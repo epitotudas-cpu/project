@@ -1,0 +1,345 @@
+{
+  "version": "3.0.0",
+  "created_at": "2026-07-29T12:19:29.069Z",
+  "counts": {
+    "technical_concepts": 5,
+    "industry_terms": 5,
+    "total": 10
+  },
+  "items": [
+    {
+      "id": "tc-001",
+      "entry_type": "technical_concept",
+      "term": "Habarcs",
+      "slug": "habarcs",
+      "category": "Falazás",
+      "szint": "Kezdő",
+      "definition": "Mészből, cementből, vízből és homokból álló kötőanyag tégla- és falazási munkákhoz.",
+      "detailed_description": "A habarcs olyan kiégetett mész vagy cement alapú kötőanyag, amely homokkal és vízzel keverve képlékeny masszát alkot, majd levegőn vagy víz alatt szilárdra köt. Osztályozása MSZ EN 998 szabvány szerint történik.",
+      "practical_applications": "Vázkerámia és vázacél falazatok kőműves munkáinál, valamint alapvakolatok felhordásánál kézi és gépi habarcsként.",
+      "common_mistakes": "Túllépett várakozási idő, nem megfelelő homok-cement arány miatti felületi porladás.",
+      "kulcsszavak": [
+        "habarcs",
+        "falazás",
+        "kötőanyag",
+        "cement",
+        "mortar",
+        "mörtel"
+      ],
+      "video_url": "https://www.youtube.com/embed/5a2d6GqJd_w",
+      "image_urls": [
+        "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80"
+      ],
+      "slides": [
+        {
+          "title": "1. Dia: Habarcs Összetétel és Típusok",
+          "content": "A kőműves habarcs cement, mész, homok és víz megfelelő arányú keveréke. Nyomószilárdság szerinti osztályozása MSZ EN 998-1 alapján történik (pl. M2.5, M5, M10)."
+        },
+        {
+          "title": "2. Dia: Bekeverési és Felhordási Technológia",
+          "content": "Keverési idő betonkeverőben: minimum 3-5 perc. A bekevert nedves habarcsot 1-2 órán belül be kell építeni a kötés megkezdődése előtt."
+        },
+        {
+          "title": "3. Dia: Minőségellenőrzés & Szabványok",
+          "content": "Ügyelni kell a megfelelő víztartalomra: a túlhígított habarcs kikötés után elmorzsálódik és elveszíti teherbírását."
+        }
+      ],
+      "translations": {
+        "en": "Mortar",
+        "de": "Mörtel",
+        "ro": "Mortar"
+      },
+      "related_tools": [
+        "Kőműveskanál",
+        "Kőműves serpenyő"
+      ],
+      "related_articles": [
+        "Falazási alapok és habarcstípusok"
+      ]
+    },
+    {
+      "id": "tc-002",
+      "entry_type": "technical_concept",
+      "term": "Betonacél B500B",
+      "slug": "betonacel-b500b",
+      "category": "Szerkezetépítés",
+      "szint": "Haladó",
+      "definition": "Melegen hengerelt, bordázott felületű acélszál vasbeton szerkezetek húzóerőinek felvételére.",
+      "detailed_description": "B500B jelölésű melegen hengerelt, magas képlékenységű betonacél. Folyáshatára minimum 500 MPa, amely garantálja a vasbeton szerkezet biztonságos teherbírását.",
+      "practical_applications": "Monolit vasbeton födémek, koszorúk, pillérek és sávalapok vasalásának szerelésénél.",
+      "common_mistakes": "Rozsdásodott vagy olajos acél beépítése, nem megfelelő betonfedés biztosítása műanyag távtartók nélkül.",
+      "kulcsszavak": [
+        "betonacél",
+        "vasbeton",
+        "armatura",
+        "b500b",
+        "rebar"
+      ],
+      "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "image_urls": [
+        "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80"
+      ],
+      "slides": [
+        {
+          "title": "1. Dia: Betonacél B500B Jellemzői",
+          "content": "Folyáshatár: 500 N/mm², B osztályú képlékenység. Bordázott felület a vasbeton tapadásának maximalizálásához."
+        },
+        {
+          "title": "2. Dia: Szerelés és Betonfedés",
+          "content": "Mindig műanyag vagy beton távtartó bakokat kell használni a korrózió elleni 3-5 cm betonfedés biztosítására."
+        }
+      ],
+      "translations": {
+        "en": "Rebar / Reinforcing Steel B500B",
+        "de": "Bewehrungsstahl / Betonstahl B500B",
+        "ro": "Oțel beton B500B"
+      },
+      "related_tools": [
+        "Vashajlító tüske",
+        "Kötöződrót fogó"
+      ],
+      "related_articles": [
+        "Monolit vasbeton szerkezetek méretezése"
+      ]
+    },
+    {
+      "id": "tc-003",
+      "entry_type": "technical_concept",
+      "term": "Döngölőgép",
+      "slug": "dongologep",
+      "category": "Alapozás & Földmunka",
+      "szint": "Haladó",
+      "definition": "Benzin- vagy dízelmotoros tömörítőgép mély munkagödrök és csőárkok földtömörítéséhez.",
+      "detailed_description": "Nagy frekvenciájú ütőmozgással működő földtömörítő gép, amely keskeny felületen fejti ki a tömörítési energiát a talaj kötő- és szemcsés rétegeiben.",
+      "practical_applications": "Közműárok rákötéseknél, sávalapok alatti kavicságy és munkagödrök réteges tömörítésénél.",
+      "common_mistakes": "Túl vastag réteg (30 cm felett) egyidejű tömörítési kísérlete.",
+      "kulcsszavak": [
+        "döngölőgép",
+        "tömörítés",
+        "földmunka",
+        "rammer",
+        "stampfer"
+      ],
+      "translations": {
+        "en": "Tamping Rammer / Trench Compactor",
+        "de": "Vibrationsstampfer / Grabenstampfer",
+        "ro": "Mai compactor"
+      },
+      "related_tools": [
+        "Lapvibrátor"
+      ],
+      "related_articles": [
+        "Munkagödrök és alapozás előkészítése"
+      ]
+    },
+    {
+      "id": "tc-004",
+      "entry_type": "technical_concept",
+      "term": "Sarokcsiszoló",
+      "slug": "sarokcsiszolo",
+      "category": "Gépek & Szerszámok",
+      "szint": "Kezdő",
+      "definition": "Kézi elektromos csiszoló- és vágógép fémek, téglák, csempék és beton vágására.",
+      "detailed_description": "Nagy fordulatszámú elektromos vagy akkumulátoros gép, amely gyémánt- vagy vágótárcsával végzi az anyagok méretre vágását és sorjátlanítását.",
+      "practical_applications": "Betonacél vágása, csempe szélcsiszolása, falhorony marása védőszemüvegben.",
+      "common_mistakes": "Védőburkolat leszerelése, nem megfelelő tárcsa kiválasztása fémhez vs betonhoz.",
+      "kulcsszavak": [
+        "sarokcsiszoló",
+        "vágás",
+        "gyémánttárcsa",
+        "angle grinder",
+        "winkelschleifer"
+      ],
+      "translations": {
+        "en": "Angle Grinder",
+        "de": "Winkelschleifer / Trennschleifer",
+        "ro": "Polizor unghiular / Flex"
+      },
+      "related_tools": [
+        "Védőszemüveg",
+        "Zajvédő tok"
+      ],
+      "related_articles": [
+        "Munkavédelmi előírások gépi vágásnál"
+      ]
+    },
+    {
+      "id": "tc-005",
+      "entry_type": "technical_concept",
+      "term": "Homlokzati hőszigetelő rendszer (THR)",
+      "slug": "homlokzati-hoszigetelo-rendszer-thr",
+      "category": "Szigetelés",
+      "szint": "Haladó",
+      "definition": "Ragasztott és dűbelezett polisztirol vagy kőzetgyapot alapú külső hőszigetelés vakolattal.",
+      "detailed_description": "Komplex homlokzati hőszigetelő rendszer (ETICS/THR), amely magában foglalja a ragasztót, a szigetelőlapot, a dűbeleket, az üvegszövet hálót és a fedővakolatot.",
+      "practical_applications": "Családi és társasházak külső határoló falainak energiatakarékos szigetelésénél.",
+      "common_mistakes": "Pogácsás ragasztás a perem-pogácsa módszer helyett, háló beágyazási hibák.",
+      "kulcsszavak": [
+        "hőszigetelés",
+        "thr",
+        "eps",
+        "homlokzat",
+        "etics",
+        "wdvs"
+      ],
+      "translations": {
+        "en": "ETICS / External Thermal Insulation Composite System",
+        "de": "WDVS / Wärmedämm-Verbundsystem",
+        "ro": "Termosistem / Sistem de izolație termică"
+      },
+      "related_tools": [
+        "Csiszolózsiráf",
+        "Styropor vágó"
+      ],
+      "related_articles": [
+        "Homlokzati hőszigetelés szakszerű kivitelezése"
+      ]
+    },
+    {
+      "id": "jt-001",
+      "entry_type": "industry_term",
+      "term": "Malter",
+      "slug": "malter",
+      "category": "Falazás",
+      "jargon_subtype": "german_origin",
+      "definition": "Építkezéseken és szakik között használt elterjedt elnevezés a kőműves habarcsra.",
+      "official_term_name": "Habarcs",
+      "usage_example": "A maltert bekevertük a falazáshoz.",
+      "origin_note": "Német eredetű mesterszó (Mörtel). Sub-típus: Német mesterszó.",
+      "kulcsszavak": [
+        "malter",
+        "habarcs",
+        "zsargon",
+        "német mesterszó"
+      ],
+      "translations": {
+        "en": "Mortar (Slang)",
+        "de": "Mörtel",
+        "ro": "Mortar (Slang)"
+      },
+      "related_tools": [
+        "Kőműveskanál"
+      ],
+      "related_articles": [
+        "Falazási alapok"
+      ]
+    },
+    {
+      "id": "jt-002",
+      "entry_type": "industry_term",
+      "term": "Béka",
+      "slug": "beka",
+      "category": "Alapozás & Földmunka",
+      "jargon_subtype": "workplace_slang",
+      "definition": "A döngölőgép elterjedt építőipari szleng elnevezése az ütőmozgása és ugrálása miatt.",
+      "official_term_name": "Döngölőgép",
+      "usage_example": "A békával alaposan tömörítsd le a munkagödör kavicságyát.",
+      "origin_note": "Munkanyelvi szleng kifejezés. Sub-típus: Munkanyelvi szleng.",
+      "kulcsszavak": [
+        "béka",
+        "döngölőgép",
+        "tömörítés",
+        "szleng"
+      ],
+      "translations": {
+        "en": "Frog Compactor (Slang)",
+        "de": "Grabenstampfer (Jargon)",
+        "ro": "Mai compactor (Sgl)"
+      },
+      "related_tools": [
+        "Lapvibrátor"
+      ],
+      "related_articles": [
+        "Munkagödrök és alapozás előkészítése"
+      ]
+    },
+    {
+      "id": "jt-003",
+      "entry_type": "industry_term",
+      "term": "Flex",
+      "slug": "flex",
+      "category": "Gépek & Szerszámok",
+      "jargon_subtype": "brand_name",
+      "definition": "A sarokcsiszoló elterjedt köznyelvi megnevezése a gyártó márkanevéből eredően.",
+      "official_term_name": "Sarokcsiszoló",
+      "usage_example": "Flexszel vágd méretre a kiálló betonacélt.",
+      "origin_note": "Márkanévből lett köznév (Ackermann & Schmitt Flex). Sub-típus: Márkanévből lett köznév.",
+      "kulcsszavak": [
+        "flex",
+        "sarokcsiszoló",
+        "vágás",
+        "márkanév"
+      ],
+      "translations": {
+        "en": "Flex / Angle Grinder (Brand name)",
+        "de": "Flex / Winkelschleifer",
+        "ro": "Flex"
+      },
+      "related_tools": [
+        "Védőszemüveg"
+      ],
+      "related_articles": [
+        "Munkavédelmi előírások gépi vágásnál"
+      ]
+    },
+    {
+      "id": "jt-004",
+      "entry_type": "industry_term",
+      "term": "Dryvit",
+      "slug": "dryvit",
+      "category": "Szigetelés",
+      "jargon_subtype": "brand_name",
+      "definition": "A homlokzati hőszigetelő rendszer köznyelvi elnevezése az első híres márkáról.",
+      "official_term_name": "Homlokzati hőszigetelő rendszer (THR)",
+      "usage_example": "A dryvitozást jövő héten kezdik a kőművesek.",
+      "origin_note": "Márkanévből lett köznév (Dryvit rendszer). Sub-típus: Márkanévből lett köznév.",
+      "kulcsszavak": [
+        "dryvit",
+        "hőszigetelés",
+        "thr",
+        "márkanév"
+      ],
+      "translations": {
+        "en": "Dryvit / EIFS",
+        "de": "Dryvit / Dämmsystem",
+        "ro": "Dryvit / Termosistem"
+      },
+      "related_tools": [
+        "Styropor simító"
+      ],
+      "related_articles": [
+        "Homlokzati hőszigetelés szakszerű kivitelezése"
+      ]
+    },
+    {
+      "id": "jt-005",
+      "entry_type": "industry_term",
+      "term": "Stafni",
+      "slug": "stafni",
+      "category": "Szerkezetépítés",
+      "jargon_subtype": "german_origin",
+      "definition": "Építkezéseken használt méretezett fagerenda vagy tetőléc kifejezés.",
+      "official_term_name": "Léc / Fagerenda",
+      "usage_example": "A stafnit méretre vágva készítettük elő a zsaluzáshoz.",
+      "origin_note": "Német eredetű mesterszó (Staffel). Sub-típus: Német mesterszó.",
+      "kulcsszavak": [
+        "stafni",
+        "léc",
+        "zsaluzat",
+        "német mesterszó"
+      ],
+      "translations": {
+        "en": "Batten / Timber Lath",
+        "de": "Staffel / Latte",
+        "ro": "Șipcă / Riglă"
+      },
+      "related_tools": [
+        "Kézi körfűrész"
+      ],
+      "related_articles": [
+        "Zsaluzási és faipari alapok"
+      ]
+    }
+  ]
+}

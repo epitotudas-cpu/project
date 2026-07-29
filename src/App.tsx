@@ -1,0 +1,203 @@
+import { useState, useEffect } from 'react';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import HomePage from './pages/HomePage';
+import CategoryPage from './pages/CategoryPage';
+import ArticlePage from './pages/ArticlePage';
+import GlossaryPage from './pages/GlossaryPage';
+import ToolPage from './pages/ToolPage';
+import CoursesPage from './pages/CoursesPage';
+import CareersPage from './pages/CareersPage';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminArticlesPage from './pages/AdminArticlesPage';
+import AdminCategoriesPage from './pages/AdminCategoriesPage';
+import AdminGlossaryPage from './pages/AdminGlossaryPage';
+import AdminToolsPage from './pages/AdminToolsPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminModerationPage from './pages/AdminModerationPage';
+import AdminRolesPage from './pages/AdminRolesPage';
+import AdminPartnersPage from './pages/AdminPartnersPage';
+import AdminAdsPage from './pages/AdminAdsPage';
+import AdminAuditPage from './pages/AdminAuditPage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import EmailVerificationPage from './pages/EmailVerificationPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProfilePage from './pages/ProfilePage';
+import PartnersPage from './pages/PartnersPage';
+import ImpressumPage from './pages/ImpressumPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
+import CookiePolicyPage from './pages/CookiePolicyPage';
+import CookieBanner from './components/CookieBanner';
+import { GlossaryProvider } from './contexts/GlossaryContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { getSiteSettings, type SiteSettings } from './services/siteSettingsService';
+
+type PageKey =
+  | 'home'
+  | 'category'
+  | 'article'
+  | 'glossary'
+  | 'tool'
+  | 'partners'
+  | 'admin'
+  | 'login'
+  | 'register'
+  | 'verify-email'
+  | 'forgot-password'
+  | 'reset-password'
+  | 'profile'
+  | 'courses'
+  | 'careers'
+  | 'impressum'
+  | 'privacy'
+  | 'terms'
+  | 'cookies';
+
+function getInitialPage(): PageKey {
+  try {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    if (params.get('type') === 'recovery') return 'reset-password';
+  } catch (err) {
+    void err;
+  }
+  return 'home';
+}
+
+function AppContent() {
+  const { user, loading, authEvent } = useAuth();
+  const [currentPage, setCurrentPage] = useState<PageKey>(getInitialPage);
+  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
+
+  useEffect(() => {
+    function handleSettingsChange() {
+      setSiteSettings(getSiteSettings());
+    }
+    window.addEventListener('site-settings-changed', handleSettingsChange);
+    return () => window.removeEventListener('site-settings-changed', handleSettingsChange);
+  }, []);
+
+  const navigate = (page: string, params?: { articleSlug?: string }) => {
+    if (params?.articleSlug) {
+      setSelectedArticleSlug(params.articleSlug);
+    }
+    setCurrentPage(page as PageKey);
+  };
+
+  useEffect(() => {
+    if (authEvent === 'PASSWORD_RECOVERY') {
+      setCurrentPage('reset-password');
+    } else if (authEvent === 'SIGNED_IN') {
+      if (currentPage === 'verify-email') {
+        setCurrentPage('home');
+      }
+    } else if (authEvent === 'SIGNED_OUT') {
+      if (currentPage === 'profile') {
+        setCurrentPage('home');
+      }
+    }
+  }, [authEvent, currentPage]);
+
+  // Redirect authenticated users away from auth-only pages
+  useEffect(() => {
+    if (!loading && user && (currentPage === 'login' || currentPage === 'register')) {
+      setCurrentPage('home');
+    }
+  }, [user, loading, currentPage]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent border-r-transparent" />
+      </div>
+    );
+  }
+
+  // Full-screen routes (no shared Header/Footer)
+  switch (currentPage) {
+    case 'admin':
+      return (
+        <AdminLayout onNavigate={navigate}>
+          {(view, userEmail, onNavigateView) => {
+            if (view === 'dashboard') return <AdminDashboard userEmail={userEmail} onNavigateView={onNavigateView} />;
+            if (view === 'moderation') return <AdminModerationPage />;
+            if (view === 'articles') return <AdminArticlesPage />;
+            if (view === 'categories') return <AdminCategoriesPage />;
+            if (view === 'glossary') return <AdminGlossaryPage />;
+            if (view === 'tools') return <AdminToolsPage />;
+            if (view === 'users') return <AdminUsersPage />;
+            if (view === 'roles') return <AdminRolesPage />;
+            if (view === 'partners') return <AdminPartnersPage />;
+            if (view === 'ads') return <AdminAdsPage onNavigate={navigate} />;
+            if (view === 'audit') return <AdminAuditPage />;
+            if (view === 'settings') return <AdminSettingsPage onNavigate={navigate} />;
+            return <div className="p-8 text-gray-500 text-sm">A(z) "{view}" nézet hamarosan elérhető.</div>;
+          }}
+        </AdminLayout>
+      );
+    case 'login':
+      return <LoginPage onNavigate={navigate} />;
+    case 'register':
+      return <RegisterPage onNavigate={navigate} />;
+    case 'verify-email':
+      return <EmailVerificationPage onNavigate={navigate} />;
+    case 'forgot-password':
+      return <ForgotPasswordPage onNavigate={navigate} />;
+    case 'reset-password':
+      return <ResetPasswordPage onNavigate={navigate} />;
+  }
+
+  // Public routes with shared Header/Footer
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'category': return <CategoryPage onNavigate={navigate} />;
+      case 'article': return <ArticlePage articleSlug={selectedArticleSlug} onNavigate={navigate} />;
+      case 'glossary': return <GlossaryPage onNavigate={navigate} />;
+      case 'tool': return <ToolPage onNavigate={navigate} />;
+      case 'partners': return <PartnersPage onNavigate={navigate} />;
+      case 'courses': return <CoursesPage />;
+      case 'careers': return <CareersPage />;
+      case 'impressum': return <ImpressumPage onNavigate={navigate} />;
+      case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;
+      case 'terms': return <TermsPage onNavigate={navigate} />;
+      case 'cookies': return <CookiePolicyPage onNavigate={navigate} />;
+      case 'profile': return <ProfilePage />;
+      default: return <HomePage onNavigate={navigate} />;
+    }
+  };
+
+  return (
+    <GlossaryProvider>
+      <div className="min-h-screen flex flex-col bg-background">
+        {siteSettings.maintenanceMode && (currentPage as string) !== 'admin' && (
+          <div className="bg-amber-500 text-black px-4 py-2.5 font-bold text-xs text-center flex items-center justify-center gap-2 shadow-lg">
+            <span>⚠️ {siteSettings.maintenanceMessage}</span>
+            <button
+              onClick={() => navigate('admin')}
+              className="underline hover:text-[#111] font-extrabold text-[11px] ml-2"
+            >
+              [Adminisztrációs Belépés]
+            </button>
+          </div>
+        )}
+        <Header currentPage={currentPage} onNavigate={navigate} />
+        <main>{renderPage()}</main>
+        <Footer onNavigate={navigate} />
+        <CookieBanner onNavigate={navigate} />
+      </div>
+    </GlossaryProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
