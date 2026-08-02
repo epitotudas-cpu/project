@@ -11,7 +11,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
   if (activeSlots.length === 0) return null;
 
   return (
-    <div className="bg-slate-950/90 border-b border-amber-500/20 py-2.5 px-4 backdrop-blur-md sticky top-0 z-30 shadow-md">
+    <div className="bg-slate-50/95 border-b border-slate-200/80 py-2.5 px-4 backdrop-blur-md sticky top-0 z-30 shadow-xs">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
         {activeSlots.slice(0, 1).map((slot) => (
           <a
@@ -20,36 +20,41 @@ export function TopAdBanner({ slots }: TopBannerProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(slot.id)}
-            className="w-full group flex items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-slate-900 to-blue-500/10 border border-amber-500/30 hover:border-amber-400/70 p-2.5 sm:px-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-amber-500/10"
+            className="w-full group flex items-center justify-between gap-4 bg-white hover:bg-slate-50/90 border border-slate-200/80 hover:border-teal-700/40 p-2.5 sm:px-4 rounded-2xl transition-all duration-300 shadow-xs hover:shadow-md"
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3.5 min-w-0">
               {slot.imageUrl ? (
-                <img
-                  src={slot.imageUrl}
-                  alt={slot.sponsorName || 'Banner'}
-                  className="w-10 h-10 object-cover rounded-lg border border-amber-500/30 shrink-0 group-hover:scale-105 transition-transform duration-300"
-                />
+                <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/80 w-10 h-10 bg-slate-100">
+                  <img
+                    src={slot.imageUrl}
+                    alt={slot.sponsorName || 'Banner'}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
               ) : (
-                <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                  <Sparkles size={16} />
+                <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-700/20 flex items-center justify-center text-[#0F766E] shrink-0">
+                  <Sparkles size={18} />
                 </div>
               )}
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black px-2 py-0.5 rounded text-[10px] uppercase tracking-wider shadow-sm">
-                    {slot.sponsorName || 'Szakmai Ajánlat'}
+
+              <div className="min-w-0 space-y-0.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-700/20 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse" />
+                    {slot.sponsorName || 'Bosch Professional Magyarország'}
                   </span>
-                  <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-amber-400 font-semibold">
-                    <ShieldCheck size={12} /> Hivatalos Partner
+                  <span className="hidden md:inline-flex items-center gap-1 text-xs text-teal-800 font-medium">
+                    <ShieldCheck size={13} className="text-[#0F766E]" /> Hivatalos Partner
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 transition-colors truncate mt-0.5">
+                <p className="text-xs sm:text-sm font-semibold text-slate-900 group-hover:text-[#0F766E] transition-colors truncate">
                   {slot.title}
                 </p>
               </div>
             </div>
-            <div className="shrink-0 flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg border border-amber-500/30 transition-all duration-300 group-hover:translate-x-0.5">
-              <span>Részletek</span>
+
+            <div className="shrink-0 flex items-center gap-1.5 bg-[#0F766E] hover:bg-[#115E59] text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all duration-300 group-hover:translate-x-0.5">
+              <span>Ajánlat megtekintése</span>
               <ExternalLink size={13} />
             </div>
           </a>
