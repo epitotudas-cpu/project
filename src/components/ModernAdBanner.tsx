@@ -45,27 +45,26 @@ export function TopAdBanner({ slots }: TopBannerProps) {
   }, [activeCreative?.id, activeCreative?.is_active]);
 
   if (!activeCreative || !activeCreative.is_active) {
-    // Fallback slot check if custom creative isn't active
     const activeSlots = slots?.filter((s) => s.location === 'top_banner' && !s.isPlaceholder) || [];
     const activeSlot = activeSlots[0];
     if (!activeSlot) return null;
 
     return (
       <div className="bg-slate-50 border-b border-slate-200 py-2.5 px-4 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <a
             href={activeSlot.targetUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeSlot.id)}
-            className="w-full group flex items-center justify-between gap-4 bg-white hover:bg-slate-50/90 border border-slate-200/80 hover:border-teal-700/40 p-2.5 sm:px-4 rounded-2xl transition-all duration-300 shadow-xs hover:shadow-md"
+            className="w-full group flex flex-col sm:flex-row items-center justify-between gap-3 bg-white hover:bg-slate-50/90 border border-slate-200/80 p-3 sm:px-4 rounded-2xl transition-all duration-300 shadow-xs hover:shadow-md"
           >
-            <div className="flex items-center gap-3.5 min-w-0">
+            <div className="flex flex-col sm:flex-row items-center gap-3 min-w-0 text-center sm:text-left">
               <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-700/20 flex items-center justify-center text-[#0F766E] shrink-0">
                 <Sparkles size={18} />
               </div>
               <div className="min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-700/20 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
                     {activeSlot.sponsorName || 'Partner'}
                   </span>
@@ -75,7 +74,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                 </p>
               </div>
             </div>
-            <div className="shrink-0 flex items-center gap-1.5 bg-[#0F766E] text-white font-bold text-xs px-3.5 py-2 rounded-xl">
+            <div className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 bg-[#0F766E] text-white font-bold text-xs px-4 py-2 rounded-xl">
               <span>Ajánlat megtekintése</span>
               <ExternalLink size={13} />
             </div>
@@ -168,11 +167,11 @@ export function TopAdBanner({ slots }: TopBannerProps) {
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`py-2.5 px-4 sticky top-0 z-30 transition-colors duration-500 ${getBackgroundClasses(
+      className={`py-2 px-3 sm:py-2.5 sm:px-4 sticky top-0 z-30 transition-colors duration-500 ${getBackgroundClasses(
         activeCreative.background_style
       )}`}
     >
-      <div className="max-w-7xl mx-auto flex items-center gap-3">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
         {/* Banner Clickable Main Card */}
         <a
           key={`${activeCreative.id}-${currentIndex}`}
@@ -180,31 +179,25 @@ export function TopAdBanner({ slots }: TopBannerProps) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => recordAdClick(activeCreative.id)}
-          className={`w-full group flex items-center justify-between gap-4 p-2.5 sm:px-4 rounded-2xl transition-all duration-300 ${
+          className={`w-full group flex flex-col sm:flex-row items-center justify-between gap-3 p-3 sm:px-4 rounded-2xl transition-all duration-300 ${
             activeCreative.background_style === 'light_neutral'
               ? 'bg-white hover:bg-slate-50/90 border border-slate-200/80 shadow-xs'
               : 'bg-black/20 hover:bg-black/40 border border-white/10'
           } ${getTransitionClass(activeCreative.transition_effect)} ${getAnimationClass(
             activeCreative.animation_type
-          )} ${
-            activeCreative.text_align === 'center'
-              ? 'flex-col text-center items-center justify-center'
-              : activeCreative.text_align === 'right'
-              ? 'flex-row-reverse text-right items-center justify-between'
-              : 'flex-row text-left items-center justify-between'
-          }`}
+          )}`}
         >
           <div
-            className={`flex items-center gap-3.5 min-w-0 ${
+            className={`w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3.5 min-w-0 ${
               activeCreative.text_align === 'center'
-                ? 'flex-col text-center items-center'
+                ? 'text-center items-center'
                 : activeCreative.text_align === 'right'
-                ? 'flex-row-reverse text-right items-center'
-                : 'flex-row text-left items-center'
+                ? 'sm:flex-row-reverse text-center sm:text-right items-center'
+                : 'text-center sm:text-left items-center sm:items-start'
             }`}
           >
             {activeCreative.image_url ? (
-              <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/80 w-10 h-10 bg-slate-100">
+              <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/80 w-10 h-10 bg-slate-100 shadow-sm">
                 <picture>
                   {activeCreative.mobile_image_url && (
                     <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
@@ -227,17 +220,17 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                 activeCreative.text_align === 'center'
                   ? 'text-center'
                   : activeCreative.text_align === 'right'
-                  ? 'text-right'
-                  : 'text-left'
+                  ? 'text-center sm:text-right'
+                  : 'text-center sm:text-left'
               }`}
             >
               <div
-                className={`flex items-center gap-2 flex-wrap ${
+                className={`flex items-center justify-center gap-2 flex-wrap ${
                   activeCreative.text_align === 'center'
-                    ? 'justify-center'
+                    ? 'sm:justify-center'
                     : activeCreative.text_align === 'right'
-                    ? 'justify-end'
-                    : 'justify-start'
+                    ? 'sm:justify-end'
+                    : 'sm:justify-start'
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-700/20 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
@@ -245,19 +238,19 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                   {activeCreative.partner_name}
                 </span>
                 {activeCreative.badge_text && (
-                  <span className="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-teal-800">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-800">
                     <ShieldCheck size={13} className="text-[#0F766E]" /> {activeCreative.badge_text}
                   </span>
                 )}
               </div>
-              <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-[#0F766E] transition-colors">
+              <p className="text-xs sm:text-sm font-semibold sm:truncate leading-snug group-hover:text-[#0F766E] transition-colors">
                 {activeCreative.headline}
               </p>
             </div>
           </div>
 
           <div
-            className={`shrink-0 flex items-center gap-1.5 font-bold text-xs px-3.5 py-2 rounded-xl transition-all duration-300 group-hover:translate-x-0.5 ${getButtonClasses(
+            className={`w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 font-bold text-xs px-4 py-2 rounded-xl transition-all duration-300 group-hover:translate-x-0.5 ${getButtonClasses(
               activeCreative.button_style
             )}`}
           >
@@ -268,7 +261,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
 
         {/* Multi-banner Rotator Navigation Controls */}
         {creatives.length > 1 && (
-          <div className="shrink-0 flex items-center gap-1 bg-black/20 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+          <div className="shrink-0 flex items-center gap-1.5 bg-black/20 px-2 py-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
             <button
               onClick={handlePrev}
               title="Előző banner"
@@ -369,14 +362,14 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
 
   if (activeCreative && activeCreative.is_active) {
     return (
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         <div
           key={`${activeCreative.id}-${currentIndex}`}
-          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-6 md:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300 ${getTransitionClass(
+          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-5 sm:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300 ${getTransitionClass(
             activeCreative.transition_effect
           )}`}
         >
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             {activeCreative.image_url && (
               <div className="lg:col-span-5 relative">
                 <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3]">
@@ -402,28 +395,28 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
               </div>
             )}
 
-            <div className={`${activeCreative.image_url ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4 text-left`}>
+            <div className={`${activeCreative.image_url ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4 text-center sm:text-left`}>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold uppercase tracking-wider">
                 <Sparkles size={13} /> {activeCreative.badge_text || 'Szakmai Partneri Ajánlat'}
               </div>
 
-              <h3 className="text-2xl md:text-3xl font-extrabold text-white leading-tight group-hover:text-amber-300 transition-colors">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight group-hover:text-amber-300 transition-colors">
                 {activeCreative.headline}
               </h3>
 
               {activeCreative.description && (
-                <p className="text-gray-300 text-sm md:text-base leading-relaxed">
+                <p className="text-gray-300 text-xs sm:text-sm md:text-base leading-relaxed">
                   {activeCreative.description}
                 </p>
               )}
 
-              <div className="pt-2 flex flex-wrap items-center gap-4">
+              <div className="pt-2 flex flex-col sm:flex-row flex-wrap items-center gap-3.5">
                 <a
                   href={activeCreative.cta_url || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => recordAdClick(activeCreative.id)}
-                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-[1.02]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-[1.02]"
                 >
                   <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
                   <ExternalLink size={16} />
@@ -432,7 +425,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
                 {onNavigate && (
                   <button
                     onClick={() => onNavigate('partners')}
-                    className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-bold text-sm border border-white/10 transition-all duration-300"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-bold text-sm border border-white/10 transition-all duration-300"
                   >
                     <span>Összes Partnerünk</span>
                     <ArrowRight size={16} />
@@ -463,9 +456,9 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
 
   if (activeSlot) {
     return (
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-6 md:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300">
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-5 sm:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3]">
                 <img
@@ -476,17 +469,17 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
               </div>
             </div>
 
-            <div className="lg:col-span-7 space-y-4 text-left">
-              <h3 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
+            <div className="lg:col-span-7 space-y-4 text-center sm:text-left">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight">
                 {activeSlot.title}
               </h3>
-              <div className="pt-2 flex flex-wrap items-center gap-4">
+              <div className="pt-2 flex flex-col sm:flex-row flex-wrap items-center gap-3.5">
                 <a
                   href={activeSlot.targetUrl || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => recordAdClick(activeSlot.id)}
-                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm"
                 >
                   <span>Ajánlat Megtekintése</span>
                   <ExternalLink size={16} />
@@ -501,10 +494,10 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
 
   // Fallback Promo Banner for Industrial Partners
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-500/20 p-6 md:p-8 shadow-xl">
+    <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-500/20 p-5 sm:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-left max-w-2xl">
+          <div className="space-y-2 text-center md:text-left max-w-2xl">
             <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
               <Sparkles size={12} /> Szakmai Hirdetési Hely
             </div>
@@ -519,7 +512,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
           {onNavigate && (
             <button
               onClick={() => onNavigate('partners')}
-              className="shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center gap-2 cursor-pointer"
+              className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Partneri Program & Kapcsolat</span>
               <ArrowRight size={16} />

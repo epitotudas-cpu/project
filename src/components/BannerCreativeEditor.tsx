@@ -754,7 +754,7 @@ export function BannerCreativeEditor() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.preventDefault()}
-                    className={`shrink-0 inline-flex items-center gap-2 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 ${getButtonClasses(
+                    className={`w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 ${getButtonClasses(
                       activeCreative.button_style
                     )}`}
                   >
