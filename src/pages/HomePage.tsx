@@ -23,6 +23,7 @@ import { getCategories, getPopularArticles } from '../lib/api';
 import type { Category, Article } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getPartnerHighlights, getAdvertisementSlots, recordAdClick, type PartnerHighlight, type AdvertisementSlot } from '../services/advertisementService';
+import { TopAdBanner, InFeedAdBanner } from '../components/ModernAdBanner';
 
 interface HomePageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;
@@ -193,37 +194,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      {/* Top Banner Ads (Admin Configured) */}
-      {adSlots.filter((slot) => !slot.isPlaceholder && slot.location === 'top_banner').length > 0 && (
-        <div className="bg-[#0D121F] border-b border-[#1E293B] py-3 px-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
-            {adSlots
-              .filter((slot) => !slot.isPlaceholder && slot.location === 'top_banner')
-              .map((slot) => (
-                <a
-                  key={slot.id}
-                  href={slot.targetUrl || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => recordAdClick(slot.id)}
-                  className="w-full bg-gradient-to-r from-amber-500/10 to-blue-500/10 border border-amber-500/30 hover:border-amber-500 p-3.5 rounded-2xl flex items-center justify-between text-xs transition-all group shadow-md"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="bg-amber-500 text-black font-extrabold px-2 py-0.5 rounded text-[10px] uppercase">
-                      Kiemelt Ajánlat: {slot.sponsorName}
-                    </span>
-                    <span className="font-bold text-white group-hover:text-amber-400 transition-colors">
-                      {slot.title}
-                    </span>
-                  </div>
-                  <span className="text-amber-400 font-bold flex items-center gap-1">
-                    Megtekintés <ExternalLink size={12} />
-                  </span>
-                </a>
-              ))}
-          </div>
-        </div>
-      )}
+      {/* Top Banner Ads */}
+      <TopAdBanner slots={adSlots} />
 
       {/* Categories */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -279,6 +251,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           </div>
         )}
       </section>
+
+      {/* In-Feed Sponsored Modern Banner */}
+      <InFeedAdBanner slots={adSlots} onNavigate={onNavigate} />
 
       {/* Popular articles */}
       <section className="bg-white border-y border-gray-200">
