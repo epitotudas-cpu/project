@@ -41,7 +41,7 @@ export function BannerCreativeEditor() {
   
   // Navigation & View State: 'selector' (dashboard list of creatives) or 'editing' (form + live preview)
   const [editorView, setEditorView] = useState<'selector' | 'editing'>('selector');
-  const [filterPlacement, setFilterPlacement] = useState<'all' | 'top_banner' | 'in_feed' | 'sidebar'>('all');
+  const [filterPlacement, setFilterPlacement] = useState<'all' | 'top_banner' | 'in_feed' | 'sidebar' | 'footer_banner'>('all');
 
   // Currently editing creative
   const [activeCreative, setActiveCreative] = useState<AdCreative | null>(null);
@@ -68,7 +68,7 @@ export function BannerCreativeEditor() {
   }
 
   // Create a brand new creative for a placement
-  function handleCreateNewCreative(placementKey: 'top_banner' | 'in_feed' | 'sidebar' = 'top_banner') {
+  function handleCreateNewCreative(placementKey: 'top_banner' | 'in_feed' | 'sidebar' | 'footer_banner' = 'top_banner') {
     const newId = `creative-${placementKey}-${Date.now()}`;
     const newCreative: AdCreative = {
       id: newId,
@@ -161,7 +161,6 @@ export function BannerCreativeEditor() {
     setTimeout(() => setSaveSuccessMessage(null), 3000);
   }
 
-  // Helper for location label
   // Visual style helpers for live preview & selector
   const getBackgroundClasses = (bg: BackgroundStyle) => {
     switch (bg) {
@@ -219,6 +218,7 @@ export function BannerCreativeEditor() {
   const topBannerCreatives = storedCreatives.filter((c) => c.placement_key === 'top_banner');
   const inFeedCreatives = storedCreatives.filter((c) => c.placement_key === 'in_feed');
   const sidebarCreatives = storedCreatives.filter((c) => c.placement_key === 'sidebar');
+  const footerCreatives = storedCreatives.filter((c) => c.placement_key === 'footer_banner');
 
   // =========================================================================
   // VIEW 1: CREATIVE SELECTOR DASHBOARD (Directory of Advertisers/Banners)
@@ -236,7 +236,7 @@ export function BannerCreativeEditor() {
               Hirdetések & Reklám Kreatívok Kiválasztása
             </h2>
             <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
-              Válaszd ki a szerkeszteni kívánt hirdetőt vagy hozz létre új vizuális banner kreatívot a kezdőlaphoz és az aloldalakhoz.
+              Válaszd ki a szerkeszteni kívánt hirdetőt vagy hozz létre új vizuális banner kreatívot a kezdőlaphoz, cikkekhez vagy az aloldalakhoz.
             </p>
           </div>
 
@@ -286,18 +286,27 @@ export function BannerCreativeEditor() {
               📍 In-Feed ({inFeedCreatives.length})
             </button>
 
-            {sidebarCreatives.length > 0 && (
-              <button
-                onClick={() => setFilterPlacement('sidebar')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                  filterPlacement === 'sidebar'
-                    ? 'bg-accent text-black shadow-sm font-extrabold'
-                    : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
-                }`}
-              >
-                📍 Oldalsáv ({sidebarCreatives.length})
-              </button>
-            )}
+            <button
+              onClick={() => setFilterPlacement('sidebar')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'sidebar'
+                  ? 'bg-accent text-black shadow-sm font-extrabold'
+                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+              }`}
+            >
+              📍 Oldalsáv ({sidebarCreatives.length})
+            </button>
+
+            <button
+              onClick={() => setFilterPlacement('footer_banner')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'footer_banner'
+                  ? 'bg-accent text-black shadow-sm font-extrabold'
+                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+              }`}
+            >
+              📍 Lábléc Banner ({footerCreatives.length})
+            </button>
           </div>
 
           {/* Stats Pills */}
@@ -399,6 +408,33 @@ export function BannerCreativeEditor() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {sidebarCreatives.map((creative) => (
+                    <CreativeCard
+                      key={creative.id}
+                      creative={creative}
+                      onEdit={() => handleEditCreative(creative)}
+                      onToggleActive={(e) => handleToggleActive(creative, e)}
+                      onDelete={(e) => handleDeleteCreative(creative.id, e)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4. FOOTER BANNER GROUP */}
+            {(filterPlacement === 'all' || filterPlacement === 'footer_banner') && footerCreatives.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[#222] pb-3">
+                  <h3 className="text-base font-extrabold text-white flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
+                    📍 Lábléc Feletti Kiemelt Banner (Footer Banner)
+                  </h3>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {footerCreatives.length} Hirdetés
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {footerCreatives.map((creative) => (
                     <CreativeCard
                       key={creative.id}
                       creative={creative}
@@ -539,6 +575,7 @@ export function BannerCreativeEditor() {
                   <option value="top_banner">Fejléc Banner (Főoldal)</option>
                   <option value="in_feed">In-Feed Banner (Cikkek között)</option>
                   <option value="sidebar">Oldalsáv Banner (Sidebar)</option>
+                  <option value="footer_banner">Lábléc Feletti Banner (Footer)</option>
                 </select>
               </div>
 
@@ -684,7 +721,7 @@ export function BannerCreativeEditor() {
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent"
                 >
                   <option value="left">Balra igazított (Left)</option>
-                  <option value="center font-bold">Középre igazított (Center)</option>
+                  <option value="center">Középre igazított (Center)</option>
                   <option value="right">Jobbra igazított (Right)</option>
                 </select>
               </div>
@@ -981,7 +1018,7 @@ function CreativeCard({ creative, onEdit, onToggleActive, onDelete }: CreativeCa
             </span>
           </div>
 
-          <span className="text-[10px] font-mono text-gray-400 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5">
+          <span className="text-[10px] font-mono text-gray-400 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5 uppercase">
             {creative.placement_key}
           </span>
         </div>

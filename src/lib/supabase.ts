@@ -778,7 +778,7 @@ export type TransitionEffect = 'fade' | 'slide_left' | 'slide_up' | 'zoom' | 'in
 export interface AdCreative {
   id: string;
   campaign_id?: string | null;
-  placement_key: 'top_banner' | 'in_feed' | 'sidebar';
+  placement_key: 'top_banner' | 'in_feed' | 'sidebar' | 'footer_banner';
   partner_name: string;
   badge_text: string;
   headline: string;

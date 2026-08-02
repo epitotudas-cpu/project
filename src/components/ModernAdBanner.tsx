@@ -523,3 +523,124 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
     </section>
   );
 }
+
+export function SidebarAdBanner() {
+  const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('sidebar'));
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    function handleCreativeChange() {
+      const updated = getCreativesByPlacementSync('sidebar');
+      setCreatives(updated ? [...updated] : []);
+      setCurrentIndex(0);
+    }
+    window.addEventListener('ad-creative-changed', handleCreativeChange);
+    return () => window.removeEventListener('ad-creative-changed', handleCreativeChange);
+  }, []);
+
+  const activeCreative = creatives[currentIndex] || creatives[0];
+
+  useEffect(() => {
+    if (activeCreative?.id && activeCreative.is_active) {
+      recordAdImpression(activeCreative.id);
+    }
+  }, [activeCreative?.id, activeCreative?.is_active]);
+
+  if (!activeCreative || !activeCreative.is_active) return null;
+
+  return (
+    <div className="bg-slate-900 border border-teal-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+      <div className="flex items-center justify-between text-xs text-teal-400 font-extrabold uppercase tracking-wider">
+        <span className="flex items-center gap-1.5">
+          <ShieldCheck size={14} /> {activeCreative.partner_name}
+        </span>
+        <span className="text-[10px] text-gray-400">Oldalsáv</span>
+      </div>
+
+      {activeCreative.image_url && (
+        <div className="rounded-xl overflow-hidden aspect-video border border-white/10">
+          <img src={activeCreative.image_url} alt={activeCreative.headline} className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      <h4 className="text-base font-extrabold text-white leading-snug">
+        {activeCreative.headline}
+      </h4>
+
+      {activeCreative.description && (
+        <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">
+          {activeCreative.description}
+        </p>
+      )}
+
+      <a
+        href={activeCreative.cta_url || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => recordAdClick(activeCreative.id)}
+        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0F766E] hover:bg-[#115E59] text-white font-bold text-xs transition-all"
+      >
+        <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
+        <ExternalLink size={13} />
+      </a>
+    </div>
+  );
+}
+
+export function FooterAdBanner() {
+  const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('footer_banner'));
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    function handleCreativeChange() {
+      const updated = getCreativesByPlacementSync('footer_banner');
+      setCreatives(updated ? [...updated] : []);
+      setCurrentIndex(0);
+    }
+    window.addEventListener('ad-creative-changed', handleCreativeChange);
+    return () => window.removeEventListener('ad-creative-changed', handleCreativeChange);
+  }, []);
+
+  const activeCreative = creatives[currentIndex] || creatives[0];
+
+  useEffect(() => {
+    if (activeCreative?.id && activeCreative.is_active) {
+      recordAdImpression(activeCreative.id);
+    }
+  }, [activeCreative?.id, activeCreative?.is_active]);
+
+  if (!activeCreative || !activeCreative.is_active) return null;
+
+  return (
+    <section className="bg-gradient-to-r from-slate-950 via-teal-950 to-slate-950 border-t border-teal-500/30 py-6 px-4">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4 text-center md:text-left">
+          {activeCreative.image_url && (
+            <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 shrink-0 hidden sm:block">
+              <img src={activeCreative.image_url} alt={activeCreative.partner_name} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <div>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded-full border border-teal-500/20">
+              {activeCreative.partner_name} • {activeCreative.badge_text || 'Kiemelt Partner'}
+            </span>
+            <h4 className="text-sm sm:text-base font-extrabold text-white mt-1">
+              {activeCreative.headline}
+            </h4>
+          </div>
+        </div>
+
+        <a
+          href={activeCreative.cta_url || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => recordAdClick(activeCreative.id)}
+          className="shrink-0 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs transition-all flex items-center gap-2"
+        >
+          <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
+          <ExternalLink size={14} />
+        </a>
+      </div>
+    </section>
+  );
+}
