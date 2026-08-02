@@ -5,7 +5,6 @@ import {
   Eye,
   MousePointer,
   DollarSign,
-  Clock,
   CheckCircle2,
   Building2,
   Package,
@@ -42,6 +41,7 @@ import {
   DEFAULT_CONTRACT_TEMPLATES,
   interpolateTemplate,
 } from '../services/contractService';
+import { BannerCreativeEditor } from '../components/BannerCreativeEditor';
 import type {
   ExtendedAdCampaign,
   CampaignStatusV2,
@@ -105,8 +105,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
   const templates = DEFAULT_CONTRACT_TEMPLATES;
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'campaigns' | 'contracts' | 'partners' | 'packages' | 'payments' | 'notifications' | 'reports' | 'partner_portal'
-  >('dashboard');
+    'dashboard' | 'creative_editor' | 'campaigns' | 'contracts' | 'partners' | 'packages' | 'payments' | 'notifications' | 'reports' | 'partner_portal'
+  >('creative_editor');
 
   const [showModal, setShowModal] = useState(false);
   const [showContractViewer, setShowContractViewer] = useState<AdvertisementContract | null>(null);
@@ -147,8 +147,17 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
     function handleContractsChanged() {
       setContracts(getContracts());
     }
+    async function handleCampaignsChanged() {
+      const campData = await listAdCampaigns();
+      setCampaigns([...campData]);
+    }
+
     window.addEventListener('contracts-changed', handleContractsChanged);
-    return () => window.removeEventListener('contracts-changed', handleContractsChanged);
+    window.addEventListener('ad-campaigns-changed', handleCampaignsChanged);
+    return () => {
+      window.removeEventListener('contracts-changed', handleContractsChanged);
+      window.removeEventListener('ad-campaigns-changed', handleCampaignsChanged);
+    };
   }, []);
 
   async function loadData() {
@@ -304,6 +313,10 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
     .filter((c) => c.status_v2 === 'active' || c.payment_status === 'paid')
     .reduce((acc, curr) => acc + (curr.price_huf || 0), 0);
 
+  const totalImpressions = campaigns.reduce((acc, c) => acc + (c.impressions_count || 0), 0);
+  const totalClicks = campaigns.reduce((acc, c) => acc + (c.clicks_count || 0), 0);
+  const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
+
   const expiring30DaysCount = campaigns.filter((c) => {
     if (!c.end_date) return false;
     const daysLeft = Math.ceil((new Date(c.end_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
@@ -351,6 +364,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       <div className="flex items-center gap-2 border-b border-[#222] overflow-x-auto pb-2">
         {[
           { id: 'dashboard', label: '📊 Dashboard', count: null },
+          { id: 'creative_editor', label: '🎨 Kreatív Szerkesztő', count: null },
           { id: 'campaigns', label: '🎯 Kampányok', count: campaigns.length },
           { id: 'contracts', label: '📄 Szerződések & Sablonok', count: pendingContractAcceptanceCount },
           { id: 'partners', label: '🏢 Partnerek', count: null },
@@ -411,15 +425,6 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
             <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-2 relative overflow-hidden">
               <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <Clock size={16} className="text-blue-400" /> Fizetésre Váró Tételek
-              </div>
-              <div className="text-3xl font-extrabold text-blue-400">{pendingPaymentCount}</div>
-              <p className="text-[11px] text-gray-500">Kiállított vagy várakozó számlák</p>
-              <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-blue-500/10 rounded-full blur-xl" />
-            </div>
-
-            <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-2 relative overflow-hidden">
-              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <DollarSign size={16} className="text-accent" /> Szerződéses Érték
               </div>
               <div className="text-3xl font-extrabold text-accent">
@@ -427,6 +432,33 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               </div>
               <p className="text-[11px] text-gray-500">Szponzori & Affiliate bevételek</p>
               <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-accent/10 rounded-full blur-xl" />
+            </div>
+          </div>
+
+          {/* Real Live Performance Analytics Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-[#111] border border-[#222] rounded-3xl p-5 space-y-1 relative overflow-hidden">
+              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Eye size={16} className="text-cyan-400" /> Valós Összes Megjelenés
+              </div>
+              <div className="text-2xl font-extrabold text-white">{totalImpressions.toLocaleString('hu-HU')}</div>
+              <p className="text-[11px] text-gray-500">Oldalon rögzített valós hirdetés megjelenések</p>
+            </div>
+
+            <div className="bg-[#111] border border-[#222] rounded-3xl p-5 space-y-1 relative overflow-hidden">
+              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <MousePointer size={16} className="text-accent" /> Valós Összes Kattintás
+              </div>
+              <div className="text-2xl font-extrabold text-accent">{totalClicks.toLocaleString('hu-HU')}</div>
+              <p className="text-[11px] text-gray-500">Látogatók által kattintott partner hivatkozások</p>
+            </div>
+
+            <div className="bg-[#111] border border-[#222] rounded-3xl p-5 space-y-1 relative overflow-hidden">
+              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <BarChart3 size={16} className="text-green-400" /> Átlagos Átkattintási Arány (CTR)
+              </div>
+              <div className="text-2xl font-extrabold text-green-400">{avgCtr}%</div>
+              <p className="text-[11px] text-gray-500">Valós idejű konverziós mutató</p>
             </div>
           </div>
 
@@ -488,6 +520,9 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
           </div>
         </div>
       )}
+
+      {/* TAB: VISUAL BANNER CREATIVE EDITOR */}
+      {activeTab === 'creative_editor' && <BannerCreativeEditor />}
 
       {/* TAB 2: CAMPAIGN MANAGER */}
       {activeTab === 'campaigns' && (

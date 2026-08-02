@@ -1,3 +1,4 @@
+import { getContracts } from './contractService';
 import {
   supabase,
   type AdCampaign,
@@ -233,13 +234,37 @@ const DEFAULT_PARTNERS: PartnerHighlight[] = [
   },
 ];
 
+const STORAGE_KEY_CAMPAIGNS = 'epitotudas_ad_campaigns_v2';
+
+export function getStoredCampaigns(): ExtendedAdCampaign[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CAMPAIGNS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (err) {
+    console.error('Hiba a kampányok olvasásakor:', err);
+  }
+  return DEFAULT_CAMPAIGNS;
+}
+
+export function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(campaigns));
+    window.dispatchEvent(new Event('ad-campaigns-changed'));
+  } catch (err) {
+    console.error('Hiba a kampányok mentésekor:', err);
+  }
+}
+
 export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
   try {
     const { data, error } = await supabase.from('ad_campaigns').select('*').order('created_at', { ascending: false });
     if (!error && data && data.length > 0) {
-      // Merge Supabase rows with extended defaults
+      const stored = getStoredCampaigns();
       const mapped = data.map((item) => {
-        const match = DEFAULT_CAMPAIGNS.find((c) => c.id === item.id);
+        const match = stored.find((c) => c.id === item.id) || DEFAULT_CAMPAIGNS.find((c) => c.id === item.id);
         return {
           ...match,
           ...item,
@@ -248,19 +273,22 @@ export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
           payment_status: match?.payment_status || 'paid',
           package_tier: match?.package_tier || 'silver',
           contract_type: match?.contract_type || 'monthly',
+          impressions_count: match?.impressions_count ?? item.impressions_count ?? 0,
+          clicks_count: match?.clicks_count ?? item.clicks_count ?? 0,
           contact_person: match?.contact_person || {
-            name: 'Kapcsolattartó',
+            name: 'Kapcsolattartó Menedzser',
             email: 'marketing@partner.hu',
             phone: '+36 30 123 4567',
           },
         } as ExtendedAdCampaign;
       });
+      saveStoredCampaigns(mapped);
       return mapped;
     }
   } catch (err) {
     void err;
   }
-  return DEFAULT_CAMPAIGNS;
+  return getStoredCampaigns();
 }
 
 export async function createAdCampaign(payload: CreateAdCampaignPayload): Promise<ExtendedAdCampaign> {
@@ -292,6 +320,10 @@ export async function createAdCampaign(payload: CreateAdCampaignPayload): Promis
     ],
   };
 
+  const current = getStoredCampaigns();
+  const updated = [newCampaign, ...current];
+  saveStoredCampaigns(updated);
+
   try {
     const { data, error } = await supabase
       .from('ad_campaigns')
@@ -308,24 +340,27 @@ export async function createAdCampaign(payload: CreateAdCampaignPayload): Promis
       .single();
 
     if (!error && data) {
-      return {
-        ...newCampaign,
-        ...data,
-      };
+      const merged = { ...newCampaign, ...data };
+      const list = getStoredCampaigns();
+      const idx = list.findIndex((c) => c.id === newCampaign.id);
+      if (idx !== -1) list[idx] = merged;
+      saveStoredCampaigns(list);
+      return merged;
     }
   } catch (err) {
     void err;
   }
 
-  DEFAULT_CAMPAIGNS.unshift(newCampaign);
   return newCampaign;
 }
 
 export async function toggleCampaignStatus(id: string, newStatus: string): Promise<void> {
-  const index = DEFAULT_CAMPAIGNS.findIndex((c) => c.id === id);
+  const campaigns = getStoredCampaigns();
+  const index = campaigns.findIndex((c) => c.id === id);
   if (index !== -1) {
-    DEFAULT_CAMPAIGNS[index].status = newStatus;
-    DEFAULT_CAMPAIGNS[index].status_v2 = newStatus === 'active' ? 'active' : 'cancelled';
+    campaigns[index].status = newStatus;
+    campaigns[index].status_v2 = newStatus === 'active' ? 'active' : 'cancelled';
+    saveStoredCampaigns(campaigns);
   }
 
   try {
@@ -336,31 +371,39 @@ export async function toggleCampaignStatus(id: string, newStatus: string): Promi
 }
 
 export async function updateCampaignStatusV2(id: string, newStatusV2: CampaignStatusV2): Promise<void> {
-  const index = DEFAULT_CAMPAIGNS.findIndex((c) => c.id === id);
+  const campaigns = getStoredCampaigns();
+  const index = campaigns.findIndex((c) => c.id === id);
   if (index !== -1) {
-    DEFAULT_CAMPAIGNS[index].status_v2 = newStatusV2;
-    DEFAULT_CAMPAIGNS[index].status = newStatusV2 === 'active' ? 'active' : 'paused';
+    campaigns[index].status_v2 = newStatusV2;
+    campaigns[index].status = newStatusV2 === 'active' ? 'active' : 'paused';
+    saveStoredCampaigns(campaigns);
   }
 }
 
 export async function updatePaymentStatus(id: string, newPaymentStatus: PaymentStatus): Promise<void> {
-  const index = DEFAULT_CAMPAIGNS.findIndex((c) => c.id === id);
+  const campaigns = getStoredCampaigns();
+  const index = campaigns.findIndex((c) => c.id === id);
   if (index !== -1) {
-    DEFAULT_CAMPAIGNS[index].payment_status = newPaymentStatus;
+    campaigns[index].payment_status = newPaymentStatus;
+    saveStoredCampaigns(campaigns);
   }
 }
 
 export async function recordAdImpression(id: string): Promise<void> {
-  const index = DEFAULT_CAMPAIGNS.findIndex((c) => c.id === id);
+  const campaigns = getStoredCampaigns();
+  const index = campaigns.findIndex((c) => c.id === id);
   if (index !== -1) {
-    DEFAULT_CAMPAIGNS[index].impressions_count += 1;
+    campaigns[index].impressions_count = (campaigns[index].impressions_count || 0) + 1;
+    saveStoredCampaigns(campaigns);
   }
 }
 
 export async function recordAdClick(id: string): Promise<void> {
-  const index = DEFAULT_CAMPAIGNS.findIndex((c) => c.id === id);
+  const campaigns = getStoredCampaigns();
+  const index = campaigns.findIndex((c) => c.id === id);
   if (index !== -1) {
-    DEFAULT_CAMPAIGNS[index].clicks_count += 1;
+    campaigns[index].clicks_count = (campaigns[index].clicks_count || 0) + 1;
+    saveStoredCampaigns(campaigns);
   }
 }
 
@@ -368,7 +411,23 @@ export async function getAdvertisementSlots(
   location?: AdvertisementSlot['location']
 ): Promise<AdvertisementSlot[]> {
   const campaigns = await listAdCampaigns();
-  const activeCampaigns = campaigns.filter((c) => c.status === 'active');
+  const contracts = getContracts();
+
+  // ONLY campaigns with status_v2 === 'active', valid payment, AND accepted contract!
+  const activeCampaigns = campaigns.filter((c) => {
+    // 1. Must be active status_v2
+    if (c.status_v2 !== 'active') return false;
+    // 2. Must not be overdue payment
+    if (c.payment_status === 'overdue') return false;
+
+    // 3. Check contract status if contract exists
+    const contract = contracts.find((cnt) => cnt.campaignId === c.id || cnt.partnerName === c.sponsor_name);
+    if (contract && contract.status !== 'accepted') {
+      return false; // Exclude if contract is draft, pending, or declined!
+    }
+
+    return true;
+  });
 
   const slotsFromCampaigns: AdvertisementSlot[] = activeCampaigns.map((c) => ({
     id: c.id,

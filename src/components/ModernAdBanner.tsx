@@ -1,129 +1,431 @@
-import { ExternalLink, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
-import { recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Sparkles, ShieldCheck, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { recordAdClick, recordAdImpression, type AdvertisementSlot } from '../services/advertisementService';
+import { getCreativesByPlacementSync } from '../services/bannerCreativeService';
+import type { AdCreative, BackgroundStyle, ButtonStyle, AnimationType, TransitionEffect } from '../lib/supabase';
 
 interface TopBannerProps {
-  slots: AdvertisementSlot[];
+  slots?: AdvertisementSlot[];
 }
 
 export function TopAdBanner({ slots }: TopBannerProps) {
-  // Show top banner if active non-placeholder slot exists
-  const activeSlots = slots.filter((s) => s.location === 'top_banner' && !s.isPlaceholder);
-  if (activeSlots.length === 0) return null;
+  const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('top_banner'));
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
-  return (
-    <div className="bg-slate-50/95 border-b border-slate-200/80 py-2.5 px-4 backdrop-blur-md sticky top-0 z-30 shadow-xs">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
-        {activeSlots.slice(0, 1).map((slot) => (
+  useEffect(() => {
+    function handleCreativeChange() {
+      const updated = getCreativesByPlacementSync('top_banner');
+      setCreatives(updated ? [...updated] : []);
+      setCurrentIndex(0);
+    }
+
+    window.addEventListener('ad-creative-changed', handleCreativeChange);
+    return () => window.removeEventListener('ad-creative-changed', handleCreativeChange);
+  }, []);
+
+  const activeCreative = creatives[currentIndex] || creatives[0];
+
+  // Dynamic Auto-rotation timer reading each ad's rotation_seconds
+  useEffect(() => {
+    if (creatives.length <= 1 || isHovered) return;
+
+    const durationSeconds = activeCreative?.rotation_seconds || 6;
+    const timer = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % creatives.length);
+    }, Math.max(2, durationSeconds) * 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, creatives.length, isHovered, activeCreative?.rotation_seconds]);
+
+  useEffect(() => {
+    if (activeCreative?.id && activeCreative.is_active) {
+      recordAdImpression(activeCreative.id);
+    }
+  }, [activeCreative?.id, activeCreative?.is_active]);
+
+  if (!activeCreative || !activeCreative.is_active) {
+    // Fallback slot check if custom creative isn't active
+    const activeSlots = slots?.filter((s) => s.location === 'top_banner' && !s.isPlaceholder) || [];
+    const activeSlot = activeSlots[0];
+    if (!activeSlot) return null;
+
+    return (
+      <div className="bg-slate-50 border-b border-slate-200 py-2.5 px-4 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
           <a
-            key={slot.id}
-            href={slot.targetUrl || '#'}
+            href={activeSlot.targetUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => recordAdClick(slot.id)}
+            onClick={() => recordAdClick(activeSlot.id)}
             className="w-full group flex items-center justify-between gap-4 bg-white hover:bg-slate-50/90 border border-slate-200/80 hover:border-teal-700/40 p-2.5 sm:px-4 rounded-2xl transition-all duration-300 shadow-xs hover:shadow-md"
           >
             <div className="flex items-center gap-3.5 min-w-0">
-              {slot.imageUrl ? (
-                <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/80 w-10 h-10 bg-slate-100">
-                  <img
-                    src={slot.imageUrl}
-                    alt={slot.sponsorName || 'Banner'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              ) : (
-                <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-700/20 flex items-center justify-center text-[#0F766E] shrink-0">
-                  <Sparkles size={18} />
-                </div>
-              )}
-
+              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-700/20 flex items-center justify-center text-[#0F766E] shrink-0">
+                <Sparkles size={18} />
+              </div>
               <div className="min-w-0 space-y-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-700/20 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse" />
-                    {slot.sponsorName || 'Bosch Professional Magyarország'}
-                  </span>
-                  <span className="hidden md:inline-flex items-center gap-1 text-xs text-teal-800 font-medium">
-                    <ShieldCheck size={13} className="text-[#0F766E]" /> Hivatalos Partner
+                    {activeSlot.sponsorName || 'Partner'}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm font-semibold text-slate-900 group-hover:text-[#0F766E] transition-colors truncate">
-                  {slot.title}
+                <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
+                  {activeSlot.title}
                 </p>
               </div>
             </div>
-
-            <div className="shrink-0 flex items-center gap-1.5 bg-[#0F766E] hover:bg-[#115E59] text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all duration-300 group-hover:translate-x-0.5">
+            <div className="shrink-0 flex items-center gap-1.5 bg-[#0F766E] text-white font-bold text-xs px-3.5 py-2 rounded-xl">
               <span>Ajánlat megtekintése</span>
               <ExternalLink size={13} />
             </div>
           </a>
-        ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Background style helper
+  const getBackgroundClasses = (bg: BackgroundStyle) => {
+    switch (bg) {
+      case 'light_neutral':
+        return 'bg-slate-50 border-b border-slate-200 text-slate-900 shadow-xs';
+      case 'dark_slate':
+        return 'bg-slate-950 border-b border-slate-800 text-white shadow-md';
+      case 'petrol_teal':
+        return 'bg-[#0F766E] border-b border-teal-600 text-white shadow-md';
+      case 'glassmorphism':
+        return 'bg-slate-900/90 backdrop-blur-xl border-b border-white/20 text-white shadow-md';
+      case 'soft_gradient':
+        return 'bg-gradient-to-r from-teal-900 via-slate-900 to-amber-950 border-b border-teal-500/40 text-white shadow-md';
+      default:
+        return 'bg-slate-50 border-b border-slate-200 text-slate-900';
+    }
+  };
+
+  // Button style helper
+  const getButtonClasses = (btn: ButtonStyle) => {
+    switch (btn) {
+      case 'petrol_teal':
+        return 'bg-[#0F766E] hover:bg-[#115E59] text-white border border-teal-500/40 shadow-xs';
+      case 'amber_gold':
+        return 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black border border-amber-400/50 shadow-sm';
+      case 'dark_slate':
+        return 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/50 shadow-xs';
+      case 'outline':
+        return 'bg-transparent border-2 border-[#0F766E] text-[#0F766E] hover:bg-[#0F766E] hover:text-white font-black';
+      default:
+        return 'bg-[#0F766E] text-white';
+    }
+  };
+
+  // Animation helper
+  const getAnimationClass = (anim: AnimationType) => {
+    switch (anim) {
+      case 'fade_in':
+        return 'animate-banner-fade-in';
+      case 'float':
+        return 'animate-banner-float';
+      case 'pulse':
+        return 'animate-banner-pulse';
+      case 'marquee':
+        return 'animate-banner-marquee';
+      default:
+        return '';
+    }
+  };
+
+  // Inter-banner Transition Helper
+  const getTransitionClass = (effect?: TransitionEffect) => {
+    switch (effect) {
+      case 'slide_left':
+        return 'banner-trans-slide-left';
+      case 'slide_up':
+        return 'banner-trans-slide-up';
+      case 'zoom':
+        return 'banner-trans-zoom';
+      case 'instant':
+        return 'banner-trans-instant';
+      case 'fade':
+      default:
+        return 'banner-trans-fade';
+    }
+  };
+
+  function handlePrev(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev === 0 ? creatives.length - 1 : prev - 1));
+  }
+
+  function handleNext(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % creatives.length);
+  }
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`py-2.5 px-4 sticky top-0 z-30 transition-colors duration-500 ${getBackgroundClasses(
+        activeCreative.background_style
+      )}`}
+    >
+      <div className="max-w-7xl mx-auto flex items-center gap-3">
+        {/* Banner Clickable Main Card */}
+        <a
+          key={`${activeCreative.id}-${currentIndex}`}
+          href={activeCreative.cta_url || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => recordAdClick(activeCreative.id)}
+          className={`w-full group flex items-center justify-between gap-4 p-2.5 sm:px-4 rounded-2xl transition-all duration-300 ${
+            activeCreative.background_style === 'light_neutral'
+              ? 'bg-white hover:bg-slate-50/90 border border-slate-200/80 shadow-xs'
+              : 'bg-black/20 hover:bg-black/40 border border-white/10'
+          } ${getTransitionClass(activeCreative.transition_effect)} ${getAnimationClass(
+            activeCreative.animation_type
+          )} ${
+            activeCreative.text_align === 'center'
+              ? 'flex-col text-center items-center justify-center'
+              : activeCreative.text_align === 'right'
+              ? 'flex-row-reverse text-right items-center justify-between'
+              : 'flex-row text-left items-center justify-between'
+          }`}
+        >
+          <div
+            className={`flex items-center gap-3.5 min-w-0 ${
+              activeCreative.text_align === 'center'
+                ? 'flex-col text-center items-center'
+                : activeCreative.text_align === 'right'
+                ? 'flex-row-reverse text-right items-center'
+                : 'flex-row text-left items-center'
+            }`}
+          >
+            {activeCreative.image_url ? (
+              <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/80 w-10 h-10 bg-slate-100">
+                <picture>
+                  {activeCreative.mobile_image_url && (
+                    <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+                  )}
+                  <img
+                    src={activeCreative.image_url}
+                    alt={activeCreative.partner_name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </picture>
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-700/20 flex items-center justify-center text-[#0F766E] shrink-0">
+                <Sparkles size={18} />
+              </div>
+            )}
+
+            <div
+              className={`min-w-0 space-y-0.5 ${
+                activeCreative.text_align === 'center'
+                  ? 'text-center'
+                  : activeCreative.text_align === 'right'
+                  ? 'text-right'
+                  : 'text-left'
+              }`}
+            >
+              <div
+                className={`flex items-center gap-2 flex-wrap ${
+                  activeCreative.text_align === 'center'
+                    ? 'justify-center'
+                    : activeCreative.text_align === 'right'
+                    ? 'justify-end'
+                    : 'justify-start'
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-700/20 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse" />
+                  {activeCreative.partner_name}
+                </span>
+                {activeCreative.badge_text && (
+                  <span className="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-teal-800">
+                    <ShieldCheck size={13} className="text-[#0F766E]" /> {activeCreative.badge_text}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-[#0F766E] transition-colors">
+                {activeCreative.headline}
+              </p>
+            </div>
+          </div>
+
+          <div
+            className={`shrink-0 flex items-center gap-1.5 font-bold text-xs px-3.5 py-2 rounded-xl transition-all duration-300 group-hover:translate-x-0.5 ${getButtonClasses(
+              activeCreative.button_style
+            )}`}
+          >
+            <span>{activeCreative.cta_text || 'Ajánlat megtekintése'}</span>
+            <ExternalLink size={13} />
+          </div>
+        </a>
+
+        {/* Multi-banner Rotator Navigation Controls */}
+        {creatives.length > 1 && (
+          <div className="shrink-0 flex items-center gap-1 bg-black/20 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+            <button
+              onClick={handlePrev}
+              title="Előző banner"
+              className="p-1 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {/* Pagination indicators with seconds tooltip */}
+            <div className="flex items-center gap-1 px-1">
+              {creatives.map((c, idx) => (
+                <button
+                  key={c.id}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCurrentIndex(idx);
+                  }}
+                  title={`${c.partner_name} (Prioritás: ${c.sort_order}, Váltás: ${c.rotation_seconds || 6} mp)`}
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
+                    idx === currentIndex ? 'w-5 bg-[#0F766E]' : 'w-2 bg-gray-400/50 hover:bg-white'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={handleNext}
+              title="Következő banner"
+              className="p-1 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 interface InFeedAdBannerProps {
-  slots: AdvertisementSlot[];
+  slots?: AdvertisementSlot[];
   onNavigate?: (page: string) => void;
 }
 
 export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
-  const inFeedSlots = slots.filter((s) => s.location === 'in_feed' && !s.isPlaceholder);
-  const activeSlot = inFeedSlots[0];
+  const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('in_feed'));
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (activeSlot) {
+  useEffect(() => {
+    function handleCreativeChange() {
+      const updated = getCreativesByPlacementSync('in_feed');
+      setCreatives(updated ? [...updated] : []);
+      setCurrentIndex(0);
+    }
+
+    window.addEventListener('ad-creative-changed', handleCreativeChange);
+    return () => window.removeEventListener('ad-creative-changed', handleCreativeChange);
+  }, []);
+
+  const activeCreative = creatives[currentIndex] || creatives[0];
+
+  // Dynamic Auto-rotation timer reading each ad's rotation_seconds
+  useEffect(() => {
+    if (creatives.length <= 1) return;
+
+    const durationSeconds = activeCreative?.rotation_seconds || 6;
+    const timer = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % creatives.length);
+    }, Math.max(2, durationSeconds) * 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, creatives.length, activeCreative?.rotation_seconds]);
+
+  useEffect(() => {
+    if (activeCreative?.id && activeCreative.is_active) {
+      recordAdImpression(activeCreative.id);
+    }
+  }, [activeCreative?.id, activeCreative?.is_active]);
+
+  const activeSlot = slots?.filter((s) => s.location === 'in_feed' && !s.isPlaceholder)?.[0];
+
+  const getTransitionClass = (effect?: TransitionEffect) => {
+    switch (effect) {
+      case 'slide_left':
+        return 'banner-trans-slide-left';
+      case 'slide_up':
+        return 'banner-trans-slide-up';
+      case 'zoom':
+        return 'banner-trans-zoom';
+      case 'instant':
+        return 'banner-trans-instant';
+      case 'fade':
+      default:
+        return 'banner-trans-fade';
+    }
+  };
+
+  if (activeCreative && activeCreative.is_active) {
     return (
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-6 md:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300">
-          {/* Background glowing blurred decorative gradients */}
-          <div className="absolute -right-20 -top-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/20 transition-all duration-500" />
-          <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
+        <div
+          key={`${activeCreative.id}-${currentIndex}`}
+          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-6 md:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300 ${getTransitionClass(
+            activeCreative.transition_effect
+          )}`}
+        >
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Image section */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3]">
-                <img
-                  src={activeSlot.imageUrl || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'}
-                  alt={activeSlot.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-amber-300 font-semibold bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                  <span className="flex items-center gap-1.5">
-                    <ShieldCheck size={14} className="text-amber-400" />
-                    {activeSlot.sponsorName || 'Kiemelt Szponzor'}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-wider text-gray-400">Hirdetés</span>
+            {activeCreative.image_url && (
+              <div className="lg:col-span-5 relative">
+                <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3]">
+                  <picture>
+                    {activeCreative.mobile_image_url && (
+                      <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+                    )}
+                    <img
+                      src={activeCreative.image_url}
+                      alt={activeCreative.headline}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </picture>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-amber-300 font-semibold bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+                    <span className="flex items-center gap-1.5">
+                      <ShieldCheck size={14} className="text-amber-400" />
+                      {activeCreative.partner_name}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400">Hirdetés</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Content section */}
-            <div className="lg:col-span-7 space-y-4 text-left">
+            <div className={`${activeCreative.image_url ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4 text-left`}>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold uppercase tracking-wider">
-                <Sparkles size={13} /> Szakmai Partneri Ajánlat
+                <Sparkles size={13} /> {activeCreative.badge_text || 'Szakmai Partneri Ajánlat'}
               </div>
 
               <h3 className="text-2xl md:text-3xl font-extrabold text-white leading-tight group-hover:text-amber-300 transition-colors">
-                {activeSlot.title}
+                {activeCreative.headline}
               </h3>
 
-              <p className="text-gray-300 text-sm md:text-base leading-relaxed">
-                Fedezd fel a legújabb ipari szerszámokat, innovatív gépeket és minősített építőanyagokat közvetlenül a gyártó hivatalos kínálatából.
-              </p>
+              {activeCreative.description && (
+                <p className="text-gray-300 text-sm md:text-base leading-relaxed">
+                  {activeCreative.description}
+                </p>
+              )}
 
               <div className="pt-2 flex flex-wrap items-center gap-4">
                 <a
-                  href={activeSlot.targetUrl || '#'}
+                  href={activeCreative.cta_url || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => recordAdClick(activeSlot.id)}
+                  onClick={() => recordAdClick(activeCreative.id)}
                   className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-[1.02]"
                 >
-                  <span>Ajánlat Megtekintése</span>
+                  <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
                   <ExternalLink size={16} />
                 </a>
 
@@ -136,6 +438,59 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
                     <ArrowRight size={16} />
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Carousel indicators for In-Feed if multiple */}
+          {creatives.length > 1 && (
+            <div className="pt-4 flex items-center justify-center gap-2">
+              {creatives.map((c, idx) => (
+                <button
+                  key={c.id}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
+                    idx === currentIndex ? 'w-6 bg-amber-400' : 'w-2 bg-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  if (activeSlot) {
+    return (
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-6 md:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-5 relative">
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3]">
+                <img
+                  src={activeSlot.imageUrl || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'}
+                  alt={activeSlot.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 space-y-4 text-left">
+              <h3 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
+                {activeSlot.title}
+              </h3>
+              <div className="pt-2 flex flex-wrap items-center gap-4">
+                <a
+                  href={activeSlot.targetUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => recordAdClick(activeSlot.id)}
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm"
+                >
+                  <span>Ajánlat Megtekintése</span>
+                  <ExternalLink size={16} />
+                </a>
               </div>
             </div>
           </div>
@@ -164,7 +519,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
           {onNavigate && (
             <button
               onClick={() => onNavigate('partners')}
-              className="shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center gap-2"
+              className="shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center gap-2 cursor-pointer"
             >
               <span>Partneri Program & Kapcsolat</span>
               <ArrowRight size={16} />

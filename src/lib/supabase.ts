@@ -1,11 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://olmavxcmkvvcebgqxohe.supabase.co';
+const supabaseAnonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sbWF2eGNta3Z2Y2ViZ3F4b2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNjAzNzksImV4cCI6MjA5NTgzNjM3OX0.uwz9kRkODHafloihBfDauFTAGk4dTb2X9TJrnF_vwHw';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -772,6 +768,39 @@ export type CampaignStatusV2 =
 export type PaymentStatus = 'paid' | 'partially_paid' | 'unpaid' | 'overdue';
 export type ContractType = 'once' | 'monthly' | 'annual';
 export type PackageTier = 'bronze' | 'silver' | 'gold' | 'custom';
+
+export type BackgroundStyle = 'light_neutral' | 'dark_slate' | 'petrol_teal' | 'glassmorphism' | 'soft_gradient';
+export type ButtonStyle = 'petrol_teal' | 'amber_gold' | 'dark_slate' | 'outline';
+export type TextAlign = 'left' | 'center' | 'right';
+export type AnimationType = 'none' | 'fade_in' | 'float' | 'marquee' | 'pulse';
+export type TransitionEffect = 'fade' | 'slide_left' | 'slide_up' | 'zoom' | 'instant';
+
+export interface AdCreative {
+  id: string;
+  campaign_id?: string | null;
+  placement_key: 'top_banner' | 'in_feed' | 'sidebar';
+  partner_name: string;
+  badge_text: string;
+  headline: string;
+  description: string;
+  cta_text: string;
+  cta_url: string;
+  image_url?: string | null;
+  mobile_image_url?: string | null;
+  background_style: BackgroundStyle;
+  overlay_style?: string | null;
+  button_style: ButtonStyle;
+  text_align: TextAlign;
+  animation_type: AnimationType;
+  transition_effect: TransitionEffect;
+  rotation_seconds: number;
+  is_active: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  sort_order: number;
+  created_by?: string | null;
+  updated_at: string;
+}
 
 export interface ExtendedAdCampaign extends AdCampaign {
   contact_person?: ContactPerson;
