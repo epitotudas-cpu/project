@@ -9,24 +9,26 @@ import {
   RotateCcw,
   CheckCircle2,
   Image as ImageIcon,
-  Palette,
   Layout,
-  Play,
-  Calendar,
   Eye,
   Building2,
   Clock,
   RefreshCw,
+  Plus,
+  ArrowLeft,
+  Edit3,
+  Trash2,
+  Check,
+  Layers,
 } from 'lucide-react';
 import {
   getStoredCreatives,
   saveBannerCreative,
+  saveStoredCreatives,
   resetCreativeToDefaults,
 } from '../services/bannerCreativeService';
-import { listAdCampaigns } from '../services/advertisementService';
 import type {
   AdCreative,
-  ExtendedAdCampaign,
   BackgroundStyle,
   ButtonStyle,
   TextAlign,
@@ -35,168 +37,164 @@ import type {
 } from '../lib/supabase';
 
 export function BannerCreativeEditor() {
-  const [campaigns, setCampaigns] = useState<ExtendedAdCampaign[]>([]);
-  const [selectedPlacement, setSelectedPlacement] = useState<'top_banner' | 'in_feed' | 'sidebar'>('top_banner');
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('default');
+  const [storedCreatives, setStoredCreatives] = useState<AdCreative[]>([]);
+  
+  // Navigation & View State: 'selector' (dashboard list of creatives) or 'editing' (form + live preview)
+  const [editorView, setEditorView] = useState<'selector' | 'editing'>('selector');
+  const [filterPlacement, setFilterPlacement] = useState<'all' | 'top_banner' | 'in_feed' | 'sidebar'>('all');
+
+  // Currently editing creative
   const [activeCreative, setActiveCreative] = useState<AdCreative | null>(null);
 
-  // Preview options
+  // Preview options in editor mode
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [simulateReducedMotion, setSimulateReducedMotion] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    async function initData() {
-      const camps = await listAdCampaigns();
-      setCampaigns(camps);
-      loadCreativeForSelection(selectedPlacement, selectedCampaignId, camps);
-    }
-    initData();
-  }, [selectedPlacement]);
+    refreshCreativesList();
+  }, []);
 
-  function loadCreativeForSelection(
-    placementKey: 'top_banner' | 'in_feed' | 'sidebar',
-    campaignId: string,
-    campsList: ExtendedAdCampaign[] = campaigns
-  ) {
-    const list = getStoredCreatives();
-
-    // Check if campaignId matches a specific campaign
-    if (campaignId !== 'default') {
-      const camp = campsList.find((c) => c.id === campaignId);
-      if (camp) {
-        const match = list.find((c) => c.campaign_id === camp.id || c.partner_name.toLowerCase() === camp.sponsor_name.toLowerCase());
-        if (match) {
-          setActiveCreative({
-            ...match,
-            placement_key: (camp.placement_slot as AdCreative['placement_key']) || placementKey,
-          });
-          return;
-        } else {
-          // Construct a creative template for this specific campaign
-          const newCreativeForCampaign: AdCreative = {
-            id: `creative-${camp.id}`,
-            campaign_id: camp.id,
-            placement_key: (camp.placement_slot as AdCreative['placement_key']) || placementKey,
-            partner_name: camp.sponsor_name,
-            badge_text: 'Hivatalos Partner',
-            headline: camp.title,
-            description: `Exkluzív ajánlat a(z) ${camp.sponsor_name} hivatalos kínálatából.`,
-            cta_text: 'Ajánlat megtekintése',
-            cta_url: camp.target_url || 'https://example.com',
-            image_url: camp.banner_image_url || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-            mobile_image_url: camp.banner_image_url || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80',
-            background_style: 'light_neutral',
-            overlay_style: 'none',
-            button_style: 'petrol_teal',
-            text_align: 'left',
-            animation_type: 'pulse',
-            transition_effect: 'slide_left',
-            rotation_seconds: 6,
-            is_active: camp.status_v2 === 'active',
-            starts_at: camp.start_date || new Date().toISOString().split('T')[0],
-            ends_at: camp.end_date || null,
-            sort_order: 1,
-            created_by: 'Admin',
-            updated_at: new Date().toISOString(),
-          };
-          setActiveCreative(newCreativeForCampaign);
-          return;
-        }
-      }
-    }
-
-    // Default fallback by placement
-    const match = list.find((c) => c.placement_key === placementKey);
-    if (match) {
-      setActiveCreative({ ...match });
-    } else {
-      const defaultItem: AdCreative = {
-        id: `creative-${placementKey}`,
-        placement_key: placementKey,
-        partner_name: 'Partner Cég Neve',
-        badge_text: 'Hivatalos Partner',
-        headline: 'Minta Hirdetési Főcím 2026',
-        description: 'Ez a hirdetés leírása, amely részletezi a partneri ajánlatot.',
-        cta_text: 'Ajánlat megtekintése',
-        cta_url: 'https://example.com',
-        image_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-        mobile_image_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80',
-        background_style: 'light_neutral',
-        overlay_style: 'none',
-        button_style: 'petrol_teal',
-        text_align: 'left',
-        animation_type: 'pulse',
-        transition_effect: 'slide_left',
-        rotation_seconds: 6,
-        is_active: true,
-        starts_at: new Date().toISOString().split('T')[0],
-        ends_at: null,
-        sort_order: 1,
-        created_by: 'Admin',
-        updated_at: new Date().toISOString(),
-      };
-      setActiveCreative(defaultItem);
-    }
+  function refreshCreativesList() {
+    const creatives = getStoredCreatives();
+    setStoredCreatives(creatives ? [...creatives] : []);
   }
 
-  function handleCampaignSelect(campId: string) {
-    setSelectedCampaignId(campId);
-    if (campId !== 'default') {
-      const camp = campaigns.find((c) => c.id === campId);
-      if (camp?.placement_slot) {
-        setSelectedPlacement(camp.placement_slot as typeof selectedPlacement);
-      }
-    }
-    loadCreativeForSelection(selectedPlacement, campId, campaigns);
+  // Open editor for a specific creative
+  function handleEditCreative(creative: AdCreative) {
+    setActiveCreative({ ...creative });
+    setEditorView('editing');
+    setSaveSuccessMessage(null);
   }
 
-  function handlePlacementSelect(placementKey: typeof selectedPlacement) {
-    setSelectedPlacement(placementKey);
-    setSelectedCampaignId('default');
-    loadCreativeForSelection(placementKey, 'default', campaigns);
-  }
-
-  function handleInputChange<K extends keyof AdCreative>(field: K, value: AdCreative[K]) {
-    if (!activeCreative) return;
-    setActiveCreative({
-      ...activeCreative,
-      [field]: value,
-    });
-  }
-
-  function handleSave(isDraft: boolean = false) {
-    if (!activeCreative) return;
-
-    const creativeToSave: AdCreative = {
-      ...activeCreative,
-      is_active: isDraft ? false : true,
+  // Create a brand new creative for a placement
+  function handleCreateNewCreative(placementKey: 'top_banner' | 'in_feed' | 'sidebar' = 'top_banner') {
+    const newId = `creative-${placementKey}-${Date.now()}`;
+    const newCreative: AdCreative = {
+      id: newId,
+      placement_key: placementKey,
+      partner_name: 'Új Hirdető Partner',
+      badge_text: 'Hivatalos Ajánlat',
+      headline: 'Új Szakmai Hirdetési Főcím 2026',
+      description: 'Fedezd fel a legújabb ipari szerszámokat és akciókat.',
+      cta_text: 'Ajánlat Megtekintése',
+      cta_url: 'https://example.com',
+      image_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+      mobile_image_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80',
+      background_style: 'light_neutral',
+      overlay_style: 'none',
+      button_style: 'petrol_teal',
+      text_align: 'left',
+      animation_type: 'pulse',
+      transition_effect: 'slide_left',
+      rotation_seconds: 6,
+      is_active: true,
+      sort_order: storedCreatives.filter((c) => c.placement_key === placementKey).length + 1,
+      created_by: 'Admin',
+      updated_at: new Date().toISOString(),
     };
 
-    saveBannerCreative(creativeToSave);
-    setActiveCreative({ ...creativeToSave });
+    setActiveCreative(newCreative);
+    setEditorView('editing');
+    setSaveSuccessMessage(null);
+  }
+
+  // Toggle active status directly from selector card
+  function handleToggleActive(creative: AdCreative, e: React.MouseEvent) {
+    e.stopPropagation();
+    const updated = { ...creative, is_active: !creative.is_active, updated_at: new Date().toISOString() };
+    saveBannerCreative(updated);
+    refreshCreativesList();
+  }
+
+  // Delete creative record
+  function handleDeleteCreative(creativeId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!window.confirm('Biztosan törölni szeretnéd ezt a hirdetési kreatívot?')) return;
+    const filtered = storedCreatives.filter((c) => c.id !== creativeId);
+    saveStoredCreatives(filtered);
+    refreshCreativesList();
+  }
+
+  // Return from editor to selector dashboard
+  function handleBackToSelector() {
+    refreshCreativesList();
+    setEditorView('selector');
+    setActiveCreative(null);
+  }
+
+  // Editor form input change handler
+  function handleInputChange<K extends keyof AdCreative>(key: K, value: AdCreative[K]) {
+    if (!activeCreative) return;
+    setActiveCreative((prev) => (prev ? { ...prev, [key]: value } : null));
+  }
+
+  // Save changes
+  async function handleSave(isDraft = false) {
+    if (!activeCreative) return;
+
+    const toSave: AdCreative = {
+      ...activeCreative,
+      is_active: isDraft ? false : activeCreative.is_active,
+      updated_at: new Date().toISOString(),
+    };
+
+    await saveBannerCreative(toSave);
+    refreshCreativesList();
+
     setSaveSuccessMessage(
       isDraft
-        ? 'Vázlat sikeresen elmentve (Rejtett állapotban)!'
-        : 'Kreatív sikeresen élesítve és elmentve (Aktív állapotban)!'
+        ? '⚠️ Vázlatként elmentve! (Inaktív állapotban tárolva)'
+        : '🎉 Hirdetés sikeresen mentve és élesítve!'
     );
+
     setTimeout(() => setSaveSuccessMessage(null), 4000);
-    loadCreativeForSelection(selectedPlacement, selectedCampaignId, campaigns);
   }
 
+  // Reset current creative to default settings
   function handleReset() {
-    if (!confirm('Biztosan visszaállítod az alapértelmezett beállításokat erre a bannerre?')) return;
-    const resetItem = resetCreativeToDefaults(selectedPlacement);
+    if (!activeCreative) return;
+    const resetItem = resetCreativeToDefaults(activeCreative.placement_key);
     setActiveCreative({ ...resetItem });
-    setSaveSuccessMessage('Alaphelyzet sikeresen visszaállítva!');
-    setTimeout(() => setSaveSuccessMessage(null), 4000);
+    refreshCreativesList();
+    setSaveSuccessMessage('🔄 Alaphelyzet sikeresen visszaállítva!');
+    setTimeout(() => setSaveSuccessMessage(null), 3000);
   }
 
-  if (!activeCreative) {
-    return <div className="p-8 text-center text-gray-400">Kreatív szerkesztő betöltése...</div>;
-  }
+  // Helper for location label
+  // Visual style helpers for live preview & selector
+  const getBackgroundClasses = (bg: BackgroundStyle) => {
+    switch (bg) {
+      case 'light_neutral':
+        return 'bg-slate-50 text-slate-900 border border-slate-200 shadow-sm';
+      case 'dark_slate':
+        return 'bg-slate-950 text-white border border-slate-800 shadow-md';
+      case 'petrol_teal':
+        return 'bg-[#0F766E] text-white border border-teal-600 shadow-md';
+      case 'glassmorphism':
+        return 'bg-slate-900/90 backdrop-blur-xl text-white border border-white/20 shadow-md';
+      case 'soft_gradient':
+        return 'bg-gradient-to-r from-teal-900 via-slate-900 to-amber-950 text-white border border-teal-500/40 shadow-md';
+      default:
+        return 'bg-slate-50 text-slate-900';
+    }
+  };
 
-  // Animation CSS helpers
+  const getButtonClasses = (btn: ButtonStyle) => {
+    switch (btn) {
+      case 'petrol_teal':
+        return 'bg-[#0F766E] hover:bg-[#115E59] text-white border border-teal-500/40';
+      case 'amber_gold':
+        return 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black border border-amber-400/50';
+      case 'dark_slate':
+        return 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/50';
+      case 'outline':
+        return 'bg-transparent border-2 border-[#0F766E] text-[#0F766E] hover:bg-[#0F766E] hover:text-white font-black';
+      default:
+        return 'bg-[#0F766E] text-white';
+    }
+  };
+
   const getAnimationClass = (anim: AnimationType) => {
     if (simulateReducedMotion) return '';
     switch (anim) {
@@ -213,96 +211,278 @@ export function BannerCreativeEditor() {
     }
   };
 
-  // Background style helper
-  const getBackgroundClasses = (bg: BackgroundStyle) => {
-    switch (bg) {
-      case 'light_neutral':
-        return 'bg-slate-50 border border-slate-200 text-slate-900 shadow-sm';
-      case 'dark_slate':
-        return 'bg-slate-950 border border-slate-800 text-white shadow-xl';
-      case 'petrol_teal':
-        return 'bg-[#0F766E] border border-teal-600 text-white shadow-lg';
-      case 'glassmorphism':
-        return 'bg-slate-900/90 backdrop-blur-xl border border-white/20 text-white shadow-xl';
-      case 'soft_gradient':
-        return 'bg-gradient-to-r from-teal-900 via-slate-900 to-amber-950 border border-teal-500/40 text-white shadow-xl';
-      default:
-        return 'bg-slate-50 border border-slate-200 text-slate-900';
-    }
-  };
+  // Filtered creatives list for selector
+  const filteredCreatives = storedCreatives.filter(
+    (c) => filterPlacement === 'all' || c.placement_key === filterPlacement
+  );
 
-  // Button style helper
-  const getButtonClasses = (btn: ButtonStyle) => {
-    switch (btn) {
-      case 'petrol_teal':
-        return 'bg-[#0F766E] hover:bg-[#115E59] text-white border border-teal-500/40 shadow-sm';
-      case 'amber_gold':
-        return 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black border border-amber-400/50 shadow-md';
-      case 'dark_slate':
-        return 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/50 shadow-sm';
-      case 'outline':
-        return 'bg-transparent border-2 border-[#0F766E] text-[#0F766E] hover:bg-[#0F766E] hover:text-white font-black';
-      default:
-        return 'bg-[#0F766E] text-white';
-    }
-  };
+  const topBannerCreatives = storedCreatives.filter((c) => c.placement_key === 'top_banner');
+  const inFeedCreatives = storedCreatives.filter((c) => c.placement_key === 'in_feed');
+  const sidebarCreatives = storedCreatives.filter((c) => c.placement_key === 'sidebar');
 
-  return (
-    <div className="space-y-6">
-      {/* Campaign & Placement Switcher Bar */}
-      <div className="bg-[#111] border border-[#222] p-5 rounded-3xl space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          {/* Campaign Selector Dropdown */}
-          <div className="flex items-center gap-3 min-w-[320px] flex-1">
-            <span className="text-xs font-extrabold text-accent bg-accent/10 px-3.5 py-1.5 rounded-full border border-accent/20 flex items-center gap-2 shrink-0">
-              <Building2 size={15} /> 🎯 Szerkesztendő Hirdető / Kampány:
-            </span>
-            <select
-              value={selectedCampaignId}
-              onChange={(e) => handleCampaignSelect(e.target.value)}
-              className="w-full bg-[#1A1A1A] border border-[#333] hover:border-accent text-white text-xs font-bold px-3 py-2 rounded-xl focus:outline-none focus:border-accent cursor-pointer"
-            >
-              <option value="default">-- Alapértelmezett Placement Kreatívok --</option>
-              {campaigns.map((c) => (
-                <option key={c.id} value={c.id}>
-                  🏢 {c.sponsor_name} — {c.title} [{c.placement_slot.toUpperCase()}] ({c.status_v2 === 'active' ? '🟢 Aktív' : '🟡 ' + c.status_v2})
-                </option>
-              ))}
-            </select>
+  // =========================================================================
+  // VIEW 1: CREATIVE SELECTOR DASHBOARD (Directory of Advertisers/Banners)
+  // =========================================================================
+  if (editorView === 'selector') {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        {/* Header Bar */}
+        <div className="bg-[#111111] border border-[#222] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 text-xs font-bold uppercase tracking-wider">
+              <Sparkles size={13} /> Kreatív Vizuális Kezelő Központ
+            </div>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+              Hirdetések & Reklám Kreatívok Kiválasztása
+            </h2>
+            <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
+              Válaszd ki a szerkeszteni kívánt hirdetőt vagy hozz létre új vizuális banner kreatívot a kezdőlaphoz és az aloldalakhoz.
+            </p>
           </div>
 
-          {/* Save notification */}
-          {saveSuccessMessage && (
-            <div className="text-xs font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 animate-fade-in">
-              <CheckCircle2 size={14} /> {saveSuccessMessage}
-            </div>
-          )}
+          <button
+            onClick={() => handleCreateNewCreative(filterPlacement === 'all' ? 'top_banner' : filterPlacement)}
+            className="shrink-0 px-6 py-3.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-sm rounded-2xl shadow-lg transition-all duration-300 flex items-center gap-2.5 cursor-pointer hover:scale-[1.02]"
+          >
+            <Plus size={18} />
+            <span>Új Hirdetés Hozzáadása</span>
+          </button>
         </div>
 
-        {/* Placement Quick Tabs */}
-        <div className="flex items-center gap-2 pt-2 border-t border-[#222]">
-          <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
-            <Palette size={13} className="text-accent" /> Elhelyezési Sáv:
-          </span>
-          {[
-            { id: 'top_banner', label: '📍 Főoldali Fejléc Banner (Top Banner)' },
-            { id: 'in_feed', label: '📍 Beágyazott Kártya Banner (In-Feed)' },
-            { id: 'sidebar', label: '📍 Oldalsáv Banner (Sidebar)' },
-          ].map((placement) => (
+        {/* Filter Bar & Summary Statistics */}
+        <div className="bg-[#111111] border border-[#222] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+          {/* Placement Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
             <button
-              key={placement.id}
-              onClick={() => handlePlacementSelect(placement.id as typeof selectedPlacement)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                selectedPlacement === placement.id
-                  ? 'bg-accent text-black shadow-md scale-105'
-                  : 'bg-[#1A1A1A] border border-[#2A2A2A] text-gray-400 hover:text-white'
+              onClick={() => setFilterPlacement('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'all'
+                  ? 'bg-accent text-black shadow-sm font-extrabold'
+                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
               }`}
             >
-              {placement.label}
+              <Layers size={14} /> Összes ({storedCreatives.length})
             </button>
-          ))}
+
+            <button
+              onClick={() => setFilterPlacement('top_banner')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'top_banner'
+                  ? 'bg-accent text-black shadow-sm font-extrabold'
+                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+              }`}
+            >
+              📍 Fejléc Banner ({topBannerCreatives.length})
+            </button>
+
+            <button
+              onClick={() => setFilterPlacement('in_feed')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'in_feed'
+                  ? 'bg-accent text-black shadow-sm font-extrabold'
+                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+              }`}
+            >
+              📍 In-Feed ({inFeedCreatives.length})
+            </button>
+
+            {sidebarCreatives.length > 0 && (
+              <button
+                onClick={() => setFilterPlacement('sidebar')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                  filterPlacement === 'sidebar'
+                    ? 'bg-accent text-black shadow-sm font-extrabold'
+                    : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+                }`}
+              >
+                📍 Oldalsáv ({sidebarCreatives.length})
+              </button>
+            )}
+          </div>
+
+          {/* Stats Pills */}
+          <div className="flex items-center gap-3 text-xs font-mono">
+            <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-xl">
+              🟢 {storedCreatives.filter((c) => c.is_active).length} Aktív
+            </span>
+            <span className="bg-gray-500/10 border border-gray-500/30 text-gray-400 px-3 py-1 rounded-xl">
+              ⚪ {storedCreatives.filter((c) => !c.is_active).length} Inaktív / Vázlat
+            </span>
+          </div>
+        </div>
+
+        {/* CREATIVE CARDS GRID GROUPED BY PLACEMENT */}
+        {filteredCreatives.length === 0 ? (
+          <div className="bg-[#111111] border border-[#222] rounded-3xl p-12 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 mx-auto">
+              <Layout size={32} />
+            </div>
+            <h3 className="text-xl font-extrabold text-white">Nincs megjeleníthető hirdetés ebben a kategóriában</h3>
+            <p className="text-gray-400 text-sm max-w-md mx-auto">
+              Hozz létre egy új hirdetést a fenti gombra kattintva, vagy válts az "Összes" nézetre.
+            </p>
+            <button
+              onClick={() => handleCreateNewCreative(filterPlacement === 'all' ? 'top_banner' : filterPlacement)}
+              className="px-6 py-3 bg-accent text-black font-extrabold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2"
+            >
+              <Plus size={16} /> Új Hirdetés Létrehozása
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* 1. TOP BANNER GROUP */}
+            {(filterPlacement === 'all' || filterPlacement === 'top_banner') && topBannerCreatives.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[#222] pb-3">
+                  <h3 className="text-base font-extrabold text-white flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-teal-500 animate-pulse" />
+                    📍 Kezdőlapi Fejléc Hirdetési Sáv (Top Banner Rotator)
+                  </h3>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {topBannerCreatives.length} Hirdetés a Rotátorban
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {topBannerCreatives.map((creative) => (
+                    <CreativeCard
+                      key={creative.id}
+                      creative={creative}
+                      onEdit={() => handleEditCreative(creative)}
+                      onToggleActive={(e) => handleToggleActive(creative, e)}
+                      onDelete={(e) => handleDeleteCreative(creative.id, e)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 2. IN-FEED GROUP */}
+            {(filterPlacement === 'all' || filterPlacement === 'in_feed') && inFeedCreatives.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[#222] pb-3">
+                  <h3 className="text-base font-extrabold text-white flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+                    📍 Tartalmak Közötti Hirdetési Sáv (In-Feed Rotator)
+                  </h3>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {inFeedCreatives.length} Hirdetés a Rotátorban
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {inFeedCreatives.map((creative) => (
+                    <CreativeCard
+                      key={creative.id}
+                      creative={creative}
+                      onEdit={() => handleEditCreative(creative)}
+                      onToggleActive={(e) => handleToggleActive(creative, e)}
+                      onDelete={(e) => handleDeleteCreative(creative.id, e)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 3. SIDEBAR GROUP */}
+            {(filterPlacement === 'all' || filterPlacement === 'sidebar') && sidebarCreatives.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[#222] pb-3">
+                  <h3 className="text-base font-extrabold text-white flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-purple-500 animate-pulse" />
+                    📍 Oldalsáv Banner Hirdetések (Sidebar)
+                  </h3>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {sidebarCreatives.length} Hirdetés
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sidebarCreatives.map((creative) => (
+                    <CreativeCard
+                      key={creative.id}
+                      creative={creative}
+                      onEdit={() => handleEditCreative(creative)}
+                      onToggleActive={(e) => handleToggleActive(creative, e)}
+                      onDelete={(e) => handleDeleteCreative(creative.id, e)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // VIEW 2: VISUAL EDITOR & LIVE PREVIEW WORKSPACE
+  // =========================================================================
+  if (!activeCreative) return null;
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* Top Header Bar with Back Button & Quick Switcher */}
+      <div className="bg-[#111111] border border-[#222] rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
+        <div className="flex items-center gap-4 flex-wrap">
+          <button
+            onClick={handleBackToSelector}
+            className="px-4 py-2.5 bg-[#1A1A1A] hover:bg-[#2B2B2B] text-white font-bold text-xs rounded-xl border border-[#333] transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            <ArrowLeft size={16} />
+            <span>Vissza a Hirdetések Listájához</span>
+          </button>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-accent uppercase font-bold">
+                {activeCreative.placement_key}
+              </span>
+              <span className="text-gray-500">•</span>
+              <span className="text-xs text-gray-400">ID: {activeCreative.id}</span>
+            </div>
+            <h2 className="text-xl md:text-2xl font-extrabold text-white">
+              Szerkesztés: {activeCreative.partner_name}
+            </h2>
+          </div>
+        </div>
+
+        {/* Quick Record Switcher */}
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+          <label className="text-xs text-gray-400 font-semibold hidden sm:inline-block">Másik Hirdetés:</label>
+          <select
+            value={activeCreative.id}
+            onChange={(e) => {
+              const target = storedCreatives.find((c) => c.id === e.target.value);
+              if (target) handleEditCreative(target);
+            }}
+            className="bg-[#1A1A1A] border border-[#333] rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-accent cursor-pointer"
+          >
+            {storedCreatives.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.partner_name} ({c.placement_key} - Prioritás: #{c.sort_order})
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => handleCreateNewCreative(activeCreative.placement_key)}
+            className="px-3.5 py-2 bg-teal-500/10 border border-teal-500/30 hover:bg-teal-500/20 text-teal-300 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus size={15} />
+            <span className="hidden sm:inline">Új</span>
+          </button>
         </div>
       </div>
+
+      {/* Save Success Alert Banner */}
+      {saveSuccessMessage && (
+        <div className="bg-teal-500/10 border border-teal-500/40 text-teal-300 p-4 rounded-2xl flex items-center gap-3 font-bold text-xs animate-banner-fade-in shadow-md">
+          <CheckCircle2 size={18} className="text-teal-400 shrink-0" />
+          <span>{saveSuccessMessage}</span>
+        </div>
+      )}
 
       {/* Main Split-Pane Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -313,23 +493,23 @@ export function BannerCreativeEditor() {
               <Layout size={18} className="text-accent" /> Kreatív Vizuális Beállítások
             </h3>
             <span className="text-xs text-gray-400 font-mono">
-              Kreatív ID: {activeCreative.id}
+              Prioritás: #{activeCreative.sort_order}
             </span>
           </div>
 
           {/* Form Controls Grid */}
           <div className="space-y-4 text-xs">
             {/* Active Switcher & Sort Order */}
-            <div className="grid grid-cols-2 gap-4 p-3 bg-[#161616] border border-[#222] rounded-2xl">
+            <div className="grid grid-cols-2 gap-4 p-3.5 bg-[#161616] border border-[#222] rounded-2xl">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="isActiveCheckbox"
                   checked={activeCreative.is_active}
                   onChange={(e) => handleInputChange('is_active', e.target.checked)}
-                  className="w-4 h-4 rounded border-[#333] text-accent focus:ring-accent"
+                  className="w-4 h-4 rounded border-[#333] text-accent focus:ring-accent cursor-pointer"
                 />
-                <label htmlFor="isActiveCheckbox" className="font-bold text-white cursor-pointer">
+                <label htmlFor="isActiveCheckbox" className="font-bold text-white cursor-pointer select-none">
                   Banner Aktív (Megjelenik)
                 </label>
               </div>
@@ -338,15 +518,30 @@ export function BannerCreativeEditor() {
                 <label className="text-gray-400 font-semibold">Prioritás (Sorrend):</label>
                 <input
                   type="number"
+                  min={1}
+                  max={99}
                   value={activeCreative.sort_order}
                   onChange={(e) => handleInputChange('sort_order', Number(e.target.value))}
-                  className="w-16 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg px-2 py-1 text-white font-mono text-center"
+                  className="w-16 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg px-2 py-1 text-white font-mono text-center font-bold"
                 />
               </div>
             </div>
 
-            {/* Partner Name & Badge Text */}
+            {/* Placement Key & Partner Name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-gray-400 font-semibold block mb-1">Elhelyezési Sáv (Placement)</label>
+                <select
+                  value={activeCreative.placement_key}
+                  onChange={(e) => handleInputChange('placement_key', e.target.value as AdCreative['placement_key'])}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent font-bold"
+                >
+                  <option value="top_banner">Fejléc Banner (Főoldal)</option>
+                  <option value="in_feed">In-Feed Banner (Cikkek között)</option>
+                  <option value="sidebar">Oldalsáv Banner (Sidebar)</option>
+                </select>
+              </div>
+
               <div>
                 <label className="text-gray-400 font-semibold block mb-1">Partner Neve</label>
                 <input
@@ -357,7 +552,10 @@ export function BannerCreativeEditor() {
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent font-bold"
                 />
               </div>
+            </div>
 
+            {/* Badge Text & Headline */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-gray-400 font-semibold block mb-1">Felső Címke / Badge Szöveg</label>
                 <input
@@ -368,18 +566,17 @@ export function BannerCreativeEditor() {
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent"
                 />
               </div>
-            </div>
 
-            {/* Headline */}
-            <div>
-              <label className="text-gray-400 font-semibold block mb-1">Főcím (Headline)</label>
-              <input
-                type="text"
-                value={activeCreative.headline}
-                onChange={(e) => handleInputChange('headline', e.target.value)}
-                placeholder="pl. Bosch Akkus Szerszámgépek & Zöld Lézeres Szintezők"
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-accent"
-              />
+              <div>
+                <label className="text-gray-400 font-semibold block mb-1">Főcím (Headline)</label>
+                <input
+                  type="text"
+                  value={activeCreative.headline}
+                  onChange={(e) => handleInputChange('headline', e.target.value)}
+                  placeholder="pl. Bosch Akkus Szerszámgépek & Zöld Lézeres Szintezők"
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-accent"
+                />
+              </div>
             </div>
 
             {/* Description */}
@@ -389,8 +586,8 @@ export function BannerCreativeEditor() {
                 rows={2}
                 value={activeCreative.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Rövid tájékoztató szöveg a hirdetésről..."
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent resize-none"
+                placeholder="Fedezd fel a prémium ipari szerszámokat és akciókat..."
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent text-xs leading-relaxed"
               />
             </div>
 
@@ -402,18 +599,18 @@ export function BannerCreativeEditor() {
                   type="text"
                   value={activeCreative.cta_text}
                   onChange={(e) => handleInputChange('cta_text', e.target.value)}
-                  placeholder="pl. Ajánlat megtekintése / Felfedezem"
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent"
+                  placeholder="pl. Ajánlat megtekintése"
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent font-bold"
                 />
               </div>
 
               <div>
-                <label className="text-gray-400 font-semibold block mb-1">CTA Cél Link (URL)</label>
+                <label className="text-gray-400 font-semibold block mb-1">CTA Cél URL (Target Link)</label>
                 <input
                   type="url"
                   value={activeCreative.cta_url}
                   onChange={(e) => handleInputChange('cta_url', e.target.value)}
-                  placeholder="https://..."
+                  placeholder="https://www.partner-weboldal.hu"
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-accent"
                 />
               </div>
@@ -448,7 +645,7 @@ export function BannerCreativeEditor() {
               </div>
             </div>
 
-            {/* Visual Styling Grid (Background, Button, Align, Animation) */}
+            {/* Visual Styling Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[#161616] border border-[#222] rounded-2xl">
               <div>
                 <label className="text-gray-400 font-semibold block mb-1">Háttér Stílus</label>
@@ -475,7 +672,7 @@ export function BannerCreativeEditor() {
                   <option value="petrol_teal">Petrol Türkiz Gomb</option>
                   <option value="amber_gold">Borostyán Arany Gomb</option>
                   <option value="dark_slate">Sötét Grafitszürke Gomb</option>
-                  <option value="outline">Szegélyes (Outline) Gomb</option>
+                  <option value="outline">Körvonalas Gomb (Outline)</option>
                 </select>
               </div>
 
@@ -487,15 +684,13 @@ export function BannerCreativeEditor() {
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent"
                 >
                   <option value="left">Balra igazított (Left)</option>
-                  <option value="center">Középre igazított (Center)</option>
+                  <option value="center font-bold">Középre igazított (Center)</option>
                   <option value="right">Jobbra igazított (Right)</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
-                  <Play size={12} className="text-accent" /> Animáció Típusa
-                </label>
+                <label className="text-gray-400 font-semibold block mb-1">Animáció Típusa</label>
                 <select
                   value={activeCreative.animation_type}
                   onChange={(e) => handleInputChange('animation_type', e.target.value as AnimationType)}
@@ -538,33 +733,6 @@ export function BannerCreativeEditor() {
                   <option value="zoom">Zoom Pop-in Áttűnés</option>
                   <option value="instant">Azonnali Váltás (Nincs áttűnés)</option>
                 </select>
-              </div>
-            </div>
-
-            {/* Schedule Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
-                  <Calendar size={12} /> Időzítés: Kezdő Dátum
-                </label>
-                <input
-                  type="date"
-                  value={activeCreative.starts_at ? activeCreative.starts_at.split('T')[0] : ''}
-                  onChange={(e) => handleInputChange('starts_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent"
-                />
-              </div>
-
-              <div>
-                <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
-                  <Calendar size={12} /> Időzítés: Lejárati Dátum
-                </label>
-                <input
-                  type="date"
-                  value={activeCreative.ends_at ? activeCreative.ends_at.split('T')[0] : ''}
-                  onChange={(e) => handleInputChange('ends_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent"
-                />
               </div>
             </div>
           </div>
@@ -759,19 +927,139 @@ export function BannerCreativeEditor() {
                     )}`}
                   >
                     <span>{activeCreative.cta_text || 'Ajánlat megtekintése'}</span>
-                    <ExternalLink size={14} />
+                    <ExternalLink size={13} />
                   </a>
                 </div>
-              </div>
-
-              {/* Status Note */}
-              <div className="text-[11px] text-gray-400 flex items-center justify-between pt-2 border-t border-[#1E1E1E]">
-                <span>Státusz: <strong className={activeCreative.is_active ? 'text-green-400' : 'text-yellow-400'}>{activeCreative.is_active ? '🟢 AKTÍV (Megjelenik)' : '🟡 VÁZLAT (Rejtett)'}</strong></span>
-                <span>Animáció: <strong className="text-accent">{activeCreative.animation_type}</strong></span>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// HELPER COMPONENT: CREATIVE SELECTOR CARD
+// =========================================================================
+interface CreativeCardProps {
+  creative: AdCreative;
+  onEdit: () => void;
+  onToggleActive: (e: React.MouseEvent) => void;
+  onDelete: (e: React.MouseEvent) => void;
+}
+
+function CreativeCard({ creative, onEdit, onToggleActive, onDelete }: CreativeCardProps) {
+  return (
+    <div
+      onClick={onEdit}
+      className={`group relative bg-[#141414] border hover:border-accent rounded-3xl p-5 transition-all duration-300 shadow-xl flex flex-col justify-between gap-5 cursor-pointer hover:scale-[1.01] ${
+        creative.is_active ? 'border-[#262626]' : 'border-red-500/20 opacity-75'
+      }`}
+    >
+      <div className="space-y-4">
+        {/* Card Header: Badges & Status */}
+        <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 border ${
+                creative.is_active
+                  ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                  : 'bg-red-500/10 border-red-500/30 text-red-400'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  creative.is_active ? 'bg-green-400 animate-pulse' : 'bg-red-400'
+                }`}
+              />
+              {creative.is_active ? 'Aktív' : 'Inaktív'}
+            </span>
+
+            <span className="bg-[#1F1F1F] border border-[#333] text-gray-300 font-mono text-[11px] px-2 py-0.5 rounded-full">
+              Prioritás: #{creative.sort_order}
+            </span>
+          </div>
+
+          <span className="text-[10px] font-mono text-gray-400 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5">
+            {creative.placement_key}
+          </span>
+        </div>
+
+        {/* Thumbnail + Partner Info */}
+        <div className="flex items-start gap-3.5">
+          {creative.image_url ? (
+            <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/10 shrink-0 bg-black/40 shadow-sm">
+              <img
+                src={creative.image_url}
+                alt={creative.partner_name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0">
+              <Building2 size={20} />
+            </div>
+          )}
+
+          <div className="min-w-0 space-y-1">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-extrabold text-white truncate group-hover:text-accent transition-colors">
+                {creative.partner_name}
+              </h4>
+            </div>
+
+            <p className="text-xs text-gray-300 font-semibold line-clamp-2 leading-snug">
+              {creative.headline}
+            </p>
+          </div>
+        </div>
+
+        {/* Metadata Badges (Duration, Transition, Style) */}
+        <div className="flex items-center gap-2 flex-wrap text-[11px] text-gray-400 pt-2 border-t border-[#1F1F1F]">
+          <span className="bg-[#1A1A1A] border border-[#2B2B2B] px-2 py-0.5 rounded-lg flex items-center gap-1">
+            <Clock size={11} className="text-teal-400" /> {creative.rotation_seconds || 6} mp váltás
+          </span>
+
+          <span className="bg-[#1A1A1A] border border-[#2B2B2B] px-2 py-0.5 rounded-lg flex items-center gap-1">
+            <RefreshCw size={11} className="text-amber-400" /> {creative.transition_effect || 'slide_left'}
+          </span>
+
+          <span className="bg-[#1A1A1A] border border-[#2B2B2B] px-2 py-0.5 rounded-lg capitalize">
+            🎨 {creative.background_style.replace('_', ' ')}
+          </span>
+        </div>
+      </div>
+
+      {/* Card Action Buttons */}
+      <div className="pt-3 border-t border-[#1F1F1F] flex items-center justify-between gap-2">
+        <button
+          onClick={onEdit}
+          className="flex-1 py-2 px-3 bg-accent/10 hover:bg-accent text-accent hover:text-black font-extrabold text-xs rounded-xl border border-accent/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+        >
+          <Edit3 size={14} />
+          <span>Szerkesztés</span>
+        </button>
+
+        <button
+          onClick={onToggleActive}
+          title={creative.is_active ? 'Inaktiválás' : 'Aktiválás'}
+          className={`p-2 rounded-xl border transition-all cursor-pointer ${
+            creative.is_active
+              ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+              : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+          }`}
+        >
+          <Check size={14} />
+        </button>
+
+        <button
+          onClick={onDelete}
+          title="Reklám Törlése"
+          className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
     </div>
   );

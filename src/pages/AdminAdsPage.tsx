@@ -106,7 +106,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'creative_editor' | 'campaigns' | 'contracts' | 'partners' | 'packages' | 'payments' | 'notifications' | 'reports' | 'partner_portal'
-  >('creative_editor');
+  >('dashboard');
 
   const [showModal, setShowModal] = useState(false);
   const [showContractViewer, setShowContractViewer] = useState<AdvertisementContract | null>(null);
