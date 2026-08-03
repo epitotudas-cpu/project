@@ -2,8 +2,13 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "epitotudas",
   "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["global_fetch_strictly_public"],
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
-  }
+  },
+  "custom_domains": [
+    "epitotudas.hu",
+    "www.epitotudas.hu"
+  ]
 }
