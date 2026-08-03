@@ -13,6 +13,7 @@
     "esbuild"
   ],
   "scripts": {
+    "postinstall": "node node_modules/esbuild/install.js || true",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
@@ -31,6 +32,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.18",
+    "esbuild": "^0.25.0",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
