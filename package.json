@@ -16,6 +16,7 @@
     "postinstall": "node node_modules/esbuild/install.js || true",
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "node -e \"const fs=require('fs');['dist/_redirects','dist/wrangler.json'].forEach(f=>{try{fs.unlinkSync(f);console.log('Removed: '+f)}catch(e){}})\"",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
