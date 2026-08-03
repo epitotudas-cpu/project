@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   FileCheck,
   XCircle,
+  Sparkles,
 } from 'lucide-react';
 import {
   listAdCampaigns,
@@ -403,6 +404,29 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {/* TAB 1: EXECUTIVE DASHBOARD */}
       {activeTab === 'dashboard' && (
         <div className="space-y-8">
+          {/* Quick Creative Selector Banner Callout */}
+          <div className="bg-gradient-to-r from-teal-950/60 via-[#111] to-amber-950/60 border border-teal-500/30 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+            <div className="space-y-1.5 text-center md:text-left">
+              <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-teal-400 bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full">
+                <Sparkles size={13} /> Vizuális Banner Szerkesztő & Hirdető Kiválasztó
+              </div>
+              <h3 className="text-xl font-extrabold text-white">
+                Hirdetések & Reklám Kreatívok Kezelése
+              </h3>
+              <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
+                Válaszd ki a szerkeszteni kívánt hirdetőt (Bosch, DeWalt, Stanley, Makita, Knauf), módosítsd a szövegeket, képeket, rotációs időtartamot (mp) és áttűnési animációkat.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('creative_editor')}
+              className="shrink-0 px-6 py-3.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-2xl shadow-lg transition-all duration-300 flex items-center gap-2 cursor-pointer hover:scale-[1.02]"
+            >
+              <span>Kreatív Kiválasztó & Szerkesztő Megnyitása</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
           {/* KPI Metrics Overview Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-2 relative overflow-hidden">
