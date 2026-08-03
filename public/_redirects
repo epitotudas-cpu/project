@@ -1,2 +1,2 @@
-# Cloudflare Pages SPA Fallback (200 Rewrite - Loop-free)
-/* /index.html 200
+# Cloudflare Redirects Configuration
+# SPA fallback routing is natively managed by Cloudflare Assets (not_found_handling: single-page-application)
