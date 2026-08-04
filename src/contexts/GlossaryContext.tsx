@@ -24,6 +24,12 @@ export function GlossaryProvider({ children }: GlossaryProviderProps) {
 
   useEffect(() => {
     loadInitialTerms();
+
+    function handleGlossaryUpdate() {
+      refreshTerms();
+    }
+    window.addEventListener('glossary-updated', handleGlossaryUpdate);
+    return () => window.removeEventListener('glossary-updated', handleGlossaryUpdate);
   }, []);
 
   async function loadInitialTerms() {

@@ -172,32 +172,32 @@ function AppContent() {
   };
 
   return (
-    <GlossaryProvider>
-      <div className="min-h-screen flex flex-col bg-background">
-        {siteSettings.maintenanceMode && (currentPage as string) !== 'admin' && (
-          <div className="bg-amber-500 text-black px-4 py-2.5 font-bold text-xs text-center flex items-center justify-center gap-2 shadow-lg">
-            <span>⚠️ {siteSettings.maintenanceMessage}</span>
-            <button
-              onClick={() => navigate('admin')}
-              className="underline hover:text-[#111] font-extrabold text-[11px] ml-2"
-            >
-              [Adminisztrációs Belépés]
-            </button>
-          </div>
-        )}
-        <Header currentPage={currentPage} onNavigate={navigate} />
-        <main>{renderPage()}</main>
-        <Footer onNavigate={navigate} />
-        <CookieBanner onNavigate={navigate} />
-      </div>
-    </GlossaryProvider>
+    <div className="min-h-screen flex flex-col bg-background">
+      {siteSettings.maintenanceMode && (currentPage as string) !== 'admin' && (
+        <div className="bg-amber-500 text-black px-4 py-2.5 font-bold text-xs text-center flex items-center justify-center gap-2 shadow-lg">
+          <span>⚠️ {siteSettings.maintenanceMessage}</span>
+          <button
+            onClick={() => navigate('admin')}
+            className="underline hover:text-[#111] font-extrabold text-[11px] ml-2"
+          >
+            [Adminisztrációs Belépés]
+          </button>
+        </div>
+      )}
+      <Header currentPage={currentPage} onNavigate={navigate} />
+      <main>{renderPage()}</main>
+      <Footer onNavigate={navigate} />
+      <CookieBanner onNavigate={navigate} />
+    </div>
   );
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <GlossaryProvider>
+        <AppContent />
+      </GlossaryProvider>
     </AuthProvider>
   );
 }

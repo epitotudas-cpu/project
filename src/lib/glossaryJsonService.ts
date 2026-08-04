@@ -151,6 +151,9 @@ class GlossaryJsonService {
         translations: item.translations,
         jargon_subtype: item.jargon_subtype,
         knowledge_graph_relations: item.knowledge_graph_relations,
+        video_url: item.video_url,
+        image_urls: item.image_urls,
+        slides: item.slides,
         updatedAt: item.updated_at,
       }));
 

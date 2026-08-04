@@ -1,8 +1,71 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save, AlertCircle, Image, Video, Info } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { GlossaryTerm } from '../lib/supabase';
 import { createGlossaryTerm, updateGlossaryTerm } from '../services/glossaryService';
+
+function isValidUrl(url: string): boolean {
+  if (!url.trim()) return true;
+  try {
+    const u = new URL(url.trim());
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/** Supabase/PostgrestError-t olvas ki és magyar szöveggé fordítja */
+function parseSupabaseError(err: unknown): string {
+  if (!err) return 'Ismeretlen hiba történt.';
+
+  // Supabase PostgrestError: { code, message, details, hint }
+  if (typeof err === 'object') {
+    const e = err as Record<string, unknown>;
+    const code = String(e.code ?? '');
+    const message = String(e.message ?? '');
+    const details = e.details ? `\nRészletek: ${e.details}` : '';
+    const hint = e.hint ? `\nTipp: ${e.hint}` : '';
+
+    // Ismert Postgres hiba kódok
+    if (code === '23505' || /duplicate|unique/i.test(message)) {
+      return `❗ Ez a slug már foglalt – válassz másik azonosítót.${details}`;
+    }
+    if (code === '23502' || /not.null|null value/i.test(message)) {
+      const col = message.match(/column "([^"]+)"/)?.[1];
+      return `❗ Kötelező mező hiányzik${col ? `: "${col}"` : ''}.${details}`;
+    }
+    if (code === '22P02' || /invalid input/i.test(message)) {
+      return `❗ Érvénytelen adat formátum – ellenőrizd a bevítt értékeket.${details}${hint}`;
+    }
+    if (code === '42703' || /column.*does not exist/i.test(message)) {
+      const col = message.match(/column "([^"]+)"/)?.[1];
+      return `❗ Az adatbázis nem ismeri fel ezt a mezőt${col ? `: "${col}"` : ''} – lehet, hogy hozzá kell adni a táblához.${details}`;
+    }
+    if (code === 'PGRST204' || /Could not find the '([^']+)' column/i.test(message)) {
+      const col = message.match(/column '([^']+)'/i)?.[1] || message.match(/column "([^"]+)"/i)?.[1];
+      return `❗ Adatbázis sémakövetési hiba: A(z) ${col ? `'${col}'` : 'kívánt'} oszlop hiányzik az adatbázisból.${details}`;
+    }
+    if (code === 'PGRST116') {
+      return '❗ Nem található a rekord – már törölhetett valaki más.';
+    }
+    if (/permission denied|rls|row.level/i.test(message)) {
+      return '❗ Jogosultság megtagadva – nincs jogod ezt szerkeszteni (Row-Level Security).';
+    }
+    if (/network|fetch|connection/i.test(message)) {
+      return '❗ Hálózati hiba – ellenőrizd az internetkapcsolatot és próbáld újra.';
+    }
+    if (message) {
+      return `❗ Adatbázis hiba (${code || '?'}): ${message}${details}${hint}`;
+    }
+  }
+
+  if (err instanceof Error) {
+    return `❗ ${err.message}`;
+  }
+
+  return 'Ismeretlen hiba történt a mentéskor.';
+}
+
 
 interface EditGlossaryTermModalProps {
   term: GlossaryTerm | null; // null = create mode
@@ -135,16 +198,31 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.term.trim()) {
-      setError('A kifejezés neve megadása kötelező.');
+      setError('\u2757 Kötelező mező hiányzik: "Kifejezés neve" – töltsd ki a fogalom nevét.');
       return;
     }
     if (!form.definition.trim()) {
-      setError('A definíció / jelentés megadása kötelező.');
+      setError('\u2757 Kötelező mező hiányzik: "Definíció" – írj le rövid meghatározást.');
       return;
     }
     const finalSlug = form.slug.trim() || slugify(form.term);
     if (!finalSlug) {
-      setError('A slug érvénytelen.');
+      setError('\u2757 A slug érvénytelen – csak kisbetűk, számok és kötőjelek megengedettek.');
+      return;
+    }
+    // Kép URL-ek szintaktikai validálása (csak formátum ellenőrzés, nem blokk)
+    const imageLines = form.image_urls.split('\n').map((u) => u.trim()).filter(Boolean);
+    const syntaxInvalidUrls = imageLines.filter((u) => !isValidUrl(u));
+    if (syntaxInvalidUrls.length > 0) {
+      setError(
+        '\u2757 Kép URL hiba – az alábbi sorok nem érvényes linkek (csak https:// kezdetű linkek elfogadottak):\n' +
+        syntaxInvalidUrls.map((u, i) => `  ${i + 1}. sor: "${u}"`).join('\n')
+      );
+      return;
+    }
+    // Videó URL szintaktikai validálása
+    if (form.video_url.trim() && !isValidUrl(form.video_url)) {
+      setError('\u2757 Videó URL hiba – csak https:// vagy http:// kezdetű link elfogadott (pl. https://youtu.be/... vagy https://youtube.com/watch?v=...)');
       return;
     }
     setSaving(true);
@@ -175,7 +253,7 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
         jargon_subtype: form.jargon_subtype || null,
         translations: translationsPayload,
         video_url: form.video_url.trim() || null,
-        image_urls: form.image_urls.split('\n').map((u) => u.trim()).filter(Boolean),
+        image_urls: imageLines,
       };
       let data: GlossaryTerm;
       if (term) {
@@ -184,13 +262,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
         data = await createGlossaryTerm(payload);
       }
       onSaved(data);
+      window.dispatchEvent(new CustomEvent('glossary-updated'));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Mentés sikertelen.';
-      if (/duplicate|unique|23505/i.test(msg)) {
-        setError('Ez a slug már foglalt.');
-      } else {
-        setError(msg);
-      }
+      setError(parseSupabaseError(err));
     } finally {
       setSaving(false);
     }
@@ -214,10 +288,17 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Hiba panel */}
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2">
-              <AlertCircle size={16} className="text-red-400 flex-shrink-0" />
-              <p className="text-red-400 text-sm">{error}</p>
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  {error.split('\n').map((line, i) => (
+                    <p key={i} className={`text-red-400 text-sm ${i > 0 ? 'mt-1 text-xs opacity-80' : ''}`}>{line}</p>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -392,6 +473,75 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           <div>
             <label className={labelClass}>Kulcsszavak (vesszővel)</label>
             <input className={fieldClass} value={form.kulcsszavak} onChange={(e) => update('kulcsszavak', e.target.value)} placeholder="beton, vas, szilárdság" />
+          </div>
+
+          {/* Kép és Videó URL-ek */}
+          <div className="p-4 bg-[#161616] border border-[#222] rounded-xl space-y-3">
+            <h4 className="text-xs font-bold text-[#FFC400] uppercase tracking-wider flex items-center gap-2">
+              <Image size={12} /> Média (Képek &amp; Videó)
+            </h4>
+
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 mb-1">
+                <Image size={10} className="inline mr-1" />
+                Kép URL-ek (soronként egy, https://... kezdetű)
+              </label>
+              <textarea
+                className={`${fieldClass} resize-none font-mono text-[11px]`}
+                rows={3}
+                value={form.image_urls}
+                onChange={(e) => update('image_urls', e.target.value)}
+                placeholder={`https://images.pexels.com/photos/11891953/pexels-photo-11891953.jpeg\nhttps://example.com/masik-kep.jpg`}
+              />
+              {/* Valós idejű szintaxis-ellenőrzés */}
+              {form.image_urls.split('\n').map((u) => u.trim()).filter(Boolean).map((u, i) =>
+                !isValidUrl(u) ? (
+                  <p key={i} className="text-red-400 text-[10px] mt-1 flex items-center gap-1">
+                    <AlertCircle size={10} /> {i + 1}. sor: Érvénytelen URL formátum (https://... szükséges)
+                  </p>
+                ) : null
+              )}
+              {/* Pexels útmutató */}
+              {form.image_urls.includes('pexels.com') && !form.image_urls.includes('images.pexels.com') && (
+                <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                  <div className="flex items-start gap-1.5 text-[10px] text-amber-400">
+                    <Info size={10} className="flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Pexels oldal URL</strong> – ez egy weblap, nem közvetlen kép. A kép helyes URL-jéhez:
+                      <ol className="list-decimal ml-4 mt-1 space-y-0.5">
+                        <li>Nyisd meg a Pexels oldalt</li>
+                        <li>Jobb klikk a képen → "Kép link másolása" (Copy image address)</li>
+                        <li>Az eredmény valami ilyesmi lesz: <code className="bg-black/30 px-1 rounded">https://images.pexels.com/photos/.../...</code></li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <p className="text-[10px] text-gray-600 mt-1">Ha nem tölt be a kép, a fogalomkártyán automatikusan kategória ikon jeleník meg helyette.</p>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 mb-1">
+                <Video size={10} className="inline mr-1" />
+                Videó URL (YouTube / Vimeo, https://... kezdetű)
+              </label>
+              <input
+                className={fieldClass}
+                value={form.video_url}
+                onChange={(e) => update('video_url', e.target.value)}
+                placeholder="https://youtu.be/... vagy https://youtube.com/watch?v=..."
+              />
+              {form.video_url.trim() && !isValidUrl(form.video_url) && (
+                <p className="text-red-400 text-[10px] mt-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> Érvénytelen videó URL – csak https:// kezdetű link elfogadott.
+                </p>
+              )}
+              {form.video_url.trim() && isValidUrl(form.video_url) && (
+                <p className="text-emerald-400 text-[10px] mt-1 flex items-center gap-1">
+                  ✓ Érvényes videó URL
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">

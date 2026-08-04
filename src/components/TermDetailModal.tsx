@@ -12,8 +12,28 @@ import {
   ChevronRight,
   Layers,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
+
+export function getEmbedVideoUrl(url: string | null | undefined): string | null {
+  if (!url || !url.trim()) return null;
+  const cleanUrl = url.trim();
+
+  // YouTube URL-ek átalakítása beágyazható https://www.youtube.com/embed/VIDEO_ID formátumra
+  const ytMatch = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  }
+
+  // Vimeo URL-ek átalakítása https://player.vimeo.com/video/VIDEO_ID formátumra
+  const vimeoMatch = cleanUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  }
+
+  return cleanUrl;
+}
 
 interface TermDetailModalProps {
   isOpen: boolean;
@@ -256,16 +276,26 @@ export default function TermDetailModal({
           {/* TAB 3: Oktatóvideó */}
           {activeTab === 'video' && videoUrl && (
             <div className="space-y-4">
-              <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
-                <Video size={16} className="text-red-400" /> Beágyazott Szakmai Oktatóvideó
-              </h4>
-              <div className="aspect-video w-full rounded-2xl overflow-hidden border border-[#232F47] bg-black">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <Video size={16} className="text-red-400" /> Beágyazott Szakmai Oktatóvideó
+                </h4>
+                <a
+                  href={videoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline font-bold"
+                >
+                  Megnyitás új lapon <ExternalLink size={13} />
+                </a>
+              </div>
+              <div className="aspect-video w-full rounded-2xl overflow-hidden border border-[#232F47] bg-black shadow-lg">
                 <iframe
-                  src={videoUrl}
+                  src={getEmbedVideoUrl(videoUrl) || videoUrl}
                   title={term.term}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
-                  className="w-full h-full"
+                  className="w-full h-full border-0"
                 />
               </div>
             </div>
