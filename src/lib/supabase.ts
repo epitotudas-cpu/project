@@ -24,6 +24,12 @@ export interface Database {
           icon_name: string | null;
           color: string | null;
           description: string | null;
+          image_url: string | null;
+          banner_url: string | null;
+          featured: boolean | null;
+          sort_order: number | null;
+          seo_title: string | null;
+          seo_description: string | null;
           article_count: number;
           created_at: string;
           updated_at: string;
@@ -35,6 +41,12 @@ export interface Database {
           icon_name?: string | null;
           color?: string | null;
           description?: string | null;
+          image_url?: string | null;
+          banner_url?: string | null;
+          featured?: boolean | null;
+          sort_order?: number | null;
+          seo_title?: string | null;
+          seo_description?: string | null;
           article_count?: number;
           created_at?: string;
           updated_at?: string;
@@ -46,6 +58,12 @@ export interface Database {
           icon_name?: string | null;
           color?: string | null;
           description?: string | null;
+          image_url?: string | null;
+          banner_url?: string | null;
+          featured?: boolean | null;
+          sort_order?: number | null;
+          seo_title?: string | null;
+          seo_description?: string | null;
           article_count?: number;
           created_at?: string;
           updated_at?: string;

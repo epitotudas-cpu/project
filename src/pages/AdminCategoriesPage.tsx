@@ -1,11 +1,53 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Pencil, AlertCircle, RefreshCw, FolderTree, Plus } from 'lucide-react';
+import {
+  Pencil,
+  AlertCircle,
+  RefreshCw,
+  FolderTree,
+  Plus,
+  Star,
+  Layers,
+  Thermometer,
+  Droplets,
+  Zap,
+  Paintbrush,
+  Wrench,
+  Hammer,
+  Building,
+  Home,
+  Shield,
+  HardHat,
+  Truck,
+  Ruler,
+  Compass,
+  Grid,
+  Settings,
+} from 'lucide-react';
 import type { Category } from '../lib/supabase';
 import { listCategories, countArticlesForCategories } from '../services/categoryService';
 import { useToast } from '../components/ToastProvider';
 import EditCategoryModal from '../components/EditCategoryModal';
 
 type CategoryWithCount = Category & { articleCount: number };
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  Layers,
+  Thermometer,
+  Droplets,
+  Zap,
+  Paintbrush,
+  Wrench,
+  Hammer,
+  Building,
+  Home,
+  Shield,
+  HardHat,
+  Truck,
+  Ruler,
+  Compass,
+  Grid,
+  Settings,
+};
 
 export default function AdminCategoriesPage() {
   const toast = useToast();
@@ -21,7 +63,10 @@ export default function AdminCategoriesPage() {
     try {
       const list = await listCategories();
       const countMap = await countArticlesForCategories(list.map((c) => c.id));
-      setCategories(list.map((c) => ({ ...c, articleCount: countMap.get(c.id) ?? 0 })));
+      const sorted = list
+        .map((c) => ({ ...c, articleCount: countMap.get(c.id) ?? 0 }))
+        .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
+      setCategories(sorted);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Hiba történt a kategóriák betöltésekor.');
     } finally {
@@ -51,10 +96,13 @@ export default function AdminCategoriesPage() {
   function handleSaved(saved: Category) {
     const existed = categories.some((c) => c.id === saved.id);
     setCategories((prev) => {
+      let updatedList: CategoryWithCount[];
       if (existed) {
-        return prev.map((c) => (c.id === saved.id ? { ...c, ...saved } : c));
+        updatedList = prev.map((c) => (c.id === saved.id ? { ...c, ...saved } : c));
+      } else {
+        updatedList = [...prev, { ...saved, articleCount: 0 }];
       }
-      return [...prev, { ...saved, articleCount: 0 }].sort((a, b) => a.name.localeCompare(b.name));
+      return updatedList.sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
     });
     toast.success(existed ? 'Kategória frissítve.' : 'Kategória létrehozva.');
     closeEditor();
@@ -64,15 +112,21 @@ export default function AdminCategoriesPage() {
     <div className="p-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-white">Kategóriák</h1>
-          <p className="text-sm text-gray-500 mt-1">{categories.length} kategória</p>
+          <h1 className="text-2xl font-black text-white">Kategóriák Készlete &amp; Szerkesztés</h1>
+          <p className="text-sm text-gray-500 mt-1">{categories.length} kategória kezelése és testreszabása</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={openCreate} className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] transition-colors">
-            <Plus size={14} /> Új kategória
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFC400] text-black text-sm font-black rounded-xl hover:bg-[#E6B000] transition-all shadow-lg shadow-[#FFC400]/10"
+          >
+            <Plus size={16} /> Új kategória
           </button>
           {!loading && (
-            <button onClick={loadCategories} className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors">
+            <button
+              onClick={loadCategories}
+              className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-xl hover:bg-[#1E1E1E] transition-colors"
+            >
               <RefreshCw size={14} /> Frissítés
             </button>
           )}
@@ -80,52 +134,123 @@ export default function AdminCategoriesPage() {
       </div>
 
       {error && (
-        <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
+        <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
           <AlertCircle size={18} className="text-red-400 flex-shrink-0" />
           <p className="text-red-400 text-sm flex-1">{error}</p>
-          <button onClick={loadCategories} className="text-red-400 text-sm font-bold hover:text-red-300">Újrapróbálás</button>
+          <button onClick={loadCategories} className="text-red-400 text-sm font-bold hover:text-red-300">
+            Újrapróbálás
+          </button>
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading &&
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-[#111] border border-[#1E1E1E] rounded-xl p-5">
-              <div className="h-5 w-32 bg-[#1E1E1E] rounded animate-pulse" />
-              <div className="h-3 w-20 bg-[#1E1E1E] rounded animate-pulse mt-2" />
-              <div className="h-4 w-full bg-[#1E1E1E] rounded animate-pulse mt-4" />
-              <div className="h-4 w-2/3 bg-[#1E1E1E] rounded animate-pulse mt-2" />
+            <div key={i} className="bg-[#111] border border-[#1E1E1E] rounded-2xl p-5 overflow-hidden">
+              <div className="h-32 bg-[#1E1E1E] rounded-xl animate-pulse" />
+              <div className="h-5 w-32 bg-[#1E1E1E] rounded animate-pulse mt-4" />
+              <div className="h-4 w-full bg-[#1E1E1E] rounded animate-pulse mt-2" />
             </div>
           ))}
 
         {!loading && categories.length === 0 && (
-          <div className="col-span-full bg-[#111] border border-[#1E1E1E] rounded-xl p-16 text-center">
-            <FolderTree size={32} className="mx-auto text-gray-700 mb-3" />
-            <p className="text-gray-500 text-sm">Még nincs kategória.</p>
+          <div className="col-span-full bg-[#111] border border-[#1E1E1E] rounded-2xl p-16 text-center">
+            <FolderTree size={36} className="mx-auto text-gray-700 mb-3" />
+            <p className="text-gray-500 text-sm font-medium">Még nincs kategória rögzítve.</p>
           </div>
         )}
 
         {!loading &&
-          categories.map((c) => (
-            <div key={c.id} className="bg-[#111] border border-[#1E1E1E] rounded-xl p-5 hover:border-[#FFC400]/30 transition-colors flex flex-col">
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="text-base font-black text-white line-clamp-1">{c.name}</h3>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/20 flex-shrink-0">
-                  {c.articleCount} cikk
-                </span>
+          categories.map((c) => {
+            const IconComp = (c.icon_name && ICON_MAP[c.icon_name]) || Layers;
+            const categoryColor = c.color || '#FFC400';
+
+            return (
+              <div
+                key={c.id}
+                className="bg-[#111] border border-[#1E1E1E] rounded-2xl overflow-hidden hover:border-[#FFC400]/40 transition-all flex flex-col group shadow-lg"
+              >
+                {/* Fejléc / Borítókép */}
+                <div className="h-36 relative bg-[#0D0D0D] overflow-hidden flex items-center justify-center">
+                  {c.image_url ? (
+                    <img
+                      src={c.image_url}
+                      alt={c.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center opacity-20"
+                      style={{ backgroundColor: categoryColor }}
+                    >
+                      <IconComp size={64} className="text-white" />
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-black/30 to-transparent" />
+
+                  {/* Ikon jelvény a borítóképen */}
+                  <div
+                    className="absolute bottom-3 left-4 w-11 h-11 rounded-xl flex items-center justify-center border shadow-xl backdrop-blur-md"
+                    style={{
+                      backgroundColor: `${categoryColor}30`,
+                      borderColor: `${categoryColor}60`,
+                      color: categoryColor,
+                    }}
+                  >
+                    <IconComp size={22} />
+                  </div>
+
+                  {/* Jelvények jobb felül */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    {c.featured && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-[#FFC400]/90 text-black shadow-md">
+                        <Star size={11} className="fill-black" /> Kiemelt
+                      </span>
+                    )}
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-black/80 text-gray-300 border border-white/10 backdrop-blur">
+                      {c.articleCount} cikk
+                    </span>
+                  </div>
+                </div>
+
+                {/* Kártya tartalom */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-base font-black text-white line-clamp-1 group-hover:text-[#FFC400] transition-colors">
+                        {c.name}
+                      </h3>
+                      {c.sort_order && (
+                        <span className="text-[10px] font-mono text-gray-500 px-1.5 py-0.5 border border-[#1E1E1E] rounded">
+                          #{c.sort_order}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-500 text-xs font-mono mt-0.5">/{c.slug}</p>
+                    <p className="text-gray-400 text-xs mt-2.5 line-clamp-2 leading-relaxed">
+                      {c.description || '— Nincs leírás megadva —'}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#1E1E1E] flex items-center justify-between">
+                    <span
+                      className="inline-block w-3 h-3 rounded-full border border-white/20"
+                      style={{ backgroundColor: categoryColor }}
+                      title={`Színkód: ${categoryColor}`}
+                    />
+
+                    <button
+                      onClick={() => openEdit(c)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-xl hover:bg-[#FFC400] hover:text-black hover:border-[#FFC400] transition-all"
+                    >
+                      <Pencil size={13} /> Szerkesztés
+                    </button>
+                  </div>
+                </div>
               </div>
-              <p className="text-gray-600 text-xs mt-1">/{c.slug}</p>
-              <p className="text-gray-400 text-sm mt-3 line-clamp-2 flex-1">{c.description || '—'}</p>
-              <div className="mt-4 pt-4 border-t border-[#1E1E1E]">
-                <button
-                  onClick={() => openEdit(c)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-md hover:bg-[#1E1E1E] hover:text-white transition-colors"
-                >
-                  <Pencil size={12} /> Szerkesztés
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
       </div>
 
       {editorOpen && (
