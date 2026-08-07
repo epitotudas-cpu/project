@@ -27,7 +27,6 @@ import {
   Sparkles,
   Link,
   Check,
-  Maximize2,
   Move,
   ZoomIn,
   RotateCcw,
