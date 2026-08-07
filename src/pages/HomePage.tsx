@@ -242,6 +242,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                           style={{
                             objectFit: (category.image_fit as 'cover' | 'contain' | 'fill') || 'cover',
                             objectPosition: category.image_position || 'center',
+                            transform: category.image_zoom && category.image_zoom !== 100 ? `scale(${category.image_zoom / 100})` : undefined,
+                            transformOrigin: category.image_position || 'center',
                           }}
                         />
                       ) : (

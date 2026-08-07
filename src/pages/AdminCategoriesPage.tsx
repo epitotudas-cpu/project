@@ -180,6 +180,8 @@ export default function AdminCategoriesPage() {
                       style={{
                         objectFit: (c.image_fit as 'cover' | 'contain' | 'fill') || 'cover',
                         objectPosition: c.image_position || 'center',
+                        transform: c.image_zoom && c.image_zoom !== 100 ? `scale(${c.image_zoom / 100})` : undefined,
+                        transformOrigin: c.image_position || 'center',
                       }}
                     />
                   ) : (

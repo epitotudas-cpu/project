@@ -388,6 +388,8 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                             style={{
                               objectFit: (cat.image_fit as 'cover' | 'contain' | 'fill') || 'cover',
                               objectPosition: cat.image_position || 'center',
+                              transform: cat.image_zoom && cat.image_zoom !== 100 ? `scale(${cat.image_zoom / 100})` : undefined,
+                              transformOrigin: cat.image_position || 'center',
                             }}
                           />
                         ) : (

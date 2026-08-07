@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   X,
   Save,
@@ -29,6 +29,9 @@ import {
   Check,
   Maximize2,
   Move,
+  ZoomIn,
+  RotateCcw,
+  Target,
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { Category } from '../lib/supabase';
@@ -49,7 +52,9 @@ interface FormState {
   image_url: string;
   banner_url: string;
   image_fit: 'cover' | 'contain' | 'fill';
-  image_position: 'center' | 'top' | 'bottom' | 'left' | 'right';
+  pos_x: number; // 0% - 100%
+  pos_y: number; // 0% - 100%
+  image_zoom: number; // 50% - 250%
   featured: boolean;
   sort_order: number;
   seo_title: string;
@@ -115,6 +120,21 @@ const SAMPLE_IMAGES = [
   },
 ];
 
+function parsePosition(posStr?: string | null): { x: number; y: number } {
+  if (!posStr) return { x: 50, y: 50 };
+  if (posStr === 'top') return { x: 50, y: 0 };
+  if (posStr === 'bottom') return { x: 50, y: 100 };
+  if (posStr === 'left') return { x: 0, y: 50 };
+  if (posStr === 'right') return { x: 100, y: 50 };
+  if (posStr === 'center') return { x: 50, y: 50 };
+
+  const match = posStr.match(/(\d+)%\s+(\d+)%/);
+  if (match) {
+    return { x: parseInt(match[1], 10), y: parseInt(match[2], 10) };
+  }
+  return { x: 50, y: 50 };
+}
+
 const EMPTY_FORM: FormState = {
   name: '',
   slug: '',
@@ -124,7 +144,9 @@ const EMPTY_FORM: FormState = {
   image_url: '',
   banner_url: '',
   image_fit: 'cover',
-  image_position: 'center',
+  pos_x: 50,
+  pos_y: 50,
+  image_zoom: 100,
   featured: false,
   sort_order: 1,
   seo_title: '',
@@ -132,6 +154,7 @@ const EMPTY_FORM: FormState = {
 };
 
 function formFromCategory(category: Category): FormState {
+  const { x, y } = parsePosition(category.image_position);
   return {
     name: category.name,
     slug: category.slug,
@@ -141,7 +164,9 @@ function formFromCategory(category: Category): FormState {
     image_url: category.image_url ?? '',
     banner_url: category.banner_url ?? '',
     image_fit: (category.image_fit as FormState['image_fit']) || 'cover',
-    image_position: (category.image_position as FormState['image_position']) || 'center',
+    pos_x: x,
+    pos_y: y,
+    image_zoom: category.image_zoom ?? 100,
     featured: Boolean(category.featured),
     sort_order: category.sort_order ?? 1,
     seo_title: category.seo_title ?? '',
@@ -166,6 +191,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'style' | 'media' | 'seo'>('general');
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (category) {
@@ -198,6 +224,19 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
   function handleSlugChange(value: string) {
     setSlugTouched(true);
     update('slug', slugify(value));
+  }
+
+  // Kattintással történő kézi fókuszpont beállítás a képen
+  function handlePreviewClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (!previewRef.current) return;
+    const rect = previewRef.current.getBoundingClientRect();
+    const clickX = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+    const clickY = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+
+    const clampedX = Math.max(0, Math.min(100, clickX));
+    const clampedY = Math.max(0, Math.min(100, clickY));
+
+    setForm((prev) => ({ ...prev, pos_x: clampedX, pos_y: clampedY }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -237,7 +276,8 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
         image_url: form.image_url.trim() || null,
         banner_url: form.banner_url.trim() || null,
         image_fit: form.image_fit,
-        image_position: form.image_position,
+        image_position: `${form.pos_x}% ${form.pos_y}%`,
+        image_zoom: Number(form.image_zoom) || 100,
         featured: form.featured,
         sort_order: Number(form.sort_order) || 1,
         seo_title: form.seo_title.trim() || null,
@@ -336,7 +376,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                 : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
           >
-            <ImageIcon size={14} /> Képek &amp; Méretezés
+            <ImageIcon size={14} /> Képek &amp; Kézi Beállítás
             {form.image_url && <span className="w-1.5 h-1.5 rounded-full bg-[#FFC400]"></span>}
           </button>
 
@@ -543,7 +583,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
             </div>
           )}
 
-          {/* 3. FÜL: Képek & Méretezés */}
+          {/* 3. FÜL: Képek & Kézi Beállítás */}
           {activeTab === 'media' && (
             <div className="space-y-6">
               {/* Borítókép URL */}
@@ -563,75 +603,161 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                 </p>
               </div>
 
-              {/* KÉP MÉRETEZÉSI & IGAZÍTÁSI VEZÉRLŐK */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[#0A0A0A] border border-[#1E1E1E] rounded-xl">
-                <div>
-                  <label className={labelClass}>
-                    <Maximize2 size={12} className="inline mr-1 text-[#FFC400]" /> Kép Méretezési Mód (Fit Mód)
-                  </label>
-                  <select
-                    className={fieldClass}
-                    value={form.image_fit}
-                    onChange={(e) => update('image_fit', e.target.value as FormState['image_fit'])}
+              {/* KÉZI IGASZÍTÁSI ESZKÖZÖK (KATTINTÁS + SLIDEREK + ZOOM) */}
+              <div className="p-4 bg-[#0A0A0A] border border-[#1E1E1E] rounded-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-200 uppercase tracking-wide flex items-center gap-1.5">
+                    <Target size={14} className="text-[#FFC400]" /> Kézi Fókuszpont &amp; Méret Igazítás
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, pos_x: 50, pos_y: 50, image_zoom: 100, image_fit: 'cover' }))}
+                    className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-[#FFC400] transition-colors"
                   >
-                    <option value="cover">🖼️ Cover (Keret kitöltése & szélek kivágása - Alapértelmezett)</option>
-                    <option value="contain">📐 Contain (Teljes kép beleillesztése kivágás nélkül)</option>
-                    <option value="fill">↕️ Fill (Kép nyújtása a teljes kerethez)</option>
-                  </select>
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    Válaszd a <strong>"Contain"</strong> opciót, ha azt szeretnéd, hogy a teljes kép látszódjon kivágás nélkül!
-                  </p>
+                    <RotateCcw size={12} /> Alaphelyzet
+                  </button>
                 </div>
 
-                <div>
-                  <label className={labelClass}>
-                    <Move size={12} className="inline mr-1 text-[#FFC400]" /> Kép Fókuszpont (Igazítás)
-                  </label>
-                  <select
-                    className={fieldClass}
-                    value={form.image_position}
-                    onChange={(e) => update('image_position', e.target.value as FormState['image_position'])}
-                  >
-                    <option value="center">🎯 Középre igazítás (Center)</option>
-                    <option value="top">⬆️ Felső rész fókusz (Top - pl. tetők, épület teteje)</option>
-                    <option value="bottom">⬇️ Alsó rész fókusz (Bottom - pl. alapozás, talajmunka)</option>
-                    <option value="left">⬅️ Bal oldal (Left)</option>
-                    <option value="right">➡️ Jobb oldal (Right)</option>
-                  </select>
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    Meghatározza, hogy a kép melyik fókusza maradjon középpontban kivágás esetén.
-                  </p>
+                {/* 1. KATTINTHATÓ ÉLŐ FÓKUSZPONT CANVAS */}
+                {form.image_url.trim() && isValidUrl(form.image_url) ? (
+                  <div className="space-y-2">
+                    <div
+                      ref={previewRef}
+                      onClick={handlePreviewClick}
+                      className="relative rounded-xl overflow-hidden border border-[#1E1E1E] bg-[#050505] h-48 cursor-crosshair group shadow-inner select-none"
+                      title="Kattints a képre a fókuszpont pontos beállításához!"
+                    >
+                      <img
+                        src={form.image_url}
+                        alt="Kézi igazítás előnézet"
+                        className="w-full h-48 pointer-events-none transition-all duration-150"
+                        style={{
+                          objectFit: form.image_fit,
+                          objectPosition: `${form.pos_x}% ${form.pos_y}%`,
+                          transform: `scale(${form.image_zoom / 100})`,
+                          transformOrigin: `${form.pos_x}% ${form.pos_y}%`,
+                        }}
+                      />
+
+                      {/* CÉLKERESZT / RETICLE KISZÁMÍTÁSA */}
+                      <div
+                        className="absolute w-7 h-7 -ml-3.5 -mt-3.5 border-2 border-[#FFC400] rounded-full pointer-events-none shadow-lg flex items-center justify-center bg-black/40 backdrop-blur-xs transition-all duration-100"
+                        style={{ left: `${form.pos_x}%`, top: `${form.pos_y}%` }}
+                      >
+                        <div className="w-1.5 h-1.5 bg-[#FFC400] rounded-full" />
+                      </div>
+
+                      {/* Útmutató szöveg a képen */}
+                      <div className="absolute top-2 left-2 px-2 py-1 bg-black/75 backdrop-blur text-[10px] font-bold text-gray-300 rounded-md border border-white/10 flex items-center gap-1">
+                        <Move size={11} className="text-[#FFC400]" /> Kattints a képre a fókusz áthelyezéséhez!
+                      </div>
+
+                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur text-[10px] font-mono text-[#FFC400] rounded-md font-bold border border-white/10">
+                        X: {form.pos_x}% | Y: {form.pos_y}% | Zoom: {form.image_zoom}%
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* 2. CSÚSZKÁK (SLIDERS) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                  {/* Vízszintes X slider */}
+                  <div>
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase">Vízszintes (X)</label>
+                      <span className="font-mono text-[11px] text-[#FFC400] font-bold">{form.pos_x}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={form.pos_x}
+                      onChange={(e) => update('pos_x', parseInt(e.target.value) || 0)}
+                      className="w-full accent-[#FFC400] cursor-pointer bg-[#111]"
+                    />
+                    <div className="flex justify-between text-[9px] text-gray-600">
+                      <span>Bal szél</span>
+                      <span>Közép</span>
+                      <span>Jobb szél</span>
+                    </div>
+                  </div>
+
+                  {/* Függőleges Y slider */}
+                  <div>
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase">Függőleges (Y)</label>
+                      <span className="font-mono text-[11px] text-[#FFC400] font-bold">{form.pos_y}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={form.pos_y}
+                      onChange={(e) => update('pos_y', parseInt(e.target.value) || 0)}
+                      className="w-full accent-[#FFC400] cursor-pointer bg-[#111]"
+                    />
+                    <div className="flex justify-between text-[9px] text-gray-600">
+                      <span>Teteje</span>
+                      <span>Közép</span>
+                      <span>Alja</span>
+                    </div>
+                  </div>
+
+                  {/* Zoom Nagyítás slider */}
+                  <div>
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase flex items-center gap-1">
+                        <ZoomIn size={11} /> Nagyítás (Zoom)
+                      </label>
+                      <span className="font-mono text-[11px] text-[#FFC400] font-bold">{form.image_zoom}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={50}
+                      max={220}
+                      step={5}
+                      value={form.image_zoom}
+                      onChange={(e) => update('image_zoom', parseInt(e.target.value) || 100)}
+                      className="w-full accent-[#FFC400] cursor-pointer bg-[#111]"
+                    />
+                    <div className="flex justify-between text-[9px] text-gray-600">
+                      <span>50%</span>
+                      <span>100%</span>
+                      <span>220%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. ILLERKEDÉSI MÓD SELECTOR */}
+                <div className="pt-2 flex items-center justify-between gap-4 border-t border-[#1A1A1A]">
+                  <span className="text-xs text-gray-400 font-bold uppercase">Keret Kitöltési Mód:</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => update('image_fit', 'cover')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                        form.image_fit === 'cover'
+                          ? 'bg-[#FFC400] text-black border-[#FFC400]'
+                          : 'bg-[#111] text-gray-400 border-[#1E1E1E] hover:text-white'
+                      }`}
+                    >
+                      🖼️ Kitöltés (Cover)
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => update('image_fit', 'contain')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                        form.image_fit === 'contain'
+                          ? 'bg-[#FFC400] text-black border-[#FFC400]'
+                          : 'bg-[#111] text-gray-400 border-[#1E1E1E] hover:text-white'
+                      }`}
+                    >
+                      📐 Teljes kép (Contain)
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              {/* Élő kép előnézet a méretezési beállításokkal */}
-              {form.image_url.trim() && isValidUrl(form.image_url) && (
-                <div className="p-4 bg-[#0A0A0A] border border-[#1E1E1E] rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs text-gray-400 font-bold uppercase">
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles size={13} className="text-[#FFC400]" /> Interaktív Kép Előnézet (Méretezéssel)
-                    </span>
-                    <span className="text-[10px] text-gray-500 font-mono">
-                      fit: {form.image_fit} | pos: {form.image_position}
-                    </span>
-                  </div>
-
-                  <div className="relative rounded-xl overflow-hidden border border-[#1E1E1E] bg-[#050505] h-44 flex items-center justify-center">
-                    <img
-                      src={form.image_url}
-                      alt="Kategória Borítókép Előnézet"
-                      className="w-full h-44 transition-all duration-300"
-                      style={{
-                        objectFit: form.image_fit,
-                        objectPosition: form.image_position,
-                      }}
-                    />
-                    <span className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur text-[10px] font-bold text-emerald-400 rounded-md flex items-center gap-1">
-                      <Check size={12} /> Élő Beállítások Alkalmazva
-                    </span>
-                  </div>
-                </div>
-              )}
 
               {/* Minta képek válogató */}
               <div className="p-4 bg-[#0A0A0A] border border-[#1E1E1E] rounded-xl space-y-3">
@@ -681,7 +807,9 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                       className="w-full h-36"
                       style={{
                         objectFit: form.image_fit,
-                        objectPosition: form.image_position,
+                        objectPosition: `${form.pos_x}% ${form.pos_y}%`,
+                        transform: `scale(${form.image_zoom / 100})`,
+                        transformOrigin: `${form.pos_x}% ${form.pos_y}%`,
                       }}
                     />
                     <span className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur text-[10px] font-bold text-emerald-400 rounded-md">

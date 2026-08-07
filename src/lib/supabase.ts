@@ -28,6 +28,7 @@ export interface Database {
           banner_url: string | null;
           image_fit: string | null;
           image_position: string | null;
+          image_zoom: number | null;
           featured: boolean | null;
           sort_order: number | null;
           seo_title: string | null;
@@ -47,6 +48,7 @@ export interface Database {
           banner_url?: string | null;
           image_fit?: string | null;
           image_position?: string | null;
+          image_zoom?: number | null;
           featured?: boolean | null;
           sort_order?: number | null;
           seo_title?: string | null;
@@ -66,6 +68,7 @@ export interface Database {
           banner_url?: string | null;
           image_fit?: string | null;
           image_position?: string | null;
+          image_zoom?: number | null;
           featured?: boolean | null;
           sort_order?: number | null;
           seo_title?: string | null;
