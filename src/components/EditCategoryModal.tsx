@@ -27,6 +27,8 @@ import {
   Sparkles,
   Link,
   Check,
+  Maximize2,
+  Move,
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { Category } from '../lib/supabase';
@@ -46,6 +48,8 @@ interface FormState {
   color: string;
   image_url: string;
   banner_url: string;
+  image_fit: 'cover' | 'contain' | 'fill';
+  image_position: 'center' | 'top' | 'bottom' | 'left' | 'right';
   featured: boolean;
   sort_order: number;
   seo_title: string;
@@ -119,6 +123,8 @@ const EMPTY_FORM: FormState = {
   color: '#FFC400',
   image_url: '',
   banner_url: '',
+  image_fit: 'cover',
+  image_position: 'center',
   featured: false,
   sort_order: 1,
   seo_title: '',
@@ -134,6 +140,8 @@ function formFromCategory(category: Category): FormState {
     color: category.color ?? '#FFC400',
     image_url: category.image_url ?? '',
     banner_url: category.banner_url ?? '',
+    image_fit: (category.image_fit as FormState['image_fit']) || 'cover',
+    image_position: (category.image_position as FormState['image_position']) || 'center',
     featured: Boolean(category.featured),
     sort_order: category.sort_order ?? 1,
     seo_title: category.seo_title ?? '',
@@ -228,6 +236,8 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
         color: form.color.trim() || '#FFC400',
         image_url: form.image_url.trim() || null,
         banner_url: form.banner_url.trim() || null,
+        image_fit: form.image_fit,
+        image_position: form.image_position,
         featured: form.featured,
         sort_order: Number(form.sort_order) || 1,
         seo_title: form.seo_title.trim() || null,
@@ -326,7 +336,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                 : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
           >
-            <ImageIcon size={14} /> Képek &amp; Média
+            <ImageIcon size={14} /> Képek &amp; Méretezés
             {form.image_url && <span className="w-1.5 h-1.5 rounded-full bg-[#FFC400]"></span>}
           </button>
 
@@ -533,7 +543,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
             </div>
           )}
 
-          {/* 3. FÜL: Képek & Média */}
+          {/* 3. FÜL: Képek & Méretezés */}
           {activeTab === 'media' && (
             <div className="space-y-6">
               {/* Borítókép URL */}
@@ -549,19 +559,79 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                   placeholder="https://images.unsplash.com/photo-..."
                 />
                 <p className="text-[11px] text-gray-500 mt-1">
-                  Megjelenik a kategória kártyákon és a böngésző fejlécekben. (Ajánlott méret: 800x600px).
+                  Megjelenik a kategória kártyákon és a böngésző fejlécekben.
                 </p>
+              </div>
 
-                {/* Élő kép előnézet */}
-                {form.image_url.trim() && isValidUrl(form.image_url) && (
-                  <div className="mt-3 relative rounded-xl overflow-hidden border border-[#1E1E1E] bg-black max-h-44 flex items-center justify-center">
-                    <img src={form.image_url} alt="Kategória Borítókép Előnézet" className="w-full h-44 object-cover" />
-                    <span className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur text-[10px] font-bold text-emerald-400 rounded-md flex items-center gap-1">
-                      <Check size={12} /> Borítókép Előnézet
+              {/* KÉP MÉRETEZÉSI & IGAZÍTÁSI VEZÉRLŐK */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[#0A0A0A] border border-[#1E1E1E] rounded-xl">
+                <div>
+                  <label className={labelClass}>
+                    <Maximize2 size={12} className="inline mr-1 text-[#FFC400]" /> Kép Méretezési Mód (Fit Mód)
+                  </label>
+                  <select
+                    className={fieldClass}
+                    value={form.image_fit}
+                    onChange={(e) => update('image_fit', e.target.value as FormState['image_fit'])}
+                  >
+                    <option value="cover">🖼️ Cover (Keret kitöltése & szélek kivágása - Alapértelmezett)</option>
+                    <option value="contain">📐 Contain (Teljes kép beleillesztése kivágás nélkül)</option>
+                    <option value="fill">↕️ Fill (Kép nyújtása a teljes kerethez)</option>
+                  </select>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Válaszd a <strong>"Contain"</strong> opciót, ha azt szeretnéd, hogy a teljes kép látszódjon kivágás nélkül!
+                  </p>
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    <Move size={12} className="inline mr-1 text-[#FFC400]" /> Kép Fókuszpont (Igazítás)
+                  </label>
+                  <select
+                    className={fieldClass}
+                    value={form.image_position}
+                    onChange={(e) => update('image_position', e.target.value as FormState['image_position'])}
+                  >
+                    <option value="center">🎯 Középre igazítás (Center)</option>
+                    <option value="top">⬆️ Felső rész fókusz (Top - pl. tetők, épület teteje)</option>
+                    <option value="bottom">⬇️ Alsó rész fókusz (Bottom - pl. alapozás, talajmunka)</option>
+                    <option value="left">⬅️ Bal oldal (Left)</option>
+                    <option value="right">➡️ Jobb oldal (Right)</option>
+                  </select>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Meghatározza, hogy a kép melyik fókusza maradjon középpontban kivágás esetén.
+                  </p>
+                </div>
+              </div>
+
+              {/* Élő kép előnézet a méretezési beállításokkal */}
+              {form.image_url.trim() && isValidUrl(form.image_url) && (
+                <div className="p-4 bg-[#0A0A0A] border border-[#1E1E1E] rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs text-gray-400 font-bold uppercase">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-[#FFC400]" /> Interaktív Kép Előnézet (Méretezéssel)
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      fit: {form.image_fit} | pos: {form.image_position}
                     </span>
                   </div>
-                )}
-              </div>
+
+                  <div className="relative rounded-xl overflow-hidden border border-[#1E1E1E] bg-[#050505] h-44 flex items-center justify-center">
+                    <img
+                      src={form.image_url}
+                      alt="Kategória Borítókép Előnézet"
+                      className="w-full h-44 transition-all duration-300"
+                      style={{
+                        objectFit: form.image_fit,
+                        objectPosition: form.image_position,
+                      }}
+                    />
+                    <span className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur text-[10px] font-bold text-emerald-400 rounded-md flex items-center gap-1">
+                      <Check size={12} /> Élő Beállítások Alkalmazva
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Minta képek válogató */}
               <div className="p-4 bg-[#0A0A0A] border border-[#1E1E1E] rounded-xl space-y-3">
@@ -605,7 +675,15 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
 
                 {form.banner_url.trim() && isValidUrl(form.banner_url) && (
                   <div className="mt-3 relative rounded-xl overflow-hidden border border-[#1E1E1E] bg-black max-h-36">
-                    <img src={form.banner_url} alt="Banner előnézet" className="w-full h-36 object-cover" />
+                    <img
+                      src={form.banner_url}
+                      alt="Banner előnézet"
+                      className="w-full h-36"
+                      style={{
+                        objectFit: form.image_fit,
+                        objectPosition: form.image_position,
+                      }}
+                    />
                     <span className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur text-[10px] font-bold text-emerald-400 rounded-md">
                       Banner Előnézet
                     </span>

@@ -176,7 +176,11 @@ export default function AdminCategoriesPage() {
                     <img
                       src={c.image_url}
                       alt={c.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
+                      className="w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-85"
+                      style={{
+                        objectFit: (c.image_fit as 'cover' | 'contain' | 'fill') || 'cover',
+                        objectPosition: c.image_position || 'center',
+                      }}
                     />
                   ) : (
                     <div

@@ -238,7 +238,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <img
                           src={category.image_url}
                           alt={category.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85"
+                          className="w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-85"
+                          style={{
+                            objectFit: (category.image_fit as 'cover' | 'contain' | 'fill') || 'cover',
+                            objectPosition: category.image_position || 'center',
+                          }}
                         />
                       ) : (
                         <div
