@@ -154,8 +154,20 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   return (
     <div className="bg-background min-h-screen pb-16">
       {/* Hero Header */}
-      <div className="bg-primary text-white border-b border-primary-700 py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-4">
+      <div className="relative bg-primary text-white border-b border-primary-700 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Banner image background if active category has banner_url or image_url */}
+        {activeCategoryObj?.banner_url || activeCategoryObj?.image_url ? (
+          <div className="absolute inset-0 z-0">
+            <img
+              src={activeCategoryObj.banner_url || activeCategoryObj.image_url || ''}
+              alt={activeCategoryObj.name}
+              className="w-full h-full object-cover opacity-25 scale-105 filter blur-xs"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-primary-900/90" />
+          </div>
+        ) : null}
+
+        <div className="relative z-10 max-w-7xl mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <button onClick={() => onNavigate('home')} className="flex items-center gap-1 hover:text-white transition-colors">
               <Home size={13} /> Főoldal
@@ -167,27 +179,49 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-accent/10 border border-accent/20 rounded-2xl text-accent">
-                <BookOpen size={28} />
-              </div>
+            <div className="flex items-center gap-4">
+              {activeCategoryObj ? (
+                (() => {
+                  const IconComp = (activeCategoryObj.icon_name && categoryIconMap[activeCategoryObj.icon_name]) || Layers;
+                  const categoryColor = activeCategoryObj.color || '#FFC400';
+                  return (
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl backdrop-blur-md shrink-0"
+                      style={{
+                        backgroundColor: `${categoryColor}25`,
+                        borderColor: `${categoryColor}60`,
+                        color: categoryColor,
+                      }}
+                    >
+                      <IconComp size={30} />
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="p-3.5 bg-accent/15 border border-accent/30 rounded-2xl text-accent shrink-0">
+                  <BookOpen size={30} />
+                </div>
+              )}
+
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white">
-                  {activeCategoryObj ? activeCategoryObj.name : 'Építőipari Kategóriák & Szakmai Cikkek'}
-                </h1>
-                <p className="text-gray-400 text-sm mt-1">
+                <h1 className="text-2xl md:text-3xl font-black text-white">
                   {activeCategoryObj
-                    ? activeCategoryObj.description
+                    ? activeCategoryObj.seo_title || activeCategoryObj.name
+                    : 'Építőipari Kategóriák & Szakmai Cikkek'}
+                </h1>
+                <p className="text-gray-300 text-sm mt-1 max-w-3xl leading-relaxed">
+                  {activeCategoryObj
+                    ? activeCategoryObj.seo_description || activeCategoryObj.description
                     : 'Gyakorlati útmutatók, szabványok, technológiai leírások és kivitelezési tippek'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs bg-accent/10 border border-accent/20 text-accent font-bold px-3 py-1.5 rounded-xl">
+              <span className="text-xs bg-accent/10 border border-accent/20 text-accent font-bold px-3.5 py-2 rounded-xl">
                 {categories.length} Kategória
               </span>
-              <span className="text-xs bg-white/10 border border-white/10 text-gray-300 font-bold px-3 py-1.5 rounded-xl">
+              <span className="text-xs bg-white/10 border border-white/10 text-gray-200 font-bold px-3.5 py-2 rounded-xl">
                 {articles.length} Szakcikk
               </span>
             </div>
@@ -249,14 +283,14 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
             placeholder="Keress cikket cím, kifejezés vagy tartalom alapján..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 focus:border-accent rounded-xl pl-11 pr-4 py-3.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-accent/30 text-sm font-medium"
+            className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent shadow-sm"
           />
         </div>
 
-        {/* Category Selector Tabs */}
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-1.5">
-            <Filter size={14} className="text-accent" /> Szűrés kategóriák szerint:
+        {/* Category Filter Chips / Pills */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Filter size={12} /> Kategória választó:
           </h3>
           <div className="flex flex-wrap gap-2">
             <button
@@ -270,22 +304,31 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               Összes Kategória ({categories.length})
             </button>
 
-            {categories.map((cat) => {
-              const count = articles.filter((a) => a.category_id === cat.id).length;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                    selectedCategory === cat.id
-                      ? 'bg-accent text-black shadow-md'
-                      : 'bg-white border border-gray-200 text-gray-700 hover:border-accent/40'
-                  }`}
-                >
-                  {cat.name} ({count})
-                </button>
-              );
-            })}
+            {[...categories]
+              .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+              .map((cat) => {
+                const count = articles.filter((a) => a.category_id === cat.id).length;
+                const isSelected = selectedCategory === cat.id;
+                const catColor = cat.color || '#FFC400';
+
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(isSelected ? null : cat.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-accent text-black shadow-md border border-accent'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:border-accent/40'
+                    }`}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full inline-block"
+                      style={{ backgroundColor: catColor }}
+                    />
+                    {cat.name} ({count})
+                  </button>
+                );
+              })}
           </div>
         </div>
 
@@ -322,43 +365,83 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-gray-900">Építőipari Szakági Kategóriák</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categories.map((cat) => {
-                const IconComponent = (cat.icon_name && categoryIconMap[cat.icon_name]) || Layers;
-                const catArticlesCount = articles.filter((a) => a.category_id === cat.id).length;
+              {[...categories]
+                .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+                .map((cat) => {
+                  const IconComponent = (cat.icon_name && categoryIconMap[cat.icon_name]) || Layers;
+                  const catArticlesCount = articles.filter((a) => a.category_id === cat.id).length;
+                  const categoryColor = cat.color || '#FFC400';
 
-                return (
-                  <div
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className="group bg-white border border-gray-200 hover:border-accent rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="p-3 bg-accent/10 rounded-xl text-accent group-hover:bg-accent group-hover:text-black transition-colors">
-                          <IconComponent size={24} />
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className="group bg-white border border-gray-200 hover:border-accent rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between"
+                    >
+                      {/* Cover Image Header */}
+                      <div className="h-36 relative bg-gray-900 overflow-hidden flex items-center justify-center">
+                        {cat.image_url ? (
+                          <img
+                            src={cat.image_url}
+                            alt={cat.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85"
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center opacity-30"
+                            style={{ backgroundColor: categoryColor }}
+                          >
+                            <IconComponent size={64} className="text-white" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                        {/* Icon badge */}
+                        <div
+                          className="absolute bottom-3 left-4 w-11 h-11 rounded-xl flex items-center justify-center border shadow-lg backdrop-blur-md"
+                          style={{
+                            backgroundColor: `${categoryColor}25`,
+                            borderColor: `${categoryColor}80`,
+                            color: categoryColor,
+                          }}
+                        >
+                          <IconComponent size={22} />
                         </div>
-                        <span className="text-xs font-bold bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg">
-                          {catArticlesCount} cikk
-                        </span>
+
+                        {/* Badges top right */}
+                        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                          {cat.featured && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#FFC400] text-black shadow-sm">
+                              <Star size={10} className="fill-black" /> Kiemelt
+                            </span>
+                          )}
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur border border-white/10">
+                            {catArticlesCount} cikk
+                          </span>
+                        </div>
                       </div>
 
-                      <h3 className="text-base font-bold text-gray-900 group-hover:text-primary transition-colors">
-                        {cat.name}
-                      </h3>
-                      {cat.description && (
-                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-                          {cat.description}
-                        </p>
-                      )}
-                    </div>
+                      {/* Content */}
+                      <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                          <h3 className="text-base font-bold text-gray-900 group-hover:text-primary transition-colors">
+                            {cat.name}
+                          </h3>
+                          {cat.description && (
+                            <p className="mt-1.5 text-xs text-gray-600 leading-relaxed line-clamp-2">
+                              {cat.description}
+                            </p>
+                          )}
+                        </div>
 
-                    <div className="pt-4 mt-4 border-t border-gray-100 text-xs font-bold text-accent flex items-center justify-between group-hover:translate-x-0.5 transition-transform">
-                      <span>Cikkek megtekintése</span>
-                      <ChevronRight size={14} />
+                        <div className="pt-3 border-t border-gray-100 text-xs font-bold text-accent flex items-center justify-between group-hover:translate-x-0.5 transition-transform">
+                          <span>Cikkek megtekintése</span>
+                          <ChevronRight size={14} />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         )}

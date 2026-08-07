@@ -199,55 +199,103 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* Categories */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Kategóriák
-          </h2>
-          <p className="mt-2 text-gray-600">Böngéssz szakterület szerint</p>
+        <div className="flex items-center justify-between mb-10 flex-wrap gap-4">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              Építőipari Szakági Kategóriák
+            </h2>
+            <p className="mt-2 text-gray-600">Böngéssz szakterület és technológia szerint</p>
+          </div>
+          <button
+            onClick={() => onNavigate('category')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary-800 transition-colors"
+          >
+            Összes kategória megtekintése <ArrowRight size={14} />
+          </button>
         </div>
 
         {categories.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
             <p className="text-gray-500">Nem találhatók kategóriák</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {categories.map((category) => {
-              const Icon = iconMap[category.icon_name || 'Layers'] || Layers;
-              const accentColors = [
-                'bg-blue-100 text-blue-600',
-                'bg-green-100 text-green-600',
-                'bg-amber-100 text-amber-600',
-                'bg-purple-100 text-purple-600',
-                'bg-red-100 text-red-600',
-                'bg-cyan-100 text-cyan-600',
-                'bg-orange-100 text-orange-600',
-                'bg-teal-100 text-teal-600',
-              ];
-              const colorClass =
-                accentColors[
-                  Math.abs(category.name.charCodeAt(0) - 32) % accentColors.length
-                ];
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => onNavigate('category')}
-                  className="group bg-white rounded-xl p-6 text-left shadow-sm border border-gray-200 transition-all hover:shadow-lg hover:border-accent/40 hover:scale-[1.02]"
-                >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...categories]
+              .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+              .map((category) => {
+                const Icon = iconMap[category.icon_name || 'Layers'] || Layers;
+                const categoryColor = category.color || '#FFC400';
+
+                return (
                   <div
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClass}`}
+                    key={category.id}
+                    onClick={() => onNavigate('category')}
+                    className="group bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between hover:border-accent/50"
                   >
-                    <Icon size={24} />
+                    {/* Cover image header */}
+                    <div className="h-36 relative bg-gray-900 overflow-hidden flex items-center justify-center">
+                      {category.image_url ? (
+                        <img
+                          src={category.image_url}
+                          alt={category.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center opacity-30"
+                          style={{ backgroundColor: categoryColor }}
+                        >
+                          <Icon size={64} className="text-white" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                      {/* Icon badge */}
+                      <div
+                        className="absolute bottom-3 left-4 w-11 h-11 rounded-xl flex items-center justify-center border shadow-lg backdrop-blur-md"
+                        style={{
+                          backgroundColor: `${categoryColor}25`,
+                          borderColor: `${categoryColor}80`,
+                          color: categoryColor,
+                        }}
+                      >
+                        <Icon size={22} />
+                      </div>
+
+                      {/* Badges top right */}
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                        {category.featured && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#FFC400] text-black shadow-sm">
+                            <Star size={10} className="fill-black" /> Kiemelt
+                          </span>
+                        )}
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur border border-white/10">
+                          {category.article_count} cikk
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900 group-hover:text-primary transition-colors">
+                          {category.name}
+                        </h3>
+                        {category.description && (
+                          <p className="mt-1.5 text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                            {category.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-accent group-hover:translate-x-0.5 transition-transform">
+                        <span>Böngészés szakterület szerint</span>
+                        <ArrowRight size={14} />
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="mt-4 font-semibold text-gray-900">
-                    {category.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {category.article_count} cikk
-                  </p>
-                </button>
-              );
-            })}
+                );
+              })}
           </div>
         )}
       </section>

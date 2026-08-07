@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen } from 'lucide-react';
-import { getArticleBySlug } from '../lib/api';
+import { getArticleBySlug, getCategories } from '../lib/api';
 import { getRelatedArticles } from '../services/articleService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
-import type { Article } from '../lib/supabase';
+import type { Article, Category } from '../lib/supabase';
 
 interface ArticlePageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;
@@ -13,6 +13,7 @@ interface ArticlePageProps {
 export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProps) {
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
+  const [categoryObj, setCategoryObj] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,9 +22,15 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
       try {
         setLoading(true);
         const slugToFetch = articleSlug || 'betonozas-lepesrol-lepesre';
-        const articleData = await getArticleBySlug(slugToFetch);
+        const [articleData, categoriesData] = await Promise.all([
+          getArticleBySlug(slugToFetch),
+          getCategories(),
+        ]);
         setArticle(articleData);
         if (articleData) {
+          const cat = categoriesData.find((c) => c.id === articleData.category_id || c.slug === articleData.category_id);
+          setCategoryObj(cat || null);
+
           const related = await getRelatedArticles(articleData.id, articleData.category_id, 3);
           setRelatedArticles(related);
         }
@@ -77,7 +84,12 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
               <Home size={13} /> Főoldal
             </button>
             <ChevronRight size={13} />
-            <button onClick={() => onNavigate('category')} className="hover:text-white">Szerkezetépítés</button>
+            <button onClick={() => onNavigate('category')} className="hover:text-white flex items-center gap-1.5">
+              {categoryObj && (
+                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: categoryObj.color || '#FFC400' }} />
+              )}
+              {categoryObj ? categoryObj.name : 'Kategóriák'}
+            </button>
             <ChevronRight size={13} />
             <span className="text-gray-300 font-medium truncate max-w-xs">{article.title}</span>
           </div>
