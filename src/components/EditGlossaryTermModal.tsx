@@ -275,11 +275,8 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   const labelClass = 'block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => !saving && onClose()}>
-      <div
-        className="bg-[#111] border border-[#1E1E1E] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-[#111] border border-[#1E1E1E] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E1E1E] sticky top-0 bg-[#111] z-10">
           <h2 className="text-base font-black text-white">{isCreate ? 'Új bejegyzés létrehozása' : 'Bejegyzés szerkesztése'}</h2>
           <button onClick={onClose} disabled={saving} className="text-gray-500 hover:text-gray-300 disabled:opacity-40">
