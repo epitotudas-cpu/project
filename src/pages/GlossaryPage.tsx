@@ -499,10 +499,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                       ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80 font-black'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                   }`}
-                  title="Rács nézet – kompakt, tömör kártyák"
+                  title="Csempe nézet – kompakt, pásztázható kártyák"
                 >
                   <LayoutGrid size={16} className={viewMode === 'grid' ? 'text-primary' : 'text-gray-400'} />
-                  <span>Rács</span>
+                  <span>Csempék</span>
                 </button>
               </div>
             </div>
@@ -516,65 +516,67 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 </p>
               </div>
             ) : viewMode === 'grid' ? (
-              /* ── RÁCS NÉZET (GRID) ── */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 items-stretch">
+              /* ── CSEMPESZERŰ NÉZET (TILES) ── */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3.5 items-stretch">
                 {filteredTerms.map((item) => {
+                  const normalizedLevel = item.szint ? item.szint.trim() : null;
+                  const normalizedCat = item.category ? item.category.trim() : null;
+
                   return (
                     <article
                       key={item.id}
                       onClick={() => handleTermClick(item)}
-                      className="h-full flex flex-col justify-between p-4.5 bg-white border border-gray-200 hover:border-primary/40 hover:shadow-md rounded-2xl transition-all duration-200 group cursor-pointer"
+                      className="h-full flex flex-col justify-between p-4 bg-white border border-gray-200/90 hover:border-primary/40 hover:shadow-md rounded-xl transition-all duration-150 group cursor-pointer shadow-2xs"
                     >
-                      <div className="space-y-2">
-                        {/* Felső Meta Sor: Típus + Szint / Státusz */}
-                        <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+                      <div className="space-y-1.5">
+                        {/* 1. Felső meta sor: típus badge + szint badge (emoji nélkül) */}
+                        <div className="flex items-center justify-between gap-2 text-xs">
                           <span
-                            className={`font-bold px-2 py-0.5 rounded-md border text-[10px] ${
+                            className={`font-bold px-2 py-0.5 rounded text-[10px] tracking-wider uppercase border ${
                               item.entry_type === 'industry_term'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200/80'
+                                : 'bg-blue-50 text-blue-700 border-blue-200/80'
                             }`}
                           >
-                            {item.entry_type === 'industry_term' ? '🗣 Zsargon' : '📘 Szakmai'}
+                            {item.entry_type === 'industry_term' ? 'Zsargon' : 'Szakmai'}
                           </span>
 
-                          {item.szint ? (
-                            <span className="text-[10px] font-bold bg-primary/10 text-primary-900 border border-primary/20 px-2 py-0.5 rounded-md">
-                              {item.szint}
+                          {normalizedLevel ? (
+                            <span className="text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200/80 px-2 py-0.5 rounded">
+                              {normalizedLevel}
                             </span>
                           ) : !user ? (
-                            <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 px-2 py-0.5 rounded flex items-center gap-1">
                               <Lock size={10} /> Zárt
                             </span>
                           ) : null}
                         </div>
 
-                        {/* Kategória sor */}
-                        {item.category && (
-                          <div className="text-[11px] font-bold text-gray-500 flex items-center gap-1 truncate">
-                            <span>{getCategoryIcon(item.category, categorySettings)}</span>
-                            <span className="truncate">{item.category}</span>
+                        {/* 2. Másodlagos meta: kategória rövid egységes címkeként */}
+                        {normalizedCat && (
+                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate pt-0.5">
+                            {normalizedCat}
                           </div>
                         )}
 
-                        {/* Fogalom cím (max 2 sor) */}
-                        <h3 className="text-base font-black text-gray-900 group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                        {/* 3. Fő tartalom: fogalom címe (max 2 sor) */}
+                        <h3 className="text-base sm:text-lg font-black text-gray-900 group-hover:text-primary transition-colors leading-snug line-clamp-2">
                           {item.term}
                         </h3>
 
-                        {/* Rövid definíció (max 2 sor) */}
-                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+                        {/* 4. Rövid leírás: definíció (max 1–2 sor) */}
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 font-normal">
                           {item.definition}
                         </p>
                       </div>
 
-                      {/* Alsó sor CTA */}
-                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-3 text-xs font-extrabold">
+                      {/* 5. Alsó akció */}
+                      <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between mt-3 text-xs font-extrabold">
                         <span className="text-primary group-hover:underline flex items-center gap-1">
                           Részletek ➔
                         </span>
                         {!user && (
-                          <span className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
+                          <span className="text-[10px] text-amber-700 font-bold flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
                             <Lock size={10} /> Regisztráció
                           </span>
                         )}
