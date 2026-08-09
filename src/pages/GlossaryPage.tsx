@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Search, Home, ChevronRight, BookOpen, AlertCircle,
-  Lock, Sparkles, ArrowRight, Clock, Tag, GraduationCap,
-  ChevronDown, ChevronUp,
+  Lock, ArrowRight, Clock, Tag, GraduationCap,
+  ChevronDown, ChevronUp, LayoutList, LayoutGrid,
 } from 'lucide-react';
 import { useGlossary } from '../contexts/GlossaryContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -108,6 +108,24 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const [categorySettings, setCategorySettings] = useState<GlossaryCategorySettings>(() =>
     getGlossaryCategorySettings(),
   );
+
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
+    try {
+      const saved = sessionStorage.getItem('epitotudas_glossary_view_mode_v1');
+      return saved === 'grid' ? 'grid' : 'list';
+    } catch {
+      return 'list';
+    }
+  });
+
+  const changeViewMode = (mode: 'list' | 'grid') => {
+    setViewMode(mode);
+    try {
+      sessionStorage.setItem('epitotudas_glossary_view_mode_v1', mode);
+    } catch {
+      // Storage unavailable fallback
+    }
+  };
 
   useEffect(() => {
     const updateSettings = () => setCategorySettings(getGlossaryCategorySettings());
@@ -436,25 +454,57 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
               </div>
             )}
 
-            {/* Szakasz fejléc */}
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-gray-900">
-                {selectedCategory
-                  ? selectedCategory
-                  : selectedLetter
-                  ? `„${selectedLetter}" betűvel kezdődők`
-                  : searchQuery
-                  ? 'Keresési eredmények'
-                  : 'Népszerű fogalmak'}
-              </h2>
-              <span className="text-xs text-gray-400 font-medium">
-                • {filteredTerms.length} fogalom
-              </span>
-              {searchQuery && (
+            {/* Szakasz fejléc & Nézetváltó */}
+            <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-gray-200/80 mb-6">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-gray-900">
+                  {selectedCategory
+                    ? selectedCategory
+                    : selectedLetter
+                    ? `„${selectedLetter}" betűvel kezdődők`
+                    : searchQuery
+                    ? 'Keresési eredmények'
+                    : 'Népszerű fogalmak'}
+                </h2>
                 <span className="text-xs text-gray-400 font-medium">
-                  a „{searchQuery}" keresésre
+                  • {filteredTerms.length} fogalom
                 </span>
-              )}
+                {searchQuery && (
+                  <span className="text-xs text-gray-400 font-medium">
+                    a „{searchQuery}" keresésre
+                  </span>
+                )}
+              </div>
+
+              {/* Nézetváltó segmented control */}
+              <div className="inline-flex items-center p-1 bg-gray-100/90 rounded-xl border border-gray-200/80 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => changeViewMode('list')}
+                  className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                    viewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80 font-black'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                  }`}
+                  title="Lista nézet – részletes, soros elrendezés"
+                >
+                  <LayoutList size={16} className={viewMode === 'list' ? 'text-primary' : 'text-gray-400'} />
+                  <span>Lista</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeViewMode('grid')}
+                  className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                    viewMode === 'grid'
+                      ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80 font-black'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                  }`}
+                  title="Rács nézet – kompakt, tömör kártyák"
+                >
+                  <LayoutGrid size={16} className={viewMode === 'grid' ? 'text-primary' : 'text-gray-400'} />
+                  <span>Rács</span>
+                </button>
+              </div>
             </div>
 
             {/* ═══ FOGALOMKÁRTYÁK ═══ */}
@@ -465,7 +515,76 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   Nincs találat a kiválasztott szűrőknek megfelelően.
                 </p>
               </div>
+            ) : viewMode === 'grid' ? (
+              /* ── RÁCS NÉZET (GRID) ── */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 items-stretch">
+                {filteredTerms.map((item) => {
+                  return (
+                    <article
+                      key={item.id}
+                      onClick={() => handleTermClick(item)}
+                      className="h-full flex flex-col justify-between p-4.5 bg-white border border-gray-200 hover:border-primary/40 hover:shadow-md rounded-2xl transition-all duration-200 group cursor-pointer"
+                    >
+                      <div className="space-y-2">
+                        {/* Felső Meta Sor: Típus + Szint / Státusz */}
+                        <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+                          <span
+                            className={`font-bold px-2 py-0.5 rounded-md border text-[10px] ${
+                              item.entry_type === 'industry_term'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}
+                          >
+                            {item.entry_type === 'industry_term' ? '🗣 Zsargon' : '📘 Szakmai'}
+                          </span>
+
+                          {item.szint ? (
+                            <span className="text-[10px] font-bold bg-primary/10 text-primary-900 border border-primary/20 px-2 py-0.5 rounded-md">
+                              {item.szint}
+                            </span>
+                          ) : !user ? (
+                            <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              <Lock size={10} /> Zárt
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {/* Kategória sor */}
+                        {item.category && (
+                          <div className="text-[11px] font-bold text-gray-500 flex items-center gap-1 truncate">
+                            <span>{getCategoryIcon(item.category, categorySettings)}</span>
+                            <span className="truncate">{item.category}</span>
+                          </div>
+                        )}
+
+                        {/* Fogalom cím (max 2 sor) */}
+                        <h3 className="text-base font-black text-gray-900 group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                          {item.term}
+                        </h3>
+
+                        {/* Rövid definíció (max 2 sor) */}
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+                          {item.definition}
+                        </p>
+                      </div>
+
+                      {/* Alsó sor CTA */}
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-3 text-xs font-extrabold">
+                        <span className="text-primary group-hover:underline flex items-center gap-1">
+                          Részletek ➔
+                        </span>
+                        {!user && (
+                          <span className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
+                            <Lock size={10} /> Regisztráció
+                          </span>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             ) : (
+              /* ── LISTA NÉZET (LIST) ── */
               <div className="space-y-4">
                 {filteredTerms.map((item) => {
                   const isExpanded = expandedCards.has(item.id);
@@ -476,7 +595,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   return (
                     <article
                       key={item.id}
-                      className="group bg-white rounded-2xl border border-gray-200 hover:border-accent/30 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                      className="group bg-white rounded-2xl border border-gray-200 hover:border-primary/40 hover:shadow-md transition-all duration-200 overflow-hidden"
                     >
                       <div className="flex">
                         {/* ── Tartalom ── */}
@@ -486,46 +605,46 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                             <span
                               className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${
                                 item.entry_type === 'industry_term'
-                                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-700'
-                                  : 'bg-blue-500/10 border-blue-500/20 text-blue-700'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                  : 'bg-blue-50 text-blue-700 border-blue-200'
                               }`}
                             >
                               {item.entry_type === 'industry_term' ? '🗣 Zsargon' : '📘 Szakmai'}
                             </span>
                             {item.category && (
-                              <span className="text-xs bg-gray-100 text-gray-600 font-medium px-2 py-0.5 rounded-md">
+                              <span className="text-xs bg-gray-100 text-gray-700 border border-gray-200 font-medium px-2 py-0.5 rounded-md">
                                 {getCategoryIcon(item.category, categorySettings)} {item.category}
                               </span>
                             )}
                             {item.szint && (
-                              <span className="text-xs bg-accent/10 text-accent font-semibold px-2 py-0.5 rounded-md">
+                              <span className="text-xs bg-primary/10 text-primary-900 border border-primary/20 font-semibold px-2 py-0.5 rounded-md">
                                 {item.szint}
                               </span>
                             )}
                             {item.jargon_subtype === 'brand_name' && (
-                              <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-md border border-purple-200">
-                                🏷️ Márkanév
+                              <span className="text-xs bg-purple-50 text-purple-700 font-semibold px-2 py-0.5 rounded-md border border-purple-200">
+                                Márkanév
                               </span>
                             )}
                             {item.jargon_subtype === 'german_origin' && (
-                              <span className="text-xs bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-md border border-emerald-200">
-                                🏷️ Német
+                              <span className="text-xs bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-md border border-emerald-200">
+                                Német
                               </span>
                             )}
                             {item.jargon_subtype === 'workplace_slang' && (
-                              <span className="text-xs bg-orange-100 text-orange-700 font-semibold px-2 py-0.5 rounded-md border border-orange-200">
-                                🏷️ Szleng
+                              <span className="text-xs bg-orange-50 text-orange-700 font-semibold px-2 py-0.5 rounded-md border border-orange-200">
+                                Szleng
                               </span>
                             )}
                             {item.jargon_subtype === 'synonym' && (
-                              <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-md border border-indigo-200">
-                                🏷️ Szinonima
+                              <span className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-md border border-indigo-200">
+                                Szinonima
                               </span>
                             )}
                           </div>
 
                           {/* Cím */}
-                          <h3 className="text-xl font-black text-gray-900 group-hover:text-accent transition-colors leading-tight">
+                          <h3 className="text-xl font-black text-gray-900 group-hover:text-primary transition-colors leading-tight">
                             {item.term}
                           </h3>
 
@@ -545,7 +664,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                       <span className="text-amber-700">Hivatalos megfelelő: </span>
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleTabChange('technical'); setSearchQuery(item.official_term_name || ''); }}
-                                        className="text-accent underline font-bold hover:text-yellow-600"
+                                        className="text-primary underline font-bold hover:text-amber-700"
                                       >
                                         ➡ {item.official_term_name}
                                       </button>
@@ -602,7 +721,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                     <button
                                       key={relTerm}
                                       onClick={(e) => { e.stopPropagation(); setSearchQuery(relTerm); }}
-                                      className="bg-accent/10 border border-accent/20 text-accent font-medium px-2 py-0.5 rounded hover:bg-accent/20 transition-colors"
+                                      className="bg-primary/10 border border-primary/20 text-primary-900 font-medium px-2 py-0.5 rounded hover:bg-primary/20 transition-colors"
                                     >
                                       {relTerm}
                                     </button>
@@ -613,24 +732,29 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           )}
 
                           {/* ── Footer akciók ── */}
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100 gap-2 flex-wrap">
-                            <button
-                              onClick={() => handleTermClick(item)}
-                              className="flex items-center gap-1.5 text-xs font-extrabold text-accent hover:text-yellow-600 transition-colors"
-                            >
-                              {user ? (
-                                <><Sparkles size={13} /> Részletes Adatlap, Slide-ok &amp; Média Megtekintése ➔</>
-                              ) : (
-                                <><Lock size={13} /> Részletek Feloldása (Regisztrációhoz kötött) ➔</>
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100 gap-2 flex-wrap text-xs">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button
+                                onClick={() => handleTermClick(item)}
+                                className="flex items-center gap-1.5 font-extrabold text-primary hover:underline transition-colors"
+                              >
+                                Részletek ➔
+                              </button>
+
+                              {!user && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                                  <Lock size={12} /> Regisztráció szükséges
+                                </span>
                               )}
-                            </button>
+                            </div>
+
                             <button
                               onClick={() => toggleExpand(item.id)}
-                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors font-semibold flex-shrink-0"
+                              className="flex items-center gap-1 text-gray-400 hover:text-gray-700 transition-colors font-semibold flex-shrink-0"
                             >
                               {isExpanded
                                 ? <><ChevronUp size={14} /> Kevesebb</>
-                                : <><ChevronDown size={14} /> Részletek</>}
+                                : <><ChevronDown size={14} /> Gyorstekintés</>}
                             </button>
                           </div>
                         </div>
@@ -655,7 +779,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           ) : (
                             <div className="text-center p-3">
                               <div className="text-4xl mb-1.5 opacity-80 drop-shadow-sm">
-                                {getCategoryIcon(item.category)}
+                                {getCategoryIcon(item.category, categorySettings)}
                               </div>
                               {item.category && (
                                 <div className="text-white/70 text-[10px] font-bold text-center leading-tight">
