@@ -516,62 +516,97 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 </p>
               </div>
             ) : viewMode === 'grid' ? (
-              /* ── CSEMPESZERŰ NÉZET (TILES) ── */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3.5 items-stretch">
+              /* ── CSEMPESZERŰ TANULÓ KÁRTYA NÉZET (TILES WITH IMAGE) ── */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 items-stretch">
                 {filteredTerms.map((item) => {
                   const normalizedLevel = item.szint ? item.szint.trim() : null;
                   const normalizedCat = item.category ? item.category.trim() : null;
+                  const imageFailedToLoad = imageLoadErrors.has(item.id);
+                  const hasImage = item.image_urls && item.image_urls.length > 0 && !imageFailedToLoad;
+                  const gradient = getTermGradient(item.category);
 
                   return (
                     <article
                       key={item.id}
                       onClick={() => handleTermClick(item)}
-                      className="h-full flex flex-col justify-between p-4 bg-white border border-gray-200/90 hover:border-primary/40 hover:shadow-md rounded-xl transition-all duration-150 group cursor-pointer shadow-2xs"
+                      className="h-full flex flex-col justify-between bg-white border border-gray-200 hover:border-primary/40 hover:shadow-lg rounded-2xl transition-all duration-200 group cursor-pointer overflow-hidden shadow-2xs"
                     >
-                      <div className="space-y-1.5">
-                        {/* 1. Felső meta sor: típus badge + szint badge (emoji nélkül) */}
-                        <div className="flex items-center justify-between gap-2 text-xs">
-                          <span
-                            className={`font-bold px-2 py-0.5 rounded text-[10px] tracking-wider uppercase border ${
-                              item.entry_type === 'industry_term'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200/80'
-                                : 'bg-blue-50 text-blue-700 border-blue-200/80'
-                            }`}
-                          >
-                            {item.entry_type === 'industry_term' ? 'Zsargon' : 'Szakmai'}
-                          </span>
+                      <div>
+                        {/* ── Kép / Tanuló kártya fejléc panel ── */}
+                        <div className={`h-32 sm:h-36 w-full relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                          {hasImage ? (
+                            <img
+                              src={item.image_urls![0]}
+                              alt={item.term}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              onError={() =>
+                                setImageLoadErrors((prev) => {
+                                  const next = new Set(prev);
+                                  next.add(item.id);
+                                  return next;
+                                })
+                              }
+                            />
+                          ) : (
+                            <div className="text-center p-3">
+                              <div className="text-4xl mb-1 opacity-90 drop-shadow-sm">
+                                {getCategoryIcon(item.category, categorySettings)}
+                              </div>
+                              {normalizedCat && (
+                                <div className="text-white/80 text-[10px] font-bold text-center leading-tight uppercase tracking-wider">
+                                  {normalizedCat}
+                                </div>
+                              )}
+                            </div>
+                          )}
 
-                          {normalizedLevel ? (
-                            <span className="text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200/80 px-2 py-0.5 rounded">
-                              {normalizedLevel}
+                          {/* Képre úszó jelvények (Badges overlay) */}
+                          <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
+                            <span
+                              className={`font-extrabold px-2 py-0.5 rounded text-[10px] tracking-wider uppercase border shadow-sm backdrop-blur-md ${
+                                item.entry_type === 'industry_term'
+                                  ? 'bg-amber-900/80 text-amber-200 border-amber-500/40'
+                                  : 'bg-blue-900/80 text-blue-200 border-blue-500/40'
+                              }`}
+                            >
+                              {item.entry_type === 'industry_term' ? 'Zsargon' : 'Szakmai'}
                             </span>
-                          ) : !user ? (
-                            <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 px-2 py-0.5 rounded flex items-center gap-1">
-                              <Lock size={10} /> Zárt
-                            </span>
-                          ) : null}
+
+                            {normalizedLevel ? (
+                              <span className="text-[10px] font-extrabold bg-black/60 text-white border border-white/20 backdrop-blur-md px-2 py-0.5 rounded shadow-sm">
+                                {normalizedLevel}
+                              </span>
+                            ) : !user ? (
+                              <span className="text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-500/40 backdrop-blur-md px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
+                                <Lock size={10} /> Zárt
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
 
-                        {/* 2. Másodlagos meta: kategória rövid egységes címkeként */}
-                        {normalizedCat && (
-                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate pt-0.5">
-                            {normalizedCat}
-                          </div>
-                        )}
+                        {/* ── Kártya tartalom ── */}
+                        <div className="p-4 space-y-1.5">
+                          {/* Kategória megnevezés */}
+                          {normalizedCat && (
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">
+                              {normalizedCat}
+                            </div>
+                          )}
 
-                        {/* 3. Fő tartalom: fogalom címe (max 2 sor) */}
-                        <h3 className="text-base sm:text-lg font-black text-gray-900 group-hover:text-primary transition-colors leading-snug line-clamp-2">
-                          {item.term}
-                        </h3>
+                          {/* Fogalom címe */}
+                          <h3 className="text-base sm:text-lg font-black text-gray-900 group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                            {item.term}
+                          </h3>
 
-                        {/* 4. Rövid leírás: definíció (max 1–2 sor) */}
-                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 font-normal">
-                          {item.definition}
-                        </p>
+                          {/* Rövid leírás */}
+                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 font-normal">
+                            {item.definition}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* 5. Alsó akció */}
-                      <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between mt-3 text-xs font-extrabold">
+                      {/* ── Alsó akció sor ── */}
+                      <div className="px-4 pb-3.5 pt-2 border-t border-gray-100 flex items-center justify-between text-xs font-extrabold">
                         <span className="text-primary group-hover:underline flex items-center gap-1">
                           Részletek ➔
                         </span>
