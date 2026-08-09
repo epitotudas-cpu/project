@@ -205,25 +205,26 @@ class GlossaryJsonService {
         updatedAt: item.updated_at,
       }));
 
-      // If Supabase does not have industry terms yet, merge in the seed dataset
-      const hasIndustryTerms = terms.some((t) => t.entry_type === 'industry_term');
-      if (!hasIndustryTerms && this.fallbackTerms.length > 0) {
-        const mergedMap = new Map<string, GlossaryTermFromJson>();
-        for (const t of terms) {
-          mergedMap.set(t.id, t);
-        }
-        for (const fb of this.fallbackTerms) {
-          if (!mergedMap.has(fb.id)) {
-            mergedMap.set(fb.id, fb);
-          }
-        }
-        const finalMerged = Array.from(mergedMap.values());
-        this.terms = finalMerged;
-        return finalMerged;
+      // Merge logic: Supabase database terms ALWAYS take precedence over local seed terms (keyed by slug/term name)
+      const mergedMap = new Map<string, GlossaryTermFromJson>();
+
+      // 1. Put all Supabase terms first (authoritative DB data edited by admins)
+      for (const item of terms) {
+        const key = (slugify(item.term) || item.id).toLowerCase();
+        mergedMap.set(key, item);
       }
 
-      this.terms = terms;
-      return terms;
+      // 2. Put fallback seed terms only if not present in Supabase data
+      for (const fb of this.fallbackTerms) {
+        const key = (slugify(fb.term) || fb.id).toLowerCase();
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, fb);
+        }
+      }
+
+      const finalMerged = Array.from(mergedMap.values());
+      this.terms = finalMerged;
+      return finalMerged;
     } catch (err) {
       console.error('Kivétel a glossary beolvasásakor:', err);
       return [...this.fallbackTerms];
