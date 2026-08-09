@@ -154,7 +154,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-lg">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg">
                       {getCategoryLabel(partner.category)}
                     </span>
 
@@ -181,7 +181,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                   </div>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-accent group-hover:translate-x-0.5 transition-transform">
+                <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-primary group-hover:text-accent group-hover:translate-x-0.5 transition-transform">
                   <span>Hivatalos weboldal megnyitása</span>
                   <ExternalLink size={14} />
                 </div>

@@ -6,6 +6,8 @@ import CategoryPage from './pages/CategoryPage';
 import ArticlePage from './pages/ArticlePage';
 import GlossaryPage from './pages/GlossaryPage';
 import ToolPage from './pages/ToolPage';
+import PathsHubPage from './pages/PathsHubPage';
+import AboutHubPage from './pages/AboutHubPage';
 import CoursesPage from './pages/CoursesPage';
 import CareersPage from './pages/CareersPage';
 import AdminLayout from './components/AdminLayout';
@@ -43,6 +45,8 @@ type PageKey =
   | 'article'
   | 'glossary'
   | 'tool'
+  | 'paths'
+  | 'about'
   | 'partners'
   | 'admin'
   | 'login'
@@ -159,6 +163,8 @@ function AppContent() {
       case 'article': return <ArticlePage articleSlug={selectedArticleSlug} onNavigate={navigate} />;
       case 'glossary': return <GlossaryPage onNavigate={navigate} />;
       case 'tool': return <ToolPage onNavigate={navigate} />;
+      case 'paths': return <PathsHubPage onNavigate={navigate} />;
+      case 'about': return <AboutHubPage onNavigate={navigate} />;
       case 'partners': return <PartnersPage onNavigate={navigate} />;
       case 'courses': return <CoursesPage />;
       case 'careers': return <CareersPage />;

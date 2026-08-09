@@ -10,12 +10,11 @@ interface HeaderProps {
 
 const navItems = [
   { label: 'Főoldal', page: 'home' },
-  { label: 'Kategóriák & Cikkek', page: 'category' },
+  { label: 'Cikkek', page: 'category' },
   { label: 'Fogalomtár', page: 'glossary' },
   { label: 'Eszközök', page: 'tool' },
-  { label: 'Oktatás', page: 'courses' },
-  { label: 'Karrier', page: 'careers' },
-  { label: 'Partnerek', page: 'partners' },
+  { label: 'Pályák', page: 'paths' },
+  { label: 'Rólunk', page: 'about' },
 ];
 
 export default function Header({ onNavigate, currentPage }: HeaderProps) {
@@ -62,6 +61,14 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     return true;
   });
 
+  const isNavItemActive = (itemPage: string) => {
+    if (currentPage === itemPage) return true;
+    if (itemPage === 'paths' && (currentPage === 'courses' || currentPage === 'careers')) return true;
+    if (itemPage === 'about' && (currentPage === 'partners' || currentPage === 'impressum')) return true;
+    if (itemPage === 'category' && currentPage === 'article') return true;
+    return false;
+  };
+
   return (
     <header className="bg-primary border-b border-primary-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4 md:flex-nowrap">
@@ -94,19 +101,22 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         <div className="flex items-center gap-3 md:gap-6 min-w-0 grow justify-end">
           {/* Desktop Nav */}
           <nav className="hidden xl:flex items-center gap-0.5 min-w-0">
-            {visibleNavItems.map((item) => (
-              <button
-                key={item.page}
-                onClick={() => onNavigate(item.page)}
-                className={`px-2.5 lg:px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-                  currentPage === item.page
-                    ? 'text-accent bg-accent/10 font-bold border border-accent/20'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {visibleNavItems.map((item) => {
+              const active = isNavItemActive(item.page);
+              return (
+                <button
+                  key={item.page}
+                  onClick={() => onNavigate(item.page)}
+                  className={`px-2.5 lg:px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+                    active
+                      ? 'text-accent bg-accent/10 font-bold border border-accent/20'
+                      : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Right actions */}
@@ -246,22 +256,25 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden bg-primary-800 border-t border-primary-700">
-          {visibleNavItems.map((item) => (
-            <button
-              key={item.page}
-              onClick={() => {
-                onNavigate(item.page);
-                setMobileOpen(false);
-              }}
-              className={`w-full text-left px-6 py-3 text-sm ${
-                currentPage === item.page
-                  ? 'text-accent bg-accent/10'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-              } transition-all`}
-            >
-              {item.label}
-            </button>
-          ))}
+          {visibleNavItems.map((item) => {
+            const active = isNavItemActive(item.page);
+            return (
+              <button
+                key={item.page}
+                onClick={() => {
+                  onNavigate(item.page);
+                  setMobileOpen(false);
+                }}
+                className={`w-full text-left px-6 py-3 text-sm ${
+                  active
+                    ? 'text-accent bg-accent/10 font-bold'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                } transition-all`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
 
           <div className="px-6 py-3 space-y-2 border-t border-primary-700">
             {user ? (

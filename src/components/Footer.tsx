@@ -53,7 +53,7 @@ export default function Footer({ onNavigate }: FooterProps) {
             </p>
           </div>
           {[
-            { title: 'Tartalom', links: [{ l: 'Főoldal', p: 'home' }, { l: 'Kategóriák', p: 'category' }, { l: 'Fogalomtár', p: 'glossary' }, { l: 'Szerszámok', p: 'tool' }] },
+            { title: 'Tartalom', links: [{ l: 'Főoldal', p: 'home' }, { l: 'Cikkek', p: 'category' }, { l: 'Fogalomtár', p: 'glossary' }, { l: 'Eszközök', p: 'tool' }, { l: 'Pályák', p: 'paths' }, { l: 'Rólunk', p: 'about' }] },
             { title: 'Témák', links: [{ l: 'Alapozás', p: 'category' }, { l: 'Szerkezetépítés', p: 'category' }, { l: 'Tetőfedés', p: 'category' }, { l: 'Villanyszerelés', p: 'category' }] },
             { title: 'Közösség', links: [{ l: 'Fórum', p: 'home' }, { l: 'Szakértők', p: 'home' }, { l: 'Hírlevél', p: 'home' }, { l: 'RSS', p: 'home' }] },
           ].map((col) => (

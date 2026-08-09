@@ -33,97 +33,137 @@ export default function ForgotPasswordPage({ onNavigate }: ForgotPasswordPagePro
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4 py-16">
-        <div className="w-full max-w-sm text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/10 rounded-2xl border border-green-500/20 mb-6">
-            <CheckCircle size={32} className="text-green-400" />
+      <div className="min-h-screen bg-[#f5f3ef] flex flex-col justify-between items-center px-4 py-10 text-[#202628]">
+        <div className="w-full max-w-md my-auto">
+          <div className="bg-white border border-[#d6d2ca] rounded-3xl p-8 md:p-10 shadow-sm text-center space-y-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 rounded-2xl border border-emerald-200">
+              <CheckCircle size={32} className="text-emerald-600" />
+            </div>
+
+            <div className="space-y-2">
+              <h1 className="text-2xl font-black text-[#202628] tracking-tight">Email elküldve!</h1>
+              <p className="text-[#5f6868] text-xs md:text-sm leading-relaxed">
+                Ha a <span className="text-[#202628] font-bold">{email}</span> cím regisztrált rendszerünkben, hamarosan kap egy jelszó-visszaállítási hivatkozást.
+              </p>
+              <p className="text-[#5f6868]/80 text-xs">
+                Ellenőrizze a spam mappát is — a link 1 óráig érvényes.
+              </p>
+            </div>
+
+            <button
+              onClick={() => onNavigate('login')}
+              className="w-full py-3 bg-[#0f4c5c] hover:bg-[#093b49] text-white font-bold text-sm rounded-xl transition-all shadow-md"
+            >
+              Vissza a bejelentkezéshez
+            </button>
           </div>
-          <h1 className="text-2xl font-black text-white mb-3">Email elküldve!</h1>
-          <p className="text-gray-400 text-sm leading-relaxed mb-2">
-            Ha a <span className="text-white font-medium">{email}</span> cím
-            regisztrált rendszerünkben, hamarosan kap egy jelszó-visszaállítási linket.
-          </p>
-          <p className="text-gray-500 text-xs mb-8">
-            Ellenőrizze a spam mappát is — a link 1 óráig érvényes.
-          </p>
-          <button
-            onClick={() => onNavigate('login')}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-black font-bold rounded-lg transition-colors"
-          >
-            Vissza a bejelentkezéshez
-          </button>
+        </div>
+
+        <div className="text-center text-xs text-[#5f6868]">
+          © 2026 ÉpítőTudás. Minden jog fenntartva.
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <button
-            onClick={() => onNavigate('home')}
-            className="inline-flex items-center gap-2 mb-6"
-          >
-            <img src="/logo.png" alt="ÉpítőTudás" className="h-8 w-auto" />
-            <span className="text-xl font-bold">
-              <span className="text-white">Építő</span>
-              <span className="text-accent">Tudás</span>
-            </span>
-          </button>
-          <h1 className="text-2xl font-black text-white">Elfelejtett jelszó</h1>
-          <p className="text-gray-500 text-sm mt-2">
-            Küldjük el a visszaállítási linket
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-1.5">
-              Email-cím
-            </label>
-            <div className="relative">
-              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="pelda@email.hu"
-                className="w-full bg-[#111] border border-[#1E1E1E] rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-300 focus:border-accent outline-none transition-colors"
-                autoComplete="email"
-                autoFocus
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <AlertCircle size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-red-400 text-xs">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-black font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-black border-r-transparent" />
-            ) : (
-              <Mail size={14} />
-            )}
-            {loading ? 'Küldés...' : 'Visszaállítási link küldése'}
-          </button>
-        </form>
-
+    <div className="min-h-screen bg-[#f5f3ef] flex flex-col justify-between items-center px-4 py-10 text-[#202628]">
+      {/* Top Bar / Back button */}
+      <div className="w-full max-w-md flex items-center justify-between">
         <button
           onClick={() => onNavigate('login')}
-          className="mt-6 w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-400 transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[#5f6868] hover:text-[#0f4c5c] transition-colors"
         >
           <ArrowLeft size={14} />
           Vissza a bejelentkezéshez
         </button>
+      </div>
+
+      {/* Centered Auth Card */}
+      <div className="w-full max-w-md my-auto py-6">
+        <div className="bg-white border border-[#d6d2ca] rounded-3xl p-8 md:p-10 shadow-sm space-y-6">
+          {/* Brand Logo & Header */}
+          <div className="text-center space-y-3">
+            <button
+              onClick={() => onNavigate('home')}
+              className="inline-flex items-center gap-2 group focus:outline-none"
+            >
+              <img
+                src="/logo.png"
+                alt="ÉpítőTudás"
+                className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo.png';
+                }}
+              />
+              <span className="text-2xl font-bold tracking-tight">
+                <span className="text-[#0f4c5c]">Építő</span>
+                <span className="text-[#b76e1d]">Tudás</span>
+              </span>
+            </button>
+            <div>
+              <h1 className="text-2xl font-black text-[#202628] tracking-tight">Elfelejtett jelszó</h1>
+              <p className="text-[#5f6868] text-xs md:text-sm mt-1">
+                Adja meg email-címét a visszaállítási link küldéséhez.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-[#202628] uppercase tracking-wider mb-1.5">
+                Email-cím
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5f6868]" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="pelda@email.hu"
+                  className="w-full bg-white border border-[#d6d2ca] rounded-xl pl-10 pr-4 py-3 text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/20 transition-all"
+                  autoComplete="email"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-700">
+                <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                <p className="text-xs font-medium leading-relaxed">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-[#0f4c5c] hover:bg-[#093b49] text-white font-bold text-sm rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
+            >
+              {loading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent" />
+              ) : (
+                <Mail size={16} />
+              )}
+              {loading ? 'Küldés...' : 'Visszaállítási link küldése'}
+            </button>
+          </form>
+
+          <div className="pt-4 border-t border-[#d6d2ca]/60 text-center">
+            <button
+              onClick={() => onNavigate('login')}
+              className="inline-flex items-center gap-1.5 text-xs text-[#0f4c5c] hover:text-[#093b49] font-bold transition-colors"
+            >
+              <ArrowLeft size={13} />
+              Vissza a bejelentkezéshez
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer copyright note */}
+      <div className="text-center text-xs text-[#5f6868]">
+        © 2026 ÉpítőTudás. Minden jog fenntartva.
       </div>
     </div>
   );
