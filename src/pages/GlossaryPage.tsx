@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Search, Home, ChevronRight, BookOpen, AlertCircle,
   Lock, Sparkles, ArrowRight, Clock, Tag, GraduationCap,
@@ -10,6 +10,10 @@ import { getTradeEducationalPathways } from '../services/glossaryService';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import AuthPromptModal from '../components/AuthPromptModal';
 import TermDetailModal from '../components/TermDetailModal';
+import {
+  getGlossaryCategorySettings,
+  type GlossaryCategorySettings,
+} from '../services/glossaryCategorySettingsService';
 
 interface GlossaryPageProps {
   onNavigate: (page: string) => void;
@@ -18,13 +22,22 @@ interface GlossaryPageProps {
 /* ── Kategória ikonok ──────────────────────────────────────────── */
 const CATEGORY_ICONS: Record<string, string> = {
   'Alapozás': '🏗️',
-  'Zsaluzás': '🪵',
+  'Alapozás & Földmunka': '🚜',
+  'Földmunka': '🚜',
+  'Szerkezetépítés': '🏗️',
+  'Gépek & Szerszámok': '🛠️',
+  'Gépek és kisgépek': '🛠️',
+  'Szerszámok': '🔧',
+  'Szigetelés': '🛡️',
   'Hőszigetelés': '🌡️',
   'Hőszigetelek': '🌡️',
+  'Vízszigetelés': '💧',
+  'Vízszigetelek': '💧',
+  'Vízszigetelésk': '💧',
+  'Páratechnika': '💨',
+  'Anyagismeret': '🧱',
+  'Zsaluzás': '🪵',
   'Födémek': '🏛️',
-  'Páratechnika': '💧',
-  'Vízszigetelek': '🛡️',
-  'Vízszigetelésk': '🛡️',
   'Szakipar': '🔧',
   'Vasbeton': '⚙️',
   'Falazás': '🧱',
@@ -38,27 +51,51 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Ács': '🪚',
   'Burkoló': '🔲',
 };
-function getCategoryIcon(cat?: string | null): string {
-  if (!cat) return '📂';
-  return CATEGORY_ICONS[cat] ?? '📂';
+
+function getCategoryIcon(cat?: string | null, customSettings?: GlossaryCategorySettings): string {
+  if (!cat) return '';
+  if (customSettings && !customSettings.showCategoryIcons) return '';
+
+  const configuredItem = customSettings?.categoryItems[cat];
+  if (configuredItem) {
+    if (configuredItem.icon) return configuredItem.icon;
+  }
+
+  if (CATEGORY_ICONS[cat]) return CATEGORY_ICONS[cat];
+
+  const lower = cat.toLowerCase();
+  if (lower.includes('szigetel')) return '🛡️';
+  if (lower.includes('alap') || lower.includes('föld')) return '🚜';
+  if (lower.includes('gép') || lower.includes('szer')) return '🛠️';
+  if (lower.includes('anyag')) return '🧱';
+  if (lower.includes('fal') || lower.includes('kőműves')) return '🧱';
+  if (lower.includes('tető') || lower.includes('ácsl')) return '🏠';
+  if (lower.includes('burkol')) return '🔲';
+
+  return '📚';
 }
 
 /* ── Kategória gradiens (jobb oldali panel) ────────────────────── */
 function getTermGradient(cat?: string | null): string {
   const map: Record<string, string> = {
-    'Falazás':       'from-amber-400 to-orange-500',
-    'Vasbeton':      'from-slate-400 to-slate-600',
-    'Hőszigetelés':  'from-blue-400 to-cyan-500',
-    'Hőszigetelek':  'from-blue-400 to-cyan-500',
-    'Alapozás':      'from-stone-400 to-stone-600',
-    'Tetőfedés':     'from-red-400 to-rose-600',
-    'Zsaluzás':      'from-yellow-500 to-amber-600',
-    'Gépészet':      'from-emerald-400 to-teal-600',
-    'Villamos':      'from-yellow-300 to-yellow-500',
-    'Vízszigetelek': 'from-sky-400 to-blue-600',
-    'Páratechnika':  'from-cyan-400 to-teal-500',
-    'Vakolás':       'from-orange-300 to-amber-500',
-    'Burkolás':      'from-indigo-400 to-violet-600',
+    'Falazás':              'from-amber-400 to-orange-500',
+    'Vasbeton':             'from-slate-400 to-slate-600',
+    'Hőszigetelés':         'from-blue-400 to-cyan-500',
+    'Hőszigetelek':         'from-blue-400 to-cyan-500',
+    'Szigetelés':           'from-blue-400 to-cyan-500',
+    'Vízszigetelés':        'from-sky-400 to-blue-600',
+    'Alapozás':             'from-stone-400 to-stone-600',
+    'Alapozás & Földmunka': 'from-stone-400 to-amber-600',
+    'Szerkezetépítés':      'from-orange-400 to-red-500',
+    'Gépek & Szerszámok':   'from-indigo-400 to-blue-600',
+    'Anyagismeret':         'from-emerald-400 to-teal-600',
+    'Tetőfedés':            'from-red-400 to-rose-600',
+    'Zsaluzás':             'from-yellow-500 to-amber-600',
+    'Gépészet':             'from-emerald-400 to-teal-600',
+    'Villamos':             'from-yellow-300 to-yellow-500',
+    'Páratechnika':         'from-cyan-400 to-teal-500',
+    'Vakolás':              'from-orange-300 to-amber-500',
+    'Burkolás':             'from-indigo-400 to-violet-600',
   };
   return (cat && map[cat]) ? map[cat] : 'from-accent/60 to-yellow-500/40';
 }
@@ -67,6 +104,20 @@ function getTermGradient(cat?: string | null): string {
 export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const { user } = useAuth();
   const glossary = useGlossary();
+
+  const [categorySettings, setCategorySettings] = useState<GlossaryCategorySettings>(() =>
+    getGlossaryCategorySettings(),
+  );
+
+  useEffect(() => {
+    const updateSettings = () => setCategorySettings(getGlossaryCategorySettings());
+    window.addEventListener('glossary-category-settings-changed', updateSettings);
+    window.addEventListener('site-settings-changed', updateSettings);
+    return () => {
+      window.removeEventListener('glossary-category-settings-changed', updateSettings);
+      window.removeEventListener('site-settings-changed', updateSettings);
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState<'technical' | 'industry'>('technical');
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
@@ -143,10 +194,14 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const categoryStats = useMemo(() => {
     const map = new Map<string, number>();
     tabTerms.forEach((t) => {
-      if (t.category) map.set(t.category, (map.get(t.category) ?? 0) + 1);
+      if (t.category) {
+        const configItem = categorySettings.categoryItems[t.category];
+        if (configItem && configItem.enabled === false) return;
+        map.set(t.category, (map.get(t.category) ?? 0) + 1);
+      }
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [tabTerms]);
+  }, [tabTerms, categorySettings]);
 
   const latestTerms = useMemo(
     () => [...glossary.terms].slice(-6).reverse(),
@@ -297,38 +352,41 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
           {/* ═══ FŐOSZLOP ═══ */}
           <div className="flex-1 min-w-0 space-y-8">
-
-            {/* Kiemelt kategóriák */}
-            {!searchQuery && categoryStats.length > 0 && (
+            {categorySettings.showFeaturedCategories && !searchQuery && categoryStats.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-black text-gray-900">Kiemelt kategóriák</h2>
                   <span className="text-xs text-gray-400">Kattints a szűréshez</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {categoryStats.map(([cat, count]) => (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setSelectedCategory(selectedCategory === cat ? null : cat);
-                        setSelectedLetter(null);
-                        setSearchQuery('');
-                      }}
-                      className={`group p-4 rounded-2xl border text-left transition-all duration-200 hover:shadow-md ${
-                        selectedCategory === cat
-                          ? 'bg-accent border-accent/40 shadow-md scale-[1.02]'
-                          : 'bg-white border-gray-200 hover:border-accent/40 hover:scale-[1.01]'
-                      }`}
-                    >
-                      <div className="text-2xl mb-2 leading-none">{getCategoryIcon(cat)}</div>
-                      <div className={`text-sm font-black leading-tight ${selectedCategory === cat ? 'text-black' : 'text-gray-900'}`}>
-                        {cat}
-                      </div>
-                      <div className={`text-xs mt-1 font-medium ${selectedCategory === cat ? 'text-black/60' : 'text-gray-500'}`}>
-                        {count} cikk
-                      </div>
-                    </button>
-                  ))}
+                  {categoryStats.map(([cat, count]) => {
+                    const icon = getCategoryIcon(cat, categorySettings);
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          setSelectedCategory(selectedCategory === cat ? null : cat);
+                          setSelectedLetter(null);
+                          setSearchQuery('');
+                        }}
+                        className={`group p-4 rounded-2xl border text-left transition-all duration-200 hover:shadow-md ${
+                          selectedCategory === cat
+                            ? 'bg-accent border-accent/40 shadow-md scale-[1.02]'
+                            : 'bg-white border-gray-200 hover:border-accent/40 hover:scale-[1.01]'
+                        }`}
+                      >
+                        {categorySettings.showCategoryIcons && icon ? (
+                          <div className="text-2xl mb-2 leading-none">{icon}</div>
+                        ) : null}
+                        <div className={`text-sm font-black leading-tight ${selectedCategory === cat ? 'text-black' : 'text-gray-900'}`}>
+                          {cat}
+                        </div>
+                        <div className={`text-xs mt-1 font-medium ${selectedCategory === cat ? 'text-black/60' : 'text-gray-500'}`}>
+                          {count} cikk
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -372,7 +430,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   onClick={() => setSelectedCategory(null)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-black text-xs font-black rounded-xl"
                 >
-                  {getCategoryIcon(selectedCategory)} {selectedCategory}
+                  {getCategoryIcon(selectedCategory, categorySettings)} {selectedCategory}
                   <span className="ml-1 opacity-60">✕</span>
                 </button>
               </div>
@@ -436,7 +494,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                             </span>
                             {item.category && (
                               <span className="text-xs bg-gray-100 text-gray-600 font-medium px-2 py-0.5 rounded-md">
-                                {getCategoryIcon(item.category)} {item.category}
+                                {getCategoryIcon(item.category, categorySettings)} {item.category}
                               </span>
                             )}
                             {item.szint && (

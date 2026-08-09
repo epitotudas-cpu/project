@@ -181,6 +181,7 @@ export interface Database {
             note?: string;
           }>;
           video_url: string | null;
+          video_urls?: string[] | null;
           image_urls: string[];
           slides: Array<{ title: string; content: string; image_url?: string }>;
           created_at: string;
@@ -228,6 +229,7 @@ export interface Database {
             note?: string;
           }>;
           video_url?: string | null;
+          video_urls?: string[] | null;
           image_urls?: string[];
           slides?: Array<{ title: string; content: string; image_url?: string }>;
           created_at?: string;
@@ -275,6 +277,7 @@ export interface Database {
             note?: string;
           }>;
           video_url?: string | null;
+          video_urls?: string[] | null;
           image_urls?: string[];
           slides?: Array<{ title: string; content: string; image_url?: string }>;
           created_at?: string;

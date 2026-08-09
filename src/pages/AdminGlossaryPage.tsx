@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Pencil, AlertCircle, RefreshCw, BookOpen, Plus, Search,
-  FileJson, ListChecks, Tag, Globe, Hash,
+  FileJson, ListChecks, Tag, Globe, Hash, Sparkles,
 } from 'lucide-react';
 import type { GlossaryTerm } from '../lib/supabase';
 import { listGlossaryTerms, countArticlesForTerms } from '../services/glossaryService';
@@ -9,6 +9,7 @@ import { useToast } from '../components/ToastProvider';
 import EditGlossaryTermModal from '../components/EditGlossaryTermModal';
 import ImportGlossaryValidationModal from '../components/ImportGlossaryValidationModal';
 import BatchEditGlossaryModal from '../components/BatchEditGlossaryModal';
+import GlossaryCategorySettingsModal from '../components/GlossaryCategorySettingsModal';
 
 type GlossaryTermWithCount = GlossaryTerm & { articleCount: number };
 
@@ -40,6 +41,7 @@ export default function AdminGlossaryPage() {
   const [importValidationOpen, setImportValidationOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchOpen, setBatchOpen] = useState(false);
+  const [catSettingsOpen, setCatSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterType, setFilterType] = useState<'all' | 'technical_concept' | 'industry_term'>('all');
 
@@ -118,6 +120,10 @@ export default function AdminGlossaryPage() {
   }
 
   const selectedTerms = useMemo(() => terms.filter((t) => selected.has(t.id)), [terms, selected]);
+  const availableCategories = useMemo(
+    () => Array.from(new Set(terms.map((t) => t.category).filter(Boolean))) as string[],
+    [terms],
+  );
 
   /* ── Stats ────────────────────────────────────────────── */
   const stats = useMemo(() => ({
@@ -142,6 +148,13 @@ export default function AdminGlossaryPage() {
             className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] transition-colors"
           >
             <Plus size={14} /> Új fogalom
+          </button>
+          <button
+            onClick={() => setCatSettingsOpen(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400]/10 border border-[#FFC400]/30 text-[#FFC400] text-sm font-bold rounded-lg hover:bg-[#FFC400]/20 transition-colors"
+            title="Kiemelt kategóriák és ikonok testreszabása"
+          >
+            <Sparkles size={14} /> Kategória Ikonok & Megjelenítés
           </button>
           <button
             onClick={() => setImportValidationOpen(true)}
@@ -430,6 +443,12 @@ export default function AdminGlossaryPage() {
       {batchOpen && (
         <BatchEditGlossaryModal terms={selectedTerms} onClose={closeBatch} onSaved={handleBatchSaved} />
       )}
+
+      <GlossaryCategorySettingsModal
+        isOpen={catSettingsOpen}
+        onClose={() => setCatSettingsOpen(false)}
+        availableCategories={availableCategories}
+      />
     </div>
   );
 }

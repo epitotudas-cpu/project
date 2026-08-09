@@ -93,7 +93,7 @@ interface FormState {
   trans_en: string;
   trans_de: string;
   trans_ro: string;
-  video_url: string;
+  video_urls: string;
   image_urls: string;
 }
 
@@ -117,12 +117,15 @@ const EMPTY_FORM: FormState = {
   trans_en: '',
   trans_de: '',
   trans_ro: '',
-  video_url: '',
+  video_urls: '',
   image_urls: '',
 };
 
 function formFromTerm(t: GlossaryTerm): FormState {
   const trans = t.translations ?? {};
+  const vUrls = t.video_urls && t.video_urls.length > 0
+    ? t.video_urls
+    : (t.video_url ? [t.video_url] : []);
   return {
     term: t.term,
     slug: t.slug,
@@ -143,7 +146,7 @@ function formFromTerm(t: GlossaryTerm): FormState {
     trans_en: trans.en ?? '',
     trans_de: trans.de ?? '',
     trans_ro: trans.ro ?? '',
-    video_url: t.video_url ?? '',
+    video_urls: vUrls.join('\n'),
     image_urls: (t.image_urls ?? []).join('\n'),
   };
 }
@@ -210,21 +213,21 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
       setError('\u2757 A slug érvénytelen – csak kisbetűk, számok és kötőjelek megengedettek.');
       return;
     }
-    // Kép URL-ek szintaktikai validálása (csak formátum ellenőrzés, nem blokk)
     const imageLines = form.image_urls.split('\n').map((u) => u.trim()).filter(Boolean);
+    const videoLines = form.video_urls.split('\n').map((u) => u.trim()).filter(Boolean);
+    
     const syntaxInvalidUrls = imageLines.filter((u) => !isValidUrl(u));
     if (syntaxInvalidUrls.length > 0) {
-      setError(
-        '\u2757 Kép URL hiba – az alábbi sorok nem érvényes linkek (csak https:// kezdetű linkek elfogadottak):\n' +
-        syntaxInvalidUrls.map((u, i) => `  ${i + 1}. sor: "${u}"`).join('\n')
-      );
+      setError('❗ Kép URL hiba – az alábbi sorok nem érvényesek:\n' + syntaxInvalidUrls.join('\n'));
       return;
     }
-    // Videó URL szintaktikai validálása
-    if (form.video_url.trim() && !isValidUrl(form.video_url)) {
-      setError('\u2757 Videó URL hiba – csak https:// vagy http:// kezdetű link elfogadott (pl. https://youtu.be/... vagy https://youtube.com/watch?v=...)');
+
+    const syntaxInvalidVideoUrls = videoLines.filter((u) => !isValidUrl(u));
+    if (syntaxInvalidVideoUrls.length > 0) {
+      setError('❗ Videó URL hiba – az alábbi sorok nem érvényesek:\n' + syntaxInvalidVideoUrls.join('\n'));
       return;
     }
+
     setSaving(true);
     setError(null);
     try {
@@ -252,9 +255,11 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
         origin_note: form.origin_note.trim() || null,
         jargon_subtype: form.jargon_subtype || null,
         translations: translationsPayload,
-        video_url: form.video_url.trim() || null,
+        video_url: videoLines.length > 0 ? videoLines[0] : null,
+        video_urls: videoLines,
         image_urls: imageLines,
       };
+      
       let data: GlossaryTerm;
       if (term) {
         data = await updateGlossaryTerm(term.id, payload);
@@ -270,32 +275,26 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
     }
   }
 
-  const fieldClass =
-    'w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
-  const labelClass = 'block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide';
+  const fieldClass = 'w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
+  const labelClass = 'block text-[10px] font-bold text-gray-400 mb-1';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111] border border-[#1E1E1E] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E1E1E] sticky top-0 bg-[#111] z-10">
-          <h2 className="text-base font-black text-white">{isCreate ? 'Új bejegyzés létrehozása' : 'Bejegyzés szerkesztése'}</h2>
-          <button onClick={onClose} disabled={saving} className="text-gray-500 hover:text-gray-300 disabled:opacity-40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#222] flex items-center justify-between bg-[#161616]">
+          <h2 className="text-lg font-black text-white">
+            {isCreate ? 'Új fogalom hozzáadása' : `Fogalom szerkesztése: ${term?.term}`}
+          </h2>
+          <button onClick={onClose} disabled={saving} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Hiba panel */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <div className="flex items-start gap-2">
-                <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  {error.split('\n').map((line, i) => (
-                    <p key={i} className={`text-red-400 text-sm ${i > 0 ? 'mt-1 text-xs opacity-80' : ''}`}>{line}</p>
-                  ))}
-                </div>
-              </div>
+            <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs flex items-start gap-2 whitespace-pre-line font-mono">
+              <AlertCircle size={14} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -519,25 +518,28 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
 
             <div>
               <label className="block text-[10px] font-bold text-gray-400 mb-1">
-                <Video size={10} className="inline mr-1" />
-                Videó URL (YouTube / Vimeo, https://... kezdetű)
+                <Video size={10} className="inline mr-1 text-[#FFC400]" />
+                Videó URL-ek (YouTube / Vimeo, soronként egy URL)
               </label>
-              <input
-                className={fieldClass}
-                value={form.video_url}
-                onChange={(e) => update('video_url', e.target.value)}
-                placeholder="https://youtu.be/... vagy https://youtube.com/watch?v=..."
+              <textarea
+                className={`${fieldClass} font-mono text-[11px] h-20 leading-snug`}
+                value={form.video_urls}
+                onChange={(e) => update('video_urls', e.target.value)}
+                placeholder={'https://www.youtube.com/watch?v=...\nhttps://vimeo.com/...'}
               />
-              {form.video_url.trim() && !isValidUrl(form.video_url) && (
-                <p className="text-red-400 text-[10px] mt-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> Érvénytelen videó URL – csak https:// kezdetű link elfogadott.
-                </p>
+              {form.video_urls.trim() && (
+                <div className="mt-1 space-y-0.5">
+                  {form.video_urls.split('\n').map((u) => u.trim()).filter(Boolean).map((u, i) => {
+                    const valid = isValidUrl(u);
+                    return (
+                      <p key={i} className={`text-[10px] flex items-center gap-1 ${valid ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {valid ? '✓' : '✗'} Videó #{i + 1}: {u}
+                      </p>
+                    );
+                  })}
+                </div>
               )}
-              {form.video_url.trim() && isValidUrl(form.video_url) && (
-                <p className="text-emerald-400 text-[10px] mt-1 flex items-center gap-1">
-                  ✓ Érvényes videó URL
-                </p>
-              )}
+              <p className="text-[10px] text-gray-600 mt-1">Több videó megadása esetén a látogatók a részletes adatlap oktatóvideó füle alatt válogathatnak a videók között.</p>
             </div>
           </div>
 

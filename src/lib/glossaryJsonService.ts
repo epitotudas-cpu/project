@@ -42,8 +42,29 @@ export interface GlossaryTermFromJson {
     note?: string;
   }>;
   video_url?: string | null;
+  video_urls?: string[] | null;
   image_urls?: string[];
   slides?: Array<{ title: string; content: string; image_url?: string }>;
+}
+
+export function getVideoUrls(term?: { video_urls?: string[] | null; video_url?: string | null } | null): string[] {
+  if (!term) return [];
+  const urls: string[] = [];
+  if (Array.isArray(term.video_urls)) {
+    for (const u of term.video_urls) {
+      if (u && typeof u === 'string' && u.trim()) {
+        const clean = u.trim();
+        if (!urls.includes(clean)) urls.push(clean);
+      }
+    }
+  }
+  if (term.video_url && typeof term.video_url === 'string' && term.video_url.trim()) {
+    const single = term.video_url.trim();
+    if (!urls.includes(single)) {
+      urls.push(single);
+    }
+  }
+  return urls;
 }
 
 interface GlossaryTermSupabase {
@@ -86,6 +107,7 @@ interface GlossaryTermSupabase {
     note?: string;
   }>;
   video_url?: string | null;
+  video_urls?: string[] | null;
   image_urls?: string[];
   slides?: Array<{ title: string; content: string; image_url?: string }>;
   created_at: string;
@@ -152,6 +174,7 @@ class GlossaryJsonService {
         jargon_subtype: item.jargon_subtype,
         knowledge_graph_relations: item.knowledge_graph_relations,
         video_url: item.video_url,
+        video_urls: item.video_urls,
         image_urls: item.image_urls,
         slides: item.slides,
         updatedAt: item.updated_at,
