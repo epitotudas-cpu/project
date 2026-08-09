@@ -255,8 +255,7 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
         origin_note: form.origin_note.trim() || null,
         jargon_subtype: form.jargon_subtype || null,
         translations: translationsPayload,
-        video_url: videoLines.length > 0 ? videoLines[0] : null,
-        video_urls: videoLines,
+        video_url: videoLines.length > 0 ? videoLines.join('\n') : null,
         image_urls: imageLines,
       };
       

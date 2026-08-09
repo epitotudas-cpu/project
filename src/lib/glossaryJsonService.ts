@@ -50,6 +50,8 @@ export interface GlossaryTermFromJson {
 export function getVideoUrls(term?: { video_urls?: string[] | null; video_url?: string | null } | null): string[] {
   if (!term) return [];
   const urls: string[] = [];
+
+  // 1. Check video_urls array (if present in JSON or object)
   if (Array.isArray(term.video_urls)) {
     for (const u of term.video_urls) {
       if (u && typeof u === 'string' && u.trim()) {
@@ -58,12 +60,35 @@ export function getVideoUrls(term?: { video_urls?: string[] | null; video_url?: 
       }
     }
   }
+
+  // 2. Parse video_url (which can be a single URL string, multiline string, or JSON string array)
   if (term.video_url && typeof term.video_url === 'string' && term.video_url.trim()) {
-    const single = term.video_url.trim();
-    if (!urls.includes(single)) {
-      urls.push(single);
+    const raw = term.video_url.trim();
+
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          for (const u of parsed) {
+            if (u && typeof u === 'string' && u.trim()) {
+              const clean = u.trim();
+              if (!urls.includes(clean)) urls.push(clean);
+            }
+          }
+        }
+      } catch {
+        // Fallback if not valid JSON
+      }
+    }
+
+    const lines = raw.split(/[\n\r]+/).map((s) => s.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (!urls.includes(line)) {
+        urls.push(line);
+      }
     }
   }
+
   return urls;
 }
 
