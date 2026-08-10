@@ -1,10 +1,13 @@
 import { Mail } from 'lucide-react';
+import { getSiteSettings } from '../services/siteSettingsService';
 
 interface FooterProps {
   onNavigate: (page: string) => void;
 }
 
 export default function Footer({ onNavigate }: FooterProps) {
+  const siteSettings = getSiteSettings();
+  const logoUrl = siteSettings.logoUrl || '/logo.png';
   return (
     <footer className="bg-primary border-t border-primary-700">
       {/* Newsletter */}
@@ -43,9 +46,12 @@ export default function Footer({ onNavigate }: FooterProps) {
           <div className="col-span-2 md:col-span-1">
             <button onClick={() => onNavigate('home')} className="flex items-center gap-2">
               <img
-                src="/logo.png"
-                alt="ÉpítőTudás"
-                className="h-10 w-auto"
+                src={logoUrl}
+                alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+                className="h-10 max-h-11 max-w-[200px] w-auto object-contain shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo.png';
+                }}
               />
             </button>
             <p className="text-gray-400 text-sm mt-4 leading-relaxed max-w-xs">

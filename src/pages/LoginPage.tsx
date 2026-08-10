@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { getSiteSettings } from '../services/siteSettingsService';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
@@ -13,6 +14,9 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const siteSettings = getSiteSettings();
+  const logoUrl = siteSettings.logoUrl || '/logo.png';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,9 +61,9 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               className="inline-flex items-center gap-2 group focus:outline-none"
             >
               <img
-                src="/logo.png"
-                alt="ÉpítőTudás"
-                className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
+                src={logoUrl}
+                alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+                className="h-9 max-h-10 max-w-[200px] w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/logo.png';
                 }}
