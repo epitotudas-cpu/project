@@ -19,6 +19,9 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
+  Upload,
+  Info,
+  AlertCircle,
 } from 'lucide-react';
 import {
   getSiteSettings,
@@ -64,6 +67,100 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   // Form state for new hero image
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newAltText, setNewAltText] = useState('');
+
+  // Logo upload & optimization state
+  const [logoProcessing, setLogoProcessing] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [logoStats, setLogoStats] = useState<{
+    width: number;
+    height: number;
+    sizeKb: number;
+    format: string;
+  } | null>(null);
+
+  const processLogoFile = (file: File) => {
+    setLogoError(null);
+
+    const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      setLogoError('Nem támogatott fájlformátum. Kérjük PNG, WebP, SVG vagy JPG fájlt tölts fel!');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setLogoError('A megadott fájlméret meghaladja a 10 MB maximális korlátot.');
+      return;
+    }
+
+    setLogoProcessing(true);
+
+    if (file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        const updated = { ...settings, logoUrl: result };
+        setSettings(updated);
+        applySiteSettings(updated);
+        setLogoStats({
+          width: 240,
+          height: 60,
+          sizeKb: Math.round(file.size / 1024),
+          format: 'SVG (Vektorigrafika)',
+        });
+        setLogoProcessing(false);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 120;
+        let width = img.naturalWidth;
+        let height = img.naturalHeight;
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const optimizedDataUrl = canvas.toDataURL('image/png', 0.92);
+          const approxKb = Math.round((optimizedDataUrl.length * 0.75) / 1024);
+
+          const updated = { ...settings, logoUrl: optimizedDataUrl };
+          setSettings(updated);
+          applySiteSettings(updated);
+
+          setLogoStats({
+            width,
+            height,
+            sizeKb: approxKb,
+            format: file.type.replace('image/', '').toUpperCase(),
+          });
+        }
+        setLogoProcessing(false);
+      };
+      img.onerror = () => {
+        setLogoError('Nem sikerült beolvasni a képet. Kérjük próbáld újra egy másik fájllal!');
+        setLogoProcessing(false);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = () => {
     saveSiteSettings(settings);
@@ -265,16 +362,154 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               />
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-300 block mb-2">Weboldal Logó Képhivatkozás (Logo URL)</label>
-              <input
-                type="text"
-                value={settings.logoUrl}
-                onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent font-mono text-xs"
-                placeholder="Hagyd üresen az alapértelmezett logóhoz (/logo.png)"
-              />
-              <p className="text-[11px] text-gray-500 mt-1">Ha üresen hagyod, az alapértelmezett ÉpítőTudás logó jelenik meg.</p>
+            {/* Advanced Logo Uploader & Management */}
+            <div className="space-y-4 pt-2 border-t border-[#222]">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-gray-300 block flex items-center gap-1.5">
+                  <Upload size={14} className="text-accent" /> Weboldal Logó Kezelése &amp; Feltöltése
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
+                  className="text-[11px] text-accent font-bold hover:underline cursor-pointer"
+                >
+                  {showCustomUrlInput ? '📁 Fájlfeltöltő használata' : '🔗 Haladó URL megadása'}
+                </button>
+              </div>
+
+              {/* Help & Guidelines Card */}
+              <div className="p-3.5 bg-[#141824] border border-blue-500/20 rounded-2xl space-y-1.5 text-xs text-gray-300">
+                <div className="flex items-center gap-1.5 font-bold text-white text-xs">
+                  <Info size={15} className="text-accent shrink-0" /> Ajánlott Logó Beállítások &amp; Fejléc Védelem
+                </div>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-gray-400 pl-1 leading-relaxed">
+                  <li><strong>Ajánlott formátum:</strong> PNG (átlátszó háttérrel), WebP vagy SVG.</li>
+                  <li><strong>Ajánlott méret / arány:</strong> Vízszintes elrendezés (kb. <span className="text-white font-mono">240 × 60 px</span> vagy <span className="text-white font-mono">320 × 80 px</span>).</li>
+                  <li><strong>Automatikus optimálás:</strong> A rendszer automatikusan átméretezi és tömöríti a fájlokat webes használatra.</li>
+                  <li><strong>Fejléc védelem:</strong> A fejlécben a logó fix keretben (<span className="text-accent font-mono">max-h-10</span>) skálázódik, így a túl nagy képek sem tudják széttolni a menüt.</li>
+                </ul>
+              </div>
+
+              {/* Dropzone or Custom URL Input */}
+              {!showCustomUrlInput ? (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragActive(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      processLogoFile(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  className={`p-6 border-2 border-dashed rounded-2xl text-center transition-all flex flex-col items-center justify-center gap-3 cursor-pointer ${
+                    dragActive
+                      ? 'border-accent bg-accent/10'
+                      : 'border-[#2E2E2E] bg-[#161616] hover:border-gray-500 hover:bg-[#1A1A1A]'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    id="logo-file-input"
+                    accept="image/png,image/svg+xml,image/webp,image/jpeg"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        processLogoFile(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+
+                  <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center text-accent">
+                    <Upload size={22} />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor="logo-file-input" className="text-xs font-bold text-white cursor-pointer hover:text-accent underline block">
+                      Kattints ide a logófájl kiválasztásához
+                    </label>
+                    <p className="text-[11px] text-gray-400">vagy húzd ide a fájlt (Drag &amp; Drop)</p>
+                  </div>
+
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded bg-[#222] text-gray-400 border border-[#333]">
+                    PNG • SVG • WebP • JPG (max 10MB)
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-300 block">Közvetlen Logó Képhivatkozás (Logo URL)</label>
+                  <input
+                    type="text"
+                    value={settings.logoUrl}
+                    onChange={(e) => {
+                      const updated = { ...settings, logoUrl: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                    placeholder="Hagyd üresen az alapértelmezett logóhoz (/logo.png)"
+                  />
+                  <p className="text-[11px] text-gray-500">Ha üresen hagyod, az alapértelmezett ÉpítőTudás logó jelenik meg.</p>
+                </div>
+              )}
+
+              {logoProcessing && (
+                <div className="p-3 bg-accent/10 border border-accent/30 rounded-xl text-accent text-xs font-bold flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full border-2 border-accent border-r-transparent animate-spin" />
+                  Logó feldolgozása, átméretezése és tömörítése folyamatban...
+                </div>
+              )}
+
+              {logoError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  {logoError}
+                </div>
+              )}
+
+              {/* Current Logo Preview & Status */}
+              <div className="p-4 bg-[#141414] border border-[#222] rounded-2xl flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-24 h-12 bg-[#0b1b33] border border-[#222] rounded-xl p-1.5 flex items-center justify-center shrink-0 overflow-hidden shadow">
+                    <img
+                      src={settings.logoUrl || '/logo.png'}
+                      alt="Jelenlegi logó"
+                      className="max-h-9 max-w-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/logo.png';
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-white block">
+                      {settings.logoUrl ? 'Egyedi feltöltött logó aktív' : 'Alapértelmezett ÉpítőTudás logó'}
+                    </span>
+                    {logoStats ? (
+                      <p className="text-[11px] font-mono text-emerald-400 mt-0.5">
+                        {logoStats.width} × {logoStats.height} px • {logoStats.sizeKb} KB • {logoStats.format}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-gray-500 mt-0.5">Automatikus méretezés &amp; layout védelem bekapcsolva</p>
+                    )}
+                  </div>
+                </div>
+
+                {settings.logoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...settings, logoUrl: '' };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                      setLogoStats(null);
+                      setLogoError(null);
+                    }}
+                    className="px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 size={14} /> Törlés &amp; Alapértelmezett
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
