@@ -43,7 +43,7 @@ import BooksPage from './pages/BooksPage';
 import SoftwarePage from './pages/SoftwarePage';
 import ToolSelectorPage from './pages/ToolSelectorPage';
 import LegalHubPage from './pages/LegalHubPage';
-import { getSiteSettings, type SiteSettings } from './services/siteSettingsService';
+import { getSiteSettings, applySiteSettings, type SiteSettings } from './services/siteSettingsService';
 
 type PageKey =
   | 'home'
@@ -96,8 +96,11 @@ function AppContent() {
 
   useEffect(() => {
     function handleSettingsChange() {
-      setSiteSettings(getSiteSettings());
+      const current = getSiteSettings();
+      setSiteSettings(current);
+      applySiteSettings(current);
     }
+    handleSettingsChange();
     window.addEventListener('site-settings-changed', handleSettingsChange);
     return () => window.removeEventListener('site-settings-changed', handleSettingsChange);
   }, []);

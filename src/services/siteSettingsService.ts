@@ -58,12 +58,40 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 
 const STORAGE_KEY = 'epitotudas_site_settings_v1';
 
+function adjustColorBrightness(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  if (isNaN(num)) return hex;
+
+  let r = (num >> 16) + Math.round(2.55 * percent);
+  let g = ((num >> 8) & 0x00ff) + Math.round(2.55 * percent);
+  let b = (num & 0x0000ff) + Math.round(2.55 * percent);
+
+  r = Math.min(255, Math.max(0, r));
+  g = Math.min(255, Math.max(0, g));
+  b = Math.min(255, Math.max(0, b));
+
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+export function applySiteSettings(settings: SiteSettings): void {
+  if (typeof document === 'undefined') return;
+
+  const accentColor = settings.primaryColor || '#FFC400';
+  document.documentElement.style.setProperty('--color-accent', accentColor);
+  document.documentElement.style.setProperty('--color-accent-hover', adjustColorBrightness(accentColor, -15));
+  document.documentElement.style.setProperty('--color-accent-light', adjustColorBrightness(accentColor, 15));
+
+  if (settings.siteTitle) {
+    document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
+  }
+}
+
 export function getSiteSettings(): SiteSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return {
+      const settings = {
         ...DEFAULT_SITE_SETTINGS,
         ...parsed,
         enabledNavItems: {
@@ -71,16 +99,20 @@ export function getSiteSettings(): SiteSettings {
           ...(parsed.enabledNavItems || {}),
         },
       };
+      applySiteSettings(settings);
+      return settings;
     }
   } catch (err) {
     console.error('Hiba a beállítások olvasásakor:', err);
   }
+  applySiteSettings(DEFAULT_SITE_SETTINGS);
   return DEFAULT_SITE_SETTINGS;
 }
 
 export function saveSiteSettings(settings: SiteSettings): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    applySiteSettings(settings);
     window.dispatchEvent(new Event('site-settings-changed'));
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);

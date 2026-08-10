@@ -19,6 +19,7 @@ import {
 import {
   getSiteSettings,
   saveSiteSettings,
+  applySiteSettings,
   DEFAULT_SITE_SETTINGS,
   type SiteSettings,
 } from '../services/siteSettingsService';
@@ -195,7 +196,11 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 {PRESET_PALETTES.map((preset) => (
                   <button
                     key={preset.name}
-                    onClick={() => setSettings({ ...settings, primaryColor: preset.primary })}
+                    onClick={() => {
+                      const updated = { ...settings, primaryColor: preset.primary };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
                     className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
                       settings.primaryColor === preset.primary
                         ? 'border-accent bg-accent/10'
@@ -215,13 +220,21 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 <input
                   type="color"
                   value={settings.primaryColor}
-                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                  onChange={(e) => {
+                    const updated = { ...settings, primaryColor: e.target.value };
+                    setSettings(updated);
+                    applySiteSettings(updated);
+                  }}
                   className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                 />
                 <input
                   type="text"
                   value={settings.primaryColor}
-                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                  onChange={(e) => {
+                    const updated = { ...settings, primaryColor: e.target.value };
+                    setSettings(updated);
+                    applySiteSettings(updated);
+                  }}
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
                 />
               </div>

@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-accent: #FFC400;
+  --color-accent-hover: #e09d28;
+  --color-accent-light: #fcd56b;
+}
+
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(16px); }
   to { opacity: 1; transform: translateX(0); }
