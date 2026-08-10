@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail } from 'lucide-react';
+import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, Globe, BookOpen, FileText } from 'lucide-react';
 import { listPartners, getCategoryLabel, type PartnerCategory } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
+import SectionSubNav from '../components/SectionSubNav';
 
 interface PartnersPageProps {
   onNavigate: (page: string) => void;
@@ -61,7 +62,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
               <Building2 size={28} />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">Építőipari Partnereink & Támogatóink</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">Építőipari Partnereink &amp; Támogatóink</h1>
               <p className="text-gray-400 text-sm mt-1">
                 Kiemelt ipari gyártók, építőanyag kereskedők, generálkivitelezők és oktatási partnerintézmények
               </p>
@@ -69,6 +70,44 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Rólunk navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Célunk',
+            page: 'about',
+            icon: <Target size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'ÉpítőTudás',
+            page: 'about',
+            icon: <Globe size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Partnerek',
+            page: 'partners',
+            icon: <Building2 size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Ajánlott források',
+            page: 'about',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Kapcsolat & Impresszum',
+            page: 'impressum',
+            icon: <FileText size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Search & Category Filter Bar */}

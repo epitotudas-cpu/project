@@ -1,5 +1,6 @@
-import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe, ChevronRight, Target, BookOpen, FileText, Building2 } from 'lucide-react';
 import { IMPRESSUM_DATA, LEGAL_METADATA } from '../data/legalDocs';
+import SectionSubNav from '../components/SectionSubNav';
 
 interface ImpressumPageProps {
   onNavigate: (page: string) => void;
@@ -50,6 +51,44 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Rólunk navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Célunk',
+            page: 'about',
+            icon: <Target size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'ÉpítőTudás',
+            page: 'about',
+            icon: <Globe size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Partnerek',
+            page: 'partners',
+            icon: <Building2 size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Ajánlott források',
+            page: 'about',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Kapcsolat & Impresszum',
+            page: 'impressum',
+            icon: <FileText size={14} className="text-accent" />,
+            active: true,
+          },
+        ]}
+      />
 
       {/* Main Content Sections */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
