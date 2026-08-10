@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface HeroImage {
   id: string;
   imageUrl: string;
@@ -67,6 +69,7 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
 
 const STORAGE_KEY = 'epitotudas_hero_state_v1';
 const BACKUP_STORAGE_KEY = 'epitotudas_hero_state_backup_v1';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000002';
 
 declare global {
   interface Window {
@@ -117,9 +120,56 @@ export function saveHeroState(state: HeroState): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(state));
     window.dispatchEvent(new Event('hero-config-changed'));
+
+    // Push cloud sync to Supabase table 'ad_campaigns'
+    void (async () => {
+      try {
+        await supabase.from('ad_campaigns').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          sponsor_name: '__SYSTEM_CONFIG_HERO_STATE__',
+          placement_slot: 'config',
+          title: 'HeroStateData',
+          banner_image_url: JSON.stringify(state),
+          status: 'system',
+          start_date: new Date().toISOString(),
+          impressions_count: 0,
+          clicks_count: 0,
+        });
+      } catch (err) {
+        console.warn('Supabase hero_state sync info:', err);
+      }
+    })();
   } catch (err) {
     console.error('Hiba a hero beállítások mentésekor:', err);
   }
+}
+
+export async function fetchHeroStateFromCloud(): Promise<HeroState | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ad_campaigns')
+      .select('banner_image_url')
+      .eq('id', SUPABASE_SYSTEM_ID)
+      .maybeSingle();
+
+    if (!error && data?.banner_image_url) {
+      const parsed = JSON.parse(data.banner_image_url);
+      const state: HeroState = {
+        config: { ...DEFAULT_HERO_CONFIG, ...(parsed.config || {}) },
+        images: Array.isArray(parsed.images) && parsed.images.length > 0 ? parsed.images : DEFAULT_HERO_IMAGES,
+      };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_HERO_STATE__ = state;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(state));
+        window.dispatchEvent(new Event('hero-config-changed'));
+      }
+      return state;
+    }
+  } catch (err) {
+    console.warn('Cloud hero state fetch info:', err);
+  }
+  return null;
 }
 
 export function getActiveHeroImages(state?: HeroState): HeroImage[] {
@@ -134,4 +184,9 @@ export function getActiveHeroImages(state?: HeroState): HeroImage[] {
     console.error('Hiba az aktív hero képek lekérésekor:', err);
   }
   return DEFAULT_HERO_IMAGES;
+}
+
+// Auto-trigger cloud fetch on startup
+if (typeof window !== 'undefined') {
+  void fetchHeroStateFromCloud();
 }

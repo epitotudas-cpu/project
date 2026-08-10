@@ -43,7 +43,14 @@ import BooksPage from './pages/BooksPage';
 import SoftwarePage from './pages/SoftwarePage';
 import ToolSelectorPage from './pages/ToolSelectorPage';
 import LegalHubPage from './pages/LegalHubPage';
-import { getSiteSettings, applySiteSettings, type SiteSettings } from './services/siteSettingsService';
+import {
+  getSiteSettings,
+  applySiteSettings,
+  fetchSiteSettingsFromCloud,
+  type SiteSettings,
+} from './services/siteSettingsService';
+import { fetchHeroStateFromCloud } from './services/heroImageService';
+import { fetchImpressumDataFromCloud } from './services/impressumService';
 
 type PageKey =
   | 'home'
@@ -101,6 +108,12 @@ function AppContent() {
       applySiteSettings(current);
     }
     handleSettingsChange();
+
+    // Trigger cloud synchronization across devices
+    void fetchSiteSettingsFromCloud();
+    void fetchHeroStateFromCloud();
+    void fetchImpressumDataFromCloud();
+
     window.addEventListener('site-settings-changed', handleSettingsChange);
     window.addEventListener('hero-config-changed', handleSettingsChange);
     return () => {
@@ -114,7 +127,13 @@ function AppContent() {
       setSelectedArticleSlug(params.articleSlug);
     }
     setCurrentPage(page as PageKey);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      if (typeof window !== 'undefined') {
+        window.scrollTo(0, 0);
+      }
+    } catch {
+      // ignore
+    }
   };
 
   useEffect(() => {

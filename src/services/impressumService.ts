@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface ImpressumData {
   companyName: string;
   regNumber: string;
@@ -33,6 +35,7 @@ export const DEFAULT_IMPRESSUM_DATA: ImpressumData = {
 
 const IMPRESSUM_STORAGE_KEY = 'epitotudas_impressum_data_v1';
 const BACKUP_STORAGE_KEY = 'epitotudas_impressum_data_backup_v1';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000003';
 
 declare global {
   interface Window {
@@ -79,7 +82,59 @@ export function saveImpressumData(data: ImpressumData): void {
     localStorage.setItem(IMPRESSUM_STORAGE_KEY, JSON.stringify(data));
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('impressum-data-changed'));
+
+    // Push cloud sync to Supabase table 'ad_campaigns'
+    void (async () => {
+      try {
+        await supabase.from('ad_campaigns').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          sponsor_name: '__SYSTEM_CONFIG_IMPRESSUM__',
+          placement_slot: 'config',
+          title: 'ImpressumData',
+          banner_image_url: JSON.stringify(data),
+          status: 'system',
+          start_date: new Date().toISOString(),
+          impressions_count: 0,
+          clicks_count: 0,
+        });
+      } catch (err) {
+        console.warn('Supabase impressum_data sync info:', err);
+      }
+    })();
   } catch (err) {
     console.error('Hiba az impresszum adatok mentésekor:', err);
   }
+}
+
+export async function fetchImpressumDataFromCloud(): Promise<ImpressumData | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ad_campaigns')
+      .select('banner_image_url')
+      .eq('id', SUPABASE_SYSTEM_ID)
+      .maybeSingle();
+
+    if (!error && data?.banner_image_url) {
+      const parsed = JSON.parse(data.banner_image_url);
+      const impressum: ImpressumData = {
+        ...DEFAULT_IMPRESSUM_DATA,
+        ...parsed,
+      };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_IMPRESSUM_DATA__ = impressum;
+        localStorage.setItem(IMPRESSUM_STORAGE_KEY, JSON.stringify(impressum));
+        localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(impressum));
+        window.dispatchEvent(new Event('impressum-data-changed'));
+      }
+      return impressum;
+    }
+  } catch (err) {
+    console.warn('Cloud impressum data fetch info:', err);
+  }
+  return null;
+}
+
+// Auto-trigger cloud fetch on startup
+if (typeof window !== 'undefined') {
+  void fetchImpressumDataFromCloud();
 }

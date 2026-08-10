@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface SiteSettings {
   // Branding & Design
   siteTitle: string;
@@ -58,6 +60,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 
 const STORAGE_KEY = 'epitotudas_site_settings_v1';
 const BACKUP_STORAGE_KEY = 'epitotudas_site_settings_backup_v1';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000001';
 
 declare global {
   interface Window {
@@ -148,7 +151,64 @@ export function saveSiteSettings(settings: SiteSettings): void {
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(settings));
     applySiteSettings(settings);
     window.dispatchEvent(new Event('site-settings-changed'));
+
+    // Push cloud sync to Supabase table 'ad_campaigns'
+    void (async () => {
+      try {
+        await supabase.from('ad_campaigns').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          sponsor_name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
+          placement_slot: 'config',
+          title: 'SiteSettingsData',
+          banner_image_url: JSON.stringify(settings),
+          status: 'system',
+          start_date: new Date().toISOString(),
+          impressions_count: 0,
+          clicks_count: 0,
+        });
+      } catch (err) {
+        console.warn('Supabase site_settings sync info:', err);
+      }
+    })();
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);
   }
+}
+
+export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ad_campaigns')
+      .select('banner_image_url')
+      .eq('id', SUPABASE_SYSTEM_ID)
+      .maybeSingle();
+
+    if (!error && data?.banner_image_url) {
+      const parsed = JSON.parse(data.banner_image_url);
+      const settings: SiteSettings = {
+        ...DEFAULT_SITE_SETTINGS,
+        ...parsed,
+        enabledNavItems: {
+          ...DEFAULT_SITE_SETTINGS.enabledNavItems,
+          ...(parsed.enabledNavItems || {}),
+        },
+      };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_SITE_SETTINGS__ = settings;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(settings));
+        window.dispatchEvent(new Event('site-settings-changed'));
+      }
+      applySiteSettings(settings);
+      return settings;
+    }
+  } catch (err) {
+    console.warn('Cloud site settings fetch info:', err);
+  }
+  return null;
+}
+
+// Auto-trigger cloud fetch on startup
+if (typeof window !== 'undefined') {
+  void fetchSiteSettingsFromCloud();
 }

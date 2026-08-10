@@ -23,9 +23,14 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
 
     setLoading(true);
     const result = await signIn(email, password);
-    setLoading(false);
 
-    if (result.error) { setError(result.error); return; }
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
     onNavigate('home');
   };
 
