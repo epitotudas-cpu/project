@@ -171,7 +171,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               return (
                 <div
                   key={item.page}
-                  className="relative"
+                  className="relative group py-1"
                   onMouseEnter={() => hasSub && handleMouseEnter(item.page)}
                   onMouseLeave={() => hasSub && handleMouseLeave()}
                 >
@@ -181,37 +181,45 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       onNavigate(item.page);
                       setActiveDropdown(null);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-1 ${
+                    className={`px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-colors duration-150 whitespace-nowrap flex items-center gap-1 ${
                       active
                         ? 'text-accent bg-accent/10 font-bold border border-accent/20'
-                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                        : 'text-gray-300 group-hover:text-white group-hover:bg-white/5'
                     }`}
                   >
                     <span>{item.label}</span>
                     {hasSub && (
                       <ChevronDown
                         size={13}
-                        className={`transition-transform duration-200 opacity-70 ${isOpen ? 'rotate-180 text-accent' : ''}`}
+                        className={`transition-transform duration-200 opacity-70 group-hover:rotate-180 group-hover:text-accent ${
+                          isOpen ? 'rotate-180 text-accent' : ''
+                        }`}
                       />
                     )}
                   </button>
 
-                  {/* Dropdown Menu Wrapper with Top Bridge & Hover Buffer */}
-                  {hasSub && isOpen && (
+                  {/* Dropdown Menu Wrapper (Always rendered for smooth CSS transition & unbroken hover zone) */}
+                  {hasSub && (
                     <div
-                      className="absolute left-0 top-full pt-1 z-50 animate-fadeIn"
+                      className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 ease-out ${
+                        isOpen
+                          ? 'opacity-100 pointer-events-auto translate-y-0'
+                          : 'opacity-0 pointer-events-none -translate-y-1 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0'
+                      }`}
                       onMouseEnter={() => handleMouseEnter(item.page)}
                       onMouseLeave={handleMouseLeave}
                     >
-                      {/* Invisible Hover Bridge Overlay */}
-                      <div className="before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-['']" />
+                      {/* Invisible Hover Bridge spanning gap to trigger button */}
+                      <div className="absolute -top-3 left-0 right-0 h-4 bg-transparent" />
+
                       <div className="w-56 bg-[#111] border border-[#222] rounded-xl shadow-2xl overflow-hidden py-1">
                         {item.subItems.map((sub) => {
                           const isSubActive = currentPage === sub.page;
                           return (
                             <button
                               key={sub.label}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
                                 setActiveDropdown(null);
                                 onNavigate(sub.page);
