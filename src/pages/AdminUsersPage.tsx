@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, AlertCircle, RefreshCw, Users, ShieldCheck, Award, CheckCircle2 } from 'lucide-react';
+import { Search, AlertCircle, RefreshCw, Users, Award, CheckCircle2, Zap } from 'lucide-react';
 import type { Profile } from '../lib/supabase';
 import { listProfiles } from '../services/userService';
-import { getUserTrustProfile, setTrustedContributorStatus, type UserTrustProfile } from '../services/trustService';
+import {
+  getUserTrustProfile,
+  setTrustedContributorStatus,
+  setTrustScore,
+  incrementTrustScore,
+  type UserTrustProfile,
+} from '../services/trustService';
 
 const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
   admin: { label: 'Admin', class: 'bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/20' },
@@ -50,6 +56,26 @@ export default function AdminUsersPage() {
     }));
   }
 
+  async function handleAdjustScore(userId: string, points: number) {
+    const updated = await incrementTrustScore(userId, points);
+    setTrustProfiles((prev) => ({
+      ...prev,
+      [userId]: updated,
+    }));
+  }
+
+  async function handleSetScore(userId: string, newScore: number) {
+    const updated = await setTrustScore(userId, newScore);
+    setTrustProfiles((prev) => ({
+      ...prev,
+      [userId]: updated,
+    }));
+  }
+
+  const trustedCount = useMemo(() => {
+    return Object.values(trustProfiles).filter((tp) => tp.autoApprovalEnabled).length;
+  }, [trustProfiles]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
@@ -67,9 +93,11 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-3">
             <Users className="text-accent" size={26} />
-            Felhasználók & Bizalmi Pontrendszer
+            Felhasználók &amp; Bizalmi Pontrendszer
           </h1>
-          <p className="text-sm text-gray-500 mt-1">{users.length} regisztrált felhasználó és megbízható feltöltői státusz</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {users.length} regisztrált felhasználó ({trustedCount} megbízható feltöltő auto-publikációs joggal)
+          </p>
         </div>
         {!loading && (
           <button onClick={loadUsers} className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors">
@@ -78,11 +106,15 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      <div className="mt-6 flex items-center gap-3 p-3 bg-[#1E1E1E]/40 border border-[#1E1E1E] rounded-lg">
-        <ShieldCheck size={16} className="text-accent flex-shrink-0" />
-        <p className="text-xs text-gray-400">
-          <strong>Megbízható Feltöltő (Trust Score 50+):</strong> A megbízható szerzők által beküldött tartalmak automatikusan jóváhagyásra/publikálásra kerülnek a manuális sorban állás megkerülésével.
-        </p>
+      {/* Trust Score Information Banner */}
+      <div className="mt-6 p-4 bg-[#141824] border border-blue-500/20 rounded-xl flex items-start gap-3">
+        <Zap size={20} className="text-accent flex-shrink-0 mt-0.5" />
+        <div className="space-y-1 text-xs text-gray-300">
+          <strong className="text-white text-sm block">Megbízható Feltöltő (Trust Score 50+ / Auto-Approve):</strong>
+          <p className="leading-relaxed">
+            A legalább <strong>50 bizalmi ponttal</strong> rendelkező vagy kijelölt <strong>Megbízható Feltöltők</strong> által beküldött szakmai cikkek és fogalmak automatikusan jóváhagyásra/publikálásra kerülnek, megkerülve a manuális moderációs várakozási sort.
+          </p>
+        </div>
       </div>
 
       <div className="mt-6 relative max-w-md">
@@ -103,7 +135,7 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      <div className="mt-6 bg-[#111] border border-[#1E1E1E] rounded-xl overflow-hidden">
+      <div className="mt-6 bg-[#111] border border-[#1E1E1E] rounded-xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -111,9 +143,9 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Email</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Név</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Szerepkör</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Bizalmi Pont</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Auto-Publikáció</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Művelet</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Bizalmi Pont (Trust Score)</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Auto-Publikáció Status</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Megbízhatóság Művelet</th>
               </tr>
             </thead>
             <tbody>
@@ -144,37 +176,59 @@ export default function AdminUsersPage() {
                   const tp = trustProfiles[u.id] || { trustScore: 10, isTrusted: false, autoApprovalEnabled: false };
                   return (
                     <tr key={u.id} className="border-b border-[#1E1E1E]/50 hover:bg-[#1E1E1E]/30 transition-colors">
-                      <td className="px-4 py-3.5 text-gray-200">{u.email ?? '—'}</td>
-                      <td className="px-4 py-3.5 text-gray-400">{u.full_name ?? '—'}</td>
+                      <td className="px-4 py-3.5 text-gray-200 font-medium">{u.email ?? '—'}</td>
+                      <td className="px-4 py-3.5 text-gray-300 font-bold">{u.full_name ?? '—'}</td>
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${badge.class}`}>
                           {badge.label}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 font-bold text-xs bg-[#1A1A1A] border border-[#2A2A2A] text-accent px-2.5 py-1 rounded-md">
-                          <Award size={12} /> {tp.trustScore} pont
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1 font-extrabold text-xs px-2.5 py-1 rounded-md border ${
+                            tp.trustScore >= 50
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              : 'bg-[#1A1A1A] border-[#2A2A2A] text-accent'
+                          }`}>
+                            <Award size={13} /> {tp.trustScore} pont
+                          </span>
+                          <button
+                            onClick={() => handleAdjustScore(u.id, 10)}
+                            title="+10 bizalmi pont hozzáadása"
+                            className="px-1.5 py-0.5 text-[11px] font-bold bg-accent/20 text-accent border border-accent/30 rounded hover:bg-accent/30 transition-colors cursor-pointer"
+                          >
+                            +10
+                          </button>
+                          <button
+                            onClick={() => handleSetScore(u.id, 50)}
+                            title="Megbízható szintre állítás (50 pont)"
+                            className="px-1.5 py-0.5 text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                          >
+                            50+
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         {tp.autoApprovalEnabled ? (
-                          <span className="text-xs text-green-400 font-semibold flex items-center gap-1">
-                            <CheckCircle2 size={14} /> Engedélyezve
+                          <span className="text-xs text-emerald-400 font-bold flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                            <CheckCircle2 size={14} /> Auto-Publikáció Aktív
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-500 font-semibold">Moderációhoz kötve</span>
+                          <span className="text-xs text-gray-500 font-semibold bg-[#141414] border border-[#222] px-2.5 py-1 rounded-lg">
+                            Moderációhoz kötve
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleTrusted(u.id, tp.isTrusted)}
-                          className={`px-3 py-1 text-xs font-bold rounded-lg border transition-colors ${
+                          className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                             tp.isTrusted
-                              ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
-                              : 'bg-[#1A1A1A] text-gray-300 border-[#2A2A2A] hover:bg-[#222]'
+                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
+                              : 'bg-[#1A1A1A] text-gray-300 border-[#2A2A2A] hover:bg-[#222] hover:text-white'
                           }`}
                         >
-                          {tp.isTrusted ? 'Megbízható ✓' : '+ Megbízhatóvá tétel'}
+                          {tp.isTrusted ? 'Megbízható Feltöltő ✓' : '+ Megbízhatóvá tétel'}
                         </button>
                       </td>
                     </tr>
