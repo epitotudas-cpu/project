@@ -389,9 +389,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         </div>
       )}
 
-      {/* Mobile menu (Scrollable Container + Accordion Submenus) */}
+      {/* Mobile menu (100% Touch Compatible Scrollable Container + Accordion) */}
       {mobileOpen && (
-        <div className="xl:hidden bg-primary-800 border-t border-primary-700 max-h-[calc(100dvh-64px)] overflow-y-auto divide-y divide-primary-700/60 shadow-2xl pb-8">
+        <div className="xl:hidden bg-primary-800 border-t border-primary-700 max-h-[calc(100vh-64px)] max-h-[calc(100dvh-64px)] overflow-y-auto divide-y divide-primary-700/60 shadow-2xl -webkit-overflow-scrolling-touch pb-12 animate-fadeIn">
           {navStructure.map((item) => {
             const active = isNavItemActive(item.page, item.subItems);
             const hasSub = item.subItems && item.subItems.length > 0;
@@ -399,67 +399,78 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
             return (
               <div key={item.page} className="py-1">
-                <div className="flex items-center justify-between min-h-[44px]">
-                  <button
-                    onClick={() => {
+                {/* Main Row: Tapping row toggles accordion if subitems exist, or navigates if no subitems */}
+                <button
+                  onClick={() => {
+                    if (hasSub) {
+                      setExpandedMobileSection(isExpanded ? null : item.page);
+                    } else {
                       onNavigate(item.page);
                       setMobileOpen(false);
-                    }}
-                    className={`grow text-left px-6 py-3 text-sm font-bold flex items-center justify-between min-h-[44px] ${
-                      active ? 'text-accent bg-accent/10' : 'text-white hover:bg-white/5'
-                    } transition-all`}
-                  >
-                    <span>{item.label}</span>
-                  </button>
-
+                    }
+                  }}
+                  className={`w-full text-left px-6 py-3.5 text-sm font-bold flex items-center justify-between min-h-[48px] active:bg-white/10 ${
+                    active ? 'text-accent bg-accent/10' : 'text-white hover:bg-white/5'
+                  } transition-all cursor-pointer`}
+                >
+                  <span>{item.label}</span>
                   {hasSub && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedMobileSection(isExpanded ? null : item.page);
-                      }}
-                      className="px-5 py-3 text-gray-300 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
-                      aria-label={`${item.label} almenü ki- és becsukása`}
-                    >
+                    <div className="p-1 min-w-[36px] min-h-[36px] flex items-center justify-center">
                       <ChevronDown
                         size={18}
-                        className={`transition-transform duration-200 ${
-                          isExpanded ? 'rotate-180 text-accent' : 'opacity-70'
+                        className={`transition-transform duration-300 ${
+                          isExpanded ? 'rotate-180 text-accent' : 'text-gray-400'
                         }`}
                       />
-                    </button>
+                    </div>
                   )}
-                </div>
+                </button>
 
-                {/* Animated Collapsible Submenu */}
+                {/* Accordion Submenu */}
                 {hasSub && (
                   <div
-                    className={`grid transition-all duration-200 ease-in-out ${
-                      isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                      isExpanded ? 'max-h-[500px] opacity-100 py-1' : 'max-h-0 opacity-0 py-0'
                     }`}
                   >
-                    <div className="overflow-hidden">
-                      <div className="pl-8 pr-6 py-1.5 space-y-1 bg-primary-900/40 border-l-2 border-accent/30 ml-6 mr-4 rounded-r-xl my-1">
-                        {item.subItems!.map((sub) => {
-                          const isSubActive = currentPage === sub.page;
-                          return (
-                            <button
-                              key={sub.label}
-                              onClick={() => {
-                                onNavigate(sub.page);
-                                setMobileOpen(false);
-                              }}
-                              className={`w-full text-left py-2 px-3 rounded-lg text-xs font-semibold min-h-[44px] flex items-center transition-colors ${
-                                isSubActive
-                                  ? 'text-accent font-bold bg-accent/10'
-                                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                              }`}
-                            >
-                              <span>• {sub.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                    <div className="pl-6 pr-4 space-y-1 bg-primary-900/60 border-l-2 border-accent/40 ml-6 mr-4 rounded-r-xl py-2 my-1">
+                      {/* Hub Main Page Link */}
+                      <button
+                        onClick={() => {
+                          onNavigate(item.page);
+                          setMobileOpen(false);
+                        }}
+                        className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-bold min-h-[44px] flex items-center gap-2 active:bg-white/10 ${
+                          currentPage === item.page
+                            ? 'text-accent bg-accent/15 border border-accent/30'
+                            : 'text-gray-200 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <span className="text-accent font-bold">📌</span>
+                        <span>{item.label} áttekintése</span>
+                      </button>
+
+                      {/* Subnav items */}
+                      {item.subItems!.map((sub) => {
+                        const isSubActive = currentPage === sub.page;
+                        return (
+                          <button
+                            key={sub.label}
+                            onClick={() => {
+                              onNavigate(sub.page);
+                              setMobileOpen(false);
+                            }}
+                            className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-semibold min-h-[44px] flex items-center gap-2 active:bg-white/10 ${
+                              isSubActive
+                                ? 'text-accent font-bold bg-accent/15 border border-accent/30'
+                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <span className="text-accent font-bold">•</span>
+                            <span>{sub.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -467,49 +478,50 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             );
           })}
 
-          <div className="px-6 py-4 space-y-2">
+          {/* Auth & Account Quick Actions */}
+          <div className="px-6 py-5 space-y-3">
             {user ? (
               <>
-                <div className="px-4 py-3 bg-primary-700/50 rounded-xl">
+                <div className="px-4 py-3 bg-primary-700/60 border border-primary-600 rounded-xl">
                   <p className="text-white text-sm font-semibold truncate">{displayName}</p>
-                  <p className="text-gray-400 text-xs truncate">{user.email}</p>
+                  <p className="text-gray-400 text-xs truncate mt-0.5">{user.email}</p>
                 </div>
                 <button
                   onClick={() => { onNavigate('profile'); setMobileOpen(false); }}
-                  className="w-full py-2.5 border border-gray-600 text-gray-300 text-sm font-medium rounded-xl flex items-center justify-center gap-2 min-h-[44px]"
+                  className="w-full py-3 border border-gray-600 text-gray-300 text-sm font-medium rounded-xl flex items-center justify-center gap-2 min-h-[48px] active:bg-white/10"
                 >
-                  <Settings size={14} /> Fiók beállítások
+                  <Settings size={16} /> Fiók beállítások
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => { onNavigate('admin'); setMobileOpen(false); }}
-                    className="w-full py-2.5 border border-accent/30 text-accent text-sm font-medium rounded-xl min-h-[44px]"
+                    className="w-full py-3 border border-accent/40 text-accent font-bold text-sm rounded-xl min-h-[48px] active:bg-accent/10"
                   >
                     Admin panel
                   </button>
                 )}
                 <button
                   onClick={handleSignOut}
-                  className="w-full py-2.5 border border-red-500/30 text-red-400 text-sm font-medium rounded-xl min-h-[44px]"
+                  className="w-full py-3 border border-red-500/40 text-red-400 font-medium text-sm rounded-xl min-h-[48px] active:bg-red-500/10"
                 >
                   Kijelentkezés
                 </button>
               </>
             ) : (
-              <>
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => { onNavigate('login'); setMobileOpen(false); }}
-                  className="w-full py-2.5 border border-gray-600 text-gray-300 text-sm font-medium rounded-xl min-h-[44px]"
+                  className="w-full py-3 border border-gray-500 text-gray-200 text-sm font-bold rounded-xl text-center min-h-[48px] active:bg-white/10"
                 >
                   Bejelentkezés
                 </button>
                 <button
                   onClick={() => { onNavigate('register'); setMobileOpen(false); }}
-                  className="w-full py-2.5 bg-accent hover:bg-accent-hover text-black text-sm font-bold rounded-xl transition-colors min-h-[44px]"
+                  className="w-full py-3 bg-accent hover:bg-accent-hover text-black text-sm font-extrabold rounded-xl text-center min-h-[48px] active:scale-95 transition-transform"
                 >
                   Regisztráció
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
