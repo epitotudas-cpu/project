@@ -61,7 +61,33 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
+
+  const handleMouseEnter = (pageKey: string) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setActiveDropdown(pageKey);
+  };
+
+  const handleMouseLeave = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function handleSettingsChange() {
@@ -77,6 +103,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         setUserMenuOpen(false);
       }
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         setActiveDropdown(null);
       }
     }
@@ -145,11 +172,12 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 <div
                   key={item.page}
                   className="relative"
-                  onMouseEnter={() => hasSub && setActiveDropdown(item.page)}
-                  onMouseLeave={() => hasSub && setActiveDropdown(null)}
+                  onMouseEnter={() => hasSub && handleMouseEnter(item.page)}
+                  onMouseLeave={() => hasSub && handleMouseLeave()}
                 >
                   <button
                     onClick={() => {
+                      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
                       onNavigate(item.page);
                       setActiveDropdown(null);
                     }}
@@ -168,29 +196,38 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     )}
                   </button>
 
-                  {/* Dropdown Menu */}
+                  {/* Dropdown Menu Wrapper with Top Bridge & Hover Buffer */}
                   {hasSub && isOpen && (
-                    <div className="absolute left-0 mt-1 w-56 bg-[#111] border border-[#222] rounded-xl shadow-2xl overflow-hidden z-50 py-1 animate-fadeIn">
-                      {item.subItems.map((sub) => {
-                        const isSubActive = currentPage === sub.page;
-                        return (
-                          <button
-                            key={sub.label}
-                            onClick={() => {
-                              onNavigate(sub.page);
-                              setActiveDropdown(null);
-                            }}
-                            className={`w-full px-4 py-2 text-left text-xs font-semibold flex items-center justify-between transition-colors ${
-                              isSubActive
-                                ? 'text-accent bg-accent/10 font-bold'
-                                : 'text-gray-300 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            <span>{sub.label}</span>
-                            {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
-                          </button>
-                        );
-                      })}
+                    <div
+                      className="absolute left-0 top-full pt-1 z-50 animate-fadeIn"
+                      onMouseEnter={() => handleMouseEnter(item.page)}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      {/* Invisible Hover Bridge Overlay */}
+                      <div className="before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-['']" />
+                      <div className="w-56 bg-[#111] border border-[#222] rounded-xl shadow-2xl overflow-hidden py-1">
+                        {item.subItems.map((sub) => {
+                          const isSubActive = currentPage === sub.page;
+                          return (
+                            <button
+                              key={sub.label}
+                              onClick={() => {
+                                if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+                                setActiveDropdown(null);
+                                onNavigate(sub.page);
+                              }}
+                              className={`w-full px-4 py-2 text-left text-xs font-semibold flex items-center justify-between transition-colors ${
+                                isSubActive
+                                  ? 'text-accent bg-accent/10 font-bold'
+                                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              <span>{sub.label}</span>
+                              {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
