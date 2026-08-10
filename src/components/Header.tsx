@@ -426,28 +426,28 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   )}
                 </button>
 
-                {/* Accordion Submenu */}
+                {/* Accordion Submenu (Seamless Indented Tree List) */}
                 {hasSub && (
                   <div
                     className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                      isExpanded ? 'max-h-[500px] opacity-100 py-1' : 'max-h-0 opacity-0 py-0'
+                      isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
                     }`}
                   >
-                    <div className="pl-6 pr-4 space-y-1 bg-primary-900/60 border-l-2 border-accent/40 ml-6 mr-4 rounded-r-xl py-2 my-1">
-                      {/* Hub Main Page Link */}
+                    <div className="ml-7 my-1 pl-4 pr-4 border-l-2 border-accent/40 space-y-0.5 py-1">
+                      {/* Hub Overview Page Link */}
                       <button
                         onClick={() => {
                           onNavigate(item.page);
                           setMobileOpen(false);
                         }}
-                        className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-bold min-h-[44px] flex items-center gap-2 active:bg-white/10 ${
+                        className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-bold min-h-[44px] flex items-center justify-between active:bg-white/10 ${
                           currentPage === item.page
-                            ? 'text-accent bg-accent/15 border border-accent/30'
+                            ? 'text-accent font-bold bg-accent/15'
                             : 'text-gray-200 hover:text-white hover:bg-white/5'
-                        }`}
+                        } transition-colors`}
                       >
-                        <span className="text-accent font-bold">📌</span>
-                        <span>{item.label} áttekintése</span>
+                        <span>Összes {item.label.toLowerCase()} megtekintése</span>
+                        <span className="text-accent font-bold">→</span>
                       </button>
 
                       {/* Subnav items */}
@@ -460,13 +460,13 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                               onNavigate(sub.page);
                               setMobileOpen(false);
                             }}
-                            className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-semibold min-h-[44px] flex items-center gap-2 active:bg-white/10 ${
+                            className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-semibold min-h-[44px] flex items-center gap-2.5 active:bg-white/10 ${
                               isSubActive
-                                ? 'text-accent font-bold bg-accent/15 border border-accent/30'
+                                ? 'text-accent font-bold bg-accent/15'
                                 : 'text-gray-300 hover:text-white hover:bg-white/5'
-                            }`}
+                            } transition-colors`}
                           >
-                            <span className="text-accent font-bold">•</span>
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSubActive ? 'bg-accent' : 'bg-gray-500'}`} />
                             <span>{sub.label}</span>
                           </button>
                         );
