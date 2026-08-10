@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   TrendingUp,
@@ -24,6 +24,11 @@ import type { Category, Article } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getPartnerHighlights, getAdvertisementSlots, recordAdClick, type PartnerHighlight, type AdvertisementSlot } from '../services/advertisementService';
 import { TopAdBanner, InFeedAdBanner } from '../components/ModernAdBanner';
+import {
+  getHeroState,
+  getActiveHeroImages,
+  type HeroState,
+} from '../services/heroImageService';
 
 interface HomePageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;
@@ -52,6 +57,43 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const [adSlots, setAdSlots] = useState<AdvertisementSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Dynamic Hero Image State & Rotation
+  const [heroState, setHeroState] = useState<HeroState>(() => getHeroState());
+  const [currentHeroIndex, setCurrentHeroIndex] = useState<number>(0);
+
+  useEffect(() => {
+    function handleHeroConfigChange() {
+      setHeroState(getHeroState());
+    }
+    window.addEventListener('hero-config-changed', handleHeroConfigChange);
+    return () => window.removeEventListener('hero-config-changed', handleHeroConfigChange);
+  }, []);
+
+  const activeHeroImages = useMemo(() => {
+    return getActiveHeroImages(heroState);
+  }, [heroState]);
+
+  useEffect(() => {
+    if (!activeHeroImages.length) return;
+    const mode = heroState.config.rotationMode;
+
+    if (mode === 'random') {
+      const randIdx = Math.floor(Math.random() * activeHeroImages.length);
+      setCurrentHeroIndex(randIdx);
+      return;
+    }
+
+    if (mode === 'slideshow' && activeHeroImages.length > 1) {
+      const intervalMs = (heroState.config.rotationIntervalSeconds || 5) * 1000;
+      const timer = setInterval(() => {
+        setCurrentHeroIndex((prev) => (prev + 1) % activeHeroImages.length);
+      }, intervalMs);
+      return () => clearInterval(timer);
+    }
+
+    setCurrentHeroIndex(0);
+  }, [activeHeroImages, heroState.config.rotationMode, heroState.config.rotationIntervalSeconds]);
 
   useEffect(() => {
     async function loadData() {
@@ -180,14 +222,38 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </div>
             </div>
 
-            {/* Right - Hero Image */}
+            {/* Right - Dynamic Hero Image Element */}
             <div className="mt-10 lg:mt-0 relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                <img
-                  src="/hero-construction.jpg"
-                  alt="Építőmunkások"
-                  className="w-full h-[300px] md:h-[400px] object-cover"
-                />
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[300px] md:h-[400px] bg-[#0A0D14] border border-white/10 group">
+                {activeHeroImages.map((img, idx) => (
+                  <img
+                    key={img.id || idx}
+                    src={img.imageUrl}
+                    alt={img.altText || 'ÉpítőTudás vizuális elem'}
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out ${
+                      idx === currentHeroIndex
+                        ? 'opacity-100 scale-100 z-10'
+                        : 'opacity-0 scale-105 z-0 pointer-events-none'
+                    }`}
+                  />
+                ))}
+
+                {/* Slideshow dots when slideshow mode is active with multiple images */}
+                {heroState.config.rotationMode === 'slideshow' && activeHeroImages.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 shadow-xl">
+                    {activeHeroImages.map((img, idx) => (
+                      <button
+                        key={img.id || idx}
+                        onClick={() => setCurrentHeroIndex(idx)}
+                        title={img.altText || `Kép ${idx + 1}`}
+                        className={`h-2 rounded-full transition-all cursor-pointer ${
+                          idx === currentHeroIndex ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'
+                        }`}
+                        aria-label={`Ugrás a(z) ${idx + 1}. képre`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

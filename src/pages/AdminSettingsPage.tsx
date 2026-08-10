@@ -15,6 +15,10 @@ import {
   Globe,
   ShieldCheck,
   FileText,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import {
   getSiteSettings,
@@ -29,6 +33,15 @@ import {
   DEFAULT_IMPRESSUM_DATA,
   type ImpressumData,
 } from '../services/impressumService';
+import {
+  getHeroState,
+  saveHeroState,
+  type HeroState,
+  type HeroImage,
+  type HeroRotationMode,
+  DEFAULT_HERO_IMAGES,
+  DEFAULT_HERO_CONFIG,
+} from '../services/heroImageService';
 
 interface AdminSettingsPageProps {
   onNavigate?: (page: string) => void;
@@ -44,25 +57,105 @@ const PRESET_PALETTES = [
 export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
   const [settings, setSettings] = useState<SiteSettings>(() => getSiteSettings());
   const [impressumData, setImpressumData] = useState<ImpressumData>(() => getImpressumData());
-  const [activeTab, setActiveTab] = useState<'design' | 'impressum' | 'navigation' | 'ads' | 'system'>('design');
+  const [heroState, setHeroState] = useState<HeroState>(() => getHeroState());
+  const [activeTab, setActiveTab] = useState<'design' | 'hero' | 'impressum' | 'navigation' | 'ads' | 'system'>('design');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Form state for new hero image
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newAltText, setNewAltText] = useState('');
 
   const handleSave = () => {
     saveSiteSettings(settings);
     saveImpressumData(impressumData);
+    saveHeroState(heroState);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Biztosan visszaállítod az összes beállítást és impresszum adatot az alapértelmezett értékekre?')) {
+    if (window.confirm('Biztosan visszaállítod az összes beállítást, impresszumot és hero képeket az alapértelmezett értékekre?')) {
       setSettings({ ...DEFAULT_SITE_SETTINGS });
       setImpressumData({ ...DEFAULT_IMPRESSUM_DATA });
+      const defaultHeroState: HeroState = { config: DEFAULT_HERO_CONFIG, images: DEFAULT_HERO_IMAGES };
+      setHeroState(defaultHeroState);
       saveSiteSettings(DEFAULT_SITE_SETTINGS);
       saveImpressumData(DEFAULT_IMPRESSUM_DATA);
+      saveHeroState(defaultHeroState);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     }
+  };
+
+  const handleAddHeroImage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newImageUrl.trim()) return;
+
+    const newImg: HeroImage = {
+      id: `hero-${Date.now()}`,
+      imageUrl: newImageUrl.trim(),
+      altText: newAltText.trim() || 'Főoldali hero vizuális kép',
+      isActive: true,
+      displayOrder: heroState.images.length + 1,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedState: HeroState = {
+      ...heroState,
+      images: [...heroState.images, newImg],
+    };
+
+    setHeroState(updatedState);
+    saveHeroState(updatedState);
+    setNewImageUrl('');
+    setNewAltText('');
+  };
+
+  const handleToggleHeroImageActive = (id: string) => {
+    const updatedImages = heroState.images.map((img) =>
+      img.id === id ? { ...img, isActive: !img.isActive } : img
+    );
+    const updatedState = { ...heroState, images: updatedImages };
+    setHeroState(updatedState);
+    saveHeroState(updatedState);
+  };
+
+  const handleDeleteHeroImage = (id: string) => {
+    if (heroState.images.length <= 1) {
+      alert('Legalább egy hero képnek léteznie kell!');
+      return;
+    }
+    const updatedImages = heroState.images.filter((img) => img.id !== id);
+    const updatedState = { ...heroState, images: updatedImages };
+    setHeroState(updatedState);
+    saveHeroState(updatedState);
+  };
+
+  const handleMoveHeroImage = (index: number, direction: 'up' | 'down') => {
+    const newImages = [...heroState.images];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= newImages.length) return;
+
+    const temp = newImages[index];
+    newImages[index] = newImages[targetIdx];
+    newImages[targetIdx] = temp;
+
+    newImages.forEach((img, i) => {
+      img.displayOrder = i + 1;
+    });
+
+    const updatedState = { ...heroState, images: newImages };
+    setHeroState(updatedState);
+    saveHeroState(updatedState);
+  };
+
+  const handleUpdateHeroConfig = (updates: Partial<HeroState['config']>) => {
+    const updatedState: HeroState = {
+      ...heroState,
+      config: { ...heroState.config, ...updates },
+    };
+    setHeroState(updatedState);
+    saveHeroState(updatedState);
   };
 
   const toggleNavItem = (key: keyof SiteSettings['enabledNavItems']) => {
@@ -85,14 +178,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             Rendszer- és Design Beállítások
           </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Weboldal arculat, impresszum adatok, logó, navigációs menüpontok és reklámok központi testreszabása.
+            Weboldal arculat, hero képek, impresszum adatok, logó, navigációs menüpontok és reklámok központi testreszabása.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={handleResetDefaults}
-            className="px-4 py-2.5 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
           >
             <RotateCcw size={14} /> Alapértelmezett
           </button>
@@ -100,7 +193,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             onClick={handleSave}
             className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
           >
-            <Save size={16} /> Mentés & Alkalmazás
+            <Save size={16} /> Mentés &amp; Alkalmazás
           </button>
         </div>
       </div>
@@ -108,7 +201,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       {savedSuccess && (
         <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold">
           <CheckCircle2 size={20} />
-          A beállítások és impresszum adatok sikeresen elmentve és alkalmazva a teljes weboldalon!
+          A beállítások, hero képek és impresszum adatok sikeresen elmentve és alkalmazva a teljes weboldalon!
         </div>
       )}
 
@@ -116,6 +209,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       <div className="flex items-center gap-2 border-b border-[#222] overflow-x-auto pb-2">
         {[
           { id: 'design', label: '🎨 Arculat & Színek', icon: Palette },
+          { id: 'hero', label: '🖼️ Főoldali Hero Képek', icon: ImageIcon },
           { id: 'impressum', label: '🏢 Impresszum & Kapcsolat', icon: Building },
           { id: 'navigation', label: '🧭 Navigáció & Menü', icon: Compass },
           { id: 'ads', label: '📢 Reklámok & Ajánlatok', icon: Megaphone },
@@ -261,6 +355,222 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   <span className="px-3 py-1 rounded-lg text-xs font-extrabold text-black" style={{ backgroundColor: settings.primaryColor }}>
                     Kiemelés
                   </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: HERO IMAGES & ROTATION */}
+      {activeTab === 'hero' && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Rotation Mode & Interval Settings */}
+            <div className="lg:col-span-1 bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl h-fit">
+              <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+                <ImageIcon size={20} className="text-accent" /> Hero Működési Mód &amp; Időzítés
+              </h2>
+
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-gray-300 block">Váltási Mód (Rotation Mode)</label>
+                <div className="space-y-2">
+                  {[
+                    {
+                      mode: 'slideshow',
+                      title: '🔄 Automatikus Slideshow',
+                      desc: 'A képek automatikusan váltsák egymást N másodpercenként.',
+                    },
+                    {
+                      mode: 'random',
+                      title: '🎲 Random Kép Frissítéskor',
+                      desc: 'Minden új oldalbetöltéskor/frissítéskor véletlenszerű képet sorsol.',
+                    },
+                    {
+                      mode: 'static',
+                      title: '📌 Statikus Egy Kép',
+                      desc: 'Egyetlen rögzített kiemelt kép megjelenítése mindig.',
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.mode}
+                      onClick={() => handleUpdateHeroConfig({ rotationMode: item.mode as HeroRotationMode })}
+                      className={`w-full p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                        heroState.config.rotationMode === item.mode
+                          ? 'border-accent bg-accent/10 text-white font-bold'
+                          : 'border-[#222] bg-[#161616] text-gray-400 hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="text-sm font-bold flex items-center justify-between">
+                        <span>{item.title}</span>
+                        {heroState.config.rotationMode === item.mode && (
+                          <span className="w-2.5 h-2.5 rounded-full bg-accent" />
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1 leading-relaxed">{item.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {heroState.config.rotationMode === 'slideshow' && (
+                <div className="pt-2 border-t border-[#222]">
+                  <label className="text-xs font-bold text-gray-300 block mb-2">
+                    Váltási Időköz (Másodperc)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={2}
+                      max={60}
+                      value={heroState.config.rotationIntervalSeconds}
+                      onChange={(e) =>
+                        handleUpdateHeroConfig({
+                          rotationIntervalSeconds: Math.max(2, parseInt(e.target.value) || 5),
+                        })
+                      }
+                      className="w-24 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                    />
+                    <span className="text-xs text-gray-400 font-semibold">másodperc képenként</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hero Images Management & Upload */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Add New Hero Image Card */}
+              <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Plus size={20} className="text-accent" /> Új Hero Kép Hozzáadása
+                </h2>
+                <form onSubmit={handleAddHeroImage} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                        Kép URL Hivatkozás (Image URL)
+                      </label>
+                      <input
+                        type="url"
+                        required
+                        value={newImageUrl}
+                        onChange={(e) => setNewImageUrl(e.target.value)}
+                        placeholder="https://images.unsplash.com/... vagy /hero-bg.jpg"
+                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                        Kép Leírása / Alt Szöveg
+                      </label>
+                      <input
+                        type="text"
+                        value={newAltText}
+                        onChange={(e) => setNewAltText(e.target.value)}
+                        placeholder="pl. Építőipari gépek munkában"
+                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <Plus size={16} /> Kép Hozzáadása a Rendszerhez
+                  </button>
+                </form>
+              </div>
+
+              {/* Images List */}
+              <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-[#222] pb-3">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <ImageIcon size={18} className="text-accent" /> Aktív Hero Képek Listája ({heroState.images.length})
+                  </h3>
+                  <span className="text-xs text-gray-400">
+                    {heroState.images.filter((i) => i.isActive).length} aktív megjelenítésben
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {heroState.images.map((img, index) => (
+                    <div
+                      key={img.id}
+                      className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                        img.isActive
+                          ? 'bg-[#161616] border-[#262626]'
+                          : 'bg-[#0E0E0E] border-[#1A1A1A] opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        <img
+                          src={img.imageUrl}
+                          alt={img.altText}
+                          className="w-24 h-16 rounded-xl object-cover border border-[#333] shrink-0 bg-[#0A0A0A]"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/hero-construction.jpg';
+                          }}
+                        />
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-accent">#{img.displayOrder}</span>
+                            <span className="text-sm font-bold text-white truncate max-w-[220px]">
+                              {img.altText || 'Hero Kép'}
+                            </span>
+                            {img.isActive ? (
+                              <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Aktív
+                              </span>
+                            ) : (
+                              <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                                Inaktív
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-mono text-gray-500 truncate max-w-[300px]">
+                            {img.imageUrl}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <button
+                          onClick={() => handleMoveHeroImage(index, 'up')}
+                          disabled={index === 0}
+                          title="Mozgatás felfelé"
+                          className="p-2 bg-[#222] hover:bg-[#333] disabled:opacity-30 text-gray-300 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleMoveHeroImage(index, 'down')}
+                          disabled={index === heroState.images.length - 1}
+                          title="Mozgatás lefelé"
+                          className="p-2 bg-[#222] hover:bg-[#333] disabled:opacity-30 text-gray-300 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleToggleHeroImageActive(img.id)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+                            img.isActive
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                              : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-white'
+                          }`}
+                        >
+                          {img.isActive ? 'Kikapcsolás' : 'Bekapcsolás'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteHeroImage(img.id)}
+                          title="Kép törlése"
+                          className="p-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
