@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe, ChevronRight, Target, BookOpen, FileText, Building2 } from 'lucide-react';
-import { IMPRESSUM_DATA, LEGAL_METADATA } from '../data/legalDocs';
+import { getImpressumData, type ImpressumData } from '../services/impressumService';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface ImpressumPageProps {
@@ -7,6 +8,16 @@ interface ImpressumPageProps {
 }
 
 export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
+  const [data, setData] = useState<ImpressumData>(() => getImpressumData());
+
+  useEffect(() => {
+    function handleDataChange() {
+      setData(getImpressumData());
+    }
+    window.addEventListener('impressum-data-changed', handleDataChange);
+    return () => window.removeEventListener('impressum-data-changed', handleDataChange);
+  }, []);
+
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
       {/* Hero Header */}
@@ -37,7 +48,7 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
               </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
                 <Building className="text-accent" size={32} />
-                {IMPRESSUM_DATA.title}
+                Impresszum
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
                 Az ÉpítőTudás platform üzemeltetőjének hivatalos cégadatai, tárhelyszolgáltatója és elérhetőségei.
@@ -45,8 +56,8 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
 
             <div className="text-left sm:text-right text-xs text-gray-300 bg-primary-800/80 border border-primary-700 p-3.5 rounded-xl shrink-0">
-              <div>Hatályos: <span className="text-white font-bold">{IMPRESSUM_DATA.lastUpdated}</span></div>
-              <div>Verzió: <span className="text-accent font-extrabold">{IMPRESSUM_DATA.version}</span></div>
+              <div>Hatályos: <span className="text-white font-bold">{data.effectiveDate}</span></div>
+              <div>Verzió: <span className="text-accent font-extrabold">{data.version}</span></div>
             </div>
           </div>
         </div>
@@ -104,15 +115,33 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">
           <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2.5 border-b border-gray-100 pb-4">
             <ShieldCheck className="text-accent" size={22} />
-            {IMPRESSUM_DATA.sections[0].heading}
+            1. Szolgáltató adatai
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            {IMPRESSUM_DATA.sections[0].details?.map((item, idx) => (
-              <div key={idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
-                <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">{item.label}</span>
-                <span className="text-gray-900 font-bold text-sm">{item.value}</span>
-              </div>
-            ))}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Hivatalos név</span>
+              <span className="text-gray-900 font-bold text-sm">{data.companyName}</span>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Cégjegyzékszám</span>
+              <span className="text-gray-900 font-bold text-sm">{data.regNumber}</span>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Adószám</span>
+              <span className="text-gray-900 font-bold text-sm">{data.taxNumber}</span>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Székhely</span>
+              <span className="text-gray-900 font-bold text-sm">{data.address}</span>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Központi email</span>
+              <span className="text-gray-900 font-bold text-sm">{data.email}</span>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Telefonszám</span>
+              <span className="text-gray-900 font-bold text-sm">{data.phone}</span>
+            </div>
           </div>
         </div>
 
@@ -120,25 +149,33 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">
           <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2.5 border-b border-gray-100 pb-4">
             <Globe className="text-accent" size={22} />
-            {IMPRESSUM_DATA.sections[1].heading}
+            2. Tárhelyszolgáltató adatai
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-            {IMPRESSUM_DATA.sections[1].details?.map((item, idx) => (
-              <div key={idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
-                <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">{item.label}</span>
-                <span className="text-gray-900 font-bold text-sm">{item.value}</span>
-              </div>
-            ))}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Név</span>
+              <span className="text-gray-900 font-bold text-sm">{data.hostingName}</span>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Cím</span>
+              <span className="text-gray-900 font-bold text-sm">{data.hostingAddress}</span>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Weboldal</span>
+              <a href={data.hostingWebsite} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold text-sm truncate block">
+                {data.hostingWebsite}
+              </a>
+            </div>
           </div>
         </div>
 
         {/* Section 3: Szerzői jogok */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm">
           <h2 className="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-4">
-            {IMPRESSUM_DATA.sections[2].heading}
+            {data.copyrightHeading}
           </h2>
-          <p className="text-gray-700 text-sm leading-relaxed">
-            {IMPRESSUM_DATA.sections[2].content}
+          <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+            {data.copyrightContent}
           </p>
         </div>
 
@@ -150,7 +187,7 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
             <div>
               <div className="text-xs text-gray-500 font-bold">Email Elérhetőség</div>
-              <div className="text-sm font-extrabold text-gray-900">{LEGAL_METADATA.company.email}</div>
+              <div className="text-sm font-extrabold text-gray-900">{data.email}</div>
             </div>
           </div>
           <div className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-3.5 shadow-sm">
@@ -159,7 +196,7 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
             <div>
               <div className="text-xs text-gray-500 font-bold">Telefonos Ügyfélszolgálat</div>
-              <div className="text-sm font-extrabold text-gray-900">{LEGAL_METADATA.company.phone}</div>
+              <div className="text-sm font-extrabold text-gray-900">{data.phone}</div>
             </div>
           </div>
           <div className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-3.5 shadow-sm">
@@ -168,7 +205,7 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
             <div>
               <div className="text-xs text-gray-500 font-bold">Székhely</div>
-              <div className="text-xs font-extrabold text-gray-900 truncate">{LEGAL_METADATA.company.address}</div>
+              <div className="text-xs font-extrabold text-gray-900 truncate">{data.address}</div>
             </div>
           </div>
         </div>

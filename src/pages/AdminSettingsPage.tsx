@@ -8,6 +8,13 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   RotateCcw,
+  Building,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  ShieldCheck,
+  FileText,
 } from 'lucide-react';
 import {
   getSiteSettings,
@@ -15,6 +22,12 @@ import {
   DEFAULT_SITE_SETTINGS,
   type SiteSettings,
 } from '../services/siteSettingsService';
+import {
+  getImpressumData,
+  saveImpressumData,
+  DEFAULT_IMPRESSUM_DATA,
+  type ImpressumData,
+} from '../services/impressumService';
 
 interface AdminSettingsPageProps {
   onNavigate?: (page: string) => void;
@@ -29,19 +42,23 @@ const PRESET_PALETTES = [
 
 export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
   const [settings, setSettings] = useState<SiteSettings>(() => getSiteSettings());
-  const [activeTab, setActiveTab] = useState<'design' | 'navigation' | 'ads' | 'system'>('design');
+  const [impressumData, setImpressumData] = useState<ImpressumData>(() => getImpressumData());
+  const [activeTab, setActiveTab] = useState<'design' | 'impressum' | 'navigation' | 'ads' | 'system'>('design');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSave = () => {
     saveSiteSettings(settings);
+    saveImpressumData(impressumData);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Biztosan visszaállítod az összes beállítást az alapértelmezett értékekre?')) {
+    if (window.confirm('Biztosan visszaállítod az összes beállítást és impresszum adatot az alapértelmezett értékekre?')) {
       setSettings({ ...DEFAULT_SITE_SETTINGS });
+      setImpressumData({ ...DEFAULT_IMPRESSUM_DATA });
       saveSiteSettings(DEFAULT_SITE_SETTINGS);
+      saveImpressumData(DEFAULT_IMPRESSUM_DATA);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     }
@@ -67,7 +84,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             Rendszer- és Design Beállítások
           </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Weboldal arculat, színek, logó, navigációs menüpontok és reklámok központi testreszabása.
+            Weboldal arculat, impresszum adatok, logó, navigációs menüpontok és reklámok központi testreszabása.
           </p>
         </div>
 
@@ -90,7 +107,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       {savedSuccess && (
         <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold">
           <CheckCircle2 size={20} />
-          A beállítások sikeresen elmentve és alkalmazva a teljes weboldalon!
+          A beállítások és impresszum adatok sikeresen elmentve és alkalmazva a teljes weboldalon!
         </div>
       )}
 
@@ -98,6 +115,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       <div className="flex items-center gap-2 border-b border-[#222] overflow-x-auto pb-2">
         {[
           { id: 'design', label: '🎨 Arculat & Színek', icon: Palette },
+          { id: 'impressum', label: '🏢 Impresszum & Kapcsolat', icon: Building },
           { id: 'navigation', label: '🧭 Navigáció & Menü', icon: Compass },
           { id: 'ads', label: '📢 Reklámok & Ajánlatok', icon: Megaphone },
           { id: 'system', label: '⚙️ Rendszer & Biztonság', icon: ShieldAlert },
@@ -231,6 +249,168 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     Kiemelés
                   </span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: IMPRESSUM & CONTACT EDITING */}
+      {activeTab === 'impressum' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column: Szolgáltatói & Kapcsolati Adatok */}
+          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+              <ShieldCheck size={20} className="text-accent" /> 1. Szolgáltató Cégadatai &amp; Kapcsolat
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
+                  <Building size={14} className="text-accent" /> Hivatalos Cégnév
+                </label>
+                <input
+                  type="text"
+                  value={impressumData.companyName}
+                  onChange={(e) => setImpressumData({ ...impressumData, companyName: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Cégjegyzékszám</label>
+                  <input
+                    type="text"
+                    value={impressumData.regNumber}
+                    onChange={(e) => setImpressumData({ ...impressumData, regNumber: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Adószám</label>
+                  <input
+                    type="text"
+                    value={impressumData.taxNumber}
+                    onChange={(e) => setImpressumData({ ...impressumData, taxNumber: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
+                  <MapPin size={14} className="text-accent" /> Székhely Címe
+                </label>
+                <input
+                  type="text"
+                  value={impressumData.address}
+                  onChange={(e) => setImpressumData({ ...impressumData, address: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
+                    <Mail size={14} className="text-accent" /> Központi Email Cím
+                  </label>
+                  <input
+                    type="email"
+                    value={impressumData.email}
+                    onChange={(e) => setImpressumData({ ...impressumData, email: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
+                    <Phone size={14} className="text-accent" /> Telefonszám
+                  </label>
+                  <input
+                    type="text"
+                    value={impressumData.phone}
+                    onChange={(e) => setImpressumData({ ...impressumData, phone: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Tárhelyszolgáltató, Dokumentum metaadatok & Szerzői jogok */}
+          <div className="space-y-6">
+            {/* Tárhelyszolgáltató */}
+            <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
+              <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+                <Globe size={20} className="text-accent" /> 2. Tárhelyszolgáltató Adatai
+              </h2>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Szolgáltató Neve</label>
+                  <input
+                    type="text"
+                    value={impressumData.hostingName}
+                    onChange={(e) => setImpressumData({ ...impressumData, hostingName: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Cím / Székhely</label>
+                  <input
+                    type="text"
+                    value={impressumData.hostingAddress}
+                    onChange={(e) => setImpressumData({ ...impressumData, hostingAddress: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Weboldal URL</label>
+                  <input
+                    type="text"
+                    value={impressumData.hostingWebsite}
+                    onChange={(e) => setImpressumData({ ...impressumData, hostingWebsite: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Dokumentum Verzió & Szerzői jogok */}
+            <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
+              <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+                <FileText size={20} className="text-accent" /> 3. Jogi Nyilatkozat &amp; Verzió
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Hatálybalépés Kelte</label>
+                  <input
+                    type="text"
+                    value={impressumData.effectiveDate}
+                    onChange={(e) => setImpressumData({ ...impressumData, effectiveDate: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Verziószám</label>
+                  <input
+                    type="text"
+                    value={impressumData.version}
+                    onChange={(e) => setImpressumData({ ...impressumData, version: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Szerzői Jogok Nyilatkozata</label>
+                <textarea
+                  rows={4}
+                  value={impressumData.copyrightContent}
+                  onChange={(e) => setImpressumData({ ...impressumData, copyrightContent: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-accent leading-relaxed"
+                />
               </div>
             </div>
           </div>
