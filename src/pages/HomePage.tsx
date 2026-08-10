@@ -238,22 +238,24 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   />
                 ))}
 
-                {/* Slideshow dots when slideshow mode is active with multiple images */}
-                {heroState.config.rotationMode === 'slideshow' && activeHeroImages.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 shadow-xl">
-                    {activeHeroImages.map((img, idx) => (
-                      <button
-                        key={img.id || idx}
-                        onClick={() => setCurrentHeroIndex(idx)}
-                        title={img.altText || `Kép ${idx + 1}`}
-                        className={`h-2 rounded-full transition-all cursor-pointer ${
-                          idx === currentHeroIndex ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'
-                        }`}
-                        aria-label={`Ugrás a(z) ${idx + 1}. képre`}
-                      />
-                    ))}
-                  </div>
-                )}
+                {/* Slideshow dots when slideshow mode is active and indicators are enabled */}
+                {heroState.config.rotationMode === 'slideshow' &&
+                  heroState.config.showIndicators !== false &&
+                  activeHeroImages.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 shadow-xl">
+                      {activeHeroImages.map((img, idx) => (
+                        <button
+                          key={img.id || idx}
+                          onClick={() => setCurrentHeroIndex(idx)}
+                          title={img.altText || `Kép ${idx + 1}`}
+                          className={`h-2 rounded-full transition-all cursor-pointer ${
+                            idx === currentHeroIndex ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'
+                          }`}
+                          aria-label={`Ugrás a(z) ${idx + 1}. képre`}
+                        />
+                      ))}
+                    </div>
+                  )}
               </div>
             </div>
           </div>

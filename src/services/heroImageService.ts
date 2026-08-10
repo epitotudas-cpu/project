@@ -14,6 +14,7 @@ export interface HeroConfig {
   rotationIntervalSeconds: number;
   defaultImageId?: string;
   enabled: boolean;
+  showIndicators: boolean;
 }
 
 export interface HeroState {
@@ -61,6 +62,7 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
   rotationIntervalSeconds: 5,
   defaultImageId: 'hero-1',
   enabled: true,
+  showIndicators: true,
 };
 
 const STORAGE_KEY = 'epitotudas_hero_state_v1';

@@ -435,6 +435,44 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   </div>
                 </div>
               )}
+
+              {/* Indicator Dots Toggle */}
+              <div className="pt-3 border-t border-[#222] space-y-2">
+                <label className="text-xs font-bold text-gray-300 block">
+                  Navigációs Indikátor Pöttyök
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleUpdateHeroConfig({
+                      showIndicators: !(heroState.config.showIndicators !== false),
+                    })
+                  }
+                  className={`w-full p-3 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                    heroState.config.showIndicators !== false
+                      ? 'border-emerald-500/30 bg-emerald-500/10 text-white'
+                      : 'border-[#222] bg-[#161616] text-gray-400'
+                  }`}
+                >
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold block">
+                      {heroState.config.showIndicators !== false
+                        ? '🟢 Indikátor pöttyök láthatók'
+                        : '⚪ Indikátor pöttyök rejtve'}
+                    </span>
+                    <p className="text-[11px] text-gray-400">
+                      Alsó léptető pöttyök a kártya alján
+                    </p>
+                  </div>
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border ${
+                      heroState.config.showIndicators !== false
+                        ? 'bg-emerald-400 border-emerald-300'
+                        : 'bg-gray-700 border-gray-600'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
             {/* Hero Images Management & Upload */}
