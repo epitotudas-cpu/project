@@ -14,6 +14,7 @@ import {
   Flame,
   Home as HomeIcon,
 } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 
 interface PathsHubPageProps {
   onNavigate: (page: string) => void;
@@ -112,38 +113,37 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
         </div>
       </div>
 
-      {/* Semantic Sub-navigation */}
-      <nav
-        aria-label="Pályák navigáció"
-        className="sticky top-[57px] z-40 bg-primary-800/95 backdrop-blur-md border-b border-primary-700 shadow-md"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 overflow-x-auto">
-          <a
-            href="#szakmak"
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <HardHat size={14} className="text-accent" /> Szakmák
-          </a>
-          <a
-            href="#tanulas"
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <BookOpen size={14} className="text-accent" /> Tanulási útvonalak
-          </a>
-          <button
-            onClick={() => onNavigate('courses')}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <GraduationCap size={14} className="text-accent" /> Képzések és kurzusok
-          </button>
-          <button
-            onClick={() => onNavigate('careers')}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <Briefcase size={14} className="text-accent" /> Karrier és állásbörze
-          </button>
-        </div>
-      </nav>
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Pályák navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Szakmák',
+            href: '#szakmak',
+            icon: <HardHat size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Tanulás',
+            href: '#tanulas',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Képzések',
+            page: 'courses',
+            icon: <GraduationCap size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Karrier',
+            page: 'careers',
+            icon: <Briefcase size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12 text-[#202628]">
         {/* Section 1: Szakmák (Trades) */}

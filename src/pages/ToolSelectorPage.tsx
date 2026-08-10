@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
+import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop } from 'lucide-react';
 import { MOCK_TOOLS, type Tool } from '../services/toolService';
+import SectionSubNav from '../components/SectionSubNav';
 
 interface ToolSelectorPageProps {
   onNavigate: (page: string) => void;
@@ -81,6 +82,32 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
           </div>
         </div>
       </div>
+
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Eszközök navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Katalógus',
+            page: 'tool',
+            icon: <Wrench size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szoftverek',
+            page: 'software',
+            icon: <Laptop size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Eszközválasztó',
+            page: 'valaszto',
+            icon: <Sparkles size={14} className="text-accent" />,
+            active: true,
+          },
+        ]}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">

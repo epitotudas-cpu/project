@@ -1,10 +1,12 @@
 import { BookOpen, Calculator, Library, ArrowRight, ChevronRight, FileText } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 
 interface KnowledgeHubPageProps {
   onNavigate: (page: string) => void;
+  activeSubTab?: string;
 }
 
-export default function KnowledgeHubPage({ onNavigate }: KnowledgeHubPageProps) {
+export default function KnowledgeHubPage({ onNavigate, activeSubTab }: KnowledgeHubPageProps) {
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
       {/* Hero Header */}
@@ -46,6 +48,38 @@ export default function KnowledgeHubPage({ onNavigate }: KnowledgeHubPageProps) 
           </div>
         </div>
       </div>
+
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Tudástár navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Cikkek',
+            page: 'category',
+            icon: <FileText size={14} className="text-accent" />,
+            active: activeSubTab === 'category',
+          },
+          {
+            label: 'Fogalomtár',
+            page: 'glossary',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: activeSubTab === 'glossary',
+          },
+          {
+            label: 'Számítások',
+            page: 'calculations',
+            icon: <Calculator size={14} className="text-accent" />,
+            active: activeSubTab === 'calculations',
+          },
+          {
+            label: 'Szakmai könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
+            active: activeSubTab === 'books',
+          },
+        ]}
+      />
 
       {/* Main Content Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">

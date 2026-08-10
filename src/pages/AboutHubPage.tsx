@@ -11,6 +11,7 @@ import {
   FileText,
   Phone,
 } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 import { LEGAL_METADATA } from '../data/legalDocs';
 
 interface AboutHubPageProps {
@@ -65,44 +66,43 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
         </div>
       </div>
 
-      {/* Semantic Sub-navigation */}
-      <nav
-        aria-label="Rólunk navigáció"
-        className="sticky top-[57px] z-40 bg-primary-800/95 backdrop-blur-md border-b border-primary-700 shadow-md"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 overflow-x-auto">
-          <a
-            href="#celunk"
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <Target size={14} className="text-accent" /> Célunk
-          </a>
-          <a
-            href="#platform"
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <Globe size={14} className="text-accent" /> Az ÉpítőTudás
-          </a>
-          <button
-            onClick={() => onNavigate('partners')}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <Building2 size={14} className="text-accent" /> Partnerek
-          </button>
-          <a
-            href="#forrasok"
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <BookOpen size={14} className="text-accent" /> Ajánlott források
-          </a>
-          <button
-            onClick={() => onNavigate('impressum')}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <FileText size={14} className="text-accent" /> Kapcsolat és impresszum
-          </button>
-        </div>
-      </nav>
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Rólunk navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Célunk',
+            href: '#celunk',
+            icon: <Target size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'ÉpítőTudás',
+            href: '#platform',
+            icon: <Globe size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Partnerek',
+            page: 'partners',
+            icon: <Building2 size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Ajánlott források',
+            href: '#forrasok',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Kapcsolat & Impresszum',
+            page: 'impressum',
+            icon: <FileText size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12 text-[#202628]">
         {/* Section 1: Célunk (Mission) */}

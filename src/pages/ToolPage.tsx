@@ -21,9 +21,12 @@ import {
 import { getActiveTools } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
 import type { Tool, AdCampaign } from '../lib/supabase';
+import SectionSubNav from '../components/SectionSubNav';
+import { Laptop } from 'lucide-react';
 
 interface ToolPageProps {
   onNavigate: (page: string) => void;
+  activeSubTab?: string;
 }
 
 const CATEGORIES_CONFIG = [
@@ -299,6 +302,32 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Eszközök navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Katalógus',
+            page: 'tool',
+            icon: <Wrench size={14} className="text-accent" />,
+            active: activeViewTab === 'catalog' && !selectedTool,
+          },
+          {
+            label: 'Szoftverek',
+            page: 'software',
+            icon: <Laptop size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Eszközválasztó',
+            page: 'valaszto',
+            icon: <Sparkles size={14} className="text-accent" />,
+            active: activeViewTab === 'wizard',
+          },
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* VIEW 1: DETAILED TOOL ENCYCLOPEDIA VIEW */}

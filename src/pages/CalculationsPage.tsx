@@ -1,4 +1,5 @@
-import { Calculator, ChevronRight, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Calculator, ChevronRight, Clock, CheckCircle2, ArrowRight, FileText, BookOpen, Library } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 
 interface CalculationsPageProps {
   onNavigate: (page: string) => void;
@@ -41,6 +42,38 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
           </div>
         </div>
       </div>
+
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Tudástár navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Cikkek',
+            page: 'category',
+            icon: <FileText size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Fogalomtár',
+            page: 'glossary',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Számítások',
+            page: 'calculations',
+            icon: <Calculator size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Szakmai könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

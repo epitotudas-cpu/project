@@ -1,4 +1,5 @@
-import { ChevronRight, Clock, Laptop, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, Clock, Laptop, ArrowRight, CheckCircle2, Wrench, Sparkles } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 
 interface SoftwarePageProps {
   onNavigate: (page: string) => void;
@@ -41,6 +42,32 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
           </div>
         </div>
       </div>
+
+      {/* Standardized Secondary Sub-navigation Bar */}
+      <SectionSubNav
+        ariaLabel="Eszközök navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Katalógus',
+            page: 'tool',
+            icon: <Wrench size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szoftverek',
+            page: 'software',
+            icon: <Laptop size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Eszközválasztó',
+            page: 'valaszto',
+            icon: <Sparkles size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
