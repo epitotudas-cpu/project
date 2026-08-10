@@ -102,8 +102,12 @@ function AppContent() {
     }
     handleSettingsChange();
     window.addEventListener('site-settings-changed', handleSettingsChange);
-    return () => window.removeEventListener('site-settings-changed', handleSettingsChange);
-  }, []);
+    window.addEventListener('hero-config-changed', handleSettingsChange);
+    return () => {
+      window.removeEventListener('site-settings-changed', handleSettingsChange);
+      window.removeEventListener('hero-config-changed', handleSettingsChange);
+    };
+  }, [authEvent]);
 
   const navigate = (page: string, params?: { articleSlug?: string }) => {
     if (params?.articleSlug) {

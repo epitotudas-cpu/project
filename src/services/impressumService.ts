@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface ImpressumData {
   companyName: string;
   regNumber: string;
@@ -32,27 +34,62 @@ export const DEFAULT_IMPRESSUM_DATA: ImpressumData = {
 };
 
 const IMPRESSUM_STORAGE_KEY = 'epitotudas_impressum_data_v1';
+const BACKUP_STORAGE_KEY = 'epitotudas_impressum_data_backup_v1';
+
+declare global {
+  interface Window {
+    __GLOBAL_IMPRESSUM_DATA__?: ImpressumData;
+  }
+}
 
 export function getImpressumData(): ImpressumData {
+  // 1. Check in-memory global window cache first
+  if (typeof window !== 'undefined' && window.__GLOBAL_IMPRESSUM_DATA__) {
+    return window.__GLOBAL_IMPRESSUM_DATA__;
+  }
+
+  // 2. Check primary and backup localStorage
   try {
-    const raw = localStorage.getItem(IMPRESSUM_STORAGE_KEY);
+    const raw = localStorage.getItem(IMPRESSUM_STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return {
+      const data: ImpressumData = {
         ...DEFAULT_IMPRESSUM_DATA,
         ...parsed,
       };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_IMPRESSUM_DATA__ = data;
+      }
+      return data;
     }
   } catch (err) {
     console.error('Hiba az impresszum adatok betöltésekor:', err);
+  }
+
+  // 3. Fallback
+  if (typeof window !== 'undefined') {
+    window.__GLOBAL_IMPRESSUM_DATA__ = DEFAULT_IMPRESSUM_DATA;
   }
   return DEFAULT_IMPRESSUM_DATA;
 }
 
 export function saveImpressumData(data: ImpressumData): void {
   try {
+    if (typeof window !== 'undefined') {
+      window.__GLOBAL_IMPRESSUM_DATA__ = data;
+    }
     localStorage.setItem(IMPRESSUM_STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('impressum-data-changed'));
+
+    // Asynchronously attempt Supabase sync
+    void (async () => {
+      try {
+        await supabase.from('site_config').upsert({ id: 'impressum_data', value: data } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
   } catch (err) {
     console.error('Hiba az impresszum adatok mentésekor:', err);
   }

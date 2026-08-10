@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface HeroImage {
   id: string;
   imageUrl: string;
@@ -66,30 +68,66 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
 };
 
 const STORAGE_KEY = 'epitotudas_hero_state_v1';
+const BACKUP_STORAGE_KEY = 'epitotudas_hero_state_backup_v1';
+
+declare global {
+  interface Window {
+    __GLOBAL_HERO_STATE__?: HeroState;
+  }
+}
 
 export function getHeroState(): HeroState {
+  // 1. Check in-memory global window cache first
+  if (typeof window !== 'undefined' && window.__GLOBAL_HERO_STATE__) {
+    return window.__GLOBAL_HERO_STATE__;
+  }
+
+  // 2. Check primary and backup localStorage
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return {
+      const state: HeroState = {
         config: { ...DEFAULT_HERO_CONFIG, ...(parsed.config || {}) },
         images: Array.isArray(parsed.images) && parsed.images.length > 0 ? parsed.images : DEFAULT_HERO_IMAGES,
       };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_HERO_STATE__ = state;
+      }
+      return state;
     }
   } catch (err) {
     console.error('Hiba a hero képek betöltésekor:', err);
   }
-  return {
+
+  // 3. Fallback
+  const defaultState: HeroState = {
     config: DEFAULT_HERO_CONFIG,
     images: DEFAULT_HERO_IMAGES,
   };
+  if (typeof window !== 'undefined') {
+    window.__GLOBAL_HERO_STATE__ = defaultState;
+  }
+  return defaultState;
 }
 
 export function saveHeroState(state: HeroState): void {
   try {
+    if (typeof window !== 'undefined') {
+      window.__GLOBAL_HERO_STATE__ = state;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(state));
     window.dispatchEvent(new Event('hero-config-changed'));
+
+    // Asynchronously attempt Supabase sync
+    void (async () => {
+      try {
+        await supabase.from('site_config').upsert({ id: 'hero_state', value: state } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
   } catch (err) {
     console.error('Hiba a hero beállítások mentésekor:', err);
   }

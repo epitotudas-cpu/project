@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface SiteSettings {
   // Branding & Design
   siteTitle: string;
@@ -57,6 +59,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 };
 
 const STORAGE_KEY = 'epitotudas_site_settings_v1';
+const BACKUP_STORAGE_KEY = 'epitotudas_site_settings_backup_v1';
+
+declare global {
+  interface Window {
+    __GLOBAL_SITE_SETTINGS__?: SiteSettings;
+  }
+}
 
 function adjustColorBrightness(hex: string, percent: number): string {
   const num = parseInt(hex.replace('#', ''), 16);
@@ -87,11 +96,18 @@ export function applySiteSettings(settings: SiteSettings): void {
 }
 
 export function getSiteSettings(): SiteSettings {
+  // 1. Check in-memory global window cache first
+  if (typeof window !== 'undefined' && window.__GLOBAL_SITE_SETTINGS__) {
+    applySiteSettings(window.__GLOBAL_SITE_SETTINGS__);
+    return window.__GLOBAL_SITE_SETTINGS__;
+  }
+
+  // 2. Check primary localStorage
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      const settings = {
+      const settings: SiteSettings = {
         ...DEFAULT_SITE_SETTINGS,
         ...parsed,
         enabledNavItems: {
@@ -99,11 +115,19 @@ export function getSiteSettings(): SiteSettings {
           ...(parsed.enabledNavItems || {}),
         },
       };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_SITE_SETTINGS__ = settings;
+      }
       applySiteSettings(settings);
       return settings;
     }
   } catch (err) {
     console.error('Hiba a beállítások olvasásakor:', err);
+  }
+
+  // 3. Fallback to default
+  if (typeof window !== 'undefined') {
+    window.__GLOBAL_SITE_SETTINGS__ = DEFAULT_SITE_SETTINGS;
   }
   applySiteSettings(DEFAULT_SITE_SETTINGS);
   return DEFAULT_SITE_SETTINGS;
@@ -111,9 +135,22 @@ export function getSiteSettings(): SiteSettings {
 
 export function saveSiteSettings(settings: SiteSettings): void {
   try {
+    if (typeof window !== 'undefined') {
+      window.__GLOBAL_SITE_SETTINGS__ = settings;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(settings));
     applySiteSettings(settings);
     window.dispatchEvent(new Event('site-settings-changed'));
+
+    // Asynchronously attempt Supabase sync
+    void (async () => {
+      try {
+        await supabase.from('site_config').upsert({ id: 'site_settings', value: settings } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);
   }
