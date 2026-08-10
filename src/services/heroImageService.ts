@@ -1,5 +1,3 @@
-import { supabase } from '../lib/supabase';
-
 export interface HeroImage {
   id: string;
   imageUrl: string;
@@ -77,13 +75,13 @@ declare global {
 }
 
 export function getHeroState(): HeroState {
-  // 1. Check in-memory global window cache first
-  if (typeof window !== 'undefined' && window.__GLOBAL_HERO_STATE__) {
-    return window.__GLOBAL_HERO_STATE__;
-  }
-
-  // 2. Check primary and backup localStorage
   try {
+    // 1. Check in-memory global window cache first
+    if (typeof window !== 'undefined' && window.__GLOBAL_HERO_STATE__) {
+      return window.__GLOBAL_HERO_STATE__;
+    }
+
+    // 2. Check primary and backup localStorage
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -119,26 +117,21 @@ export function saveHeroState(state: HeroState): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(state));
     window.dispatchEvent(new Event('hero-config-changed'));
-
-    // Asynchronously attempt Supabase sync
-    void (async () => {
-      try {
-        await supabase.from('site_config').upsert({ id: 'hero_state', value: state } as any);
-      } catch (err) {
-        void err;
-      }
-    })();
   } catch (err) {
     console.error('Hiba a hero beállítások mentésekor:', err);
   }
 }
 
 export function getActiveHeroImages(state?: HeroState): HeroImage[] {
-  const current = state || getHeroState();
-  const active = current.images
-    .filter((img) => img.isActive && img.imageUrl?.trim())
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  try {
+    const current = state || getHeroState();
+    const active = current.images
+      .filter((img) => img.isActive && img.imageUrl?.trim())
+      .sort((a, b) => a.displayOrder - b.displayOrder);
 
-  if (active.length > 0) return active;
+    if (active.length > 0) return active;
+  } catch (err) {
+    console.error('Hiba az aktív hero képek lekérésekor:', err);
+  }
   return DEFAULT_HERO_IMAGES;
 }

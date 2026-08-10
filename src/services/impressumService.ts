@@ -1,5 +1,3 @@
-import { supabase } from '../lib/supabase';
-
 export interface ImpressumData {
   companyName: string;
   regNumber: string;
@@ -43,13 +41,13 @@ declare global {
 }
 
 export function getImpressumData(): ImpressumData {
-  // 1. Check in-memory global window cache first
-  if (typeof window !== 'undefined' && window.__GLOBAL_IMPRESSUM_DATA__) {
-    return window.__GLOBAL_IMPRESSUM_DATA__;
-  }
-
-  // 2. Check primary and backup localStorage
   try {
+    // 1. Check in-memory global window cache first
+    if (typeof window !== 'undefined' && window.__GLOBAL_IMPRESSUM_DATA__) {
+      return window.__GLOBAL_IMPRESSUM_DATA__;
+    }
+
+    // 2. Check primary and backup localStorage
     const raw = localStorage.getItem(IMPRESSUM_STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -81,15 +79,6 @@ export function saveImpressumData(data: ImpressumData): void {
     localStorage.setItem(IMPRESSUM_STORAGE_KEY, JSON.stringify(data));
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('impressum-data-changed'));
-
-    // Asynchronously attempt Supabase sync
-    void (async () => {
-      try {
-        await supabase.from('site_config').upsert({ id: 'impressum_data', value: data } as any);
-      } catch (err) {
-        void err;
-      }
-    })();
   } catch (err) {
     console.error('Hiba az impresszum adatok mentésekor:', err);
   }
