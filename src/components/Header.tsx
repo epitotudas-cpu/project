@@ -59,10 +59,22 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [expandedMobileSection, setExpandedMobileSection] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
+
+  useEffect(() => {
+    if (mobileOpen) {
+      const activeNav = navStructure.find((item) => isNavItemActive(item.page, item.subItems));
+      if (activeNav && activeNav.subItems?.length) {
+        setExpandedMobileSection(activeNav.page);
+      } else {
+        setExpandedMobileSection(null);
+      }
+    }
+  }, [mobileOpen, currentPage]);
 
   const handleMouseEnter = (pageKey: string) => {
     if (closeTimeoutRef.current) {
@@ -377,73 +389,108 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         </div>
       )}
 
-      {/* Mobile menu */}
+      {/* Mobile menu (Scrollable Container + Accordion Submenus) */}
       {mobileOpen && (
-        <div className="xl:hidden bg-primary-800 border-t border-primary-700 divide-y divide-primary-700/60">
+        <div className="xl:hidden bg-primary-800 border-t border-primary-700 max-h-[calc(100dvh-64px)] overflow-y-auto divide-y divide-primary-700/60 shadow-2xl pb-8">
           {navStructure.map((item) => {
             const active = isNavItemActive(item.page, item.subItems);
+            const hasSub = item.subItems && item.subItems.length > 0;
+            const isExpanded = expandedMobileSection === item.page;
+
             return (
               <div key={item.page} className="py-1">
-                <button
-                  onClick={() => {
-                    onNavigate(item.page);
-                    setMobileOpen(false);
-                  }}
-                  className={`w-full text-left px-6 py-2.5 text-sm font-bold flex items-center justify-between ${
-                    active ? 'text-accent bg-accent/10' : 'text-white hover:bg-white/5'
-                  } transition-all`}
-                >
-                  <span>{item.label}</span>
-                </button>
+                <div className="flex items-center justify-between min-h-[44px]">
+                  <button
+                    onClick={() => {
+                      onNavigate(item.page);
+                      setMobileOpen(false);
+                    }}
+                    className={`grow text-left px-6 py-3 text-sm font-bold flex items-center justify-between min-h-[44px] ${
+                      active ? 'text-accent bg-accent/10' : 'text-white hover:bg-white/5'
+                    } transition-all`}
+                  >
+                    <span>{item.label}</span>
+                  </button>
 
-                {item.subItems && (
-                  <div className="pl-8 pr-6 pb-2 space-y-1">
-                    {item.subItems.map((sub) => (
-                      <button
-                        key={sub.label}
-                        onClick={() => {
-                          onNavigate(sub.page);
-                          setMobileOpen(false);
-                        }}
-                        className={`w-full text-left py-1.5 px-3 rounded-lg text-xs ${
-                          currentPage === sub.page
-                            ? 'text-accent font-bold bg-accent/10'
-                            : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  {hasSub && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedMobileSection(isExpanded ? null : item.page);
+                      }}
+                      className="px-5 py-3 text-gray-300 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+                      aria-label={`${item.label} almenü ki- és becsukása`}
+                    >
+                      <ChevronDown
+                        size={18}
+                        className={`transition-transform duration-200 ${
+                          isExpanded ? 'rotate-180 text-accent' : 'opacity-70'
                         }`}
-                      >
-                        • {sub.label}
-                      </button>
-                    ))}
+                      />
+                    </button>
+                  )}
+                </div>
+
+                {/* Animated Collapsible Submenu */}
+                {hasSub && (
+                  <div
+                    className={`grid transition-all duration-200 ease-in-out ${
+                      isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="pl-8 pr-6 py-1.5 space-y-1 bg-primary-900/40 border-l-2 border-accent/30 ml-6 mr-4 rounded-r-xl my-1">
+                        {item.subItems!.map((sub) => {
+                          const isSubActive = currentPage === sub.page;
+                          return (
+                            <button
+                              key={sub.label}
+                              onClick={() => {
+                                onNavigate(sub.page);
+                                setMobileOpen(false);
+                              }}
+                              className={`w-full text-left py-2 px-3 rounded-lg text-xs font-semibold min-h-[44px] flex items-center transition-colors ${
+                                isSubActive
+                                  ? 'text-accent font-bold bg-accent/10'
+                                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              <span>• {sub.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             );
           })}
 
-          <div className="px-6 py-3 space-y-2">
+          <div className="px-6 py-4 space-y-2">
             {user ? (
               <>
-                <div className="px-3 py-2 bg-primary-700/50 rounded-lg">
+                <div className="px-4 py-3 bg-primary-700/50 rounded-xl">
                   <p className="text-white text-sm font-semibold truncate">{displayName}</p>
                   <p className="text-gray-400 text-xs truncate">{user.email}</p>
                 </div>
                 <button
                   onClick={() => { onNavigate('profile'); setMobileOpen(false); }}
-                  className="w-full py-2 border border-gray-600 text-gray-300 text-sm font-medium rounded-md flex items-center justify-center gap-2"
+                  className="w-full py-2.5 border border-gray-600 text-gray-300 text-sm font-medium rounded-xl flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   <Settings size={14} /> Fiók beállítások
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => { onNavigate('admin'); setMobileOpen(false); }}
-                    className="w-full py-2 border border-accent/30 text-accent text-sm font-medium rounded-md"
+                    className="w-full py-2.5 border border-accent/30 text-accent text-sm font-medium rounded-xl min-h-[44px]"
                   >
                     Admin panel
                   </button>
                 )}
                 <button
                   onClick={handleSignOut}
-                  className="w-full py-2 border border-red-500/30 text-red-400 text-sm font-medium rounded-md"
+                  className="w-full py-2.5 border border-red-500/30 text-red-400 text-sm font-medium rounded-xl min-h-[44px]"
                 >
                   Kijelentkezés
                 </button>
@@ -452,13 +499,13 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               <>
                 <button
                   onClick={() => { onNavigate('login'); setMobileOpen(false); }}
-                  className="w-full py-2 border border-gray-600 text-gray-300 text-sm font-medium rounded-md"
+                  className="w-full py-2.5 border border-gray-600 text-gray-300 text-sm font-medium rounded-xl min-h-[44px]"
                 >
                   Bejelentkezés
                 </button>
                 <button
                   onClick={() => { onNavigate('register'); setMobileOpen(false); }}
-                  className="w-full py-2 bg-accent hover:bg-accent-hover text-black text-sm font-semibold rounded-md transition-colors"
+                  className="w-full py-2.5 bg-accent hover:bg-accent-hover text-black text-sm font-bold rounded-xl transition-colors min-h-[44px]"
                 >
                   Regisztráció
                 </button>
