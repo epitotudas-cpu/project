@@ -1,4 +1,4 @@
-import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe, ChevronRight } from 'lucide-react';
 import { IMPRESSUM_DATA, LEGAL_METADATA } from '../data/legalDocs';
 
 interface ImpressumPageProps {
@@ -7,101 +7,129 @@ interface ImpressumPageProps {
 
 export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-gray-200 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Navigation & Header */}
-        <div>
-          <button
-            onClick={() => onNavigate('home')}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#1E1E1E] bg-[#111] hover:bg-[#1A1A1A] text-gray-400 hover:text-white text-xs font-medium transition-colors mb-6"
-          >
-            <ArrowLeft size={14} />
-            Vissza a főoldalra
-          </button>
+    <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
+      {/* Hero Header */}
+      <div className="bg-primary text-white border-b border-primary-700 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <button
+              onClick={() => onNavigate('home')}
+              className="hover:text-white transition-colors flex items-center gap-1"
+            >
+              Főoldal
+            </button>
+            <ChevronRight size={13} />
+            <button
+              onClick={() => onNavigate('jogi')}
+              className="hover:text-white transition-colors"
+            >
+              Jogi Információk
+            </button>
+            <ChevronRight size={13} />
+            <span className="text-gray-200 font-medium">Impresszum &amp; Kapcsolat</span>
+          </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1E1E1E] pb-6 gap-4">
-            <div>
-              <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                <Building className="text-accent" size={30} />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
+                Hivatalos Adatok
+              </span>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                <Building className="text-accent" size={32} />
                 {IMPRESSUM_DATA.title}
               </h1>
-              <p className="text-gray-400 text-sm mt-1">
-                A szolgáltató hivatalos adatai és elérhetőségei
+              <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
+                Az ÉpítőTudás platform üzemeltetőjének hivatalos cégadatai, tárhelyszolgáltatója és elérhetőségei.
               </p>
             </div>
-            <div className="text-right text-xs text-gray-500 bg-[#111] border border-[#1E1E1E] p-3 rounded-lg">
-              <div>Hatályos: <span className="text-gray-300 font-medium">{IMPRESSUM_DATA.lastUpdated}</span></div>
-              <div>Verzió: <span className="text-accent font-semibold">{IMPRESSUM_DATA.version}</span></div>
+
+            <div className="text-left sm:text-right text-xs text-gray-300 bg-primary-800/80 border border-primary-700 p-3.5 rounded-xl shrink-0">
+              <div>Hatályos: <span className="text-white font-bold">{IMPRESSUM_DATA.lastUpdated}</span></div>
+              <div>Verzió: <span className="text-accent font-extrabold">{IMPRESSUM_DATA.version}</span></div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Content Sections */}
-        <div className="space-y-8">
-          {/* Section 1: Szolgáltató adatai */}
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-xl p-6 space-y-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2 border-b border-[#1E1E1E] pb-3">
-              <ShieldCheck className="text-accent" size={20} />
-              {IMPRESSUM_DATA.sections[0].heading}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              {IMPRESSUM_DATA.sections[0].details?.map((item, idx) => (
-                <div key={idx} className="bg-[#161616] p-3.5 rounded-lg border border-[#222]">
-                  <span className="text-gray-500 text-xs block mb-1">{item.label}</span>
-                  <span className="text-white font-medium">{item.value}</span>
-                </div>
-              ))}
+      {/* Main Content Sections */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <button
+          onClick={() => onNavigate('home')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all shadow-xs"
+        >
+          <ArrowLeft size={14} />
+          Vissza a főoldalra
+        </button>
+
+        {/* Section 1: Szolgáltató adatai */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">
+          <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2.5 border-b border-gray-100 pb-4">
+            <ShieldCheck className="text-accent" size={22} />
+            {IMPRESSUM_DATA.sections[0].heading}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            {IMPRESSUM_DATA.sections[0].details?.map((item, idx) => (
+              <div key={idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+                <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">{item.label}</span>
+                <span className="text-gray-900 font-bold text-sm">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Section 2: Tárhelyszolgáltató */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">
+          <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2.5 border-b border-gray-100 pb-4">
+            <Globe className="text-accent" size={22} />
+            {IMPRESSUM_DATA.sections[1].heading}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            {IMPRESSUM_DATA.sections[1].details?.map((item, idx) => (
+              <div key={idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
+                <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">{item.label}</span>
+                <span className="text-gray-900 font-bold text-sm">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Section 3: Szerzői jogok */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm">
+          <h2 className="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-4">
+            {IMPRESSUM_DATA.sections[2].heading}
+          </h2>
+          <p className="text-gray-700 text-sm leading-relaxed">
+            {IMPRESSUM_DATA.sections[2].content}
+          </p>
+        </div>
+
+        {/* Contact Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-3.5 shadow-sm">
+            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl">
+              <Mail size={20} />
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 font-bold">Email Elérhetőség</div>
+              <div className="text-sm font-extrabold text-gray-900">{LEGAL_METADATA.company.email}</div>
             </div>
           </div>
-
-          {/* Section 2: Tárhelyszolgáltató */}
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-xl p-6 space-y-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2 border-b border-[#1E1E1E] pb-3">
-              <Globe className="text-accent" size={20} />
-              {IMPRESSUM_DATA.sections[1].heading}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              {IMPRESSUM_DATA.sections[1].details?.map((item, idx) => (
-                <div key={idx} className="bg-[#161616] p-3.5 rounded-lg border border-[#222]">
-                  <span className="text-gray-500 text-xs block mb-1">{item.label}</span>
-                  <span className="text-white font-medium">{item.value}</span>
-                </div>
-              ))}
+          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-3.5 shadow-sm">
+            <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl">
+              <Phone size={20} />
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 font-bold">Telefonos Ügyfélszolgálat</div>
+              <div className="text-sm font-extrabold text-gray-900">{LEGAL_METADATA.company.phone}</div>
             </div>
           </div>
-
-          {/* Section 3: Szerzői jogok */}
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-xl p-6 space-y-3">
-            <h2 className="text-lg font-bold text-white border-b border-[#1E1E1E] pb-3">
-              {IMPRESSUM_DATA.sections[2].heading}
-            </h2>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              {IMPRESSUM_DATA.sections[2].content}
-            </p>
-          </div>
-
-          {/* Contact Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="bg-[#161616] border border-[#222] p-4 rounded-xl flex items-center gap-3">
-              <Mail className="text-accent flex-shrink-0" size={20} />
-              <div>
-                <div className="text-xs text-gray-500">Email</div>
-                <div className="text-sm font-medium text-white">{LEGAL_METADATA.company.email}</div>
-              </div>
+          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-3.5 shadow-sm">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl">
+              <MapPin size={20} />
             </div>
-            <div className="bg-[#161616] border border-[#222] p-4 rounded-xl flex items-center gap-3">
-              <Phone className="text-accent flex-shrink-0" size={20} />
-              <div>
-                <div className="text-xs text-gray-500">Telefon</div>
-                <div className="text-sm font-medium text-white">{LEGAL_METADATA.company.phone}</div>
-              </div>
-            </div>
-            <div className="bg-[#161616] border border-[#222] p-4 rounded-xl flex items-center gap-3">
-              <MapPin className="text-accent flex-shrink-0" size={20} />
-              <div>
-                <div className="text-xs text-gray-500">Székhely</div>
-                <div className="text-xs font-medium text-white truncate">{LEGAL_METADATA.company.address}</div>
-              </div>
+            <div>
+              <div className="text-xs text-gray-500 font-bold">Székhely</div>
+              <div className="text-xs font-extrabold text-gray-900 truncate">{LEGAL_METADATA.company.address}</div>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { ArrowLeft, Shield, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Shield, CheckCircle2, ChevronRight } from 'lucide-react';
 import { PRIVACY_POLICY_DATA } from '../data/legalDocs';
 
 interface PrivacyPolicyPageProps {
@@ -7,50 +7,74 @@ interface PrivacyPolicyPageProps {
 
 export default function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-gray-200 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Navigation & Header */}
-        <div>
-          <button
-            onClick={() => onNavigate('home')}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#1E1E1E] bg-[#111] hover:bg-[#1A1A1A] text-gray-400 hover:text-white text-xs font-medium transition-colors mb-6"
-          >
-            <ArrowLeft size={14} />
-            Vissza a főoldalra
-          </button>
+    <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
+      {/* Hero Header */}
+      <div className="bg-primary text-white border-b border-primary-700 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <button
+              onClick={() => onNavigate('home')}
+              className="hover:text-white transition-colors flex items-center gap-1"
+            >
+              Főoldal
+            </button>
+            <ChevronRight size={13} />
+            <button
+              onClick={() => onNavigate('jogi')}
+              className="hover:text-white transition-colors"
+            >
+              Jogi Információk
+            </button>
+            <ChevronRight size={13} />
+            <span className="text-gray-200 font-medium">Adatvédelmi Tájékoztató</span>
+          </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1E1E1E] pb-6 gap-4">
-            <div>
-              <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                <Shield className="text-accent" size={30} />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
+                GDPR &amp; Adatvédelem
+              </span>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                <Shield className="text-accent" size={32} />
                 {PRIVACY_POLICY_DATA.title}
               </h1>
-              <p className="text-gray-400 text-sm mt-1">
-                A személyes adatok kezelésének és védelmének szabályzata (EU GDPR)
+              <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
+                A személyes adatok kezelésének, feldolgozásának és védelmének hivatalos szabályzata (EU GDPR).
               </p>
             </div>
-            <div className="text-right text-xs text-gray-500 bg-[#111] border border-[#1E1E1E] p-3 rounded-lg">
-              <div>Hatályos: <span className="text-gray-300 font-medium">{PRIVACY_POLICY_DATA.lastUpdated}</span></div>
-              <div>Verzió: <span className="text-accent font-semibold">{PRIVACY_POLICY_DATA.version}</span></div>
+
+            <div className="text-left sm:text-right text-xs text-gray-300 bg-primary-800/80 border border-primary-700 p-3.5 rounded-xl shrink-0">
+              <div>Hatályos: <span className="text-white font-bold">{PRIVACY_POLICY_DATA.lastUpdated}</span></div>
+              <div>Verzió: <span className="text-accent font-extrabold">{PRIVACY_POLICY_DATA.version}</span></div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Content */}
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <button
+          onClick={() => onNavigate('home')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all shadow-xs"
+        >
+          <ArrowLeft size={14} />
+          Vissza a főoldalra
+        </button>
+
         <div className="space-y-6">
           {PRIVACY_POLICY_DATA.sections.map((sec, idx) => (
-            <div key={idx} className="bg-[#111111] border border-[#1E1E1E] rounded-xl p-6 space-y-3">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2 border-b border-[#1E1E1E] pb-3">
+            <div key={idx} className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm">
+              <h2 className="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">
                 {sec.title}
               </h2>
-              <p className="text-gray-300 text-sm leading-relaxed">
+              <p className="text-gray-700 text-sm leading-relaxed">
                 {sec.text}
               </p>
               {sec.list && (
-                <ul className="space-y-2 mt-3 pl-2">
+                <ul className="space-y-2.5 mt-3 pl-1">
                   {sec.list.map((item, itemIdx) => (
-                    <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-gray-300">
-                      <CheckCircle2 size={16} className="text-accent flex-shrink-0 mt-0.5" />
+                    <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-gray-700">
+                      <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </li>
                   ))}

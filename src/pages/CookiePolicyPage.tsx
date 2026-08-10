@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Cookie, Check, Info } from 'lucide-react';
+import { ArrowLeft, Cookie, Check, Info, ChevronRight } from 'lucide-react';
 import { COOKIE_POLICY_DATA } from '../data/legalDocs';
 
 interface CookiePolicyPageProps {
@@ -31,65 +31,90 @@ export default function CookiePolicyPage({ onNavigate }: CookiePolicyPageProps) 
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-gray-200 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Navigation & Header */}
-        <div>
-          <button
-            onClick={() => onNavigate('home')}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#1E1E1E] bg-[#111] hover:bg-[#1A1A1A] text-gray-400 hover:text-white text-xs font-medium transition-colors mb-6"
-          >
-            <ArrowLeft size={14} />
-            Vissza a főoldalra
-          </button>
+    <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
+      {/* Hero Header */}
+      <div className="bg-primary text-white border-b border-primary-700 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <button
+              onClick={() => onNavigate('home')}
+              className="hover:text-white transition-colors flex items-center gap-1"
+            >
+              Főoldal
+            </button>
+            <ChevronRight size={13} />
+            <button
+              onClick={() => onNavigate('jogi')}
+              className="hover:text-white transition-colors"
+            >
+              Jogi Információk
+            </button>
+            <ChevronRight size={13} />
+            <span className="text-gray-200 font-medium">Cookie (Süti) Kezelés</span>
+          </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1E1E1E] pb-6 gap-4">
-            <div>
-              <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                <Cookie className="text-accent" size={30} />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
+                Süti Szabályzat
+              </span>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                <Cookie className="text-accent" size={32} />
                 {COOKIE_POLICY_DATA.title}
               </h1>
-              <p className="text-gray-400 text-sm mt-1">
-                A sütik (cookie-k) használata és kezelési beállításai
+              <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
+                Tájékoztató az ÉpítőTudás weboldal által használt sütikről és az Ön adatkezelési beállításairól.
               </p>
             </div>
-            <div className="text-right text-xs text-gray-500 bg-[#111] border border-[#1E1E1E] p-3 rounded-lg">
-              <div>Hatályos: <span className="text-gray-300 font-medium">{COOKIE_POLICY_DATA.lastUpdated}</span></div>
-              <div>Verzió: <span className="text-accent font-semibold">{COOKIE_POLICY_DATA.version}</span></div>
+
+            <div className="text-left sm:text-right text-xs text-gray-300 bg-primary-800/80 border border-primary-700 p-3.5 rounded-xl shrink-0">
+              <div>Hatályos: <span className="text-white font-bold">{COOKIE_POLICY_DATA.lastUpdated}</span></div>
+              <div>Verzió: <span className="text-accent font-extrabold">{COOKIE_POLICY_DATA.version}</span></div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <button
+          onClick={() => onNavigate('home')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all shadow-xs"
+        >
+          <ArrowLeft size={14} />
+          Vissza a főoldalra
+        </button>
 
         {/* Current Preferences Box */}
-        <div className="bg-[#141414] border border-[#262626] rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-3 text-accent font-bold text-base border-b border-[#222] pb-3">
-            <Info size={20} />
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm">
+          <div className="flex items-center gap-2.5 text-gray-900 font-extrabold text-lg border-b border-gray-100 pb-3">
+            <Info size={22} className="text-accent" />
             Az Ön Jelenlegi Süti Beállításai
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="text-sm text-gray-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+            <div className="text-sm text-gray-700 font-medium">
               Analitikai és teljesítmény sütik engedélyezése:
-              <span className={`ml-2 font-semibold ${consent?.analytics ? 'text-green-400' : 'text-yellow-500'}`}>
+              <span className={`ml-2 font-bold ${consent?.analytics ? 'text-emerald-600' : 'text-amber-700'}`}>
                 {consent?.analytics ? 'Engedélyezve' : 'Csak a szükségesek (Elutasítva)'}
               </span>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => handleConsentChange(false)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   !consent?.analytics
-                    ? 'bg-[#222] text-white border border-accent/40'
-                    : 'border border-[#222] text-gray-400 hover:bg-[#1A1A1A]'
+                    ? 'bg-gray-900 text-white shadow-xs'
+                    : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 Csak a szükségesek
               </button>
               <button
                 onClick={() => handleConsentChange(true)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   consent?.analytics
-                    ? 'bg-accent text-black font-bold'
-                    : 'border border-[#222] text-gray-400 hover:bg-[#1A1A1A]'
+                    ? 'bg-accent text-black font-extrabold shadow-xs'
+                    : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 Összes elfogadása
@@ -101,17 +126,17 @@ export default function CookiePolicyPage({ onNavigate }: CookiePolicyPageProps) 
         {/* Cookie Categories */}
         <div className="space-y-4">
           {COOKIE_POLICY_DATA.types.map((type, idx) => (
-            <div key={idx} className="bg-[#111111] border border-[#1E1E1E] rounded-xl p-6 space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Check size={18} className="text-accent" />
+            <div key={idx} className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                  <Check size={18} className="text-emerald-600" />
                   {type.name}
                 </h2>
-                <span className="text-xs px-2.5 py-1 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-gray-400">
+                <span className="text-xs px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-700 font-bold">
                   {type.required ? 'Kötelező' : 'Választható'}
                 </span>
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed">
+              <p className="text-gray-700 text-sm leading-relaxed">
                 {type.description}
               </p>
             </div>
