@@ -37,14 +37,25 @@ import CookiePolicyPage from './pages/CookiePolicyPage';
 import CookieBanner from './components/CookieBanner';
 import { GlossaryProvider } from './contexts/GlossaryContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import KnowledgeHubPage from './pages/KnowledgeHubPage';
+import CalculationsPage from './pages/CalculationsPage';
+import BooksPage from './pages/BooksPage';
+import SoftwarePage from './pages/SoftwarePage';
+import ToolSelectorPage from './pages/ToolSelectorPage';
+import LegalHubPage from './pages/LegalHubPage';
 import { getSiteSettings, type SiteSettings } from './services/siteSettingsService';
 
 type PageKey =
   | 'home'
+  | 'tudastar'
   | 'category'
   | 'article'
   | 'glossary'
+  | 'calculations'
+  | 'books'
   | 'tool'
+  | 'software'
+  | 'valaszto'
   | 'paths'
   | 'about'
   | 'partners'
@@ -60,12 +71,17 @@ type PageKey =
   | 'impressum'
   | 'privacy'
   | 'terms'
-  | 'cookies';
+  | 'cookies'
+  | 'jogi';
 
 function getInitialPage(): PageKey {
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
     if (params.get('type') === 'recovery') return 'reset-password';
+    const hash = window.location.hash.replace(/^#\/?/, '');
+    if (hash && ['tudastar', 'category', 'article', 'glossary', 'calculations', 'books', 'tool', 'software', 'valaszto', 'paths', 'about', 'partners', 'courses', 'careers', 'impressum', 'privacy', 'terms', 'cookies', 'jogi'].includes(hash)) {
+      return hash as PageKey;
+    }
   } catch (err) {
     void err;
   }
@@ -91,6 +107,7 @@ function AppContent() {
       setSelectedArticleSlug(params.articleSlug);
     }
     setCurrentPage(page as PageKey);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -159,15 +176,21 @@ function AppContent() {
   // Public routes with shared Header/Footer
   const renderPage = () => {
     switch (currentPage) {
+      case 'tudastar': return <KnowledgeHubPage onNavigate={navigate} />;
+      case 'calculations': return <CalculationsPage onNavigate={navigate} />;
+      case 'books': return <BooksPage onNavigate={navigate} />;
       case 'category': return <CategoryPage onNavigate={navigate} />;
       case 'article': return <ArticlePage articleSlug={selectedArticleSlug} onNavigate={navigate} />;
       case 'glossary': return <GlossaryPage onNavigate={navigate} />;
       case 'tool': return <ToolPage onNavigate={navigate} />;
+      case 'software': return <SoftwarePage onNavigate={navigate} />;
+      case 'valaszto': return <ToolSelectorPage onNavigate={navigate} />;
       case 'paths': return <PathsHubPage onNavigate={navigate} />;
       case 'about': return <AboutHubPage onNavigate={navigate} />;
       case 'partners': return <PartnersPage onNavigate={navigate} />;
       case 'courses': return <CoursesPage />;
       case 'careers': return <CareersPage />;
+      case 'jogi': return <LegalHubPage onNavigate={navigate} />;
       case 'impressum': return <ImpressumPage onNavigate={navigate} />;
       case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;
       case 'terms': return <TermsPage onNavigate={navigate} />;

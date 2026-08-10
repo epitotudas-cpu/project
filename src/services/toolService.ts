@@ -1,6 +1,7 @@
 import { supabase, type Tool } from '../lib/supabase';
+export type { Tool };
 
-const DEFAULT_ENCYCLOPEDIA_TOOLS: Tool[] = [
+export const DEFAULT_ENCYCLOPEDIA_TOOLS: Tool[] = [
   {
     id: 'tool-1',
     name: 'Ácskalapács',
@@ -560,4 +561,6 @@ export async function getToolTypes(): Promise<string[]> {
   const types = [...new Set((data ?? []).map((t) => t.type).filter((t): t is string => Boolean(t)))];
   return types.sort();
 }
+
+export const MOCK_TOOLS = DEFAULT_ENCYCLOPEDIA_TOOLS;
 

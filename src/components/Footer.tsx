@@ -53,9 +53,9 @@ export default function Footer({ onNavigate }: FooterProps) {
             </p>
           </div>
           {[
-            { title: 'Tartalom', links: [{ l: 'Főoldal', p: 'home' }, { l: 'Cikkek', p: 'category' }, { l: 'Fogalomtár', p: 'glossary' }, { l: 'Eszközök', p: 'tool' }, { l: 'Pályák', p: 'paths' }, { l: 'Rólunk', p: 'about' }] },
-            { title: 'Témák', links: [{ l: 'Alapozás', p: 'category' }, { l: 'Szerkezetépítés', p: 'category' }, { l: 'Tetőfedés', p: 'category' }, { l: 'Villanyszerelés', p: 'category' }] },
-            { title: 'Közösség', links: [{ l: 'Fórum', p: 'home' }, { l: 'Szakértők', p: 'home' }, { l: 'Hírlevél', p: 'home' }, { l: 'RSS', p: 'home' }] },
+            { title: 'Navigáció', links: [{ l: 'Főoldal', p: 'home' }, { l: 'Tudástár', p: 'tudastar' }, { l: 'Eszközök', p: 'tool' }, { l: 'Pályák', p: 'paths' }, { l: 'Rólunk', p: 'about' }] },
+            { title: 'Modulok', links: [{ l: 'Cikkek', p: 'category' }, { l: 'Fogalomtár', p: 'glossary' }, { l: 'Számítások', p: 'calculations' }, { l: 'Eszközválasztó', p: 'valaszto' }, { l: 'Képzések', p: 'courses' }] },
+            { title: 'Jogi & Info', links: [{ l: 'Jogi Nyilatkozatok', p: 'jogi' }, { l: 'Impresszum', p: 'impressum' }, { l: 'Adatvédelem', p: 'privacy' }, { l: 'ÁSZF', p: 'terms' }, { l: 'Cookie-kezelés', p: 'cookies' }] },
           ].map((col) => (
             <div key={col.title}>
               <h4 className="text-white font-semibold text-sm mb-4">{col.title}</h4>
@@ -81,6 +81,7 @@ export default function Footer({ onNavigate }: FooterProps) {
           </p>
           <div className="flex flex-wrap items-center gap-4">
             {[
+              { label: 'Jogi Központ', page: 'jogi' },
               { label: 'Impresszum', page: 'impressum' },
               { label: 'Adatvédelem', page: 'privacy' },
               { label: 'ÁSZF', page: 'terms' },

@@ -8,13 +8,49 @@ interface HeaderProps {
   currentPage: string;
 }
 
-const navItems = [
-  { label: 'Főoldal', page: 'home' },
-  { label: 'Cikkek', page: 'category' },
-  { label: 'Fogalomtár', page: 'glossary' },
-  { label: 'Eszközök', page: 'tool' },
-  { label: 'Pályák', page: 'paths' },
-  { label: 'Rólunk', page: 'about' },
+const navStructure = [
+  {
+    label: 'Főoldal',
+    page: 'home',
+  },
+  {
+    label: 'Tudástár',
+    page: 'tudastar',
+    subItems: [
+      { label: 'Cikkek & Útmutatók', page: 'category' },
+      { label: 'Fogalomtár & Szótár', page: 'glossary' },
+      { label: 'Számítások & Kalkulátorok', page: 'calculations' },
+      { label: 'Szakmai Könyvek', page: 'books' },
+    ],
+  },
+  {
+    label: 'Eszközök',
+    page: 'tool',
+    subItems: [
+      { label: 'Gép & Szerszám Katalógus', page: 'tool' },
+      { label: 'Szoftverek', page: 'software' },
+      { label: 'Eszközválasztó Modul', page: 'valaszto' },
+    ],
+  },
+  {
+    label: 'Pályák',
+    page: 'paths',
+    subItems: [
+      { label: 'Építőipari Szakmák', page: 'paths' },
+      { label: 'Tanulási Útvonalak', page: 'paths' },
+      { label: 'Képzések & Kurzusok', page: 'courses' },
+      { label: 'Karrier & Állások', page: 'careers' },
+    ],
+  },
+  {
+    label: 'Rólunk',
+    page: 'about',
+    subItems: [
+      { label: 'Küldetésünk & Rólunk', page: 'about' },
+      { label: 'Partnereink', page: 'partners' },
+      { label: 'Impresszum & Kapcsolat', page: 'impressum' },
+    ],
+  },
 ];
 
 export default function Header({ onNavigate, currentPage }: HeaderProps) {
@@ -22,7 +58,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
 
   useEffect(() => {
@@ -37,6 +75,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     function handleClickOutside(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
+      }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setActiveDropdown(null);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -53,19 +94,13 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Fiók';
   const isAdmin = profile?.role === 'admin' || profile?.role === 'editor';
 
-  const visibleNavItems = navItems.filter((item) => {
-    const pageKey = item.page as keyof SiteSettings['enabledNavItems'];
-    if (pageKey in siteSettings.enabledNavItems) {
-      return siteSettings.enabledNavItems[pageKey];
-    }
-    return true;
-  });
-
-  const isNavItemActive = (itemPage: string) => {
+  const isNavItemActive = (itemPage: string, subItems?: Array<{ page: string }>) => {
     if (currentPage === itemPage) return true;
-    if (itemPage === 'paths' && (currentPage === 'courses' || currentPage === 'careers')) return true;
-    if (itemPage === 'about' && (currentPage === 'partners' || currentPage === 'impressum')) return true;
-    if (itemPage === 'category' && currentPage === 'article') return true;
+    if (itemPage === 'tudastar' && ['category', 'article', 'glossary', 'calculations', 'books'].includes(currentPage)) return true;
+    if (itemPage === 'tool' && ['software', 'valaszto'].includes(currentPage)) return true;
+    if (itemPage === 'paths' && ['courses', 'careers'].includes(currentPage)) return true;
+    if (itemPage === 'about' && ['partners', 'impressum', 'privacy', 'terms', 'cookies', 'jogi'].includes(currentPage)) return true;
+    if (subItems?.some((sub) => sub.page === currentPage)) return true;
     return false;
   };
 
@@ -100,21 +135,65 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         {/* Right side: nav + actions */}
         <div className="flex items-center gap-3 md:gap-6 min-w-0 grow justify-end">
           {/* Desktop Nav */}
-          <nav className="hidden xl:flex items-center gap-0.5 min-w-0">
-            {visibleNavItems.map((item) => {
-              const active = isNavItemActive(item.page);
+          <nav className="hidden xl:flex items-center gap-1 min-w-0 relative" ref={dropdownRef}>
+            {navStructure.map((item) => {
+              const active = isNavItemActive(item.page, item.subItems);
+              const hasSub = item.subItems && item.subItems.length > 0;
+              const isOpen = activeDropdown === item.page;
+
               return (
-                <button
+                <div
                   key={item.page}
-                  onClick={() => onNavigate(item.page)}
-                  className={`px-2.5 lg:px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-                    active
-                      ? 'text-accent bg-accent/10 font-bold border border-accent/20'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
+                  className="relative"
+                  onMouseEnter={() => hasSub && setActiveDropdown(item.page)}
+                  onMouseLeave={() => hasSub && setActiveDropdown(null)}
                 >
-                  {item.label}
-                </button>
+                  <button
+                    onClick={() => {
+                      onNavigate(item.page);
+                      setActiveDropdown(null);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-1 ${
+                      active
+                        ? 'text-accent bg-accent/10 font-bold border border-accent/20'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    {hasSub && (
+                      <ChevronDown
+                        size={13}
+                        className={`transition-transform duration-200 opacity-70 ${isOpen ? 'rotate-180 text-accent' : ''}`}
+                      />
+                    )}
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {hasSub && isOpen && (
+                    <div className="absolute left-0 mt-1 w-56 bg-[#111] border border-[#222] rounded-xl shadow-2xl overflow-hidden z-50 py-1 animate-fadeIn">
+                      {item.subItems.map((sub) => {
+                        const isSubActive = currentPage === sub.page;
+                        return (
+                          <button
+                            key={sub.label}
+                            onClick={() => {
+                              onNavigate(sub.page);
+                              setActiveDropdown(null);
+                            }}
+                            className={`w-full px-4 py-2 text-left text-xs font-semibold flex items-center justify-between transition-colors ${
+                              isSubActive
+                                ? 'text-accent bg-accent/10 font-bold'
+                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <span>{sub.label}</span>
+                            {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
@@ -255,28 +334,48 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-primary-800 border-t border-primary-700">
-          {visibleNavItems.map((item) => {
-            const active = isNavItemActive(item.page);
+        <div className="xl:hidden bg-primary-800 border-t border-primary-700 divide-y divide-primary-700/60">
+          {navStructure.map((item) => {
+            const active = isNavItemActive(item.page, item.subItems);
             return (
-              <button
-                key={item.page}
-                onClick={() => {
-                  onNavigate(item.page);
-                  setMobileOpen(false);
-                }}
-                className={`w-full text-left px-6 py-3 text-sm ${
-                  active
-                    ? 'text-accent bg-accent/10 font-bold'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
-                } transition-all`}
-              >
-                {item.label}
-              </button>
+              <div key={item.page} className="py-1">
+                <button
+                  onClick={() => {
+                    onNavigate(item.page);
+                    setMobileOpen(false);
+                  }}
+                  className={`w-full text-left px-6 py-2.5 text-sm font-bold flex items-center justify-between ${
+                    active ? 'text-accent bg-accent/10' : 'text-white hover:bg-white/5'
+                  } transition-all`}
+                >
+                  <span>{item.label}</span>
+                </button>
+
+                {item.subItems && (
+                  <div className="pl-8 pr-6 pb-2 space-y-1">
+                    {item.subItems.map((sub) => (
+                      <button
+                        key={sub.label}
+                        onClick={() => {
+                          onNavigate(sub.page);
+                          setMobileOpen(false);
+                        }}
+                        className={`w-full text-left py-1.5 px-3 rounded-lg text-xs ${
+                          currentPage === sub.page
+                            ? 'text-accent font-bold bg-accent/10'
+                            : 'text-gray-300 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        • {sub.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
 
-          <div className="px-6 py-3 space-y-2 border-t border-primary-700">
+          <div className="px-6 py-3 space-y-2">
             {user ? (
               <>
                 <div className="px-3 py-2 bg-primary-700/50 rounded-lg">
