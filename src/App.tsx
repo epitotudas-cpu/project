@@ -81,13 +81,49 @@ type PageKey =
   | 'cookies'
   | 'jogi';
 
+const ALL_VALID_PAGES: PageKey[] = [
+  'home',
+  'tudastar',
+  'category',
+  'article',
+  'glossary',
+  'calculations',
+  'books',
+  'tool',
+  'software',
+  'valaszto',
+  'paths',
+  'about',
+  'partners',
+  'admin',
+  'login',
+  'register',
+  'verify-email',
+  'forgot-password',
+  'reset-password',
+  'profile',
+  'courses',
+  'careers',
+  'impressum',
+  'privacy',
+  'terms',
+  'cookies',
+  'jogi',
+];
+
 function getInitialPage(): PageKey {
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
     if (params.get('type') === 'recovery') return 'reset-password';
-    const hash = window.location.hash.replace(/^#\/?/, '');
-    if (hash && ['tudastar', 'category', 'article', 'glossary', 'calculations', 'books', 'tool', 'software', 'valaszto', 'paths', 'about', 'partners', 'courses', 'careers', 'impressum', 'privacy', 'terms', 'cookies', 'jogi'].includes(hash)) {
+
+    const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
+    if (hash && ALL_VALID_PAGES.includes(hash as PageKey)) {
       return hash as PageKey;
+    }
+
+    const savedSessionPage = sessionStorage.getItem('epitotudas_active_page');
+    if (savedSessionPage && ALL_VALID_PAGES.includes(savedSessionPage as PageKey)) {
+      return savedSessionPage as PageKey;
     }
   } catch (err) {
     void err;
@@ -98,7 +134,13 @@ function getInitialPage(): PageKey {
 function AppContent() {
   const { user, loading, authEvent } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageKey>(getInitialPage);
-  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
+  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem('epitotudas_article_slug');
+    } catch {
+      return null;
+    }
+  });
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
 
   useEffect(() => {
@@ -122,13 +164,33 @@ function AppContent() {
     };
   }, [authEvent]);
 
+  useEffect(() => {
+    function handleHashChange() {
+      const page = getInitialPage();
+      setCurrentPage(page);
+    }
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const navigate = (page: string, params?: { articleSlug?: string }) => {
+    const validPage = (ALL_VALID_PAGES.includes(page as PageKey) ? page : 'home') as PageKey;
+
     if (params?.articleSlug) {
       setSelectedArticleSlug(params.articleSlug);
+      try {
+        sessionStorage.setItem('epitotudas_article_slug', params.articleSlug);
+      } catch (err) {
+        void err;
+      }
     }
-    setCurrentPage(page as PageKey);
+
+    setCurrentPage(validPage);
+
     try {
       if (typeof window !== 'undefined') {
+        sessionStorage.setItem('epitotudas_active_page', validPage);
+        window.location.hash = validPage === 'home' ? '' : `#${validPage}`;
         window.scrollTo(0, 0);
       }
     } catch {
