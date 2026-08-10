@@ -1,7 +1,7 @@
-import { getSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
-  const siteSettings = getSiteSettings();
+  const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
 
   const sizes = {

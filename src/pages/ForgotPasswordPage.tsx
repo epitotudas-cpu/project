@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 interface ForgotPasswordPageProps {
   onNavigate: (page: string) => void;
@@ -14,7 +14,7 @@ export default function ForgotPasswordPage({ onNavigate }: ForgotPasswordPagePro
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const siteSettings = getSiteSettings();
+  const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
 
   const handleSubmit = async (e: React.FormEvent) => {

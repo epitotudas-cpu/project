@@ -1,12 +1,12 @@
 import { Mail } from 'lucide-react';
-import { getSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 interface FooterProps {
   onNavigate: (page: string) => void;
 }
 
 export default function Footer({ onNavigate }: FooterProps) {
-  const siteSettings = getSiteSettings();
+  const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
   return (
     <footer className="bg-primary border-t border-primary-700">

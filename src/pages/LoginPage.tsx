@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
@@ -15,7 +15,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const siteSettings = getSiteSettings();
+  const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
 
   const handleSubmit = async (e: React.FormEvent) => {

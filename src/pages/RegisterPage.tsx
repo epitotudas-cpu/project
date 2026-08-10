@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { User, Mail, Lock, UserPlus, AlertCircle, Eye, EyeOff, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 interface RegisterPageProps {
   onNavigate: (page: string) => void;
@@ -25,7 +25,7 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const siteSettings = getSiteSettings();
+  const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
 
   const validate = (): string | null => {

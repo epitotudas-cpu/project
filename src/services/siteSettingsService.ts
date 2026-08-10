@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface SiteSettings {
@@ -206,6 +207,32 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
     console.warn('Cloud site settings fetch info:', err);
   }
   return null;
+}
+
+export function useSiteSettings(): SiteSettings {
+  const [settings, setSettings] = useState<SiteSettings>(() => getSiteSettings());
+
+  useEffect(() => {
+    function handleChange() {
+      const current = getSiteSettings();
+      setSettings(current);
+      applySiteSettings(current);
+    }
+
+    handleChange();
+
+    void fetchSiteSettingsFromCloud().then((cloudSettings) => {
+      if (cloudSettings) {
+        setSettings(cloudSettings);
+        applySiteSettings(cloudSettings);
+      }
+    });
+
+    window.addEventListener('site-settings-changed', handleChange);
+    return () => window.removeEventListener('site-settings-changed', handleChange);
+  }, []);
+
+  return settings;
 }
 
 // Auto-trigger cloud fetch on startup
