@@ -153,22 +153,38 @@ export function saveSiteSettings(settings: SiteSettings): void {
     applySiteSettings(settings);
     window.dispatchEvent(new Event('site-settings-changed'));
 
-    // Push cloud sync to Supabase table 'ad_campaigns'
+    // Dual-table cloud sync to Supabase ('categories' + 'ad_campaigns')
     void (async () => {
+      const payloadString = JSON.stringify(settings);
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
+          slug: 'system-site-settings-config',
+          description: payloadString,
+          banner_url: settings.logoUrl || '/logo.png',
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        console.warn('Supabase categories site_settings sync info:', err);
+      }
+
       try {
         await supabase.from('ad_campaigns').upsert({
           id: SUPABASE_SYSTEM_ID,
           sponsor_name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
           placement_slot: 'config',
           title: 'SiteSettingsData',
-          banner_image_url: JSON.stringify(settings),
+          banner_image_url: payloadString,
           status: 'system',
           start_date: new Date().toISOString(),
           impressions_count: 0,
           clicks_count: 0,
         });
       } catch (err) {
-        console.warn('Supabase site_settings sync info:', err);
+        console.warn('Supabase ad_campaigns site_settings sync info:', err);
       }
     })();
   } catch (err) {
@@ -178,14 +194,32 @@ export function saveSiteSettings(settings: SiteSettings): void {
 
 export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null> {
   try {
-    const { data, error } = await supabase
-      .from('ad_campaigns')
-      .select('banner_image_url')
+    let rawJson: string | null = null;
+
+    // 1. Query 'categories' system config row
+    const { data: catData, error: catErr } = await supabase
+      .from('categories')
+      .select('description')
       .eq('id', SUPABASE_SYSTEM_ID)
       .maybeSingle();
 
-    if (!error && data?.banner_image_url) {
-      const parsed = JSON.parse(data.banner_image_url);
+    if (!catErr && catData?.description && catData.description.startsWith('{')) {
+      rawJson = catData.description;
+    } else {
+      // 2. Query 'ad_campaigns' system config row
+      const { data: adData, error: adErr } = await supabase
+        .from('ad_campaigns')
+        .select('banner_image_url')
+        .eq('id', SUPABASE_SYSTEM_ID)
+        .maybeSingle();
+
+      if (!adErr && adData?.banner_image_url && adData.banner_image_url.startsWith('{')) {
+        rawJson = adData.banner_image_url;
+      }
+    }
+
+    if (rawJson) {
+      const parsed = JSON.parse(rawJson);
       const settings: SiteSettings = {
         ...DEFAULT_SITE_SETTINGS,
         ...parsed,

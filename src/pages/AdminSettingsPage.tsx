@@ -119,8 +119,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_WIDTH = 400;
-        const MAX_HEIGHT = 120;
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 90;
         let width = img.naturalWidth;
         let height = img.naturalHeight;
 
@@ -137,7 +137,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const optimizedDataUrl = canvas.toDataURL('image/png', 0.92);
+          const optimizedDataUrl = canvas.toDataURL('image/png', 0.85);
           const approxKb = Math.round((optimizedDataUrl.length * 0.75) / 1024);
 
           const updated = { ...settings, logoUrl: optimizedDataUrl };

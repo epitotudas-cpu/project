@@ -79,12 +79,10 @@ declare global {
 
 export function getHeroState(): HeroState {
   try {
-    // 1. Check in-memory global window cache first
     if (typeof window !== 'undefined' && window.__GLOBAL_HERO_STATE__) {
       return window.__GLOBAL_HERO_STATE__;
     }
 
-    // 2. Check primary and backup localStorage
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -101,7 +99,6 @@ export function getHeroState(): HeroState {
     console.error('Hiba a hero képek betöltésekor:', err);
   }
 
-  // 3. Fallback
   const defaultState: HeroState = {
     config: DEFAULT_HERO_CONFIG,
     images: DEFAULT_HERO_IMAGES,
@@ -121,22 +118,36 @@ export function saveHeroState(state: HeroState): void {
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(state));
     window.dispatchEvent(new Event('hero-config-changed'));
 
-    // Push cloud sync to Supabase table 'ad_campaigns'
     void (async () => {
+      const payloadString = JSON.stringify(state);
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          name: '__SYSTEM_CONFIG_HERO_STATE__',
+          slug: 'system-hero-state-config',
+          description: payloadString,
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        console.warn('Supabase categories hero_state sync info:', err);
+      }
+
       try {
         await supabase.from('ad_campaigns').upsert({
           id: SUPABASE_SYSTEM_ID,
           sponsor_name: '__SYSTEM_CONFIG_HERO_STATE__',
           placement_slot: 'config',
           title: 'HeroStateData',
-          banner_image_url: JSON.stringify(state),
+          banner_image_url: payloadString,
           status: 'system',
           start_date: new Date().toISOString(),
           impressions_count: 0,
           clicks_count: 0,
         });
       } catch (err) {
-        console.warn('Supabase hero_state sync info:', err);
+        console.warn('Supabase ad_campaigns hero_state sync info:', err);
       }
     })();
   } catch (err) {
@@ -146,14 +157,30 @@ export function saveHeroState(state: HeroState): void {
 
 export async function fetchHeroStateFromCloud(): Promise<HeroState | null> {
   try {
-    const { data, error } = await supabase
-      .from('ad_campaigns')
-      .select('banner_image_url')
+    let rawJson: string | null = null;
+
+    const { data: catData, error: catErr } = await supabase
+      .from('categories')
+      .select('description')
       .eq('id', SUPABASE_SYSTEM_ID)
       .maybeSingle();
 
-    if (!error && data?.banner_image_url) {
-      const parsed = JSON.parse(data.banner_image_url);
+    if (!catErr && catData?.description && catData.description.startsWith('{')) {
+      rawJson = catData.description;
+    } else {
+      const { data: adData, error: adErr } = await supabase
+        .from('ad_campaigns')
+        .select('banner_image_url')
+        .eq('id', SUPABASE_SYSTEM_ID)
+        .maybeSingle();
+
+      if (!adErr && adData?.banner_image_url && adData.banner_image_url.startsWith('{')) {
+        rawJson = adData.banner_image_url;
+      }
+    }
+
+    if (rawJson) {
+      const parsed = JSON.parse(rawJson);
       const state: HeroState = {
         config: { ...DEFAULT_HERO_CONFIG, ...(parsed.config || {}) },
         images: Array.isArray(parsed.images) && parsed.images.length > 0 ? parsed.images : DEFAULT_HERO_IMAGES,
@@ -186,7 +213,6 @@ export function getActiveHeroImages(state?: HeroState): HeroImage[] {
   return DEFAULT_HERO_IMAGES;
 }
 
-// Auto-trigger cloud fetch on startup
 if (typeof window !== 'undefined') {
   void fetchHeroStateFromCloud();
 }
