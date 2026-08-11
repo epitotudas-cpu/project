@@ -89,19 +89,13 @@ export interface TradeDetail {
     prosAndCons: string;
   };
 
-  // 15. KAPCSOLÓDÓ SZAKMÁK
-  relatedTrades: {
-    name: string;
-    reason: string;
-  }[];
-
-  // 16. GYAKORI KÉRDÉSEK
+  // 15. GYAKORI KÉRDÉSEK
   faqs: FAQItem[];
 
-  // 17. SZAKMAI SZÓTÁR (HU / DE / EN)
+  // 16. SZAKMAI SZÓTÁR (HU / DE / EN)
   dictionary: DictionaryTerm[];
 
-  // 18. RÖVID ÖSSZEFOGLALÓ – "NEKED VALÓ EZ A SZAKMA?"
+  // 17. RÖVID ÖSSZEFOGLALÓ – "NEKED VALÓ EZ A SZAKMA?"
   summaryChecklist: {
     goodFitIf: string[];
     considerOtherIf: string[];
@@ -227,11 +221,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek (családi ház tulajdonosok)', 'Kisebb ingatlanfejlesztők'],
       prosAndCons: 'Nagy szabadságot és jó jövedelemszerzési lehetőséget biztosít, de felelősséggel jár az anyagszervezés és a határidők tartása terén.',
     },
-    relatedTrades: [
-      { name: 'Ács', reason: 'A kőműves falazza a koszorúk és a tetőszerkezet fogadófelületét.' },
-      { name: 'Burkoló', reason: 'A burkoló a kőműves által elkészített vakolatra és aljzatbetonra dolgozik.' },
-      { name: 'Épületgépész', reason: 'A gépész csövei és hornyai a kőműves falaiba kerülnek beépítésre.' },
-    ],
     faqs: [
       { question: 'Nehéz megtanulni egyenesen falazni?', answer: 'A zsinór és a vízmérték használatát néhány hét gyakorlással el lehet sajátítani. A titok a türelem és a folyamatos ellenőrzés.' },
       { question: 'Kell hozzá jó matematikai tudás?', answer: 'Alapfokú geometria és aritmetika elegendő (terület- és térfogatszámítás, derékszög kitűzése Pitagorasz-tétellel).' },
@@ -329,10 +318,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Építész irodák'],
       prosAndCons: 'Nagy a kereslet a jó ácsokra, de komoly szerszám- és gépparkot igényel az indulás.',
     },
-    relatedTrades: [
-      { name: 'Tetőfedő', reason: 'Az ács szerkezetére rakja le a tetőfedő a cserepeket.' },
-      { name: 'Kőműves', reason: 'A kőműves által öntött koszorúhoz rögzíti az ács a talpszelement.' },
-    ],
     faqs: [
       { question: 'Kell-e félni a magasban?', answer: 'Az egészséges óvatosság alapfeltétel, de a leesés elleni hám és a tapasztalat biztonságot ad.' },
       { question: 'Nehéz megtanulni a tetőszerkesztést?', answer: 'A műszaki rajzok és a szögszámítások némi gyakorlással gyorsan elsajátíthatók.' },
@@ -410,10 +395,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Belsőépítészek'],
       prosAndCons: 'Nagyon jól jövedelmező önálló szakma, minimális kezdeti gépparkkal elindítható.',
     },
-    relatedTrades: [
-      { name: 'Vízvezeték-szerelő', reason: 'A vízvezeték-szerelő kiállásaira burkol rá a mester.' },
-      { name: 'Kőműves', reason: 'A kőműves egyenes aljzata alapvető a burkolónak.' },
-    ],
     faqs: [
       { question: 'Fájni fog a térdem?', answer: 'Profi géles térdvédő használatával az ízületi terhelés jelentősen csökkenthető.' },
       { question: 'Kell hozzá jó rajzkészség?', answer: 'Nem rajz, hanem jó geometriai szemlélet kell a lapok szimmetrikus elrendezéséhez.' },
@@ -491,10 +472,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Társasházkezelők'],
       prosAndCons: 'Kiváló vállalkozási lehetőség, de kötelező a folyamatos továbbképzés és a szabványok ismerete.',
     },
-    relatedTrades: [
-      { name: 'Épületgépész', reason: 'A villanyszerelő biztosítja a tápellátást a kazánoknak és hőszivattyúknak.' },
-      { name: 'Gipszkartonozó', reason: 'A gipszkarton vázakban futtatja a villanyszerelő a csöveket.' },
-    ],
     faqs: [
       { question: 'Kell-e jó matektudás?', answer: 'Alapfokú fizikára és matematikára szükség van a teljesítmények és áramerősségek kiszámításához.' },
       { question: 'Veszélyes ez a szakma?', answer: 'Szakszerű munkavégzéssel és a 5 biztonsági szabály betartásával a baleseti kockázat minimálisra csökkenthető.' },
@@ -572,10 +549,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Családi ház tulajdonosok', 'Társasházak'],
       prosAndCons: 'Magas profittartalmú vállalkozási forma, komoly szerszámozottsági igénnyel.',
     },
-    relatedTrades: [
-      { name: 'Villanyszerelő', reason: 'A villanyszerelő táplálja be a gépészeti szivattyúkat és szelepeket.' },
-      { name: 'Burkoló', reason: 'A gépész csöveire szereli fel a burkoló a szanitereket.' },
-    ],
     faqs: [
       { question: 'Büdös ez a szakma?', answer: 'Az ivóvíz-, fűtés- és hőszivattyús szerelés tiszta munka. A lefolyószerelésnél fordulhat elő kellemetlenség.' },
       { question: 'Kell-e hozzá fűtési számításokat tudni?', answer: 'Igen, a csőátmérőket és szivattyú-teljesítményeket hidraulikai méretezés alapján választjuk.' },
@@ -653,9 +626,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Családi ház tulajdonosok', 'Társasházak'],
       prosAndCons: 'Nagyon keresett önálló szakma, emelőgépek és bádogos élhajlító megléte nagy előny.',
     },
-    relatedTrades: [
-      { name: 'Ács', reason: 'Az ács fafényére rakja fel a tetőfedő a cserepeket.' },
-    ],
     faqs: [
       { question: 'Forró a tető nyáron?', answer: 'Igen, a cserép és lemez átforrósodik, ezért nyáron korai kezdtetű (06:00) munkarend a bevett.' },
       { question: 'Nehéz a bádogot hajtogatni?', answer: 'A kézi bádogos fogók és a műhelyi élhajlítók használatával könnyen alakítható a lemez.' },
@@ -733,10 +703,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Irodavezetők'],
       prosAndCons: 'Gyorsan indítható vállalkozás, kis géppark igénnyel.',
     },
-    relatedTrades: [
-      { name: 'Villanyszerelő', reason: 'A kartonvázban futtatja a csöveket a villanyszerelő.' },
-      { name: 'Festő', reason: 'A gipszkartonozó hézagolt felületét festi be a festő.' },
-    ],
     faqs: [
       { question: 'Nehéz egy gipszkarton tábla?', answer: 'Egy normál tábla kb. 22-25 kg, de kartonemelő lifttel a plafonra emelés könnyen megoldható.' },
       { question: 'Poros ez a munka?', answer: 'A vázszerelés és csavarozás nem poros, egyedül a hézagolás csiszolásakor keletkezik finom gipszpor.' },
@@ -814,9 +780,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Irodák'],
       prosAndCons: 'Nagyon alacsony kezdő tőkével elindítható sikeres vállalkozás.',
     },
-    relatedTrades: [
-      { name: 'Gipszkartonozó', reason: 'A festő a gipszkartonozó sima felületét festi be.' },
-    ],
     faqs: [
       { question: 'Nehéz megtanulni glettelni?', answer: 'A glettvas tartását és a simító mozdulatokat néhány hét gyakorlással szépen el lehet sajátítani.' },
       { question: 'Büdösek a mai festékek?', answer: 'A modern diszperziós és akril festékek szagtalanok és vízbázisúak.' },

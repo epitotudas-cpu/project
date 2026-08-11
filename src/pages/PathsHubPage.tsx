@@ -247,7 +247,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 { id: 'sec-7-10', label: 'Terhelés & Körülmények' },
                 { id: 'sec-11-12', label: 'Előnyök & Hátrányok' },
                 { id: 'sec-13-15', label: 'Karrier & Vállalkozás' },
-                { id: 'sec-16', label: 'Kapcsolódó szakmák' },
                 { id: 'sec-17', label: 'GYIK' },
                 { id: 'sec-18', label: 'Szakmai szótár' },
                 { id: 'sec-19', label: 'Neked való?' },
@@ -523,25 +522,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                       <p className="text-gray-600 leading-relaxed">{activeTrade.entrepreneurship.prosAndCons}</p>
                     </div>
                   </div>
-                </div>
-              </section>
-
-              {/* KAPCSOLÓDÓ SZAKMÁK */}
-              <section id="sec-16" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-4">
-                <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 flex items-center justify-center font-bold">
-                    <HardHat size={18} />
-                  </div>
-                  <h2 className="text-xl font-extrabold text-gray-900">KAPCSOLÓDÓ SZAKMÁK</h2>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {activeTrade.relatedTrades.map((rt, idx) => (
-                    <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-1">
-                      <h4 className="text-xs font-bold text-gray-900">{rt.name}</h4>
-                      <p className="text-xs text-gray-600 leading-relaxed">{rt.reason}</p>
-                    </div>
-                  ))}
                 </div>
               </section>
 
