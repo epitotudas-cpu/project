@@ -24,7 +24,6 @@ import {
   Search,
   BookOpen,
   Wrench,
-  Clock,
   Briefcase as BriefcaseIcon,
   ShieldCheck,
   Award,
@@ -238,12 +237,11 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
               </div>
             </div>
 
-            {/* Sticky Table of Contents Quick Nav (Clean Unnumbered Labels) */}
+            {/* Sticky Table of Contents Quick Nav */}
             <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm sticky top-4 z-30 overflow-x-auto scrollbar-none flex items-center gap-2">
               {[
                 { id: 'sec-1', label: 'Mi ez a szakma?' },
                 { id: 'sec-2', label: 'Mit csinál?' },
-                { id: 'sec-3', label: 'Átlagos munkanap' },
                 { id: 'sec-4', label: 'Eszközök & Anyagok' },
                 { id: 'sec-5-6', label: 'Mit kell megtanulni?' },
                 { id: 'sec-7-10', label: 'Terhelés & Körülmények' },
@@ -325,33 +323,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                     <p className="text-gray-600 leading-relaxed">{activeTrade.whatDoesDo.teamWork}</p>
                   </div>
                 </div>
-              </section>
-
-              {/* MILYEN EGY ÁTLAGOS MUNKANAP? */}
-              <section id="sec-3" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold">
-                    <Clock size={18} />
-                  </div>
-                  <h2 className="text-xl font-extrabold text-gray-900">MILYEN EGY ÁTLAGOS MUNKANAP?</h2>
-                </div>
-
-                <div className="space-y-3">
-                  {activeTrade.daySchedule.map((step, idx) => (
-                    <div key={idx} className="flex items-start gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 hover:border-accent transition-all">
-                      <span className="px-3 py-1.5 bg-primary text-white font-mono font-bold text-xs rounded-xl shrink-0">
-                        {step.time}
-                      </span>
-                      <div className="space-y-0.5">
-                        <h4 className="text-xs font-extrabold text-gray-900">{step.title}</h4>
-                        <p className="text-xs text-gray-600 leading-relaxed">{step.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[11px] text-gray-400 italic">
-                  *A napi időpontok szemléltető jellegűek. A pontos munkaidő-beosztás munkáltatónként és projektenként eltérhet.
-                </p>
               </section>
 
               {/* MIVEL DOLGOZIK? */}

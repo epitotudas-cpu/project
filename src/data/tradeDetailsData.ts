@@ -1,9 +1,3 @@
-export interface ScheduleStep {
-  time: string;
-  title: string;
-  description: string;
-}
-
 export interface MaterialToolItem {
   category: 'Anyagok' | 'Kéziszerszámok' | 'Gépek' | 'Mérőeszközök';
   name: string;
@@ -41,36 +35,33 @@ export interface TradeDetail {
     teamWork: string;
   };
 
-  // 3. MILYEN EGY ÁTLAGOS MUNKANAP?
-  daySchedule: ScheduleStep[];
-
-  // 4. MIVEL DOLGOZIK?
+  // 3. MIVEL DOLGOZIK?
   toolsAndMaterials: MaterialToolItem[];
 
-  // 5. MIT KELL MEGTANULNI?
+  // 4. MIT KELL MEGTANULNI?
   knowledgeToLearn: {
     theory: string[];
     practice: string[];
     safety: string[];
   };
 
-  // 6. MIT TANULSZ MEG A KÉPZÉS SORÁN?
+  // 5. MIT TANULSZ MEG A KÉPZÉS SORÁN?
   trainingOverview: string[];
 
-  // 7. MENNYIRE NEHÉZ EZ A SZAKMA?
+  // 6. MENNYIRE NEHÉZ EZ A SZAKMA?
   difficulty: {
     physical: string;
     mental: string;
     precision: string;
   };
 
-  // 8. MILYEN EMBERNEK VALÓ?
+  // 7. MILYEN EMBERNEK VALÓ?
   suitableAttributes: string[];
 
-  // 9. KINEK NEM AJÁNLOTT?
+  // 8. KINEK NEM AJÁNLOTT?
   unsuitableAttributes: string[];
 
-  // 10. MILYENEK A MUNKAKÖRÜLMÉNYEK?
+  // 9. MILYENEK A MUNKAKÖRÜLMÉNYEK?
   workConditions: {
     location: string;
     weatherExposure: string;
@@ -78,19 +69,19 @@ export interface TradeDetail {
     heightAndPhysical: string;
   };
 
-  // 11. MIK A SZAKMA ELŐNYEI?
+  // 10. MIK A SZAKMA ELŐNYEI?
   pros: string[];
 
-  // 12. MIK A SZAKMA HÁTRÁNYAI?
+  // 11. MIK A SZAKMA HÁTRÁNYAI?
   cons: string[];
 
-  // 13. HOL LEHET DOLGOZNI?
+  // 12. HOL LEHET DOLGOZNI?
   workplaces: string[];
 
-  // 14. HOGYAN LEHET TOVÁBB FEJLŐDNI?
+  // 13. HOGYAN LEHET TOVÁBB FEJLŐDNI?
   careerPath: string[];
 
-  // 15. LEHET-E VÁLLALKOZÁST INDÍTANI?
+  // 14. LEHET-E VÁLLALKOZÁST INDÍTANI?
   entrepreneurship: {
     possible: boolean;
     services: string[];
@@ -98,19 +89,19 @@ export interface TradeDetail {
     prosAndCons: string;
   };
 
-  // 16. KAPCSOLÓDÓ SZAKMÁK
+  // 15. KAPCSOLÓDÓ SZAKMÁK
   relatedTrades: {
     name: string;
     reason: string;
   }[];
 
-  // 17. GYAKORI KÉRDÉSEK
+  // 16. GYAKORI KÉRDÉSEK
   faqs: FAQItem[];
 
-  // 18. SZAKMAI SZÓTÁR (HU / DE / EN)
+  // 17. SZAKMAI SZÓTÁR (HU / DE / EN)
   dictionary: DictionaryTerm[];
 
-  // 19. RÖVID ÖSSZEFOGLALÓ – "NEKED VALÓ EZ A SZAKMA?"
+  // 18. RÖVID ÖSSZEFOGLALÓ – "NEKED VALÓ EZ A SZAKMA?"
   summaryChecklist: {
     goodFitIf: string[];
     considerOtherIf: string[];
@@ -149,15 +140,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Egyes kisebb falazási szakaszok, vakolási sávok lehúzása és szintellenőrzések.',
       teamWork: 'Szoros együttműködés a segédmunkásokkal (habarcskeverés, anyagszállítás), az ácsokkal (zsaluzat, koszorúk) és a gépészekkel (hornyok hagyása).',
     },
-    daySchedule: [
-      { time: '07:00', title: 'Munkakezdés és területhasonlítás', description: 'Munkaterület átvétele, biztonsági ellenőrzés, napi zsinórozási adatok egyeztetése a művezetővel.' },
-      { time: '07:30', title: 'Anyagelőkészítés', description: 'Téglaraklapok bekészítése a munkazónába, habarcskeverő gép beüzemelése, szerszámok tisztítása.' },
-      { time: '08:00', title: 'Kivitelezés (Falazás / Vakolás)', description: 'Saroktéglák precíz beállítása vízmértékkel, zsinór kihúzása, falazósorok lerakása habarcságyba.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő, étkezés és hidratálás a fizikai munka után.' },
-      { time: '12:30', title: 'Áthidalók & Koszorú előkészítés', description: 'Nyílászáró áthidalók behelyezése, koszorú vasalás ellenőrzése, betonozás előkészítése.' },
-      { time: '15:30', title: 'Eszközök mosása és takarítás', description: 'Habarcsos szerszámok és keverőgépek azonnali vízsugaras elmosása, maradék anyagok védelme.' },
-      { time: '16:00', title: 'Munkaterület átadása és zárás', description: 'Elkészült falszakasz visszamérése, munkaterület lekerítése, napi munka befejezése.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Égetett kerámia téglák, pórusbeton (Ytong), zsalukövek', description: 'A szerkezeti falak alapvető alkatrészei.' },
       { category: 'Anyagok', name: 'Gyári szárazhabarcs, cement, mész, homok', description: 'Falazó- és vakolóanyagok kötőanyaga.' },
@@ -307,15 +289,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Kisebb előkészítő vágások, gérvágások és egyedi fa elemek megmunkálása.',
       teamWork: 'Csapatmunka a daruzásnál, a nehéz gerendák beemelésénél és a tetőváz egyidejű rögzítésénél.',
     },
-    daySchedule: [
-      { time: '07:00', title: 'Munkaterület átvétele', description: 'Szerszámok, biztonsági hámok ellenőrzése, vágási tervek átnézése.' },
-      { time: '07:30', title: 'Gerendák válogatása és leszabása', description: 'Szarufák és szelemenek jelölése, csapolások vágása a földön.' },
-      { time: '09:00', title: 'Szerkezet emelése és beállítása', description: 'Gerendák beemelése a falkoszorúra daruval vagy csigával, ideiglenes megtámasztás.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő.' },
-      { time: '12:30', title: 'Szarufák rögzítése & Lécezés', description: 'Szarufák rögzítése kötőelemekkel, páraáteresztő fólia és tetőlécek felövegezése.' },
-      { time: '15:30', title: 'Hulladékfa gyűjtése és szerszámeltakarítás', description: 'Fűrészpor és fahulladék eltakarítása, gépek elpakolása.' },
-      { time: '16:00', title: 'Munkanap zárása', description: 'Biztonsági lezárás, szerkezet vihar elleni rögzítésének ellenőrzése.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Fenyő gerendák, pallók, deszkák, rétegelt lemezek', description: 'Hagyományos fa építőanyagok.' },
       { category: 'Anyagok', name: 'Zsalutáblák (Doka/Peri), Doka gerendák (H20), acél támaszok', description: 'Ipari zsaluzási elemek.' },
@@ -401,15 +374,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Gyakran dolgozik egyedül vagy egy segéddel egy-egy fürdőszobában vagy helyiségben.',
       teamWork: 'Együttműködik a vízvezeték-szerelővel (kiállások) és a kőművessel (egyenes aljzat).',
     },
-    daySchedule: [
-      { time: '07:30', title: 'Munkaterület előkészítése', description: 'Aljzat portalanítása, mélyalapozás felvitele.' },
-      { time: '08:30', title: 'Kiosztás és vágások', description: 'Lézeres szintezővel tengelyek kijelölése, szélső lapok vágása.' },
-      { time: '10:00', title: 'Csemperagasztás', description: 'Fogas glettvassal ragasztó felhordása, lapok fektetése burkolatszintezővel.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő.' },
-      { time: '12:30', title: 'Falfelületek burkolása', description: 'Csempézés folytatása, konnektorok és csőkiállások körfúrása.' },
-      { time: '15:30', title: 'Előző napi felület fugázása', description: 'Fugázóanyag behúzása gumi simítóval, szivacsos lemosás.' },
-      { time: '16:00', title: 'Takarítás', description: 'Szerszámok és vágógép vízsugaras elmosása.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Csempék, greslapok, természetes kő, mozaik', description: 'Burkolóelemek.' },
       { category: 'Anyagok', name: 'Flexibilis csemperagasztó, fugázó por, szilikon, vízszigetelés', description: 'Segédanyagok.' },
@@ -491,15 +455,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Kapcsolók, aljzatok szerelése és elosztótáblák bekötése gyakran önálló munka.',
       teamWork: 'Együttműködik a kőművessel (hornyok visszajavítása) és a gépésszel (kazánok, hőszivattyúk bekötése).',
     },
-    daySchedule: [
-      { time: '07:30', title: 'Rajzelemzés és nyomvonal-kijelölés', description: 'Tervek egyeztetése, kiállások kijelölése lézerrel.' },
-      { time: '08:00', title: 'Horonymarás és vésés', description: 'Falhornyok marása porszívós géppel, dobozhelyek fúrása.' },
-      { time: '10:30', title: 'Védőcsövezés és kábelbehúzás', description: 'Műanyag védőcsövek rögzítése, vezetékek behúzása behúzóspirállal.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő.' },
-      { time: '12:30', title: 'Elosztódoboz szerelés', description: 'Kismegszakítók, Fi-relék rögzítése kalapsínre, vezetékek felcímkézése.' },
-      { time: '15:30', title: 'Műszeres ellenőrzés', description: 'Feszültségmentes ellenőrzés, folytonosság-mérés.' },
-      { time: '16:00', title: 'Munkanap zárása', description: 'Munkaterület feltakarítása, szerszámok elpakolása.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Rézvezetékek (NYM-J, MCU), védőcsövek (Symalen), WAGO kötőelemek', description: 'Elektromos szerelvények.' },
       { category: 'Anyagok', name: 'Kismegszakítók, Fi-relék, kapcsolók, dugaljak', description: 'Védelmi és kezelőelemek.' },
@@ -581,15 +536,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Csőszerelvények, csaptelepek és szaniterek szerelése.',
       teamWork: 'Együttműködés a villanyszerelővel (automatika bekötés) és a kőművessel/burkolóval.',
     },
-    daySchedule: [
-      { time: '07:30', title: 'Munkaterület átvétele', description: 'Gépészeti tervek egyeztetése, csőnyomvonalak kijelölése.' },
-      { time: '08:00', title: 'Csőhálózat préselése', description: 'Ötrétegű csövek fektetése, présidomok rögzítése akkus présgéppel.' },
-      { time: '11:00', title: 'Padlófűtés tekercselés', description: 'Rendszerlemezre vagy hálóra fűtési körök lefektetése osztó-gyűjtőig.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő.' },
-      { time: '12:30', title: 'Gépészeti helyiség szerelése', description: 'Hőszivattyú beltéri egység és puffertartály csatlakoztatása.' },
-      { time: '15:30', title: 'Nyomáspróba', description: 'Vízzel vagy levegővel 6 bar nyomás felépítése, tartás ellenőrzése.' },
-      { time: '16:00', title: 'Munkanap zárása', description: 'Terület megtisztítása, jegyzőkönyv kiállítása.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Ötrétegű műanyag csövek, rézcsövek, PVC lefolyócsövek', description: 'Csővezetékek.' },
       { category: 'Anyagok', name: 'Hőszivattyúk, osztó-gyűjtők, keringető szivattyúk', description: 'Gépészeti berendezések.' },
@@ -671,15 +617,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Bádogos elemek előkészítése és hajlítása a műhelyben.',
       teamWork: 'Csapatmunka a cserepek feladásánál és a tetőfelület gyors befedésénél az eső előtt.',
     },
-    daySchedule: [
-      { time: '07:00', title: 'Munkaterület átvétele', description: 'Időjárás-előrejelzés ellenőrzése, zuhanásgátlók rögzítése.' },
-      { time: '07:30', title: 'Bádogos előkészítés', description: 'Ereszcsatorna tartóvasak lejtésbe hajlítása és csavarozása.' },
-      { time: '09:00', title: 'Cserépfelhordás és lerakás', description: 'Cserépkötelékek feljuttatása emelővel, kiosztás szerinti felrakás.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő.' },
-      { time: '12:30', title: 'Kápás és vápa vágás', description: 'Tetőhajlatok (vápák) cserepeinek vágása sarokcsiszolóval, lemezbádogozás.' },
-      { time: '15:30', title: 'Tető fóliázás zárása', description: 'Vihar elleni letakarás biztosítása.' },
-      { time: '16:00', title: 'Munkanap zárása', description: 'Eszközök elpakolása, munkaterület takarítása.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Kerámia és beton cserepek, cserepeslemezek, bitumenes lemezek', description: 'Fedőanyagok.' },
       { category: 'Anyagok', name: 'Horganyzott és színes alumínium lemezek, ereszcsatornák', description: 'Bádogos termékek.' },
@@ -760,15 +697,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Profilok vágása, kisebb falfelületek csavarozása és hézagolás.',
       teamWork: 'Páros munka a nagy gipszkarton táblák (120x200cm) mennyezeti emelésénél és csavarozásánál.',
     },
-    daySchedule: [
-      { time: '07:30', title: 'Lézeres kitűzés', description: 'Tervek alapján a válaszfalak nyomvonalának feljelölése lézerrel.' },
-      { time: '08:00', title: 'Fémváz megépítése', description: 'UW/CW profilok vágása, szivacscsík felragasztása, rögzítés dűbelekkel.' },
-      { time: '10:30', title: 'Egyik oldal kartonozása & Szigetelés', description: 'Gipszkarton lapok csavarozása, kőzetgyapot szigetelés behelyezése.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő.' },
-      { time: '12:30', title: 'Másik oldal zárása & Mennyezet', description: 'Vezetékek elhelyezése után a fal lezárása kartonozással.' },
-      { time: '15:30', title: 'Hézagolás első réteg', description: 'Hézagkitöltő gipsz és bandázsszalag beágyazása a találkozásoknál.' },
-      { time: '16:00', title: 'Takarítás', description: 'Fémhulladék gyűjtése, munkaterület feltakarítása.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Normál (RB), Impregnált (RBI) és Tűzgátló (RF) gipszkartonok', description: 'Kartonlapok.' },
       { category: 'Anyagok', name: 'CW, UW, CD, UD horganyzott fémprofilok, csavarok, gipsz', description: 'Szerkezeti elemek.' },
@@ -850,15 +778,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       soloWork: 'Gyakran egyedül festi vagy gletteli egy-egy szoba felületeit.',
       teamWork: 'Nagyobb csarnokok vagy irodák gépi szórásos festésénél páros munka.',
     },
-    daySchedule: [
-      { time: '07:30', title: 'Kitakarás és maszkolás', description: 'Padló, ablakok fóliázása, szegélylécek ragasztószalagozása.' },
-      { time: '08:00', title: 'Glettelés első/második réteg', description: 'Glettanyag felhordása lepke spaklival a falegyenetlenségekre.' },
-      { time: '11:00', title: 'Csiszolás és portalanítás', description: 'Glettelt felület átcsiszolása porszívós zsiróffal, Portalanítás.' },
-      { time: '12:00', title: 'Ebédszünet', description: 'Pihenő.' },
-      { time: '12:30', title: 'Első és második réteg festés', description: 'Diszperziós festék felhordása sarokecsettel és hengerrel.' },
-      { time: '15:30', title: 'Maszkolás eltávolítása', description: 'Festékszalagok visszahúzása a tűéles határvonalakért.' },
-      { time: '16:00', title: 'Eszközök mosása és átadás', description: 'Hengerek és ecsetek vízsugaras elmosása.' },
-    ],
     toolsAndMaterials: [
       { category: 'Anyagok', name: 'Diszperziós, mész és szilikát festékek, glettanyagok, zománcok', description: 'Festékanyagok.' },
       { category: 'Anyagok', name: 'Takarófóliák, maszkolószalagok, tapétaragasztók', description: 'Védelmi és segédanyagok.' },
