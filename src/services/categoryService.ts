@@ -186,8 +186,37 @@ function saveLocalCategory(cat: Category) {
   }
 }
 
+const DELETED_STORAGE_KEY = 'epitotudas_deleted_category_ids';
+
+function getDeletedCategoryIds(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(DELETED_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addDeletedCategoryId(id: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const list = getDeletedCategoryIds();
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem(DELETED_STORAGE_KEY, JSON.stringify(list));
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export async function listCategories(): Promise<Category[]> {
   const localMap = getLocalCategories();
+  const deletedIds = getDeletedCategoryIds();
+
+  const isPublicCategory = (c: Category) =>
+    !deletedIds.includes(c.id) && !c.name.startsWith('__SYSTEM_CONFIG_');
 
   try {
     const { data, error } = await supabase
@@ -196,15 +225,42 @@ export async function listCategories(): Promise<Category[]> {
       .order('sort_order', { ascending: true });
 
     if (!error && data && data.length > 0) {
-      // Merge with local overrides if present
-      return data.map((c) => (localMap[c.id] ? { ...c, ...localMap[c.id] } : c));
+      // Merge with local overrides if present and filter system/deleted categories
+      return data
+        .map((c) => (localMap[c.id] ? { ...c, ...localMap[c.id] } : c))
+        .filter(isPublicCategory);
     }
   } catch (err) {
     void err;
   }
 
   // Fallback to default categories merged with local overrides
-  return DEFAULT_CATEGORIES.map((c) => (localMap[c.id] ? { ...c, ...localMap[c.id] } : c));
+  return DEFAULT_CATEGORIES.map((c) => (localMap[c.id] ? { ...c, ...localMap[c.id] } : c)).filter(
+    isPublicCategory
+  );
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  try {
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error && !/RLS/i.test(error.message)) {
+      console.warn('Supabase deleteCategory warning:', error);
+    }
+  } catch (err) {
+    console.warn('Supabase deleteCategory error:', err);
+  }
+
+  addDeletedCategoryId(id);
+
+  if (typeof window !== 'undefined') {
+    try {
+      const map = getLocalCategories();
+      delete map[id];
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {

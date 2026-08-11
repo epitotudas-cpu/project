@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Pencil,
+  Trash2,
   AlertCircle,
   RefreshCw,
   FolderTree,
@@ -24,7 +25,7 @@ import {
   Settings,
 } from 'lucide-react';
 import type { Category } from '../lib/supabase';
-import { listCategories, countArticlesForCategories } from '../services/categoryService';
+import { listCategories, countArticlesForCategories, deleteCategory } from '../services/categoryService';
 import { useToast } from '../components/ToastProvider';
 import EditCategoryModal from '../components/EditCategoryModal';
 
@@ -56,6 +57,7 @@ export default function AdminCategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Category | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadCategories = useCallback(async () => {
     setLoading(true);
@@ -91,6 +93,25 @@ export default function AdminCategoriesPage() {
   function closeEditor() {
     setEditorOpen(false);
     setEditing(null);
+  }
+
+  async function handleDelete(category: CategoryWithCount) {
+    const confirmMessage = `Biztosan törölni szeretnéd a(z) "${category.name}" kategóriát?${
+      category.articleCount > 0 ? `\n\nFigyelem: A kategória ${category.articleCount} cikket tartalmaz!` : ''
+    }`;
+
+    if (!window.confirm(confirmMessage)) return;
+
+    setDeletingId(category.id);
+    try {
+      await deleteCategory(category.id);
+      setCategories((prev) => prev.filter((c) => c.id !== category.id));
+      toast.success(`A(z) "${category.name}" kategória törölve.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a törlés során.');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   function handleSaved(saved: Category) {
@@ -246,12 +267,22 @@ export default function AdminCategoriesPage() {
                       title={`Színkód: ${categoryColor}`}
                     />
 
-                    <button
-                      onClick={() => openEdit(c)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-xl hover:bg-[#FFC400] hover:text-black hover:border-[#FFC400] transition-all"
-                    >
-                      <Pencil size={13} /> Szerkesztés
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openEdit(c)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-xl hover:bg-[#FFC400] hover:text-black hover:border-[#FFC400] transition-all"
+                      >
+                        <Pencil size={13} /> Szerkesztés
+                      </button>
+                      <button
+                        onClick={() => handleDelete(c)}
+                        disabled={deletingId === c.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 bg-red-500/10 rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                        title="Kategória törlése"
+                      >
+                        <Trash2 size={13} /> Törlés
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
