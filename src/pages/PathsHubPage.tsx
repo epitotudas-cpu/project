@@ -22,6 +22,12 @@ import {
   UserCheck,
   UserX,
   Search,
+  BookOpen,
+  Wrench,
+  Clock,
+  Briefcase as BriefcaseIcon,
+  ShieldCheck,
+  Award,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { TRADE_DETAILS, TradeDetail } from '../data/tradeDetailsData';
@@ -87,7 +93,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 Építőipari Szakmák Részletes Bemutatása
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Őszinte, valósághű és gyakorlatias szakmaismertető leendő tanulóknak és pályaválasztóknak a megadott 19 kötelező szerkezeti pont alapján.
+                Őszinte, valósághű és gyakorlatias szakmaismertető leendő tanulóknak és pályaválasztóknak.
               </p>
             </div>
 
@@ -146,7 +152,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                   <HardHat className="text-accent" size={22} /> Válassz egy Építőipari Szakmát!
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">
-                  Kattints a kártyákra a 19 pontból álló, részletes és őszinte szakmai pályaismertető megnyitásához.
+                  Kattints a kártyákra a részletes és őszinte szakmai pályaismertető megnyitásához.
                 </p>
               </div>
 
@@ -192,7 +198,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                       onClick={() => { setSelectedTradeId(card.id); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
                       className="w-full py-2.5 bg-primary hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 group-hover:bg-accent group-hover:text-primary"
                     >
-                      <span>Szakma bemutatása (19 fejezet)</span>
+                      <span>Szakma bemutatása</span>
                       <ChevronRight size={14} />
                     </button>
                   </div>
@@ -202,7 +208,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
           </div>
         )}
 
-        {/* VIEW 2: FULL 19-SECTION TRADE PROFESSION ORIENTATION GUIDE */}
+        {/* VIEW 2: FULL UNNUMBERED TRADE PROFESSION ORIENTATION GUIDE */}
         {activeTrade && (
           <div className="space-y-8 animate-fade-in">
             
@@ -215,7 +221,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 <ArrowRight size={14} className="rotate-180" /> Vissza az összes szakmához
               </button>
               <div className="text-xs text-gray-400 font-medium">
-                Pályaorientációs Útmutató • <strong>19 fejezet</strong>
+                Pályaorientációs Útmutató
               </div>
             </div>
 
@@ -232,21 +238,21 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
               </div>
             </div>
 
-            {/* Sticky Table of Contents Quick Nav */}
+            {/* Sticky Table of Contents Quick Nav (Clean Unnumbered Labels) */}
             <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm sticky top-4 z-30 overflow-x-auto scrollbar-none flex items-center gap-2">
               {[
-                { id: 'sec-1', label: '1. Mi ez?' },
-                { id: 'sec-2', label: '2. Mit csinál?' },
-                { id: 'sec-3', label: '3. Átlagos munkanap' },
-                { id: 'sec-4', label: '4. Eszközök & Anyagok' },
-                { id: 'sec-5-6', label: '5-6. Mit kell megtanulni?' },
-                { id: 'sec-7-10', label: '7-10. Nehézség & Körülmények' },
-                { id: 'sec-11-12', label: '11-12. Előnyök & Hátrányok' },
-                { id: 'sec-13-15', label: '13-15. Karrier & Vállalkozás' },
-                { id: 'sec-16', label: '16. Kapcsolódó szakmák' },
-                { id: 'sec-17', label: '17. GYIK' },
-                { id: 'sec-18', label: '18. Szakmai szótár' },
-                { id: 'sec-19', label: '19. Neked való?' },
+                { id: 'sec-1', label: 'Mi ez a szakma?' },
+                { id: 'sec-2', label: 'Mit csinál?' },
+                { id: 'sec-3', label: 'Átlagos munkanap' },
+                { id: 'sec-4', label: 'Eszközök & Anyagok' },
+                { id: 'sec-5-6', label: 'Mit kell megtanulni?' },
+                { id: 'sec-7-10', label: 'Terhelés & Körülmények' },
+                { id: 'sec-11-12', label: 'Előnyök & Hátrányok' },
+                { id: 'sec-13-15', label: 'Karrier & Vállalkozás' },
+                { id: 'sec-16', label: 'Kapcsolódó szakmák' },
+                { id: 'sec-17', label: 'GYIK' },
+                { id: 'sec-18', label: 'Szakmai szótár' },
+                { id: 'sec-19', label: 'Neked való?' },
               ].map((nav) => (
                 <a
                   key={nav.id}
@@ -258,25 +264,29 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
               ))}
             </div>
 
-            {/* 19 FEJEZET TARTALOM */}
+            {/* UNNUMBERED FEJEZET TARTALOM */}
             <div className="space-y-10">
               
-              {/* 1. MI EZ A SZAKMA? */}
+              {/* MI EZ A SZAKMA? */}
               <section id="sec-1" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-4">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">1</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">1. MI EZ A SZAKMA?</h2>
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">
+                    <BookOpen size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">MI EZ A SZAKMA?</h2>
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed font-medium bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
                   {activeTrade.overview}
                 </p>
               </section>
 
-              {/* 2. MIT CSINÁL EGY [SZAKMA]? */}
+              {/* MIT CSINÁL EGY [SZAKMA]? */}
               <section id="sec-2" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">2</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">2. MIT CSINÁL EGY {activeTrade.name.toUpperCase()}?</h2>
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
+                    <Wrench size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">MIT CSINÁL EGY {activeTrade.name.toUpperCase()}?</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,11 +327,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 3. MILYEN EGY ÁTLAGOS MUNKANAP? */}
+              {/* MILYEN EGY ÁTLAGOS MUNKANAP? */}
               <section id="sec-3" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold">3</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">3. MILYEN EGY ÁTLAGOS MUNKANAP?</h2>
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold">
+                    <Clock size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">MILYEN EGY ÁTLAGOS MUNKANAP?</h2>
                 </div>
 
                 <div className="space-y-3">
@@ -342,11 +354,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </p>
               </section>
 
-              {/* 4. MIVEL DOLGOZIK? */}
+              {/* MIVEL DOLGOZIK? */}
               <section id="sec-4" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center font-bold">4</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">4. MIVEL DOLGOZIK? (ANYAGOK, SZERSZÁMOK &amp; GÉPEK)</h2>
+                  <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center font-bold">
+                    <Wrench size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">MIVEL DOLGOZIK? (ANYAGOK, SZERSZÁMOK &amp; GÉPEK)</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -360,11 +374,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 5-6. MIT KELL MEGTANULNI & KÉPZÉS */}
+              {/* MIT KELL MEGTANULNI A KÉPZÉS SORÁN? */}
               <section id="sec-5-6" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center font-bold">5-6</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">5-6. MIT KELL MEGTANULNI A KÉPZÉS SORÁN?</h2>
+                  <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center font-bold">
+                    <GraduationCap size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">MIT KELL MEGTANULNI A KÉPZÉS SORÁN?</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -406,11 +422,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 7-10. NEHÉZSÉG, EMBER, KÖRÜLMÉNYEK */}
+              {/* TERHELÉS, KINEK VALÓ & MUNKAKÖRÜLMÉNYEK */}
               <section id="sec-7-10" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 flex items-center justify-center font-bold">7-10</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">7-10. TERHELÉS, KINEK VALÓ &amp; MUNKAKÖRÜLMÉNYEK</h2>
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 flex items-center justify-center font-bold">
+                    <ShieldCheck size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">TERHELÉS, KINEK VALÓ &amp; MUNKAKÖRÜLMÉNYEK</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -432,7 +450,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                   <div className="p-6 bg-emerald-500/5 rounded-3xl border border-emerald-500/20 space-y-3">
                     <h3 className="text-sm font-extrabold text-emerald-900 flex items-center gap-2">
-                      <UserCheck size={18} className="text-emerald-600" /> 8. Milyen embernek való?
+                      <UserCheck size={18} className="text-emerald-600" /> Milyen embernek való?
                     </h3>
                     <ul className="space-y-2 text-xs text-gray-700">
                       {activeTrade.suitableAttributes.map((attr, i) => (
@@ -446,7 +464,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
 
                   <div className="p-6 bg-red-500/5 rounded-3xl border border-red-500/20 space-y-3">
                     <h3 className="text-sm font-extrabold text-red-900 flex items-center gap-2">
-                      <UserX size={18} className="text-red-600" /> 9. Kinek NEM ajánlott?
+                      <UserX size={18} className="text-red-600" /> Kinek NEM ajánlott?
                     </h3>
                     <ul className="space-y-2 text-xs text-gray-700">
                       {activeTrade.unsuitableAttributes.map((attr, i) => (
@@ -460,11 +478,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 11-12. ELŐNYÖK & HÁTRÁNYOK */}
+              {/* A SZAKMA ELŐNYEI ÉS HÁTRÁNYAI */}
               <section id="sec-11-12" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">11-12</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">11-12. A SZAKMA ELŐNYEI ÉS HÁTRÁNYAI</h2>
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">
+                    <Award size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">A SZAKMA ELŐNYEI ÉS HÁTRÁNYAI</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -494,11 +514,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 13-15. KARRIER & VÁLLALKOZÁS */}
+              {/* MUNKALEHETŐSÉGEK, KARRIERÚT & VÁLLALKOZÁS */}
               <section id="sec-13-15" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center font-bold">13-15</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">13-15. MUNKALEHETŐSÉGEK, KARRIERÚT &amp; VÁLLALKOZÁS</h2>
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center font-bold">
+                    <BriefcaseIcon size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">MUNKALEHETŐSÉGEK, KARRIERÚT &amp; VÁLLALKOZÁS</h2>
                 </div>
 
                 <div className="space-y-4">
@@ -533,11 +555,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 16. KAPCSOLÓDÓ SZAKMÁK */}
+              {/* KAPCSOLÓDÓ SZAKMÁK */}
               <section id="sec-16" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-4">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 flex items-center justify-center font-bold">16</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">16. KAPCSOLÓDÓ SZAKMÁK</h2>
+                  <div className="w-9 h-9 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 flex items-center justify-center font-bold">
+                    <HardHat size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">KAPCSOLÓDÓ SZAKMÁK</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -550,11 +574,13 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 17. GYAKORI KÉRDÉSEK */}
+              {/* GYAKORI KÉRDÉSEK LEENDŐ TANULÓKNAK */}
               <section id="sec-17" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">17</div>
-                  <h2 className="text-xl font-extrabold text-gray-900">17. GYAKORI KÉRDÉSEK LEENDŐ TANULÓKNAK</h2>
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
+                    <HelpCircle size={18} />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-gray-900">GYAKORI KÉRDÉSEK LEENDŐ TANULÓKNAK</h2>
                 </div>
 
                 <div className="space-y-3">
@@ -583,12 +609,14 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 18. SZAKMAI SZÓTÁR */}
+              {/* SZAKMAI SZÓTÁR (HU / DE / EN) */}
               <section id="sec-18" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">18</div>
-                    <h2 className="text-xl font-extrabold text-gray-900">18. SZAKMAI SZÓTÁR (HU / DE / EN)</h2>
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">
+                      <Globe size={18} />
+                    </div>
+                    <h2 className="text-xl font-extrabold text-gray-900">SZAKMAI SZÓTÁR (HU / DE / EN)</h2>
                   </div>
                   <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
                     <Globe size={14} /> Szakkijelölés
@@ -619,10 +647,10 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 </div>
               </section>
 
-              {/* 19. RÖVID ÖSSZEFOGLALÓ - NEKED VALÓ EZ A SZAKMA? */}
+              {/* RÖVID ÖSSZEFOGLALÓ - NEKED VALÓ EZ A SZAKMA? */}
               <section id="sec-19" className="bg-primary text-white rounded-3xl p-6 md:p-10 shadow-xl space-y-6">
                 <div className="space-y-2 text-center max-w-2xl mx-auto">
-                  <span className="text-xs font-bold text-accent uppercase tracking-wider">19. Összegző döntési segédlet</span>
+                  <span className="text-xs font-bold text-accent uppercase tracking-wider">Összegző döntési segédlet</span>
                   <h2 className="text-2xl md:text-3xl font-black">Neked való ez a szakma?</h2>
                   <p className="text-xs text-gray-300">
                     Gondold át reálisan az alábbi szempontokat a pálya orientációs döntésed előtt!
