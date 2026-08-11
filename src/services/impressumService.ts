@@ -95,22 +95,6 @@ export function saveImpressumData(data: ImpressumData): void {
       } catch (err) {
         console.warn('Supabase categories impressum_data sync info:', err);
       }
-
-      try {
-        await supabase.from('ad_campaigns').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          sponsor_name: '__SYSTEM_CONFIG_IMPRESSUM__',
-          placement_slot: 'config',
-          title: 'ImpressumData',
-          banner_image_url: payloadString,
-          status: 'system',
-          start_date: new Date().toISOString(),
-          impressions_count: 0,
-          clicks_count: 0,
-        });
-      } catch (err) {
-        console.warn('Supabase ad_campaigns impressum_data sync info:', err);
-      }
     })();
   } catch (err) {
     console.error('Hiba az impresszum adatok mentésekor:', err);
@@ -119,8 +103,6 @@ export function saveImpressumData(data: ImpressumData): void {
 
 export async function fetchImpressumDataFromCloud(): Promise<ImpressumData | null> {
   try {
-    let rawJson: string | null = null;
-
     const { data: catData, error: catErr } = await supabase
       .from('categories')
       .select('description')
@@ -128,21 +110,7 @@ export async function fetchImpressumDataFromCloud(): Promise<ImpressumData | nul
       .maybeSingle();
 
     if (!catErr && catData?.description && catData.description.startsWith('{')) {
-      rawJson = catData.description;
-    } else {
-      const { data: adData, error: adErr } = await supabase
-        .from('ad_campaigns')
-        .select('banner_image_url')
-        .eq('id', SUPABASE_SYSTEM_ID)
-        .maybeSingle();
-
-      if (!adErr && adData?.banner_image_url && adData.banner_image_url.startsWith('{')) {
-        rawJson = adData.banner_image_url;
-      }
-    }
-
-    if (rawJson) {
-      const parsed = JSON.parse(rawJson);
+      const parsed = JSON.parse(catData.description);
       const impressum: ImpressumData = {
         ...DEFAULT_IMPRESSUM_DATA,
         ...parsed,

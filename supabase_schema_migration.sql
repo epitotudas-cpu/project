@@ -1,0 +1,83 @@
+-- ============================================================================
+-- ÉpítőTudás - Supabase Database Schema Migration SQL Script
+-- Execute this script in the Supabase SQL Editor if you wish to create
+-- native database tables for ad_campaigns, partners, courses, comments, etc.
+-- ============================================================================
+
+-- 1. Create 'partners' table
+CREATE TABLE IF NOT EXISTS public.partners (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    category TEXT NOT NULL,
+    description TEXT,
+    website_url TEXT,
+    logo_url TEXT,
+    is_verified BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Create 'ad_campaigns' table
+CREATE TABLE IF NOT EXISTS public.ad_campaigns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sponsor_name TEXT NOT NULL,
+    placement_slot TEXT NOT NULL,
+    title TEXT NOT NULL,
+    target_url TEXT,
+    banner_image_url TEXT,
+    status TEXT DEFAULT 'active',
+    status_v2 TEXT DEFAULT 'active',
+    package_tier TEXT DEFAULT 'silver',
+    contract_type TEXT DEFAULT 'monthly',
+    price_huf NUMERIC DEFAULT 99000,
+    payment_status TEXT DEFAULT 'paid',
+    start_date TIMESTAMPTZ DEFAULT NOW(),
+    end_date TIMESTAMPTZ,
+    impressions_count INT DEFAULT 0,
+    clicks_count INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Create 'ad_creatives' table
+CREATE TABLE IF NOT EXISTS public.ad_creatives (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    placement_key TEXT NOT NULL,
+    partner_name TEXT NOT NULL,
+    badge_text TEXT,
+    headline TEXT NOT NULL,
+    description TEXT,
+    cta_text TEXT,
+    cta_url TEXT,
+    image_url TEXT,
+    mobile_image_url TEXT,
+    background_style TEXT DEFAULT 'light_neutral',
+    overlay_style TEXT DEFAULT 'none',
+    button_style TEXT DEFAULT 'petrol_teal',
+    text_align TEXT DEFAULT 'left',
+    animation_type TEXT DEFAULT 'pulse',
+    transition_effect TEXT DEFAULT 'slide_left',
+    rotation_seconds INT DEFAULT 6,
+    is_active BOOLEAN DEFAULT TRUE,
+    starts_at TIMESTAMPTZ DEFAULT NOW(),
+    ends_at TIMESTAMPTZ,
+    sort_order INT DEFAULT 1,
+    created_by TEXT DEFAULT 'Admin',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Enable Row Level Security (RLS) policies for public access
+ALTER TABLE public.partners ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_creatives ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read partners" ON public.partners FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update partners" ON public.partners FOR ALL USING (true);
+
+CREATE POLICY "Allow public read ad_campaigns" ON public.ad_campaigns FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update ad_campaigns" ON public.ad_campaigns FOR ALL USING (true);
+
+CREATE POLICY "Allow public read ad_creatives" ON public.ad_creatives FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update ad_creatives" ON public.ad_creatives FOR ALL USING (true);

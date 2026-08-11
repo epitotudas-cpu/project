@@ -1,4 +1,4 @@
-import { supabase, type Comment } from '../lib/supabase';
+import { type Comment } from '../lib/supabase';
 export type { Comment };
 
 const IN_MEMORY_COMMENTS: Map<string, Comment[]> = new Map([
@@ -34,19 +34,6 @@ const IN_MEMORY_FOLLOWS: Set<string> = new Set();
 
 export async function getComments(contentType: string, contentId: string): Promise<Comment[]> {
   const key = `${contentType}-${contentId}`;
-  try {
-    const { data } = await supabase
-      .from('comments' as 'articles')
-      .select('*')
-      .eq('content_type', contentType)
-      .eq('content_id', contentId)
-      .order('created_at', { ascending: false });
-
-    if (data && data.length > 0) return data as unknown as Comment[];
-  } catch (err) {
-    void err;
-  }
-
   return IN_MEMORY_COMMENTS.get(key) || [];
 }
 
@@ -55,56 +42,51 @@ export async function addComment(
   userName: string,
   contentType: string,
   contentId: string,
-  commentText: string,
+  text: string,
   rating: number = 5
 ): Promise<Comment> {
+  const key = `${contentType}-${contentId}`;
   const newComment: Comment = {
     id: `c-${Date.now()}`,
     user_id: userId,
     user_name: userName,
     content_type: contentType,
     content_id: contentId,
-    comment_text: commentText,
+    comment_text: text,
     rating,
     created_at: new Date().toISOString(),
   };
 
-  const key = `${contentType}-${contentId}`;
-  const existing = IN_MEMORY_COMMENTS.get(key) || [];
-  IN_MEMORY_COMMENTS.set(key, [newComment, ...existing]);
-
-  try {
-    await supabase.from('comments' as 'articles').insert([newComment]);
-  } catch (err) {
-    void err;
-  }
-
+  const list = IN_MEMORY_COMMENTS.get(key) || [];
+  list.unshift(newComment);
+  IN_MEMORY_COMMENTS.set(key, list);
   return newComment;
 }
 
-export async function toggleFavorite(userId: string, contentType: string, contentId: string): Promise<boolean> {
-  const key = `${userId}-${contentType}-${contentId}`;
+export async function toggleFavorite(userId: string, itemType: string, itemId: string): Promise<boolean> {
+  const key = `${userId}:${itemType}:${itemId}`;
   if (IN_MEMORY_FAVORITES.has(key)) {
     IN_MEMORY_FAVORITES.delete(key);
     return false;
-  } else {
-    IN_MEMORY_FAVORITES.add(key);
-    return true;
   }
+  IN_MEMORY_FAVORITES.add(key);
+  return true;
 }
 
-export async function isFavorite(userId: string, contentType: string, contentId: string): Promise<boolean> {
-  const key = `${userId}-${contentType}-${contentId}`;
-  return IN_MEMORY_FAVORITES.has(key);
+export async function isFavorite(userId: string, itemType: string, itemId: string): Promise<boolean> {
+  return IN_MEMORY_FAVORITES.has(`${userId}:${itemType}:${itemId}`);
 }
 
-export async function toggleFollow(followerId: string, followingId: string): Promise<boolean> {
-  const key = `${followerId}-${followingId}`;
+export async function toggleFollowAuthor(userId: string, authorId: string): Promise<boolean> {
+  const key = `${userId}:${authorId}`;
   if (IN_MEMORY_FOLLOWS.has(key)) {
     IN_MEMORY_FOLLOWS.delete(key);
     return false;
-  } else {
-    IN_MEMORY_FOLLOWS.add(key);
-    return true;
   }
+  IN_MEMORY_FOLLOWS.add(key);
+  return true;
+}
+
+export async function isFollowingAuthor(userId: string, authorId: string): Promise<boolean> {
+  return IN_MEMORY_FOLLOWS.has(`${userId}:${authorId}`);
 }

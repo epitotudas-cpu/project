@@ -1,4 +1,4 @@
-import { supabase, type Course, type Lesson, type QuizQuestion, type UserCertificate } from '../lib/supabase';
+import { type Course, type Lesson, type QuizQuestion, type UserCertificate } from '../lib/supabase';
 
 export interface DetailedCourse {
   course: Course;
@@ -53,20 +53,20 @@ const DEFAULT_COURSES: Course[] = [
 const DEFAULT_LESSONS: Record<string, Lesson[]> = {
   'course-1': [
     {
-      id: 'les-1',
+      id: 'l-1',
       course_id: 'course-1',
-      title: '1. Lecke: A zsaluzati rendszerek kiválasztása és szerelése',
+      title: '1. Lecke: Zsaluzatok és Dúcolási Szabályok',
       sequence_order: 1,
-      content: 'A zsaluzatok szerkezetépítésben betöltött szerepe kulcsfontosságú. A megfelelő keretes és pillérzsaluk csökkentik az üzemidőt.',
-      video_url: null,
+      content: 'A zsalurendszerek teherbírása, biztonsági tényezői és zsaluolajozási technológiák.',
+      video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       created_at: new Date().toISOString(),
     },
     {
-      id: 'les-2',
+      id: 'l-2',
       course_id: 'course-1',
-      title: '2. Lecke: Öntömörödő beton (SCC) tömörítése és utókezelése',
+      title: '2. Lecke: Öntömörödő Beton (SCC) Betonalapok',
       sequence_order: 2,
-      content: 'Az öntömörödő beton tömörítést nem igényel, de a párásítás és fedés elengedhetetlen a repedésmentes szilárduláshoz.',
+      content: 'Mi az az Öntömörödő Beton, hogyan viselkedik vibrálás nélkül?',
       video_url: null,
       created_at: new Date().toISOString(),
     },
@@ -102,20 +102,10 @@ const DEFAULT_QUESTIONS: Record<string, QuizQuestion[]> = {
 const USER_CERTIFICATES_STORE: Map<string, UserCertificate[]> = new Map();
 
 export async function listCourses(category?: string, difficulty?: string): Promise<Course[]> {
-  try {
-    let query = supabase.from('courses').select('*').eq('is_published', true);
-    if (category && category !== 'all') query = query.eq('category', category);
-    if (difficulty && difficulty !== 'all') query = query.eq('difficulty', difficulty);
-
-    const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      return DEFAULT_COURSES;
-    }
-    return data;
-  } catch (err) {
-    void err;
-    return DEFAULT_COURSES;
-  }
+  let list = DEFAULT_COURSES;
+  if (category && category !== 'all') list = list.filter((c) => c.category === category);
+  if (difficulty && difficulty !== 'all') list = list.filter((c) => c.difficulty === difficulty);
+  return list;
 }
 
 export async function getCourseDetails(courseId: string): Promise<DetailedCourse> {
@@ -145,24 +135,26 @@ export async function submitQuizAnswers(
     }
   });
 
-  const totalQuestions = questions.length;
+  const totalQuestions = questions.length || 1;
   const scorePercentage = Math.round((correctCount / totalQuestions) * 100);
   const passed = scorePercentage >= 75;
 
-  let certificate: UserCertificate | undefined;
+  let certificate: UserCertificate | undefined = undefined;
 
   if (passed) {
-    certificate = {
+    const certItem: UserCertificate = {
       id: `cert-${Date.now()}`,
       user_id: userId,
       course_id: courseId,
       score_achieved: scorePercentage,
-      certificate_code: `ET-CERT-${Math.floor(100000 + Math.random() * 900000)}`,
+      certificate_code: `EPITO-CERT-2026-${Math.floor(100000 + Math.random() * 900000)}`,
       issued_at: new Date().toISOString(),
     };
+    certificate = certItem;
 
-    const existing = USER_CERTIFICATES_STORE.get(userId) || [];
-    USER_CERTIFICATES_STORE.set(userId, [certificate, ...existing]);
+    const userCerts = USER_CERTIFICATES_STORE.get(userId) || [];
+    userCerts.push(certItem);
+    USER_CERTIFICATES_STORE.set(userId, userCerts);
   }
 
   return {
@@ -175,14 +167,5 @@ export async function submitQuizAnswers(
 }
 
 export async function getUserCertificates(userId: string): Promise<UserCertificate[]> {
-  return USER_CERTIFICATES_STORE.get(userId) || [
-    {
-      id: 'cert-sample',
-      user_id: userId,
-      course_id: 'course-1',
-      score_achieved: 100,
-      certificate_code: 'ET-CERT-982415',
-      issued_at: new Date().toISOString(),
-    },
-  ];
+  return USER_CERTIFICATES_STORE.get(userId) || [];
 }

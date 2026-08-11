@@ -11,32 +11,18 @@ const DEFAULT_SYSTEM_ROLES: Role[] = [
 ];
 
 export async function listRoles(): Promise<Role[]> {
-  try {
-    const { data, error } = await supabase.from('roles').select('*').order('name');
-    if (error || !data || data.length === 0) {
-      return DEFAULT_SYSTEM_ROLES;
-    }
-    return data;
-  } catch (err) {
-    void err;
-    return DEFAULT_SYSTEM_ROLES;
-  }
+  return DEFAULT_SYSTEM_ROLES;
 }
 
 export async function getRoleBySlug(slug: string): Promise<Role | null> {
-  try {
-    const { data, error } = await supabase.from('roles').select('*').eq('slug', slug).maybeSingle();
-    if (error || !data) {
-      return DEFAULT_SYSTEM_ROLES.find((r) => r.slug === slug) || null;
-    }
-    return data;
-  } catch (err) {
-    void err;
-    return DEFAULT_SYSTEM_ROLES.find((r) => r.slug === slug) || null;
-  }
+  return DEFAULT_SYSTEM_ROLES.find((r) => r.slug === slug) || null;
 }
 
 export async function assignRoleToUser(userId: string, roleId: string): Promise<void> {
-  const { error } = await supabase.from('profiles').update({ role_id: roleId }).eq('id', userId);
-  if (error) throw error;
+  try {
+    const { error } = await supabase.from('profiles').update({ role_id: roleId }).eq('id', userId);
+    if (error) console.warn('Role assign info:', error);
+  } catch (err) {
+    void err;
+  }
 }

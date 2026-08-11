@@ -1,7 +1,5 @@
-import { getContracts } from './contractService';
 import {
   supabase,
-  type AdCampaign,
   type ExtendedAdCampaign,
   type ContactPerson,
   type CampaignStatusV2,
@@ -48,8 +46,8 @@ export interface AdvertisementSlot {
   title: string;
   imageUrl?: string;
   targetUrl?: string;
-  sponsorName?: string;
-  isPlaceholder: boolean;
+  sponsorName: string;
+  isPlaceholder?: boolean;
 }
 
 export interface PartnerHighlight {
@@ -57,36 +55,34 @@ export interface PartnerHighlight {
   name: string;
   logoUrl?: string;
   description: string;
+  category: 'gyarto' | 'kereskedo' | 'ceg' | 'iskola';
   websiteUrl?: string;
-  category: 'gyarto' | 'kereskedo' | 'iskola' | 'kivitelezo';
 }
 
 export interface CreateAdCampaignPayload {
   sponsorName: string;
-  placementSlot: 'top_banner' | 'sidebar' | 'in_feed';
+  placementSlot: string;
   title: string;
   targetUrl?: string;
   bannerImageUrl?: string;
-
-  // v2 Fields
-  contactPerson?: ContactPerson;
   packageTier?: PackageTier;
   contractType?: ContractType;
   priceHuf?: number;
-  startDate?: string;
-  endDate?: string;
   paymentStatus?: PaymentStatus;
   statusV2?: CampaignStatusV2;
+  contactPerson?: ContactPerson;
+  startDate?: string;
+  endDate?: string;
 }
 
 const DEFAULT_CAMPAIGNS: ExtendedAdCampaign[] = [
   {
     id: 'camp-101',
-    sponsor_name: 'Bosch Professional Magyarország',
+    sponsor_name: 'Leier Hungária Kft.',
     placement_slot: 'top_banner',
-    title: 'Bosch Akkus Szerszámgépek & Zöld Lézeres Szintezők 2026',
-    target_url: 'https://www.bosch-professional.com/hu/hu/',
-    banner_image_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+    title: 'Leier Taverna & Kaiser Térkő Akció 2026 Tavasz',
+    target_url: 'https://www.leier.hu',
+    banner_image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=1200&q=80',
     status: 'active',
     status_v2: 'active',
     package_tier: 'gold',
@@ -94,39 +90,35 @@ const DEFAULT_CAMPAIGNS: ExtendedAdCampaign[] = [
     price_huf: 249000,
     payment_status: 'paid',
     contact_person: {
-      name: 'Nagy Péter',
-      email: 'peter.nagy@hu.bosch.com',
-      phone: '+36 30 555 1234',
-      role: 'Marketing Vezető',
+      name: 'Nagy Gábor',
+      email: 'gabor.nagy@leier.hu',
+      phone: '+36 96 555 123',
+      role: 'Marketing Igazgató',
     },
     start_date: '2026-01-01T00:00:00.000Z',
     end_date: '2026-12-31T23:59:59.000Z',
-    impressions_count: 124500,
-    clicks_count: 8420,
+    impressions_count: 154200,
+    clicks_count: 8940,
     created_at: new Date().toISOString(),
-    history_logs: [
-      { timestamp: '2026-01-01', action: 'Gold Szerződés Aláírva', author: 'Admin' },
-      { timestamp: '2026-01-05', action: 'Számla Kiegyenlítve: 249 000 Ft', author: 'Pénzügy' },
-    ],
   },
   {
     id: 'camp-102',
-    sponsor_name: 'Stanley Black & Decker',
-    placement_slot: 'in_feed',
-    title: 'Stanley FatMax Kéziszerszámok – Hivatalos Ipari Ajánlat',
-    target_url: 'https://www.stanleytools.eu',
-    banner_image_url: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=800&q=80',
+    sponsor_name: 'BOSCH Professional',
+    placement_slot: 'sidebar',
+    title: 'Bosch Professional Zöld Lézeres Szintezők',
+    target_url: 'https://www.bosch-professional.com',
+    banner_image_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
     status: 'active',
-    status_v2: 'active',
+    status_v2: 'pending_payment',
     package_tier: 'silver',
     contract_type: 'monthly',
     price_huf: 99000,
-    payment_status: 'paid',
+    payment_status: 'partially_paid',
     contact_person: {
       name: 'Kovács Andrea',
-      email: 'andrea.kovacs@stanley.com',
-      phone: '+36 20 444 8765',
-      role: 'Affiliate Menedzser',
+      email: 'andrea.kovacs@bosch.hu',
+      phone: '+36 1 432 5678',
+      role: 'Brand Menedzser',
     },
     start_date: '2026-06-01T00:00:00.000Z',
     end_date: '2026-08-31T23:59:59.000Z',
@@ -159,82 +151,10 @@ const DEFAULT_CAMPAIGNS: ExtendedAdCampaign[] = [
     clicks_count: 1940,
     created_at: new Date().toISOString(),
   },
-  {
-    id: 'camp-104',
-    sponsor_name: 'Cemex Magyarország',
-    placement_slot: 'sidebar',
-    title: 'Cemex Transzportbeton & Speciális Cementek 2026',
-    target_url: 'https://www.cemex.hu',
-    banner_image_url: null,
-    status: 'active',
-    status_v2: 'contracting',
-    package_tier: 'bronze',
-    contract_type: 'monthly',
-    price_huf: 49000,
-    payment_status: 'unpaid',
-    contact_person: {
-      name: 'Szabó Tamás',
-      email: 'tamas.szabo@cemex.hu',
-      phone: '+36 1 333 9876',
-      role: 'Marketing Menedzser',
-    },
-    start_date: '2026-07-15T00:00:00.000Z',
-    end_date: '2026-10-15T23:59:59.000Z',
-    impressions_count: 18500,
-    clicks_count: 940,
-    created_at: new Date().toISOString(),
-  },
-];
-
-const DEFAULT_SLOTS: AdvertisementSlot[] = [
-  {
-    id: 'ad-top-1',
-    location: 'top_banner',
-    title: 'Építőipari Szerszám & Alapanyag Kiemelés',
-    sponsorName: 'Partneri Hirdetés Helye',
-    isPlaceholder: true,
-  },
-  {
-    id: 'ad-sidebar-1',
-    location: 'sidebar',
-    title: 'Hivatalos Gyártói Támogató',
-    sponsorName: 'Partner Kiadvány',
-    isPlaceholder: true,
-  },
-  {
-    id: 'ad-feed-1',
-    location: 'in_feed',
-    title: 'Építkezési Szabványok és Újdonságok 2026',
-    sponsorName: 'Szakmai Szponzoráció',
-    isPlaceholder: true,
-  },
-];
-
-const DEFAULT_PARTNERS: PartnerHighlight[] = [
-  {
-    id: 'partner-1',
-    name: 'Holcim Magyarország',
-    description: 'Fenntartható kötőanyagok, speciális cementek és betontechnológiák.',
-    category: 'gyarto',
-    websiteUrl: 'https://www.holcim.hu',
-  },
-  {
-    id: 'partner-2',
-    name: 'Wienerberger Téglaipari Zrt.',
-    description: 'Innovatív Porotherm falazati rendszerek és Tondach kerámia cserepek.',
-    category: 'gyarto',
-    websiteUrl: 'https://www.wienerberger.hu',
-  },
-  {
-    id: 'partner-3',
-    name: 'BME Építőmérnöki Kar',
-    description: 'A jövő építőmérnökeinek, mérnöki tudásbázisának és szakembereinek képzése.',
-    category: 'iskola',
-    websiteUrl: 'https://www.epito.bme.hu',
-  },
 ];
 
 const STORAGE_KEY_CAMPAIGNS = 'epitotudas_ad_campaigns_v2';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000005';
 
 export function getStoredCampaigns(): ExtendedAdCampaign[] {
   try {
@@ -253,42 +173,49 @@ export function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): void {
   try {
     localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(campaigns));
     window.dispatchEvent(new Event('ad-campaigns-changed'));
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          name: '__SYSTEM_CONFIG_AD_CAMPAIGNS__',
+          slug: 'system-ad-campaigns-config',
+          description: JSON.stringify(campaigns),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
   } catch (err) {
     console.error('Hiba a kampányok mentésekor:', err);
   }
 }
 
 export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
+  let list = getStoredCampaigns();
+
   try {
-    const { data, error } = await supabase.from('ad_campaigns').select('*').order('created_at', { ascending: false });
-    if (!error && data && data.length > 0) {
-      const stored = getStoredCampaigns();
-      const mapped = data.map((item) => {
-        const match = stored.find((c) => c.id === item.id) || DEFAULT_CAMPAIGNS.find((c) => c.id === item.id);
-        return {
-          ...match,
-          ...item,
-          status_v2: match?.status_v2 || (item.status === 'active' ? 'active' : 'cancelled'),
-          price_huf: match?.price_huf || 99000,
-          payment_status: match?.payment_status || 'paid',
-          package_tier: match?.package_tier || 'silver',
-          contract_type: match?.contract_type || 'monthly',
-          impressions_count: match?.impressions_count ?? item.impressions_count ?? 0,
-          clicks_count: match?.clicks_count ?? item.clicks_count ?? 0,
-          contact_person: match?.contact_person || {
-            name: 'Kapcsolattartó Menedzser',
-            email: 'marketing@partner.hu',
-            phone: '+36 30 123 4567',
-          },
-        } as ExtendedAdCampaign;
-      });
-      saveStoredCampaigns(mapped);
-      return mapped;
+    const { data } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_SYSTEM_ID)
+      .maybeSingle();
+
+    if (data?.description && data.description.startsWith('[')) {
+      const cloudList = JSON.parse(data.description);
+      if (Array.isArray(cloudList) && cloudList.length > 0) {
+        list = cloudList;
+        try { localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(list)); } catch { /* ignore */ }
+      }
     }
   } catch (err) {
     void err;
   }
-  return getStoredCampaigns();
+
+  return list;
 }
 
 export async function createAdCampaign(payload: CreateAdCampaignPayload): Promise<ExtendedAdCampaign> {
@@ -320,174 +247,117 @@ export async function createAdCampaign(payload: CreateAdCampaignPayload): Promis
     ],
   };
 
-  const current = getStoredCampaigns();
-  const updated = [newCampaign, ...current];
-  saveStoredCampaigns(updated);
-
-  try {
-    const { data, error } = await supabase
-      .from('ad_campaigns')
-      .insert([
-        {
-          sponsor_name: payload.sponsorName,
-          placement_slot: payload.placementSlot,
-          title: payload.title,
-          target_url: payload.targetUrl,
-          banner_image_url: payload.bannerImageUrl,
-        },
-      ])
-      .select()
-      .single();
-
-    if (!error && data) {
-      const merged = { ...newCampaign, ...data };
-      const list = getStoredCampaigns();
-      const idx = list.findIndex((c) => c.id === newCampaign.id);
-      if (idx !== -1) list[idx] = merged;
-      saveStoredCampaigns(list);
-      return merged;
-    }
-  } catch (err) {
-    void err;
-  }
-
+  const campaigns = getStoredCampaigns();
+  campaigns.unshift(newCampaign);
+  saveStoredCampaigns(campaigns);
   return newCampaign;
 }
 
-export async function toggleCampaignStatus(id: string, newStatus: string): Promise<void> {
+export async function updateAdCampaign(id: string, updates: Partial<ExtendedAdCampaign>): Promise<ExtendedAdCampaign> {
   const campaigns = getStoredCampaigns();
   const index = campaigns.findIndex((c) => c.id === id);
+
   if (index !== -1) {
-    campaigns[index].status = newStatus;
-    campaigns[index].status_v2 = newStatus === 'active' ? 'active' : 'cancelled';
+    campaigns[index] = {
+      ...campaigns[index],
+      ...updates,
+    };
     saveStoredCampaigns(campaigns);
+    return campaigns[index];
   }
 
-  try {
-    await supabase.from('ad_campaigns').update({ status: newStatus }).eq('id', id);
-  } catch (err) {
-    void err;
-  }
+  throw new Error('Kampány nem található');
 }
 
-export async function updateCampaignStatusV2(id: string, newStatusV2: CampaignStatusV2): Promise<void> {
-  const campaigns = getStoredCampaigns();
-  const index = campaigns.findIndex((c) => c.id === id);
-  if (index !== -1) {
-    campaigns[index].status_v2 = newStatusV2;
-    campaigns[index].status = newStatusV2 === 'active' ? 'active' : 'paused';
-    saveStoredCampaigns(campaigns);
-  }
+export async function updateCampaignStatusV2(id: string, statusV2: CampaignStatusV2): Promise<ExtendedAdCampaign> {
+  return updateAdCampaign(id, { status_v2: statusV2, status: statusV2 === 'active' ? 'active' : 'paused' });
 }
 
-export async function updatePaymentStatus(id: string, newPaymentStatus: PaymentStatus): Promise<void> {
-  const campaigns = getStoredCampaigns();
-  const index = campaigns.findIndex((c) => c.id === id);
-  if (index !== -1) {
-    campaigns[index].payment_status = newPaymentStatus;
-    saveStoredCampaigns(campaigns);
-  }
+export async function updatePaymentStatus(id: string, paymentStatus: PaymentStatus): Promise<ExtendedAdCampaign> {
+  return updateAdCampaign(id, { payment_status: paymentStatus });
 }
 
-export async function recordAdImpression(id: string): Promise<void> {
+export async function deleteAdCampaign(id: string): Promise<void> {
   const campaigns = getStoredCampaigns();
-  const index = campaigns.findIndex((c) => c.id === id);
+  const filtered = campaigns.filter((c) => c.id !== id);
+  saveStoredCampaigns(filtered);
+}
+
+export async function getAdvertisementSlots(): Promise<AdvertisementSlot[]> {
+  const campaigns = await listAdCampaigns();
+  return campaigns.map((c) => ({
+    id: c.id,
+    location: (c.placement_slot as any) || 'top_banner',
+    title: c.title,
+    imageUrl: c.banner_image_url || undefined,
+    targetUrl: c.target_url || undefined,
+    sponsorName: c.sponsor_name,
+  }));
+}
+
+export async function getAdsForTool(_toolId?: string, _category?: string): Promise<any[]> {
+  return listAdCampaigns();
+}
+
+export async function getActiveAdForSlot(slot: 'top_banner' | 'sidebar' | 'in_feed' | 'footer_banner'): Promise<AdvertisementSlot | null> {
+  const campaigns = await listAdCampaigns();
+  const active = campaigns.filter((c) => c.placement_slot === slot && (c.status === 'active' || c.status_v2 === 'active'));
+
+  if (active.length > 0) {
+    const selected = active[Math.floor(Math.random() * active.length)];
+    return {
+      id: selected.id,
+      location: slot,
+      title: selected.title,
+      imageUrl: selected.banner_image_url || undefined,
+      targetUrl: selected.target_url || undefined,
+      sponsorName: selected.sponsor_name,
+    };
+  }
+
+  return null;
+}
+
+export async function recordAdImpression(campaignId: string): Promise<void> {
+  const campaigns = getStoredCampaigns();
+  const index = campaigns.findIndex((c) => c.id === campaignId);
   if (index !== -1) {
     campaigns[index].impressions_count = (campaigns[index].impressions_count || 0) + 1;
     saveStoredCampaigns(campaigns);
   }
 }
 
-export async function recordAdClick(id: string): Promise<void> {
+export async function recordAdClick(campaignId: string): Promise<void> {
   const campaigns = getStoredCampaigns();
-  const index = campaigns.findIndex((c) => c.id === id);
+  const index = campaigns.findIndex((c) => c.id === campaignId);
   if (index !== -1) {
     campaigns[index].clicks_count = (campaigns[index].clicks_count || 0) + 1;
     saveStoredCampaigns(campaigns);
   }
 }
 
-export async function getAdvertisementSlots(
-  location?: AdvertisementSlot['location']
-): Promise<AdvertisementSlot[]> {
-  const campaigns = await listAdCampaigns();
-  const contracts = getContracts();
-
-  // ONLY campaigns with status_v2 === 'active', valid payment, AND accepted contract!
-  const activeCampaigns = campaigns.filter((c) => {
-    // 1. Must be active status_v2
-    if (c.status_v2 !== 'active') return false;
-    // 2. Must not be overdue payment
-    if (c.payment_status === 'overdue') return false;
-
-    // 3. Check contract status if contract exists
-    const contract = contracts.find((cnt) => cnt.campaignId === c.id || cnt.partnerName === c.sponsor_name);
-    if (contract && contract.status !== 'accepted') {
-      return false; // Exclude if contract is draft, pending, or declined!
-    }
-
-    return true;
-  });
-
-  const slotsFromCampaigns: AdvertisementSlot[] = activeCampaigns.map((c) => ({
-    id: c.id,
-    location: (c.placement_slot as AdvertisementSlot['location']) || 'top_banner',
-    title: c.title,
-    imageUrl: c.banner_image_url || undefined,
-    targetUrl: c.target_url || undefined,
-    sponsorName: c.sponsor_name,
-    isPlaceholder: false,
-  }));
-
-  const all = [...slotsFromCampaigns, ...DEFAULT_SLOTS];
-
-  if (location) {
-    return all.filter((slot) => slot.location === location);
-  }
-  return all;
-}
-
 export async function getPartnerHighlights(): Promise<PartnerHighlight[]> {
-  try {
-    const { data, error } = await supabase
-      .from('partners')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(6);
-    if (!error && data && data.length > 0) {
-      return data.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        category: (item.category as PartnerHighlight['category']) || 'gyarto',
-        websiteUrl: item.website_url || undefined,
-        logoUrl: item.logo_url || undefined,
-      }));
-    }
-  } catch (err) {
-    void err;
-  }
-  return DEFAULT_PARTNERS;
+  return [
+    {
+      id: 'partner-1',
+      name: 'Holcim Magyarország',
+      description: 'Fenntartható kötőanyagok, speciális cementek és betontechnológiák.',
+      category: 'gyarto',
+      websiteUrl: 'https://www.holcim.hu',
+    },
+    {
+      id: 'partner-2',
+      name: 'Wienerberger Téglaipari Zrt.',
+      description: 'Innovatív Porotherm falazati rendszerek és Tondach kerámia cserepek.',
+      category: 'gyarto',
+      websiteUrl: 'https://www.wienerberger.hu',
+    },
+    {
+      id: 'partner-3',
+      name: 'BME Építőmérnöki Kar',
+      description: 'A jövő építőmérnökeinek, mérnöki tudásbázisának és szakembereinek képzése.',
+      category: 'iskola',
+      websiteUrl: 'https://www.epito.bme.hu',
+    },
+  ];
 }
-
-export async function getAdsForTool(_toolId?: string, category?: string): Promise<AdCampaign[]> {
-  try {
-    const campaigns = await listAdCampaigns();
-    if (campaigns && campaigns.length > 0) return campaigns;
-  } catch (err) {
-    void err;
-  }
-
-  if (category === 'Kéziszerszámok') {
-    return DEFAULT_CAMPAIGNS.filter((c) => c.id === 'camp-3');
-  }
-  if (category === 'Gépek és kisgépek') {
-    return DEFAULT_CAMPAIGNS.filter((c) => c.id === 'camp-4');
-  }
-  if (category === 'Mérőeszközök') {
-    return DEFAULT_CAMPAIGNS.filter((c) => c.id === 'camp-5');
-  }
-
-  return DEFAULT_CAMPAIGNS;
-}
-

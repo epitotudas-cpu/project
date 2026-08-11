@@ -153,7 +153,7 @@ export function saveSiteSettings(settings: SiteSettings): void {
     applySiteSettings(settings);
     window.dispatchEvent(new Event('site-settings-changed'));
 
-    // Dual-table cloud sync to Supabase ('categories' + 'ad_campaigns')
+    // Cloud sync to Supabase table 'categories' (which exists and works without 404 error)
     void (async () => {
       const payloadString = JSON.stringify(settings);
       try {
@@ -170,22 +170,6 @@ export function saveSiteSettings(settings: SiteSettings): void {
       } catch (err) {
         console.warn('Supabase categories site_settings sync info:', err);
       }
-
-      try {
-        await supabase.from('ad_campaigns').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          sponsor_name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
-          placement_slot: 'config',
-          title: 'SiteSettingsData',
-          banner_image_url: payloadString,
-          status: 'system',
-          start_date: new Date().toISOString(),
-          impressions_count: 0,
-          clicks_count: 0,
-        });
-      } catch (err) {
-        console.warn('Supabase ad_campaigns site_settings sync info:', err);
-      }
     })();
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);
@@ -194,9 +178,6 @@ export function saveSiteSettings(settings: SiteSettings): void {
 
 export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null> {
   try {
-    let rawJson: string | null = null;
-
-    // 1. Query 'categories' system config row
     const { data: catData, error: catErr } = await supabase
       .from('categories')
       .select('description')
@@ -204,22 +185,7 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
       .maybeSingle();
 
     if (!catErr && catData?.description && catData.description.startsWith('{')) {
-      rawJson = catData.description;
-    } else {
-      // 2. Query 'ad_campaigns' system config row
-      const { data: adData, error: adErr } = await supabase
-        .from('ad_campaigns')
-        .select('banner_image_url')
-        .eq('id', SUPABASE_SYSTEM_ID)
-        .maybeSingle();
-
-      if (!adErr && adData?.banner_image_url && adData.banner_image_url.startsWith('{')) {
-        rawJson = adData.banner_image_url;
-      }
-    }
-
-    if (rawJson) {
-      const parsed = JSON.parse(rawJson);
+      const parsed = JSON.parse(catData.description);
       const settings: SiteSettings = {
         ...DEFAULT_SITE_SETTINGS,
         ...parsed,

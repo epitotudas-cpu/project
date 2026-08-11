@@ -1,6 +1,7 @@
 import { supabase, type AdCreative } from '../lib/supabase';
 
 const CREATIVES_STORAGE_KEY = 'epitotudas_ad_creatives_v1';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000006';
 
 export const DEFAULT_AD_CREATIVES: AdCreative[] = [
   {
@@ -54,69 +55,19 @@ export const DEFAULT_AD_CREATIVES: AdCreative[] = [
     updated_at: new Date().toISOString(),
   },
   {
-    id: 'creative-in-feed-stanley',
-    placement_key: 'in_feed',
-    partner_name: 'Stanley Black & Decker',
-    badge_text: 'Kiemelt Ajánlat',
-    headline: 'Stanley FatMax Kéziszerszámok – Hivatalos Ipari Ajánlat',
-    description: 'Prémium minőségű ipari kéziszerszámok és méréstechnika professzionális kivitelezőknek.',
-    cta_text: 'Felfedezem',
-    cta_url: 'https://www.stanleytools.eu',
-    image_url: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=800&q=80',
-    mobile_image_url: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=400&q=80',
-    background_style: 'dark_slate',
-    overlay_style: 'soft_dark',
-    button_style: 'amber_gold',
-    text_align: 'left',
-    animation_type: 'float',
-    transition_effect: 'zoom',
-    rotation_seconds: 6,
-    is_active: true,
-    starts_at: '2026-01-01T00:00:00.000Z',
-    ends_at: null,
-    sort_order: 1,
-    created_by: 'Admin',
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'creative-sidebar-makita',
-    placement_key: 'sidebar',
-    partner_name: 'Makita Magyarország',
-    badge_text: 'Kiemelt Partner',
-    headline: 'Makita 18V LXT & 40V max XGT Ipari Szerszámok',
-    description: 'Akkumulátoros szerszámgépek szakemberek számára a legkeményebb körülményekre.',
-    cta_text: 'Katalógus',
-    cta_url: 'https://www.makita.hu',
-    image_url: 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&w=800&q=80',
-    mobile_image_url: 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&w=400&q=80',
+    id: 'creative-top-banner-leier',
+    placement_key: 'top_banner',
+    partner_name: 'Leier Tégla- és Betonipartermékek',
+    badge_text: 'Újdonság 2026',
+    headline: 'Leier Taverna Térkövek & Poroton Falazási Rendszerek',
+    description: 'Prémium minőségű magyar építőanyagok közvetlenül a gyártótól.',
+    cta_text: 'Részletek a Leier Oldalán',
+    cta_url: 'https://www.leier.hu',
+    image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80',
+    mobile_image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=400&q=80',
     background_style: 'petrol_teal',
     overlay_style: 'none',
     button_style: 'amber_gold',
-    text_align: 'left',
-    animation_type: 'pulse',
-    transition_effect: 'slide_up',
-    rotation_seconds: 5,
-    is_active: true,
-    starts_at: '2026-01-01T00:00:00.000Z',
-    ends_at: null,
-    sort_order: 1,
-    created_by: 'Admin',
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'creative-footer-knauf',
-    placement_key: 'footer_banner',
-    partner_name: 'Knauf Építőipari Rendszerek',
-    badge_text: 'Rendszergarancia',
-    headline: 'Knauf Gipszkarton & Szigetelési Rendszerek 2026',
-    description: 'Energiahatékony szárazépítészeti és hőszigetelési rendszerek profi kivitelezőknek.',
-    cta_text: 'Rendszerek Megtekintése',
-    cta_url: 'https://www.knauf.hu',
-    image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80',
-    mobile_image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=400&q=80',
-    background_style: 'soft_gradient',
-    overlay_style: 'none',
-    button_style: 'petrol_teal',
     text_align: 'left',
     animation_type: 'fade_in',
     transition_effect: 'fade',
@@ -124,7 +75,7 @@ export const DEFAULT_AD_CREATIVES: AdCreative[] = [
     is_active: true,
     starts_at: '2026-01-01T00:00:00.000Z',
     ends_at: null,
-    sort_order: 1,
+    sort_order: 3,
     created_by: 'Admin',
     updated_at: new Date().toISOString(),
   },
@@ -153,98 +104,123 @@ export function saveStoredCreatives(creatives: AdCreative[]): void {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('ad-creative-changed'));
     }
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          name: '__SYSTEM_CONFIG_AD_CREATIVES__',
+          slug: 'system-ad-creatives-config',
+          description: JSON.stringify(creatives),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
   } catch (err) {
     console.error('Hiba a kreatívok mentésekor:', err);
   }
 }
 
 export async function listBannerCreatives(): Promise<AdCreative[]> {
-  try {
-    const { data, error } = await supabase
-      .from('ad_creatives')
-      .select('*')
-      .order('sort_order', { ascending: true });
+  let list = getStoredCreatives();
 
-    if (!error && data && data.length > 0) {
-      const stored = getStoredCreatives();
-      const mapped: AdCreative[] = data.map((item) => {
-        const match = stored.find((c) => c.id === item.id) || DEFAULT_AD_CREATIVES.find((c) => c.id === item.id);
-        return {
-          ...match,
-          ...item,
-        } as AdCreative;
-      });
-      saveStoredCreatives(mapped);
-      return mapped;
+  try {
+    const { data } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_SYSTEM_ID)
+      .maybeSingle();
+
+    if (data?.description && data.description.startsWith('[')) {
+      const cloudList = JSON.parse(data.description);
+      if (Array.isArray(cloudList) && cloudList.length > 0) {
+        list = cloudList;
+        try { localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+      }
     }
   } catch (err) {
     void err;
   }
-  return getStoredCreatives();
+
+  return list;
 }
 
-export function getCreativesByPlacementSync(placementKey: AdCreative['placement_key']): AdCreative[] {
+export async function createBannerCreative(payload: Partial<AdCreative>): Promise<AdCreative> {
   const creatives = getStoredCreatives();
-  const matches = creatives
-    .filter((c) => c.placement_key === placementKey && c.is_active)
-    .sort((a, b) => (a.sort_order || 1) - (b.sort_order || 1));
-
-  if (matches.length > 0) return matches;
-
-  const defaultMatch = DEFAULT_AD_CREATIVES
-    .filter((c) => c.placement_key === placementKey && c.is_active)
-    .sort((a, b) => (a.sort_order || 1) - (b.sort_order || 1));
-
-  return defaultMatch;
-}
-
-export function getCreativeByPlacementSync(placementKey: AdCreative['placement_key']): AdCreative | null {
-  const list = getCreativesByPlacementSync(placementKey);
-  return list.length > 0 ? list[0] : null;
-}
-
-export async function saveBannerCreative(creative: AdCreative): Promise<AdCreative> {
-  const current = getStoredCreatives();
-  // Match ONLY by unique id to prevent overwriting other creatives of the same placement!
-  const index = current.findIndex((c) => c.id === creative.id);
-
-  const updatedCreative: AdCreative = {
-    ...creative,
+  const newCreative: AdCreative = {
+    id: `creative-${Date.now()}`,
+    placement_key: payload.placement_key || 'top_banner',
+    partner_name: payload.partner_name || 'Új Partner',
+    badge_text: payload.badge_text || 'Ajánlat',
+    headline: payload.headline || 'Új Banner Cím',
+    description: payload.description || '',
+    cta_text: payload.cta_text || 'Megtekintem',
+    cta_url: payload.cta_url || '#',
+    image_url: payload.image_url || null,
+    mobile_image_url: payload.mobile_image_url || null,
+    background_style: payload.background_style || 'light_neutral',
+    overlay_style: payload.overlay_style || 'none',
+    button_style: payload.button_style || 'petrol_teal',
+    text_align: payload.text_align || 'left',
+    animation_type: payload.animation_type || 'none',
+    transition_effect: payload.transition_effect || 'fade',
+    rotation_seconds: payload.rotation_seconds || 5,
+    is_active: payload.is_active !== undefined ? payload.is_active : true,
+    starts_at: payload.starts_at || new Date().toISOString(),
+    ends_at: payload.ends_at || null,
+    sort_order: payload.sort_order || creatives.length + 1,
+    created_by: 'Admin',
     updated_at: new Date().toISOString(),
   };
 
-  if (index !== -1) {
-    current[index] = updatedCreative;
-  } else {
-    current.push(updatedCreative);
-  }
-
-  saveStoredCreatives(current);
-
-  try {
-    await supabase.from('ad_creatives').upsert([updatedCreative]);
-  } catch (err) {
-    void err;
-  }
-
-  return updatedCreative;
+  creatives.push(newCreative);
+  saveStoredCreatives(creatives);
+  return newCreative;
 }
 
-export function resetCreativeToDefaults(placementKey: AdCreative['placement_key']): AdCreative {
-  const defaultItems = DEFAULT_AD_CREATIVES.filter((c) => c.placement_key === placementKey);
-  const defaultItem = defaultItems[0] || DEFAULT_AD_CREATIVES[0];
-  
-  const current = getStoredCreatives();
-  const index = current.findIndex((c) => c.id === defaultItem.id || c.placement_key === placementKey);
-
-  const resetItem = { ...defaultItem, updated_at: new Date().toISOString() };
+export async function updateBannerCreative(id: string, updates: Partial<AdCreative>): Promise<AdCreative> {
+  const creatives = getStoredCreatives();
+  const index = creatives.findIndex((c) => c.id === id);
 
   if (index !== -1) {
-    current[index] = resetItem;
-  } else {
-    current.push(resetItem);
+    creatives[index] = {
+      ...creatives[index],
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    saveStoredCreatives(creatives);
+    return creatives[index];
   }
 
-  saveStoredCreatives(current);
-  return resetItem;
+  throw new Error('Kreatív nem található');
+}
+
+export async function saveBannerCreative(creative: Partial<AdCreative>): Promise<AdCreative> {
+  if (creative.id) {
+    return updateBannerCreative(creative.id, creative);
+  }
+  return createBannerCreative(creative);
+}
+
+export function resetCreativeToDefaults(placementKey?: string): AdCreative {
+  saveStoredCreatives(DEFAULT_AD_CREATIVES);
+  if (placementKey) {
+    return DEFAULT_AD_CREATIVES.find((c) => c.placement_key === placementKey) || DEFAULT_AD_CREATIVES[0];
+  }
+  return DEFAULT_AD_CREATIVES[0];
+}
+
+export function getCreativesByPlacementSync(placementKey: string): AdCreative[] {
+  const creatives = getStoredCreatives();
+  return creatives.filter((c) => c.placement_key === placementKey && c.is_active);
+}
+
+export async function deleteBannerCreative(id: string): Promise<void> {
+  const creatives = getStoredCreatives();
+  const filtered = creatives.filter((c) => c.id !== id);
+  saveStoredCreatives(filtered);
 }

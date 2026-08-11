@@ -16,6 +16,9 @@ export interface CreatePartnerPayload {
   logo_url?: string;
 }
 
+const STORAGE_KEY = 'epitotudas_partners_store_v1';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000004';
+
 const DEFAULT_PARTNERS: Partner[] = [
   {
     id: 'p-1',
@@ -63,27 +66,80 @@ const DEFAULT_PARTNERS: Partner[] = [
   },
 ];
 
-export async function listPartners(category?: string): Promise<Partner[]> {
+export function getCategoryLabel(cat: string): string {
+  const map: Record<string, string> = {
+    gyarto: 'Gyártó',
+    kereskedo: 'Kereskedő',
+    ceg: 'Kivitelező Cég',
+    iskola: 'Oktatási Intézmény',
+    oktato: 'Oktató / Tréner',
+    tamogato: 'Támogató',
+  };
+  return map[cat] || cat;
+}
+
+function getStoredPartners(): Partner[] {
   try {
-    let query = supabase.from('partners').select('*').order('name');
-    if (category && category !== 'all') {
-      query = query.eq('category', category);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-    const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      if (category && category !== 'all') {
-        return DEFAULT_PARTNERS.filter((p) => p.category === category);
-      }
-      return DEFAULT_PARTNERS;
-    }
-    return data;
   } catch (err) {
     void err;
-    if (category && category !== 'all') {
-      return DEFAULT_PARTNERS.filter((p) => p.category === category);
-    }
-    return DEFAULT_PARTNERS;
   }
+  return DEFAULT_PARTNERS;
+}
+
+function saveStoredPartners(list: Partner[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_SYSTEM_ID,
+          name: '__SYSTEM_CONFIG_PARTNERS__',
+          slug: 'system-partners-config',
+          description: JSON.stringify(list),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
+  } catch (err) {
+    void err;
+  }
+}
+
+export async function listPartners(category?: string): Promise<Partner[]> {
+  let list = getStoredPartners();
+
+  try {
+    const { data } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_SYSTEM_ID)
+      .maybeSingle();
+
+    if (data?.description && data.description.startsWith('[')) {
+      const cloudList = JSON.parse(data.description);
+      if (Array.isArray(cloudList) && cloudList.length > 0) {
+        list = cloudList;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+      }
+    }
+  } catch (err) {
+    void err;
+  }
+
+  if (category && category !== 'all') {
+    return list.filter((p) => p.category === category);
+  }
+  return list;
 }
 
 export async function createPartner(payload: CreatePartnerPayload): Promise<Partner> {
@@ -104,77 +160,30 @@ export async function createPartner(payload: CreatePartnerPayload): Promise<Part
     created_at: new Date().toISOString(),
   };
 
-  try {
-    const { data, error } = await supabase.from('partners').insert([payload]).select().single();
-    if (!error && data) return data;
-  } catch (err) {
-    void err;
-  }
-
-  DEFAULT_PARTNERS.push(newPartner);
+  const list = getStoredPartners();
+  list.unshift(newPartner);
+  saveStoredPartners(list);
   return newPartner;
 }
 
 export async function updatePartner(id: string, payload: Partial<CreatePartnerPayload & { is_verified?: boolean }>): Promise<Partner> {
-  const updateData: Record<string, unknown> = {};
-  if (payload.name !== undefined) updateData.name = payload.name;
-  if (payload.category !== undefined) updateData.category = payload.category;
-  if (payload.description !== undefined) updateData.description = payload.description || null;
-  if (payload.website_url !== undefined) updateData.website_url = payload.website_url || null;
-  if (payload.is_verified !== undefined) updateData.is_verified = payload.is_verified;
+  const list = getStoredPartners();
+  const index = list.findIndex((p) => p.id === id);
 
-  try {
-    const { data, error } = await supabase.from('partners').update(updateData).eq('id', id).select().single();
-    if (!error && data) return data;
-  } catch (err) {
-    void err;
-  }
-
-  const idx = DEFAULT_PARTNERS.findIndex((p) => p.id === id);
-  if (idx !== -1) {
-    DEFAULT_PARTNERS[idx] = {
-      ...DEFAULT_PARTNERS[idx],
-      ...updateData,
+  if (index !== -1) {
+    list[index] = {
+      ...list[index],
+      ...payload,
     };
-    return DEFAULT_PARTNERS[idx];
+    saveStoredPartners(list);
+    return list[index];
   }
 
-  throw new Error('Partner nem található.');
+  throw new Error('Partner nem található');
 }
 
 export async function deletePartner(id: string): Promise<void> {
-  try {
-    const { error } = await supabase.from('partners').delete().eq('id', id);
-    if (!error) {
-      const idx = DEFAULT_PARTNERS.findIndex((p) => p.id === id);
-      if (idx !== -1) DEFAULT_PARTNERS.splice(idx, 1);
-      return;
-    }
-  } catch (err) {
-    void err;
-  }
-
-  const idx = DEFAULT_PARTNERS.findIndex((p) => p.id === id);
-  if (idx !== -1) {
-    DEFAULT_PARTNERS.splice(idx, 1);
-  }
-}
-
-export function getCategoryLabel(category: string): string {
-  switch (category) {
-    case 'gyarto':
-      return 'Gyártó';
-    case 'kereskedo':
-      return 'Kereskedő';
-    case 'ceg':
-      return 'Cég / Kivitelező';
-    case 'iskola':
-      return 'Oktatási Intézmény';
-    case 'oktato':
-      return 'Oktatási Központ';
-    case 'tamogato':
-      return 'Támogató Szervezet';
-    default:
-      return category;
-  }
+  const list = getStoredPartners();
+  const filtered = list.filter((p) => p.id !== id);
+  saveStoredPartners(filtered);
 }
