@@ -4,18 +4,6 @@ export interface MaterialToolItem {
   description: string;
 }
 
-export interface DictionaryTerm {
-  hu: string;
-  description: string;
-  de: string;
-  en: string;
-}
-
-export interface FAQItem {
-  question: string;
-  answer: string;
-}
-
 export interface TradeDetail {
   id: string;
   name: string;
@@ -89,13 +77,7 @@ export interface TradeDetail {
     prosAndCons: string;
   };
 
-  // 15. GYAKORI KÉRDÉSEK
-  faqs: FAQItem[];
-
-  // 16. SZAKMAI SZÓTÁR (HU / DE / EN)
-  dictionary: DictionaryTerm[];
-
-  // 17. RÖVID ÖSSZEFOGLALÓ – "NEKED VALÓ EZ A SZAKMA?"
+  // 15. RÖVID ÖSSZEFOGLALÓ – "NEKED VALÓ EZ A SZAKMA?"
   summaryChecklist: {
     goodFitIf: string[];
     considerOtherIf: string[];
@@ -221,19 +203,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek (családi ház tulajdonosok)', 'Kisebb ingatlanfejlesztők'],
       prosAndCons: 'Nagy szabadságot és jó jövedelemszerzési lehetőséget biztosít, de felelősséggel jár az anyagszervezés és a határidők tartása terén.',
     },
-    faqs: [
-      { question: 'Nehéz megtanulni egyenesen falazni?', answer: 'A zsinór és a vízmérték használatát néhány hét gyakorlással el lehet sajátítani. A titok a türelem és a folyamatos ellenőrzés.' },
-      { question: 'Kell hozzá jó matematikai tudás?', answer: 'Alapfokú geometria és aritmetika elegendő (terület- és térfogatszámítás, derékszög kitűzése Pitagorasz-tétellel).' },
-      { question: 'Csak nyáron lehet dolgozni?', answer: 'Nem, a modern téli adalékszerekkel fagypont körül is lehet falazni, emellett télen sok a beltéri átalakítás és vakolás.' },
-      { question: 'Lehet-e nőként kőművesnek tanulni?', answer: 'Igen, a gépesítés (gépi vakolás, emelők) terjedésével a fizikai teher csökken, a precíz látásmód pedig előny.' },
-    ],
-    dictionary: [
-      { hu: 'Függőón', description: 'Függőleges irány beállítására szolgáló nehezék zsinóron.', de: 'Lot / Senkblei', en: 'Plumb bob' },
-      { hu: 'Zsinórállvány', description: 'Épület sarkain felállított fa keret a tengelyek kitűzéséhez.', de: 'Schnurgerüst', en: 'Batter board' },
-      { hu: 'Koszorú', description: 'Falak tetején futó vasbeton merevítő öv.', de: 'Ringanker', en: 'Ring beam' },
-      { hu: 'Esztrich', description: 'Vékony, aljzatképző betonréteg burkolat alá.', de: 'Estrich', en: 'Screed' },
-      { hu: 'Áthidaló', description: 'Ajtó- és ablaknyílások feletti teherhordó elem.', de: 'Sturz', en: 'Lintel' },
-    ],
     summaryChecklist: {
       goodFitIf: [
         'Szereted a fizikai munkát és a szabadlevegőt',
@@ -318,15 +287,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Építész irodák'],
       prosAndCons: 'Nagy a kereslet a jó ácsokra, de komoly szerszám- és gépparkot igényel az indulás.',
     },
-    faqs: [
-      { question: 'Kell-e félni a magasban?', answer: 'Az egészséges óvatosság alapfeltétel, de a leesés elleni hám és a tapasztalat biztonságot ad.' },
-      { question: 'Nehéz megtanulni a tetőszerkesztést?', answer: 'A műszaki rajzok és a szögszámítások némi gyakorlással gyorsan elsajátíthatók.' },
-    ],
-    dictionary: [
-      { hu: 'Szarufa', description: 'A tető lejtését adó, gerinctől ereszig futó gerenda.', de: 'Sparren', en: 'Rafter' },
-      { hu: 'Szelemen', description: 'A szarufákat alátámasztó vízszintes gerenda.', de: 'Pfetten', en: 'Purlin' },
-      { hu: 'Zsalutábla', description: 'Betonöntéshez használt vízálló lemez.', de: 'Schalungsplatte', en: 'Formwork panel' },
-    ],
     summaryChecklist: {
       goodFitIf: ['Imádod a fával való munkát', 'Nem félsz a magasban dolgozni', 'Jó a térlátásod és szeretsz mérni'],
       considerOtherIf: ['Tériszonyod van', 'Nem szereted az évszakos kültéri munkát'],
@@ -395,15 +355,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Belsőépítészek'],
       prosAndCons: 'Nagyon jól jövedelmező önálló szakma, minimális kezdeti gépparkkal elindítható.',
     },
-    faqs: [
-      { question: 'Fájni fog a térdem?', answer: 'Profi géles térdvédő használatával az ízületi terhelés jelentősen csökkenthető.' },
-      { question: 'Kell hozzá jó rajzkészség?', answer: 'Nem rajz, hanem jó geometriai szemlélet kell a lapok szimmetrikus elrendezéséhez.' },
-    ],
-    dictionary: [
-      { hu: 'Dilatáció', description: 'Hőtágulás miatti mozgási hézag.', de: 'Dehnungsfuge', en: 'Expansion joint' },
-      { hu: 'Greslap', description: 'Nagy keménységű, fagyálló kerámialap.', de: 'Feinsteinzeug', en: 'Porcelain tile' },
-      { hu: 'Fogazott simító', description: 'Ragasztó bordázására szolgáló glettvas.', de: 'Zahnspachtel', en: 'Notched trowel' },
-    ],
     summaryChecklist: {
       goodFitIf: ['Szereted a hajszálpontos, szép felületeket', 'Szeretsz zárt belső térben dolgozni', 'Jó a kézügyességed'],
       considerOtherIf: ['Nem tudsz tartósan térdelni', 'Nincs türelmed az aprólékos vágásokhoz'],
@@ -472,15 +423,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Társasházkezelők'],
       prosAndCons: 'Kiváló vállalkozási lehetőség, de kötelező a folyamatos továbbképzés és a szabványok ismerete.',
     },
-    faqs: [
-      { question: 'Kell-e jó matektudás?', answer: 'Alapfokú fizikára és matematikára szükség van a teljesítmények és áramerősségek kiszámításához.' },
-      { question: 'Veszélyes ez a szakma?', answer: 'Szakszerű munkavégzéssel és a 5 biztonsági szabály betartásával a baleseti kockázat minimálisra csökkenthető.' },
-    ],
-    dictionary: [
-      { hu: 'Fi-relé', description: 'Áramvédő kapcsoló a szivárgó áramok kivédésére.', de: 'FI-Schutzschalter', en: 'RCD / Residual current breaker' },
-      { hu: 'Kismegszakító', description: 'Túlterhelés és zárlat ellen védő kapcsoló.', de: 'Leitungsschutzschalter', en: 'Circuit breaker' },
-      { hu: 'Horonymaró', description: 'Két gyémánttárcsás gép vezetékhornyok vágására.', de: 'Mauernutfräse', en: 'Wall chaser' },
-    ],
     summaryChecklist: {
       goodFitIf: ['Szereted a logikai feladványokat és a műszaki rajzokat', 'Felelősségteljes vagy és szeretsz precízen szerelni', 'Érdekelnek az okosgépek, napelemes rendszerek'],
       considerOtherIf: ['Színtévesztő vagy', 'Nem szeretsz gondolkodni a munkafolyamatokon'],
@@ -549,15 +491,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Családi ház tulajdonosok', 'Társasházak'],
       prosAndCons: 'Magas profittartalmú vállalkozási forma, komoly szerszámozottsági igénnyel.',
     },
-    faqs: [
-      { question: 'Büdös ez a szakma?', answer: 'Az ivóvíz-, fűtés- és hőszivattyús szerelés tiszta munka. A lefolyószerelésnél fordulhat elő kellemetlenség.' },
-      { question: 'Kell-e hozzá fűtési számításokat tudni?', answer: 'Igen, a csőátmérőket és szivattyú-teljesítményeket hidraulikai méretezés alapján választjuk.' },
-    ],
-    dictionary: [
-      { hu: 'Osztó-gyűjtő', description: 'Fűtési vagy ivóvízkörök elágaztató sárgaréz szerelvénye.', de: 'Heizkreisverteiler', en: 'Manifold' },
-      { hu: 'Press-idom', description: 'Présgéppel rögzíthető csőkötő elem.', de: 'Pressfitting', en: 'Press fitting' },
-      { hu: 'Hőszivattyú', description: 'Környezeti hőt hasznosító hűtő/fűtő berendezés.', de: 'Wärmepumpe', en: 'Heat pump' },
-    ],
     summaryChecklist: {
       goodFitIf: ['Szereted a modern épületgépészetet és a zöld energiákat', 'Logikusan gondolkodsz hidraulikai körökben', 'Jó kereseti lehetőséget keresel'],
       considerOtherIf: ['Nem szeretsz felelősséget vállalni a vízzáróságért'],
@@ -626,15 +559,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Családi ház tulajdonosok', 'Társasházak'],
       prosAndCons: 'Nagyon keresett önálló szakma, emelőgépek és bádogos élhajlító megléte nagy előny.',
     },
-    faqs: [
-      { question: 'Forró a tető nyáron?', answer: 'Igen, a cserép és lemez átforrósodik, ezért nyáron korai kezdtetű (06:00) munkarend a bevett.' },
-      { question: 'Nehéz a bádogot hajtogatni?', answer: 'A kézi bádogos fogók és a műhelyi élhajlítók használatával könnyen alakítható a lemez.' },
-    ],
-    dictionary: [
-      { hu: 'Kúpcserép', description: 'A tetőgerincet lezáró félhenger alakú cserép.', de: 'Firstziegel', en: 'Ridge tile' },
-      { hu: 'Vápa', description: 'Két tetősík találkozásánál lévő csapadékgyűjtő vájat.', de: 'Kehle', en: 'Roof valley' },
-      { hu: 'Korcolás', description: 'Fémlemezek vízhatlan összehajtási kötési módja.', de: 'Stehfalz', en: 'Standing seam' },
-    ],
     summaryChecklist: {
       goodFitIf: ['Szeretsz magasan dolgozni és jó az egyensúlyod', 'Kedveled a finom fémlemez-megmunkálást', 'Bírod a napsütést és a kültéri munkát'],
       considerOtherIf: ['Tériszonyod van', 'Félsz a lejtős felületeken való mozgástól'],
@@ -703,15 +627,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Irodavezetők'],
       prosAndCons: 'Gyorsan indítható vállalkozás, kis géppark igénnyel.',
     },
-    faqs: [
-      { question: 'Nehéz egy gipszkarton tábla?', answer: 'Egy normál tábla kb. 22-25 kg, de kartonemelő lifttel a plafonra emelés könnyen megoldható.' },
-      { question: 'Poros ez a munka?', answer: 'A vázszerelés és csavarozás nem poros, egyedül a hézagolás csiszolásakor keletkezik finom gipszpor.' },
-    ],
-    dictionary: [
-      { hu: 'CW profil', description: 'Válaszfalak függőleges fém bordaprofilja.', de: 'CW-Profil', en: 'CW stud profile' },
-      { hu: 'Bandázsszalag', description: 'Gipszkarton illesztésekbe ágyazott erősítő háló/papír.', de: 'Bewehrungsstreifen', en: 'Joint tape' },
-      { hu: 'Q4 felület', description: 'Legmagasabb minőségű, teljes felületen glettelt karton.', de: 'Q4-Oberfläche', en: 'Q4 finish' },
-    ],
     summaryChecklist: {
       goodFitIf: ['Szeretsz zárt belső térben, tisztán dolgozni', 'Könnyen megtanulható, látványos szakmát keresel', 'Jó a kézügyességed'],
       considerOtherIf: ['Nem bírod a finom gipszport', 'Nem szeretsz mennyezet felé nyújtózni'],
@@ -780,15 +695,6 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
       clients: ['Magánszemélyek', 'Irodák'],
       prosAndCons: 'Nagyon alacsony kezdő tőkével elindítható sikeres vállalkozás.',
     },
-    faqs: [
-      { question: 'Nehéz megtanulni glettelni?', answer: 'A glettvas tartását és a simító mozdulatokat néhány hét gyakorlással szépen el lehet sajátítani.' },
-      { question: 'Büdösek a mai festékek?', answer: 'A modern diszperziós és akril festékek szagtalanok és vízbázisúak.' },
-    ],
-    dictionary: [
-      { hu: 'Diszperziós festék', description: 'Vízbázisú, műgyanta kötőanyagú beltéri festék.', de: 'Dispersionsfarbe', en: 'Emulsion paint' },
-      { hu: 'Airless szórás', description: 'Levegő nélküli, nagy nyomású festékszórás.', de: 'Airless-Spritzen', en: 'Airless spraying' },
-      { hu: 'Mélyalapozó', description: 'A fal nedvszívását kiegyenlítő és porkötő folyadék.', de: 'Tiefgrund', en: 'Primer' },
-    ],
     summaryChecklist: {
       goodFitIf: ['Szereted a tiszta, színes és esztétikus munkát', 'Szeretnél gyorsan indítható vállalkozást', 'Jó a szemmértéked és precíz vagy'],
       considerOtherIf: ['Nem bírja a karod a tartós felemelt tartást'],

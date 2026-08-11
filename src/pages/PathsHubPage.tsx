@@ -17,16 +17,14 @@ import {
   Check,
   X,
   AlertCircle,
-  HelpCircle,
-  Globe,
-  UserCheck,
-  UserX,
   Search,
   BookOpen,
   Wrench,
   Briefcase as BriefcaseIcon,
   ShieldCheck,
   Award,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { TRADE_DETAILS, TradeDetail } from '../data/tradeDetailsData';
@@ -48,7 +46,6 @@ const TRADE_CARDS = [
 
 export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [tradeSearch, setTradeSearch] = useState<string>('');
 
   const activeTrade: TradeDetail | null = useMemo(() => {
@@ -62,10 +59,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
       tc.name.toLowerCase().includes(tradeSearch.toLowerCase())
     );
   }, [tradeSearch]);
-
-  const toggleFaq = (idx: number) => {
-    setOpenFaqIndex(openFaqIndex === idx ? null : idx);
-  };
 
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
@@ -247,8 +240,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 { id: 'sec-7-10', label: 'Terhelés & Körülmények' },
                 { id: 'sec-11-12', label: 'Előnyök & Hátrányok' },
                 { id: 'sec-13-15', label: 'Karrier & Vállalkozás' },
-                { id: 'sec-17', label: 'GYIK' },
-                { id: 'sec-18', label: 'Szakmai szótár' },
                 { id: 'sec-19', label: 'Neked való?' },
               ].map((nav) => (
                 <a
@@ -522,79 +513,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                       <p className="text-gray-600 leading-relaxed">{activeTrade.entrepreneurship.prosAndCons}</p>
                     </div>
                   </div>
-                </div>
-              </section>
-
-              {/* GYAKORI KÉRDÉSEK LEENDŐ TANULÓKNAK */}
-              <section id="sec-17" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
-                    <HelpCircle size={18} />
-                  </div>
-                  <h2 className="text-xl font-extrabold text-gray-900">GYAKORI KÉRDÉSEK LEENDŐ TANULÓKNAK</h2>
-                </div>
-
-                <div className="space-y-3">
-                  {activeTrade.faqs.map((faq, idx) => {
-                    const isOpen = openFaqIndex === idx;
-                    return (
-                      <div key={idx} className="border border-gray-200 rounded-2xl overflow-hidden">
-                        <button
-                          onClick={() => toggleFaq(idx)}
-                          className="w-full p-4 bg-gray-50 hover:bg-gray-100 text-left font-bold text-xs text-gray-900 flex items-center justify-between transition-colors"
-                        >
-                          <span className="flex items-center gap-2">
-                            <HelpCircle size={15} className="text-accent" />
-                            {faq.question}
-                          </span>
-                          <ChevronRight size={16} className={`transition-transform ${isOpen ? 'rotate-90 text-primary' : 'text-gray-400'}`} />
-                        </button>
-                        {isOpen && (
-                          <div className="p-4 bg-white text-xs text-gray-700 leading-relaxed border-t border-gray-100">
-                            {faq.answer}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* SZAKMAI SZÓTÁR (HU / DE / EN) */}
-              <section id="sec-18" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">
-                      <Globe size={18} />
-                    </div>
-                    <h2 className="text-xl font-extrabold text-gray-900">SZAKMAI SZÓTÁR (HU / DE / EN)</h2>
-                  </div>
-                  <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                    <Globe size={14} /> Szakkijelölés
-                  </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-primary text-white">
-                        <th className="p-3 font-bold rounded-tl-xl">Magyar kifejezés</th>
-                        <th className="p-3 font-bold">Rövid magyarázat</th>
-                        <th className="p-3 font-bold">Német (DE)</th>
-                        <th className="p-3 font-bold rounded-tr-xl">Angol (EN)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 font-medium text-gray-800">
-                      {activeTrade.dictionary.map((term, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                          <td className="p-3 font-bold text-gray-900">{term.hu}</td>
-                          <td className="p-3 text-gray-600">{term.description}</td>
-                          <td className="p-3 italic text-primary">{term.de}</td>
-                          <td className="p-3 italic text-accent">{term.en}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </section>
 
