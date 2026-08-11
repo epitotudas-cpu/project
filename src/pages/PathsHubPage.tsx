@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   GraduationCap,
   Briefcase,
@@ -52,6 +52,45 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
     if (!selectedTradeId) return null;
     return TRADE_DETAILS[selectedTradeId] || null;
   }, [selectedTradeId]);
+
+  useEffect(() => {
+    if (activeTrade) {
+      const pageTitle = `${activeTrade.name} szakma – Feladatok, képzés, munkakörülmények | ÉpítőTudás`;
+      const pageDesc = `Ismerd meg a ${activeTrade.name.toLowerCase()} szakmát: ${activeTrade.tagline.toLowerCase()}. Mit csinál, milyen eszközökkel dolgozik és milyen szakmai lehetőségek várnak rád.`;
+      const pageUrl = `https://epitotudas.hu/#paths?trade=${activeTrade.id}`;
+
+      document.title = pageTitle;
+
+      const updateMeta = (selector: string, content: string) => {
+        const el = document.querySelector(selector);
+        if (el) {
+          el.setAttribute('content', content);
+        }
+      };
+
+      updateMeta('meta[name="description"]', pageDesc);
+      updateMeta('meta[property="og:title"]', pageTitle);
+      updateMeta('meta[property="og:description"]', pageDesc);
+      updateMeta('meta[property="og:url"]', pageUrl);
+      updateMeta('meta[name="twitter:title"]', pageTitle);
+      updateMeta('meta[name="twitter:description"]', pageDesc);
+    } else {
+      document.title = 'ÉpítőTudás – Építőipari tudásbázis és szakmai képzések';
+      const defaultDesc = 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek. Szakmai fogalmak, technológiák, szakmák, számítások és gyakorlati tudás egy helyen.';
+      const updateMeta = (selector: string, content: string) => {
+        const el = document.querySelector(selector);
+        if (el) {
+          el.setAttribute('content', content);
+        }
+      };
+      updateMeta('meta[name="description"]', defaultDesc);
+      updateMeta('meta[property="og:title"]', 'ÉpítőTudás – Építőipari tudásbázis és szakmai képzések');
+      updateMeta('meta[property="og:description"]', defaultDesc);
+      updateMeta('meta[property="og:url"]', 'https://epitotudas.hu');
+      updateMeta('meta[name="twitter:title"]', 'ÉpítőTudás – Építőipari tudásbázis és szakmai képzések');
+      updateMeta('meta[name="twitter:description"]', defaultDesc);
+    }
+  }, [activeTrade]);
 
   const filteredTradeCards = useMemo(() => {
     if (!tradeSearch.trim()) return TRADE_CARDS;
