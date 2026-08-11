@@ -100,6 +100,25 @@ export function applySiteSettings(settings: SiteSettings): void {
     if (settings?.siteTitle) {
       document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
     }
+
+    // Dynamic Favicon & Apple Touch Icon from admin logoUrl
+    const logoUrl = (settings?.logoUrl && settings.logoUrl.trim()) ? settings.logoUrl.trim() : '/logo.png';
+
+    let iconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!iconLink) {
+      iconLink = document.createElement('link');
+      iconLink.rel = 'icon';
+      document.head.appendChild(iconLink);
+    }
+    iconLink.href = logoUrl;
+
+    let appleIconLink = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+    if (!appleIconLink) {
+      appleIconLink = document.createElement('link');
+      appleIconLink.rel = 'apple-touch-icon';
+      document.head.appendChild(appleIconLink);
+    }
+    appleIconLink.href = logoUrl;
   } catch (err) {
     console.error('Hiba a beállítások érvényesítésekor:', err);
   }
