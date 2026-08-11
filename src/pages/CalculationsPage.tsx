@@ -32,48 +32,47 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   const [copied, setCopied] = useState(false);
 
   // --------------------------------------------------------------------------
-  // 1. BETON & ZSALUZAT STATE
+  // 1. BETON & ZSALUZAT STATE (Alapértelmezetten 0 értékek)
   // --------------------------------------------------------------------------
   const [concreteShape, setConcreteShape] = useState<'slab' | 'strip' | 'column'>('slab');
-  const [cLength, setCLength] = useState<number>(10);
-  const [cWidth, setCWidth] = useState<number>(8);
-  const [cHeight, setCHeight] = useState<number>(0.15); // meters
-  const [cCount, setCCount] = useState<number>(4); // for columns
+  const [cLength, setCLength] = useState<number>(0);
+  const [cWidth, setCWidth] = useState<number>(0);
+  const [cHeight, setCHeight] = useState<number>(0); // meters
+  const [cCount, setCCount] = useState<number>(0); // for columns
   const [cGrade, setCGrade] = useState<'C12' | 'C16' | 'C20' | 'C25' | 'C30'>('C20');
-  const [cWaste, setCWaste] = useState<number>(8); // %
+  const [cWaste, setCWaste] = useState<number>(0); // %
 
   const concreteCalc = useMemo(() => {
     let netVol = 0;
     let formArea = 0;
 
-    if (concreteShape === 'slab') {
-      netVol = cLength * cWidth * cHeight;
-      formArea = 2 * (cLength + cWidth) * cHeight;
-    } else if (concreteShape === 'strip') {
-      netVol = cLength * cWidth * cHeight;
-      formArea = 2 * cLength * cHeight;
-    } else {
-      // column
-      netVol = cLength * cWidth * cHeight * cCount;
-      formArea = 2 * (cLength + cWidth) * cHeight * cCount;
+    if (cLength > 0 && cWidth > 0 && cHeight > 0) {
+      if (concreteShape === 'slab') {
+        netVol = cLength * cWidth * cHeight;
+        formArea = 2 * (cLength + cWidth) * cHeight;
+      } else if (concreteShape === 'strip') {
+        netVol = cLength * cWidth * cHeight;
+        formArea = 2 * cLength * cHeight;
+      } else {
+        // column
+        netVol = cLength * cWidth * cHeight * (cCount || 1);
+        formArea = 2 * (cLength + cWidth) * cHeight * (cCount || 1);
+      }
     }
 
-    const grossVol = netVol * (1 + cWaste / 100);
+    const grossVol = netVol * (1 + (cWaste || 0) / 100);
 
-    // Cement ratios per m3 approx: C12 -> 230kg, C16 -> 270kg, C20 -> 320kg, C25 -> 360kg, C30 -> 400kg
     const cementRatioMap = { C12: 230, C16: 270, C20: 320, C25: 360, C30: 400 };
     const cementKgPerM3 = cementRatioMap[cGrade];
-    const totalCementKg = Math.ceil(grossVol * cementKgPerM3);
+    const totalCementKg = grossVol > 0 ? Math.ceil(grossVol * cementKgPerM3) : 0;
     const cementBags25kg = Math.ceil(totalCementKg / 25);
 
-    // Gravel/Sóder approx 1.85 tons per m3
-    const soderTons = Number((grossVol * 1.85).toFixed(2));
-    const soderM3 = Number((grossVol * 1.15).toFixed(2));
-    const waterLiters = Math.ceil(totalCementKg * 0.55);
+    const soderTons = grossVol > 0 ? Number((grossVol * 1.85).toFixed(2)) : 0;
+    const soderM3 = grossVol > 0 ? Number((grossVol * 1.15).toFixed(2)) : 0;
+    const waterLiters = totalCementKg > 0 ? Math.ceil(totalCementKg * 0.55) : 0;
 
-    // Rebar approx 60kg per m3 for slabs, 80kg for strips, 110kg for columns
     const rebarRatio = concreteShape === 'column' ? 110 : concreteShape === 'strip' ? 80 : 65;
-    const rebarKg = Math.ceil(grossVol * rebarRatio);
+    const rebarKg = grossVol > 0 ? Math.ceil(grossVol * rebarRatio) : 0;
 
     return {
       netVol: Number(netVol.toFixed(2)),
@@ -89,19 +88,18 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [concreteShape, cLength, cWidth, cHeight, cCount, cGrade, cWaste]);
 
   // --------------------------------------------------------------------------
-  // 2. FALAZÓANYAG & HABARCS STATE
+  // 2. FALAZÓANYAG & HABARCS STATE (Alapértelmezetten 0 értékek)
   // --------------------------------------------------------------------------
   const [brickType, setBrickType] = useState<'pth30' | 'pth44' | 'ytong30' | 'b30' | 'zsaluko30'>('pth30');
-  const [wLength, setWLength] = useState<number>(12);
-  const [wHeight, setWHeight] = useState<number>(2.8);
-  const [wDeduction, setWDeduction] = useState<number>(4); // m2 windows/doors
-  const [wWaste, setWWaste] = useState<number>(5);
+  const [wLength, setWLength] = useState<number>(0);
+  const [wHeight, setWHeight] = useState<number>(0);
+  const [wDeduction, setWDeduction] = useState<number>(0); // m2 windows/doors
+  const [wWaste, setWWaste] = useState<number>(0);
 
   const masonryCalc = useMemo(() => {
     const grossArea = wLength * wHeight;
     const netArea = Math.max(0, grossArea - wDeduction);
 
-    // Brick data: pcs/m2, pallet pcs, mortar L/m2 or concrete m3/m2
     const specs = {
       pth30: { name: 'Porotherm 30 N+F', pcsM2: 16, palletPcs: 80, mortarL: 24, isZsaluko: false },
       pth44: { name: 'Porotherm 44 Thermo Profi', pcsM2: 16, palletPcs: 60, mortarL: 35, isZsaluko: false },
@@ -111,18 +109,19 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     }[brickType];
 
     const netPcs = netArea * specs.pcsM2;
-    const grossPcs = Math.ceil(netPcs * (1 + wWaste / 100));
-    const pallets = Math.ceil(grossPcs / specs.palletPcs);
+    const grossPcs = netPcs > 0 ? Math.ceil(netPcs * (1 + (wWaste || 0) / 100)) : 0;
+    const pallets = grossPcs > 0 ? Math.ceil(grossPcs / specs.palletPcs) : 0;
 
     let mortarBags = 0;
     let zsalukoConcreteM3 = 0;
 
-    if (specs.isZsaluko) {
-      zsalukoConcreteM3 = Number((netArea * 0.19).toFixed(2));
-    } else {
-      const totalMortarLiters = netArea * specs.mortarL;
-      // 1 bag 25kg dry mortar yields ~16 liters
-      mortarBags = Math.ceil(totalMortarLiters / 16);
+    if (netArea > 0) {
+      if (specs.isZsaluko) {
+        zsalukoConcreteM3 = Number((netArea * 0.19).toFixed(2));
+      } else {
+        const totalMortarLiters = netArea * specs.mortarL;
+        mortarBags = Math.ceil(totalMortarLiters / 16);
+      }
     }
 
     return {
@@ -137,15 +136,14 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [brickType, wLength, wHeight, wDeduction, wWaste]);
 
   // --------------------------------------------------------------------------
-  // 3. HŐSZIGETELÉS & U-ÉRTÉK STATE
+  // 3. HŐSZIGETELÉS & U-ÉRTÉK STATE (Alapértelmezetten 0 értékek)
   // --------------------------------------------------------------------------
   const [wallBase, setWallBase] = useState<'b30' | 'pth30' | 'concrete'>('pth30');
   const [insulationMat, setInsulationMat] = useState<'eps' | 'grafit' | 'kozetgyapot' | 'xps' | 'pir'>('grafit');
-  const [insulationCm, setInsulationCm] = useState<number>(15);
-  const [insArea, setInsArea] = useState<number>(120); // m2
+  const [insulationCm, setInsulationCm] = useState<number>(0);
+  const [insArea, setInsArea] = useState<number>(0); // m2
 
   const insulationCalc = useMemo(() => {
-    // Base wall U-value and thermal conductivity lambda (W/mK)
     const baseWallSpecs = {
       b30: { name: 'B30 Téglafal (30 cm)', R: 0.60 },
       pth30: { name: 'Porotherm 30 N+F (30 cm)', R: 1.12 },
@@ -160,17 +158,15 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       pir: { name: 'PIR keményhab tábla', lambda: 0.022 },
     }[insulationMat];
 
-    const R_insulation = (insulationCm / 100) / matSpecs.lambda;
-    const R_total = baseWallSpecs.R + R_insulation + 0.17; // Rsi + Rse boundary resistance
+    const R_insulation = insulationCm > 0 ? (insulationCm / 100) / matSpecs.lambda : 0;
+    const R_total = baseWallSpecs.R + R_insulation + 0.17;
     const uValue = Number((1 / R_total).toFixed(3));
 
-    // TNM 7/2006 KNE threshold for exterior wall is U <= 0.24 W/m2K
     const passesKNE = uValue <= 0.24;
 
-    // Material totals
-    const adhesiveBags = Math.ceil((insArea * 9) / 25); // 9kg/m2 adhesive + basecoat
-    const meshM2 = Math.ceil(insArea * 1.1); // 10% overlap
-    const boardPcs = Math.ceil((insArea * 2)); // 50x100cm boards = 2 pcs/m2
+    const adhesiveBags = insArea > 0 ? Math.ceil((insArea * 9) / 25) : 0;
+    const meshM2 = insArea > 0 ? Math.ceil(insArea * 1.1) : 0;
+    const boardPcs = insArea > 0 ? Math.ceil(insArea * 2) : 0;
 
     return {
       baseName: baseWallSpecs.name,
@@ -184,34 +180,34 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [wallBase, insulationMat, insulationCm, insArea]);
 
   // --------------------------------------------------------------------------
-  // 4. VAKOLAT, ESZTRICH & BURKOLAT STATE
+  // 4. VAKOLAT, ESZTRICH & BURKOLAT STATE (Alapértelmezetten 0 értékek)
   // --------------------------------------------------------------------------
   const [tilingType, setTilingType] = useState<'tile' | 'screed' | 'plaster'>('tile');
-  const [tArea, setTArea] = useState<number>(45); // m2
+  const [tArea, setTArea] = useState<number>(0); // m2
   const [tTileSize, setTTileSize] = useState<'30x30' | '60x60' | '30x60'>('60x60');
-  const [tThicknessMm, setTThicknessMm] = useState<number>(40); // for screed/plaster mm
-  const [tWaste, setTWaste] = useState<number>(10);
+  const [tThicknessMm, setTThicknessMm] = useState<number>(0); // for screed/plaster mm
+  const [tWaste, setTWaste] = useState<number>(0);
 
   const tilingCalc = useMemo(() => {
     let tilesM2 = 0;
     let adhesiveBags = 0;
     let groutKg = 0;
     let screedBags = 0;
+    let primerLiters = 0;
 
-    if (tilingType === 'tile') {
-      tilesM2 = Math.ceil(tArea * (1 + tWaste / 100));
-      // Adhesive approx 4.5 kg/m2 for 60x60, 3.5 kg/m2 for 30x30
-      const kgPerM2 = tTileSize === '60x60' ? 4.8 : 3.8;
-      adhesiveBags = Math.ceil((tArea * kgPerM2) / 25);
-      groutKg = Math.ceil(tArea * 0.4);
-    } else {
-      // Screed or plaster
-      // Dry mortar approx 20kg per m2 per cm thickness (10mm)
-      const totalDryKg = tArea * (tThicknessMm / 10) * 19;
-      screedBags = Math.ceil(totalDryKg / 25);
+    if (tArea > 0) {
+      if (tilingType === 'tile') {
+        tilesM2 = Math.ceil(tArea * (1 + (tWaste || 0) / 100));
+        const kgPerM2 = tTileSize === '60x60' ? 4.8 : 3.8;
+        adhesiveBags = Math.ceil((tArea * kgPerM2) / 25);
+        groutKg = Math.ceil(tArea * 0.4);
+      } else {
+        const totalDryKg = tArea * (tThicknessMm / 10) * 19;
+        screedBags = Math.ceil(totalDryKg / 25);
+      }
+
+      primerLiters = Math.ceil(tArea * 0.15);
     }
-
-    const primerLiters = Math.ceil(tArea * 0.15);
 
     return {
       tilesM2,
@@ -223,24 +219,23 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [tilingType, tArea, tTileSize, tThicknessMm, tWaste]);
 
   // --------------------------------------------------------------------------
-  // 5. GIPSZKARTON & SZÁRAZÉPÍTÉSZET STATE
+  // 5. GIPSZKARTON & SZÁRAZÉPÍTÉSZET STATE (Alapértelmezetten 0 értékek)
   // --------------------------------------------------------------------------
   const [dwType, setDwType] = useState<'wall1' | 'wall2' | 'ceiling'>('wall1');
-  const [dwArea, setDwArea] = useState<number>(35); // m2
+  const [dwArea, setDwArea] = useState<number>(0); // m2
   const [dwBoardType, setDwBoardType] = useState<'rb' | 'rbi' | 'rf'>('rb');
 
   const drywallCalc = useMemo(() => {
-    const boardSizeM2 = 2.4; // 120x200 cm standard
+    const boardSizeM2 = 2.4;
     const layers = dwType === 'wall2' ? 2 : 1;
-    const boardCount = Math.ceil((dwArea * layers * 1.05) / boardSizeM2);
+    const boardCount = dwArea > 0 ? Math.ceil((dwArea * layers * 1.05) / boardSizeM2) : 0;
 
-    // CW/UW or CD/UD profile linear meters
-    const mainProfileFm = Math.ceil(dwArea * 2.8);
-    const perimeterProfileFm = Math.ceil(Math.sqrt(dwArea) * 4 * 1.2);
+    const mainProfileFm = dwArea > 0 ? Math.ceil(dwArea * 2.8) : 0;
+    const perimeterProfileFm = dwArea > 0 ? Math.ceil(Math.sqrt(dwArea) * 4 * 1.2) : 0;
 
-    const jointFillerKg = Math.ceil(dwArea * layers * 0.5);
-    const screwsPcs = Math.ceil(dwArea * layers * 18);
-    const tapeM = Math.ceil(dwArea * 1.5);
+    const jointFillerKg = dwArea > 0 ? Math.ceil(dwArea * layers * 0.5) : 0;
+    const screwsPcs = dwArea > 0 ? Math.ceil(dwArea * layers * 18) : 0;
+    const tapeM = dwArea > 0 ? Math.ceil(dwArea * 1.5) : 0;
 
     const boardNames = {
       rb: 'Normál RB Gipszkarton (12.5mm)',
@@ -260,24 +255,31 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [dwType, dwArea, dwBoardType]);
 
   // --------------------------------------------------------------------------
-  // 6. TETŐFEDÉS & CSERÉP STATE
+  // 6. TETŐFEDÉS & CSERÉP STATE (Alapértelmezetten 0 értékek)
   // --------------------------------------------------------------------------
-  const [roofFootprint, setRoofFootprint] = useState<number>(100); // m2 ground footprint
-  const [roofAngle, setRoofAngle] = useState<number>(35); // degrees
+  const [roofFootprint, setRoofFootprint] = useState<number>(0); // m2 ground footprint
+  const [roofAngle, setRoofAngle] = useState<number>(0); // degrees
   const [tileType, setTileType] = useState<'ceramic' | 'concrete' | 'sheet'>('ceramic');
 
   const roofingCalc = useMemo(() => {
-    // Pitch multiplier = 1 / cos(angle in rad)
-    const rad = (roofAngle * Math.PI) / 180;
-    const pitchMultiplier = 1 / Math.cos(rad);
-    const actualRoofArea = Number((roofFootprint * pitchMultiplier * 1.1).toFixed(1)); // 1.1 overhang factor
+    let actualRoofArea = 0;
+    let totalTiles = 0;
+    let battenFm = 0;
+    let membraneM2 = 0;
+    let ridgeTiles = 0;
 
-    const tilePcsPerM2 = tileType === 'ceramic' ? 10.5 : tileType === 'concrete' ? 9.8 : 1;
-    const totalTiles = Math.ceil(actualRoofArea * tilePcsPerM2 * 1.06); // 6% waste
+    if (roofFootprint > 0) {
+      const rad = (roofAngle * Math.PI) / 180;
+      const pitchMultiplier = 1 / Math.cos(rad);
+      actualRoofArea = Number((roofFootprint * pitchMultiplier * 1.1).toFixed(1));
 
-    const battenFm = Math.ceil(actualRoofArea * 3.2); // battens
-    const membraneM2 = Math.ceil(actualRoofArea * 1.15); // membrane overlap
-    const ridgeTiles = Math.ceil(Math.sqrt(roofFootprint) * 1.4 * 3); // ridge tiles
+      const tilePcsPerM2 = tileType === 'ceramic' ? 10.5 : tileType === 'concrete' ? 9.8 : 1;
+      totalTiles = Math.ceil(actualRoofArea * tilePcsPerM2 * 1.06);
+
+      battenFm = Math.ceil(actualRoofArea * 3.2);
+      membraneM2 = Math.ceil(actualRoofArea * 1.15);
+      ridgeTiles = Math.ceil(Math.sqrt(roofFootprint) * 1.4 * 3);
+    }
 
     return {
       actualRoofArea,
@@ -396,7 +398,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 Interaktív Építőipari Számítások &amp; Kalkulátorok
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Preíz anyagszükséglet-számítások, zsaluzási és betonszükséglet kalkulációk, U-érték energetikai ellenőrzés a magyar szabványoknak megfelelően.
+                Prezíz anyagszükséglet-számítások, zsaluzási és betonszükséglet kalkulációk, U-érték energetikai ellenőrzés a magyar szabványoknak megfelelően.
               </p>
             </div>
 
@@ -505,11 +507,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     </div>
                   </div>
                   <button
-                    onClick={() => { setCLength(10); setCWidth(8); setCHeight(0.15); setCWaste(8); }}
+                    onClick={() => { setCLength(0); setCWidth(0); setCHeight(0); setCCount(0); setCWaste(0); }}
                     className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
                     title="Alaphelyzet"
                   >
-                    <RotateCcw size={12} /> Visszaállítás
+                    <RotateCcw size={12} /> Visszaállítás (0)
                   </button>
                 </div>
 
@@ -544,10 +546,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <input
                       type="number"
                       step="0.1"
-                      min="0.5"
+                      min="0"
                       max="100"
-                      value={cLength}
-                      onChange={(e) => setCLength(Math.max(0.1, parseFloat(e.target.value) || 0))}
+                      value={cLength || ''}
+                      placeholder="0"
+                      onChange={(e) => setCLength(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
                   </div>
@@ -557,10 +560,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <input
                       type="number"
                       step="0.1"
-                      min="0.1"
+                      min="0"
                       max="100"
-                      value={cWidth}
-                      onChange={(e) => setCWidth(Math.max(0.1, parseFloat(e.target.value) || 0))}
+                      value={cWidth || ''}
+                      placeholder="0"
+                      onChange={(e) => setCWidth(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
                   </div>
@@ -570,10 +574,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <input
                       type="number"
                       step="0.01"
-                      min="0.05"
+                      min="0"
                       max="5"
-                      value={cHeight}
-                      onChange={(e) => setCHeight(Math.max(0.01, parseFloat(e.target.value) || 0))}
+                      value={cHeight || ''}
+                      placeholder="0"
+                      onChange={(e) => setCHeight(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
                   </div>
@@ -584,10 +589,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <label className="text-xs font-bold text-gray-700">Pillérek Darabszáma</label>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       max="100"
-                      value={cCount}
-                      onChange={(e) => setCCount(Math.max(1, parseInt(e.target.value) || 1))}
+                      value={cCount || ''}
+                      placeholder="0"
+                      onChange={(e) => setCCount(Math.max(0, parseInt(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
                   </div>
@@ -616,7 +622,8 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       type="number"
                       min="0"
                       max="20"
-                      value={cWaste}
+                      value={cWaste || ''}
+                      placeholder="0"
                       onChange={(e) => setCWaste(Math.max(0, parseInt(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
@@ -640,6 +647,13 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <p className="text-xs text-gray-500">Téglák, zsalukövek, nyílászáró levonások és habarcsigény</p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => { setWLength(0); setWHeight(0); setWDeduction(0); setWWaste(0); }}
+                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
+                    title="Alaphelyzet"
+                  >
+                    <RotateCcw size={12} /> Visszaállítás (0)
+                  </button>
                 </div>
 
                 <div className="space-y-2">
@@ -663,8 +677,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <input
                       type="number"
                       step="0.1"
-                      value={wLength}
-                      onChange={(e) => setWLength(Math.max(0.1, parseFloat(e.target.value) || 0))}
+                      min="0"
+                      value={wLength || ''}
+                      placeholder="0"
+                      onChange={(e) => setWLength(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
                   </div>
@@ -674,8 +690,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <input
                       type="number"
                       step="0.1"
-                      value={wHeight}
-                      onChange={(e) => setWHeight(Math.max(0.1, parseFloat(e.target.value) || 0))}
+                      min="0"
+                      value={wHeight || ''}
+                      placeholder="0"
+                      onChange={(e) => setWHeight(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
                   </div>
@@ -685,7 +703,9 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <input
                       type="number"
                       step="0.1"
-                      value={wDeduction}
+                      min="0"
+                      value={wDeduction || ''}
+                      placeholder="0"
                       onChange={(e) => setWDeduction(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                     />
@@ -696,7 +716,9 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   <label className="text-xs font-bold text-gray-700">Vágási Veszteség Ráhagyás (%)</label>
                   <input
                     type="number"
-                    value={wWaste}
+                    min="0"
+                    value={wWaste || ''}
+                    placeholder="0"
                     onChange={(e) => setWWaste(Math.max(0, parseInt(e.target.value) || 0))}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
                   />
@@ -719,6 +741,13 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <p className="text-xs text-gray-500">TN/KNE szabvány ellenőrzés és anyagkiírás</p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => { setInsulationCm(0); setInsArea(0); }}
+                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
+                    title="Alaphelyzet"
+                  >
+                    <RotateCcw size={12} /> Visszaállítás (0)
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -731,7 +760,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     >
                       <option value="pth30">Porotherm 30 N+F téglafal</option>
                       <option value="b30">B30 Hagyományos téglafal</option>
-                      <option value="concrete">Vasbeton szerkezeti fal (20 cm)</option>
+                      <option value="concrete">Vasbeton fal (20 cm)</option>
                     </select>
                   </div>
 
@@ -757,10 +786,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <input
                       type="number"
                       step="1"
-                      min="2"
+                      min="0"
                       max="40"
-                      value={insulationCm}
-                      onChange={(e) => setInsulationCm(Math.max(1, parseInt(e.target.value) || 0))}
+                      value={insulationCm || ''}
+                      placeholder="0"
+                      onChange={(e) => setInsulationCm(Math.max(0, parseInt(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
                     />
                   </div>
@@ -769,8 +799,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <label className="text-xs font-bold text-gray-700">Szigetelendő Felület (m²)</label>
                     <input
                       type="number"
-                      value={insArea}
-                      onChange={(e) => setInsArea(Math.max(1, parseFloat(e.target.value) || 0))}
+                      min="0"
+                      value={insArea || ''}
+                      placeholder="0"
+                      onChange={(e) => setInsArea(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
                     />
                   </div>
@@ -793,6 +825,13 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <p className="text-xs text-gray-500">Csemperagasztó, fugázó, esztrich zsákos kiszerelések</p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => { setTArea(0); setTThicknessMm(0); setTWaste(0); }}
+                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
+                    title="Alaphelyzet"
+                  >
+                    <RotateCcw size={12} /> Visszaállítás (0)
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -812,8 +851,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <label className="text-xs font-bold text-gray-700">Alapterület / Falfelület (m²)</label>
                     <input
                       type="number"
-                      value={tArea}
-                      onChange={(e) => setTArea(Math.max(1, parseFloat(e.target.value) || 0))}
+                      min="0"
+                      value={tArea || ''}
+                      placeholder="0"
+                      onChange={(e) => setTArea(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
                     />
                   </div>
@@ -838,7 +879,9 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <label className="text-xs font-bold text-gray-700">Vágási Veszteség (%)</label>
                       <input
                         type="number"
-                        value={tWaste}
+                        min="0"
+                        value={tWaste || ''}
+                        placeholder="0"
                         onChange={(e) => setTWaste(Math.max(0, parseInt(e.target.value) || 0))}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
                       />
@@ -849,8 +892,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <label className="text-xs font-bold text-gray-700">Rétegvastagság (milliméter)</label>
                     <input
                       type="number"
-                      value={tThicknessMm}
-                      onChange={(e) => setTThicknessMm(Math.max(5, parseInt(e.target.value) || 0))}
+                      min="0"
+                      value={tThicknessMm || ''}
+                      placeholder="0"
+                      onChange={(e) => setTThicknessMm(Math.max(0, parseInt(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
                     />
                   </div>
@@ -873,6 +918,13 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <p className="text-xs text-gray-500">Profilok (CW/UW/CD/UD), gipszkarton táblák és csavarok</p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => { setDwArea(0); }}
+                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
+                    title="Alaphelyzet"
+                  >
+                    <RotateCcw size={12} /> Visszaállítás (0)
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -906,8 +958,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <label className="text-xs font-bold text-gray-700">Felület (m²)</label>
                     <input
                       type="number"
-                      value={dwArea}
-                      onChange={(e) => setDwArea(Math.max(1, parseFloat(e.target.value) || 0))}
+                      min="0"
+                      value={dwArea || ''}
+                      placeholder="0"
+                      onChange={(e) => setDwArea(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
                     />
                   </div>
@@ -930,6 +984,13 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <p className="text-xs text-gray-500">Dőlésszög korrekció, tetőléc és páraáteresztő fólia</p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => { setRoofFootprint(0); setRoofAngle(0); }}
+                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
+                    title="Alaphelyzet"
+                  >
+                    <RotateCcw size={12} /> Visszaállítás (0)
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -937,8 +998,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <label className="text-xs font-bold text-gray-700">Alapterület (m² alapterület)</label>
                     <input
                       type="number"
-                      value={roofFootprint}
-                      onChange={(e) => setRoofFootprint(Math.max(10, parseFloat(e.target.value) || 0))}
+                      min="0"
+                      value={roofFootprint || ''}
+                      placeholder="0"
+                      onChange={(e) => setRoofFootprint(Math.max(0, parseFloat(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
                     />
                   </div>
@@ -947,10 +1010,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <label className="text-xs font-bold text-gray-700">Tető Dőlésszög (Fok °)</label>
                     <input
                       type="number"
-                      min="15"
+                      min="0"
                       max="65"
-                      value={roofAngle}
-                      onChange={(e) => setRoofAngle(Math.max(10, parseInt(e.target.value) || 0))}
+                      value={roofAngle || ''}
+                      placeholder="0"
+                      onChange={(e) => setRoofAngle(Math.max(0, parseInt(e.target.value) || 0))}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
                     />
                   </div>
@@ -1064,7 +1128,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-400 font-medium">Eredő U-érték</span>
-                        {insulationCalc.passesKNE ? (
+                        {insulationCm === 0 ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-gray-500/20 text-gray-300 px-2 py-0.5 rounded-full border border-gray-500/40">
+                            Nincs hőszigetelés megadva
+                          </span>
+                        ) : insulationCalc.passesKNE ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
                             <CheckCircle2 size={12} /> MEGFELELT (KNE TNM)
                           </span>
