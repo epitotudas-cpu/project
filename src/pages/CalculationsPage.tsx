@@ -14,10 +14,19 @@ import {
   Printer,
   Sparkles,
   Info,
-  RotateCcw,
   Check,
   Building,
   Maximize2,
+  Search,
+  ArrowLeft,
+  Ruler,
+  Compass,
+  TrendingUp,
+  HardHat,
+  Thermometer,
+  HelpCircle,
+  CheckSquare,
+  FileSpreadsheet,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 
@@ -27,9 +36,656 @@ interface CalculationsPageProps {
 
 type CalculatorTab = 'concrete' | 'masonry' | 'insulation' | 'tiling' | 'drywall' | 'roofing';
 
+interface MainCategory {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: React.ElementType;
+  badgeColor: string;
+  bgColor: string;
+  borderColor: string;
+}
+
+const MAIN_CATEGORIES: MainCategory[] = [
+  {
+    id: 'alapok',
+    title: '1. ALAPOK & MÉRTÉKEGYSÉGEK',
+    subtitle: 'ALAPOK',
+    description: 'Mértékegységek, átváltások, százalékok, arányok, sűrűség.',
+    icon: Ruler,
+    badgeColor: 'text-amber-700 bg-amber-100 border-amber-300',
+    bgColor: 'bg-amber-50/60 hover:bg-amber-50',
+    borderColor: 'border-amber-200 hover:border-amber-400',
+  },
+  {
+    id: 'geometria',
+    title: '2. GEOMETRIA & TRIGONOMETRIA',
+    subtitle: 'GEOMETRIA',
+    description: 'Terület, kerület, térfogat, Pitagorasz, lejtés, szögek.',
+    icon: Compass,
+    badgeColor: 'text-blue-700 bg-blue-100 border-blue-300',
+    bgColor: 'bg-blue-50/60 hover:bg-blue-50',
+    borderColor: 'border-blue-200 hover:border-blue-400',
+  },
+  {
+    id: 'mennyiseg',
+    title: '3. MENNYISÉGSZÁMÍTÁS',
+    subtitle: 'MENNYISÉG',
+    description: 'Ráruházás, veszteség, kerekítés, rendelési mennyiség, szállítás.',
+    icon: TrendingUp,
+    badgeColor: 'text-emerald-700 bg-emerald-100 border-emerald-300',
+    bgColor: 'bg-emerald-50/60 hover:bg-emerald-50',
+    borderColor: 'border-emerald-200 hover:border-emerald-400',
+  },
+  {
+    id: 'anyag',
+    title: '4. ANYAGSZÜKSÉGLET',
+    subtitle: 'ANYAGOK',
+    description: 'Beton, falazás, habarcs, vakolat, burkolás, festés, szigetelés, gipszkarton, tető, faanyag, acél.',
+    icon: Building,
+    badgeColor: 'text-orange-700 bg-orange-100 border-orange-300',
+    bgColor: 'bg-orange-50/60 hover:bg-orange-50',
+    borderColor: 'border-orange-200 hover:border-orange-400',
+  },
+  {
+    id: 'szerkezet',
+    title: '5. SZERKEZETI & KIVITELEZÉSI SZÁMÍTÁSOK',
+    subtitle: 'SZERKEZET',
+    description: 'Zsaluzás, betonacél, lépcsők, földmunka és egyéb kivitelezési számítások.',
+    icon: HardHat,
+    badgeColor: 'text-purple-700 bg-purple-100 border-purple-300',
+    bgColor: 'bg-purple-50/60 hover:bg-purple-50',
+    borderColor: 'border-purple-200 hover:border-purple-400',
+  },
+  {
+    id: 'halado',
+    title: '6. HALADÓ MŰSZAKI SZÁMÍTÁSOK',
+    subtitle: 'MŰSZAKI',
+    description: 'Hőtechnika, U-érték, páradiffúzió és statikai alapok.',
+    icon: Thermometer,
+    badgeColor: 'text-red-700 bg-red-100 border-red-300',
+    bgColor: 'bg-red-50/60 hover:bg-red-50',
+    borderColor: 'border-red-200 hover:border-red-400',
+  },
+];
+
+interface CalculationItem {
+  id: string;
+  categoryId: string;
+  title: string;
+  shortDesc: string;
+  level: 'Alap' | 'Középhaladó' | 'Haladó';
+  miEz: string;
+  mireHasznaljuk: string;
+  szuksegesAdatok: string[];
+  keplet: string;
+  jelolesek: Array<{ symbol: string; name: string }>;
+  lepesek: string[];
+  gyakorlatiPelda: { title: string; steps: string[]; result: string };
+  ellenorzes: string;
+  gyakoriHibak: string[];
+  gyakorlatiMegjegyzes: string;
+  kapcsolodoSzamitasok: string[];
+  calculatorTab?: CalculatorTab;
+}
+
+const CALCULATION_ITEMS: CalculationItem[] = [
+  {
+    id: 'savalap-beton',
+    categoryId: 'anyag',
+    title: 'Sávalap betonszükségletének számítása',
+    shortDesc: 'Sávalapok bruttó és nettó betonmennyiségének, zsákos cement és sóderigényének pontos kiszámítása.',
+    level: 'Középhaladó',
+    miEz: 'A sávalap az épület falai alatt húzódó folyamatos alaptest. Betonszükséglete a sáv hosszának, szélességének és mélységének szorzata, kiegészítve a kivitelezési tömörödési és vágási veszteséggel.',
+    mireHasznaljuk: 'Új családi házak, kerítések, melléképületek alapozási anyagszükségletének és szállítási kapacitásának (mixerkocsi vagy kézi keverés) megrendeléséhez.',
+    szuksegesAdatok: ['Sávalap hossza (L, méterben)', 'Sávalap szélessége (b, méterben)', 'Sávalap mélysége / magassága (h, méterben)', 'Kivitelezési veszteség és tömörödés (v%, jellemzően 5-10%)'],
+    keplet: 'V_bruttó = (L × b × h) × (1 + v / 100)',
+    jelolesek: [
+      { symbol: 'V_bruttó', name: 'Beton rendelési térfogat (m³)' },
+      { symbol: 'L', name: 'Sávalap hossza (m)' },
+      { symbol: 'b', name: 'Alap szélessége (m)' },
+      { symbol: 'h', name: 'Alap mélysége (m)' },
+      { symbol: 'v', name: 'Veszteségi ráhagyás (%)' },
+    ],
+    lepesek: [
+      'Számítsd ki a nettó térfogatot a hossz, szélesség és mélység megszorzásával.',
+      'Add hozzá a kivitelezési veszteséget (5-10%).',
+      'Határozd meg a szükséges cement (zsák) és sóder (tonna) mennyiségét.',
+    ],
+    gyakorlatiPelda: {
+      title: '36 méter hosszú, 50 cm széles és 80 cm mély sávalap kiöntése (8% ráhagyással)',
+      steps: [
+        'Nettó térfogat: V = 36m × 0.5m × 0.8m = 14.4 m³',
+        'Bruttó betonigény (8% ráhagyással): 14.4 m³ × 1.08 = 15.55 m³',
+        'Helyszíni keverésnél: kb. 200 zsák 25kg cement és 28.7 tonna sóder.',
+      ],
+      result: 'Rendelendő betonmennyiség: 15.6 m³ (kb. 2 mixerszerelvény)',
+    },
+    ellenorzes: 'Hasonlítsd össze az alapterülettel: egy átlagos sávalap térfogata m³-ben általában az épület alapterületének 15-25%-a körül mozog.',
+    gyakoriHibak: [
+      'Az egyenetlen kiásás miatti plusz betonszükséglet figyelmen kívül hagyása.',
+      'A földtömörödési veszteség kihagyása a rendelésnél.',
+      'A sarkok kétszeres beleszámítása a sávhosszba.',
+    ],
+    gyakorlatiMegjegyzes: 'Gödörásás után célszerű azonnal kiönteni a betont, megelőzve a szél beomlását és a meder átázását.',
+    kapcsolodoSzamitasok: ['Lemezalap betonszükséglete', 'Zsaluzási felület kiszámítása', 'Betonacél súlyszámítása'],
+    calculatorTab: 'concrete',
+  },
+  {
+    id: 'pitagorasz',
+    categoryId: 'geometria',
+    title: 'Pitagorasz-tétel és derékszög kitűzése (3-4-5)',
+    shortDesc: 'Derékszögű háromszögek oldalainak számítása és építési derékszögek ellenőrzése.',
+    level: 'Alap',
+    miEz: 'A Pitagorasz-tétel kimondja, hogy derékszögű háromszögben a két befogó négyzeteinek összege egyenlő az átfogó négyzetével (a² + b² = c²).',
+    mireHasznaljuk: 'Alaprajzok kitűzésénél, falak csatlakozási derékszögének ellenőrzésénél és tetőszarufák átlójának kiszámításánál.',
+    szuksegesAdatok: ['a befogó hossza (m)', 'b befogó hossza (m)'],
+    keplet: 'c = √(a² + b²)',
+    jelolesek: [
+      { symbol: 'a', name: 'Első befogó' },
+      { symbol: 'b', name: 'Második befogó' },
+      { symbol: 'c', name: 'Átfogó (átló)' },
+    ],
+    lepesek: [
+      'Mérj ki az egyik fal mentén 3 métert (vagy 30 cm-t).',
+      'Mérj ki a rá merőleges fal mentén 4 métert (vagy 40 cm-t).',
+      'Ha a két végpont közötti átló pontosan 5 méter (vagy 50 cm), a sarok tökéletesen derékszögű.',
+    ],
+    gyakorlatiPelda: {
+      title: '4m x 3m helyiség derékszögű átlójának ellenőrzése',
+      steps: ['a² + b² = 3² + 4² = 9 + 16 = 25', 'c = √25 = 5 méter'],
+      result: 'Az átlónak pontosan 5.00 méternek kell lennie.',
+    },
+    ellenorzes: 'Kisebb helyiségekben 3-4-5 helyett a 60cm-80cm-100cm arány is használható.',
+    gyakoriHibak: ['Nem feszes mérőszalag használata.', 'Ferde kitűzés pontatlan sarokpontról.'],
+    gyakorlatiMegjegyzes: 'Minden alapszedésnél kétszer ellenőrizd az átlókat: téglalap alaprajznál a két átlónak milliméterre egyenlőnek kell lennie!',
+    kapcsolodoSzamitasok: ['Síkidomok területe és kerülete', 'Szarufahossz számítása', 'Lépcsőfok méretezése'],
+  },
+  {
+    id: 'u-ertek',
+    categoryId: 'halado',
+    title: 'Rétegrendi U-érték és Hőellenállás számítása',
+    shortDesc: 'Szerkezetek hőátbocsátási tényezőjének (U) kiszámítása és energetikai jogszabályi megfelelősége.',
+    level: 'Haladó',
+    miEz: 'Az U-érték (W/m²K) megmutatja, hogy mekkora hőteljesítmény áramlik át 1 m² felületű szerkezeten 1 Kelvin hőmérséklet-különbség hatására. Minél alacsonyabb az U-érték, annál jobb a szerkezet hőszigetelése.',
+    mireHasznaljuk: 'Homlokzati falak, födémek és tetők energetikai méretezésénél a KNE 7/2006 (U <= 0.24 W/m²K) jogszabályi előírások teljesítéséhez.',
+    szuksegesAdatok: ['Egyes rétegek vastagsága (d, méterben)', 'Egyes rétegek hővezetési tényezője (λ, W/mK)'],
+    keplet: 'R = d / λ,   U = 1 / (R_si + ΣR + R_se)',
+    jelolesek: [
+      { symbol: 'R', name: 'Hőellenállás (m²K/W)' },
+      { symbol: 'd', name: 'Rétegvastagság (m)' },
+      { symbol: 'λ', name: 'Hővezetési tényező (W/mK)' },
+      { symbol: 'U', name: 'Hőátbocsátási tényező (W/m²K)' },
+    ],
+    lepesek: [
+      'Számítsd ki minden réteg R értékét (R = d / λ).',
+      'Add össze a rétegek R értékeit a felületi hőátadási ellenállásokkal (Rsi + ΣR + Rse).',
+      'Az U-érték az eredő R érték reciproka (1 / R).',
+    ],
+    gyakorlatiPelda: {
+      title: '30 cm B30 téglafal + 15 cm Grafitos polisztirol hőszigetelés',
+      steps: [
+        'Tégla R: 0.30m / 0.50 W/mK = 0.60 m²K/W',
+        'Grafitos EPS R: 0.15m / 0.031 W/mK = 4.84 m²K/W',
+        'Eredő R: 0.13 + 0.60 + 4.84 + 0.04 = 5.61 m²K/W',
+        'U-érték: U = 1 / 5.61 = 0.178 W/m²K',
+      ],
+      result: 'U = 0.18 W/m²K (MEGFELELT a KNE 0.24 előírásnak!)',
+    },
+    ellenorzes: 'Ha a hőszigetelés vastagságát duplázod, az R érték nő, az U-érték pedig csökken.',
+    gyakoriHibak: ['Rétegvastagság centiméterben hagyása méter helyett a képletben.', 'A vakolati rétegek kihagyása.'],
+    gyakorlatiMegjegyzes: 'A hőszigetelésnél a dübelezésnél és a hőhidaknál mindig 10-15%-os U-érték romlással érdemes számolni a valóságban.',
+    kapcsolodoSzamitasok: ['Homlokzati hőszigetelő táblák száma', 'Falazóanyag darabszám számítása'],
+    calculatorTab: 'insulation',
+  },
+  {
+    id: 'szazalek',
+    categoryId: 'alapok',
+    title: 'Százalékszámítás és vágási ráhagyás',
+    shortDesc: 'Alapvető százalékszámítási műveletek az építőipari vágási és tömörödési veszteségek kezelésére.',
+    level: 'Alap',
+    miEz: 'A százalékszámítás az építőiparban a nettó szükséglet bruttó rendelési mennyiséggé alakításának legfontosabb eszköze.',
+    mireHasznaljuk: 'Burkolólapok, téglák, gipszkarton táblák és beton vágási veszteségének kísérésére.',
+    szuksegesAdatok: ['Nettó mennyiség (A)', 'Százalékos ráhagyás (p%)'],
+    keplet: 'B = A × (1 + p / 100)',
+    jelolesek: [
+      { symbol: 'A', name: 'Nettó mennyiség' },
+      { symbol: 'p', name: 'Ráhagyási százalék (%)' },
+      { symbol: 'B', name: 'Bruttó rendelési mennyiség' },
+    ],
+    lepesek: [
+      'Határozd meg a nettó burkolandó vagy beépítendő felületet.',
+      'Válaszd ki a szakmailag indokolt ráhagyási százalékot (átlós burkolásnál pl. 10-15%).',
+      'Szorozd meg a nettó értéket az (1 + p/100) tényezővel.',
+    ],
+    gyakorlatiPelda: {
+      title: '40 m² nettó felületű csempézés 10% vágási veszteséggel',
+      steps: ['B = 40 × (1 + 10/100) = 40 × 1.10 = 44 m²'],
+      result: 'Rendelendő csempe: 44 m²',
+    },
+    ellenorzes: 'A bruttó értéknek mindig nagyobbnak kell lennie a nettó értéknél.',
+    gyakoriHibak: ['Bruttó értékből való hibás visszaszámolás.', 'Átlós rakási minta esetén a túl kicsi ráhagyás.'],
+    gyakorlatiMegjegyzes: 'Tartalékolj mindig 1-2 doboz csempét a későbbi javításokhoz a gyártási sorozat egyezősége miatt!',
+    kapcsolodoSzamitasok: ['Hidegburkolat és csemperagasztó igénye', 'Rendelési mennyiség és kerekítési szabályok'],
+  },
+  {
+    id: 'terulet',
+    categoryId: 'geometria',
+    title: 'Síkidomok területe és kerülete',
+    shortDesc: 'Téglalap, háromszög, trapéz és kör alaprajzok területszámítása.',
+    level: 'Alap',
+    miEz: 'A felületszámítás az építészet alapja, amely megadja az alapterületet, falkéreg felületét vagy burkolandó zónákat.',
+    mireHasznaljuk: 'Festék, vakolat, burkolat, szigetelés és aljzatbeton mennyiségi kiírásához.',
+    szuksegesAdatok: ['Hosszúsági méretek (m)'],
+    keplet: 'A_téglalap = a × b,   A_kör = π × r²',
+    jelolesek: [
+      { symbol: 'a', name: 'Hosszúság' },
+      { symbol: 'b', name: 'Szélesség' },
+      { symbol: 'r', name: 'Sugár' },
+    ],
+    lepesek: [
+      'Bontsd fel az összetett alaprajzot egyszerű téglalapokra és háromszögekre.',
+      'Számítsd ki az egyes idomok területeit.',
+      'Add össze a területeket a teljes felülethez.',
+    ],
+    gyakorlatiPelda: {
+      title: 'L-alakú szoba területe (5m x 4m szekció + 3m x 2m beugró)',
+      steps: ['A1 = 5 × 4 = 20 m²', 'A2 = 3 × 2 = 6 m²', 'A_összes = 20 + 6 = 26 m²'],
+      result: 'Alapterület: 26 m²',
+    },
+    ellenorzes: 'Ellenőrizd a befoglaló téglalap területével: a kapott eredmény nem lehet nagyobb annál.',
+    gyakoriHibak: ['Méretek keverése (mm és cm m-re való átváltása nélkül).'],
+    gyakorlatiMegjegyzes: 'Méréskor használj lézeres távolságmérőt a falak párhuzamossági hibáinak azonnali feltárására.',
+    kapcsolodoSzamitasok: ['Pitagorasz-tétel', 'Testek térfogatának kiszámítása'],
+  },
+  {
+    id: 'falazat-tegla',
+    categoryId: 'anyag',
+    title: 'Falazóanyag és tégla darabszám számítása',
+    shortDesc: 'Falfelületek nettó téglaszükségletének és raklapszámának meghatározása nyíláslevonással.',
+    level: 'Középhaladó',
+    miEz: 'A falazás anyagszükséglet-számítása a bruttó falfelületből levonja az ajtók és ablakok területét, majd a m²-enkénti téglaszámmal megadja a rendelendő darabszámot.',
+    mireHasznaljuk: 'Porotherm, Ytong vagy B30 téglafalak anyagkiírásához és raklaprendeléshez.',
+    szuksegesAdatok: ['Fal hossza (L, m)', 'Fal magassága (H, m)', 'Nyílászárók felülete (A_nyílás, m²)', 'Tégla igény (db/m²)'],
+    keplet: 'N_tégla = (L × H - A_nyílás) × n_db/m2 × 1.05',
+    jelolesek: [
+      { symbol: 'L', name: 'Fal hossza' },
+      { symbol: 'H', name: 'Fal magassága' },
+      { symbol: 'n', name: 'Téglaigény (db/m²)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a bruttó falfelületet.',
+      'Levonjuk az ablakok és ajtók felületét.',
+      'Megszorozzuk az 1 m²-re jutó téglaszámmal (pl. Porotherm 30 N+F esetén 16 db/m²).',
+      'Hozzáadunk 5% törési és vágási veszteséget.',
+    ],
+    gyakorlatiPelda: {
+      title: '12m x 2.8m Porotherm 30 N+F fal (két 1.5m x 1.5m ablakkal)',
+      steps: [
+        'Bruttó felület: 12 × 2.8 = 33.6 m²',
+        'Nyílás levonás: 2 × (1.5 × 1.5) = 4.5 m²',
+        'Nettó felület: 33.6 - 4.5 = 29.1 m²',
+        'Téglaszám (16 db/m² + 5%): 29.1 × 16 × 1.05 = 489 db',
+        'Raklapszám (80 db/raklap): 489 / 80 = 6.11 -> 7 raklap',
+      ],
+      result: 'Rendelendő: 7 raklap (560 db tégla)',
+    },
+    ellenorzes: 'Csekkold a raklap kerekítést: fél raklapot ritkán szállítanak ki a gyárak.',
+    gyakoriHibak: ['A nyílások feletti áthidalók helyének kétszeres levonása.', 'A törési veszteség elhagyása.'],
+    gyakorlatiMegjegyzes: 'A szárazon fektetett vékonyrétegű ragasztóhabarcsos tégláknál lényegesen kisebb a habarcsigény!',
+    kapcsolodoSzamitasok: ['Falazóhabarcs és vakolat zsákigénye', 'Sávalap betonszükséglete'],
+    calculatorTab: 'masonry',
+  },
+  {
+    id: 'burkolat-lap',
+    categoryId: 'anyag',
+    title: 'Hidegburkolat és csemperagasztó igénye',
+    shortDesc: 'Padló- és fali csempék, csemperagasztó és fugázóanyag pontos kiszámítása.',
+    level: 'Középhaladó',
+    miEz: 'A burkolási anyagszükséglet megadja a felület nettó mérete alapján szükséges burkolólap dobozszámot és ragasztómennyiséget.',
+    mireHasznaljuk: 'Fürdőszobák, konyhák és teraszok burkolási anyagrendeléséhez.',
+    szuksegesAdatok: ['Burkolandó felület (A, m²)', 'Lapméret (cm)', 'Vágási mintázat (hálós vagy átlós)'],
+    keplet: 'A_bruttó = A_nettó × (1 + v%),   m_ragasztó = A_nettó × k_kg/m2',
+    jelolesek: [
+      { symbol: 'A', name: 'Felület (m²)' },
+      { symbol: 'v', name: 'Vágási veszteség (10-15%)' },
+      { symbol: 'k', name: 'Ragasztó anyagszükséglet (kg/m²)' },
+    ],
+    lepesek: [
+      'Számítsd ki a nettó burkolandó aljzat- és falfelületet.',
+      'Számolj hálós rakásnál 10%, átlós vagy kötésben rakásnál 15% veszteséggel.',
+      'Határozd meg a ragasztóigényt (60x60 cm lapoknál kb. 4.8 kg/m², azaz 25kg zsák / 5m²).',
+    ],
+    gyakorlatiPelda: {
+      title: '25 m² alapterület 60x60 cm-es greslapokkal',
+      steps: [
+        'Bruttó lapigény (10% veszteséggel): 25 × 1.10 = 27.5 m²',
+        'Csemperagasztó (4.8 kg/m²): 25 × 4.8 = 120 kg',
+        '25 kg-os zsákok száma: 120 / 25 = 4.8 -> 5 zsák',
+        'Fugázó (0.4 kg/m²): 25 × 0.4 = 10 kg (2 vödör)',
+      ],
+      result: 'Rendelendő: 28 m² lap, 5 zsák C2TE ragasztó, 10 kg fugázó',
+    },
+    ellenorzes: 'Nagy lapoknál (60x60 felett) kétoldali ragasztást kell alkalmazni, ami 20-30%-kal növeli a ragasztóigényt!',
+    gyakoriHibak: ['Az aljzatkiegyenlítés elhagyása miatti túlzott ragasztófelhasználás.', 'Kevés tartalék lap vásárlása.'],
+    gyakorlatiMegjegyzes: 'Mindig ellenőrizd a dobozokon a gyártási kód azonosítót (Tone / Caliber)!',
+    kapcsolodoSzamitasok: ['Százalékszámítás és vágási ráhagyás', 'Síkidomok területe'],
+    calculatorTab: 'tiling',
+  },
+  {
+    id: 'gipszkarton-tabla',
+    categoryId: 'anyag',
+    title: 'Gipszkarton tábla és profil szükséglet',
+    shortDesc: 'Gipszkarton válaszfalak és álmennyezetek táblaszámának, CW/UW profiljainak és csavarjainak kiszámítása.',
+    level: 'Középhaladó',
+    miEz: 'A gipszkartonozási anyagszámítás megadja a borítási felületből a táblák, a vázprofilok, a függesztők és a rögzítőelemek mennyiségét.',
+    mireHasznaljuk: 'Szárazépítészeti válaszfalak, tetőtér-beépítések és álmennyezetek kiírásához.',
+    szuksegesAdatok: ['Szerkezet felülete (A, m²)', 'Borítási rétegszám (1 vagy 2 réteg)', 'Karton típus (RB normál, RBI vízálló, RF tűzgátló)'],
+    keplet: 'N_tábla = ⌈(A × n_réteg × 1.05) / 2.4⌉',
+    jelolesek: [
+      { symbol: 'A', name: 'Felület (m²)' },
+      { symbol: 'n', name: 'Rétegszám' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a szerkezet nettó felületét.',
+      'Kétrétegű borításnál megszorozzuk 2-vel.',
+      'Kiszámítjuk a keretprofilokat (UW/UD = kerület × 1.2) és vázprofilokat (CW/CD = felület × 2.8 fm/m²).',
+      'Kiszámítjuk a csavarigényt (18 db/m²).',
+    ],
+    gyakorlatiPelda: {
+      title: '15 m² kétrétegű RB gipszkarton válaszfal (L=5m, H=3m)',
+      steps: [
+        'Karton felület (2 réteg): 15m² × 2 × 1.05 = 31.5 m²',
+        'Táblaszám (120x200cm = 2.4m²): 31.5 / 2.4 = 13.1 -> 14 tábla',
+        'UW keretprofil: 2 × (5 + 3) × 1.2 = 19.2 fm (7 szál 3m-es)',
+        'CW vázprofil: 15 × 2.8 = 42 fm (14 szál 3m-es)',
+        'TN 25 csavar: 15 × 18 = 270 db',
+      ],
+      result: 'Rendelendő: 14 tábla RB12.5 gipszkarton, 7 szál UW75, 14 szál CW75, 1 doboz csavar',
+    },
+    ellenorzes: 'Fürdőszobába és vizes helyiségbe kizárólag zöld impregnált (RBI) gipszkarton táblát építs be!',
+    gyakoriHibak: ['A profilok 60 cm-es tengelytávolságának megszegése.', 'Hézagolószalag elhagyása a illesztéseknél.'],
+    gyakorlatiMegjegyzes: 'Válaszfalaknál a hangszigetelés érdekében a profilok alá mindig ragassz szivacscsíkot!',
+    kapcsolodoSzamitasok: ['Síkidomok területe', 'Homlokzati hőszigetelő táblák száma'],
+    calculatorTab: 'drywall',
+  },
+  {
+    id: 'teto-felulet',
+    categoryId: 'anyag',
+    title: 'Tetőszerkezet felülete és cserépigény',
+    shortDesc: 'Tető felületének kiszámítása a hajlásszögből, cserép-, léc- és fóliaigény meghatározásával.',
+    level: 'Középhaladó',
+    miEz: 'A tetőszámítás a vízszintes alapterületből a dőlésszög korrekciós tényezőjével határozza meg a valós tetősík felületét és az anyagszükségletet.',
+    mireHasznaljuk: 'Magastetők cserépezésének, lécezésének és páraáteresztő fóliázásának méretezéséhez.',
+    szuksegesAdatok: ['Alapterület vetülete (A_vetület, m²)', 'Tető hajlásszöge (α, fok)', 'Cserépigény (db/m²)'],
+    keplet: 'A_tető = (A_vetület / cos(α)) × 1.1',
+    jelolesek: [
+      { symbol: 'α', name: 'Tető dőlésszöge' },
+      { symbol: 'cos(α)', name: 'Dőlésszög korrekciós tényező' },
+    ],
+    lepesek: [
+      'Határozd meg a tető vízszintes vetületi alapterületét.',
+      'Oszd el a dőlésszög koszinuszával (pl. 35°-nál cos(35°) = 0.819).',
+      'Számítsd ki a cserepek számát (átlagos cserépnél kb. 10.5 db/m²).',
+      'Számítsd ki a tetőlécet (3.2 fm/m²) és a fóliát (1.15-szörös szorzó).',
+    ],
+    gyakorlatiPelda: {
+      title: '100 m² vetületű nyeregtető 35°-os dőlésszöggel',
+      steps: [
+        'Valós tetőfelület: 100 / 0.819 × 1.10 = 134.3 m²',
+        'Cserépigény (10.5 db/m² + 6%): 134.3 × 10.5 × 1.06 = 1495 db',
+        'Tetőléc (3.2 fm/m²): 134.3 × 3.2 = 430 fm',
+        'Páraáteresztő fólia (1.15): 134.3 × 1.15 = 154.4 m² (2 tekercs 75m²)',
+      ],
+      result: 'Rendelendő: 1495 db cserép, 430 fm 3x5-ös léc, 2 tekercs fólia',
+    },
+    ellenorzes: 'Minél meredekebb a tető, annál nagyobb a korrekciós szorzó és a szükséges cserépszámozás.',
+    gyakoriHibak: ['A vápák és élgerincek miatti plusz cserépvágási veszteség kihagyása.', 'Ellenléc kihagyása a átszellőztetett légrésből.'],
+    gyakorlatiMegjegyzes: 'Alacsony hajlásszögnél (20° alatt) különösen figyelj a vízhatlan alátéthéjazat és a csatorna lejtésére!',
+    kapcsolodoSzamitasok: ['Pitagorasz-tétel', 'Lejtés és szintkülönbség'],
+    calculatorTab: 'roofing',
+  },
+  {
+    id: 'lepco-geometria',
+    categoryId: 'szerkezet',
+    title: 'Lépcsőfok méretezése (2m + sz = 60..64 cm)',
+    shortDesc: 'Kényelmes és biztonságos lépcsőfok-magasság és fellépési szélesség kiszámítása.',
+    level: 'Haladó',
+    miEz: 'A lépcsőméretezés a megmászandó szintkülönbség alapján határozza meg a lépcsőfokok számát, magasságát (m) és belépési szélességét (sz) az ergonómiai alapképlet (2m + sz = 62 cm) segítségével.',
+    mireHasznaljuk: 'Belső és külső lépcsők, monolit beton és szerkezeti lépcsők tervezéséhez.',
+    szuksegesAdatok: ['Szintkülönbség (H, cm)', 'Lépcsőkar rendelkezésre álló hossza (L, cm)'],
+    keplet: '2m + sz = 60..64 cm,   N_fok = H / m',
+    jelolesek: [
+      { symbol: 'm', name: 'Lépcsőfok magassága (cm)' },
+      { symbol: 'sz', name: 'Lépcsőfok szélessége / belépője (cm)' },
+      { symbol: 'H', name: 'Szintkülönbség (cm)' },
+    ],
+    lepesek: [
+      'Oszd el a teljes H szintkülönbséget a kívánt lépcsőfok-magassággal (pl. ideálisan m = 17 cm).',
+      'Kerekítsd az eredményt a legközelebbi egész fokszámra (N).',
+      'Számítsd ki a pontos magasságot: m = H / N.',
+      'Alkalmazd a 2m + sz = 62 cm képletet a belépőszélesség kiszámításához: sz = 62 - 2m.',
+    ],
+    gyakorlatiPelda: {
+      title: '280 cm szintkülönbségű emeleti lépcső méretezése',
+      steps: [
+        'Fokszám: 280 / 17 = 16.47 -> 16 fok',
+        'Pontos fokmagasság: m = 280 / 16 = 17.5 cm',
+        'Belépőszélesség: sz = 62 - (2 × 17.5) = 62 - 35 = 27 cm',
+        'Lépcsőkar hossza: 15 belépő × 27 cm = 405 cm',
+      ],
+      result: 'Lépcső paraméterei: 16 fok, 17.5 cm magasság, 27 cm belépő',
+    },
+    ellenorzes: 'Csekkold az ergonómiát: 2m + sz értékének szigorúan 60 és 64 cm közé kell esnie!',
+    gyakoriHibak: ['Az utolsó fellépőnél a kész padlóburkolat vastagságának elfelejtése.', 'Különböző magasságú lépcsőfokok kivitelezése.'],
+    gyakorlatiMegjegyzes: 'Családi házban a legkényelmesebb lépcsőfok magasság 16.5-17.5 cm között van. 18 cm felett a lépcső meredekké és fárasztóvá válik!',
+    kapcsolodoSzamitasok: ['Sávalap betonszükséglete', 'Pitagorasz-tétel'],
+  },
+  {
+    id: 'mertkegysegek',
+    categoryId: 'alapok',
+    title: 'Építőipari mértékegységek és átváltások',
+    shortDesc: 'Hosszúság, felület, térfogat és tömeg mértékegységeinek pontos átváltása (m³, liter, tonna, kg, fm).',
+    level: 'Alap',
+    miEz: 'Az építőipari mértékegységek a tervezési és kivitelezési anyagkiírások közös nyelve.',
+    mireHasznaljuk: 'Sóder, beton, vízigény és folyóméteres anyagok pontos megrendeléséhez és helyszíni átvételéhez.',
+    szuksegesAdatok: ['Mérési érték (A)', 'Kiindulási mértékegység', 'Cél mértékegység'],
+    keplet: '1 m³ = 1000 liter,   1 tonna = 1000 kg,   1 m² = 100 dm² = 10000 cm²',
+    jelolesek: [
+      { symbol: 'm³', name: 'Köbméter (térfogat)' },
+      { symbol: 'l', name: 'Liter (folyadék/térfogat)' },
+      { symbol: 't', name: 'Tonna (tömeg)' },
+      { symbol: 'kg', name: 'Kilogramm (tömeg)' },
+      { symbol: 'fm', name: 'Folyóméter (hosszúság)' },
+    ],
+    lepesek: [
+      'Azonosítsd a mértékegység szorzóit (1 m = 10 dm = 100 cm = 1000 mm).',
+      'Térfogat esetén köbre emeld a szorzót (1 m³ = 10³ dm³ = 1000 liter).',
+      'Átváltáskor oszd vagy szorozd meg az értéket a megfelelő nagyságrendi szorzóval.',
+    ],
+    gyakorlatiPelda: {
+      title: '2.5 m³ beton helyszíni keverése - hány liter víz és hány tonna sóder szükséges?',
+      steps: [
+        'Térfogat literben: 2.5 m³ × 1000 = 2500 liter',
+        'Sóder tömege (1.85 t/m³): 2.5 × 1.85 = 4.625 tonna (4625 kg)',
+      ],
+      result: 'Szükséges: 4.63 tonna sóder és 2500 liter vízi kapacitás',
+    },
+    ellenorzes: 'Ne keverd össze a folyómétert (fm) a négyzetméterrel (m²) a profilok és a szegőlécek megrendelésénél!',
+    gyakoriHibak: ['Centiméterben mért adatok köbre emelésének elfelejtése.', 'Liter és m³ keverése a folyékony adalékszereknél.'],
+    gyakorlatiMegjegyzes: 'A sóder és a homok nedves állapotban nehezebb, mint szárazon: 1 m³ nedves sóder akár 1.95 tonna is lehet!',
+    kapcsolodoSzamitasok: ['Anyagok sűrűsége és halmazsűrűsége', 'Százalékszámítás és vágási ráhagyás'],
+  },
+  {
+    id: 'suruseg',
+    categoryId: 'alapok',
+    title: 'Anyagok sűrűsége és halmazsűrűsége',
+    shortDesc: 'A legfontosabb építőanyagok (beton, sóder, acél, tégla, fa) fajsúlya és szállítási tömegének számítása.',
+    level: 'Alap',
+    miEz: 'A sűrűség (ρ) az anyag egységnyi térfogatára jutó tömege (kg/m³ vagy t/m³).',
+    mireHasznaljuk: 'Födémterhelés, tehergépkocsi szállítási teherbírás és daruzási kapacitás méretezésénél.',
+    szuksegesAdatok: ['Térfogat (V, m³)', 'Anyagsűrűség (ρ, kg/m³)'],
+    keplet: 'm = V × ρ',
+    jelolesek: [
+      { symbol: 'm', name: 'Tömeg (kg vagy tonna)' },
+      { symbol: 'V', name: 'Térfogat (m³)' },
+      { symbol: 'ρ', name: 'Sűrűség (kg/m³)' },
+    ],
+    lepesek: [
+      'Keresd ki az építőanyag sűrűségét (Vasbeton: 2500 kg/m³, Kavics: 1850 kg/m³, Acél: 7850 kg/m³).',
+      'Szorozd meg a térfogatot a sűrűséggel.',
+      'Konvertáld át tonnára (osztás 1000-rel).',
+    ],
+    gyakorlatiPelda: {
+      title: '6 m³ friss frissbeton szállítása egy mixer autóval',
+      steps: [
+        'C20/25 frissbeton sűrűsége: 2400 kg/m³',
+        'Tömeg: 6 m³ × 2400 kg/m³ = 14400 kg = 14.4 tonna',
+      ],
+      result: 'A beton rakomány tömege 14.4 tonna (az autó önsúlyával együtt kb. 26 tonna összsúly).',
+    },
+    ellenorzes: 'A laza halmazsűrűség (pl. ömlesztett sóder) mindig kisebb, mint a tömörített sűrűség.',
+    gyakoriHibak: ['Teherautók túlterhelése a nedves sóder és föld súlyának alulbecslése miatt.'],
+    gyakorlatiMegjegyzes: 'Tengelyterheléskor mindig számolj a gépjármű önsúlyával is a behajtási engedélyek megszerzésekor!',
+    kapcsolodoSzamitasok: ['Építőipari mértékegységek és átváltások', 'Földmunka és munkagödör kiemelési térfogat'],
+  },
+  {
+    id: 'terfogat',
+    categoryId: 'geometria',
+    title: 'Geometriai testek térfogatának kiszámítása',
+    shortDesc: 'Hasáb, henger, gúla és csonkagúla térfogatának kiszámítása építési szerkezeteknél.',
+    level: 'Alap',
+    miEz: 'A térfogatszámítás megadja a háromdimenziós szerkezetek belső kapacitását vagy az anyagkitöltés mértékét.',
+    mireHasznaljuk: 'Pillérek, henger alakú kútalapok, földtöltések és tartályok méretezéséhez.',
+    szuksegesAdatok: ['Alapterület (A, m²)', 'Magasság (h, m)'],
+    keplet: 'V_hasáb = A × h,   V_henger = π × r² × h',
+    jelolesek: [
+      { symbol: 'V', name: 'Térfogat (m³)' },
+      { symbol: 'A', name: 'Alapterület (m²)' },
+      { symbol: 'h', name: 'Magasság (m)' },
+      { symbol: 'r', name: 'Henger sugara (m)' },
+    ],
+    lepesek: [
+      'Számítsd ki a test keresztmetszeti alapterületét (A).',
+      'Szorozd meg a test magasságával (h).',
+      'Kúp vagy gúla esetén oszd el 3-mal.',
+    ],
+    gyakorlatiPelda: {
+      title: '40 cm átmérőjű, 3 méter mély fúrt betonpillér térfogata',
+      steps: [
+        'Sugár r = 0.20 m',
+        'Alapterület A = π × (0.20)² = 3.1416 × 0.04 = 0.1257 m²',
+        'Térfogat V = 0.1257 m² × 3 m = 0.377 m³',
+      ],
+      result: 'Egy pillér betonszükséglete: 0.38 m³ (10 pillérnél 3.8 m³)',
+    },
+    ellenorzes: 'Henger alakú szerkezetnél az átmérő felével (sugár) kell számolni, nem az átmérővel!',
+    gyakoriHibak: ['Sugár és átmérő összekeverése a képletben.'],
+    gyakorlatiMegjegyzes: 'Fúrt cölöpöknél a furat falának beomlása miatt 15-20% plusz betonfogyasztásra kell felkészülni.',
+    kapcsolodoSzamitasok: ['Síkidomok területe és kerülete', 'Sávalap betonszükséglete'],
+  },
+  {
+    id: 'lejtes',
+    categoryId: 'geometria',
+    title: 'Lejtés és szintkülönbség számítása (% és fok)',
+    shortDesc: 'Csatornák, teraszok, kocsibeállók és tetők lejtésének kiszámítása (% és fok átszámítással).',
+    level: 'Középhaladó',
+    miEz: 'A lejtés a függőleges szintkülönbség (H) és a vízszintes hossz (L) hányadosa százalékban kifejezve (i% = H / L × 100).',
+    mireHasznaljuk: 'Vízelvezetéshez (terasz lejtés 2%, csatornázás 1-2%), gépkocsi behajtókhoz (max 15%) és tetőhajlásszögekhez.',
+    szuksegesAdatok: ['Szintkülönbség (H, cm)', 'Vízszintes hossz (L, m)'],
+    keplet: 'i% = (H / (L × 100)) × 100,   H_cm = L_m × i%',
+    jelolesek: [
+      { symbol: 'i%', name: 'Lejtés százalékban (%)' },
+      { symbol: 'H', name: 'Szintkülönbség (cm)' },
+      { symbol: 'L', name: 'Vízszintes távolság (m)' },
+    ],
+    lepesek: [
+      'Mérd ki a vízszintes távolságot méterben.',
+      'Szorozd meg a kívánt lejtési százalékkal.',
+      'Megkapod a szükséges szintkülönbséget centiméterben.',
+    ],
+    gyakorlatiPelda: {
+      title: '6 méter hosszú terasz lejtésének kialakítása 2%-os vízelvezetéssel',
+      steps: [
+        'Vízszintes hossz: 6 méter',
+        'Szükséges lejtés: 2%',
+        'Szintkülönbség: 6 m × 2 cm/m = 12 cm',
+      ],
+      result: 'A terasz külső szélének 12 cm-rel alacsonyabban kell lennie a fal tövénél.',
+    },
+    ellenorzes: 'A túl kis lejtés (1% alatt terasznál) megállítja a vizet, a túl nagy lejtés (3% felett) kényelmetlen bútorozást okoz.',
+    gyakoriHibak: ['Százalék és fok összekeverése (a 100%-os lejtés 45°-os dőlésszögnek felel meg!).'],
+    gyakorlatiMegjegyzes: 'Csatornacsöveknél a túlzott lejtés (3% felett) lerontja a tisztítóhatást, mert a víz gyorsabban lefolyik, mint a szilárd anyag!',
+    kapcsolodoSzamitasok: ['Tetőszerkezet felülete és cserépigény', 'Pitagorasz-tétel'],
+  },
+  {
+    id: 'foldmunka-godor',
+    categoryId: 'szerkezet',
+    title: 'Földmunka és munkagödör kiemelési térfogat',
+    shortDesc: 'Tereprendezési földtömeg, munkagödör rézsűs kiemelésének és laza föld duzzadásának számítása.',
+    level: 'Középhaladó',
+    miEz: 'A földmunkaszámítás a tömör termett talaj kiemelési térfogatát és annak lazulási szorzóját (1.2-1.3) határozza meg elszállításhoz.',
+    mireHasznaljuk: 'Pincegödrök, alapszedés, medencék kiásási földtömegének és konténerigényének kiszámításához.',
+    szuksegesAdatok: ['Gödör hossza (L, m)', 'Gödör szélessége (b, m)', 'Mélység (h, m)', 'Talaj lazulási tényező (k, pl. 1.25)'],
+    keplet: 'V_termett = L × b × h,   V_laza = V_termett × k_lazulás',
+    jelolesek: [
+      { symbol: 'V_termett', name: 'Termett földtömeg (m³)' },
+      { symbol: 'V_laza', name: 'Elszállítandó laza földtömeg (m³)' },
+      { symbol: 'k', name: 'Lazulási tényező (1.25)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a kiásandó gödör geometriai térfogatát.',
+      'Megszorozzuk a talaj lazulási tényezőjével (közepes kötött talajnál 1.25).',
+      'Meghatározzuk a szükséges 5 m³-es vagy 8 m³-es konténerek számát.',
+    ],
+    gyakorlatiPelda: {
+      title: '10m x 8m alapterületű, 1.5m mély pincegödör kiásása',
+      steps: [
+        'Termett földtérfogat: 10m × 8m × 1.5m = 120 m³',
+        'Laza földtömeg (25% lazulás): 120 m³ × 1.25 = 150 m³',
+        'Konténerek száma (8 m³ konténer): 150 / 8 = 18.75 -> 19 konténer',
+      ],
+      result: 'Elszállítandó föld: 150 m³ laza föld (19 db 8m³-es konténer)',
+    },
+    ellenorzes: 'Rézsűs kiemelésnél a gödör felső szélessége nagyobb, mint az alja, ezért trapéz keresztmetszettel kell számolni.',
+    gyakoriHibak: ['A talaj lazulási szorzójának elfelejtése, ami miatt kevés konténert rendelnek.'],
+    gyakorlatiMegjegyzes: 'A humuszréteget (felső 20-30 cm) mindig külön depóniába gyűjtsd a későbbi kertépítéshez!',
+    kapcsolodoSzamitasok: ['Sávalap betonszükséglete', 'Anyagok sűrűsége és halmazsűrűsége'],
+  },
+];
+
 export default function CalculationsPage({ onNavigate }: CalculationsPageProps) {
+  const [viewMode, setViewMode] = useState<'categories' | 'category-list' | 'detail' | 'interactive-calculators'>('categories');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCalcId, setSelectedCalcId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeTab, setActiveTab] = useState<CalculatorTab>('concrete');
   const [copied, setCopied] = useState(false);
+
+  const activeCategoryObj = useMemo(() => {
+    return MAIN_CATEGORIES.find((c) => c.id === selectedCategory) || null;
+  }, [selectedCategory]);
+
+  const activeCalculationObj = useMemo(() => {
+    return CALCULATION_ITEMS.find((c) => c.id === selectedCalcId) || null;
+  }, [selectedCalcId]);
+
+  const filteredItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      return CALCULATION_ITEMS.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.shortDesc.toLowerCase().includes(q) ||
+          item.miEz.toLowerCase().includes(q)
+      );
+    }
+    if (selectedCategory) {
+      return CALCULATION_ITEMS.filter((item) => item.categoryId === selectedCategory);
+    }
+    return CALCULATION_ITEMS;
+  }, [searchQuery, selectedCategory]);
 
   // --------------------------------------------------------------------------
   // 1. BETON & ZSALUZAT STATE (Alapértelmezetten 0 értékek)
@@ -371,7 +1027,8 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       {/* Hero Header */}
       <div className="bg-primary text-white border-b border-primary-700 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
             <button
               onClick={() => onNavigate('home')}
               className="hover:text-white transition-colors flex items-center gap-1"
@@ -386,36 +1043,87 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
               Tudástár
             </button>
             <ChevronRight size={13} />
-            <span className="text-gray-200 font-medium">Számítások</span>
+            <button
+              onClick={() => {
+                setViewMode('categories');
+                setSelectedCategory(null);
+                setSelectedCalcId(null);
+                setSearchQuery('');
+              }}
+              className="hover:text-white transition-colors"
+            >
+              Számítások
+            </button>
+            {activeCategoryObj && (
+              <>
+                <ChevronRight size={13} />
+                <button
+                  onClick={() => {
+                    setViewMode('category-list');
+                    setSelectedCalcId(null);
+                  }}
+                  className="hover:text-white transition-colors"
+                >
+                  {activeCategoryObj.subtitle}
+                </button>
+              </>
+            )}
+            {activeCalculationObj && (
+              <>
+                <ChevronRight size={13} />
+                <span className="text-gray-200 font-medium truncate max-w-[200px]">
+                  {activeCalculationObj.title}
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <Sparkles size={13} /> Profi Építőipari Számítási Központ
+                <Sparkles size={13} /> Építőipari Számítási Tudásbázis
               </span>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Interaktív Építőipari Számítások &amp; Kalkulátorok
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight uppercase">
+                SZÁMÍTÁSOK
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Prezíz anyagszükséglet-számítások, zsaluzási és betonszükséglet kalkulációk, U-érték energetikai ellenőrzés a magyar szabványoknak megfelelően.
+                Építőipari számítások, képletek és gyakorlati példák egy helyen.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Action Navigation */}
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
-                onClick={handleCopySummary}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary font-bold text-xs rounded-xl shadow-lg transition-all transform active:scale-95"
+                onClick={() => {
+                  setViewMode('categories');
+                  setSelectedCategory(null);
+                  setSelectedCalcId(null);
+                  setSearchQuery('');
+                }}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-xl shadow-md transition-all ${
+                  viewMode !== 'interactive-calculators'
+                    ? 'bg-accent text-black'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                }`}
               >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? 'Másolva a vágólapra!' : 'Anyagkiírás Másolása'}
+                <BookOpen size={15} /> Számítási Tudásbázis
+              </button>
+              <button
+                onClick={() => setViewMode('interactive-calculators')}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-xl shadow-md transition-all ${
+                  viewMode === 'interactive-calculators'
+                    ? 'bg-accent text-black'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                }`}
+              >
+                <Calculator size={15} /> Interaktív Kalkulátorok
               </button>
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium text-xs rounded-xl border border-white/20 transition-all"
+                className="inline-flex items-center justify-center p-2.5 bg-white/10 hover:bg-white/20 text-white font-medium text-xs rounded-xl border border-white/20 transition-all"
                 title="Nyomtatás vagy PDF mentése"
               >
-                <Printer size={16} />
+                <Printer size={15} />
               </button>
             </div>
           </div>
@@ -454,632 +1162,938 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
         ]}
       />
 
-      {/* Calculator Tab Selector */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
-          {[
-            { id: 'concrete', label: 'Beton & Zsaluzat', icon: <Building size={16} /> },
-            { id: 'masonry', label: 'Falazás & Tégla', icon: <Home size={16} /> },
-            { id: 'insulation', label: 'Hőszigetelés (U)', icon: <Zap size={16} /> },
-            { id: 'tiling', label: 'Burkolat & Vakolat', icon: <Layers size={16} /> },
-            { id: 'drywall', label: 'Gipszkarton', icon: <Maximize2 size={16} /> },
-            { id: 'roofing', label: 'Tető & Cserép', icon: <Home size={16} /> },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as CalculatorTab)}
-                className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl font-bold text-xs transition-all ${
-                  isActive
-                    ? 'bg-primary text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Interactive Calculation Panel */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* VIEWMODE 1 & 2: CATEGORIES / CATEGORY LIST / SEARCH */}
+      {viewMode !== 'interactive-calculators' && viewMode !== 'detail' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
           
-          {/* LEFT COLUMN: INPUT CONTROLS (7 Cols) */}
-          <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-            
-            {/* ---------------------------------------------------------------- */}
-            {/* 1. BETON & ZSALUZAT TAB */}
-            {/* ---------------------------------------------------------------- */}
-            {activeTab === 'concrete' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold">
-                      <Building size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-gray-900">Betonszükséglet &amp; Zsaluzási Kalkulátor</h2>
-                      <p className="text-xs text-gray-500">Sávalapok, lemezek, pillérek és födémek méretezése</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setCLength(0); setCWidth(0); setCHeight(0); setCCount(0); setCWaste(0); }}
-                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
-                    title="Alaphelyzet"
-                  >
-                    <RotateCcw size={12} /> Visszaállítás (0)
-                  </button>
-                </div>
-
-                {/* Concrete Shape Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Szerkezet Típusa</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'slab', label: 'Lemezalap / Födém' },
-                      { id: 'strip', label: 'Sávalap' },
-                      { id: 'column', label: 'Pillér / Gerenda' },
-                    ].map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => setConcreteShape(s.id as any)}
-                        className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all ${
-                          concreteShape === s.id
-                            ? 'bg-primary text-white border-primary shadow-sm'
-                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Dimension Sliders / Numeric Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Hosszúság (méter)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="100"
-                      value={cLength || ''}
-                      placeholder="0"
-                      onChange={(e) => setCLength(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Szélesség (méter)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="100"
-                      value={cWidth || ''}
-                      placeholder="0"
-                      onChange={(e) => setCWidth(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Magasság / Vastagság (m)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="5"
-                      value={cHeight || ''}
-                      placeholder="0"
-                      onChange={(e) => setCHeight(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                </div>
-
-                {concreteShape === 'column' && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Pillérek Darabszáma</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={cCount || ''}
-                      placeholder="0"
-                      onChange={(e) => setCCount(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                )}
-
-                {/* Grade and Waste Margin */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Beton Minőségi Osztály</label>
-                    <select
-                      value={cGrade}
-                      onChange={(e) => setCGrade(e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    >
-                      <option value="C12">C12/15 (Szerelőbeton / Aljzat)</option>
-                      <option value="C16">C16/20 (Sávalap / Kerítésalap)</option>
-                      <option value="C20">C20/25 (Szerkezeti / Födém / NORMÁL)</option>
-                      <option value="C25">C25/30 (Vízzáró lemezalap)</option>
-                      <option value="C30">C30/37 (Nagy teherbírású ipari)</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Tömörödési Ráhagyás (%)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="20"
-                      value={cWaste || ''}
-                      placeholder="0"
-                      onChange={(e) => setCWaste(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------- */}
-            {/* 2. FALAZÓANYAG & HABARCS TAB */}
-            {/* ---------------------------------------------------------------- */}
-            {activeTab === 'masonry' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center font-bold">
-                      <Home size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-gray-900">Falazóanyag &amp; Habarcs Kalkulátor</h2>
-                      <p className="text-xs text-gray-500">Téglák, zsalukövek, nyílászáró levonások és habarcsigény</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setWLength(0); setWHeight(0); setWDeduction(0); setWWaste(0); }}
-                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
-                    title="Alaphelyzet"
-                  >
-                    <RotateCcw size={12} /> Visszaállítás (0)
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Tégla / Blokkelem Típusa</label>
-                  <select
-                    value={brickType}
-                    onChange={(e) => setBrickType(e.target.value as any)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-bold text-gray-900 focus:outline-none focus:border-accent"
-                  >
-                    <option value="pth30">Porotherm 30 N+F (30x25x23.8 cm)</option>
-                    <option value="pth44">Porotherm 44 Thermo Profi (44 cm csiszolt)</option>
-                    <option value="ytong30">Ytong A+ 30 cm Pórusbeton</option>
-                    <option value="b30">Hagyományos B30 Tégla</option>
-                    <option value="zsaluko30">Zsalukő 30 cm (50x30x23 cm betonblokk)</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Fal Hosszúság (m)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={wLength || ''}
-                      placeholder="0"
-                      onChange={(e) => setWLength(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Fal Magasság (m)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={wHeight || ''}
-                      placeholder="0"
-                      onChange={(e) => setWHeight(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Ajtók / Ablakok (m² levonás)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={wDeduction || ''}
-                      placeholder="0"
-                      onChange={(e) => setWDeduction(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Vágási Veszteség Ráhagyás (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={wWaste || ''}
-                    placeholder="0"
-                    onChange={(e) => setWWaste(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-accent"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------- */}
-            {/* 3. HŐSZIGETELÉS & U-ÉRTÉK TAB */}
-            {/* ---------------------------------------------------------------- */}
-            {activeTab === 'insulation' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center font-bold">
-                      <Zap size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-gray-900">Hőszigetelés &amp; U-érték Energetikai Kalkulátor</h2>
-                      <p className="text-xs text-gray-500">TN/KNE szabvány ellenőrzés és anyagkiírás</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setInsulationCm(0); setInsArea(0); }}
-                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
-                    title="Alaphelyzet"
-                  >
-                    <RotateCcw size={12} /> Visszaállítás (0)
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Meglévő Falazat / Szerkezet</label>
-                    <select
-                      value={wallBase}
-                      onChange={(e) => setWallBase(e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
-                    >
-                      <option value="pth30">Porotherm 30 N+F téglafal</option>
-                      <option value="b30">B30 Hagyományos téglafal</option>
-                      <option value="concrete">Vasbeton fal (20 cm)</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Hőszigetelő Anyag Típusa</label>
-                    <select
-                      value={insulationMat}
-                      onChange={(e) => setInsulationMat(e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
-                    >
-                      <option value="grafit">Grafitos EPS 80 (λ = 0.031 W/mK)</option>
-                      <option value="eps">EPS 80 Fehér Polisztirol (λ = 0.039 W/mK)</option>
-                      <option value="kozetgyapot">Kőzetgyapot Homlokzati (λ = 0.035 W/mK)</option>
-                      <option value="xps">XPS Lábazati Lap (λ = 0.034 W/mK)</option>
-                      <option value="pir">PIR Keményhab Tábla (λ = 0.022 W/mK)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Hőszigetelés Vastagsága (cm)</label>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      max="40"
-                      value={insulationCm || ''}
-                      placeholder="0"
-                      onChange={(e) => setInsulationCm(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Szigetelendő Felület (m²)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={insArea || ''}
-                      placeholder="0"
-                      onChange={(e) => setInsArea(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------- */}
-            {/* 4. BURKOLAT & VAKOLAT TAB */}
-            {/* ---------------------------------------------------------------- */}
-            {activeTab === 'tiling' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center font-bold">
-                      <Layers size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-gray-900">Vakolat, Esztrich &amp; Hidegburkolat Kalkulátor</h2>
-                      <p className="text-xs text-gray-500">Csemperagasztó, fugázó, esztrich zsákos kiszerelések</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setTArea(0); setTThicknessMm(0); setTWaste(0); }}
-                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
-                    title="Alaphelyzet"
-                  >
-                    <RotateCcw size={12} /> Visszaállítás (0)
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Munkálat Típusa</label>
-                    <select
-                      value={tilingType}
-                      onChange={(e) => setTilingType(e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    >
-                      <option value="tile">Hidegburkolás (Csempe / Járólap)</option>
-                      <option value="screed">Esztrich Aljzatbeton / Vakolás</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Alapterület / Falfelület (m²)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={tArea || ''}
-                      placeholder="0"
-                      onChange={(e) => setTArea(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    />
-                  </div>
-                </div>
-
-                {tilingType === 'tile' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-700">Lap Méret</label>
-                      <select
-                        value={tTileSize}
-                        onChange={(e) => setTTileSize(e.target.value as any)}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
-                      >
-                        <option value="60x60">60 x 60 cm (Gres lap)</option>
-                        <option value="30x60">30 x 60 cm (Csempe)</option>
-                        <option value="30x30">30 x 30 cm (Kerámia)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-700">Vágási Veszteség (%)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={tWaste || ''}
-                        placeholder="0"
-                        onChange={(e) => setTWaste(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Rétegvastagság (milliméter)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={tThicknessMm || ''}
-                      placeholder="0"
-                      onChange={(e) => setTThicknessMm(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------- */}
-            {/* 5. GIPSZKARTON TAB */}
-            {/* ---------------------------------------------------------------- */}
-            {activeTab === 'drywall' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center font-bold">
-                      <Maximize2 size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-gray-900">Gipszkarton &amp; Szárazépítészet Kalkulátor</h2>
-                      <p className="text-xs text-gray-500">Profilok (CW/UW/CD/UD), gipszkarton táblák és csavarok</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setDwArea(0); }}
-                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
-                    title="Alaphelyzet"
-                  >
-                    <RotateCcw size={12} /> Visszaállítás (0)
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Szerkezet Típusa</label>
-                    <select
-                      value={dwType}
-                      onChange={(e) => setDwType(e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
-                    >
-                      <option value="wall1">Előtétfal / Válaszfal (1 réteg)</option>
-                      <option value="wall2">Válaszfal (2 réteg duplázott)</option>
-                      <option value="ceiling">Álmennyezet szerkezet</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Karton Lap Típusa</label>
-                    <select
-                      value={dwBoardType}
-                      onChange={(e) => setDwBoardType(e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
-                    >
-                      <option value="rb">Normál RB (Szürke)</option>
-                      <option value="rbi">Impregnált RBI Vízálló (Zöld)</option>
-                      <option value="rf">Tűzgátló RF (Rózsaszín)</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Felület (m²)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={dwArea || ''}
-                      placeholder="0"
-                      onChange={(e) => setDwArea(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------- */}
-            {/* 6. TETŐFEDÉS TAB */}
-            {/* ---------------------------------------------------------------- */}
-            {activeTab === 'roofing' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center font-bold">
-                      <Home size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-gray-900">Tetőfedés &amp; Cserép Kalkulátor</h2>
-                      <p className="text-xs text-gray-500">Dőlésszög korrekció, tetőléc és páraáteresztő fólia</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setRoofFootprint(0); setRoofAngle(0); }}
-                    className="text-xs text-gray-400 hover:text-primary flex items-center gap-1"
-                    title="Alaphelyzet"
-                  >
-                    <RotateCcw size={12} /> Visszaállítás (0)
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Alapterület (m² alapterület)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={roofFootprint || ''}
-                      placeholder="0"
-                      onChange={(e) => setRoofFootprint(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Tető Dőlésszög (Fok °)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="65"
-                      value={roofAngle || ''}
-                      placeholder="0"
-                      onChange={(e) => setRoofAngle(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Fedés Típusa</label>
-                    <select
-                      value={tileType}
-                      onChange={(e) => setTileType(e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900"
-                    >
-                      <option value="ceramic">Kerámia Cserép (~10.5 db/m²)</option>
-                      <option value="concrete">Beton Cserép (~9.8 db/m²)</option>
-                      <option value="sheet">Cserepeslemez / Zsindely</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Standard Warning / Info note */}
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl flex items-start gap-3 text-xs text-gray-600">
-              <Info size={18} className="text-accent shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                A számítások a magyar építőipari gyakorlat és gyártói normatáblázatok alapján készülnek. Kivitelezés előtt kérjük, konzultáljon a felelős műszaki vezetővel vagy építész tervezővel!
-              </p>
+          {/* Search bar */}
+          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+            <div className="relative">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Keress számításra, képletre vagy kifejezésre (pl. beton, terület, pitagorasz, U-érték)..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.trim() && viewMode !== 'category-list') {
+                    setViewMode('category-list');
+                  }
+                }}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-11 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent focus:bg-white transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-gray-600"
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
 
-          {/* RIGHT COLUMN: LIVE CALCULATION RESULTS & MATERIAL SUMMARY (5 Cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-primary text-white rounded-3xl p-6 md:p-8 shadow-xl border border-primary-700 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <Calculator size={140} />
+          {/* 1. CATEGORIES TILES VIEW */}
+          {!searchQuery && !selectedCategory && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900">Számítási Kategóriák</h2>
+                  <p className="text-xs text-gray-500 mt-1">Válassz szakterületet a kapcsolódó képletek és számítások megtekintéséhez</p>
+                </div>
               </div>
 
-              <div className="space-y-6 relative z-10">
-                <div className="flex items-center justify-between border-b border-primary-700 pb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
-                    <Sparkles size={14} /> Számított Anyagszükséglet
-                  </span>
-                  <span className="text-[11px] bg-white/10 text-gray-300 px-2.5 py-1 rounded-full font-mono">
-                    ÉpítőTudás Engine
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {MAIN_CATEGORIES.map((cat) => {
+                  const IconComp = cat.icon;
+                  const itemCount = CALCULATION_ITEMS.filter((item) => item.categoryId === cat.id).length;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setViewMode('category-list');
+                      }}
+                      className={`group text-left p-6 rounded-2xl border ${cat.borderColor} ${cat.bgColor} shadow-sm transition-all hover:shadow-xl flex flex-col justify-between space-y-4`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                          <IconComp size={24} className="text-primary" />
+                        </div>
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-md border ${cat.badgeColor}`}>
+                          {itemCount} számítás
+                        </span>
+                      </div>
+
+                      <div>
+                        <h3 className="text-base font-extrabold text-gray-900 group-hover:text-primary transition-colors">
+                          {cat.title}
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                          {cat.description}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-200/60 flex items-center justify-between text-xs font-bold text-primary group-hover:translate-x-1 transition-transform">
+                        <span>Böngészés témakör szerint</span>
+                        <ChevronRight size={16} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 2. CATEGORY ITEM TILES GRID (Search results or Category List) */}
+          {(selectedCategory || searchQuery) && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setSearchQuery('');
+                      setViewMode('categories');
+                    }}
+                    className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700 transition-colors"
+                    title="Vissza a kategóriákhoz"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                  <div>
+                    <h2 className="text-xl font-extrabold text-gray-900">
+                      {searchQuery
+                        ? `Keresési eredmények: "${searchQuery}"`
+                        : activeCategoryObj?.title || 'Számítások Listája'}
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {filteredItems.length} számítási modul található ebben a nézetben
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {filteredItems.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+                  <HelpCircle size={40} className="mx-auto text-gray-400 mb-3" />
+                  <p className="text-gray-600 font-bold text-sm">Nem található számítás a megadott keresési feltételekkel.</p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="mt-3 px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl"
+                  >
+                    Keresés törlése
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedCalcId(item.id);
+                        setViewMode('detail');
+                      }}
+                      className="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-primary text-left shadow-sm hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-primary/10 text-primary border border-primary/20">
+                            {item.level}
+                          </span>
+                          {item.calculatorTab && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                              <Calculator size={11} /> Kalkulátor elérhető
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 group-hover:text-primary transition-colors leading-snug">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                          {item.shortDesc}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-accent group-hover:translate-x-1 transition-transform">
+                        <span>Adatlap megnyitása</span>
+                        <ChevronRight size={16} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* VIEWMODE 3: DETAILED CALCULATION SHEET VIEW */}
+      {viewMode === 'detail' && activeCalculationObj && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          
+          {/* Back button */}
+          <button
+            onClick={() => {
+              if (selectedCategory) {
+                setViewMode('category-list');
+              } else {
+                setViewMode('categories');
+              }
+              setSelectedCalcId(null);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <ArrowLeft size={16} /> Vissza a számításokhoz
+          </button>
+
+          {/* Main Calculation Document Sheet */}
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
+            
+            {/* Document Header */}
+            <div className="bg-primary text-white p-6 md:p-8 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded bg-accent text-black">
+                  {activeCalculationObj.level} SZINT
+                </span>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-extrabold leading-tight">
+                {activeCalculationObj.title}
+              </h1>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {activeCalculationObj.shortDesc}
+              </p>
+            </div>
+
+            {/* Document Body Sections */}
+            <div className="p-6 md:p-8 space-y-8 text-gray-800 text-sm">
+
+              {/* 1. Mi ez? */}
+              <div className="space-y-2 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Info size={18} className="text-primary" /> Mi ez?
+                </h2>
+                <p className="text-gray-700 leading-relaxed text-sm">{activeCalculationObj.miEz}</p>
+              </div>
+
+              {/* 2. Mire használjuk? */}
+              <div className="space-y-2 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <HardHat size={18} className="text-primary" /> Mire használjuk?
+                </h2>
+                <p className="text-gray-700 leading-relaxed text-sm">{activeCalculationObj.mireHasznaljuk}</p>
+              </div>
+
+              {/* 3. Szükséges adatok */}
+              <div className="space-y-3 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <CheckSquare size={18} className="text-primary" /> Szükséges adatok
+                </h2>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {activeCalculationObj.szuksegesAdatok.map((ad, idx) => (
+                    <li key={idx} className="flex items-center gap-2 bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700">
+                      <CheckCircle2 size={15} className="text-accent shrink-0" />
+                      <span>{ad}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* 4. Képlet */}
+              <div className="space-y-3 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Calculator size={18} className="text-primary" /> Képlet
+                </h2>
+                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 text-center">
+                  <div className="font-mono text-base md:text-xl font-bold text-primary tracking-wide">
+                    {activeCalculationObj.keplet}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Jelölések */}
+              <div className="space-y-3 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <FileSpreadsheet size={18} className="text-primary" /> Jelölések
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {activeCalculationObj.jelolesek.map((j, idx) => (
+                    <div key={idx} className="flex items-center gap-3 bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-xs">
+                      <span className="font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">{j.symbol}</span>
+                      <span className="text-gray-700 font-medium">{j.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 6. Számítás lépésről lépésre */}
+              <div className="space-y-3 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <TrendingUp size={18} className="text-primary" /> Számítás lépésről lépésre
+                </h2>
+                <ol className="space-y-2">
+                  {activeCalculationObj.lepesek.map((l, idx) => (
+                    <li key={idx} className="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200 text-xs text-gray-700">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <span className="leading-relaxed">{l}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              {/* 7. Gyakorlati példa */}
+              <div className="space-y-3 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Sparkles size={18} className="text-primary" /> Gyakorlati példa
+                </h2>
+                <div className="bg-amber-50/60 border border-amber-200 rounded-2xl p-5 space-y-3">
+                  <h3 className="font-bold text-amber-900 text-sm">{activeCalculationObj.gyakorlatiPelda.title}</h3>
+                  <div className="space-y-1.5 font-mono text-xs text-amber-950">
+                    {activeCalculationObj.gyakorlatiPelda.steps.map((st, idx) => (
+                      <div key={idx}>• {st}</div>
+                    ))}
+                  </div>
+                  <div className="pt-2 border-t border-amber-200/60 font-bold text-xs text-amber-900 flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-amber-700 shrink-0" />
+                    <span>{activeCalculationObj.gyakorlatiPelda.result}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 8. Ellenőrzés */}
+              <div className="space-y-2 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <CheckCircle2 size={18} className="text-emerald-600" /> Ellenőrzés
+                </h2>
+                <p className="text-gray-700 text-xs leading-relaxed bg-emerald-50/50 border border-emerald-200 p-3.5 rounded-xl">
+                  {activeCalculationObj.ellenorzes}
+                </p>
+              </div>
+
+              {/* 9. Gyakori hibák */}
+              <div className="space-y-3 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <AlertCircle size={18} className="text-red-500" /> Gyakori hibák
+                </h2>
+                <div className="space-y-2">
+                  {activeCalculationObj.gyakoriHibak.map((h, idx) => (
+                    <div key={idx} className="flex items-start gap-2 bg-red-50/60 border border-red-200/60 p-3 rounded-xl text-xs text-red-900">
+                      <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
+                      <span>{h}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 10. Gyakorlati megjegyzés */}
+              <div className="space-y-2 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Info size={18} className="text-primary" /> Gyakorlati megjegyzés
+                </h2>
+                <p className="text-gray-700 text-xs leading-relaxed bg-gray-50 border border-gray-200 p-3.5 rounded-xl">
+                  {activeCalculationObj.gyakorlatiMegjegyzes}
+                </p>
+              </div>
+
+              {/* 11. Kapcsolódó számítások */}
+              <div className="space-y-3 border-b border-gray-100 pb-6">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Layers size={18} className="text-primary" /> Kapcsolódó számítások
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {activeCalculationObj.kapcsolodoSzamitasok.map((ksz, idx) => (
+                    <span key={idx} className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200">
+                      {ksz}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 12. Kalkulátor megnyitása gomb */}
+              {activeCalculationObj.calculatorTab && (
+                <div className="pt-4 bg-primary/5 border border-primary/20 rounded-2xl p-6 text-center space-y-3">
+                  <h3 className="font-extrabold text-gray-900 text-base">Szeretnéd azonnal kiszámolni a saját adataiddal?</h3>
+                  <p className="text-xs text-gray-600">Nyisd meg a kapcsolódó interaktív kalkulátort és írd be a pontos méreteket!</p>
+                  <button
+                    onClick={() => {
+                      setActiveTab(activeCalculationObj.calculatorTab!);
+                      setViewMode('interactive-calculators');
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-sm rounded-xl shadow-lg transition-all transform active:scale-95"
+                  >
+                    <Calculator size={18} /> KALKULÁTOR MEGNYITÁSA
+                  </button>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEWMODE 4: INTERACTIVE CALCULATORS TAB VIEW */}
+      {viewMode === 'interactive-calculators' && (
+        <div className="space-y-8">
+          {/* Calculator Tab Selector */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <button
+                onClick={() => setViewMode('categories')}
+                className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-primary transition-colors"
+              >
+                <ArrowLeft size={16} /> Vissza a Számítási Tudásbázishoz
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
+              {[
+                { id: 'concrete', label: 'Beton & Zsaluzat', icon: <Building size={16} /> },
+                { id: 'masonry', label: 'Falazás & Tégla', icon: <Home size={16} /> },
+                { id: 'insulation', label: 'Hőszigetelés (U)', icon: <Zap size={16} /> },
+                { id: 'tiling', label: 'Burkolat & Vakolat', icon: <Layers size={16} /> },
+                { id: 'drywall', label: 'Gipszkarton', icon: <Maximize2 size={16} /> },
+                { id: 'roofing', label: 'Tető & Cserép', icon: <Home size={16} /> },
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as CalculatorTab)}
+                    className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl font-bold text-xs transition-all ${
+                      isActive
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Main Interactive Calculation Panel */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* LEFT COLUMN: INPUT CONTROLS (7 Cols) */}
+              <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
+                
+                {/* ---------------------------------------------------------------- */}
+                {/* 1. BETON & ZSALUZAT TAB */}
+                {/* ---------------------------------------------------------------- */}
+                {activeTab === 'concrete' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                          <Building size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Beton &amp; Zsaluzat Számítás</h2>
+                          <p className="text-xs text-gray-500">Sávalap, lemezalap és pillérek betonszükséglete</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Szerkezet Típusa</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'slab', label: 'Lemezalap / Födém' },
+                          { id: 'strip', label: 'Sávalap / Koszorú' },
+                          { id: 'column', label: 'Pillér / Oszlop' },
+                        ].map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => setConcreteShape(s.id as any)}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                              concreteShape === s.id
+                                ? 'bg-primary text-white border-primary shadow-sm'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Hosszúság (m)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={cLength || ''}
+                          onChange={(e) => setCLength(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Szélesség (m)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={cWidth || ''}
+                          onChange={(e) => setCWidth(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Magasság / Mélység (m)</label>
+                        <input
+                          type="number"
+                          step="0.05"
+                          value={cHeight || ''}
+                          onChange={(e) => setCHeight(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    </div>
+
+                    {concreteShape === 'column' && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Pillérek Száma (db)</label>
+                        <input
+                          type="number"
+                          value={cCount || ''}
+                          onChange={(e) => setCCount(parseInt(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Beton Minőség (C-osztály)</label>
+                        <select
+                          value={cGrade}
+                          onChange={(e) => setCGrade(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="C12">C12/15 - Szerelőbeton</option>
+                          <option value="C16">C16/20 - Sávalapok</option>
+                          <option value="C20">C20/25 - Standard lakossági</option>
+                          <option value="C25">C25/30 - Szilárd födém/pillér</option>
+                          <option value="C30">C30/37 - Kiemelt vasbeton</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Kivitelezési Veszteség (%)</label>
+                        <input
+                          type="number"
+                          value={cWaste || ''}
+                          onChange={(e) => setCWaste(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------------------- */}
+                {/* 2. FALAZÓANYAG TAB */}
+                {/* ---------------------------------------------------------------- */}
+                {activeTab === 'masonry' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold">
+                          <Home size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Falazóanyag &amp; Habarcs Számítás</h2>
+                          <p className="text-xs text-gray-500">Téglaszám, habarcsigény és zsalukő betoningény</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Falazóelem Típusa</label>
+                      <select
+                        value={brickType}
+                        onChange={(e) => setBrickType(e.target.value as any)}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                      >
+                        <option value="pth30">Porotherm 30 N+F (16 db/m²)</option>
+                        <option value="pth44">Porotherm 44 Thermo Profi (16 db/m²)</option>
+                        <option value="ytong30">Ytong A+ 30 cm (6.67 db/m²)</option>
+                        <option value="b30">Hagyományos B30 tégla (36 db/m²)</option>
+                        <option value="zsaluko30">Zsalukő 30 cm (8.7 db/m²)</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Fal Hosszúsága (m)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={wLength || ''}
+                          onChange={(e) => setWLength(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Fal Magassága (m)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={wHeight || ''}
+                          onChange={(e) => setWHeight(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Nyílászáró Levonások (m²)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={wDeduction || ''}
+                          onChange={(e) => setWDeduction(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Vágási Veszteség (%)</label>
+                        <input
+                          type="number"
+                          value={wWaste || ''}
+                          onChange={(e) => setWWaste(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------------------- */}
+                {/* 3. HŐSZIGETELÉS TAB */}
+                {/* ---------------------------------------------------------------- */}
+                {activeTab === 'insulation' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                          <Zap size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Hőszigetelés &amp; U-érték Energetikai Kalkulátor</h2>
+                          <p className="text-xs text-gray-500">Hőátbocsátási tényező (U) és KNE jogszabályi megfelelőség</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Meglévő Falazat Típusa</label>
+                        <select
+                          value={wallBase}
+                          onChange={(e) => setWallBase(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="b30">B30 Téglafal (30 cm)</option>
+                          <option value="pth30">Porotherm 30 N+F (30 cm)</option>
+                          <option value="concrete">Vasbeton fal (20 cm)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Hőszigetelő Anyag</label>
+                        <select
+                          value={insulationMat}
+                          onChange={(e) => setInsulationMat(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="eps">EPS 80 Fehér polisztirol (λ = 0.039)</option>
+                          <option value="grafit">Grafitos EPS 80 polisztirol (λ = 0.031)</option>
+                          <option value="kozetgyapot">Kőzetgyapot homlokzati tábla (λ = 0.035)</option>
+                          <option value="xps">XPS lábazati zártcellás hab (λ = 0.034)</option>
+                          <option value="pir">PIR keményhab tábla (λ = 0.022)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Szigetelés Vastagsága (cm)</label>
+                        <input
+                          type="number"
+                          value={insulationCm || ''}
+                          onChange={(e) => setInsulationCm(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Homlokzati Felület (m²)</label>
+                        <input
+                          type="number"
+                          value={insArea || ''}
+                          onChange={(e) => setInsArea(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------------------- */}
+                {/* 4. BURKOLAT & VAKOLAT TAB */}
+                {/* ---------------------------------------------------------------- */}
+                {activeTab === 'tiling' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                          <Layers size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Vakolat, Esztrich &amp; Burkolat Kalkulátor</h2>
+                          <p className="text-xs text-gray-500">Csempézés, ragasztó, aljzatbeton és vakolat habarcsigény</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Munkálat Típusa</label>
+                        <select
+                          value={tilingType}
+                          onChange={(e) => setTilingType(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="tile">Hidegburkolás (Csempézés / Járólap)</option>
+                          <option value="screed">Aljzatbeton / Esztrich terítés</option>
+                          <option value="plaster">Belső / Külső Vakolás</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Nettó Felület (m²)</label>
+                        <input
+                          type="number"
+                          value={tArea || ''}
+                          onChange={(e) => setTArea(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    </div>
+
+                    {tilingType === 'tile' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Lapméret (cm)</label>
+                          <select
+                            value={tTileSize}
+                            onChange={(e) => setTTileSize(e.target.value as any)}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                          >
+                            <option value="30x30">30x30 cm</option>
+                            <option value="60x60">60x60 cm (Nagy méret)</option>
+                            <option value="30x60">30x60 cm</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Vágási Veszteség (%)</label>
+                          <input
+                            type="number"
+                            value={tWaste || ''}
+                            onChange={(e) => setTWaste(parseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Rétegvastagság (mm)</label>
+                        <input
+                          type="number"
+                          value={tThicknessMm || ''}
+                          onChange={(e) => setTThicknessMm(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------------------- */}
+                {/* 5. GIPSZKARTON TAB */}
+                {/* ---------------------------------------------------------------- */}
+                {activeTab === 'drywall' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+                          <Maximize2 size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Gipszkarton Kalkulátor</h2>
+                          <p className="text-xs text-gray-500">Táblaszám, profilok, csavarok és hézagoló gipsz</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Szerkezet Típusa</label>
+                        <select
+                          value={dwType}
+                          onChange={(e) => setDwType(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="wall1">Válaszfal (1 réteg karton / oldal)</option>
+                          <option value="wall2">Válaszfal (2 réteg karton / oldal)</option>
+                          <option value="ceiling">Álmennyezet / Tetőtér beépítés</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Gipszkarton Típusa</label>
+                        <select
+                          value={dwBoardType}
+                          onChange={(e) => setDwBoardType(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="rb">RB Normál Fehér (12.5 mm)</option>
+                          <option value="rbi">RBI Vízálló Zöld (12.5 mm)</option>
+                          <option value="rf">RF Tűzgátló Rózsaszín (12.5 mm)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Szerkezet Felülete (m²)</label>
+                      <input
+                        type="number"
+                        value={dwArea || ''}
+                        onChange={(e) => setDwArea(parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------------------- */}
+                {/* 6. TETŐFEDÉS TAB */}
+                {/* ---------------------------------------------------------------- */}
+                {activeTab === 'roofing' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center font-bold">
+                          <Home size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Tetőfedés &amp; Cserép Kalkulátor</h2>
+                          <p className="text-xs text-gray-500">Valós tetőfelület, cserépszám és lécezés dőlésszögből</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Vízszintes Vetületi Alapterület (m²)</label>
+                        <input
+                          type="number"
+                          value={roofFootprint || ''}
+                          onChange={(e) => setRoofFootprint(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Tető Dőlésszöge (fok °)</label>
+                        <input
+                          type="number"
+                          value={roofAngle || ''}
+                          onChange={(e) => setRoofAngle(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Héjazat Típusa</label>
+                      <select
+                        value={tileType}
+                        onChange={(e) => setTileType(e.target.value as any)}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                      >
+                        <option value="ceramic">Kerámia cserép (~10.5 db/m²)</option>
+                        <option value="concrete">Betoncserép (~9.8 db/m²)</option>
+                        <option value="sheet">Trapézlemez / Cserepeslemez (m²)</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* RIGHT COLUMN: REAL-TIME CALCULATION RESULTS (5 Cols) */}
+              <div className="lg:col-span-5 bg-primary text-white rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="text-accent" size={18} />
+                    <h3 className="text-base font-bold text-white">Eredmények &amp; Anyagkiírás</h3>
+                  </div>
+                  <span className="text-[10px] font-mono bg-white/10 px-2 py-1 rounded text-gray-300">
+                    MSZ Szabvány
                   </span>
                 </div>
 
                 {/* 1. BETON RESULTS */}
                 {activeTab === 'concrete' && (
-                  <div className="space-y-4">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-1">
-                      <span className="text-xs text-gray-400 font-medium">Bruttó Betonigény ({cWaste}% veszteséggel)</span>
-                      <div className="text-3xl font-black text-accent">{concreteCalc.grossVol} m³</div>
-                      <p className="text-[11px] text-gray-300">Nettó térfogat: {concreteCalc.netVol} m³</p>
+                  <div className="space-y-4 text-xs">
+                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-1">
+                      <span className="text-gray-400 font-medium">Bruttó Betonigény (Veszteséggel):</span>
+                      <div className="text-2xl font-black text-accent">{concreteCalc.grossVol} m³</div>
+                      <p className="text-[11px] text-gray-400">Nettó térfogat: {concreteCalc.netVol} m³</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
                         <span className="text-gray-400">Cement (25kg zsák)</span>
                         <div className="text-base font-bold text-white">{concreteCalc.cementBags25kg} zsák</div>
                         <span className="text-[10px] text-gray-400">({concreteCalc.totalCementKg} kg)</span>
                       </div>
                       <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
-                        <span className="text-gray-400">Sóder szükséglet</span>
-                        <div className="text-base font-bold text-white">{concreteCalc.soderTons} t</div>
+                        <span className="text-gray-400">Sóder / Kavics</span>
+                        <div className="text-base font-bold text-white">{concreteCalc.soderTons} tonna</div>
                         <span className="text-[10px] text-gray-400">(~{concreteCalc.soderM3} m³)</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Zsaluzási Felület</span>
+                        <div className="text-base font-bold text-accent">{concreteCalc.formArea} m²</div>
                       </div>
                       <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
                         <span className="text-gray-400">Becsült Betonacél</span>
@@ -1274,9 +2288,9 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
               </div>
             </div>
           </div>
-
         </div>
-      </div>
+      )}
+
     </div>
   );
 }
