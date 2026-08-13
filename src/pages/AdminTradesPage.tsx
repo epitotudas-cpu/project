@@ -8,9 +8,6 @@ import {
   Eye,
   EyeOff,
   Hammer,
-  Layers,
-  Wrench,
-  BookOpen,
 } from 'lucide-react';
 import {
   useTrades,
