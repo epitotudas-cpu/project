@@ -1,12 +1,15 @@
-import { LayoutDashboard, FileText, FolderTree, BookOpen, Library, Wrench, Settings, Home, Users, CheckSquare, Shield, Building2, Megaphone, Activity, X } from 'lucide-react';
+import { LayoutDashboard, FileText, FolderTree, BookOpen, Library, Wrench, Settings, Home, Users, CheckSquare, Shield, Building2, Megaphone, Activity, X, Briefcase, GraduationCap, Compass } from 'lucide-react';
 
 export type AdminView =
   | 'dashboard'
   | 'articles'
   | 'categories'
   | 'glossary'
+  | 'trades'
   | 'books'
   | 'tools'
+  | 'jobs'
+  | 'courses'
   | 'users'
   | 'moderation'
   | 'roles'
@@ -29,8 +32,11 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: typeof LayoutDashboard }[
   { id: 'articles', label: 'Cikkek', icon: FileText },
   { id: 'categories', label: 'Kategóriák', icon: FolderTree },
   { id: 'glossary', label: 'Fogalmak', icon: BookOpen },
+  { id: 'trades', label: 'Szakmák & Karrierutak', icon: Compass },
   { id: 'books', label: 'Szakmai Könyvek', icon: Library },
   { id: 'tools', label: 'Eszközök', icon: Wrench },
+  { id: 'jobs', label: 'Állásajánlatok', icon: Briefcase },
+  { id: 'courses', label: 'Képzések', icon: GraduationCap },
   { id: 'users', label: 'Felhasználók', icon: Users },
   { id: 'roles', label: 'Jogosultságok', icon: Shield },
   { id: 'partners', label: 'Partnerek', icon: Building2 },

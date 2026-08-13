@@ -13,12 +13,15 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { LEGAL_METADATA } from '../data/legalDocs';
+import { useAboutSettings } from '../services/aboutService';
 
 interface AboutHubPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
+  const aboutSettings = useAboutSettings();
+
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
       {/* Hero Header */}
@@ -38,13 +41,13 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
-                Rólunk
+                {aboutSettings.heroTagline}
               </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Az ÉpítőTudásról és küldetésünkről
+                {aboutSettings.heroTitle}
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Magyarország online építőipari tudásbázisa. Célunk a szakképesítés támogatása, a szakmai normák terjesztése és az iparági szereplők összekapcsolása.
+                {aboutSettings.heroDescription}
               </p>
             </div>
 
@@ -109,10 +112,10 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
         <section id="celunk" className="space-y-6">
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-[#202628] flex items-center gap-2">
-              <Target className="text-accent" size={24} /> Célunk és küldetésünk
+              <Target className="text-accent" size={24} /> {aboutSettings.missionTitle}
             </h2>
             <p className="text-[#5f6868] text-xs md:text-sm">
-              Az ÉpítőTudás egy független szakmai digitális platform, amely a minőségi kivitelezést és a szakoktatást szolgálja.
+              {aboutSettings.missionDescription}
             </p>
           </div>
 
@@ -121,9 +124,9 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
               <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center">
                 <BookOpen size={22} />
               </div>
-              <h3 className="text-base font-bold text-[#202628]">1. Műszaki tudásmegosztás</h3>
+              <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar1Title}</h3>
               <p className="text-xs text-[#5f6868] leading-relaxed">
-                Szabványosított műszaki kifejezések, szakszótár, kivitelezési tippek és közérthető magyarázatok biztosítása mindenkinek.
+                {aboutSettings.pillar1Desc}
               </p>
             </div>
 
@@ -131,9 +134,9 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
               <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center">
                 <Award size={22} />
               </div>
-              <h3 className="text-base font-bold text-[#202628]">2. Utánpótlás és szakképzés</h3>
+              <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar2Title}</h3>
               <p className="text-xs text-[#5f6868] leading-relaxed">
-                Az építőipari szakképzésben tanuló diákok, pályakezdők és átképzésben résztvevők digitális támogatása interaktív tananyagokkal.
+                {aboutSettings.pillar2Desc}
               </p>
             </div>
 
@@ -141,9 +144,9 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
               <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
                 <Users size={22} />
               </div>
-              <h3 className="text-base font-bold text-[#202628]">3. Iparági összefogás</h3>
+              <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar3Title}</h3>
               <p className="text-xs text-[#5f6868] leading-relaxed">
-                Kereskedők, gyártók, kivitelező cégek és oktatási intézmények hálózatba szervezése a kiszámítható együttműködésért.
+                {aboutSettings.pillar3Desc}
               </p>
             </div>
           </div>

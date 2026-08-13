@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { type Course, type Lesson, type QuizQuestion, type UserCertificate } from '../lib/supabase';
 
 export interface DetailedCourse {
@@ -14,7 +16,13 @@ export interface QuizSubmissionResult {
   certificate?: UserCertificate;
 }
 
-const DEFAULT_COURSES: Course[] = [
+export interface EducationData {
+  courses: Course[];
+  lessons: Record<string, Lesson[]>;
+  questions: Record<string, QuizQuestion[]>;
+}
+
+export const DEFAULT_COURSES: Course[] = [
   {
     id: 'course-1',
     title: 'Monolitikus Beton- és Szerkezetépítés Mesterfogásai',
@@ -50,7 +58,7 @@ const DEFAULT_COURSES: Course[] = [
   },
 ];
 
-const DEFAULT_LESSONS: Record<string, Lesson[]> = {
+export const DEFAULT_LESSONS: Record<string, Lesson[]> = {
   'course-1': [
     {
       id: 'l-1',
@@ -73,7 +81,7 @@ const DEFAULT_LESSONS: Record<string, Lesson[]> = {
   ],
 };
 
-const DEFAULT_QUESTIONS: Record<string, QuizQuestion[]> = {
+export const DEFAULT_QUESTIONS: Record<string, QuizQuestion[]> = {
   'course-1': [
     {
       id: 'q-1',
@@ -99,19 +107,140 @@ const DEFAULT_QUESTIONS: Record<string, QuizQuestion[]> = {
   ],
 };
 
+export const DEFAULT_EDUCATION_DATA: EducationData = {
+  courses: DEFAULT_COURSES,
+  lessons: DEFAULT_LESSONS,
+  questions: DEFAULT_QUESTIONS,
+};
+
+const STORAGE_KEY = 'epitotudas_education_data_v1';
+const SUPABASE_COURSES_ID = '00000000-0000-0000-0000-000000000007';
+
+declare global {
+  interface Window {
+    __GLOBAL_EDUCATION_DATA__?: EducationData;
+  }
+}
+
+export function getEducationData(): EducationData {
+  try {
+    if (typeof window !== 'undefined' && window.__GLOBAL_EDUCATION_DATA__) {
+      return window.__GLOBAL_EDUCATION_DATA__;
+    }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.courses)) {
+        const data = {
+          courses: parsed.courses || DEFAULT_COURSES,
+          lessons: { ...DEFAULT_LESSONS, ...(parsed.lessons || {}) },
+          questions: { ...DEFAULT_QUESTIONS, ...(parsed.questions || {}) },
+        };
+        if (typeof window !== 'undefined') window.__GLOBAL_EDUCATION_DATA__ = data;
+        return data;
+      }
+    }
+  } catch (err) {
+    console.error('Hiba a képzési adatok betöltésekor:', err);
+  }
+
+  if (typeof window !== 'undefined') window.__GLOBAL_EDUCATION_DATA__ = DEFAULT_EDUCATION_DATA;
+  return DEFAULT_EDUCATION_DATA;
+}
+
+export function saveEducationData(data: EducationData): void {
+  try {
+    if (typeof window !== 'undefined') {
+      window.__GLOBAL_EDUCATION_DATA__ = data;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    window.dispatchEvent(new Event('education-data-changed'));
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_COURSES_ID,
+          name: '__SYSTEM_CONFIG_COURSES__',
+          slug: 'system-courses-config',
+          description: JSON.stringify(data),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        console.warn('Supabase courses cloud sync info:', err);
+      }
+    })();
+  } catch (err) {
+    console.error('Hiba a képzési adatok mentésekor:', err);
+  }
+}
+
+export async function fetchEducationDataFromCloud(): Promise<EducationData | null> {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_COURSES_ID)
+      .maybeSingle();
+
+    if (!error && data?.description && data.description.startsWith('{')) {
+      const parsed = JSON.parse(data.description);
+      if (parsed && Array.isArray(parsed.courses)) {
+        const eduData = {
+          courses: parsed.courses || DEFAULT_COURSES,
+          lessons: { ...DEFAULT_LESSONS, ...(parsed.lessons || {}) },
+          questions: { ...DEFAULT_QUESTIONS, ...(parsed.questions || {}) },
+        };
+        if (typeof window !== 'undefined') {
+          window.__GLOBAL_EDUCATION_DATA__ = eduData;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(eduData));
+          window.dispatchEvent(new Event('education-data-changed'));
+        }
+        return eduData;
+      }
+    }
+  } catch (err) {
+    console.warn('Cloud education data fetch info:', err);
+  }
+  return null;
+}
+
+export function useEducationData(): EducationData {
+  const [eduData, setEduData] = useState<EducationData>(() => getEducationData());
+
+  useEffect(() => {
+    function handleChange() {
+      setEduData(getEducationData());
+    }
+    handleChange();
+
+    void fetchEducationDataFromCloud().then((cloudData) => {
+      if (cloudData) setEduData(cloudData);
+    });
+
+    window.addEventListener('education-data-changed', handleChange);
+    return () => window.removeEventListener('education-data-changed', handleChange);
+  }, []);
+
+  return eduData;
+}
+
 const USER_CERTIFICATES_STORE: Map<string, UserCertificate[]> = new Map();
 
 export async function listCourses(category?: string, difficulty?: string): Promise<Course[]> {
-  let list = DEFAULT_COURSES;
+  const eduData = getEducationData();
+  let list = eduData.courses;
   if (category && category !== 'all') list = list.filter((c) => c.category === category);
   if (difficulty && difficulty !== 'all') list = list.filter((c) => c.difficulty === difficulty);
   return list;
 }
 
 export async function getCourseDetails(courseId: string): Promise<DetailedCourse> {
-  const course = DEFAULT_COURSES.find((c) => c.id === courseId) || DEFAULT_COURSES[0];
-  const lessons = DEFAULT_LESSONS[course.id] || DEFAULT_LESSONS['course-1'];
-  const questions = DEFAULT_QUESTIONS[course.id] || DEFAULT_QUESTIONS['course-1'];
+  const eduData = getEducationData();
+  const course = eduData.courses.find((c) => c.id === courseId) || eduData.courses[0] || DEFAULT_COURSES[0];
+  const lessons = eduData.lessons[course.id] || DEFAULT_LESSONS[course.id] || [];
+  const questions = eduData.questions[course.id] || DEFAULT_QUESTIONS[course.id] || [];
 
   return {
     course,

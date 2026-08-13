@@ -69,6 +69,11 @@ import {
   DEFAULT_LEGAL_DOCS,
   type LegalDocsData,
 } from '../services/legalDocService';
+import {
+  getAboutSettings,
+  saveAboutSettings,
+  type AboutSettings,
+} from '../services/aboutService';
 
 interface AdminSettingsPageProps {
   onNavigate?: (page: string) => void;
@@ -87,9 +92,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   const [heroState, setHeroState] = useState<HeroState>(() => getHeroState());
   const [calcConfig, setCalcConfig] = useState<CalculatorConfig>(() => getCalculatorConfig());
   const [legalDocs, setLegalDocs] = useState<LegalDocsData>(() => getLegalDocs());
+  const [aboutSettings, setAboutSettings] = useState<AboutSettings>(() => getAboutSettings());
   const navItems = useNavigationItems();
 
-  const [activeTab, setActiveTab] = useState<'design' | 'hero' | 'impressum' | 'navigation' | 'calculators' | 'legal' | 'ads' | 'system'>('design');
+  const [activeTab, setActiveTab] = useState<'design' | 'hero' | 'impressum' | 'navigation' | 'calculators' | 'legal' | 'about' | 'ads' | 'system'>('design');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Dynamic Navigation Management Form State
@@ -379,6 +385,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     saveHeroState(heroState);
     saveCalculatorConfig(calcConfig);
     saveLegalDocs(legalDocs);
+    saveAboutSettings(aboutSettings);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
@@ -518,6 +525,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           { id: 'navigation', label: '🧭 Navigáció & Menü', icon: Compass },
           { id: 'calculators', label: '🧮 Kalkulátor Árak', icon: Calculator },
           { id: 'legal', label: '📜 Jogi Szövegek', icon: Shield },
+          { id: 'about', label: 'ℹ️ Rólunk Oldal', icon: Info },
           { id: 'ads', label: '📢 Reklámok & Ajánlatok', icon: Megaphone },
           { id: 'system', label: '⚙️ Rendszer & Biztonság', icon: ShieldAlert },
         ].map((tab) => {
@@ -1787,6 +1795,134 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB: ABOUT PAGE SETTINGS */}
+      {activeTab === 'about' && (
+        <div className="space-y-8 max-w-4xl">
+          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+              <Info size={20} className="text-accent" /> 1. Rólunk Fejléc &amp; Hero Szövegek
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Hero Kiemelt Címke (Tagline)</label>
+                <input
+                  type="text"
+                  value={aboutSettings.heroTagline}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, heroTagline: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Hero Főcím</label>
+                <input
+                  type="text"
+                  value={aboutSettings.heroTitle}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, heroTitle: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Hero Alcím / Bevezető Szöveg</label>
+                <textarea
+                  rows={3}
+                  value={aboutSettings.heroDescription}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, heroDescription: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-accent leading-relaxed"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+              <Target size={20} className="text-accent" /> 2. Célunk &amp; Küldetésünk Szövegek
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Küldetés Címsor</label>
+                <input
+                  type="text"
+                  value={aboutSettings.missionTitle}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, missionTitle: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Küldetés Leírása</label>
+                <textarea
+                  rows={3}
+                  value={aboutSettings.missionDescription}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, missionDescription: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-accent leading-relaxed"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-[#222] space-y-4">
+                <h3 className="text-sm font-extrabold text-accent">Három Fő Pillér &amp; Értékek</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+                    <label className="text-xs font-bold text-white block">1. Pillér Címe</label>
+                    <input
+                      type="text"
+                      value={aboutSettings.pillar1Title}
+                      onChange={(e) => setAboutSettings({ ...aboutSettings, pillar1Title: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white"
+                    />
+                    <label className="text-xs font-bold text-gray-400 block pt-1">1. Pillér Leírása</label>
+                    <textarea
+                      rows={3}
+                      value={aboutSettings.pillar1Desc}
+                      onChange={(e) => setAboutSettings({ ...aboutSettings, pillar1Desc: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+                    <label className="text-xs font-bold text-white block">2. Pillér Címe</label>
+                    <input
+                      type="text"
+                      value={aboutSettings.pillar2Title}
+                      onChange={(e) => setAboutSettings({ ...aboutSettings, pillar2Title: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white"
+                    />
+                    <label className="text-xs font-bold text-gray-400 block pt-1">2. Pillér Leírása</label>
+                    <textarea
+                      rows={3}
+                      value={aboutSettings.pillar2Desc}
+                      onChange={(e) => setAboutSettings({ ...aboutSettings, pillar2Desc: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+                    <label className="text-xs font-bold text-white block">3. Pillér Címe</label>
+                    <input
+                      type="text"
+                      value={aboutSettings.pillar3Title}
+                      onChange={(e) => setAboutSettings({ ...aboutSettings, pillar3Title: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white"
+                    />
+                    <label className="text-xs font-bold text-gray-400 block pt-1">3. Pillér Leírása</label>
+                    <textarea
+                      rows={3}
+                      value={aboutSettings.pillar3Desc}
+                      onChange={(e) => setAboutSettings({ ...aboutSettings, pillar3Desc: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

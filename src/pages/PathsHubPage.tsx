@@ -27,7 +27,8 @@ import {
   UserX,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
-import { TRADE_DETAILS, TradeDetail } from '../data/tradeDetailsData';
+import { type TradeDetail } from '../data/tradeDetailsData';
+import { useTrades } from '../services/tradeService';
 
 interface PathsHubPageProps {
   onNavigate: (page: string) => void;
@@ -45,13 +46,15 @@ const TRADE_CARDS = [
 ];
 
 export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
+  const trades = useTrades();
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
   const [tradeSearch, setTradeSearch] = useState<string>('');
 
   const activeTrade: TradeDetail | null = useMemo(() => {
     if (!selectedTradeId) return null;
-    return TRADE_DETAILS[selectedTradeId] || null;
-  }, [selectedTradeId]);
+    const found = trades.find((t) => t.id === selectedTradeId && t.isActive !== false);
+    return found || null;
+  }, [selectedTradeId, trades]);
 
   useEffect(() => {
     if (activeTrade) {

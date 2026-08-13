@@ -107,3 +107,33 @@ export async function submitJobApplication(
   APPLICATIONS_STORE.push(application);
   return application;
 }
+
+export async function updateJobPosting(id: string, payload: Partial<CreateJobPostingPayload> & { is_active?: boolean }): Promise<void> {
+  const idx = DEFAULT_JOBS.findIndex((j) => j.id === id);
+  if (idx !== -1) {
+    DEFAULT_JOBS[idx] = {
+      ...DEFAULT_JOBS[idx],
+      company_name: payload.companyName ?? DEFAULT_JOBS[idx].company_name,
+      title: payload.title ?? DEFAULT_JOBS[idx].title,
+      job_type: payload.jobType ?? DEFAULT_JOBS[idx].job_type,
+      location: payload.location ?? DEFAULT_JOBS[idx].location,
+      salary_range: payload.salaryRange !== undefined ? payload.salaryRange : DEFAULT_JOBS[idx].salary_range,
+      description: payload.description ?? DEFAULT_JOBS[idx].description,
+      is_active: payload.is_active !== undefined ? payload.is_active : DEFAULT_JOBS[idx].is_active,
+    };
+  }
+}
+
+export async function toggleJobPostingActive(id: string): Promise<void> {
+  const job = DEFAULT_JOBS.find((j) => j.id === id);
+  if (job) {
+    job.is_active = !job.is_active;
+  }
+}
+
+export async function deleteJobPosting(id: string): Promise<void> {
+  const idx = DEFAULT_JOBS.findIndex((j) => j.id === id);
+  if (idx !== -1) {
+    DEFAULT_JOBS.splice(idx, 1);
+  }
+}
