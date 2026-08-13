@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { CalculatorInput, safeNum, parseNumberValue } from '../components/CalculatorInput';
+import { useCalculatorConfig } from '../services/calculatorConfigService';
 
 interface CalculationsPageProps {
   onNavigate: (page: string) => void;
@@ -870,6 +871,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeTab, setActiveTab] = useState<CalculatorTab>('concrete');
   const [copied, setCopied] = useState(false);
+  const calcConfig = useCalculatorConfig();
 
   const activeCategoryObj = useMemo(() => {
     return MAIN_CATEGORIES.find((c) => c.id === selectedCategory) || null;
@@ -1415,6 +1417,38 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       default: return false;
     }
   }, [activeTab, concreteCalc.isReady, masonryCalc.isReady, insulationCalc.isReady, tilingCalc.isReady, drywallCalc.isReady, roofingCalc.isReady, rafterCalc.isReady]);
+
+  const costEstimate = useMemo(() => {
+    let materialNet = 0;
+    if (activeTab === 'concrete' && concreteCalc.isReady) {
+      materialNet = concreteCalc.grossVol * calcConfig.concretePricePerM3;
+    } else if (activeTab === 'masonry' && masonryCalc.isReady) {
+      materialNet = masonryCalc.netArea * calcConfig.masonryMortarPricePerM2 + masonryCalc.grossPcs * 950;
+    } else if (activeTab === 'insulation' && insulationCalc.isReady) {
+      materialNet = insulationCalc.netArea * calcConfig.insulationPricePerM2;
+    } else if (activeTab === 'tiling' && tilingCalc.isReady) {
+      materialNet = tilingCalc.grossArea * 3800 + tilingCalc.adhesiveKg * calcConfig.tilingAdhesivePricePerKg;
+    } else if (activeTab === 'drywall' && drywallCalc.isReady) {
+      materialNet = drywallCalc.boardArea * calcConfig.drywallBoardPricePerM2;
+    } else if (activeTab === 'roofing' && roofingCalc.isReady) {
+      materialNet = roofingCalc.netArea * calcConfig.roofingTilePricePerM2;
+    } else if (activeTab === 'rafter' && rafterCalc.isReady) {
+      materialNet = rafterCalc.totalLumberVolumeM3 * 185000;
+    }
+
+    const laborNet = materialNet * (calcConfig.laborCostMultiplier - 1);
+    const subtotalNet = materialNet + laborNet;
+    const vatAmount = subtotalNet * (calcConfig.vatRatePercent / 100);
+    const totalGross = subtotalNet + vatAmount;
+
+    return {
+      materialNet: Math.round(materialNet),
+      laborNet: Math.round(laborNet),
+      subtotalNet: Math.round(subtotalNet),
+      vatAmount: Math.round(vatAmount),
+      totalGross: Math.round(totalGross),
+    };
+  }, [activeTab, concreteCalc, masonryCalc, insulationCalc, tilingCalc, drywallCalc, roofingCalc, rafterCalc, calcConfig]);
 
 
   // --------------------------------------------------------------------------
@@ -2920,6 +2954,41 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     )}
                   </div>
                 ))}
+
+                {/* 💰 DYNAMIC COST ESTIMATION BOX */}
+                {isCurrentCalcReady && (
+                  <div className="bg-[#141414] border border-amber-500/30 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                        💰 Becsült Anyag- és Munkadíj Összesítő
+                      </span>
+                      <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono">
+                        Admin Árak
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="bg-white/5 p-2.5 rounded-xl">
+                        <div className="text-gray-400">Nettó Anyagköltség:</div>
+                        <div className="text-sm font-extrabold text-white">{costEstimate.materialNet.toLocaleString('hu-HU')} Ft</div>
+                      </div>
+                      <div className="bg-white/5 p-2.5 rounded-xl">
+                        <div className="text-gray-400">Nettó Munkadíj:</div>
+                        <div className="text-sm font-extrabold text-gray-200">{costEstimate.laborNet.toLocaleString('hu-HU')} Ft</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/40 p-3 rounded-xl flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] text-gray-300 uppercase tracking-wider font-bold">Várható Bruttó Összesen</div>
+                        <div className="text-xs text-gray-400 font-mono">({calcConfig.vatRatePercent}% ÁFA-val)</div>
+                      </div>
+                      <div className="text-xl font-black text-amber-300">
+                        {costEstimate.totalGross.toLocaleString('hu-HU')} Ft
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="pt-2">

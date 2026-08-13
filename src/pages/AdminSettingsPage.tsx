@@ -100,6 +100,83 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   const [navFormParentId, setNavFormParentId] = useState<string | null>(null);
   const [navFormBadge, setNavFormBadge] = useState('');
 
+  // Legal Doc Editor State
+  const [activeLegalDocTab, setActiveLegalDocTab] = useState<'privacyPolicy' | 'terms' | 'cookiePolicy'>('privacyPolicy');
+
+  const handleAddLegalSection = (docKey: 'privacyPolicy' | 'terms') => {
+    const doc = legalDocs[docKey];
+    const newSection = {
+      title: `${doc.sections.length + 1}. Új Témakör / Szekció`,
+      text: 'Ide írhatod a szekció részletes tartalmát és jogi tájékoztatóját...',
+      list: [],
+    };
+    setLegalDocs({
+      ...legalDocs,
+      [docKey]: {
+        ...doc,
+        sections: [...doc.sections, newSection],
+      },
+    });
+  };
+
+  const handleUpdateLegalSection = (
+    docKey: 'privacyPolicy' | 'terms',
+    index: number,
+    field: 'title' | 'text' | 'list',
+    value: any
+  ) => {
+    const doc = legalDocs[docKey];
+    const updatedSections = [...doc.sections];
+    updatedSections[index] = {
+      ...updatedSections[index],
+      [field]: value,
+    };
+    setLegalDocs({
+      ...legalDocs,
+      [docKey]: {
+        ...doc,
+        sections: updatedSections,
+      },
+    });
+  };
+
+  const handleDeleteLegalSection = (docKey: 'privacyPolicy' | 'terms', index: number) => {
+    if (window.confirm('Biztosan törölni szeretnéd ezt a szekciót?')) {
+      const doc = legalDocs[docKey];
+      const updatedSections = doc.sections.filter((_, i) => i !== index);
+      setLegalDocs({
+        ...legalDocs,
+        [docKey]: {
+          ...doc,
+          sections: updatedSections,
+        },
+      });
+    }
+  };
+
+  const handleMoveLegalSection = (
+    docKey: 'privacyPolicy' | 'terms',
+    index: number,
+    direction: 'up' | 'down'
+  ) => {
+    const doc = legalDocs[docKey];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= doc.sections.length) return;
+
+    const updatedSections = [...doc.sections];
+    const temp = updatedSections[index];
+    updatedSections[index] = updatedSections[targetIdx];
+    updatedSections[targetIdx] = temp;
+
+    setLegalDocs({
+      ...legalDocs,
+      [docKey]: {
+        ...doc,
+        sections: updatedSections,
+      },
+    });
+  };
+
   const handleToggleNavActive = (id: string) => {
     const updated = navItems.map((item) =>
       item.id === id ? { ...item, isActive: !item.isActive } : item
@@ -1542,130 +1619,174 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
         </div>
       )}
 
-      {/* TAB: LEGAL DOCUMENTS EDITOR */}
+      {/* TAB: LEGAL DOCUMENTS WYSIWYG SECTION EDITOR */}
       {activeTab === 'legal' && (
         <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
-          <div>
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Shield size={20} className="text-accent" /> Jogi Szövegek &amp; Szabályzatok Szerkesztője
-            </h2>
-            <p className="text-xs text-gray-400 mt-1">
-              Szerkeszd élőben az Adatvédelmi Tájékoztató (GDPR), az ÁSZF és a Süti Szabályzat szekcióit.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-4">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Shield size={20} className="text-accent" /> Jogi Szövegek &amp; Szabályzatok Szerkesztője
+              </h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Szerkeszd élőben az Adatvédelmi Tájékoztató (GDPR), az ÁSZF és a Süti Szabályzat szekcióit, törzsszövegeit és felsorolási pontjait.
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-6">
-            {/* GDPR Title */}
-            <div className="space-y-4 bg-[#161616] p-5 rounded-2xl border border-[#222]">
-              <h3 className="text-sm font-bold text-accent flex items-center gap-2">
-                🔒 Adatvédelmi Tájékoztató (GDPR) Fejléc &amp; Szekciók
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Címsor</label>
-                  <input
-                    type="text"
-                    value={legalDocs.privacyPolicy.title}
-                    onChange={(e) =>
-                      setLegalDocs({
-                        ...legalDocs,
-                        privacyPolicy: { ...legalDocs.privacyPolicy, title: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Verzió</label>
-                  <input
-                    type="text"
-                    value={legalDocs.privacyPolicy.version}
-                    onChange={(e) =>
-                      setLegalDocs({
-                        ...legalDocs,
-                        privacyPolicy: { ...legalDocs.privacyPolicy, version: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
-                  />
-                </div>
-              </div>
-            </div>
+          {/* Subtab Selector */}
+          <div className="flex items-center gap-2 bg-[#161616] p-1.5 rounded-2xl border border-[#222] overflow-x-auto">
+            {[
+              { key: 'privacyPolicy', label: '🔒 Adatvédelem (GDPR)' },
+              { key: 'terms', label: '📄 ÁSZF Szerződési Feltételek' },
+              { key: 'cookiePolicy', label: '🍪 Süti (Cookie) Szabályzat' },
+            ].map((sub) => (
+              <button
+                key={sub.key}
+                type="button"
+                onClick={() => setActiveLegalDocTab(sub.key as typeof activeLegalDocTab)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  activeLegalDocTab === sub.key
+                    ? 'bg-accent text-black shadow-md font-extrabold'
+                    : 'text-gray-400 hover:text-white hover:bg-[#222]'
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
 
-            {/* ÁSZF Title */}
-            <div className="space-y-4 bg-[#161616] p-5 rounded-2xl border border-[#222]">
-              <h3 className="text-sm font-bold text-accent flex items-center gap-2">
-                📄 Általános Szerződési Feltételek (ÁSZF) Fejléc &amp; Szekciók
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Címsor</label>
-                  <input
-                    type="text"
-                    value={legalDocs.terms.title}
-                    onChange={(e) =>
-                      setLegalDocs({
-                        ...legalDocs,
-                        terms: { ...legalDocs.terms, title: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Verzió</label>
-                  <input
-                    type="text"
-                    value={legalDocs.terms.version}
-                    onChange={(e) =>
-                      setLegalDocs({
-                        ...legalDocs,
-                        terms: { ...legalDocs.terms, version: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
-                  />
-                </div>
+          {/* DOCUMENT HEADER METADATA */}
+          <div className="bg-[#161616] p-5 rounded-2xl border border-[#222] space-y-4">
+            <h3 className="text-xs font-bold text-accent uppercase tracking-wider">
+              Dokumentum Fejléc Adatok ({activeLegalDocTab})
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="sm:col-span-2">
+                <label className="font-bold text-gray-300 block mb-1">Címsor *</label>
+                <input
+                  type="text"
+                  value={legalDocs[activeLegalDocTab].title}
+                  onChange={(e) =>
+                    setLegalDocs({
+                      ...legalDocs,
+                      [activeLegalDocTab]: { ...legalDocs[activeLegalDocTab], title: e.target.value },
+                    })
+                  }
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                />
               </div>
-            </div>
-
-            {/* Cookie Policy Title */}
-            <div className="space-y-4 bg-[#161616] p-5 rounded-2xl border border-[#222]">
-              <h3 className="text-sm font-bold text-accent flex items-center gap-2">
-                🍪 Süti (Cookie) Szabályzat Fejléc
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Címsor</label>
-                  <input
-                    type="text"
-                    value={legalDocs.cookiePolicy.title}
-                    onChange={(e) =>
-                      setLegalDocs({
-                        ...legalDocs,
-                        cookiePolicy: { ...legalDocs.cookiePolicy, title: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Verzió</label>
-                  <input
-                    type="text"
-                    value={legalDocs.cookiePolicy.version}
-                    onChange={(e) =>
-                      setLegalDocs({
-                        ...legalDocs,
-                        cookiePolicy: { ...legalDocs.cookiePolicy, version: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
-                  />
-                </div>
+              <div>
+                <label className="font-bold text-gray-300 block mb-1">Verziószám *</label>
+                <input
+                  type="text"
+                  value={legalDocs[activeLegalDocTab].version}
+                  onChange={(e) =>
+                    setLegalDocs({
+                      ...legalDocs,
+                      [activeLegalDocTab]: { ...legalDocs[activeLegalDocTab], version: e.target.value },
+                    })
+                  }
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent font-mono"
+                />
               </div>
             </div>
           </div>
+
+          {/* SECTIONS EDITOR FOR PRIVACY POLICY & TERMS */}
+          {(activeLegalDocTab === 'privacyPolicy' || activeLegalDocTab === 'terms') && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <FileText size={16} className="text-accent" /> Szekciók &amp; Törzsszövegek ({legalDocs[activeLegalDocTab].sections.length} db szekció)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => handleAddLegalSection(activeLegalDocTab)}
+                  className="px-3.5 py-1.5 bg-accent/10 border border-accent/30 hover:bg-accent hover:text-black text-accent text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus size={14} /> Új Szekció Hozzáadása
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {legalDocs[activeLegalDocTab].sections.map((sec, idx) => (
+                  <div key={idx} className="bg-[#161616] border border-[#222] rounded-2xl p-5 space-y-4 shadow-sm hover:border-[#333] transition-colors">
+                    <div className="flex items-center justify-between gap-3 border-b border-[#222] pb-3">
+                      <span className="text-xs font-mono font-bold text-accent">#{idx + 1}. Szekció</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveLegalSection(activeLegalDocTab, idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-1.5 bg-[#222] hover:bg-[#333] disabled:opacity-40 text-gray-300 rounded-lg text-xs"
+                          title="Mozgatás Fel"
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveLegalSection(activeLegalDocTab, idx, 'down')}
+                          disabled={idx === legalDocs[activeLegalDocTab].sections.length - 1}
+                          className="p-1.5 bg-[#222] hover:bg-[#333] disabled:opacity-40 text-gray-300 rounded-lg text-xs"
+                          title="Mozgatás Le"
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLegalSection(activeLegalDocTab, idx)}
+                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs ml-2 cursor-pointer"
+                          title="Szekció Törlése"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <label className="font-bold text-gray-300 block mb-1">Szekció Címsor (Alcím)</label>
+                        <input
+                          type="text"
+                          value={sec.title}
+                          onChange={(e) => handleUpdateLegalSection(activeLegalDocTab, idx, 'title', e.target.value)}
+                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-accent"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-gray-300 block mb-1">Szekció Törzsszövege (RichText / Bekezdések)</label>
+                        <textarea
+                          rows={4}
+                          value={sec.text}
+                          onChange={(e) => handleUpdateLegalSection(activeLegalDocTab, idx, 'text', e.target.value)}
+                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent font-sans leading-relaxed"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-gray-400 block mb-1">Felsorolási Pontok (Soronként 1 elem, opcionális)</label>
+                        <textarea
+                          rows={3}
+                          value={sec.list ? sec.list.join('\n') : ''}
+                          onChange={(e) =>
+                            handleUpdateLegalSection(
+                              activeLegalDocTab,
+                              idx,
+                              'list',
+                              e.target.value.split('\n').map((s) => s.trim()).filter(Boolean)
+                            )
+                          }
+                          placeholder="pl. 1. Pontos név és címtárolás&#10;2. Email cím titkosított hash formátumban"
+                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent font-mono text-[11px]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
