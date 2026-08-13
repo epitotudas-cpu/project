@@ -1105,15 +1105,15 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
 
     const isReady = numL !== null && numH !== null;
     const specs = {
-      pth30: { name: 'Porotherm 30 N+F', pcsM2: 16, palletPcs: 80, mortarL: 24, isZsaluko: false },
-      pth44: { name: 'Porotherm 44 Thermo Profi', pcsM2: 16, palletPcs: 60, mortarL: 35, isZsaluko: false },
-      ytong30: { name: 'Ytong A+ 30 cm', pcsM2: 6.67, palletPcs: 40, mortarL: 5, isZsaluko: false },
-      b30: { name: 'Hagyományos B30 tégla', pcsM2: 36, palletPcs: 240, mortarL: 45, isZsaluko: false },
-      zsaluko30: { name: 'Zsalukő 30 cm (50x30x23 cm)', pcsM2: 8.7, palletPcs: 40, mortarL: 0, isZsaluko: true },
+      pth30: { name: 'Porotherm 30 N+F', pcsM2: 16, palletPcs: 80, mortarL: 24, isZsaluko: false, mortarName: 'Falazóhabarcs (25kg)' },
+      pth44: { name: 'Porotherm 44 Thermo Profi', pcsM2: 16, palletPcs: 60, mortarL: 35, isZsaluko: false, mortarName: 'Falazóhabarcs (25kg)' },
+      ytong30: { name: 'Ytong A+ 30 cm', pcsM2: 6.67, palletPcs: 40, mortarL: 5, isZsaluko: false, mortarName: 'Ytong vékonyágyazó ragasztó (25kg)' },
+      b30: { name: 'Hagyományos B30 tégla', pcsM2: 36, palletPcs: 240, mortarL: 45, isZsaluko: false, mortarName: 'Falazóhabarcs (25kg)' },
+      zsaluko30: { name: 'Zsalukő 30 cm (50x30x23 cm)', pcsM2: 8.7, palletPcs: 40, mortarL: 0, isZsaluko: true, mortarName: 'Kiöntőbeton' },
     }[brickType];
 
     if (!isReady || numL <= 0 || numH <= 0) {
-      return { isReady: false, netArea: 0, grossPcs: 0, pallets: 0, mortarBags: 0, zsalukoConcreteM3: 0, brickName: specs.name, isZsaluko: specs.isZsaluko };
+      return { isReady: false, netArea: 0, grossPcs: 0, pallets: 0, mortarBags: 0, zsalukoConcreteM3: 0, brickName: specs.name, isZsaluko: specs.isZsaluko, mortarName: specs.mortarName };
     }
 
     const grossArea = numL * numH;
@@ -1144,6 +1144,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       zsalukoConcreteM3,
       brickName: specs.name,
       isZsaluko: specs.isZsaluko,
+      mortarName: specs.mortarName,
     };
   }, [brickType, wLength, wHeight, wDeduction, wWaste]);
 
@@ -1175,7 +1176,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
 
     const isReady = numCm !== null && numArea !== null;
     if (!isReady) {
-      return { isReady: false, baseName: baseWallSpecs.name, matName: matSpecs.name, uValue: 0, passesKNE: false, adhesiveBags: 0, meshM2: 0, boardPcs: 0 };
+      return { isReady: false, baseName: baseWallSpecs.name, matName: matSpecs.name, uValue: 0, passesKNE: false, adhesiveBags: 0, meshM2: 0, boardPcs: 0, dowelPcs: 0, primerLiters: 0 };
     }
 
     const R_insulation = numCm > 0 ? (numCm / 100) / matSpecs.lambda : 0;
@@ -1187,6 +1188,8 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     const adhesiveBags = numArea > 0 ? Math.ceil((numArea * 9) / 25) : 0;
     const meshM2 = numArea > 0 ? Math.ceil(numArea * 1.1) : 0;
     const boardPcs = numArea > 0 ? Math.ceil(numArea * 2) : 0;
+    const dowelPcs = numArea > 0 ? Math.ceil(numArea * 6) : 0;
+    const primerLiters = numArea > 0 ? Math.ceil(numArea * 0.2) : 0;
 
     return {
       isReady: true,
@@ -1197,6 +1200,8 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       adhesiveBags,
       meshM2,
       boardPcs,
+      dowelPcs,
+      primerLiters,
     };
   }, [wallBase, insulationMat, insulationCm, insArea]);
 
@@ -1216,7 +1221,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
 
     const isReady = numArea !== null && (tilingType === 'tile' || numThick > 0);
     if (!isReady || numArea <= 0) {
-      return { isReady: false, tilesM2: 0, adhesiveBags: 0, groutKg: 0, screedBags: 0, primerLiters: 0 };
+      return { isReady: false, tilesM2: 0, adhesiveBags: 0, groutKg: 0, screedBags: 0, primerLiters: 0, waterproofingKg: 0 };
     }
 
     let tilesM2 = 0;
@@ -1224,14 +1229,16 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     let groutKg = 0;
     let screedBags = 0;
     let primerLiters = 0;
+    let waterproofingKg = 0;
 
     if (tilingType === 'tile') {
       tilesM2 = Math.ceil(numArea * (1 + numWaste / 100));
       const kgPerM2 = tTileSize === '60x60' ? 4.8 : 3.8;
       adhesiveBags = Math.ceil((numArea * kgPerM2) / 25);
       groutKg = Math.ceil(numArea * 0.4);
+      waterproofingKg = Math.ceil(numArea * 1.5);
     } else {
-      const totalDryKg = numArea * (numThick / 10) * 19;
+      const totalDryKg = numArea * (numThick / 10) * 19 * (1 + numWaste / 100);
       screedBags = Math.ceil(totalDryKg / 25);
     }
 
@@ -1244,6 +1251,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       groutKg,
       screedBags,
       primerLiters,
+      waterproofingKg,
     };
   }, [tilingType, tArea, tTileSize, tThicknessMm, tWaste]);
 
@@ -1265,7 +1273,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     }[dwBoardType];
 
     if (!isReady || numArea <= 0) {
-      return { isReady: false, boardCount: 0, boardNames, mainProfileFm: 0, perimeterProfileFm: 0, jointFillerKg: 0, screwsPcs: 0, tapeM: 0 };
+      return { isReady: false, boardCount: 0, boardNames, mainProfileFm: 0, perimeterProfileFm: 0, jointFillerKg: 0, screwsPcs: 0, tapeM: 0, insulationM2: 0 };
     }
 
     const boardSizeM2 = 2.4;
@@ -1278,6 +1286,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     const jointFillerKg = Math.ceil(numArea * layers * 0.5);
     const screwsPcs = Math.ceil(numArea * layers * 18);
     const tapeM = Math.ceil(numArea * 1.5);
+    const insulationM2 = Math.ceil(numArea * 1.05);
 
     return {
       isReady: true,
@@ -1288,6 +1297,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       jointFillerKg,
       screwsPcs,
       tapeM,
+      insulationM2,
     };
   }, [dwType, dwArea, dwBoardType]);
 
@@ -1304,7 +1314,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
 
     const isReady = numFootprint !== null && numAngle !== null;
     if (!isReady || numFootprint <= 0) {
-      return { isReady: false, actualRoofArea: 0, totalTiles: 0, battenFm: 0, membraneM2: 0, ridgeTiles: 0 };
+      return { isReady: false, actualRoofArea: 0, totalTiles: 0, battenFm: 0, counterBattenFm: 0, membraneM2: 0, ridgeTiles: 0 };
     }
 
     const rad = (numAngle * Math.PI) / 180;
@@ -1315,6 +1325,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     const totalTiles = Math.ceil(actualRoofArea * tilePcsPerM2 * 1.06);
 
     const battenFm = Math.ceil(actualRoofArea * 3.2);
+    const counterBattenFm = Math.ceil(actualRoofArea * 2.5);
     const membraneM2 = Math.ceil(actualRoofArea * 1.15);
     const ridgeTiles = Math.ceil(Math.sqrt(numFootprint) * 1.4 * 3);
 
@@ -1323,6 +1334,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       actualRoofArea,
       totalTiles,
       battenFm,
+      counterBattenFm,
       membraneM2,
       ridgeTiles,
     };
@@ -1346,7 +1358,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
 
     const isReady = numSpan !== null && numAngle !== null;
     if (!isReady || numSpan <= 0 || numAngle <= 0) {
-      return { isReady: false, totalHoriz: 0, cosAlpha: 0, rafterLength: 0, stdStockLength: 0, raftersPerSide: 0, totalRaftersBothSides: 0 };
+      return { isReady: false, totalHoriz: 0, cosAlpha: 0, rafterLength: 0, stdStockLength: 0, raftersPerSide: 0, totalRaftersBothSides: 0, totalLumberMeters: 0, totalLumberVolumeM3: 0 };
     }
 
     const totalHoriz = numSpan + numOverhang;
@@ -1367,10 +1379,15 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
 
     let raftersPerSide = 0;
     let totalRaftersBothSides = 0;
+    let totalLumberMeters = 0;
+    let totalLumberVolumeM3 = 0;
+
     if (numRoofLength !== null && numRoofLength > 0) {
       const spacingM = numSpacing / 100;
-      raftersPerSide = Math.ceil(numRoofLength / spacingM) + 1;
-      totalRaftersBothSides = raftersPerSide * 2;
+      raftersPerSide = Math.ceil(numRoofLength / spacingM) + 1; // Szarufaállások / párok száma
+      totalRaftersBothSides = raftersPerSide * 2; // Szükséges szarufák száma (2 tetősík)
+      totalLumberMeters = totalRaftersBothSides * stdStockLength; // Összes rendelendő szarufaanyag (fm)
+      totalLumberVolumeM3 = Number((totalLumberMeters * 0.075 * 0.15).toFixed(2)); // Becsült faanyag (m³)
     }
 
     return {
@@ -1381,6 +1398,8 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       stdStockLength,
       raftersPerSide,
       totalRaftersBothSides,
+      totalLumberMeters,
+      totalLumberVolumeM3,
     };
   }, [rSpan, rAngle, rOverhang, rSpacing, rRoofLength]);
 
@@ -1411,6 +1430,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       text += `- Beton minőség: ${cGrade}\n`;
       text += `- Cement szükséglet: ${concreteCalc.cementBags25kg} zsák (25 kg/zsák - össz: ${concreteCalc.totalCementKg} kg)\n`;
       text += `- Sóder szükséglet: ${concreteCalc.soderTons} tonna (~${concreteCalc.soderM3} m³)\n`;
+      text += `- Keverővíz szükséglet: ${concreteCalc.waterLiters} liter\n`;
       text += `- Becsült betonacél: ${concreteCalc.rebarKg} kg\n`;
       text += `- Zsaluzási felület: ${concreteCalc.formArea} m²\n`;
     } else if (activeTab === 'masonry') {
@@ -1422,25 +1442,28 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       if (masonryCalc.isZsaluko) {
         text += `- Kiöntőbeton szükséglet: ${masonryCalc.zsalukoConcreteM3} m³\n`;
       } else {
-        text += `- Falazóhabarcs (25kg zsák): ${masonryCalc.mortarBags} zsák\n`;
+        text += `- Habarcs / Ragasztó: ${masonryCalc.mortarBags} zsák (${masonryCalc.mortarName})\n`;
       }
     } else if (activeTab === 'insulation') {
       text += `Hőszigetelés & U-érték Energetikai Kalkulátor\n`;
       text += `- Meglévő szerkezet: ${insulationCalc.baseName}\n`;
       text += `- Hőszigetelés: ${insulationCalc.matName} (${insulationCm} cm)\n`;
       text += `- Eredő hőátbocsátási tényező (U-érték): ${insulationCalc.uValue} W/m²K\n`;
-      text += `- KNE 7/2006 Energetikai Minősítés: ${insulationCalc.passesKNE ? 'MEGFELELT (U <= 0.24 W/m²K)' : 'NEM FELELT MEG (Vastagabb szigetelés javasolt!)'}\n`;
+      text += `- KNE 7/2006 (TNM) Energetikai Minősítés: ${insulationCalc.passesKNE ? 'MEGFELELT (U <= 0.24 W/m²K)' : 'NEM FELELT MEG (Vastagabb szigetelés javasolt!)'}\n`;
       text += `- Hőszigetelő táblák száma: ${insulationCalc.boardPcs} db\n`;
       text += `- Ragasztó- és beágyazó habarcs: ${insulationCalc.adhesiveBags} zsák (25 kg/zsák)\n`;
+      text += `- Rögzítő dűbelek száma: ${insulationCalc.dowelPcs} db (6 db/m²)\n`;
       text += `- Üvegszövet háló: ${insulationCalc.meshM2} m²\n`;
+      text += `- Színező alapozó: ${insulationCalc.primerLiters} liter\n`;
     } else if (activeTab === 'tiling') {
       text += `Vakolat, Esztrich & Burkolat Kalkulátor\n`;
       if (tilingType === 'tile') {
         text += `- Burkolólap igény (${tWaste}% vágási veszteséggel): ${tilingCalc.tilesM2} m²\n`;
         text += `- Csemperagasztó: ${tilingCalc.adhesiveBags} zsák (25 kg/zsák)\n`;
+        text += `- Kenhető vízszigetelés / Folyékony fólia: ${tilingCalc.waterproofingKg} kg\n`;
         text += `- Fugázó anyag: ${tilingCalc.groutKg} kg\n`;
       } else {
-        text += `- Szárazesztrich / Vakolat habarcs: ${tilingCalc.screedBags} zsák (25 kg/zsák)\n`;
+        text += `- Szárazesztrich / Vakolat habarcs (${tWaste}% veszteséggel): ${tilingCalc.screedBags} zsák (25 kg/zsák)\n`;
       }
       text += `- Mélyalapozó: ${tilingCalc.primerLiters} liter\n`;
     } else if (activeTab === 'drywall') {
@@ -1450,16 +1473,19 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       text += `- Főprofilok (CW/CD): ${drywallCalc.mainProfileFm} fm\n`;
       text += `- Keretprofilok (UW/UD): ${drywallCalc.perimeterProfileFm} fm\n`;
       text += `- Hézagoló gipsz: ${drywallCalc.jointFillerKg} kg\n`;
+      text += `- Hézagerősítő szalag: ${drywallCalc.tapeM} m\n`;
       text += `- Rögzítőcsavarok: ${drywallCalc.screwsPcs} db\n`;
+      text += `- Belső kőzetgyapot szigetelés: ${drywallCalc.insulationM2} m²\n`;
     } else if (activeTab === 'roofing') {
       text += `Tetőfedés & Cserép Kalkulátor\n`;
       text += `- Valós tetőfelület (${roofAngle}° dőlésszöggel): ${roofingCalc.actualRoofArea} m²\n`;
       text += `- Szükséges cserepek / lemez: ${roofingCalc.totalTiles} db\n`;
       text += `- Kúpcserép: ${roofingCalc.ridgeTiles} db\n`;
       text += `- Tetőléc szükséglet: ${roofingCalc.battenFm} fm\n`;
+      text += `- Ellenléc (kontraléc): ${roofingCalc.counterBattenFm} fm\n`;
       text += `- Páraáteresztő tetőfólia: ${roofingCalc.membraneM2} m²\n`;
     } else if (activeTab === 'rafter') {
-      text += `Szarufahossz Kalkulátor\n`;
+      text += `Szarufahossz & Tetőszerkezet Kalkulátor\n`;
       text += `- Épület fél-fesztávolsága (L_v): ${rSpan} m\n`;
       text += `- Tető dőlésszöge (α): ${rAngle}° (cos(α) = ${rafterCalc.cosAlpha})\n`;
       text += `- Eresz túlnyúlás (L_eresz): ${rOverhang} m\n`;
@@ -1467,7 +1493,9 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       text += `- Szarufa ferde hossza (L_szarufa): ${rafterCalc.rafterLength} m\n`;
       text += `- Ajánlott szabványos fűrészáru hossz: ${rafterCalc.stdStockLength}.0 m-es szálak\n`;
       if (rafterCalc.totalRaftersBothSides > 0) {
-        text += `- Szarufák száma (${rRoofLength}m tetőhossznál): ${rafterCalc.totalRaftersBothSides} db (mindkét oldal)\n`;
+        text += `- Szarufaállások (párok) száma: ${rafterCalc.raftersPerSide} állás\n`;
+        text += `- Szükséges szarufák száma (${rRoofLength}m tetőhossznál): ${rafterCalc.totalRaftersBothSides} db (mindkét oldal)\n`;
+        text += `- Összes rendelendő szarufaanyag: ${rafterCalc.totalLumberMeters} fm (~${rafterCalc.totalLumberVolumeM3} m³ fűrészáru)\n`;
       }
     }
 
@@ -2572,13 +2600,17 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
                         <span className="text-gray-400">Zsaluzási Felület</span>
                         <div className="text-base font-bold text-accent">{concreteCalc.formArea} m²</div>
                       </div>
                       <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
-                        <span className="text-gray-400">Becsült Betonacél</span>
+                        <span className="text-gray-400">Keverővíz</span>
+                        <div className="text-base font-bold text-white">{concreteCalc.waterLiters} liter</div>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Betonacél</span>
                         <div className="text-base font-bold text-accent">{concreteCalc.rebarKg} kg</div>
                       </div>
                     </div>
@@ -2614,8 +2646,9 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         </div>
                       ) : (
                         <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
-                          <span className="text-gray-400">Falazóhabarcs (25kg)</span>
+                          <span className="text-gray-400">Ragasztó / Habarcs</span>
                           <div className="text-base font-bold text-accent">{masonryCalc.mortarBags} zsák</div>
+                          <span className="text-[10px] text-gray-400">({masonryCalc.mortarName})</span>
                         </div>
                       )}
                     </div>
@@ -2659,6 +2692,15 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <span className="text-gray-400">Ragasztó (25kg)</span>
                         <div className="text-base font-bold text-accent">{insulationCalc.adhesiveBags} zsák</div>
                       </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Rögzítő Dűbelek</span>
+                        <div className="text-base font-bold text-white">{insulationCalc.dowelPcs} db</div>
+                        <span className="text-[10px] text-gray-400">(6 db/m² tanácsolt)</span>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Színező Alapozó</span>
+                        <div className="text-base font-bold text-accent">{insulationCalc.primerLiters} liter</div>
+                      </div>
                       <div className="bg-white/5 col-span-2 p-3 rounded-xl space-y-0.5 border border-white/5">
                         <span className="text-gray-400">Üvegszövet Háló</span>
                         <div className="text-base font-bold text-white">{insulationCalc.meshM2} m² (10% átlapolással)</div>
@@ -2698,10 +2740,15 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                             <span className="text-gray-400">Fugázó Por</span>
                             <div className="text-base font-bold text-accent">{tilingCalc.groutKg} kg</div>
                           </div>
+                          <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                            <span className="text-gray-400">Kenhető Vízszigetelés</span>
+                            <div className="text-base font-bold text-accent">{tilingCalc.waterproofingKg} kg</div>
+                            <span className="text-[10px] text-gray-400">(Folyékony fólia)</span>
+                          </div>
                         </>
                       ) : (
                         <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
-                          <span className="text-gray-400">Szárazesztrich (25kg)</span>
+                          <span className="text-gray-400">Szárazesztrich / Vakolat</span>
                           <div className="text-base font-bold text-white">{tilingCalc.screedBags} zsák</div>
                         </div>
                       )}
@@ -2744,8 +2791,16 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <div className="text-base font-bold text-accent">{drywallCalc.jointFillerKg} kg</div>
                       </div>
                       <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Hézagerősítő Szalag</span>
+                        <div className="text-base font-bold text-white">{drywallCalc.tapeM} m</div>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
                         <span className="text-gray-400">Gipszkarton Csavar</span>
                         <div className="text-base font-bold text-white">{drywallCalc.screwsPcs} db</div>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Belső Kőzetgyapot</span>
+                        <div className="text-base font-bold text-accent">{drywallCalc.insulationM2} m²</div>
                       </div>
                     </div>
                   </div>
@@ -2782,6 +2837,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <div className="text-base font-bold text-accent">{roofingCalc.battenFm} fm</div>
                       </div>
                       <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Ellenléc (Kontraléc)</span>
+                        <div className="text-base font-bold text-accent">{roofingCalc.counterBattenFm} fm</div>
+                      </div>
+                      <div className="bg-white/5 col-span-2 p-3 rounded-xl space-y-0.5 border border-white/5">
                         <span className="text-gray-400">Páraáteresztő Fólia</span>
                         <div className="text-base font-bold text-white">{roofingCalc.membraneM2} m²</div>
                       </div>
@@ -2832,14 +2891,30 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     </div>
 
                     {rafterCalc.totalRaftersBothSides > 0 && (
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
-                          <span className="text-gray-400">Szarufák (1 tetősík)</span>
-                          <div className="text-base font-bold text-accent">{rafterCalc.raftersPerSide} db</div>
+                      <div className="space-y-3 pt-2 border-t border-white/10">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                            <span className="text-gray-400">Szarufaállások / Párok</span>
+                            <div className="text-base font-bold text-white">{rafterCalc.raftersPerSide} állás (pár)</div>
+                            <span className="text-[10px] text-gray-400">({rRoofLength} m tetőhossznál)</span>
+                          </div>
+                          <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                            <span className="text-gray-400">Összes Szarufa (Nyeregtető)</span>
+                            <div className="text-base font-bold text-accent">{rafterCalc.totalRaftersBothSides} db</div>
+                            <span className="text-[10px] text-gray-400">(Mindkét tetősíkon)</span>
+                          </div>
                         </div>
-                        <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
-                          <span className="text-gray-400">Összes Szarufa (Nyeregtető)</span>
-                          <div className="text-base font-bold text-accent">{rafterCalc.totalRaftersBothSides} db</div>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                            <span className="text-gray-400">Rendelendő Faanyag (Fm)</span>
+                            <div className="text-base font-bold text-accent">{rafterCalc.totalLumberMeters} fm</div>
+                            <span className="text-[10px] text-gray-400">({rafterCalc.stdStockLength}m szálhosszal)</span>
+                          </div>
+                          <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                            <span className="text-gray-400">Becsült Faterfogat (7.5x15)</span>
+                            <div className="text-base font-bold text-white">~{rafterCalc.totalLumberVolumeM3} m³</div>
+                            <span className="text-[10px] text-gray-400">(Fűrészáru térfogat)</span>
+                          </div>
                         </div>
                       </div>
                     )}
