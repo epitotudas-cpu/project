@@ -1768,7 +1768,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         <label className="font-bold text-gray-400 block mb-1">Felsorolási Pontok (Soronként 1 elem, opcionális)</label>
                         <textarea
                           rows={3}
-                          value={sec.list ? sec.list.join('\n') : ''}
+                          value={(sec as any).list ? (sec as any).list.join('\n') : ''}
                           onChange={(e) =>
                             handleUpdateLegalSection(
                               activeLegalDocTab,

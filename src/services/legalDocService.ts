@@ -6,9 +6,22 @@ import {
   COOKIE_POLICY_DATA,
 } from '../data/legalDocs';
 
+export interface LegalSection {
+  title: string;
+  text: string;
+  list?: string[];
+}
+
+export interface LegalDocItem {
+  title: string;
+  lastUpdated: string;
+  version: string;
+  sections: LegalSection[];
+}
+
 export interface LegalDocsData {
-  privacyPolicy: typeof PRIVACY_POLICY_DATA;
-  terms: typeof TERMS_DATA;
+  privacyPolicy: LegalDocItem;
+  terms: LegalDocItem;
   cookiePolicy: typeof COOKIE_POLICY_DATA;
 }
 
