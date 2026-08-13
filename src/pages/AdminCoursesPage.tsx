@@ -7,24 +7,20 @@ import {
   Edit3,
   CheckCircle2,
   Clock,
-  Award,
   PlayCircle,
   HelpCircle,
   RotateCcw,
-  BookOpen,
 } from 'lucide-react';
 import {
   useEducationData,
   saveEducationData,
   DEFAULT_EDUCATION_DATA,
-  type EducationData,
 } from '../services/educationService';
 import type { Course, Lesson, QuizQuestion } from '../lib/supabase';
 
 export default function AdminCoursesPage() {
   const eduData = useEducationData();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Active Selected Course for Editing Lessons/Quiz
@@ -57,12 +53,12 @@ export default function AdminCoursesPage() {
   const [correctOptionIdx, setCorrectOptionIdx] = useState(0);
 
   const filteredCourses = eduData.courses.filter((c) => {
-    const matchCat = selectedCategory === 'all' || c.category === selectedCategory;
-    const matchQuery =
+    return (
       !searchQuery.trim() ||
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCat && matchQuery;
+      c.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   });
 
   const handleOpenAddCourse = () => {
@@ -80,7 +76,7 @@ export default function AdminCoursesPage() {
     setCourseTitle(course.title);
     setCourseDescription(course.description);
     setCourseCategory(course.category);
-    setCourseDifficulty(course.difficulty);
+    setCourseDifficulty(course.difficulty as 'beginner' | 'intermediate' | 'advanced');
     setCourseDuration(course.duration_hours);
     setShowCourseModal(true);
   };

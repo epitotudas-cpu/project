@@ -28,6 +28,7 @@ import {
   ChevronRight,
   Calculator,
   Shield,
+  Target,
 } from 'lucide-react';
 import {
   getSiteSettings,

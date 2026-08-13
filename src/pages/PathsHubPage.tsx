@@ -205,7 +205,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredTradeCards.map((card) => {
                 const IconComp = card.icon;
-                const detailData = TRADE_DETAILS[card.id];
+                const detailData = trades.find((t) => t.id === card.id);
                 return (
                   <div
                     key={card.id}
