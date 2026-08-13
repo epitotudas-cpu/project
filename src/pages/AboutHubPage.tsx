@@ -108,46 +108,81 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12 text-[#202628]">
-        {/* Section 1: Célunk (Mission) */}
+        {/* Section 0: Bemutatkozás (Intro) */}
+        <section id="bemutatkozas" className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-3 shadow-sm">
+          <div className="flex items-center gap-2 text-accent font-extrabold text-xs uppercase tracking-wider">
+            <Building2 size={16} /> {aboutSettings.introTitle}
+          </div>
+          <h2 className="text-2xl font-extrabold text-[#202628]">
+            {aboutSettings.heroTitle}
+          </h2>
+          <p className="text-[#5f6868] text-sm md:text-base leading-relaxed">
+            {aboutSettings.introDescription}
+          </p>
+        </section>
+
+        {/* Section 1: Célunk & Küldetésünk (Mission & Vision) */}
         <section id="celunk" className="space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-[#202628] flex items-center gap-2">
-              <Target className="text-accent" size={24} /> {aboutSettings.missionTitle}
-            </h2>
-            <p className="text-[#5f6868] text-xs md:text-sm">
-              {aboutSettings.missionDescription}
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white border border-gray-200 rounded-3xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
+              <h2 className="text-xl font-bold text-[#202628] flex items-center gap-2">
+                <Target className="text-accent" size={22} /> {aboutSettings.missionTitle}
+              </h2>
+              <p className="text-[#5f6868] text-xs md:text-sm leading-relaxed">
+                {aboutSettings.missionDescription}
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-3xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
+              <h2 className="text-xl font-bold text-[#202628] flex items-center gap-2">
+                <Globe className="text-accent" size={22} /> {aboutSettings.visionTitle}
+              </h2>
+              <p className="text-[#5f6868] text-xs md:text-sm leading-relaxed">
+                {aboutSettings.visionDescription}
+              </p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center">
-                <BookOpen size={22} />
-              </div>
-              <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar1Title}</h3>
-              <p className="text-xs text-[#5f6868] leading-relaxed">
-                {aboutSettings.pillar1Desc}
+          <div className="space-y-3 pt-4">
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-[#202628] flex items-center gap-2">
+                <ShieldCheck className="text-accent" size={22} /> {aboutSettings.valuesTitle}
+              </h3>
+              <p className="text-[#5f6868] text-xs md:text-sm">
+                {aboutSettings.valuesDescription}
               </p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center">
-                <Award size={22} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center">
+                  <BookOpen size={22} />
+                </div>
+                <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar1Title}</h3>
+                <p className="text-xs text-[#5f6868] leading-relaxed">
+                  {aboutSettings.pillar1Desc}
+                </p>
               </div>
-              <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar2Title}</h3>
-              <p className="text-xs text-[#5f6868] leading-relaxed">
-                {aboutSettings.pillar2Desc}
-              </p>
-            </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
-                <Users size={22} />
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center">
+                  <Award size={22} />
+                </div>
+                <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar2Title}</h3>
+                <p className="text-xs text-[#5f6868] leading-relaxed">
+                  {aboutSettings.pillar2Desc}
+                </p>
               </div>
-              <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar3Title}</h3>
-              <p className="text-xs text-[#5f6868] leading-relaxed">
-                {aboutSettings.pillar3Desc}
-              </p>
+
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
+                  <Users size={22} />
+                </div>
+                <h3 className="text-base font-bold text-[#202628]">{aboutSettings.pillar3Title}</h3>
+                <p className="text-xs text-[#5f6868] leading-relaxed">
+                  {aboutSettings.pillar3Desc}
+                </p>
+              </div>
             </div>
           </div>
         </section>

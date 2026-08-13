@@ -1842,32 +1842,104 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
           <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
             <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Target size={20} className="text-accent" /> 2. Célunk &amp; Küldetésünk Szövegek
+              <Building size={20} className="text-accent" /> 2. Bemutatkozás Szövegek
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Küldetés Címsor</label>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Bemutatkozás Címsor</label>
                 <input
                   type="text"
-                  value={aboutSettings.missionTitle}
-                  onChange={(e) => setAboutSettings({ ...aboutSettings, missionTitle: e.target.value })}
+                  value={aboutSettings.introTitle}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, introTitle: e.target.value })}
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none focus:border-accent"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Küldetés Leírása</label>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Bemutatkozás Leírása</label>
                 <textarea
                   rows={3}
-                  value={aboutSettings.missionDescription}
-                  onChange={(e) => setAboutSettings({ ...aboutSettings, missionDescription: e.target.value })}
+                  value={aboutSettings.introDescription}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, introDescription: e.target.value })}
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-accent leading-relaxed"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+              <Target size={20} className="text-accent" /> 3. Küldetés &amp; Vízió (Jövőkép)
+            </h2>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-300 block">Küldetés Címsor</label>
+                  <input
+                    type="text"
+                    value={aboutSettings.missionTitle}
+                    onChange={(e) => setAboutSettings({ ...aboutSettings, missionTitle: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-sm text-white font-bold"
+                  />
+                  <label className="text-xs font-bold text-gray-400 block pt-1">Küldetés Leírása</label>
+                  <textarea
+                    rows={4}
+                    value={aboutSettings.missionDescription}
+                    onChange={(e) => setAboutSettings({ ...aboutSettings, missionDescription: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white leading-relaxed"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-300 block">Vízió (Jövőkép) Címsor</label>
+                  <input
+                    type="text"
+                    value={aboutSettings.visionTitle}
+                    onChange={(e) => setAboutSettings({ ...aboutSettings, visionTitle: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-sm text-white font-bold"
+                  />
+                  <label className="text-xs font-bold text-gray-400 block pt-1">Vízió Leírása</label>
+                  <textarea
+                    rows={4}
+                    value={aboutSettings.visionDescription}
+                    onChange={(e) => setAboutSettings({ ...aboutSettings, visionDescription: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white leading-relaxed"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+              <ShieldCheck size={20} className="text-accent" /> 4. Alapértékek &amp; Pillérek
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Értékek Címsor</label>
+                <input
+                  type="text"
+                  value={aboutSettings.valuesTitle}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, valuesTitle: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1">Értékek Bevezető Leírása</label>
+                <textarea
+                  rows={2}
+                  value={aboutSettings.valuesDescription}
+                  onChange={(e) => setAboutSettings({ ...aboutSettings, valuesDescription: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white leading-relaxed"
                 />
               </div>
 
               <div className="pt-4 border-t border-[#222] space-y-4">
-                <h3 className="text-sm font-extrabold text-accent">Három Fő Pillér &amp; Értékek</h3>
+                <h3 className="text-sm font-extrabold text-accent">Három Fő Pillér</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
@@ -1876,14 +1948,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       type="text"
                       value={aboutSettings.pillar1Title}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar1Title: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white font-bold"
                     />
                     <label className="text-xs font-bold text-gray-400 block pt-1">1. Pillér Leírása</label>
                     <textarea
                       rows={3}
                       value={aboutSettings.pillar1Desc}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar1Desc: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white leading-relaxed"
                     />
                   </div>
 
@@ -1893,14 +1965,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       type="text"
                       value={aboutSettings.pillar2Title}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar2Title: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white font-bold"
                     />
                     <label className="text-xs font-bold text-gray-400 block pt-1">2. Pillér Leírása</label>
                     <textarea
                       rows={3}
                       value={aboutSettings.pillar2Desc}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar2Desc: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white leading-relaxed"
                     />
                   </div>
 
@@ -1910,14 +1982,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       type="text"
                       value={aboutSettings.pillar3Title}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar3Title: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white font-bold"
                     />
                     <label className="text-xs font-bold text-gray-400 block pt-1">3. Pillér Leírása</label>
                     <textarea
                       rows={3}
                       value={aboutSettings.pillar3Desc}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar3Desc: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white leading-relaxed"
                     />
                   </div>
                 </div>

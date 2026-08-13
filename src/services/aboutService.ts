@@ -5,8 +5,14 @@ export interface AboutSettings {
   heroTagline: string;
   heroTitle: string;
   heroDescription: string;
+  introTitle: string;
+  introDescription: string;
   missionTitle: string;
   missionDescription: string;
+  visionTitle: string;
+  visionDescription: string;
+  valuesTitle: string;
+  valuesDescription: string;
   pillar1Title: string;
   pillar1Desc: string;
   pillar2Title: string;
@@ -21,8 +27,14 @@ export const DEFAULT_ABOUT_SETTINGS: AboutSettings = {
   heroTagline: 'Rólunk',
   heroTitle: 'Az ÉpítőTudásról és küldetésünkről',
   heroDescription: 'Magyarország online építőipari tudásbázisa. Célunk a szakképesítés támogatása, a szakmai normák terjesztése és az iparági szereplők összekapcsolása.',
+  introTitle: 'Bemutatkozás',
+  introDescription: 'Az ÉpítőTudás egy független, szakmailag hiteles digitális platform, amelyet mérnökök, oktatók és tapasztalt kivitelezők hoztak létre a hazai építőipar fejlesztése érdekében.',
   missionTitle: 'Célunk és küldetésünk',
   missionDescription: 'Az ÉpítőTudás egy független szakmai digitális platform, amely a minőségi kivitelezést és a szakoktatást szolgálja.',
+  visionTitle: 'Jövőképünk (Vízió)',
+  visionDescription: 'Egy olyan átlátható, szabványosított és kiszámítható hazai építőipari ökoszisztéma megteremtése, ahol a tudás mindenki számára elérhető, a minőségi munka pedig megbecsült alappá válik.',
+  valuesTitle: 'Alapértékeink',
+  valuesDescription: 'Szakmai munkánkat négy elválaszthatatlan alapelv vezérli: a hitelesség, a gyakorlatorientáltság, az iparági összefogás és a folyamatos fejlődés.',
   pillar1Title: 'Hitelesség és Szabványosság',
   pillar1Desc: 'Tartalmaink a legújabb MSZ és EU építőipari normáknak, valamint szakértő mérnökök tapasztalatainak felelnek meg.',
   pillar2Title: 'Gyakorlatorientált Tudás',

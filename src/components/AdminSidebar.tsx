@@ -26,23 +26,61 @@ interface AdminSidebarProps {
   onCloseMobile: () => void;
 }
 
-const NAV_ITEMS: { id: AdminView; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'dashboard', label: 'Áttekintés', icon: LayoutDashboard },
-  { id: 'moderation', label: 'Moderáció', icon: CheckSquare },
-  { id: 'articles', label: 'Cikkek', icon: FileText },
-  { id: 'categories', label: 'Kategóriák', icon: FolderTree },
-  { id: 'glossary', label: 'Fogalmak', icon: BookOpen },
-  { id: 'trades', label: 'Szakmák & Karrierutak', icon: Compass },
-  { id: 'books', label: 'Szakmai Könyvek', icon: Library },
-  { id: 'tools', label: 'Eszközök', icon: Wrench },
-  { id: 'jobs', label: 'Állásajánlatok', icon: Briefcase },
-  { id: 'courses', label: 'Képzések', icon: GraduationCap },
-  { id: 'users', label: 'Felhasználók', icon: Users },
-  { id: 'roles', label: 'Jogosultságok', icon: Shield },
-  { id: 'partners', label: 'Partnerek', icon: Building2 },
-  { id: 'ads', label: 'Reklámok', icon: Megaphone },
-  { id: 'audit', label: 'Audit napló', icon: Activity },
-  { id: 'settings', label: 'Beállítások', icon: Settings },
+interface NavItem {
+  id: AdminView;
+  label: string;
+  icon: typeof LayoutDashboard;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    title: 'ADMIN',
+    items: [
+      { id: 'dashboard', label: 'Áttekintés', icon: LayoutDashboard },
+      { id: 'moderation', label: 'Moderáció', icon: CheckSquare },
+    ],
+  },
+  {
+    title: 'TARTALOM',
+    items: [
+      { id: 'articles', label: 'Cikkek', icon: FileText },
+      { id: 'categories', label: 'Kategóriák', icon: FolderTree },
+      { id: 'glossary', label: 'Fogalmak', icon: BookOpen },
+      { id: 'trades', label: 'Szakmák & Karrierutak', icon: Compass },
+      { id: 'books', label: 'Szakmai Könyvek', icon: Library },
+      { id: 'tools', label: 'Eszközök & Gépek', icon: Wrench },
+      { id: 'jobs', label: 'Állásajánlatok', icon: Briefcase },
+      { id: 'courses', label: 'Képzések', icon: GraduationCap },
+    ],
+  },
+  {
+    title: 'PARTNEREK',
+    items: [{ id: 'partners', label: 'Partnerek', icon: Building2 }],
+  },
+  {
+    title: 'MARKETING',
+    items: [{ id: 'ads', label: 'Reklámok', icon: Megaphone }],
+  },
+  {
+    title: 'FELHASZNÁLÓK',
+    items: [
+      { id: 'users', label: 'Felhasználók', icon: Users },
+      { id: 'roles', label: 'Jogosultságok', icon: Shield },
+    ],
+  },
+  {
+    title: 'AUDIT',
+    items: [{ id: 'audit', label: 'Audit Napló', icon: Activity }],
+  },
+  {
+    title: 'BEÁLLÍTÁSOK',
+    items: [{ id: 'settings', label: 'Beállítások', icon: Settings }],
+  },
 ];
 
 export default function AdminSidebar({
@@ -82,27 +120,36 @@ export default function AdminSidebar({
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto admin-scroll">
-          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-            const active = activeView === id;
-            return (
-              <button
-                key={id}
-                onClick={() => {
-                  onNavigateView(id);
-                  onCloseMobile();
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-[#FFC400]/10 text-[#FFC400]'
-                    : 'text-gray-400 hover:bg-[#1E1E1E] hover:text-gray-200'
-                }`}
-              >
-                <Icon size={16} className={active ? 'text-[#FFC400]' : 'text-gray-500'} />
-                {label}
-              </button>
-            );
-          })}
+        <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto admin-scroll">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.title} className="space-y-1">
+              <h3 className="px-3 text-[10px] font-black tracking-widest text-gray-500 uppercase">
+                {group.title}
+              </h3>
+              <div className="space-y-0.5">
+                {group.items.map(({ id, label, icon: Icon }) => {
+                  const active = activeView === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => {
+                        onNavigateView(id);
+                        onCloseMobile();
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        active
+                          ? 'bg-[#FFC400]/10 text-[#FFC400] font-bold border-l-2 border-[#FFC400]'
+                          : 'text-gray-400 hover:bg-[#1E1E1E] hover:text-gray-200'
+                      }`}
+                    >
+                      <Icon size={15} className={active ? 'text-[#FFC400]' : 'text-gray-500'} />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="px-3 py-4 border-t border-[#1E1E1E]">
