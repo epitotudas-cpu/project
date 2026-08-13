@@ -178,7 +178,8 @@ function AppContent() {
   }, []);
 
   const navigate = (page: string, params?: { articleSlug?: string }) => {
-    const validPage = (ALL_VALID_PAGES.includes(page as PageKey) ? page : 'home') as PageKey;
+    const mainPage = page.split('?')[0];
+    const validPage = (ALL_VALID_PAGES.includes(mainPage as PageKey) ? mainPage : 'home') as PageKey;
 
     if (params?.articleSlug) {
       setSelectedArticleSlug(params.articleSlug);
@@ -194,7 +195,11 @@ function AppContent() {
     try {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('epitotudas_active_page', validPage);
-        window.location.hash = validPage === 'home' ? '' : `#${validPage}`;
+        const targetHash = validPage === 'home' ? '' : params?.articleSlug ? `#article?slug=${params.articleSlug}` : `#${validPage}`;
+        if (window.location.hash !== targetHash) {
+          window.history.pushState(null, '', targetHash || window.location.pathname);
+        }
+        window.dispatchEvent(new Event('popstate'));
         window.scrollTo(0, 0);
       }
     } catch {

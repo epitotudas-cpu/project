@@ -963,6 +963,14 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     };
   }, []);
 
+  // Safety fallback if detail mode is active with no valid item
+  useEffect(() => {
+    if (viewMode === 'detail' && !activeCalculationObj) {
+      setViewMode('categories');
+      setSelectedCalcId(null);
+    }
+  }, [viewMode, activeCalculationObj]);
+
   const navigateToCategory = (catId: string) => {
     setSelectedCategory(catId);
     setSelectedCalcId(null);
@@ -971,6 +979,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     if (window.location.hash !== newHash) {
       window.history.pushState(null, '', newHash);
     }
+    window.dispatchEvent(new Event('popstate'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -984,6 +993,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       if (window.location.hash !== newHash) {
         window.history.pushState(null, '', newHash);
       }
+      window.dispatchEvent(new Event('popstate'));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -995,6 +1005,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     if (window.location.hash !== newHash) {
       window.history.pushState(null, '', newHash);
     }
+    window.dispatchEvent(new Event('popstate'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1007,6 +1018,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     if (window.location.hash !== newHash) {
       window.history.pushState(null, '', newHash);
     }
+    window.dispatchEvent(new Event('popstate'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
