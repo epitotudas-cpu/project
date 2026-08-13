@@ -121,6 +121,9 @@
         "rammer",
         "stampfer"
       ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
+      ],
       "translations": {
         "en": "Tamping Rammer / Trench Compactor",
         "de": "Vibrationsstampfer / Grabenstampfer",
@@ -150,6 +153,9 @@
         "gyémánttárcsa",
         "angle grinder",
         "winkelschleifer"
+      ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80"
       ],
       "translations": {
         "en": "Angle Grinder",
@@ -183,6 +189,9 @@
         "etics",
         "wdvs"
       ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80"
+      ],
       "translations": {
         "en": "ETICS / External Thermal Insulation Composite System",
         "de": "WDVS / Wärmedämm-Verbundsystem",
@@ -213,6 +222,9 @@
         "zsargon",
         "német mesterszó"
       ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80"
+      ],
       "translations": {
         "en": "Mortar (Slang)",
         "de": "Mörtel",
@@ -241,6 +253,9 @@
         "döngölőgép",
         "tömörítés",
         "szleng"
+      ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
       ],
       "translations": {
         "en": "Frog Compactor (Slang)",
@@ -271,6 +286,9 @@
         "vágás",
         "márkanév"
       ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80"
+      ],
       "translations": {
         "en": "Flex / Angle Grinder (Brand name)",
         "de": "Flex / Winkelschleifer",
@@ -300,6 +318,9 @@
         "thr",
         "márkanév"
       ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80"
+      ],
       "translations": {
         "en": "Dryvit / EIFS",
         "de": "Dryvit / Dämmsystem",
@@ -328,6 +349,9 @@
         "léc",
         "zsaluzat",
         "német mesterszó"
+      ],
+      "image_urls": [
+        "https://images.unsplash.com/photo-1520699049698-acd2fccb8cc8?auto=format&fit=crop&w=800&q=80"
       ],
       "translations": {
         "en": "Batten / Timber Lath",

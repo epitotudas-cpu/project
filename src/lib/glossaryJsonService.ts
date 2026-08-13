@@ -47,6 +47,73 @@ export interface GlossaryTermFromJson {
   slides?: Array<{ title: string; content: string; image_url?: string }>;
 }
 
+export function resolveTermImages(term: Partial<GlossaryTermFromJson> & { term?: string; category?: string; image_urls?: string[] }): string[] {
+  if (term.image_urls && term.image_urls.length > 0) {
+    const valid = term.image_urls.filter((u) => typeof u === 'string' && u.trim().length > 0);
+    if (valid.length > 0) return valid;
+  }
+
+  const name = (term.term || '').toLowerCase();
+  const cat = (term.category || '').toLowerCase();
+
+  if (name.includes('habarcs') || name.includes('malter')) {
+    return ['https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('betonacél') || name.includes('armatura') || name.includes('vasb')) {
+    return ['https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('döngöl') || name.includes('béka') || name.includes('tömörít')) {
+    return ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('sarokcsisz') || name.includes('flex') || name.includes('vágó')) {
+    return ['https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('hőszigetel') || name.includes('dryvit') || name.includes('thr')) {
+    return ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('stafni') || name.includes('léc') || name.includes('zsalu')) {
+    return ['https://images.unsplash.com/photo-1520699049698-acd2fccb8cc8?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('adalék') || name.includes('homok') || name.includes('kavics')) {
+    return ['https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('c20') || name.includes('beton')) {
+    return ['https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('cement')) {
+    return ['https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('esztrich') || name.includes('padló')) {
+    return ['https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (name.includes('panel')) {
+    return ['https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'];
+  }
+
+  // Category level fallback images
+  if (cat.includes('fal') || cat.includes('kőműves')) {
+    return ['https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (cat.includes('szerkezet') || cat.includes('vasbeton')) {
+    return ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (cat.includes('szigetel')) {
+    return ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (cat.includes('gép') || cat.includes('szerszám')) {
+    return ['https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (cat.includes('alap') || cat.includes('föld')) {
+    return ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'];
+  }
+  if (cat.includes('tető') || cat.includes('ácsl')) {
+    return ['https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80'];
+  }
+
+  // General fallback construction photo
+  return ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'];
+}
+
 export function getVideoUrls(term?: { video_urls?: string[] | null; video_url?: string | null } | null): string[] {
   if (!term) return [];
   const urls: string[] = [];
@@ -149,8 +216,9 @@ class GlossaryJsonService {
       ? glossarySeedPackage.items
       : glossaryData;
 
-    this.fallbackTerms = (rawItems as unknown as GlossaryTermFromJson[]).map(t => ({
+    this.fallbackTerms = (rawItems as unknown as GlossaryTermFromJson[]).map((t) => ({
       ...t,
+      image_urls: resolveTermImages(t),
       updatedAt: t.updatedAt || new Date().toISOString(),
     }));
     this.terms = [...this.fallbackTerms];
@@ -179,31 +247,37 @@ class GlossaryJsonService {
         return [...this.fallbackTerms];
       }
 
-      const terms: GlossaryTermFromJson[] = data.map((item: GlossaryTermSupabase) => ({
-        id: item.id,
-        term: item.term,
-        definition: item.definition,
-        category: item.category || '',
-        tags: item.kulcsszavak || [],
-        szint: item.szint || undefined,
-        kapcsolodofogalmak: item.kapcsolodofogalmak || undefined,
-        entry_type: item.entry_type || 'technical_concept',
-        official_term_id: item.official_term_id,
-        official_term_name: item.official_term_name,
-        detailed_description: item.detailed_description,
-        practical_applications: item.practical_applications,
-        common_mistakes: item.common_mistakes,
-        usage_example: item.usage_example,
-        origin_note: item.origin_note,
-        translations: item.translations,
-        jargon_subtype: item.jargon_subtype,
-        knowledge_graph_relations: item.knowledge_graph_relations,
-        video_url: item.video_url,
-        video_urls: item.video_urls,
-        image_urls: item.image_urls,
-        slides: item.slides,
-        updatedAt: item.updated_at,
-      }));
+      const terms: GlossaryTermFromJson[] = data.map((item: GlossaryTermSupabase) => {
+        const rawTermObj = {
+          id: item.id,
+          term: item.term,
+          definition: item.definition,
+          category: item.category || '',
+          tags: item.kulcsszavak || [],
+          szint: item.szint || undefined,
+          kapcsolodofogalmak: item.kapcsolodofogalmak || undefined,
+          entry_type: item.entry_type || 'technical_concept',
+          official_term_id: item.official_term_id,
+          official_term_name: item.official_term_name,
+          detailed_description: item.detailed_description,
+          practical_applications: item.practical_applications,
+          common_mistakes: item.common_mistakes,
+          usage_example: item.usage_example,
+          origin_note: item.origin_note,
+          translations: item.translations,
+          jargon_subtype: item.jargon_subtype,
+          knowledge_graph_relations: item.knowledge_graph_relations,
+          video_url: item.video_url,
+          video_urls: item.video_urls,
+          image_urls: item.image_urls,
+          slides: item.slides,
+          updatedAt: item.updated_at,
+        };
+        return {
+          ...rawTermObj,
+          image_urls: resolveTermImages(rawTermObj),
+        };
+      });
 
       // Merge logic: Supabase database terms ALWAYS take precedence over local seed terms (keyed by slug/term name)
       const mergedMap = new Map<string, GlossaryTermFromJson>();

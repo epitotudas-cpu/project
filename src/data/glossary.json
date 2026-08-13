@@ -5,6 +5,7 @@
     "definition": "Homok és kavics a betonkeverékben. Ahol 60-75% a tipikus arány. Mérete és összetétele befolyásolja a beton szilárdságát és tartósságát.",
     "category": "Anyagismeret",
     "tags": ["beton", "adalék", "homok"],
+    "image_urls": ["https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-06-02T10:15:00Z"
   },
   {
@@ -13,6 +14,7 @@
     "definition": "Vasalás, teherviselő vasak a betonban. A húzóerőket veszi fel, megakadályozza a repedezést.",
     "category": "Szerkezetépítés",
     "tags": ["vas", "teherviselő", "beton"],
+    "image_urls": ["https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-06-02T09:45:00Z"
   },
   {
@@ -21,6 +23,7 @@
     "definition": "Öntöttvas vagy acél armatura betonba bekötéshez. Jellemzően B60.50 vagy B50.50 besorolású, keresztirányú és hosszanti bordázással.",
     "category": "Anyagismeret",
     "tags": ["acél", "beton", "vasbeton"],
+    "image_urls": ["https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-06-02T09:30:00Z"
   },
   {
@@ -29,6 +32,7 @@
     "definition": "Beton szilárdsági osztály. 20 MPa cube nyomószilárdság, 25 MPa henger. Közönséges építési munkáknál használt szabványosztály.",
     "category": "Anyagismeret",
     "tags": ["beton", "szilárdság", "szabvány"],
+    "image_urls": ["https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-06-01T14:20:00Z"
   },
   {
@@ -37,6 +41,7 @@
     "definition": "Kötőanyag a betonban. Víz hatására hidratál és keményre köt. CEM I a leggyakoribb portlandcement, CEM II a kompozit cement.",
     "category": "Anyagismeret",
     "tags": ["cement", "kötőanyag", "hidratáció"],
+    "image_urls": ["https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-06-01T11:00:00Z"
   },
   {
@@ -45,6 +50,7 @@
     "definition": "Kiegyenlítő esztrich réteg a padlózat alapjául. Tipikus vastagság 4-8 cm, C20/25 vagy C25/30 szilárdságú.",
     "category": "Alapozás",
     "tags": ["padlózat", "esztrich", "kiegyenlítő"],
+    "image_urls": ["https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-05-31T16:30:00Z"
   },
   {
@@ -53,6 +59,7 @@
     "definition": "Cement, homok és víz keveréke. M1-M5 jelzés szerint osztályozzák. Téglafalazatnál és vakoláshoz használatos.",
     "category": "Anyagismeret",
     "tags": ["habarcs", "cement", "falazat"],
+    "image_urls": ["https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-05-31T13:15:00Z"
   },
   {
@@ -61,6 +68,7 @@
     "definition": "Ideiglenes vagy maradandó formázat friss beton megtartásához. Leggyakrabban fa vagy acél elemekből.",
     "category": "Szerkezetépítés",
     "tags": ["zsaluzat", "beton", "forma"],
+    "image_urls": ["https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-05-30T10:45:00Z"
   },
   {
@@ -69,6 +77,7 @@
     "definition": "Előregyártott vasbeton elemek. Falak, tetők, padlók összeszerelésére, tipikus panelméretek 3x6m vagy 3x12m.",
     "category": "Szerkezetépítés",
     "tags": ["panel", "előregyártott", "vasbeton"],
+    "image_urls": ["https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-05-29T15:20:00Z"
   },
   {
@@ -77,6 +86,7 @@
     "definition": "Beton armaturával erősítve. Ezzel egyidejűleg nyomásra és húzásra ellenálló szerkezeti anyag.",
     "category": "Szerkezetépítés",
     "tags": ["vasbeton", "beton", "vas"],
+    "image_urls": ["https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80"],
     "updatedAt": "2026-05-28T12:00:00Z"
   }
 ]
