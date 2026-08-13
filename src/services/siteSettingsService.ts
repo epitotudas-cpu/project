@@ -9,6 +9,13 @@ export interface SiteSettings {
   primaryColor: string;
   themeMode: 'dark' | 'light';
 
+  // Customizable Section Texts & Content Styling
+  heroMainTitle: string;
+  heroSubtitle: string;
+  newsletterTitle: string;
+  newsletterDescription: string;
+  footerDescription: string;
+
   // Navigation Menu Toggles
   enabledNavItems: {
     home: boolean;
@@ -38,6 +45,12 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   logoUrl: '',
   primaryColor: '#FFC400',
   themeMode: 'dark',
+
+  heroMainTitle: 'Magyarország vezető építőipari tudásbázisa',
+  heroSubtitle: 'Szakmai enciklopédia, megbízható útmutatók, kalkulátorok és szerszámkatalógus szakembereknek, tanulóknak és kivitelezőknek egyaránt.',
+  newsletterTitle: 'Szakmai hírlevél',
+  newsletterDescription: 'Heti frissítések, új cikkek, szakmai tippek és iparági újdonságok közvetlenül az e-mail fiókodba.',
+  footerDescription: 'Magyarország legátfogóbb online építőipari tudásbázisa. Szakembereknek és tanulóknak egyaránt.',
 
   enabledNavItems: {
     home: true,

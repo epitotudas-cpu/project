@@ -2,59 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, X, User, LogOut, ChevronDown, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSiteSettings, type SiteSettings } from '../services/siteSettingsService';
+import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
 interface HeaderProps {
   onNavigate: (page: string) => void;
   currentPage: string;
 }
 
-const navStructure = [
-  {
-    label: 'Főoldal',
-    page: 'home',
-  },
-  {
-    label: 'Tudástár',
-    page: 'tudastar',
-    subItems: [
-      { label: 'Cikkek & Útmutatók', page: 'category' },
-      { label: 'Fogalomtár & Szótár', page: 'glossary' },
-      { label: 'Számítások & Kalkulátorok', page: 'calculations' },
-      { label: 'Szakmai Könyvek', page: 'books' },
-    ],
-  },
-  {
-    label: 'Eszközök',
-    page: 'tool',
-    subItems: [
-      { label: 'Gép & Szerszám Katalógus', page: 'tool' },
-      { label: 'Szoftverek', page: 'software' },
-      { label: 'Eszközválasztó Modul', page: 'valaszto' },
-    ],
-  },
-  {
-    label: 'Pályák',
-    page: 'paths',
-    subItems: [
-      { label: 'Építőipari Szakmák', page: 'paths' },
-      { label: 'Tanulási Útvonalak', page: 'paths' },
-      { label: 'Képzések & Kurzusok', page: 'courses' },
-      { label: 'Karrier & Állások', page: 'careers' },
-    ],
-  },
-  {
-    label: 'Rólunk',
-    page: 'about',
-    subItems: [
-      { label: 'Küldetésünk & Rólunk', page: 'about' },
-      { label: 'Partnereink', page: 'partners' },
-      { label: 'Impresszum & Kapcsolat', page: 'impressum' },
-    ],
-  },
-];
-
 export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
+  const rawNavItems = useNavigationItems();
+  const navStructure = getStructuredNav(rawNavItems, false);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);

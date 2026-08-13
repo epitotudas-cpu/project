@@ -1,11 +1,12 @@
 import { ArrowLeft, Shield, CheckCircle2, ChevronRight } from 'lucide-react';
-import { PRIVACY_POLICY_DATA } from '../data/legalDocs';
+import { useLegalDocs } from '../services/legalDocService';
 
 interface PrivacyPolicyPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
+  const { privacyPolicy: PRIVACY_POLICY_DATA } = useLegalDocs();
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
       {/* Hero Header */}

@@ -22,6 +22,12 @@ import {
   Upload,
   Info,
   AlertCircle,
+  Eye,
+  EyeOff,
+  Edit3,
+  ChevronRight,
+  Calculator,
+  Shield,
 } from 'lucide-react';
 import {
   getSiteSettings,
@@ -45,6 +51,24 @@ import {
   DEFAULT_HERO_IMAGES,
   DEFAULT_HERO_CONFIG,
 } from '../services/heroImageService';
+import {
+  useNavigationItems,
+  saveNavItems,
+  DEFAULT_NAV_ITEMS,
+  type MenuItem,
+} from '../services/navigationService';
+import {
+  getCalculatorConfig,
+  saveCalculatorConfig,
+  DEFAULT_CALCULATOR_CONFIG,
+  type CalculatorConfig,
+} from '../services/calculatorConfigService';
+import {
+  getLegalDocs,
+  saveLegalDocs,
+  DEFAULT_LEGAL_DOCS,
+  type LegalDocsData,
+} from '../services/legalDocService';
 
 interface AdminSettingsPageProps {
   onNavigate?: (page: string) => void;
@@ -61,8 +85,118 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   const [settings, setSettings] = useState<SiteSettings>(() => getSiteSettings());
   const [impressumData, setImpressumData] = useState<ImpressumData>(() => getImpressumData());
   const [heroState, setHeroState] = useState<HeroState>(() => getHeroState());
-  const [activeTab, setActiveTab] = useState<'design' | 'hero' | 'impressum' | 'navigation' | 'ads' | 'system'>('design');
+  const [calcConfig, setCalcConfig] = useState<CalculatorConfig>(() => getCalculatorConfig());
+  const [legalDocs, setLegalDocs] = useState<LegalDocsData>(() => getLegalDocs());
+  const navItems = useNavigationItems();
+
+  const [activeTab, setActiveTab] = useState<'design' | 'hero' | 'impressum' | 'navigation' | 'calculators' | 'legal' | 'ads' | 'system'>('design');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Dynamic Navigation Management Form State
+  const [showNavModal, setShowNavModal] = useState(false);
+  const [editingNavItem, setEditingNavItem] = useState<MenuItem | null>(null);
+  const [navFormLabel, setNavFormLabel] = useState('');
+  const [navFormPage, setNavFormPage] = useState('home');
+  const [navFormParentId, setNavFormParentId] = useState<string | null>(null);
+  const [navFormBadge, setNavFormBadge] = useState('');
+
+  const handleToggleNavActive = (id: string) => {
+    const updated = navItems.map((item) =>
+      item.id === id ? { ...item, isActive: !item.isActive } : item
+    );
+    saveNavItems(updated);
+  };
+
+  const handleMoveNav = (id: string, direction: 'up' | 'down') => {
+    const item = navItems.find((i) => i.id === id);
+    if (!item) return;
+
+    const siblings = navItems
+      .filter((i) => i.parentId === item.parentId)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+
+    const idx = siblings.findIndex((i) => i.id === id);
+    if (idx === -1) return;
+
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= siblings.length) return;
+
+    const otherItem = siblings[targetIdx];
+    const updated = navItems.map((i) => {
+      if (i.id === item.id) return { ...i, displayOrder: otherItem.displayOrder };
+      if (i.id === otherItem.id) return { ...i, displayOrder: item.displayOrder };
+      return i;
+    });
+    saveNavItems(updated);
+  };
+
+  const handleDeleteNav = (id: string) => {
+    if (window.confirm('Biztosan törölni szeretnéd ezt a menüpontot? (Főmenü esetén az almenüi is törlődnek!)')) {
+      const updated = navItems.filter((i) => i.id !== id && i.parentId !== id);
+      saveNavItems(updated);
+    }
+  };
+
+  const handleOpenAddNavModal = (parentId: string | null = null) => {
+    setEditingNavItem(null);
+    setNavFormLabel('');
+    setNavFormPage('home');
+    setNavFormParentId(parentId);
+    setNavFormBadge('');
+    setShowNavModal(true);
+  };
+
+  const handleOpenEditNavModal = (item: MenuItem) => {
+    setEditingNavItem(item);
+    setNavFormLabel(item.label);
+    setNavFormPage(item.page);
+    setNavFormParentId(item.parentId);
+    setNavFormBadge(item.badge || '');
+    setShowNavModal(true);
+  };
+
+  const handleSaveNavForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!navFormLabel.trim()) return;
+
+    if (editingNavItem) {
+      const updated = navItems.map((i) =>
+        i.id === editingNavItem.id
+          ? {
+              ...i,
+              label: navFormLabel.trim(),
+              page: navFormPage.trim(),
+              parentId: navFormParentId,
+              badge: navFormBadge.trim() || undefined,
+            }
+          : i
+      );
+      saveNavItems(updated);
+    } else {
+      const siblings = navItems.filter((i) => i.parentId === navFormParentId);
+      const maxOrder = siblings.reduce((max, i) => Math.max(max, i.displayOrder), 0);
+
+      const newItem: MenuItem = {
+        id: `nav-${Date.now()}`,
+        label: navFormLabel.trim(),
+        page: navFormPage.trim(),
+        parentId: navFormParentId,
+        isActive: true,
+        displayOrder: maxOrder + 1,
+        badge: navFormBadge.trim() || undefined,
+      };
+      saveNavItems([...navItems, newItem]);
+    }
+
+    setShowNavModal(false);
+    setEditingNavItem(null);
+  };
+
+  const handleResetNavTree = () => {
+    if (window.confirm('Biztosan visszaállítod az alapszintű navigációt a gyári elrendezésre?')) {
+      saveNavItems(DEFAULT_NAV_ITEMS);
+    }
+  };
 
   // Form state for new hero image
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -166,19 +300,25 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     saveSiteSettings(settings);
     saveImpressumData(impressumData);
     saveHeroState(heroState);
+    saveCalculatorConfig(calcConfig);
+    saveLegalDocs(legalDocs);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Biztosan visszaállítod az összes beállítást, impresszumot és hero képeket az alapértelmezett értékekre?')) {
+    if (window.confirm('Biztosan visszaállítod az összes beállítást az alapértelmezett értékekre?')) {
       setSettings({ ...DEFAULT_SITE_SETTINGS });
       setImpressumData({ ...DEFAULT_IMPRESSUM_DATA });
+      setCalcConfig({ ...DEFAULT_CALCULATOR_CONFIG });
+      setLegalDocs({ ...DEFAULT_LEGAL_DOCS });
       const defaultHeroState: HeroState = { config: DEFAULT_HERO_CONFIG, images: DEFAULT_HERO_IMAGES };
       setHeroState(defaultHeroState);
       saveSiteSettings(DEFAULT_SITE_SETTINGS);
       saveImpressumData(DEFAULT_IMPRESSUM_DATA);
       saveHeroState(defaultHeroState);
+      saveCalculatorConfig(DEFAULT_CALCULATOR_CONFIG);
+      saveLegalDocs(DEFAULT_LEGAL_DOCS);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     }
@@ -255,16 +395,6 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     saveHeroState(updatedState);
   };
 
-  const toggleNavItem = (key: keyof SiteSettings['enabledNavItems']) => {
-    setSettings((prev) => ({
-      ...prev,
-      enabledNavItems: {
-        ...prev.enabledNavItems,
-        [key]: !prev.enabledNavItems[key],
-      },
-    }));
-  };
-
   return (
     <div className="space-[#111] min-h-screen text-gray-200 p-4 md:p-8 space-y-8">
       {/* Top Header Bar */}
@@ -309,6 +439,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           { id: 'hero', label: '🖼️ Főoldali Hero Képek', icon: ImageIcon },
           { id: 'impressum', label: '🏢 Impresszum & Kapcsolat', icon: Building },
           { id: 'navigation', label: '🧭 Navigáció & Menü', icon: Compass },
+          { id: 'calculators', label: '🧮 Kalkulátor Árak', icon: Calculator },
+          { id: 'legal', label: '📜 Jogi Szövegek', icon: Shield },
           { id: 'ads', label: '📢 Reklámok & Ajánlatok', icon: Megaphone },
           { id: 'system', label: '⚙️ Rendszer & Biztonság', icon: ShieldAlert },
         ].map((tab) => {
@@ -360,6 +492,69 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
                 placeholder="Építőipari Tudásbázis & Szakmai Enciklopédia"
               />
+            </div>
+
+            {/* Customizable Public Section Texts */}
+            <div className="space-y-4 pt-4 border-t border-[#222]">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                <FileText size={14} /> Főoldali & Globális Szöveges Tartalmak
+              </h3>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5">Főoldali Hero Főcím</label>
+                <textarea
+                  rows={2}
+                  value={settings.heroMainTitle || ''}
+                  onChange={(e) => setSettings({ ...settings, heroMainTitle: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  placeholder="Magyarország vezető építőipari tudásbázisa"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5">Főoldali Hero Alcím / Leírás</label>
+                <textarea
+                  rows={2}
+                  value={settings.heroSubtitle || ''}
+                  onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  placeholder="Szakmai enciklopédia, megbízható útmutatók..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Hírlevél Blokkcím</label>
+                  <input
+                    type="text"
+                    value={settings.newsletterTitle || ''}
+                    onChange={(e) => setSettings({ ...settings, newsletterTitle: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                    placeholder="Szakmai hírlevél"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Hírlevél Leírás</label>
+                  <input
+                    type="text"
+                    value={settings.newsletterDescription || ''}
+                    onChange={(e) => setSettings({ ...settings, newsletterDescription: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                    placeholder="Heti frissítések..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5">Lábjegyzet (Footer) Leírás</label>
+                <input
+                  type="text"
+                  value={settings.footerDescription || ''}
+                  onChange={(e) => setSettings({ ...settings, footerDescription: e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  placeholder="Magyarország legátfogóbb online építőipari tudásbázisa."
+                />
+              </div>
             </div>
 
             {/* Advanced Logo Uploader & Management */}
@@ -1015,64 +1210,461 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* TAB 2: NAVIGATION & MENU ITEMS */}
       {activeTab === 'navigation' && (
+        <div className="space-y-6">
+          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Compass size={20} className="text-accent" /> Dinamikus Menü- és Almenüszerkesztő Modul
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  Kezeld a weboldalon megjelenő összes főmenüt és almenüt: adj hozzá új elemeket, szerkeszd, töröld, mozgasd vagy tedd inaktívvá őket egyetlen kattintással.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetNavTree}
+                  className="px-3.5 py-2 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw size={14} /> Alaphelyzet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenAddNavModal(null)}
+                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-lg cursor-pointer"
+                >
+                  <Plus size={16} /> Új Főmenü Hozzáadása
+                </button>
+              </div>
+            </div>
+
+            {/* Information Guidance Banner */}
+            <div className="p-4 bg-[#141824] border border-blue-500/20 rounded-2xl flex items-start gap-3 text-xs text-gray-300">
+              <Info size={18} className="text-accent shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-white">Szerkesztési útmutató &amp; Élő Jelzések:</p>
+                <ul className="list-disc list-inside text-gray-400 space-y-0.5 text-[11px] leading-relaxed">
+                  <li><strong>Főmenük:</strong> A legfelső szinten megjelenő fülek a fejlécben.</li>
+                  <li><strong>Almenük:</strong> A főmenü alá behúzott elemek, melyek a legördülő menüben és mobil harmonikában jelennek meg.</li>
+                  <li><strong>Inaktívvá tétel:</strong> A szem ikonra (<Eye size={12} className="inline mx-0.5 text-accent" /> / <EyeOff size={12} className="inline mx-0.5 text-gray-500" />) kattintva elrejtheted az elemet a látogatók elől anélkül, hogy törölnéd az adatbázisból.</li>
+                  <li><strong>Sorrendezése:</strong> A nyilakkal (<ArrowUp size={12} className="inline" /> / <ArrowDown size={12} className="inline" />) megváltoztathatod a menüpontok sorrendjét.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Tree Structure Listing */}
+            <div className="space-y-4 pt-2">
+              {navItems.filter((item) => item.parentId === null).sort((a, b) => a.displayOrder - b.displayOrder).map((mainItem, mainIdx, mainArr) => {
+                const subItems = navItems.filter((sub) => sub.parentId === mainItem.id).sort((a, b) => a.displayOrder - b.displayOrder);
+
+                return (
+                  <div key={mainItem.id} className="border border-[#222] rounded-2xl overflow-hidden bg-[#161616]">
+                    {/* Main Item Row */}
+                    <div className={`p-4 flex flex-wrap items-center justify-between gap-3 ${mainItem.isActive ? 'bg-[#1C1C1C]' : 'bg-[#121212] opacity-60'}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-6 h-6 rounded-lg bg-accent/10 border border-accent/30 text-accent font-extrabold text-xs flex items-center justify-center shrink-0">
+                          {mainItem.displayOrder}
+                        </span>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-extrabold text-white truncate">{mainItem.label}</span>
+                            {mainItem.badge && (
+                              <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">
+                                {mainItem.badge}
+                              </span>
+                            )}
+                            {!mainItem.isActive && (
+                              <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold">
+                                Rejtett (Inaktív)
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs font-mono text-gray-500">Útvonal: #{mainItem.page}</span>
+                        </div>
+                      </div>
+
+                      {/* Main Item Actions */}
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        {/* Toggle Active */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleNavActive(mainItem.id)}
+                          className={`p-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            mainItem.isActive
+                              ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+                              : 'bg-gray-800/40 border-gray-700 text-gray-400 hover:bg-gray-800'
+                          }`}
+                          title={mainItem.isActive ? 'Megjelenítve a látogatóknak (Kattints az elrejtéshez)' : 'Elrejtve (Kattints a megjelenítéshez)'}
+                        >
+                          {mainItem.isActive ? <Eye size={15} /> : <EyeOff size={15} />}
+                        </button>
+
+                        {/* Reorder Up/Down */}
+                        <button
+                          type="button"
+                          disabled={mainIdx === 0}
+                          onClick={() => handleMoveNav(mainItem.id, 'up')}
+                          className="p-2 rounded-xl bg-[#222] hover:bg-[#333] text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          title="Mozgatás felfelé"
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={mainIdx === mainArr.length - 1}
+                          onClick={() => handleMoveNav(mainItem.id, 'down')}
+                          className="p-2 rounded-xl bg-[#222] hover:bg-[#333] text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          title="Mozgatás lefelé"
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+
+                        {/* Add Subitem */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAddNavModal(mainItem.id)}
+                          className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 text-xs font-bold transition-colors flex items-center gap-1"
+                        >
+                          <Plus size={13} /> Almenü
+                        </button>
+
+                        {/* Edit */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditNavModal(mainItem)}
+                          className="p-2 rounded-xl bg-[#222] hover:bg-[#333] text-gray-300 hover:text-white transition-colors"
+                          title="Szerkesztés"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNav(mainItem.id)}
+                          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                          title="Törlés"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Child Submenu Tree */}
+                    {subItems.length > 0 && (
+                      <div className="bg-[#111111] px-4 py-3 border-t border-[#222] space-y-2">
+                        <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <ChevronRight size={12} className="text-accent" /> Almenü Pontok ({subItems.length} db)
+                        </div>
+
+                        {subItems.map((subItem, subIdx) => (
+                          <div
+                            key={subItem.id}
+                            className={`ml-4 pl-4 border-l-2 border-accent/40 py-2 px-3 rounded-xl border border-[#222] flex flex-wrap items-center justify-between gap-2 transition-all ${
+                              subItem.isActive ? 'bg-[#161922]' : 'bg-[#141414] opacity-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                              <div className="min-w-0">
+                                <span className="text-xs font-bold text-gray-200">{subItem.label}</span>
+                                <span className="text-[11px] font-mono text-gray-500 ml-2">#{subItem.page}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {/* Active Toggle */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleNavActive(subItem.id)}
+                                className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                                  subItem.isActive
+                                    ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                                    : 'bg-gray-800/40 border-gray-700 text-gray-400'
+                                }`}
+                              >
+                                {subItem.isActive ? <Eye size={13} /> : <EyeOff size={13} />}
+                              </button>
+
+                              {/* Up/Down */}
+                              <button
+                                type="button"
+                                disabled={subIdx === 0}
+                                onClick={() => handleMoveNav(subItem.id, 'up')}
+                                className="p-1.5 rounded-lg bg-[#222] hover:bg-[#333] text-gray-400 disabled:opacity-30 transition-colors"
+                              >
+                                <ArrowUp size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={subIdx === subItems.length - 1}
+                                onClick={() => handleMoveNav(subItem.id, 'down')}
+                                className="p-1.5 rounded-lg bg-[#222] hover:bg-[#333] text-gray-400 disabled:opacity-30 transition-colors"
+                              >
+                                <ArrowDown size={12} />
+                              </button>
+
+                              {/* Edit */}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditNavModal(subItem)}
+                                className="p-1.5 rounded-lg bg-[#222] hover:bg-[#333] text-gray-300 transition-colors"
+                              >
+                                <Edit3 size={13} />
+                              </button>
+
+                              {/* Delete */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteNav(subItem.id)}
+                                className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CALCULATOR PRICING CONFIGURATOR */}
+      {activeTab === 'calculators' && (
         <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
           <div>
             <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Compass size={20} className="text-accent" /> Felső Menüsor Elemek Kapcsolója
+              <Calculator size={20} className="text-accent" /> Kalkulátor Anyag- és Munkadíj Egységárak
             </h2>
             <p className="text-xs text-gray-400 mt-1">
-              Itt ki- és bekapcsolhatod a weboldal felső navigációs sávjában megjelenő menüpontokat.
+              Az itt megadott alapértelmezett egységárak és szorzók alapján számítja ki a rendszer az anyagköltségeket a Számítások &amp; Kalkulátorok oldalon.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { key: 'home', label: 'Főoldal', desc: 'Kezdőlap és kiemelt szakmai témák', mandatory: true },
-              { key: 'category', label: 'Kategóriák & Cikkek', desc: 'Építőipari kategóriák és cikktár' },
-              { key: 'glossary', label: 'Fogalomtár', desc: 'Szakmai fogalmak és enciklopédia' },
-              { key: 'tool', label: 'Eszközök (Enciklopédia)', desc: 'Szerszámok, gépek és eszközválasztó segéd' },
-              { key: 'courses', label: 'Oktatás (Kurzusok)', desc: 'Szakmai képzések és tananyagok' },
-              { key: 'careers', label: 'Karrier (Állások)', desc: 'Építőipari állásbörze' },
-              { key: 'partners', label: 'Partnerek', desc: 'Gyártók, iskolák és szponzorok' },
-            ].map((item) => {
-              const isEnabled = settings.enabledNavItems[item.key as keyof SiteSettings['enabledNavItems']];
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">C20/25 Transzportbeton Egységár (Ft / m³)</label>
+              <input
+                type="number"
+                value={calcConfig.concretePricePerM3}
+                onChange={(e) => setCalcConfig({ ...calcConfig, concretePricePerM3: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">Alapértelmezett: 32,000 Ft / m³</span>
+            </div>
 
-              return (
-                <div
-                  key={item.key}
-                  className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
-                    isEnabled
-                      ? 'bg-[#181F33] border-blue-500/30'
-                      : 'bg-[#161616] border-[#222] opacity-60'
-                  }`}
-                >
-                  <div className="space-y-1 pr-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-white">{item.label}</h4>
-                      {item.mandatory && (
-                        <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded font-bold">Mindig Aktív</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400">{item.desc}</p>
-                  </div>
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">Falazóhabarcs Egységár (Ft / m²)</label>
+              <input
+                type="number"
+                value={calcConfig.masonryMortarPricePerM2}
+                onChange={(e) => setCalcConfig({ ...calcConfig, masonryMortarPricePerM2: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">Alapértelmezett: 4,500 Ft / m²</span>
+            </div>
 
-                  {!item.mandatory && (
-                    <button
-                      onClick={() => toggleNavItem(item.key as keyof SiteSettings['enabledNavItems'])}
-                      className={`w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                        isEnabled ? 'bg-accent' : 'bg-gray-700'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-black absolute top-0.5 transition-transform ${
-                          isEnabled ? 'right-0.5' : 'left-0.5'
-                        }`}
-                      />
-                    </button>
-                  )}
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">Homlokzati Hőszigetelés Egységár (Ft / m²)</label>
+              <input
+                type="number"
+                value={calcConfig.insulationPricePerM2}
+                onChange={(e) => setCalcConfig({ ...calcConfig, insulationPricePerM2: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">Alapértelmezett: 6,800 Ft / m²</span>
+            </div>
+
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">Csemperagasztó Egységár (Ft / kg)</label>
+              <input
+                type="number"
+                value={calcConfig.tilingAdhesivePricePerKg}
+                onChange={(e) => setCalcConfig({ ...calcConfig, tilingAdhesivePricePerKg: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">Alapértelmezett: 350 Ft / kg</span>
+            </div>
+
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">Gipszkarton Tábla Egységár (Ft / m²)</label>
+              <input
+                type="number"
+                value={calcConfig.drywallBoardPricePerM2}
+                onChange={(e) => setCalcConfig({ ...calcConfig, drywallBoardPricePerM2: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">Alapértelmezett: 2,200 Ft / m²</span>
+            </div>
+
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">Tetőcserép Egységár (Ft / m²)</label>
+              <input
+                type="number"
+                value={calcConfig.roofingTilePricePerM2}
+                onChange={(e) => setCalcConfig({ ...calcConfig, roofingTilePricePerM2: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">Alapértelmezett: 5,400 Ft / m²</span>
+            </div>
+
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">Munkadíj Becslési Szorzó</label>
+              <input
+                type="number"
+                step="0.05"
+                value={calcConfig.laborCostMultiplier}
+                onChange={(e) => setCalcConfig({ ...calcConfig, laborCostMultiplier: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">pl. 1.25 = anyagköltség + 25% munkadíj</span>
+            </div>
+
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-300 block">ÁFA Kulcs (%)</label>
+              <input
+                type="number"
+                value={calcConfig.vatRatePercent}
+                onChange={(e) => setCalcConfig({ ...calcConfig, vatRatePercent: Number(e.target.value) })}
+                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+              />
+              <span className="text-[11px] text-gray-500">Alapértelmezett: 27 %</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: LEGAL DOCUMENTS EDITOR */}
+      {activeTab === 'legal' && (
+        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
+          <div>
+            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
+              <Shield size={20} className="text-accent" /> Jogi Szövegek &amp; Szabályzatok Szerkesztője
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">
+              Szerkeszd élőben az Adatvédelmi Tájékoztató (GDPR), az ÁSZF és a Süti Szabályzat szekcióit.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {/* GDPR Title */}
+            <div className="space-y-4 bg-[#161616] p-5 rounded-2xl border border-[#222]">
+              <h3 className="text-sm font-bold text-accent flex items-center gap-2">
+                🔒 Adatvédelmi Tájékoztató (GDPR) Fejléc &amp; Szekciók
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Címsor</label>
+                  <input
+                    type="text"
+                    value={legalDocs.privacyPolicy.title}
+                    onChange={(e) =>
+                      setLegalDocs({
+                        ...legalDocs,
+                        privacyPolicy: { ...legalDocs.privacyPolicy, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                  />
                 </div>
-              );
-            })}
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Verzió</label>
+                  <input
+                    type="text"
+                    value={legalDocs.privacyPolicy.version}
+                    onChange={(e) =>
+                      setLegalDocs({
+                        ...legalDocs,
+                        privacyPolicy: { ...legalDocs.privacyPolicy, version: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ÁSZF Title */}
+            <div className="space-y-4 bg-[#161616] p-5 rounded-2xl border border-[#222]">
+              <h3 className="text-sm font-bold text-accent flex items-center gap-2">
+                📄 Általános Szerződési Feltételek (ÁSZF) Fejléc &amp; Szekciók
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Címsor</label>
+                  <input
+                    type="text"
+                    value={legalDocs.terms.title}
+                    onChange={(e) =>
+                      setLegalDocs({
+                        ...legalDocs,
+                        terms: { ...legalDocs.terms, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Verzió</label>
+                  <input
+                    type="text"
+                    value={legalDocs.terms.version}
+                    onChange={(e) =>
+                      setLegalDocs({
+                        ...legalDocs,
+                        terms: { ...legalDocs.terms, version: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Cookie Policy Title */}
+            <div className="space-y-4 bg-[#161616] p-5 rounded-2xl border border-[#222]">
+              <h3 className="text-sm font-bold text-accent flex items-center gap-2">
+                🍪 Süti (Cookie) Szabályzat Fejléc
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Címsor</label>
+                  <input
+                    type="text"
+                    value={legalDocs.cookiePolicy.title}
+                    onChange={(e) =>
+                      setLegalDocs({
+                        ...legalDocs,
+                        cookiePolicy: { ...legalDocs.cookiePolicy, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 block mb-1">Verzió</label>
+                  <input
+                    type="text"
+                    value={legalDocs.cookiePolicy.version}
+                    onChange={(e) =>
+                      setLegalDocs({
+                        ...legalDocs,
+                        cookiePolicy: { ...legalDocs.cookiePolicy, version: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1243,6 +1835,144 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           </div>
         </div>
       )}
+
+      {/* Add / Edit Navigation Item Modal */}
+      {showNavModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111111] border border-[#222] rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between border-b border-[#222] pb-4">
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <Compass size={18} className="text-accent" />
+                {editingNavItem ? 'Menüpont Szerkesztése' : 'Új Menü- vagy Almenüpont Hozzáadása'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowNavModal(false)}
+                className="text-gray-400 hover:text-white text-xs font-bold px-2 py-1 bg-[#1A1A1A] rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNavForm} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                  Menüpont Megnevezése (Megjelenő Felirat) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={navFormLabel}
+                  onChange={(e) => setNavFormLabel(e.target.value)}
+                  placeholder="pl. Blog cikkek, Szakmai szótár..."
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                  Szülő Menüpont (Helyzet a Menüfa Struktúrában)
+                </label>
+                <select
+                  value={navFormParentId || ''}
+                  onChange={(e) => setNavFormParentId(e.target.value === '' ? null : e.target.value)}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">-- Gyökér Szintű Főmenü (Felső menüsor) --</option>
+                  {navItems
+                    .filter((item) => item.parentId === null && item.id !== editingNavItem?.id)
+                    .map((main) => (
+                      <option key={main.id} value={main.id}>
+                        📌 {main.label} almenüje
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                  Cél Oldal / Útvonal Identifikátor (#page) *
+                </label>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    required
+                    value={navFormPage}
+                    onChange={(e) => setNavFormPage(e.target.value)}
+                    placeholder="home, category, glossary, tool, paths, courses..."
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                  />
+
+                  {/* Quick Preset Selector */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {[
+                      'home',
+                      'tudastar',
+                      'category',
+                      'glossary',
+                      'calculations',
+                      'books',
+                      'tool',
+                      'software',
+                      'valaszto',
+                      'paths',
+                      'courses',
+                      'careers',
+                      'about',
+                      'partners',
+                      'impressum',
+                      'jogi',
+                    ].map((p) => (
+                      <button
+                        type="button"
+                        key={p}
+                        onClick={() => setNavFormPage(p)}
+                        className={`text-[10px] font-mono px-2 py-1 rounded-md border transition-all ${
+                          navFormPage === p
+                            ? 'bg-accent text-black font-bold border-accent'
+                            : 'bg-[#181818] border-[#2A2A2A] text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        #{p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                  Kiemelt Jelvény / Badge Szöveg (Opcionális)
+                </label>
+                <input
+                  type="text"
+                  value={navFormBadge}
+                  onChange={(e) => setNavFormBadge(e.target.value)}
+                  placeholder="pl. Új, Hot, Béta..."
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222]">
+                <button
+                  type="button"
+                  onClick={() => setShowNavModal(false)}
+                  className="px-4 py-2 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-colors"
+                >
+                  Mégse
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all shadow-lg"
+                >
+                  {editingNavItem ? 'Módosítások Mentése' : 'Menüpont Létrehozása'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

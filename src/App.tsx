@@ -15,6 +15,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminArticlesPage from './pages/AdminArticlesPage';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
 import AdminGlossaryPage from './pages/AdminGlossaryPage';
+import AdminBooksPage from './pages/AdminBooksPage';
 import AdminToolsPage from './pages/AdminToolsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminModerationPage from './pages/AdminModerationPage';
@@ -247,6 +248,7 @@ function AppContent() {
             if (view === 'articles') return <AdminArticlesPage />;
             if (view === 'categories') return <AdminCategoriesPage />;
             if (view === 'glossary') return <AdminGlossaryPage />;
+            if (view === 'books') return <AdminBooksPage />;
             if (view === 'tools') return <AdminToolsPage />;
             if (view === 'users') return <AdminUsersPage />;
             if (view === 'roles') return <AdminRolesPage />;

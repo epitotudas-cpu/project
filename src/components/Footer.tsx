@@ -1,5 +1,6 @@
 import { Mail } from 'lucide-react';
 import { useSiteSettings } from '../services/siteSettingsService';
+import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
 interface FooterProps {
   onNavigate: (page: string) => void;
@@ -7,7 +8,16 @@ interface FooterProps {
 
 export default function Footer({ onNavigate }: FooterProps) {
   const siteSettings = useSiteSettings();
+  const rawNavItems = useNavigationItems();
+  const structuredNav = getStructuredNav(rawNavItems, false);
   const logoUrl = siteSettings.logoUrl || '/logo.png';
+
+  const mainNavLinks = structuredNav.map((item) => ({ l: item.label, p: item.page }));
+  const subNavLinks = structuredNav
+    .flatMap((item) => item.subItems)
+    .slice(0, 6)
+    .map((sub) => ({ l: sub.label, p: sub.page }));
+
   return (
     <footer className="bg-primary border-t border-primary-700">
       {/* Newsletter */}
@@ -17,10 +27,10 @@ export default function Footer({ onNavigate }: FooterProps) {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Mail size={18} className="text-accent" />
-                <span className="text-white font-bold text-lg">Szakmai hírlevél</span>
+                <span className="text-white font-bold text-lg">{siteSettings.newsletterTitle || 'Szakmai hírlevél'}</span>
               </div>
               <p className="text-gray-400 text-sm max-w-md">
-                Heti frissítések, új cikkek, szakmai tippek és iparági újdonságok közvetlenül az e-mail fiókodba.
+                {siteSettings.newsletterDescription || 'Heti frissítések, új cikkek, szakmai tippek és iparági újdonságok közvetlenül az e-mail fiókodba.'}
               </p>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
@@ -55,12 +65,12 @@ export default function Footer({ onNavigate }: FooterProps) {
               />
             </button>
             <p className="text-gray-400 text-sm mt-4 leading-relaxed max-w-xs">
-              Magyarország legátfogóbb online építőipari tudásbázisa. Szakembereknek és tanulóknak egyaránt.
+              {siteSettings.footerDescription || 'Magyarország legátfogóbb online építőipari tudásbázisa. Szakembereknek és tanulóknak egyaránt.'}
             </p>
           </div>
           {[
-            { title: 'Navigáció', links: [{ l: 'Főoldal', p: 'home' }, { l: 'Tudástár', p: 'tudastar' }, { l: 'Eszközök', p: 'tool' }, { l: 'Pályák', p: 'paths' }, { l: 'Rólunk', p: 'about' }] },
-            { title: 'Modulok', links: [{ l: 'Cikkek', p: 'category' }, { l: 'Fogalomtár', p: 'glossary' }, { l: 'Számítások', p: 'calculations' }, { l: 'Eszközválasztó', p: 'valaszto' }, { l: 'Képzések', p: 'courses' }] },
+            { title: 'Navigáció', links: mainNavLinks },
+            { title: 'Kiemelt Modulok', links: subNavLinks },
             { title: 'Jogi & Info', links: [{ l: 'Jogi Nyilatkozatok', p: 'jogi' }, { l: 'Impresszum', p: 'impressum' }, { l: 'Adatvédelem', p: 'privacy' }, { l: 'ÁSZF', p: 'terms' }, { l: 'Cookie-kezelés', p: 'cookies' }] },
           ].map((col) => (
             <div key={col.title}>

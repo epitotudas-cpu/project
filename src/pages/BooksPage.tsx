@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import { useBooks } from '../services/bookService';
 
 interface BooksPageProps {
   onNavigate: (page: string) => void;
@@ -48,196 +49,8 @@ export interface BookItem {
   reviewsCount: number;
 }
 
-const DEFAULT_BOOKS: BookItem[] = [
-  {
-    id: 'book-1',
-    title: 'Monolitikus Vasbeton Szerkezetek Tervezése és Kivitelezése',
-    subtitle: 'Átfogó mérnöki útmutató a zsalurendszerektől a betonozásig és utókezelésig',
-    author: 'Prof. Dr. Balázs György',
-    publisher: 'Műszaki Könyvkiadó',
-    year: 2026,
-    pages: 420,
-    isbn: '978-963-16-4521-0',
-    category: 'szerkezet',
-    categoryLabel: 'Szerkezetépítés & Alapozás',
-    badge: 'Kiemelt Szakkönyv',
-    badgeColor: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'Nyomtatott + PDF',
-    fileSizeMb: 18.5,
-    description:
-      'A monolitikus vasbeton építészet alapműve, amely bemutatja a korszerű zsaluzási technológiákat, a betonacél vasalási tervek értelmezését, az Öntömörödő Beton (SCC) viselkedését, valamint a kötési szakasz párásítási és utókezelési szabályait az MSZ EN 206 szabványnak megfelelően.',
-    tableOfContents: [
-      '1. Fejezet: Zsalurendszerek és dúcolási teherbírási számítások',
-      '2. Fejezet: Betonacél szerelés, toldások és lehorgonyzási hosszak',
-      '3. Fejezet: Frissbeton feldolgozása, tömörítés és Öntömörödő Beton (SCC)',
-      '4. Fejezet: Beton utókezelés, párazárás és fagy elleni védelem',
-      '5. Fejezet: Szerkezeti hibák diagnosztikája és utólagos megerősítések',
-    ],
-    sampleExcerpt:
-      'A vasbeton szerkezetek tartósságát alapvetően meghatározza a megfelelő betontakarás és a frissbeton utókezelésének minősége. A korai kiszáradás megelőzésére a betonozást követő első 7 napban folyamatos párásítás vagy felületi párazáró filmréteg felvitele kötelező.',
-    rating: 4.9,
-    reviewsCount: 142,
-  },
-  {
-    id: 'book-2',
-    title: 'Korszerű Épületgépészeti Rendszerek & KNE Energetika',
-    subtitle: 'Hőszivattyúk, felületfűtések és a 7/2006. TNM energetikai rendelet gyakorlata',
-    author: 'Szabó István okleveles gépészmérnök',
-    publisher: 'Építésügyi Tudományos Kiadó',
-    year: 2025,
-    pages: 310,
-    isbn: '978-963-16-8901-2',
-    category: 'gepeszet',
-    categoryLabel: 'Épületgépészet & Villanyszerelés',
-    badge: 'KNE Energetika 2026',
-    badgeColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'PDF E-könyv',
-    fileSizeMb: 12.2,
-    description:
-      'Gyakorlati kézikönyv épületgépészeknek és kivitelezőknek. Tárgyalja a levegő-víz hőszivattyús rendszereket, a padló- és mennyezetfűtési rétegrendeket, a hővisszanyerős szellőztetést és a Közel Nullás (KNE) energetikai követelmények teljesítését.',
-    tableOfContents: [
-      '1. Fejezet: A KNE energetikai rendelet és az U-érték határértékek',
-      '2. Fejezet: Levegő-víz és geotermikus hőszivattyúk méretezése',
-      '3. Fejezet: Felületfűtési és felülethűtési rétegrendek',
-      '4. Fejezet: Hővisszanyerős központi és helyiségenkénti szellőztetés',
-      '5. Fejezet: Okosotthon integráció és hidraulikai beszabályozás',
-    ],
-    sampleExcerpt:
-      'A hőszivattyús rendszerek hatékonyságának (COP/SCOP) előfeltétele az alacsony előremenő vízhőmérséklet (max. 35°C). Emiatt a felületfűtések méretezésénél a csőtávolságok és a megfelelő aljzatbeton hővezetés kulcsfontosságú.',
-    rating: 4.8,
-    reviewsCount: 98,
-  },
-  {
-    id: 'book-3',
-    title: 'Magasépítési Kivitelezői Kézikönyv & Munkavédelmi Szabályzat',
-    subtitle: 'Munkaterületi biztonságtechnika, állványozás és helyszíni irányítás',
-    author: 'ÉPMI Építésügyi Szakmai Intézet',
-    publisher: 'ÉPMI Kiadványok',
-    year: 2026,
-    pages: 280,
-    isbn: '978-963-88-0012-4',
-    category: 'munkavedelem',
-    categoryLabel: 'Munkavédelem & Szabványok',
-    badge: 'Ingyenes PDF Segédlet',
-    badgeColor: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'Ingyenes PDF',
-    fileSizeMb: 8.4,
-    description:
-      'Hivatalos útmutató az építésvezetők, műszaki ellenőrök és munkavédelmi felelősök számára. Tartalmazza a legújabb 2026-os munkavédelmi szabványokat, leesés elleni védelmet, állványzatok átvételi jegyzőkönyveit és az e-építési napló vezetésének szabályait.',
-    tableOfContents: [
-      '1. Fejezet: Munkaterület átadás-átvétel és felelős műszaki vezetés',
-      '2. Fejezet: Magasban végzett munkák és leesés elleni egyéni/kollektív védelem',
-      '3. Fejezet: Homlokzati állványok szerelése, horgonyzása és átvétele',
-      '4. Fejezet: Munkagödrök és munkagödrök dúcolási szabályai',
-      '5. Fejezet: E-építési napló és hatósági ellenőrzések felkészülési csekklistája',
-    ],
-    sampleExcerpt:
-      'Minden 2 métert meghaladó szintkülönbség esetén kötelező a kollektív védelem (korlátrendszer lábléccel) vagy az egyéni leesés elleni védőfelszerelés használata kikötési pontok biztosításával.',
-    rating: 4.7,
-    reviewsCount: 86,
-  },
-  {
-    id: 'book-4',
-    title: 'Eurocode 2: Beton- és Vasbetonszerkezetek Méretezése',
-    subtitle: 'MSZ EN 1992-1-1 szabványsorozat szakmai magyarázata és mintapéldák',
-    author: 'Dr. Kovács Tamás Statikus Tervező',
-    publisher: 'Akadémiai & Mérnöki Kiadó',
-    year: 2025,
-    pages: 510,
-    isbn: '978-963-456-789-0',
-    category: 'statika',
-    categoryLabel: 'Építész Tervezés & Statika',
-    badge: 'Eurocode Szabvány',
-    badgeColor: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'Nyomtatott + PDF',
-    fileSizeMb: 24.1,
-    description:
-      'A magyar és európai statikai tervezési szabvány (Eurocode 2) legrészletesebb hazai elemzése. Tartalmazza a hajlítási, nyírási, csavarási teherbírási számításokat, a repedéstágasság és behajlás ellenőrzését lépésről lépésre kidolgozott számpéldákkal.',
-    tableOfContents: [
-      '1. Fejezet: Anyagjellemzők: Beton és betonacél szilárdsági osztályok',
-      '2. Fejezet: Hajlított és nyomott keresztmetszetek teherbírása (ULS)',
-      '3. Fejezet: Nyírási teherbírás és nyírási vasalás méretezése',
-      '4. Fejezet: Használhatósági határállapotok (SLS): Repedéstágasság és behajlás',
-      '5. Fejezet: Kétrányban teherviselő lemezek és áttörések méretezése',
-    ],
-    sampleExcerpt:
-      'Az Eurocode 2 szerint a repedéstágasság korlátozása (wmax <= 0.3 mm) nemcsak esztétikai, hanem tartóssági feltétel is, mivel megelőzi a betonacél korrózióját agresszív környezeti osztályokban.',
-    rating: 5.0,
-    reviewsCount: 112,
-  },
-  {
-    id: 'book-5',
-    title: 'Szárazépítészeti Mesterfogások & Gipszkarton Rendszerek',
-    subtitle: 'Válaszfalak, álmennyezetek, hanggátlás és tűzgátló burkolatok szerelése',
-    author: 'Tóth László Szárazépítő Mester',
-    publisher: 'ÉpítőTudás Digitális Presztízs',
-    year: 2026,
-    pages: 190,
-    isbn: '978-963-77-9911-0',
-    category: 'befejezo',
-    categoryLabel: 'Szárazépítészet & Befejező Munkák',
-    badge: 'Új Kiadás 2026',
-    badgeColor: 'bg-teal-500/10 text-teal-600 border-teal-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'PDF E-könyv',
-    fileSizeMb: 9.8,
-    description:
-      'Gyakorlati útmutató a gipszkartonozás szakszerű kivitelezéséhez. Tárgyalja a CW/UW és CD/UD fémváz profilok rögzítését, a vízszintes és függőleges csatlakozások rugalmas tömítését, a Q1-Q4 felületi minőségi osztályokat és a hanggátló szerkezeteket.',
-    tableOfContents: [
-      '1. Fejezet: Gipszkarton tábla típusok (RB, RBI, RF, RFI) és alkalmazási területeik',
-      '2. Fejezet: Fémvázas válaszfalak és előtétfalak szerelése szigeteléssel',
-      '3. Fejezet: Álmennyezetek felfüggesztése és hőtágulási hézagok',
-      '4. Fejezet: Hanggátlási megoldások és akusztikai hanggátló gipszkartonok',
-      '5. Fejezet: Hézagolás, bandázsolás és Q1-Q4 glettelési felületminőségek',
-    ],
-    sampleExcerpt:
-      'A gipszkarton válaszfalak hanggátlásának kulcsa a fémvázas profilok alatti szivacscsík (szigetelő szalag) alkalmazása, amely megakadályozza a kopogóhangok testhangszigeteléssel történő átterjedését.',
-    rating: 4.9,
-    reviewsCount: 74,
-  },
-  {
-    id: 'book-6',
-    title: 'Családi Házak Homlokzati Hőszigetelése & Vízszigetelési Útmutató',
-    subtitle: 'EPS, Grafitos és Kőzetgyapot homlokzatok, XPS lábazati szigetelés',
-    author: 'Varga Ferenc Építészmérnök',
-    publisher: 'Épületfizikai Szakmai Kiadó',
-    year: 2025,
-    pages: 255,
-    isbn: '978-963-990-112-4',
-    category: 'befejezo',
-    categoryLabel: 'Szárazépítészet & Befejező Munkák',
-    badge: 'E-könyv',
-    badgeColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'Nyomtatott + PDF',
-    fileSizeMb: 14.6,
-    description:
-      'Részletes szakkönyv a homlokzati hőszigetelő rendszerek (THR/ETICS) hibátlan kivitelezéséről. Külön fejezet foglalkozik a dübelezési mintákkal, az ablak körüli befordulások beázásmentes kialakításával és a lábazati XPS csatlakozásokkal.',
-    tableOfContents: [
-      '1. Fejezet: Homlokzati szigetelőanyagok összehasonlítása: EPS, Grafitos, Kőzetgyapot',
-      '2. Fejezet: Ragasztás és dübelezés szabályai: perem-pont módszer és dübelhossz',
-      '3. Fejezet: Ablakkávák és nyílászáró befordulások beázásmentes részletrajzai',
-      '4. Fejezet: Lábazati XPS szigetelés és talajvíz elleni vízszigetelő csatlakozás',
-      '5. Fejezet: Üvegszövet háló beágyazása és homlokzati vakolási hibák megelőzése',
-    ],
-    sampleExcerpt:
-      'A homlokzati szigetelőlapokat kivétel nélkül perem-pont módszerrel kell ragasztani, hogy megelőzzük a lapok mögötti levegőcirkulációt és kéményhatást tűz esetén.',
-    rating: 4.8,
-    reviewsCount: 65,
-  },
-];
-
 export default function BooksPage({ onNavigate }: BooksPageProps) {
+  const allBooks = useBooks();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
@@ -245,7 +58,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
 
   // Filtered books
   const filteredBooks = useMemo(() => {
-    return DEFAULT_BOOKS.filter((b) => {
+    return allBooks.filter((b) => {
       const matchCat = selectedCategory === 'all' || b.category === selectedCategory;
       const matchQuery =
         !searchQuery.trim() ||
@@ -255,7 +68,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
         b.isbn.toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchQuery;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [allBooks, selectedCategory, searchQuery]);
 
   const handleDownload = (book: BookItem) => {
     setDownloadSuccess(`📥 "${book.title}" letöltése elindult!`);

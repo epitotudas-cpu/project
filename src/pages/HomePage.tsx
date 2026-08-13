@@ -24,6 +24,7 @@ import type { Category, Article } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getPartnerHighlights, getAdvertisementSlots, recordAdClick, type PartnerHighlight, type AdvertisementSlot } from '../services/advertisementService';
 import { TopAdBanner, InFeedAdBanner } from '../components/ModernAdBanner';
+import { useSiteSettings } from '../services/siteSettingsService';
 import {
   getHeroState,
   getActiveHeroImages,
@@ -50,6 +51,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export default function HomePage({ onNavigate }: HomePageProps) {
+  const siteSettings = useSiteSettings();
   const { session } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -185,15 +187,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 Az oldal fejlesztés alatt
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-white">
-                Minden tudás,
-                <br />
-                <span className="text-accent">egy helyen.</span>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-white whitespace-pre-line">
+                {siteSettings.heroMainTitle || 'Magyarország vezető építőipari tudásbázisa'}
               </h1>
 
               <p className="mt-6 text-lg text-gray-300 max-w-lg">
-                Szakmai útmutatók, fogalmak és eszközadatlapok az építőipar minden
-                területéről.
+                {siteSettings.heroSubtitle || 'Szakmai enciklopédia, megbízható útmutatók, kalkulátorok és szerszámkatalógus szakembereknek.'}
               </p>
 
               {/* Search */}

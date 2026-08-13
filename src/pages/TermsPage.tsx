@@ -1,11 +1,12 @@
 import { ArrowLeft, FileText, ChevronRight } from 'lucide-react';
-import { TERMS_DATA } from '../data/legalDocs';
+import { useLegalDocs } from '../services/legalDocService';
 
 interface TermsPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function TermsPage({ onNavigate }: TermsPageProps) {
+  const { terms: TERMS_DATA } = useLegalDocs();
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
       {/* Hero Header */}

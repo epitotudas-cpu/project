@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Cookie, Check, Info, ChevronRight } from 'lucide-react';
-import { COOKIE_POLICY_DATA } from '../data/legalDocs';
+import { useLegalDocs } from '../services/legalDocService';
 
 interface CookiePolicyPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function CookiePolicyPage({ onNavigate }: CookiePolicyPageProps) {
+  const { cookiePolicy: COOKIE_POLICY_DATA } = useLegalDocs();
   const [consent, setConsent] = useState<{ necessary: boolean; analytics: boolean } | null>(null);
 
   useEffect(() => {
