@@ -895,6 +895,122 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [searchQuery, selectedCategory]);
 
   // --------------------------------------------------------------------------
+  // SPA ROUTER HASH & HISTORY STACK SYNCHRONIZATION
+  // --------------------------------------------------------------------------
+  const syncFromHash = () => {
+    try {
+      const hashString = window.location.hash || '';
+      const queryPart = hashString.includes('?') ? hashString.split('?')[1] : '';
+      const params = new URLSearchParams(queryPart);
+
+      const calcParam = params.get('calc');
+      const modeParam = params.get('mode');
+      const tabParam = params.get('tab');
+      const catParam = params.get('cat');
+
+      if (calcParam) {
+        const item = CALCULATION_ITEMS.find((c) => c.id === calcParam);
+        if (item) {
+          setSelectedCalcId(item.id);
+          setSelectedCategory(item.categoryId);
+          setViewMode('detail');
+          return;
+        }
+      }
+
+      if (modeParam === 'interactive') {
+        setViewMode('interactive-calculators');
+        if (
+          tabParam &&
+          ['concrete', 'masonry', 'insulation', 'tiling', 'drywall', 'roofing', 'rafter'].includes(tabParam)
+        ) {
+          setActiveTab(tabParam as CalculatorTab);
+        }
+        return;
+      }
+
+      if (catParam) {
+        const cat = MAIN_CATEGORIES.find((c) => c.id === catParam);
+        if (cat) {
+          setSelectedCategory(cat.id);
+          setSelectedCalcId(null);
+          setViewMode('category-list');
+          return;
+        }
+      }
+
+      // Root calculations view
+      setViewMode('categories');
+      setSelectedCategory(null);
+      setSelectedCalcId(null);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    syncFromHash();
+
+    const handlePopState = () => {
+      syncFromHash();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, []);
+
+  const navigateToCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    setSelectedCalcId(null);
+    setViewMode('category-list');
+    const newHash = `#calculations?cat=${catId}`;
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToDetail = (calcId: string) => {
+    const item = CALCULATION_ITEMS.find((c) => c.id === calcId);
+    if (item) {
+      setSelectedCalcId(item.id);
+      setSelectedCategory(item.categoryId);
+      setViewMode('detail');
+      const newHash = `#calculations?calc=${calcId}`;
+      if (window.location.hash !== newHash) {
+        window.history.pushState(null, '', newHash);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const navigateToInteractive = (tab: CalculatorTab) => {
+    setActiveTab(tab);
+    setViewMode('interactive-calculators');
+    const newHash = `#calculations?mode=interactive&tab=${tab}`;
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToCategoriesRoot = () => {
+    setSelectedCategory(null);
+    setSelectedCalcId(null);
+    setSearchQuery('');
+    setViewMode('categories');
+    const newHash = '#calculations';
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // --------------------------------------------------------------------------
   // 1. BETON & ZSALUZAT STATE (Alapértelmezetten 0 értékek)
   // --------------------------------------------------------------------------
   const [concreteShape, setConcreteShape] = useState<'slab' | 'strip' | 'column'>('slab');
@@ -1312,12 +1428,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
             </button>
             <ChevronRight size={13} />
             <button
-              onClick={() => {
-                setViewMode('categories');
-                setSelectedCategory(null);
-                setSelectedCalcId(null);
-                setSearchQuery('');
-              }}
+              onClick={() => navigateToCategoriesRoot()}
               className="hover:text-white transition-colors"
             >
               Számítások
@@ -1326,10 +1437,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
               <>
                 <ChevronRight size={13} />
                 <button
-                  onClick={() => {
-                    setViewMode('category-list');
-                    setSelectedCalcId(null);
-                  }}
+                  onClick={() => navigateToCategory(activeCategoryObj.id)}
                   className="hover:text-white transition-colors"
                 >
                   {activeCategoryObj.subtitle}
@@ -1362,12 +1470,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
             {/* Quick Action Navigation */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
-                onClick={() => {
-                  setViewMode('categories');
-                  setSelectedCategory(null);
-                  setSelectedCalcId(null);
-                  setSearchQuery('');
-                }}
+                onClick={() => navigateToCategoriesRoot()}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-xl shadow-md transition-all ${
                   viewMode !== 'interactive-calculators'
                     ? 'bg-accent text-black'
@@ -1377,7 +1480,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 <BookOpen size={15} /> Számítási Tudásbázis
               </button>
               <button
-                onClick={() => setViewMode('interactive-calculators')}
+                onClick={() => navigateToInteractive(activeTab)}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-xl shadow-md transition-all ${
                   viewMode === 'interactive-calculators'
                     ? 'bg-accent text-black'
@@ -1479,10 +1582,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        setViewMode('category-list');
-                      }}
+                      onClick={() => navigateToCategory(cat.id)}
                       className={`group text-left p-6 rounded-2xl border ${cat.borderColor} ${cat.bgColor} shadow-sm transition-all hover:shadow-xl flex flex-col justify-between space-y-4`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -1520,11 +1620,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setSearchQuery('');
-                      setViewMode('categories');
-                    }}
+                    onClick={() => navigateToCategoriesRoot()}
                     className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700 transition-colors"
                     title="Vissza a kategóriákhoz"
                   >
@@ -1559,10 +1655,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   {filteredItems.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => {
-                        setSelectedCalcId(item.id);
-                        setViewMode('detail');
-                      }}
+                      onClick={() => navigateToDetail(item.id)}
                       className="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-primary text-left shadow-sm hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
                     >
                       <div className="space-y-2">
@@ -1605,11 +1698,10 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
           <button
             onClick={() => {
               if (selectedCategory) {
-                setViewMode('category-list');
+                navigateToCategory(selectedCategory);
               } else {
-                setViewMode('categories');
+                navigateToCategoriesRoot();
               }
-              setSelectedCalcId(null);
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
           >
@@ -1784,12 +1876,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       return (
                         <button
                           key={idx}
-                          onClick={() => {
-                            setSelectedCalcId(matchedItem.id);
-                            setSelectedCategory(matchedItem.categoryId);
-                            setViewMode('detail');
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
+                          onClick={() => navigateToDetail(matchedItem.id)}
                           className="text-xs font-bold bg-primary/5 hover:bg-primary/10 text-primary hover:text-primary-700 px-3.5 py-1.5 rounded-xl border border-primary/20 hover:border-primary/40 transition-all flex items-center gap-1.5 group cursor-pointer shadow-xs"
                         >
                           <span>{ksz}</span>
@@ -1813,10 +1900,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   <h3 className="font-extrabold text-gray-900 text-base">Szeretnéd azonnal kiszámolni a saját adataiddal?</h3>
                   <p className="text-xs text-gray-600">Nyisd meg a kapcsolódó interaktív kalkulátort és írd be a pontos méreteket!</p>
                   <button
-                    onClick={() => {
-                      setActiveTab(activeCalculationObj.calculatorTab!);
-                      setViewMode('interactive-calculators');
-                    }}
+                    onClick={() => navigateToInteractive(activeCalculationObj.calculatorTab!)}
                     className="inline-flex items-center gap-2 px-6 py-3.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-sm rounded-xl shadow-lg transition-all transform active:scale-95"
                   >
                     <Calculator size={18} /> KALKULÁTOR MEGNYITÁSA
@@ -1836,7 +1920,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <button
-                onClick={() => setViewMode('categories')}
+                onClick={() => navigateToCategoriesRoot()}
                 className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-primary transition-colors"
               >
                 <ArrowLeft size={16} /> Vissza a Számítási Tudásbázishoz
@@ -1856,7 +1940,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as CalculatorTab)}
+                    onClick={() => navigateToInteractive(tab.id as CalculatorTab)}
                     className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl font-bold text-xs transition-all ${
                       isActive
                         ? 'bg-primary text-white shadow-md'
@@ -2395,7 +2479,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1">Eresz Vízszintes Túlnyúlása (L_eresz, m)</label>
                         <input
@@ -2406,11 +2490,27 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                           placeholder="pl. 0.6"
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         />
-                        <span className="text-[11px] text-gray-500 mt-1 block">A homlokzati fal síkján kívül eső eresztúlnyúlás</span>
+                        <span className="text-[11px] text-gray-500 mt-1 block">A homlokzati fal síkján kívül eső eresznyúlás</span>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">Tető Hossza / Épület hossza (L_tető, m) [Opcionális]</label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Szarufa Tengelytáv (cm)</label>
+                        <select
+                          value={rSpacing}
+                          onChange={(e) => setRSpacing(parseFloat(e.target.value) || 85)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value={75}>75 cm</option>
+                          <option value={80}>80 cm</option>
+                          <option value={85}>85 cm (Szabványos)</option>
+                          <option value={90}>90 cm</option>
+                          <option value={100}>100 cm</option>
+                        </select>
+                        <span className="text-[11px] text-gray-500 mt-1 block">Ácsszerkezeti tengelytáv</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Tető Hossza (L_tető, m) [Opcionális]</label>
                         <input
                           type="number"
                           step="0.5"
