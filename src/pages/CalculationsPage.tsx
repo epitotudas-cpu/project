@@ -169,7 +169,7 @@ const CALCULATION_ITEMS: CalculationItem[] = [
       'A sarkok kétszeres beleszámítása a sávhosszba.',
     ],
     gyakorlatiMegjegyzes: 'Gödörásás után célszerű azonnal kiönteni a betont, megelőzve a szél beomlását és a meder átázását.',
-    kapcsolodoSzamitasok: ['Lemezalap betonszükséglete', 'Zsaluzási felület kiszámítása', 'Betonacél súlyszámítása'],
+    kapcsolodoSzamitasok: ['Lemezalap betonszükségletének számítása', 'Geometriai testek térfogatának kiszámítása', 'Anyagok sűrűsége és halmazsűrűsége'],
     calculatorTab: 'concrete',
   },
   {
@@ -200,7 +200,7 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     ellenorzes: 'Kisebb helyiségekben 3-4-5 helyett a 60cm-80cm-100cm arány is használható.',
     gyakoriHibak: ['Nem feszes mérőszalag használata.', 'Ferde kitűzés pontatlan sarokpontról.'],
     gyakorlatiMegjegyzes: 'Minden alapszedésnél kétszer ellenőrizd az átlókat: téglalap alaprajznál a két átlónak milliméterre egyenlőnek kell lennie!',
-    kapcsolodoSzamitasok: ['Síkidomok területe és kerülete', 'Szarufahossz számítása', 'Lépcsőfok méretezése'],
+    kapcsolodoSzamitasok: ['Síkidomok területe és kerülete', 'Szarufahossz számítása dőlésszögből és fesztávból', 'Lépcsőfok méretezése (2m + sz = 60..64 cm)'],
   },
   {
     id: 'u-ertek',
@@ -209,7 +209,7 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     shortDesc: 'Szerkezetek hőátbocsátási tényezőjének (U) kiszámítása és energetikai jogszabályi megfelelősége.',
     level: 'Haladó',
     miEz: 'Az U-érték (W/m²K) megmutatja, hogy mekkora hőteljesítmény áramlik át 1 m² felületű szerkezeten 1 Kelvin hőmérséklet-különbség hatására. Minél alacsonyabb az U-érték, annál jobb a szerkezet hőszigetelése.',
-    mireHasznaljuk: 'Homlokzati falak, födémek és tetők energetikai méretezésénél a KNE 7/2006 (U <= 0.24 W/m²K) jogszabályi előírások teljesítéséhez.',
+    mireHasznaljuk: 'Homlokzati falak, födémek és tetők energetikai méretezésénél a TNM 7/2006 (V. 24.) (U <= 0.24 W/m²K) jogszabályi előírások teljesítéséhez.',
     szuksegesAdatok: ['Egyes rétegek vastagsága (d, méterben)', 'Egyes rétegek hővezetési tényezője (λ, W/mK)'],
     keplet: 'R = d / λ,   U = 1 / (R_si + ΣR + R_se)',
     jelolesek: [
@@ -231,12 +231,12 @@ const CALCULATION_ITEMS: CalculationItem[] = [
         'Eredő R: 0.13 + 0.60 + 4.84 + 0.04 = 5.61 m²K/W',
         'U-érték: U = 1 / 5.61 = 0.178 W/m²K',
       ],
-      result: 'U = 0.18 W/m²K (MEGFELELT a KNE 0.24 előírásnak!)',
+      result: 'U = 0.18 W/m²K (MEGFELELT a TNM 7/2006 (V. 24.) 0.24 előírásnak!)',
     },
     ellenorzes: 'Ha a hőszigetelés vastagságát duplázod, az R érték nő, az U-érték pedig csökken.',
     gyakoriHibak: ['Rétegvastagság centiméterben hagyása méter helyett a képletben.', 'A vakolati rétegek kihagyása.'],
     gyakorlatiMegjegyzes: 'A hőszigetelésnél a dübelezésnél és a hőhidaknál mindig 10-15%-os U-érték romlással érdemes számolni a valóságban.',
-    kapcsolodoSzamitasok: ['Homlokzati hőszigetelő táblák száma', 'Falazóanyag darabszám számítása'],
+    kapcsolodoSzamitasok: ['Homlokzati hőszigetelő táblák és dübelek száma', 'Falazóanyag és tégla darabszám számítása'],
     calculatorTab: 'insulation',
   },
   {
@@ -334,7 +334,7 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     ellenorzes: 'Csekkold a raklap kerekítést: fél raklapot ritkán szállítanak ki a gyárak.',
     gyakoriHibak: ['A nyílások feletti áthidalók helyének kétszeres levonása.', 'A törési veszteség elhagyása.'],
     gyakorlatiMegjegyzes: 'A szárazon fektetett vékonyrétegű ragasztóhabarcsos tégláknál lényegesen kisebb a habarcsigény!',
-    kapcsolodoSzamitasok: ['Falazóhabarcs és vakolat zsákigénye', 'Sávalap betonszükséglete'],
+    kapcsolodoSzamitasok: ['Falazóhabarcs és vakolat zsákigényének számítása', 'Sávalap betonszükségletének számítása'],
     calculatorTab: 'masonry',
   },
   {
@@ -370,7 +370,7 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     ellenorzes: 'Nagy lapoknál (60x60 felett) kétoldali ragasztást kell alkalmazni, ami 20-30%-kal növeli a ragasztóigényt!',
     gyakoriHibak: ['Az aljzatkiegyenlítés elhagyása miatti túlzott ragasztófelhasználás.', 'Kevés tartalék lap vásárlása.'],
     gyakorlatiMegjegyzes: 'Mindig ellenőrizd a dobozokon a gyártási kód azonosítót (Tone / Caliber)!',
-    kapcsolodoSzamitasok: ['Százalékszámítás és vágási ráhagyás', 'Síkidomok területe'],
+    kapcsolodoSzamitasok: ['Százalékszámítás és vágási ráhagyás', 'Síkidomok területe és kerülete'],
     calculatorTab: 'tiling',
   },
   {
@@ -407,7 +407,7 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     ellenorzes: 'Fürdőszobába és vizes helyiségbe kizárólag zöld impregnált (RBI) gipszkarton táblát építs be!',
     gyakoriHibak: ['A profilok 60 cm-es tengelytávolságának megszegése.', 'Hézagolószalag elhagyása a illesztéseknél.'],
     gyakorlatiMegjegyzes: 'Válaszfalaknál a hangszigetelés érdekében a profilok alá mindig ragassz szivacscsíkot!',
-    kapcsolodoSzamitasok: ['Síkidomok területe', 'Homlokzati hőszigetelő táblák száma'],
+    kapcsolodoSzamitasok: ['Síkidomok területe és kerülete', 'Homlokzati hőszigetelő táblák és dübelek száma'],
     calculatorTab: 'drywall',
   },
   {
@@ -651,7 +651,214 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     ellenorzes: 'Rézsűs kiemelésnél a gödör felső szélessége nagyobb, mint az alja, ezért trapéz keresztmetszettel kell számolni.',
     gyakoriHibak: ['A talaj lazulási szorzójának elfelejtése, ami miatt kevés konténert rendelnek.'],
     gyakorlatiMegjegyzes: 'A humuszréteget (felső 20-30 cm) mindig külön depóniába gyűjtsd a későbbi kertépítéshez!',
-    kapcsolodoSzamitasok: ['Sávalap betonszükséglete', 'Anyagok sűrűsége és halmazsűrűsége'],
+    kapcsolodoSzamitasok: ['Sávalap betonszükségletének számítása', 'Anyagok sűrűsége és halmazsűrűsége'],
+  },
+  {
+    id: 'rendelesi-mennyiseg',
+    categoryId: 'mennyiseg',
+    title: 'Rendelési mennyiség és kerekítési szabályok',
+    shortDesc: 'Nettó anyagszükséglet átváltása rendelési egységekre (raklap, doboz, zsák, köbméter, szál) kerekítési és biztonsági szabályokkal.',
+    level: 'Alap',
+    miEz: 'A rendelési mennyiség kiszámítása a teoretikus nettó anyagszükséglet átváltása a kereskedelemben kapható legkisebb csomagolási vagy szállítási egységekre (pl. egész raklap, doboz, zsák, tábla, szál), felfelé kerekítéssel és biztonsági ráhagyással.',
+    mireHasznaljuk: 'Építőanyagok megrendelésénél, logisztikai kiírásoknál és költségvetés-készítésnél, hogy elkerüljük az anyaghiány miatti leállást vagy a bontott csomagolási egységek miatti túlárazást.',
+    szuksegesAdatok: ['Nettó anyagszükséglet (N, mértékegységben)', 'Csomagolási egység mérete (C, mértékegység/csomag)', 'Vágási és biztonsági ráhagyás (v%, pl. 5-15%)'],
+    keplet: 'Bruttó csomagszám = ⌈ (N × (1 + v / 100)) / C ⌉',
+    jelolesek: [
+      { symbol: 'N', name: 'Nettó anyagszükséglet' },
+      { symbol: 'v', name: 'Biztonsági és vágási ráhagyás (%)' },
+      { symbol: 'C', name: 'Csomagolási egység kiszerelése (db/m²/m³/zsák/raklap)' },
+      { symbol: '⌈ ⌉', name: 'Felfelé kerekítés a legközelebbi egész számra' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a nettó anyagszükségletet a műszaki méretek alapján.',
+      'Hozzáadjuk a technológiai és vágási ráhagyási százalékot.',
+      'Elosztjuk a kereskedelmi kiszerelés egységméretével.',
+      'Az eredményt mindig felfelé kerekítjük a legközelebbi egész csomagolási egységre.',
+    ],
+    gyakorlatiPelda: {
+      title: '42.5 m² csempézés rendelési dobozszámának meghatározása (1.44 m²/doboz, 10% vágási ráhagyás)',
+      steps: [
+        'Bruttó felület: 42.5 m² × 1.10 = 46.75 m²',
+        'Csomagok száma: 46.75 / 1.44 = 32.46 doboz',
+        'Felfelé kerekítés: ⌈32.46⌉ = 33 doboz',
+        'Valós rendelendő felület: 33 × 1.44 = 47.52 m²',
+      ],
+      result: 'Rendelendő: 33 doboz csempe (47.52 m²)',
+    },
+    ellenorzes: 'A megrendelt mennyiség soha nem lehet kisebb a kiszámított bruttó szükségletnél; tört csomagolási egységet a tüzépek ritkán bontanak meg.',
+    gyakoriHibak: [
+      'Lefelé kerekítés vagy matematikai kerekítés (pl. 32.2 doboznál 32-t rendelnek, ami anyaghiányhoz vezet).',
+      'A gyári csomagolási bontatlansági szabályok figyelmen kívül hagyása.',
+    ],
+    gyakorlatiMegjegyzes: 'Raklapos árunál (tégla, zsalukő, térkő) a gyárak raklap-betétdíjat és használati díjat is felszámítanak, amit a költségvetésbe be kell építeni.',
+    kapcsolodoSzamitasok: ['Százalékszámítás és vágási ráhagyás', 'Hidegburkolat és csemperagasztó igénye', 'Falazóanyag és tégla darabszám számítása'],
+  },
+  {
+    id: 'lemezalap-beton',
+    categoryId: 'anyag',
+    title: 'Lemezalap betonszükségletének számítása',
+    shortDesc: 'Teljes felületű lemezalapok (vasbeton lemez) beton- és betonacél-szükségletének kiszámítása peremszegélyekkel és veszteséggel.',
+    level: 'Középhaladó',
+    miEz: 'A lemezalap az épület teljes alapterülete alatt húzódó, egyenletes teherelosztást biztosító monolit vasbeton szerkezet. Betonszükséglete a lemez alapterületének, vastagságának, a peremvastagításoknak és a tömörödési veszteségnek az összege.',
+    mireHasznaljuk: 'Talajvíz- vagy gyenge teherbírású talaj esetén épülő családi házak, csarnokok és társasházak aljzat-alapozási betonigényének kiszámításához.',
+    szuksegesAdatok: ['Lemez alapterülete (A, m²)', 'Lemezvastagság (h, méterben)', 'Perem- és belső sávvastagítások plusz térfogata (V_perem, m³)', 'Tömörödési és szállítási veszteség (v%, pl. 5-8%)'],
+    keplet: 'V_bruttó = (A × h + V_perem) × (1 + v / 100)',
+    jelolesek: [
+      { symbol: 'V_bruttó', name: 'Beton rendelési térfogat (m³)' },
+      { symbol: 'A', name: 'Lemez alapterülete (m²)' },
+      { symbol: 'h', name: 'Lemez vastagsága (m)' },
+      { symbol: 'V_perem', name: 'Perem- és gerendavastagítások térfogata (m³)' },
+      { symbol: 'v', name: 'Veszteségi ráhagyás (%)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a fő lemeztest nettó térfogatát (Alapterület × Vastagság).',
+      'Hozzáadjuk a lemezperemeknél és teherhordó falak alatt futó vastagítások (sávok) plusz térfogatát.',
+      'Alkalmazzuk az 5-8%-os tömörödési és pumpában maradó veszteségi tényezőt.',
+      'Kiszámítjuk a szükséges mixerautók számát (7-8 m³/autó).',
+    ],
+    gyakorlatiPelda: {
+      title: '120 m² alapterületű, 25 cm vastag lemezalap kiöntése 40m lemezperem vastagítással (0.3m x 0.3m) 6% ráhagyással',
+      steps: [
+        'Lemez alaptérfogat: 120 m² × 0.25 m = 30.0 m³',
+        'Peremvastagítás: 40 m × (0.3 m × 0.3 m) = 3.6 m³',
+        'Nettó térfogat összesen: 30.0 + 3.6 = 33.6 m³',
+        'Bruttó betonigény (6% ráhagyással): 33.6 m³ × 1.06 = 35.62 m³',
+      ],
+      result: 'Rendelendő betonmennyiség: 36.0 m³ (kb. 5 mixerautó rakomány)',
+    },
+    ellenorzes: 'A lemezalap térfogata m³-ben 0.25-0.35-szöröse az alapterületnek; 100 m²-re átlagosan 25-35 m³ beton kell.',
+    gyakoriHibak: [
+      'A peremvastagítások és teherhordó falalapozási sávok kihagyása a területszorzatból.',
+      'A szivattyúzás során a betonpumpa csővezetékében maradó 0.3-0.5 m³ beton figyelmen kívül hagyása.',
+    ],
+    gyakorlatiMegjegyzes: 'Lemezalapnál a betonozást egyenletes rétegben, vibrátoros tömörítéssel kell végezni, és meleg időben 7 napig nedvesen kell tartani a zsugorodási repedések elkerülésére.',
+    kapcsolodoSzamitasok: ['Sávalap betonszükségletének számítása', 'Geometriai testek térfogatának kiszámítása', 'Anyagok sűrűsége és halmazsűrűsége'],
+    calculatorTab: 'concrete',
+  },
+  {
+    id: 'falazohabarcs-vakolat',
+    categoryId: 'anyag',
+    title: 'Falazóhabarcs és vakolat zsákigényének számítása',
+    shortDesc: 'Falazási téglakötő habarcsok és beltéri/kültéri vakolatok szárazhabarcs zsákigényének kiszámítása rétegvastagság alapján.',
+    level: 'Középhaladó',
+    miEz: 'A falazóhabarcs és vakolatszükséglet a falazási felület és téglatípus habarcsigényének, vagy a vakolandó felület és rétegvastagság szárazhabarcs-fogyasztásának (kg/m²/mm) kiszámítása 25kg/40kg-os zsákokra vetítve.',
+    mireHasznaljuk: 'Téglafalak építésénél, beltéri gépi vagy kézi mész-cement vakolásnál és kültéri homlokzati alapvakolatok megrendelésénél.',
+    szuksegesAdatok: ['Falfelület (A, m²)', 'Vakolat vastagsága (d, mm) vagy falazóhabarcs normatíva (kg/m²)', 'Veszteség (v%, 5-10%)', 'Zsák kiszerelés (25 kg vagy 40 kg)'],
+    keplet: 'M_összes = A × d × k_száraz × (1 + v / 100),   N_zsák = ⌈ M_összes / m_zsák ⌉',
+    jelolesek: [
+      { symbol: 'A', name: 'Felület (m²)' },
+      { symbol: 'd', name: 'Vakolat vastagsága (mm)' },
+      { symbol: 'k_száraz', name: 'Fajlagos szárazhabarcs igény (kb. 1.4 kg/m²/mm)' },
+      { symbol: 'm_zsák', name: 'Zsák tömege (25 kg vagy 40 kg)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a nettó vakolandó vagy falazandó felületet.',
+      'Vakolásnál a rétegvastagság (mm) és a fajlagos anyagszükséglet (kb. 1.4-1.5 kg/m²/mm) szorzatát vesszük.',
+      'Hozzáadjuk az 5-10%-os szóródási és keverési veszteséget.',
+      'Elosztjuk a zsák tömegével és felfelé kerekítünk.',
+    ],
+    gyakorlatiPelda: {
+      title: '85 m² beltéri téglafalfelület 15 mm vastag mész-cement vakolása 25kg-os zsákos vakolattal (8% veszteséggel)',
+      steps: [
+        'Nettó szárazvakolat igény (1.4 kg/m²/mm): 85 m² × 15 mm × 1.4 kg/m²/mm = 1785 kg',
+        'Bruttó tömeg (8% ráhagyással): 1785 kg × 1.08 = 1927.8 kg',
+        '25 kg-os zsákok száma: 1927.8 / 25 = 77.11 -> 78 zsák',
+        'Raklapszám (40 zsák/raklap): 78 / 40 = 1.95 -> 2 raklap (80 zsák)',
+      ],
+      result: 'Rendelendő: 2 raklap (80 zsák 25kg-os vakolat)',
+    },
+    ellenorzes: 'Egy átlagos 15 mm vastag beltéri vakolat m²-enként kb. 21 kg szárazhabarcsot (közel 1 zsák 25kg-os anyagszükséglet) igényel.',
+    gyakoriHibak: [
+      'Az egyenetlen téglafelület és a mély fuga-beugrások miatti többlet-vakolatvastagság figyelmen kívül hagyása.',
+      'Hagyományos mész-cement falazóhabarcs és a vékonyrétegű ragasztóhabarcs normáinak összekeverése.',
+    ],
+    gyakorlatiMegjegyzes: 'Nagyobb (200 m² feletti) vakolási munkáknál gazdaságosabb a gépi vakológéphez való silós vakolóanyag megrendelése a zsákolási hulladék elkerülésére.',
+    kapcsolodoSzamitasok: ['Falazóanyag és tégla darabszám számítása', 'Hidegburkolat és csemperagasztó igénye', 'Rendelési mennyiség és kerekítési szabályok'],
+    calculatorTab: 'masonry',
+  },
+  {
+    id: 'homlokzati-hoszigetelo-tabla',
+    categoryId: 'anyag',
+    title: 'Homlokzati hőszigetelő táblák és dübelek száma',
+    shortDesc: 'EPS/XPS/Kőzetgyapot hőszigetelő lapok, indítósínek, dübelek és ragasztóhabarcs szükségletének kiszámítása.',
+    level: 'Középhaladó',
+    miEz: 'A homlokzati hőszigetelő rendszer kiszámítása a homlokzat nettó felülete alapján határozza meg a hőszigetelő táblák (0.5 m²/tábla), a rendszerragasztó, az üvegszövet háló, az indítóprofilok és a rögzítő dübelek darabszámát.',
+    mireHasznaljuk: 'Családi házak és társasházak utólagos vagy új építésű homlokzati hőszigetelési (ETICS/THR) anyagrendeléséhez.',
+    szuksegesAdatok: ['Homlokzat felülete nyíláslevonással (A, m²)', 'Tábla mérete (0.5m x 1.0m = 0.5 m²)', 'Szigetelés vastagsága (cm)', 'Dübel sűrűség (db/m², pl. 6-8 db/m²)'],
+    keplet: 'N_tábla = ⌈ (A × 1.08) / 0.5 ⌉,   N_dübel = ⌈ A × n_dübel × 1.05 ⌉',
+    jelolesek: [
+      { symbol: 'A', name: 'Nettó homlokzati felület (m²)' },
+      { symbol: 'N_tábla', name: 'Hőszigetelő lapok száma (db)' },
+      { symbol: 'N_dübel', name: 'Tányéros dübelek száma (db)' },
+      { symbol: 'n_dübel', name: 'Dübelezési normatíva (6-8 db/m²)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a homlokzat felületét és levonjuk a nyílászárókat.',
+      'Hozzáadunk 8-10% vágási veszteséget (a sarkoknál lévő L-alakú beszabások miatt).',
+      'Kiszámítjuk a 0.5 m²-es EPS táblák számát (vagy csomagok számát).',
+      'Kiszámítjuk a ragasztóigényt (ragasztás + ágyazás: kb. 8-10 kg/m²), az üvegszövet hálót (1.15x szorzó) és a dübeleket.',
+    ],
+    gyakorlatiPelda: {
+      title: '140 m² homlokzat szigetelése 15 cm-es Grafitos EPS lapokkal és 6 db/m² dübelezéssel',
+      steps: [
+        'Bruttó felület (8% vágási ráhagyás): 140 m² × 1.08 = 151.2 m²',
+        'EPS táblaszám (0.5 m²/tábla): 151.2 / 0.5 = 302.4 -> 303 tábla',
+        'EPS csomagszám (15 cm vastag lapból 2 tábla/csomag = 1 m²): 151.2 m² / 1 m² = 152 csomag',
+        'Dübeligény (6 db/m² + 5%): 140 × 6 × 1.05 = 882 db (9 doboz 100 db-os)',
+        'Ragasztóhabarcs (9 kg/m²): 140 × 9 = 1260 kg (51 zsák 25kg)',
+      ],
+      result: 'Rendelendő: 152 csomag EPS lap, 9 doboz dübel, 51 zsák ragasztó, 161 m² üvegszövet háló',
+    },
+    ellenorzes: 'Az ablakok és ajtók sarkainál szigorúan pisztoly alakú (L-szabású) táblákat kell beépíteni, egyenes illesztés a saroknál tilos, mert elreped a szigetelés!',
+    gyakoriHibak: [
+      'A nyílászárók kávaburkoló (pl. 2-3 cm-es) szigetelőcsíkjainak elfelejtése a rendelésnél.',
+      'Rövid dübel választása (a dübel szárának legalább 5-6 cm-re kell rögzülnie a teherhordó falazatba).',
+    ],
+    gyakorlatiMegjegyzes: 'A lábazati zónában az alsó 30-50 cm-es sávban zártcellás XPS lapokat kell használni a csapóvíz és a fagyállóság biztosítására.',
+    kapcsolodoSzamitasok: ['Rétegrendi U-érték és Hőellenállás számítása', 'Gipszkarton tábla és profil szükséglet', 'Falazóhabarcs és vakolat zsákigényének számítása'],
+    calculatorTab: 'insulation',
+  },
+  {
+    id: 'szarufahossz-szamitas',
+    categoryId: 'geometria',
+    title: 'Szarufahossz számítása dőlésszögből és fesztávból',
+    shortDesc: 'Nyeregtetők és félnyeregtetők szarufahosszának, eresznyúlásának és fűrészáru igényének kiszámítása trigonometriával.',
+    level: 'Középhaladó',
+    miEz: 'A szarufahossz kiszámítása a épület fesztávjának feléből (vízszintes vetület) és a tető dőlésszögéből (α) a derékszögű háromszög trigonometriájával (L_szarufa = L_vetület / cos(α)) határozza meg a szarufák ferde hosszát, beleértve az eresznyúlást is.',
+    mireHasznaljuk: 'Ács munkáknál a tetőszerkezet fűrészárujának (szarufák mérete, hossza, szál száma) pontos kiírásához és megrendeléséhez.',
+    szuksegesAdatok: ['Épület fesztávolsága / vízszintes vetület (L_v, m)', 'Tető dőlésszöge (α, fok)', 'Eresztúlnyúlás vízszintesen (L_eresz, m)'],
+    keplet: 'L_szarufa = (L_v + L_eresz) / cos(α)',
+    jelolesek: [
+      { symbol: 'L_szarufa', name: 'Szarufa teljes ferde hossza (m)' },
+      { symbol: 'L_v', name: 'Épület fél-fesztávolsága a szelemenig (m)' },
+      { symbol: 'L_eresz', name: 'Eresz túlnyúlás vízszintesen (m)' },
+      { symbol: 'α', name: 'Tető dőlésszöge (fok)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a szarufa vízszintes vetületét (fél-fesztáv + eresznyúlás).',
+      'Keresd ki vagy számítsd ki a dőlésszög koszinuszát (pl. 30°-nál cos(30°) = 0.866).',
+      'Elosztjuk a vízszintes távolságot cos(α)-val.',
+      'Kiszámítjuk a rendelendő szabványos gerendahosszat (pl. 4m, 5m, 6m kerekítéssel).',
+    ],
+    gyakorlatiPelda: {
+      title: '8 méter széles épület nyeregtetőjének szarufahossza 35°-os dőlésszöggel és 60 cm eresznyúlással',
+      steps: [
+        'Fél-fesztáv: 8m / 2 = 4.0 m',
+        'Teljes vízszintes vetület: 4.0m + 0.6m = 4.6 m',
+        'dőlésszög tényező: cos(35°) = 0.8192',
+        'Ferde szarufahossz: 4.6 m / 0.8192 = 5.615 m',
+        'Szabvány fűrészáru kerekítés: 6.0 méteres gerendák rendelése',
+      ],
+      result: 'Szükséges szarufa hosszúság: 5.62 m (Rendelendő: 6.0 m-es szálfák)',
+    },
+    ellenorzes: 'Pitagorasz-tétellel is ellenőrizhető: L_szarufa² = L_vetület² + H_taréj².',
+    gyakoriHibak: [
+      'Az eresz túlnyúlásának elfelejtése a szarufahossz megállapításakor.',
+      'Nem szabványos gerendahosszal való kalkulálás (a tüzépeken a gerendák általában 1 méteres lépcsőkben, pl. 4m, 5m, 6m kaphatók).',
+    ],
+    gyakorlatiMegjegyzes: 'A szarufák szokásos tengelytávolsága 80-90 cm. Számold ki a darabszámot: (Tetőhossz / Tengelytáv) + 1, mindkét tetősíkra!',
+    kapcsolodoSzamitasok: ['Pitagorasz-tétel és derékszög kitűzése', 'Tetőszerkezet felülete és cserépigény', 'Síkidomok területe és kerülete'],
+    calculatorTab: 'roofing',
   },
 ];
 
@@ -1504,11 +1711,38 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   <Layers size={18} className="text-primary" /> Kapcsolódó számítások
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  {activeCalculationObj.kapcsolodoSzamitasok.map((ksz, idx) => (
-                    <span key={idx} className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200">
-                      {ksz}
-                    </span>
-                  ))}
+                  {activeCalculationObj.kapcsolodoSzamitasok.map((ksz, idx) => {
+                    const matchedItem = CALCULATION_ITEMS.find(
+                      (item) =>
+                        item.title.toLowerCase() === ksz.toLowerCase() ||
+                        item.title.toLowerCase().includes(ksz.toLowerCase()) ||
+                        ksz.toLowerCase().includes(item.title.toLowerCase())
+                    );
+
+                    if (matchedItem) {
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSelectedCalcId(matchedItem.id);
+                            setSelectedCategory(matchedItem.categoryId);
+                            setViewMode('detail');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="text-xs font-bold bg-primary/5 hover:bg-primary/10 text-primary hover:text-primary-700 px-3.5 py-1.5 rounded-xl border border-primary/20 hover:border-primary/40 transition-all flex items-center gap-1.5 group cursor-pointer shadow-xs"
+                        >
+                          <span>{ksz}</span>
+                          <ChevronRight size={13} className="text-accent group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <span key={idx} className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200">
+                        {ksz}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
