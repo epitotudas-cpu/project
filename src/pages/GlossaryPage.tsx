@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Search, Home, ChevronRight, BookOpen, AlertCircle,
   Lock, ArrowRight, Clock, Tag, GraduationCap,
-  ChevronDown, ChevronUp, LayoutList, LayoutGrid,
+  ChevronDown, ChevronUp, LayoutList, LayoutGrid, FileText, Calculator, Library,
 } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 import { useGlossary } from '../contexts/GlossaryContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getTradeEducationalPathways } from '../services/glossaryService';
@@ -340,6 +341,38 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Sub-navigation */}
+      <SectionSubNav
+        ariaLabel="Tudástár navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Cikkek',
+            page: 'category',
+            icon: <FileText size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Fogalomtár',
+            page: 'glossary',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Számítások',
+            page: 'calculations',
+            icon: <Calculator size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szakmai könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       {/* ═══════════ MAIN CONTENT ═══════════ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

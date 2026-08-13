@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen } from 'lucide-react';
+import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
 import { getRelatedArticles } from '../services/articleService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
@@ -95,6 +96,38 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           </div>
         </div>
       </div>
+
+      {/* Sub-navigation */}
+      <SectionSubNav
+        ariaLabel="Tudástár navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Cikkek',
+            page: 'category',
+            icon: <FileText size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Fogalomtár',
+            page: 'glossary',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Számítások',
+            page: 'calculations',
+            icon: <Calculator size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szakmai könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {/* Featured Image */}

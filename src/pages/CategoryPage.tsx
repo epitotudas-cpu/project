@@ -25,7 +25,11 @@ import {
   BookOpen,
   Filter,
   ExternalLink,
+  FileText,
+  Calculator,
+  Library,
 } from 'lucide-react';
+import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
 import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
 import type { Category, Article } from '../lib/supabase';
@@ -228,6 +232,38 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Sub-navigation */}
+      <SectionSubNav
+        ariaLabel="Tudástár navigáció"
+        onNavigate={onNavigate}
+        items={[
+          {
+            label: 'Cikkek',
+            page: 'category',
+            icon: <FileText size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Fogalomtár',
+            page: 'glossary',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Számítások',
+            page: 'calculations',
+            icon: <Calculator size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szakmai könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
+            active: false,
+          },
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Active Partner & Sidebar Ad Banners */}
