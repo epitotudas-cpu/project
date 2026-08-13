@@ -262,7 +262,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                 className={fieldClass}
                 value={form.price}
                 onChange={(e) => update('price', e.target.value)}
-                placeholder="0"
+                placeholder="pl. 15000"
               />
             </div>
             <div>

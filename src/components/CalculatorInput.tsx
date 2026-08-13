@@ -14,8 +14,8 @@ export interface CalculatorInputProps {
 }
 
 /**
- * Formats a value for numeric input elements so that 0 is preserved as "0"
- * rather than coerced into an empty string via falsy check.
+ * Formats a value for numeric input elements so that 0 is preserved as "0",
+ * while empty string, null, or undefined is formatted as "" (truly empty).
  */
 export const formatInputValue = (val: number | string | null | undefined): string => {
   if (val === '' || val === null || val === undefined || (typeof val === 'number' && Number.isNaN(val))) {
@@ -25,22 +25,36 @@ export const formatInputValue = (val: number | string | null | undefined): strin
 };
 
 /**
- * Safely extracts a numeric value from input state (number | string | null | undefined)
- * treating empty string, null, or undefined as fallback (default 0), while correctly preserving 0.
+ * Safely parses input state (number | string | null | undefined) to number or null.
+ * Returns null if the value is empty, null, or undefined (meaning not entered),
+ * and returns the number (including 0) if entered.
+ */
+export const parseNumberValue = (val: number | string | null | undefined): number | null => {
+  if (val === '' || val === null || val === undefined) {
+    return null;
+  }
+  if (typeof val === 'number') {
+    return Number.isNaN(val) ? null : val;
+  }
+  const normalized = String(val).trim().replace(',', '.');
+  if (normalized === '') return null;
+  const parsed = parseFloat(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+/**
+ * Fallback helper for legacy calculation routines where a numeric fallback is explicitly requested.
  */
 export const safeNum = (val: number | string | null | undefined, fallback = 0): number => {
-  if (val === '' || val === null || val === undefined || (typeof val === 'number' && Number.isNaN(val))) {
-    return fallback;
-  }
-  const num = typeof val === 'number' ? val : parseFloat(String(val).replace(',', '.'));
-  return Number.isNaN(num) ? fallback : num;
+  const parsed = parseNumberValue(val);
+  return parsed === null ? fallback : parsed;
 };
 
 export const CalculatorInput: React.FC<CalculatorInputProps> = ({
   label,
   value,
   onChange,
-  placeholder = '0',
+  placeholder,
   step,
   min,
   max,
