@@ -565,23 +565,37 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                       className="h-full flex flex-col justify-between bg-white border border-gray-200 hover:border-primary/40 hover:shadow-lg rounded-2xl transition-all duration-200 group cursor-pointer overflow-hidden shadow-2xs"
                     >
                       <div>
-                        {/* ── Kép / Tanuló kártya fejléc panel ── */}
-                        <div className={`h-32 sm:h-36 w-full relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                        {/* ── Kép / Tanuló kártya fejléc panel (Grid / Csempe Nézet) ── */}
+                        <div className={`w-full aspect-[16/10] sm:aspect-[16/10] relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
                           {hasImage ? (
-                            <img
-                              src={item.image_urls![0]}
-                              alt={item.term}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={() =>
-                                setImageLoadErrors((prev) => {
-                                  const next = new Set(prev);
-                                  next.add(item.id);
-                                  return next;
-                                })
-                              }
-                            />
+                            <>
+                              {/* 1. Háttér kiegészítő elmosás (Backdrop fill for non-standard aspect ratios) */}
+                              <img
+                                src={item.image_urls![0]}
+                                alt=""
+                                aria-hidden="true"
+                                className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-110 pointer-events-none select-none"
+                              />
+
+                              {/* 2. Fő kép intelligens felső-középső fókuszálással */}
+                              <img
+                                src={item.image_urls![0]}
+                                alt={item.term}
+                                className="relative z-10 w-full h-full object-cover object-[center_30%] group-hover:scale-105 transition-transform duration-500 ease-out"
+                                onError={() =>
+                                  setImageLoadErrors((prev) => {
+                                    const next = new Set(prev);
+                                    next.add(item.id);
+                                    return next;
+                                  })
+                                }
+                              />
+
+                              {/* Top shadow gradient layer for text/badge legibility */}
+                              <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-20 pointer-events-none" />
+                            </>
                           ) : (
-                            <div className="text-center p-3">
+                            <div className="text-center p-3 relative z-10">
                               <div className="text-4xl mb-1 opacity-90 drop-shadow-sm">
                                 {getCategoryIcon(item.category, categorySettings)}
                               </div>
@@ -594,7 +608,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           )}
 
                           {/* Képre úszó jelvények (Badges overlay) */}
-                          <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
+                          <div className="absolute top-2.5 left-2.5 right-2.5 z-30 flex items-center justify-between gap-1.5 pointer-events-none">
                             <span
                               className={`font-extrabold px-2 py-0.5 rounded text-[10px] tracking-wider uppercase border shadow-sm backdrop-blur-md ${
                                 item.entry_type === 'industry_term'
@@ -829,25 +843,33 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           </div>
                         </div>
 
-                        {/* ── Jobb oldali kép / gradiens panel ── */}
+                        {/* ── Jobb oldali kép / gradiens panel (Lista Nézet) ── */}
                         <div
                           className={`hidden md:flex w-28 lg:w-36 flex-shrink-0 items-center justify-center bg-gradient-to-br ${gradient} relative overflow-hidden`}
                         >
                           {hasImage ? (
-                            <img
-                              src={item.image_urls![0]}
-                              alt={item.term}
-                              className="w-full h-full object-cover"
-                              onError={() =>
-                                setImageLoadErrors((prev) => {
-                                  const next = new Set(prev);
-                                  next.add(item.id);
-                                  return next;
-                                })
-                              }
-                            />
+                            <>
+                              <img
+                                src={item.image_urls![0]}
+                                alt=""
+                                aria-hidden="true"
+                                className="absolute inset-0 w-full h-full object-cover blur-sm opacity-35 scale-110 pointer-events-none select-none"
+                              />
+                              <img
+                                src={item.image_urls![0]}
+                                alt={item.term}
+                                className="relative z-10 w-full h-full object-cover object-[center_30%] group-hover:scale-105 transition-transform duration-300"
+                                onError={() =>
+                                  setImageLoadErrors((prev) => {
+                                    const next = new Set(prev);
+                                    next.add(item.id);
+                                    return next;
+                                  })
+                                }
+                              />
+                            </>
                           ) : (
-                            <div className="text-center p-3">
+                            <div className="text-center p-3 relative z-10">
                               <div className="text-4xl mb-1.5 opacity-80 drop-shadow-sm">
                                 {getCategoryIcon(item.category, categorySettings)}
                               </div>
