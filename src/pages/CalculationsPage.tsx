@@ -1380,6 +1380,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       rafterLength: Number(rafterLength.toFixed(2)),
       stdStockLength,
       raftersPerSide,
+      totalRaftersBothSides,
     };
   }, [rSpan, rAngle, rOverhang, rSpacing, rRoofLength]);
 
