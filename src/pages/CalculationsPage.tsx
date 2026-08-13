@@ -1425,13 +1425,13 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     } else if (activeTab === 'masonry' && masonryCalc.isReady) {
       materialNet = masonryCalc.netArea * calcConfig.masonryMortarPricePerM2 + masonryCalc.grossPcs * 950;
     } else if (activeTab === 'insulation' && insulationCalc.isReady) {
-      materialNet = insulationCalc.netArea * calcConfig.insulationPricePerM2;
+      materialNet = insulationCalc.meshM2 * calcConfig.insulationPricePerM2;
     } else if (activeTab === 'tiling' && tilingCalc.isReady) {
-      materialNet = tilingCalc.grossArea * 3800 + tilingCalc.adhesiveKg * calcConfig.tilingAdhesivePricePerKg;
+      materialNet = tilingCalc.tilesM2 * 3800 + (tilingCalc.adhesiveBags * 25) * calcConfig.tilingAdhesivePricePerKg;
     } else if (activeTab === 'drywall' && drywallCalc.isReady) {
-      materialNet = drywallCalc.boardArea * calcConfig.drywallBoardPricePerM2;
+      materialNet = (drywallCalc.boardCount * 2.4) * calcConfig.drywallBoardPricePerM2;
     } else if (activeTab === 'roofing' && roofingCalc.isReady) {
-      materialNet = roofingCalc.netArea * calcConfig.roofingTilePricePerM2;
+      materialNet = roofingCalc.actualRoofArea * calcConfig.roofingTilePricePerM2;
     } else if (activeTab === 'rafter' && rafterCalc.isReady) {
       materialNet = rafterCalc.totalLumberVolumeM3 * 185000;
     }
