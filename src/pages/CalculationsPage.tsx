@@ -896,6 +896,134 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [searchQuery, selectedCategory]);
 
   // --------------------------------------------------------------------------
+  // SPA ROUTER HASH & HISTORY STACK SYNCHRONIZATION
+  // --------------------------------------------------------------------------
+  const syncFromHash = () => {
+    try {
+      const hashString = window.location.hash || '';
+      const queryPart = hashString.includes('?') ? hashString.split('?')[1] : '';
+      const params = new URLSearchParams(queryPart);
+
+      const calcParam = params.get('calc');
+      const modeParam = params.get('mode');
+      const tabParam = params.get('tab');
+      const catParam = params.get('cat');
+
+      if (calcParam) {
+        const item = CALCULATION_ITEMS.find((c) => c.id === calcParam);
+        if (item) {
+          setSelectedCalcId(item.id);
+          setSelectedCategory(item.categoryId);
+          setViewMode('detail');
+          return;
+        }
+      }
+
+      if (modeParam === 'interactive') {
+        setViewMode('interactive-calculators');
+        if (
+          tabParam &&
+          ['concrete', 'masonry', 'insulation', 'tiling', 'drywall', 'roofing', 'rafter'].includes(tabParam)
+        ) {
+          setActiveTab(tabParam as CalculatorTab);
+        }
+        return;
+      }
+
+      if (catParam) {
+        const cat = MAIN_CATEGORIES.find((c) => c.id === catParam);
+        if (cat) {
+          setSelectedCategory(cat.id);
+          setSelectedCalcId(null);
+          setViewMode('category-list');
+          return;
+        }
+      }
+
+      // Root calculations view
+      setViewMode('categories');
+      setSelectedCategory(null);
+      setSelectedCalcId(null);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    syncFromHash();
+
+    const handlePopState = () => {
+      syncFromHash();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, []);
+
+  // Safety fallback if detail mode is active with no valid item
+  useEffect(() => {
+    if (viewMode === 'detail' && !activeCalculationObj) {
+      setViewMode('categories');
+      setSelectedCalcId(null);
+    }
+  }, [viewMode, activeCalculationObj]);
+
+  const navigateToCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    setSelectedCalcId(null);
+    setViewMode('category-list');
+    const newHash = `#calculations?cat=${catId}`;
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
+    window.dispatchEvent(new Event('popstate'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToDetail = (calcId: string) => {
+    const item = CALCULATION_ITEMS.find((c) => c.id === calcId);
+    if (item) {
+      setSelectedCalcId(item.id);
+      setSelectedCategory(item.categoryId);
+      setViewMode('detail');
+      const newHash = `#calculations?calc=${calcId}`;
+      if (window.location.hash !== newHash) {
+        window.history.pushState(null, '', newHash);
+      }
+      window.dispatchEvent(new Event('popstate'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const navigateToInteractive = (tab: CalculatorTab) => {
+    setActiveTab(tab);
+    setViewMode('interactive-calculators');
+    const newHash = `#calculations?mode=interactive&tab=${tab}`;
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
+    window.dispatchEvent(new Event('popstate'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToCategoriesRoot = () => {
+    setSelectedCategory(null);
+    setSelectedCalcId(null);
+    setSearchQuery('');
+    setViewMode('categories');
+    const newHash = '#calculations';
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
+    window.dispatchEvent(new Event('popstate'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // --------------------------------------------------------------------------
   // 1. BETON & ZSALUZAT STATE
   // --------------------------------------------------------------------------
   const [concreteShape, setConcreteShape] = useState<'slab' | 'strip' | 'column'>('slab');
