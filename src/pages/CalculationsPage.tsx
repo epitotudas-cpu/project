@@ -34,7 +34,7 @@ interface CalculationsPageProps {
   onNavigate: (page: string) => void;
 }
 
-type CalculatorTab = 'concrete' | 'masonry' | 'insulation' | 'tiling' | 'drywall' | 'roofing';
+type CalculatorTab = 'concrete' | 'masonry' | 'insulation' | 'tiling' | 'drywall' | 'roofing' | 'rafter';
 
 interface MainCategory {
   id: string;
@@ -858,7 +858,7 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     ],
     gyakorlatiMegjegyzes: 'A szarufák szokásos tengelytávolsága 80-90 cm. Számold ki a darabszámot: (Tetőhossz / Tengelytáv) + 1, mindkét tetősíkra!',
     kapcsolodoSzamitasok: ['Pitagorasz-tétel és derékszög kitűzése', 'Tetőszerkezet felülete és cserépigény', 'Síkidomok területe és kerülete'],
-    calculatorTab: 'roofing',
+    calculatorTab: 'rafter',
   },
 ];
 
@@ -1154,6 +1154,56 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   }, [roofFootprint, roofAngle, tileType]);
 
   // --------------------------------------------------------------------------
+  // 7. SZARUFAHOSSZ KALKULÁTOR STATE (Alapértelmezetten 0 értékek)
+  // --------------------------------------------------------------------------
+  const [rSpan, setRSpan] = useState<number>(0); // fél-fesztávolság L_v (m)
+  const [rAngle, setRAngle] = useState<number>(0); // tető dőlésszög α (fok)
+  const [rOverhang, setROverhang] = useState<number>(0); // eresz túlnyúlás L_eresz (m)
+  const [rSpacing, setRSpacing] = useState<number>(85); // szarufa tengelytáv (cm)
+  const [rRoofLength, setRRoofLength] = useState<number>(0); // tető hossza L_tető (m)
+
+  const rafterCalc = useMemo(() => {
+    let totalHoriz = 0;
+    let cosAlpha = 0;
+    let rafterLength = 0;
+    let stdStockLength = 0;
+    let raftersPerSide = 0;
+    let totalRaftersBothSides = 0;
+
+    if (rSpan > 0 && rAngle > 0) {
+      totalHoriz = rSpan + (rOverhang || 0); // L_v + L_eresz (m)
+      const rad = (rAngle * Math.PI) / 180;
+      cosAlpha = Math.cos(rad);
+      rafterLength = cosAlpha > 0 ? totalHoriz / cosAlpha : 0; // L_szarufa (m)
+
+      if (rafterLength > 0) {
+        if (rafterLength <= 4) stdStockLength = 4;
+        else if (rafterLength <= 5) stdStockLength = 5;
+        else if (rafterLength <= 6) stdStockLength = 6;
+        else if (rafterLength <= 7) stdStockLength = 7;
+        else if (rafterLength <= 8) stdStockLength = 8;
+        else if (rafterLength <= 9) stdStockLength = 9;
+        else stdStockLength = Math.ceil(rafterLength);
+      }
+
+      if (rRoofLength > 0) {
+        const spacingM = (rSpacing || 85) / 100;
+        raftersPerSide = Math.ceil(rRoofLength / spacingM) + 1;
+        totalRaftersBothSides = raftersPerSide * 2;
+      }
+    }
+
+    return {
+      totalHoriz: Number(totalHoriz.toFixed(2)),
+      cosAlpha: Number(cosAlpha.toFixed(4)),
+      rafterLength: Number(rafterLength.toFixed(2)),
+      stdStockLength,
+      raftersPerSide,
+      totalRaftersBothSides,
+    };
+  }, [rSpan, rAngle, rOverhang, rSpacing, rRoofLength]);
+
+  // --------------------------------------------------------------------------
   // SUMMARY TEXT GENERATOR & COPY ACTION
   // --------------------------------------------------------------------------
   const getActiveSummaryText = () => {
@@ -1213,6 +1263,17 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       text += `- Kúpcserép: ${roofingCalc.ridgeTiles} db\n`;
       text += `- Tetőléc szükséglet: ${roofingCalc.battenFm} fm\n`;
       text += `- Páraáteresztő tetőfólia: ${roofingCalc.membraneM2} m²\n`;
+    } else if (activeTab === 'rafter') {
+      text += `Szarufahossz Kalkulátor\n`;
+      text += `- Épület fél-fesztávolsága (L_v): ${rSpan} m\n`;
+      text += `- Tető dőlésszöge (α): ${rAngle}° (cos(α) = ${rafterCalc.cosAlpha})\n`;
+      text += `- Eresz túlnyúlás (L_eresz): ${rOverhang} m\n`;
+      text += `- Teljes vízszintes vetület: ${rafterCalc.totalHoriz} m\n`;
+      text += `- Szarufa ferde hossza (L_szarufa): ${rafterCalc.rafterLength} m\n`;
+      text += `- Ajánlott szabványos fűrészáru hossz: ${rafterCalc.stdStockLength}.0 m-es szálak\n`;
+      if (rafterCalc.totalRaftersBothSides > 0) {
+        text += `- Szarufák száma (${rRoofLength}m tetőhossznál): ${rafterCalc.totalRaftersBothSides} db (mindkét oldal)\n`;
+      }
     }
 
     text += `\nGenerálva az ÉpítőTudás Építőipari Számítási Moduljával (${new Date().toLocaleDateString('hu-HU')})`;
@@ -1781,7 +1842,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 <ArrowLeft size={16} /> Vissza a Számítási Tudásbázishoz
               </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
               {[
                 { id: 'concrete', label: 'Beton & Zsaluzat', icon: <Building size={16} /> },
                 { id: 'masonry', label: 'Falazás & Tégla', icon: <Home size={16} /> },
@@ -1789,6 +1850,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 { id: 'tiling', label: 'Burkolat & Vakolat', icon: <Layers size={16} /> },
                 { id: 'drywall', label: 'Gipszkarton', icon: <Maximize2 size={16} /> },
                 { id: 'roofing', label: 'Tető & Cserép', icon: <Home size={16} /> },
+                { id: 'rafter', label: 'Szarufahossz', icon: <Compass size={16} /> },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -2288,6 +2350,81 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   </div>
                 )}
 
+                {/* ---------------------------------------------------------------- */}
+                {/* 7. SZARUFAHOSSZ TAB */}
+                {/* ---------------------------------------------------------------- */}
+                {activeTab === 'rafter' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                          <Compass size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Szarufahossz &amp; Tetőszerkezet Kalkulátor</h2>
+                          <p className="text-xs text-gray-500">Szarufák ferde hossza, eresznyúlás és szabványos gerendahossz kiszámítása</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Épület Fél-fesztávolsága (L_v, m)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={rSpan || ''}
+                          onChange={(e) => setRSpan(parseFloat(e.target.value) || 0)}
+                          placeholder="pl. 4.0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                        <span className="text-[11px] text-gray-500 mt-1 block">A gerinc és az oldalfal (szelemen) közötti vízszintes távolság</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Tető Dőlésszöge (α, fok °)</label>
+                        <input
+                          type="number"
+                          step="1"
+                          value={rAngle || ''}
+                          onChange={(e) => setRAngle(parseFloat(e.target.value) || 0)}
+                          placeholder="pl. 35"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                        <span className="text-[11px] text-gray-500 mt-1 block">Jellemző magastető dőlésszög: 25° - 45°</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Eresz Vízszintes Túlnyúlása (L_eresz, m)</label>
+                        <input
+                          type="number"
+                          step="0.05"
+                          value={rOverhang || ''}
+                          onChange={(e) => setROverhang(parseFloat(e.target.value) || 0)}
+                          placeholder="pl. 0.6"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                        <span className="text-[11px] text-gray-500 mt-1 block">A homlokzati fal síkján kívül eső eresztúlnyúlás</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Tető Hossza / Épület hossza (L_tető, m) [Opcionális]</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={rRoofLength || ''}
+                          onChange={(e) => setRRoofLength(parseFloat(e.target.value) || 0)}
+                          placeholder="pl. 10.0"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                        <span className="text-[11px] text-gray-500 mt-1 block">A szarufák összdarabszámának kiszámításához</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               {/* RIGHT COLUMN: REAL-TIME CALCULATION RESULTS (5 Cols) */}
@@ -2506,6 +2643,55 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <div className="text-base font-bold text-white">{roofingCalc.membraneM2} m²</div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* 7. RAFTER RESULTS */}
+                {activeTab === 'rafter' && (
+                  <div className="space-y-4">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-1">
+                      <span className="text-xs text-gray-400 font-medium">Szarufa Szükséges Ferde Hossza (L_szarufa)</span>
+                      <div className="text-3xl font-black text-accent">
+                        {rafterCalc.rafterLength > 0 ? `${rafterCalc.rafterLength} m` : '0 m'}
+                      </div>
+                      <p className="text-[11px] text-gray-300">
+                        {rSpan > 0 && rAngle > 0
+                          ? `Teljes vízszintes vetület: ${rafterCalc.totalHoriz} m | cos(${rAngle}°) = ${rafterCalc.cosAlpha}`
+                          : 'Adja meg a fesztávolságot és a dőlésszöget'}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Szabvány Gerendahossz</span>
+                        <div className="text-base font-bold text-white">
+                          {rafterCalc.stdStockLength > 0 ? `${rafterCalc.stdStockLength}.0 m` : '-'}
+                        </div>
+                        <span className="text-[10px] text-gray-400">(Tüzépi rendelési szálhossz)</span>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Ferde Hossz Eresz Nélkül</span>
+                        <div className="text-base font-bold text-white">
+                          {rSpan > 0 && rAngle > 0 && rafterCalc.cosAlpha > 0
+                            ? `${(rSpan / rafterCalc.cosAlpha).toFixed(2)} m`
+                            : '-'}
+                        </div>
+                        <span className="text-[10px] text-gray-400">(Szelemenek közötti táv)</span>
+                      </div>
+                    </div>
+
+                    {rafterCalc.totalRaftersBothSides > 0 && (
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                          <span className="text-gray-400">Szarufák (1 tetősík)</span>
+                          <div className="text-base font-bold text-accent">{rafterCalc.raftersPerSide} db</div>
+                        </div>
+                        <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                          <span className="text-gray-400">Összes Szarufa (Nyeregtető)</span>
+                          <div className="text-base font-bold text-accent">{rafterCalc.totalRaftersBothSides} db</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
