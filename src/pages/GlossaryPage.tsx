@@ -54,17 +54,18 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 function getCategoryIcon(cat?: string | null, customSettings?: GlossaryCategorySettings): string {
-  if (!cat) return '';
-  if (customSettings && !customSettings.showCategoryIcons) return '';
+  if (!cat) return '📚';
+  const trimmed = cat.trim();
 
-  const configuredItem = customSettings?.categoryItems[cat];
-  if (configuredItem) {
-    if (configuredItem.icon) return configuredItem.icon;
+  const configuredItem = customSettings?.categoryItems?.[trimmed] || customSettings?.categoryItems?.[cat];
+  if (configuredItem && configuredItem.enabled !== false && configuredItem.icon && configuredItem.icon.trim()) {
+    return configuredItem.icon.trim();
   }
 
+  if (CATEGORY_ICONS[trimmed]) return CATEGORY_ICONS[trimmed];
   if (CATEGORY_ICONS[cat]) return CATEGORY_ICONS[cat];
 
-  const lower = cat.toLowerCase();
+  const lower = trimmed.toLowerCase();
   if (lower.includes('szigetel')) return '🛡️';
   if (lower.includes('alap') || lower.includes('föld')) return '🚜';
   if (lower.includes('gép') || lower.includes('szer')) return '🛠️';
@@ -78,23 +79,45 @@ function getCategoryIcon(cat?: string | null, customSettings?: GlossaryCategoryS
 
 function renderCategoryIconElement(cat?: string | null, customSettings?: GlossaryCategorySettings) {
   if (!cat) return null;
-  if (customSettings && !customSettings.showCategoryIcons) return null;
+  if (customSettings?.showCategoryIcons === false) return null;
 
-  const configuredItem = customSettings?.categoryItems[cat];
+  const trimmed = cat.trim();
+  const configuredItem = customSettings?.categoryItems?.[trimmed] || customSettings?.categoryItems?.[cat];
+
+  // 1. Check custom image URL from settings
   const customImg = configuredItem?.customImageUrl;
-  const rawIcon = configuredItem?.icon || CATEGORY_ICONS[cat];
-
   if (customImg && customImg.trim()) {
-    return <img src={customImg.trim()} alt="" className="w-8 h-8 object-contain mb-2 inline-block rounded-md drop-shadow-xs" />;
+    return (
+      <img
+        src={customImg.trim()}
+        alt={trimmed}
+        className="w-8 h-8 object-contain mb-2 inline-block rounded-md drop-shadow-xs"
+        onError={(e) => {
+          (e.currentTarget as HTMLElement).style.display = 'none';
+        }}
+      />
+    );
   }
+
+  // 2. Check if icon itself is an image URL / Data URL
+  const rawIcon = (configuredItem?.icon && configuredItem.icon.trim()) || CATEGORY_ICONS[trimmed] || CATEGORY_ICONS[cat];
 
   if (rawIcon && (rawIcon.startsWith('http://') || rawIcon.startsWith('https://') || rawIcon.startsWith('data:image/'))) {
-    return <img src={rawIcon.trim()} alt="" className="w-8 h-8 object-contain mb-2 inline-block rounded-md drop-shadow-xs" />;
+    return (
+      <img
+        src={rawIcon.trim()}
+        alt={trimmed}
+        className="w-8 h-8 object-contain mb-2 inline-block rounded-md drop-shadow-xs"
+        onError={(e) => {
+          (e.currentTarget as HTMLElement).style.display = 'none';
+        }}
+      />
+    );
   }
 
+  // 3. Fallback emoji string
   const iconStr = rawIcon || getCategoryIcon(cat, customSettings);
-  if (!iconStr) return null;
-  return <div className="text-2xl mb-2 leading-none">{iconStr}</div>;
+  return <div className="text-2xl mb-2 leading-none select-none">{iconStr}</div>;
 }
 
 /* ── Kategória gradiens (jobb oldali panel) ────────────────────── */
@@ -223,9 +246,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     const map = new Map<string, number>();
     tabTerms.forEach((t) => {
       if (t.category) {
-        const configItem = categorySettings.categoryItems[t.category];
+        const catName = t.category.trim();
+        const configItem = categorySettings.categoryItems?.[catName] || categorySettings.categoryItems?.[t.category];
         if (configItem && configItem.enabled === false) return;
-        map.set(t.category, (map.get(t.category) ?? 0) + 1);
+        map.set(catName, (map.get(catName) ?? 0) + 1);
       }
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
