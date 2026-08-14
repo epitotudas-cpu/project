@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 export interface GlossaryCategorySettingItem {
   categoryName: string;
   icon: string;
+  customImageUrl?: string;
   enabled: boolean;
   isCustom?: boolean;
 }

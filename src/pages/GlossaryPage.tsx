@@ -77,6 +77,27 @@ function getCategoryIcon(cat?: string | null, customSettings?: GlossaryCategoryS
   return '📚';
 }
 
+function renderCategoryIconElement(cat?: string | null, customSettings?: GlossaryCategorySettings) {
+  if (!cat) return null;
+  if (customSettings && !customSettings.showCategoryIcons) return null;
+
+  const configuredItem = customSettings?.categoryItems[cat];
+  const customImg = configuredItem?.customImageUrl;
+  const rawIcon = configuredItem?.icon || CATEGORY_ICONS[cat];
+
+  if (customImg && customImg.trim()) {
+    return <img src={customImg.trim()} alt="" className="w-8 h-8 object-contain mb-2 inline-block rounded-md drop-shadow-xs" />;
+  }
+
+  if (rawIcon && (rawIcon.startsWith('http://') || rawIcon.startsWith('https://') || rawIcon.startsWith('data:image/'))) {
+    return <img src={rawIcon.trim()} alt="" className="w-8 h-8 object-contain mb-2 inline-block rounded-md drop-shadow-xs" />;
+  }
+
+  const iconStr = rawIcon || getCategoryIcon(cat, customSettings);
+  if (!iconStr) return null;
+  return <div className="text-2xl mb-2 leading-none">{iconStr}</div>;
+}
+
 /* ── Kategória gradiens (jobb oldali panel) ────────────────────── */
 function getTermGradient(cat?: string | null): string {
   const map: Record<string, string> = {
@@ -415,9 +436,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                             : 'bg-white border-gray-200 hover:border-accent/40 hover:scale-[1.01]'
                         }`}
                       >
-                        {categorySettings.showCategoryIcons && icon ? (
-                          <div className="text-2xl mb-2 leading-none">{icon}</div>
-                        ) : null}
+                        {renderCategoryIconElement(cat, categorySettings)}
                         <div className={`text-sm font-black leading-tight ${selectedCategory === cat ? 'text-black' : 'text-gray-900'}`}>
                           {cat}
                         </div>
@@ -584,10 +603,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                               <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-20 pointer-events-none" />
                             </>
                           ) : (
-                            <div className="text-center p-3 relative z-10">
-                              <div className="text-4xl mb-1 opacity-90 drop-shadow-sm">
-                                {getCategoryIcon(item.category, categorySettings)}
-                              </div>
+                            <div className="text-center p-3 relative z-10 flex flex-col items-center justify-center">
+                              {renderCategoryIconElement(item.category, categorySettings)}
                               {normalizedCat && (
                                 <div className="text-white/80 text-[10px] font-bold text-center leading-tight uppercase tracking-wider">
                                   {normalizedCat}
