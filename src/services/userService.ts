@@ -47,3 +47,15 @@ export async function updateProfile(userId: string, payload: Partial<Pick<Profil
   if (error) throw error;
   return data;
 }
+
+export async function deleteUser(userId: string): Promise<boolean> {
+  const { error } = await supabase.rpc('delete_user_by_admin', { target_user_id: userId });
+  if (!error) return true;
+
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', userId);
+  if (profileError) throw profileError;
+  return true;
+}

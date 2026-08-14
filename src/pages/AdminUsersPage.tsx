@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, AlertCircle, RefreshCw, Users, Award, CheckCircle2, Zap } from 'lucide-react';
+import { Search, AlertCircle, RefreshCw, Users, Award, CheckCircle2, Zap, Trash2 } from 'lucide-react';
 import type { Profile } from '../lib/supabase';
-import { listProfiles } from '../services/userService';
+import { listProfiles, deleteUser } from '../services/userService';
+import { useAuth } from '../contexts/AuthContext';
 import {
   getUserTrustProfile,
   setTrustedContributorStatus,
@@ -17,10 +18,13 @@ const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
 };
 
 export default function AdminUsersPage() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<Profile[]>([]);
   const [trustProfiles, setTrustProfiles] = useState<Record<string, UserTrustProfile>>({});
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const loadUsers = useCallback(async () => {
@@ -72,6 +76,32 @@ export default function AdminUsersPage() {
     }));
   }
 
+  async function handleDeleteUser(targetUser: Profile) {
+    if (currentUser?.id === targetUser.id) {
+      alert('Saját magadat nem törölheted az admin felületen!');
+      return;
+    }
+
+    const nameStr = targetUser.full_name || targetUser.email || 'felhasználó';
+    if (!window.confirm(`Biztosan törölni szeretnéd a(z) "${nameStr}" (${targetUser.email || targetUser.id}) felhasználót? Ez a művelet végleges és nem visszavonható!`)) {
+      return;
+    }
+
+    setDeletingId(targetUser.id);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      await deleteUser(targetUser.id);
+      setUsers((prev) => prev.filter((u) => u.id !== targetUser.id));
+      setSuccessMsg(`A(z) "${nameStr}" felhasználó sikeresen törölve lett.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'A felhasználó törlése nem sikerült.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   const trustedCount = useMemo(() => {
     return Object.values(trustProfiles).filter((tp) => tp.autoApprovalEnabled).length;
   }, [trustProfiles]);
@@ -100,7 +130,7 @@ export default function AdminUsersPage() {
           </p>
         </div>
         {!loading && (
-          <button onClick={loadUsers} className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors">
+          <button onClick={loadUsers} className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors cursor-pointer">
             <RefreshCw size={14} /> Frissítés
           </button>
         )}
@@ -127,6 +157,13 @@ export default function AdminUsersPage() {
         />
       </div>
 
+      {successMsg && (
+        <div className="mt-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-sm font-bold flex items-center justify-between">
+          <span>✓ {successMsg}</span>
+          <button onClick={() => setSuccessMsg(null)} className="text-xs text-emerald-400/80 hover:text-emerald-300">✕</button>
+        </div>
+      )}
+
       {error && (
         <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
           <AlertCircle size={18} className="text-red-400 flex-shrink-0" />
@@ -145,7 +182,8 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Szerepkör</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Bizalmi Pont (Trust Score)</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Auto-Publikáció Status</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Megbízhatóság Művelet</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Megbízhatóság</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap text-right">Műveletek</th>
               </tr>
             </thead>
             <tbody>
@@ -158,12 +196,13 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3.5"><div className="h-4 w-16 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-4 w-20 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-6 w-24 bg-[#1E1E1E] rounded animate-pulse" /></td>
+                    <td className="px-4 py-3.5"><div className="h-6 w-16 bg-[#1E1E1E] rounded animate-pulse ml-auto" /></td>
                   </tr>
                 ))}
 
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center">
+                  <td colSpan={7} className="px-4 py-16 text-center">
                     <Users size={32} className="mx-auto text-gray-700 mb-3" />
                     <p className="text-gray-500 text-sm">{search ? 'Nincs a keresésnek megfelelő felhasználó.' : 'Még nincs felhasználó.'}</p>
                   </td>
@@ -174,6 +213,9 @@ export default function AdminUsersPage() {
                 filtered.map((u) => {
                   const badge = ROLE_BADGE[u.role];
                   const tp = trustProfiles[u.id] || { trustScore: 10, isTrusted: false, autoApprovalEnabled: false };
+                  const isSelf = currentUser?.id === u.id;
+                  const isDeleting = deletingId === u.id;
+
                   return (
                     <tr key={u.id} className="border-b border-[#1E1E1E]/50 hover:bg-[#1E1E1E]/30 transition-colors">
                       <td className="px-4 py-3.5 text-gray-200 font-medium">{u.email ?? '—'}</td>
@@ -229,6 +271,21 @@ export default function AdminUsersPage() {
                           }`}
                         >
                           {tp.isTrusted ? 'Megbízható Feltöltő ✓' : '+ Megbízhatóvá tétel'}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          disabled={isSelf || isDeleting}
+                          title={isSelf ? 'Saját magadat nem törölheted' : 'Felhasználó törlése'}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                            isSelf
+                              ? 'opacity-40 cursor-not-allowed bg-gray-800 text-gray-500 border-gray-700'
+                              : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40'
+                          }`}
+                        >
+                          <Trash2 size={14} />
+                          <span>{isDeleting ? 'Törlés...' : 'Törlés'}</span>
                         </button>
                       </td>
                     </tr>
