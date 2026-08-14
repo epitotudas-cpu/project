@@ -12,6 +12,7 @@ import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import AuthPromptModal from '../components/AuthPromptModal';
 import TermDetailModal from '../components/TermDetailModal';
 import {
+  useGlossaryCategorySettings,
   getGlossaryCategorySettings,
   type GlossaryCategorySettings,
 } from '../services/glossaryCategorySettingsService';
@@ -106,9 +107,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const { user } = useAuth();
   const glossary = useGlossary();
 
-  const [categorySettings, setCategorySettings] = useState<GlossaryCategorySettings>(() =>
-    getGlossaryCategorySettings(),
-  );
+  const categorySettings = useGlossaryCategorySettings();
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     try {
@@ -127,16 +126,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
       // Storage unavailable fallback
     }
   };
-
-  useEffect(() => {
-    const updateSettings = () => setCategorySettings(getGlossaryCategorySettings());
-    window.addEventListener('glossary-category-settings-changed', updateSettings);
-    window.addEventListener('site-settings-changed', updateSettings);
-    return () => {
-      window.removeEventListener('glossary-category-settings-changed', updateSettings);
-      window.removeEventListener('site-settings-changed', updateSettings);
-    };
-  }, []);
 
   const [activeTab, setActiveTab] = useState<'technical' | 'industry'>('technical');
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);

@@ -1,7 +1,11 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+
 export interface GlossaryCategorySettingItem {
   categoryName: string;
   icon: string;
   enabled: boolean;
+  isCustom?: boolean;
 }
 
 export interface GlossaryCategorySettings {
@@ -43,13 +47,24 @@ export const DEFAULT_GLOSSARY_CATEGORY_SETTINGS: GlossaryCategorySettings = {
 };
 
 const STORAGE_KEY = 'epitotudas_glossary_category_settings_v1';
+const SUPABASE_GLOSSARY_CAT_ID = '00000000-0000-0000-0000-000000000009';
+
+declare global {
+  interface Window {
+    __GLOBAL_GLOSSARY_CAT_SETTINGS__?: GlossaryCategorySettings;
+  }
+}
 
 export function getGlossaryCategorySettings(): GlossaryCategorySettings {
   try {
+    if (typeof window !== 'undefined' && window.__GLOBAL_GLOSSARY_CAT_SETTINGS__) {
+      return window.__GLOBAL_GLOSSARY_CAT_SETTINGS__;
+    }
+
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return {
+      const res = {
         ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS,
         ...parsed,
         categoryItems: {
@@ -57,18 +72,93 @@ export function getGlossaryCategorySettings(): GlossaryCategorySettings {
           ...(parsed.categoryItems || {}),
         },
       };
+      if (typeof window !== 'undefined') window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = res;
+      return res;
     }
   } catch (err) {
     console.error('Hiba a fogalomtár kategória beállítások betöltésekor:', err);
   }
+  if (typeof window !== 'undefined') window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = DEFAULT_GLOSSARY_CATEGORY_SETTINGS;
   return DEFAULT_GLOSSARY_CATEGORY_SETTINGS;
 }
 
 export function saveGlossaryCategorySettings(settings: GlossaryCategorySettings): void {
   try {
+    if (typeof window !== 'undefined') {
+      window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = settings;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     window.dispatchEvent(new Event('glossary-category-settings-changed'));
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_GLOSSARY_CAT_ID,
+          name: '__SYSTEM_CONFIG_GLOSSARY_CATEGORY_SETTINGS__',
+          slug: 'system-glossary-cat-config',
+          description: JSON.stringify(settings),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        console.warn('Supabase glossary category cloud sync info:', err);
+      }
+    })();
   } catch (err) {
     console.error('Hiba a fogalomtár kategória beállítások mentésekor:', err);
   }
+}
+
+export async function fetchGlossaryCategorySettingsFromCloud(): Promise<GlossaryCategorySettings | null> {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_GLOSSARY_CAT_ID)
+      .maybeSingle();
+
+    if (!error && data?.description && data.description.startsWith('{')) {
+      const parsed = JSON.parse(data.description);
+      if (parsed && parsed.categoryItems) {
+        const merged = {
+          ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS,
+          ...parsed,
+          categoryItems: {
+            ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS.categoryItems,
+            ...(parsed.categoryItems || {}),
+          },
+        };
+        if (typeof window !== 'undefined') {
+          window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = merged;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          window.dispatchEvent(new Event('glossary-category-settings-changed'));
+        }
+        return merged;
+      }
+    }
+  } catch (err) {
+    console.warn('Cloud glossary category settings fetch info:', err);
+  }
+  return null;
+}
+
+export function useGlossaryCategorySettings(): GlossaryCategorySettings {
+  const [settings, setSettings] = useState<GlossaryCategorySettings>(() => getGlossaryCategorySettings());
+
+  useEffect(() => {
+    function handleChange() {
+      setSettings(getGlossaryCategorySettings());
+    }
+    handleChange();
+
+    void fetchGlossaryCategorySettingsFromCloud().then((cloudData) => {
+      if (cloudData) setSettings(cloudData);
+    });
+
+    window.addEventListener('glossary-category-settings-changed', handleChange);
+    return () => window.removeEventListener('glossary-category-settings-changed', handleChange);
+  }, []);
+
+  return settings;
 }
