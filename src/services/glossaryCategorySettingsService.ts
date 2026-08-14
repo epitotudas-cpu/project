@@ -13,6 +13,7 @@ export interface GlossaryCategorySettings {
   showFeaturedCategories: boolean;
   showCategoryIcons: boolean;
   categoryItems: Record<string, GlossaryCategorySettingItem>;
+  deletedCategories?: string[];
 }
 
 export function getDefaultCategoryIcon(catName?: string | null): string {
@@ -48,25 +49,35 @@ export function getDefaultCategoryIcon(catName?: string | null): string {
 }
 
 function sanitizeCategorySettings(settings: GlossaryCategorySettings): GlossaryCategorySettings {
-  if (!settings || !settings.categoryItems) return settings;
+  if (!settings) return DEFAULT_GLOSSARY_CATEGORY_SETTINGS;
+  const deletedList = Array.isArray(settings.deletedCategories) ? settings.deletedCategories : [];
+  const rawItems = settings.categoryItems || {};
   const nextItems: Record<string, GlossaryCategorySettingItem> = {};
-  for (const [key, item] of Object.entries(settings.categoryItems)) {
+
+  for (const [key, item] of Object.entries(rawItems)) {
+    const isDeleted = deletedList.includes(key);
     const isBrickWall = item.icon === '🧱';
     const isMasonry = key.toLowerCase().includes('fal') || key.toLowerCase().includes('kőműves');
+
     nextItems[key] = {
       ...item,
+      enabled: isDeleted ? false : (item.enabled !== false),
       icon: (isBrickWall && !isMasonry) ? getDefaultCategoryIcon(key) : (item.icon || getDefaultCategoryIcon(key)),
     };
   }
+
   return {
-    ...settings,
+    showFeaturedCategories: settings.showFeaturedCategories !== false,
+    showCategoryIcons: settings.showCategoryIcons !== false,
     categoryItems: nextItems,
+    deletedCategories: deletedList,
   };
 }
 
 export const DEFAULT_GLOSSARY_CATEGORY_SETTINGS: GlossaryCategorySettings = {
   showFeaturedCategories: true,
   showCategoryIcons: true,
+  deletedCategories: [],
   categoryItems: {
     'Alapozás & Földmunka': { categoryName: 'Alapozás & Földmunka', icon: '🚜', enabled: true },
     'Alapozás': { categoryName: 'Alapozás', icon: '🏗️', enabled: true },

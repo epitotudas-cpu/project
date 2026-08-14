@@ -46,20 +46,25 @@ export default function GlossaryCategorySettingsModal({
     if (isOpen) {
       const current = getGlossaryCategorySettings();
       const updatedItems = { ...current.categoryItems };
+      const deletedList = current.deletedCategories || [];
 
-      // Ensure all available categories are present in the settings object
+      // Ensure all available categories are present in the settings object unless explicitly deleted
       availableCategories.forEach((cat) => {
-        if (!updatedItems[cat]) {
-          updatedItems[cat] = {
-            categoryName: cat,
-            icon: getDefaultCategoryIcon(cat),
-            enabled: true,
-          };
-        } else if (updatedItems[cat].icon === '🧱' && !cat.toLowerCase().includes('fal') && !cat.toLowerCase().includes('kőműves')) {
-          updatedItems[cat] = {
-            ...updatedItems[cat],
-            icon: getDefaultCategoryIcon(cat),
-          };
+        if (!deletedList.includes(cat)) {
+          if (!updatedItems[cat]) {
+            updatedItems[cat] = {
+              categoryName: cat,
+              icon: getDefaultCategoryIcon(cat),
+              enabled: true,
+            };
+          } else if (updatedItems[cat].icon === '🧱' && !cat.toLowerCase().includes('fal') && !cat.toLowerCase().includes('kőműves')) {
+            updatedItems[cat] = {
+              ...updatedItems[cat],
+              icon: getDefaultCategoryIcon(cat),
+            };
+          }
+        } else {
+          delete updatedItems[cat];
         }
       });
 
@@ -100,9 +105,17 @@ export default function GlossaryCategorySettingsModal({
         icon: getDefaultCategoryIcon(catName),
         enabled: true,
       };
-      const updatedItem = { ...existing, ...updates };
+
+      const isUpdatingIconEmoji = updates.icon !== undefined && updates.customImageUrl === undefined;
+      const updatedItem: GlossaryCategorySettingItem = {
+        ...existing,
+        ...updates,
+        ...(isUpdatingIconEmoji ? { customImageUrl: undefined } : {}),
+      };
 
       const updatedCategoryItems = { ...prev.categoryItems };
+      const nextDeleted = (prev.deletedCategories || []).filter((c) => c !== catName && c !== updates.categoryName);
+
       if (updates.categoryName && updates.categoryName !== catName) {
         delete updatedCategoryItems[catName];
         updatedCategoryItems[updates.categoryName] = updatedItem;
@@ -113,6 +126,7 @@ export default function GlossaryCategorySettingsModal({
       return {
         ...prev,
         categoryItems: updatedCategoryItems,
+        deletedCategories: nextDeleted,
       };
     });
   }
@@ -122,10 +136,14 @@ export default function GlossaryCategorySettingsModal({
       setSettings((prev) => {
         const nextItems = { ...prev.categoryItems };
         delete nextItems[catName];
-        return {
+        const nextDeleted = Array.from(new Set([...(prev.deletedCategories || []), catName]));
+        const newSettings = {
           ...prev,
           categoryItems: nextItems,
+          deletedCategories: nextDeleted,
         };
+        saveGlossaryCategorySettings(newSettings);
+        return newSettings;
       });
       toast.info(`"${catName}" kategória beállítása törölve.`);
     }
@@ -143,8 +161,10 @@ export default function GlossaryCategorySettingsModal({
       return;
     }
 
+    const nextDeleted = (settings.deletedCategories || []).filter((c) => c !== name);
     setSettings((prev) => ({
       ...prev,
+      deletedCategories: nextDeleted,
       categoryItems: {
         ...prev.categoryItems,
         [name]: {
@@ -320,7 +340,10 @@ export default function GlossaryCategorySettingsModal({
                       <input
                         type="text"
                         value={newCatIcon}
-                        onChange={(e) => setNewCatIcon(e.target.value)}
+                        onChange={(e) => {
+                          setNewCatIcon(e.target.value);
+                          setNewCatImageUrl('');
+                        }}
                         placeholder="Emoji"
                         className="w-full bg-[#222] border border-[#333] rounded-lg px-2.5 py-2 text-xs text-center font-bold text-white focus:outline-none focus:border-[#FFC400]"
                       />
@@ -514,7 +537,7 @@ export default function GlossaryCategorySettingsModal({
                       <input
                         type="text"
                         value={item.icon}
-                        onChange={(e) => updateCategoryItem(item.categoryName, { icon: e.target.value })}
+                        onChange={(e) => updateCategoryItem(item.categoryName, { icon: e.target.value, customImageUrl: undefined })}
                         placeholder="Emoji"
                         className="w-14 bg-[#1C1C1C] border border-[#2A2A2A] rounded-lg px-2 py-1 text-xs text-center font-bold text-white focus:outline-none focus:border-[#FFC400]"
                       />

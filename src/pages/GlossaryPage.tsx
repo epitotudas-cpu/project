@@ -204,9 +204,12 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
   const categoryStats = useMemo(() => {
     const map = new Map<string, number>();
+    const deletedList = categorySettings.deletedCategories || [];
     tabTerms.forEach((t) => {
       if (t.category) {
         const catName = t.category.trim();
+        if (deletedList.includes(catName) || deletedList.includes(t.category)) return;
+
         const configItem = categorySettings.categoryItems?.[catName] || categorySettings.categoryItems?.[t.category];
         if (configItem && configItem.enabled === false) return;
         map.set(catName, (map.get(catName) ?? 0) + 1);
