@@ -32,3 +32,14 @@ export async function resetPasswordForEmail(email: string, options: { redirectTo
 export async function updateUser(payload: { password?: string }) {
   return supabase.auth.updateUser(payload);
 }
+
+export async function resendVerificationEmail(email: string) {
+  return supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+    },
+  });
+}
+

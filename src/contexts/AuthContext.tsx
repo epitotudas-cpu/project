@@ -16,6 +16,7 @@ interface AuthContextType {
   requestPasswordReset: (email: string) => Promise<{ error?: string }>;
   updatePassword: (password: string) => Promise<{ error?: string }>;
   updateProfile: (data: { full_name?: string }) => Promise<{ error?: string }>;
+  resendVerificationEmail: (email: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,6 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     authClient.getSession().then(({ data: { session } }) => {
+      if (session?.user && !session.user.email_confirmed_at) {
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -40,6 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = authClient.onAuthStateChange((event, session) => {
       setAuthEvent(event);
+      if (session?.user && !session.user.email_confirmed_at) {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -69,28 +83,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await authClient.signInWithPassword(email, password);
-    if (!error) return {};
-    if (error.message.includes('Email not confirmed')) {
-      return { error: 'Kérjük erősítse meg az email-címét a bejelentkezés előtt.' };
+    const { data, error } = await authClient.signInWithPassword(email, password);
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('email not confirmed')) {
+        return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
+      }
+      if (msg.includes('invalid login credentials')) {
+        return { error: 'Hibás email-cím vagy jelszó.' };
+      }
+      return { error: error.message };
     }
-    if (error.message.includes('Invalid login credentials')) {
-      return { error: 'Hibás email-cím vagy jelszó.' };
+
+    if (data?.user && !data.user.email_confirmed_at) {
+      await authClient.signOut();
+      return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
     }
-    return { error: error.message };
+
+    return {};
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await authClient.signUp(email, password, {
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}` : undefined;
+    const { data, error } = await authClient.signUp(email, password, {
       data: { full_name: fullName },
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: redirectUrl,
     });
-    if (!error) return {};
-    const msg = error.message.toLowerCase();
-    if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already exists')) {
-      return { error: 'Ez az email-cím már regisztrált.' };
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already exists')) {
+        return { error: 'Ez az email-cím már regisztrált.' };
+      }
+      return { error: error.message };
     }
-    return { error: error.message };
+
+    // Always sign out immediately if session or user was returned, so the user CANNOT log in automatically without confirming email!
+    if (data?.session || (data?.user && !data.user.email_confirmed_at)) {
+      await authClient.signOut();
+    }
+    return {};
   };
 
   const signOut = async () => {
@@ -124,10 +155,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    const { error } = await authClient.resendVerificationEmail(email);
+    if (error) return { error: error.message };
+    return {};
+  };
+
   return (
     <AuthContext.Provider value={{
       user, profile, session, loading, authEvent,
-      signIn, signUp, signOut, requestPasswordReset, updatePassword, updateProfile,
+      signIn, signUp, signOut, requestPasswordReset, updatePassword, updateProfile, resendVerificationEmail,
     }}>
       {children}
     </AuthContext.Provider>
