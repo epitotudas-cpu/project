@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Search, Home, ChevronRight, BookOpen, AlertCircle,
   Lock, ArrowRight, Clock, Tag, GraduationCap,
@@ -13,7 +13,6 @@ import AuthPromptModal from '../components/AuthPromptModal';
 import TermDetailModal from '../components/TermDetailModal';
 import {
   useGlossaryCategorySettings,
-  getGlossaryCategorySettings,
   type GlossaryCategorySettings,
 } from '../services/glossaryCategorySettingsService';
 
@@ -421,7 +420,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {categoryStats.map(([cat, count]) => {
-                    const icon = getCategoryIcon(cat, categorySettings);
                     return (
                       <button
                         key={cat}
