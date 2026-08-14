@@ -31,6 +31,7 @@ import {
   ZoomIn,
   RotateCcw,
   Target,
+  Upload,
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { Category } from '../lib/supabase';
@@ -175,6 +176,7 @@ function formFromCategory(category: Category): FormState {
 
 function isValidUrl(url: string): boolean {
   if (!url.trim()) return true;
+  if (url.trim().startsWith('data:image/')) return true;
   try {
     const u = new URL(url.trim());
     return u.protocol === 'http:' || u.protocol === 'https:';
@@ -191,6 +193,32 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'style' | 'media' | 'seo'>('general');
   const previewRef = useRef<HTMLDivElement>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const bannerFileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleLocalCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        update('image_url', evt.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleLocalBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        update('banner_url', evt.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
 
   useEffect(() => {
     if (category) {
@@ -585,20 +613,45 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
           {/* 3. FÜL: Képek & Kézi Beállítás */}
           {activeTab === 'media' && (
             <div className="space-y-6">
-              {/* Borítókép URL */}
-              <div>
+              {/* Borítókép URL és Helyi Fájl Feltöltés */}
+              <input
+                ref={coverFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLocalCoverUpload}
+                className="hidden"
+              />
+              <input
+                ref={bannerFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLocalBannerUpload}
+                className="hidden"
+              />
+
+              <div className="space-y-2">
                 <label className={labelClass}>
-                  <ImageIcon size={12} className="inline mr-1 text-[#FFC400]" /> Kategória Borítókép (Kártya / Kiskép URL)
+                  <ImageIcon size={12} className="inline mr-1 text-[#FFC400]" /> Kategória Borítókép (Saját gép vagy URL)
                 </label>
-                <input
-                  type="url"
-                  className={`${fieldClass} font-mono text-xs`}
-                  value={form.image_url}
-                  onChange={(e) => update('image_url', e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                />
-                <p className="text-[11px] text-gray-500 mt-1">
-                  Megjelenik a kategória kártyákon és a böngésző fejlécekben.
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    className={`${fieldClass} font-mono text-xs flex-1`}
+                    value={form.image_url}
+                    onChange={(e) => update('image_url', e.target.value)}
+                    placeholder="Saját kép URL vagy tölts fel egyet saját gépről..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => coverFileInputRef.current?.click()}
+                    className="px-3.5 py-2 bg-[#1A1A1A] hover:bg-[#252525] border border-[#2A2A2A] text-[#FFC400] text-xs font-extrabold rounded-lg transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+                  >
+                    <Upload size={14} /> Saját Gép
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Tallózd be a saját képedet a gépedről, vagy illessz be egy képhivatkozást. Megjelenik a kategória kártyákon.
                 </p>
               </div>
 
@@ -618,7 +671,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                 </div>
 
                 {/* 1. KATTINTHATÓ ÉLŐ FÓKUSZPONT CANVAS */}
-                {form.image_url.trim() && isValidUrl(form.image_url) ? (
+                {form.image_url.trim() ? (
                   <div className="space-y-2">
                     <div
                       ref={previewRef}
@@ -782,19 +835,28 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                 </div>
               </div>
 
-              {/* Banner / Hero Háttérkép URL */}
-              <div>
+              {/* Banner / Hero Háttérkép URL és Helyi Fájl Feltöltés */}
+              <div className="space-y-2">
                 <label className={labelClass}>
-                  <Link size={12} className="inline mr-1 text-[#FFC400]" /> Fejléc Banner / Hero Háttérkép URL (Opcionális)
+                  <Link size={12} className="inline mr-1 text-[#FFC400]" /> Fejléc Banner / Hero Háttérkép (Saját gép vagy URL)
                 </label>
-                <input
-                  type="url"
-                  className={`${fieldClass} font-mono text-xs`}
-                  value={form.banner_url}
-                  onChange={(e) => update('banner_url', e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                />
-                <p className="text-[11px] text-gray-500 mt-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    className={`${fieldClass} font-mono text-xs flex-1`}
+                    value={form.banner_url}
+                    onChange={(e) => update('banner_url', e.target.value)}
+                    placeholder="https://... vagy tölts fel háttérképet saját gépről..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => bannerFileInputRef.current?.click()}
+                    className="px-3.5 py-2 bg-[#1A1A1A] hover:bg-[#252525] border border-[#2A2A2A] text-[#FFC400] text-xs font-extrabold rounded-lg transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+                  >
+                    <Upload size={14} /> Saját Gép
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-500">
                   Nagy felbontású háttérkép a kategória oldal tetején található bannerhez (Ajánlott: 1920x600px).
                 </p>
 
