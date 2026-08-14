@@ -3,6 +3,7 @@ import { X, Save, Eye, EyeOff, Sparkles, Search, Layers, RefreshCw, Plus, Trash2
 import {
   getGlossaryCategorySettings,
   saveGlossaryCategorySettings,
+  getDefaultCategoryIcon,
   type GlossaryCategorySettings,
   type GlossaryCategorySettingItem,
 } from '../services/glossaryCategorySettingsService';
@@ -33,7 +34,7 @@ export default function GlossaryCategorySettingsModal({
 
   // Form State for Adding a New Category Icon
   const [newCatName, setNewCatName] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState('🧱');
+  const [newCatIcon, setNewCatIcon] = useState('🏗️');
   const [newCatImageUrl, setNewCatImageUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -51,8 +52,13 @@ export default function GlossaryCategorySettingsModal({
         if (!updatedItems[cat]) {
           updatedItems[cat] = {
             categoryName: cat,
-            icon: '🧱',
+            icon: getDefaultCategoryIcon(cat),
             enabled: true,
+          };
+        } else if (updatedItems[cat].icon === '🧱' && !cat.toLowerCase().includes('fal') && !cat.toLowerCase().includes('kőműves')) {
+          updatedItems[cat] = {
+            ...updatedItems[cat],
+            icon: getDefaultCategoryIcon(cat),
           };
         }
       });
@@ -91,7 +97,7 @@ export default function GlossaryCategorySettingsModal({
     setSettings((prev) => {
       const existing = prev.categoryItems[catName] || {
         categoryName: catName,
-        icon: '🧱',
+        icon: getDefaultCategoryIcon(catName),
         enabled: true,
       };
       const updatedItem = { ...existing, ...updates };
@@ -143,7 +149,7 @@ export default function GlossaryCategorySettingsModal({
         ...prev.categoryItems,
         [name]: {
           categoryName: name,
-          icon: newCatIcon || '🧱',
+          icon: newCatIcon || getDefaultCategoryIcon(name),
           customImageUrl: newCatImageUrl.trim() || undefined,
           enabled: true,
           isCustom: true,
@@ -153,7 +159,7 @@ export default function GlossaryCategorySettingsModal({
 
     toast.success(`"${name}" kategória sikeresen hozzáadva!`);
     setNewCatName('');
-    setNewCatIcon('🧱');
+    setNewCatIcon('🏗️');
     setNewCatImageUrl('');
     setShowAddForm(false);
   }

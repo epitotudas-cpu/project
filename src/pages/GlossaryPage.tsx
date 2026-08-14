@@ -13,6 +13,7 @@ import AuthPromptModal from '../components/AuthPromptModal';
 import TermDetailModal from '../components/TermDetailModal';
 import {
   useGlossaryCategorySettings,
+  getDefaultCategoryIcon,
   type GlossaryCategorySettings,
 } from '../services/glossaryCategorySettingsService';
 
@@ -20,61 +21,20 @@ interface GlossaryPageProps {
   onNavigate: (page: string) => void;
 }
 
-/* ── Kategória ikonok ──────────────────────────────────────────── */
-const CATEGORY_ICONS: Record<string, string> = {
-  'Alapozás': '🏗️',
-  'Alapozás & Földmunka': '🚜',
-  'Földmunka': '🚜',
-  'Szerkezetépítés': '🏗️',
-  'Gépek & Szerszámok': '🛠️',
-  'Gépek és kisgépek': '🛠️',
-  'Szerszámok': '🔧',
-  'Szigetelés': '🛡️',
-  'Hőszigetelés': '🌡️',
-  'Hőszigetelek': '🌡️',
-  'Vízszigetelés': '💧',
-  'Vízszigetelek': '💧',
-  'Vízszigetelésk': '💧',
-  'Páratechnika': '💨',
-  'Anyagismeret': '🧱',
-  'Zsaluzás': '🪵',
-  'Födémek': '🏛️',
-  'Szakipar': '🔧',
-  'Vasbeton': '⚙️',
-  'Falazás': '🧱',
-  'Tetőfedés': '🏠',
-  'Villamos': '⚡',
-  'Gépészet': '⚙️',
-  'Vakolás': '🖌️',
-  'Burkolás': '🔲',
-  'Asztalos': '🪚',
-  'Kőműves': '🧱',
-  'Ács': '🪚',
-  'Burkoló': '🔲',
-};
-
 function getCategoryIcon(cat?: string | null, customSettings?: GlossaryCategorySettings): string {
   if (!cat) return '📚';
   const trimmed = cat.trim();
 
   const configuredItem = customSettings?.categoryItems?.[trimmed] || customSettings?.categoryItems?.[cat];
   if (configuredItem && configuredItem.enabled !== false && configuredItem.icon && configuredItem.icon.trim()) {
-    return configuredItem.icon.trim();
+    const icon = configuredItem.icon.trim();
+    if (icon === '🧱' && !trimmed.toLowerCase().includes('fal') && !trimmed.toLowerCase().includes('kőműves')) {
+      return getDefaultCategoryIcon(trimmed);
+    }
+    return icon;
   }
 
-  if (CATEGORY_ICONS[trimmed]) return CATEGORY_ICONS[trimmed];
-  if (CATEGORY_ICONS[cat]) return CATEGORY_ICONS[cat];
-
-  const lower = trimmed.toLowerCase();
-  if (lower.includes('szigetel')) return '🛡️';
-  if (lower.includes('alap') || lower.includes('föld')) return '🚜';
-  if (lower.includes('gép') || lower.includes('szer')) return '🛠️';
-  if (lower.includes('anyag')) return '🧱';
-  if (lower.includes('fal') || lower.includes('kőműves')) return '🧱';
-  if (lower.includes('tető') || lower.includes('ácsl')) return '🏠';
-  if (lower.includes('burkol')) return '🔲';
-
-  return '📚';
+  return getDefaultCategoryIcon(trimmed);
 }
 
 function renderCategoryIconElement(cat?: string | null, customSettings?: GlossaryCategorySettings) {
@@ -100,12 +60,12 @@ function renderCategoryIconElement(cat?: string | null, customSettings?: Glossar
   }
 
   // 2. Check if icon itself is an image URL / Data URL
-  const rawIcon = (configuredItem?.icon && configuredItem.icon.trim()) || CATEGORY_ICONS[trimmed] || CATEGORY_ICONS[cat];
+  const rawIcon = configuredItem?.icon?.trim();
 
   if (rawIcon && (rawIcon.startsWith('http://') || rawIcon.startsWith('https://') || rawIcon.startsWith('data:image/'))) {
     return (
       <img
-        src={rawIcon.trim()}
+        src={rawIcon}
         alt={trimmed}
         className="w-8 h-8 object-contain mb-2 inline-block rounded-md drop-shadow-xs"
         onError={(e) => {
@@ -116,7 +76,7 @@ function renderCategoryIconElement(cat?: string | null, customSettings?: Glossar
   }
 
   // 3. Fallback emoji string
-  const iconStr = rawIcon || getCategoryIcon(cat, customSettings);
+  const iconStr = getCategoryIcon(cat, customSettings);
   return <div className="text-2xl mb-2 leading-none select-none">{iconStr}</div>;
 }
 

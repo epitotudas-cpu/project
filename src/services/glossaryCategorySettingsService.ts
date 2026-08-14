@@ -15,6 +15,55 @@ export interface GlossaryCategorySettings {
   categoryItems: Record<string, GlossaryCategorySettingItem>;
 }
 
+export function getDefaultCategoryIcon(catName?: string | null): string {
+  if (!catName) return '📚';
+  const trimmed = catName.trim();
+  const lower = trimmed.toLowerCase();
+
+  if (lower.includes('alap') && lower.includes('föld')) return '🚜';
+  if (lower.includes('alap')) return '🏗️';
+  if (lower.includes('szerkezet')) return '🏗️';
+  if (lower.includes('gép') || lower.includes('szerszám')) return '🛠️';
+  if (lower.includes('hőszigetel') || lower.includes('hőszigetelek')) return '🌡️';
+  if (lower.includes('vízszigetel') || lower.includes('vízszigetelek')) return '💧';
+  if (lower.includes('szigetel')) return '🛡️';
+  if (lower.includes('pára')) return '💨';
+  if (lower.includes('anyag')) return '🧪';
+  if (lower.includes('zsalu')) return '🪵';
+  if (lower.includes('födém')) return '🏛️';
+  if (lower.includes('vasbeton')) return '⚙️';
+  if (lower.includes('fal') || lower.includes('kőműves')) return '🧱';
+  if (lower.includes('tető') || lower.includes('bádog')) return '🏠';
+  if (lower.includes('villamos') || lower.includes('villar')) return '⚡';
+  if (lower.includes('gépész')) return '⚙️';
+  if (lower.includes('vakol')) return '🖌️';
+  if (lower.includes('burkol')) return '🔲';
+  if (lower.includes('asztalos') || lower.includes('ácsl') || lower.includes('ácsa') || lower.includes('ács')) return '🪚';
+  if (lower.includes('fest')) return '🎨';
+  if (lower.includes('kert')) return '🌱';
+  if (lower.includes('bont')) return '🔨';
+  if (lower.includes('szakipar')) return '🔧';
+
+  return '📚';
+}
+
+function sanitizeCategorySettings(settings: GlossaryCategorySettings): GlossaryCategorySettings {
+  if (!settings || !settings.categoryItems) return settings;
+  const nextItems: Record<string, GlossaryCategorySettingItem> = {};
+  for (const [key, item] of Object.entries(settings.categoryItems)) {
+    const isBrickWall = item.icon === '🧱';
+    const isMasonry = key.toLowerCase().includes('fal') || key.toLowerCase().includes('kőműves');
+    nextItems[key] = {
+      ...item,
+      icon: (isBrickWall && !isMasonry) ? getDefaultCategoryIcon(key) : (item.icon || getDefaultCategoryIcon(key)),
+    };
+  }
+  return {
+    ...settings,
+    categoryItems: nextItems,
+  };
+}
+
 export const DEFAULT_GLOSSARY_CATEGORY_SETTINGS: GlossaryCategorySettings = {
   showFeaturedCategories: true,
   showCategoryIcons: true,
@@ -29,7 +78,7 @@ export const DEFAULT_GLOSSARY_CATEGORY_SETTINGS: GlossaryCategorySettings = {
     'Hőszigetelés': { categoryName: 'Hőszigetelés', icon: '🌡️', enabled: true },
     'Vízszigetelés': { categoryName: 'Vízszigetelés', icon: '💧', enabled: true },
     'Páratechnika': { categoryName: 'Páratechnika', icon: '💨', enabled: true },
-    'Anyagismeret': { categoryName: 'Anyagismeret', icon: '🧱', enabled: true },
+    'Anyagismeret': { categoryName: 'Anyagismeret', icon: '🧪', enabled: true },
     'Zsaluzás': { categoryName: 'Zsaluzás', icon: '🪵', enabled: true },
     'Födémek': { categoryName: 'Födémek', icon: '🏛️', enabled: true },
     'Szakipar': { categoryName: 'Szakipar', icon: '🔧', enabled: true },
@@ -59,20 +108,20 @@ declare global {
 export function getGlossaryCategorySettings(): GlossaryCategorySettings {
   try {
     if (typeof window !== 'undefined' && window.__GLOBAL_GLOSSARY_CAT_SETTINGS__) {
-      return window.__GLOBAL_GLOSSARY_CAT_SETTINGS__;
+      return sanitizeCategorySettings(window.__GLOBAL_GLOSSARY_CAT_SETTINGS__);
     }
 
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      const res = {
+      const res = sanitizeCategorySettings({
         ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS,
         ...parsed,
         categoryItems: {
           ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS.categoryItems,
           ...(parsed.categoryItems || {}),
         },
-      };
+      });
       if (typeof window !== 'undefined') window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = res;
       return res;
     }
@@ -85,10 +134,11 @@ export function getGlossaryCategorySettings(): GlossaryCategorySettings {
 
 export function saveGlossaryCategorySettings(settings: GlossaryCategorySettings): void {
   try {
+    const sanitized = sanitizeCategorySettings(settings);
     if (typeof window !== 'undefined') {
-      window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = settings;
+      window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = sanitized;
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
     window.dispatchEvent(new Event('glossary-category-settings-changed'));
 
     void (async () => {
@@ -97,7 +147,7 @@ export function saveGlossaryCategorySettings(settings: GlossaryCategorySettings)
           id: SUPABASE_GLOSSARY_CAT_ID,
           name: '__SYSTEM_CONFIG_GLOSSARY_CATEGORY_SETTINGS__',
           slug: 'system-glossary-cat-config',
-          description: JSON.stringify(settings),
+          description: JSON.stringify(sanitized),
           article_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -122,14 +172,14 @@ export async function fetchGlossaryCategorySettingsFromCloud(): Promise<Glossary
     if (!error && data?.description && data.description.startsWith('{')) {
       const parsed = JSON.parse(data.description);
       if (parsed && parsed.categoryItems) {
-        const merged = {
+        const merged = sanitizeCategorySettings({
           ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS,
           ...parsed,
           categoryItems: {
             ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS.categoryItems,
             ...(parsed.categoryItems || {}),
           },
-        };
+        });
         if (typeof window !== 'undefined') {
           window.__GLOBAL_GLOSSARY_CAT_SETTINGS__ = merged;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
@@ -163,3 +213,4 @@ export function useGlossaryCategorySettings(): GlossaryCategorySettings {
 
   return settings;
 }
+
