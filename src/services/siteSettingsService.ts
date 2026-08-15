@@ -41,7 +41,7 @@ export interface SiteSettings {
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteTitle: 'ÉpítőTudás',
-  tagline: 'Építőipari Tudásbázis & Szakmai Enciklopédia',
+  tagline: 'Építőipari tudásbázis',
   logoUrl: '',
   primaryColor: '#FFC400',
   themeMode: 'dark',
@@ -111,7 +111,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     document.documentElement.style.setProperty('--color-accent-light', adjustColorBrightness(accentColor, 15));
 
     if (settings?.siteTitle) {
-      document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
+      document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari tudásbázis'}`;
     }
 
     // Dynamic Favicon & Apple Touch Icon from admin logoUrl

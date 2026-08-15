@@ -62,7 +62,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
             >
               <img
                 src={logoUrl}
-                alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+                alt="ÉpítőTudás"
                 className="h-9 max-h-10 max-w-[200px] w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/logo.png';

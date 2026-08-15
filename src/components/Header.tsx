@@ -109,10 +109,11 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         <button
           onClick={() => onNavigate('home')}
           className="flex items-center gap-2 shrink-0 group"
+          title="ÉpítőTudás főoldal"
         >
           <img
             src={siteSettings.logoUrl || '/logo.png'}
-            alt={`${siteSettings.siteTitle} logó`}
+            alt="ÉpítőTudás"
             className="h-8 md:h-10 max-h-10 max-w-[220px] w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/logo.png';
