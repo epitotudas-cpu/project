@@ -102,7 +102,7 @@ function adjustColorBrightness(hex: string, percent: number): string {
 }
 
 function sanitizeLogoUrl(url: string | undefined): string {
-  if (!url || !url.trim() || url.startsWith('data:') || url.length > 200) {
+  if (!url || !url.trim()) {
     return '/logo.png';
   }
   return url.trim();
