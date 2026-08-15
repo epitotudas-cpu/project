@@ -454,9 +454,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             </div>
 
             <div className="bg-[#0C213E]/80 border border-[#1E3A64] p-5 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Bizalmi Pontszám</span>
-              <span className="text-lg font-black text-emerald-400 block">
-                {profile.trustProfile?.trustScore || 10} pont
+              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Fiók Státusz</span>
+              <span className="text-lg font-black text-emerald-400 block flex items-center gap-1.5">
+                <CheckCircle2 size={18} /> Aktív Tag
               </span>
             </div>
           </div>
