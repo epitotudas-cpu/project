@@ -80,6 +80,32 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubTab>('profile_data');
 
+  // Sync tab state dynamically on hashchange / popstate navigation
+  useEffect(() => {
+    function handleTabSync() {
+      try {
+        const hash = window.location.hash;
+        if (hash.includes('tab=')) {
+          const tab = hash.split('tab=')[1].split('&')[0];
+          if (['overview', 'learning', 'saved', 'history', 'settings', 'help'].includes(tab)) {
+            setActiveMainSection(tab as MainSection);
+          } else if (['profile_data', 'trade_profile', 'notifications', 'security', 'appearance', 'privacy'].includes(tab)) {
+            setActiveMainSection('settings');
+            setActiveSettingsTab(tab as SettingsSubTab);
+          }
+        }
+      } catch {}
+    }
+
+    handleTabSync();
+    window.addEventListener('hashchange', handleTabSync);
+    window.addEventListener('popstate', handleTabSync);
+    return () => {
+      window.removeEventListener('hashchange', handleTabSync);
+      window.removeEventListener('popstate', handleTabSync);
+    };
+  }, []);
+
   // Form Fields State
   const [fullName, setFullName] = useState('');
   const [specialization, setSpecialization] = useState('');

@@ -482,12 +482,32 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <p className="text-white text-sm font-semibold truncate">{displayName}</p>
                   <p className="text-gray-400 text-xs truncate mt-0.5">{user.email}</p>
                 </div>
-                <button
-                  onClick={() => { onNavigate('profile'); setMobileOpen(false); }}
-                  className="w-full py-3 border border-gray-600 text-gray-300 text-sm font-medium rounded-xl flex items-center justify-center gap-2 min-h-[48px] active:bg-white/10"
-                >
-                  <Settings size={16} /> Fiók beállítások
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => { onNavigate('profile?tab=overview'); setMobileOpen(false); }}
+                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                  >
+                    <User size={14} className="text-accent" /> Fiókom
+                  </button>
+                  <button
+                    onClick={() => { onNavigate('profile?tab=learning'); setMobileOpen(false); }}
+                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                  >
+                    <GraduationCap size={14} className="text-blue-400" /> Tanulásom
+                  </button>
+                  <button
+                    onClick={() => { onNavigate('profile?tab=saved'); setMobileOpen(false); }}
+                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                  >
+                    <Bookmark size={14} className="text-purple-400" /> Mentéseim
+                  </button>
+                  <button
+                    onClick={() => { onNavigate('profile?tab=settings'); setMobileOpen(false); }}
+                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                  >
+                    <Sliders size={14} className="text-emerald-400" /> Beállítások
+                  </button>
+                </div>
                 {isAdmin && (
                   <button
                     onClick={() => { onNavigate('admin'); setMobileOpen(false); }}

@@ -203,11 +203,12 @@ function AppContent() {
     try {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('epitotudas_active_page', validPage);
-        const targetHash = validPage === 'home' ? '' : params?.articleSlug ? `#article?slug=${params.articleSlug}` : `#${validPage}`;
+        const targetHash = validPage === 'home' ? '' : params?.articleSlug ? `#article?slug=${params.articleSlug}` : page.includes('?') ? `#${page}` : `#${validPage}`;
         if (window.location.hash !== targetHash) {
           window.history.pushState(null, '', targetHash || window.location.pathname);
         }
         window.dispatchEvent(new Event('popstate'));
+        window.dispatchEvent(new Event('hashchange'));
         window.scrollTo(0, 0);
       }
     } catch {
