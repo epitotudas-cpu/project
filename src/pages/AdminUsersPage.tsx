@@ -70,6 +70,12 @@ function getTimeAgo(isoString?: string | null): string {
   }
 }
 
+function checkIsConfirmed(u: Profile): boolean {
+  if (u.email_confirmed_at || u.confirmed_at) return true;
+  if (u.role === 'admin' || u.role === 'editor') return true;
+  return false;
+}
+
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<Profile[]>([]);
@@ -163,9 +169,7 @@ export default function AdminUsersPage() {
     let pending = 0;
 
     users.forEach((u) => {
-      // In Supabase profile listing, users created with verified email or admin roles are confirmed
-      const isConfirmed = Boolean(u.email_confirmed_at || u.confirmed_at || u.role === 'admin' || u.role === 'editor' || u.created_at);
-      if (isConfirmed) {
+      if (checkIsConfirmed(u)) {
         confirmed++;
       } else {
         pending++;
@@ -192,7 +196,7 @@ export default function AdminUsersPage() {
       if (!matchesSearch) return false;
 
       // Tab filter
-      const isConfirmed = Boolean(u.email_confirmed_at || u.confirmed_at || u.role === 'admin' || u.role === 'editor' || u.created_at);
+      const isConfirmed = checkIsConfirmed(u);
       const tp = trustProfiles[u.id];
 
       if (activeTab === 'confirmed') return isConfirmed;
@@ -418,7 +422,7 @@ export default function AdminUsersPage() {
                   const tp = trustProfiles[u.id] || { trustScore: 10, isTrusted: false, autoApprovalEnabled: false };
                   const isSelf = currentUser?.id === u.id;
                   const isDeleting = deletingId === u.id;
-                  const isConfirmed = Boolean(u.email_confirmed_at || u.confirmed_at || u.role === 'admin' || u.role === 'editor' || u.created_at);
+                  const isConfirmed = checkIsConfirmed(u);
 
                   const confirmDateStr = u.email_confirmed_at || u.confirmed_at;
                   const lastActiveIso = u.last_sign_in_at || u.updated_at || u.created_at;
@@ -606,11 +610,15 @@ export default function AdminUsersPage() {
 
                 <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">E-mail Visszaigazolás Status</span>
-                  <span className="font-bold text-emerald-400 block">
-                    {selectedUserDetail.email_confirmed_at || selectedUserDetail.confirmed_at
-                      ? `Megerősítve (${formatHungarianDate(selectedUserDetail.email_confirmed_at || selectedUserDetail.confirmed_at)})`
-                      : 'Megerősített / Aktív'}
-                  </span>
+                  {checkIsConfirmed(selectedUserDetail) ? (
+                    <span className="font-bold text-emerald-400 block">
+                      Megerősítve ✓ {selectedUserDetail.email_confirmed_at || selectedUserDetail.confirmed_at ? `(${formatHungarianDate(selectedUserDetail.email_confirmed_at || selectedUserDetail.confirmed_at)})` : ''}
+                    </span>
+                  ) : (
+                    <span className="font-bold text-amber-400 block">
+                      Megerősítésre vár ⏳ (Függőben)
+                    </span>
+                  )}
                 </div>
 
                 <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
