@@ -38,7 +38,7 @@ export async function resendVerificationEmail(email: string) {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+      emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined,
     },
   });
 }

@@ -3,6 +3,42 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://olmavxcmkvvcebgqxohe.supabase.co';
 const supabaseAnonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sbWF2eGNta3Z2Y2ViZ3F4b2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNjAzNzksImV4cCI6MjA5NTgzNjM3OX0.uwz9kRkODHafloihBfDauFTAGk4dTb2X9TJrnF_vwHw';
 
+if (typeof window !== 'undefined') {
+  try {
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    const fullUrl = hash + search;
+
+    // Detect email verification callback and strip tokens to prevent automatic login
+    if (fullUrl.includes('confirmed=true') || fullUrl.includes('type=signup') || fullUrl.includes('type=email_change')) {
+      try {
+        sessionStorage.setItem('email_confirmed_success', 'true');
+      } catch {}
+
+      // Clear any stored tokens from localStorage so no active session remains
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('auth-token'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+      } catch {}
+
+      // Clean hash URL before createClient parses access_token
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + '#login');
+      } else {
+        window.location.hash = '#login';
+      }
+    }
+  } catch (e) {
+    void e;
+  }
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Json =

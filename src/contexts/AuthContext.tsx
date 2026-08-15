@@ -29,21 +29,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
 
   useEffect(() => {
-    authClient.getSession().then(({ data: { session } }) => {
-      if (session?.user && !session.user.email_confirmed_at) {
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    }).catch(() => setLoading(false));
+    // Check if returning from email confirmation
+    const isEmailConfirm = typeof window !== 'undefined' && (
+      window.location.hash.includes('confirmed=true') ||
+      window.location.hash.includes('type=signup') ||
+      sessionStorage.getItem('email_confirmed_success') === 'true'
+    );
+
+    if (isEmailConfirm) {
+      void authClient.signOut();
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+    } else {
+      authClient.getSession().then(({ data: { session } }) => {
+        if (session?.user && !session.user.email_confirmed_at) {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          loadProfile(session.user.id).finally(() => setLoading(false));
+        } else {
+          setLoading(false);
+        }
+      }).catch(() => setLoading(false));
+    }
 
     const { data: { subscription } } = authClient.onAuthStateChange((event, session) => {
       setAuthEvent(event);
@@ -51,13 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // If returning from signup email confirmation link, force sign out and signal login page
       if (typeof window !== 'undefined') {
         const hash = window.location.hash;
-        if (hash.includes('confirmed=true') || hash.includes('type=signup')) {
+        const isConfirming = hash.includes('confirmed=true') || hash.includes('type=signup') || sessionStorage.getItem('email_confirmed_success') === 'true';
+        if (isConfirming && session?.user) {
           void authClient.signOut();
           setSession(null);
           setUser(null);
           setProfile(null);
           setLoading(false);
-          try { sessionStorage.setItem('email_confirmed_success', 'true'); } catch {}
           return;
         }
       }
