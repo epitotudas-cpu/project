@@ -1,4 +1,5 @@
 import { LayoutDashboard, FileText, FolderTree, BookOpen, Library, Wrench, Settings, Home, Users, CheckSquare, Shield, Building2, Megaphone, Activity, X, Briefcase, GraduationCap, Compass } from 'lucide-react';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 export type AdminView =
   | 'dashboard'
@@ -90,6 +91,9 @@ export default function AdminSidebar({
   mobileOpen,
   onCloseMobile,
 }: AdminSidebarProps) {
+  const siteSettings = useSiteSettings();
+  const logoUrl = siteSettings.logoUrl || '/logo.png';
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -106,14 +110,24 @@ export default function AdminSidebar({
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="px-5 py-5 border-b border-[#1E1E1E] flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-black uppercase tracking-wider text-[#FFC400]">Admin</h2>
-            <p className="text-xs text-gray-500 mt-1">ÉpítőTudás panel</p>
+        <div className="px-5 py-4 border-b border-[#1E1E1E] flex items-center justify-between">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <img
+              src={logoUrl}
+              alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+              className="h-8 max-h-8 max-w-[140px] w-auto object-contain shrink-0"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.png';
+              }}
+            />
+            <div className="min-w-0">
+              <h2 className="text-xs font-black uppercase tracking-wider text-[#FFC400] truncate">Admin</h2>
+              <p className="text-[10px] text-gray-500 truncate">Panel</p>
+            </div>
           </div>
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 text-gray-500 hover:bg-[#1E1E1E] rounded-md transition-colors"
+            className="lg:hidden p-1.5 text-gray-500 hover:bg-[#1E1E1E] rounded-md transition-colors shrink-0"
             aria-label="Menü bezárása"
           >
             <X size={18} />

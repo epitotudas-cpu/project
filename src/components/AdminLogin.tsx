@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Lock, Mail, LogIn, AlertCircle } from 'lucide-react';
 import { signInAdmin } from '../lib/authService';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -11,6 +12,9 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const siteSettings = useSiteSettings();
+  const logoUrl = siteSettings.logoUrl || '/logo.png';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,8 +41,15 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#FFC400]/10 rounded-2xl border border-[#FFC400]/20 mb-4">
-            <Lock size={28} className="text-[#FFC400]" />
+          <div className="inline-flex items-center justify-center p-3 bg-[#FFC400]/10 rounded-2xl border border-[#FFC400]/20 mb-4">
+            <img
+              src={logoUrl}
+              alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+              className="h-10 max-h-12 max-w-[200px] w-auto object-contain shrink-0"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.png';
+              }}
+            />
           </div>
           <h1 className="text-2xl font-black text-white">Admin bejelentkezés</h1>
           <p className="text-gray-500 text-sm mt-2">Jelentkezz be az admin panel eléréséhez</p>

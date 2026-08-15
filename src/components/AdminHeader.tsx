@@ -1,6 +1,7 @@
 import { LogOut, Menu } from 'lucide-react';
 import GlobalSearch from './GlobalSearch';
 import type { AdminView } from './AdminSidebar';
+import { useSiteSettings } from '../services/siteSettingsService';
 
 interface AdminHeaderProps {
   userEmail: string | null;
@@ -17,6 +18,9 @@ export default function AdminHeader({
   onNavigateView,
   onOpenSidebar,
 }: AdminHeaderProps) {
+  const siteSettings = useSiteSettings();
+  const logoUrl = siteSettings.logoUrl || '/logo.png';
+
   return (
     <header className="sticky top-0 z-40 bg-[#0D0D0D]/95 backdrop-blur border-b border-[#1E1E1E] flex-shrink-0">
       <div className="px-4 sm:px-6 py-3 flex items-center gap-3">
@@ -27,6 +31,14 @@ export default function AdminHeader({
         >
           <Menu size={18} />
         </button>
+        <img
+          src={logoUrl}
+          alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+          className="lg:hidden h-7 max-h-7 w-auto object-contain shrink-0"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/logo.png';
+          }}
+        />
         <div className="flex-1 min-w-0">
           <GlobalSearch onNavigateView={onNavigateView} />
         </div>
