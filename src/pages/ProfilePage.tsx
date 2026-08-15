@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
 import { getTradeItems } from '../services/tradeService';
+import { deleteUser } from '../services/userService';
 
 interface ProfilePageProps {
   onNavigate?: (page: string) => void;
@@ -105,8 +106,29 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   // Appearance state
   const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>('dark');
 
-  // Delete account confirmation modal
+  // Delete account confirmation modal & process state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  async function handleDeleteAccount() {
+    if (!user) return;
+    try {
+      setDeletingAccount(true);
+      await deleteUser(user.id);
+      try {
+        localStorage.removeItem(`epitotudas_user_pref_${user.id}`);
+      } catch {}
+      await signOut();
+      if (onNavigate) onNavigate('home');
+    } catch (err) {
+      console.error('Hiba a fiók törlésekor:', err);
+      await signOut();
+      if (onNavigate) onNavigate('home');
+    } finally {
+      setDeletingAccount(false);
+      setDeleteModalOpen(false);
+    }
+  }
 
   // Available Trades List from existing system
   const availableTrades = useMemo(() => {
@@ -992,9 +1014,22 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     </div>
                     <button
                       onClick={exportUserDataJSON}
-                      className="px-3 py-1.5 bg-accent text-black font-extrabold text-xs rounded-lg flex items-center gap-1.5"
+                      className="px-3 py-1.5 bg-accent text-black font-extrabold text-xs rounded-lg flex items-center gap-1.5 cursor-pointer"
                     >
                       <Download size={14} /> Adatok Letöltése
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-red-950/30 border border-red-500/30 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-red-400 block">Fiók & Profil Végleges Törlése</span>
+                      <span className="text-[11px] text-gray-400 block">A profil és a személyes adatok végleges eltávolítása a rendszerből.</span>
+                    </div>
+                    <button
+                      onClick={() => setDeleteModalOpen(true)}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <AlertTriangle size={14} /> Fiók Törlése
                     </button>
                   </div>
                 </div>
@@ -1045,26 +1080,34 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               <div className="space-y-1">
                 <h3 className="text-lg font-bold text-white">Biztosan törölni szeretnéd a fiókodat?</h3>
                 <p className="text-xs text-gray-300 leading-relaxed">
-                  Ez a művelet végleges és nem visszavonható! Minden mentett tartalom, tanulási előzmény és fiókadat véglegesen törlésre kerül.
+                  Ez a művelet végleges és nem visszavonható! Minden fiókadatod és elmentett preferenciád törlésre kerül az ÉpítőTudás rendszeréből.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#1E3A64]">
               <button
+                type="button"
+                disabled={deletingAccount}
                 onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 bg-[#162C4E] text-gray-300 text-xs font-bold rounded-xl"
+                className="px-4 py-2 bg-[#162C4E] text-gray-300 text-xs font-bold rounded-xl hover:text-white transition-colors cursor-pointer"
               >
                 Mégse
               </button>
               <button
-                onClick={() => {
-                  setDeleteModalOpen(false);
-                  signOut();
-                }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl"
+                type="button"
+                disabled={deletingAccount}
+                onClick={handleDeleteAccount}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl disabled:opacity-50 flex items-center gap-2 transition-colors cursor-pointer"
               >
-                Fiók Végleges Törlése
+                {deletingAccount ? (
+                  <>
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-solid border-white border-r-transparent" />
+                    <span>Törlés folyamatban...</span>
+                  </>
+                ) : (
+                  <span>Fiók Végleges Törlése</span>
+                )}
               </button>
             </div>
           </div>
