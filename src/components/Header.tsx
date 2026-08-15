@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, User, LogOut, ChevronDown, Settings } from 'lucide-react';
+import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSiteSettings, type SiteSettings } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
@@ -249,33 +249,80 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-[#111] border border-[#1E1E1E] rounded-xl shadow-2xl overflow-hidden z-50">
-                    <div className="px-4 py-3 border-b border-[#1E1E1E]">
-                      <p className="text-white text-sm font-semibold truncate">{displayName}</p>
-                      <p className="text-gray-500 text-xs truncate mt-0.5">{user.email}</p>
+                  <div className="absolute right-0 mt-2 w-56 bg-[#111] border border-[#1E1E1E] rounded-xl shadow-2xl overflow-hidden z-50 divide-y divide-[#1E1E1E]/60 text-xs">
+                    <div className="px-4 py-3 bg-[#161616]">
+                      <p className="text-white text-xs font-bold truncate">{displayName}</p>
+                      <p className="text-gray-500 text-[11px] truncate mt-0.5">{user.email}</p>
                     </div>
-                    <button
-                      onClick={() => { setUserMenuOpen(false); onNavigate('profile'); }}
-                      className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2"
-                    >
-                      <User size={14} className="text-accent" />
-                      Profilom & Beállítások
-                    </button>
-                    {isAdmin && (
+
+                    <div className="py-1">
                       <button
-                        onClick={() => { setUserMenuOpen(false); onNavigate('admin'); }}
-                        className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2"
+                        onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=overview'); }}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
                       >
-                        <Settings size={14} className="text-accent" />
-                        Admin panel
+                        <User size={14} className="text-accent shrink-0" />
+                        Fiókom
                       </button>
+
+                      <button
+                        onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=learning'); }}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                      >
+                        <GraduationCap size={14} className="text-blue-400 shrink-0" />
+                        Tanulásom
+                      </button>
+
+                      <button
+                        onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=saved'); }}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                      >
+                        <Bookmark size={14} className="text-purple-400 shrink-0" />
+                        Mentéseim
+                      </button>
+
+                      <button
+                        onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=history'); }}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                      >
+                        <Clock size={14} className="text-amber-400 shrink-0" />
+                        Előzményeim
+                      </button>
+
+                      <button
+                        onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=settings'); }}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                      >
+                        <Sliders size={14} className="text-emerald-400 shrink-0" />
+                        Beállítások
+                      </button>
+
+                      <button
+                        onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=help'); }}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                      >
+                        <HelpCircle size={14} className="text-sky-400 shrink-0" />
+                        Segítség
+                      </button>
+                    </div>
+
+                    {isAdmin && (
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setUserMenuOpen(false); onNavigate('admin'); }}
+                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-bold"
+                        >
+                          <Settings size={14} className="text-accent shrink-0" />
+                          Admin panel
+                        </button>
+                      </div>
                     )}
-                    <div className="border-t border-[#1E1E1E]">
+
+                    <div className="py-1">
                       <button
                         onClick={handleSignOut}
-                        className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                        className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2.5 font-bold"
                       >
-                        <LogOut size={14} />
+                        <LogOut size={14} className="shrink-0" />
                         Kijelentkezés
                       </button>
                     </div>
