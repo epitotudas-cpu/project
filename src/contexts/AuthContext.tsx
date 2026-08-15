@@ -47,6 +47,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = authClient.onAuthStateChange((event, session) => {
       setAuthEvent(event);
+
+      // If returning from signup email confirmation link, force sign out and signal login page
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        if (hash.includes('confirmed=true') || hash.includes('type=signup')) {
+          void authClient.signOut();
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          try { sessionStorage.setItem('email_confirmed_success', 'true'); } catch {}
+          return;
+        }
+      }
+
       if (session?.user && !session.user.email_confirmed_at) {
         setSession(null);
         setUser(null);
@@ -104,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}` : undefined;
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined;
     const { data, error } = await authClient.signUp(email, password, {
       data: { full_name: fullName },
       emailRedirectTo: redirectUrl,

@@ -119,6 +119,10 @@ function getInitialPage(): PageKey {
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
     if (params.get('type') === 'recovery') return 'reset-password';
+    if (window.location.hash.includes('confirmed=true') || params.get('type') === 'signup') {
+      try { sessionStorage.setItem('email_confirmed_success', 'true'); } catch {}
+      return 'login';
+    }
 
     const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
     if (hash && ALL_VALID_PAGES.includes(hash as PageKey)) {

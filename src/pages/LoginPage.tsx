@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteSettings } from '../services/siteSettingsService';
 
@@ -14,6 +14,19 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [confirmedNotice] = useState<boolean>(() => {
+    try {
+      const isConfirmedSuccess = sessionStorage.getItem('email_confirmed_success') === 'true';
+      if (isConfirmedSuccess) {
+        sessionStorage.removeItem('email_confirmed_success');
+        return true;
+      }
+    } catch {
+      void 0;
+    }
+    return false;
+  });
 
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
@@ -80,6 +93,17 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               </p>
             </div>
           </div>
+
+          {/* Email Confirmation Success Notice */}
+          {confirmedNotice && (
+            <div role="alert" className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 shadow-sm">
+              <CheckCircle2 size={20} className="shrink-0 mt-0.5 text-emerald-600" />
+              <div className="text-xs font-medium leading-relaxed">
+                <strong className="font-bold text-emerald-900 block text-sm mb-0.5">Sikeres e-mail cím megerősítés! 🎉</strong>
+                Fiókja aktiválásra került. Kérjük, jelentkezzen be az alábbi űrlapon a megadott e-mail címmel és jelszóval.
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
