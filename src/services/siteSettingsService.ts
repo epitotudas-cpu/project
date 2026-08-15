@@ -121,24 +121,38 @@ export function applySiteSettings(settings: SiteSettings): void {
       document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
     }
 
-    // Dynamic Favicon & Apple Touch Icon from clean short logoUrl
-    const logoUrl = sanitizeLogoUrl(settings?.logoUrl);
+    // Dynamic Favicon & Apple Touch Icon from admin-configurable logoUrl with cache-busting
+    const rawLogoUrl = sanitizeLogoUrl(settings?.logoUrl);
+    
+    // Add cache buster query parameter based on logo URL so browsers don't hold aggressive old favicon caches
+    const urlHash = Array.from(rawLogoUrl).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) >>> 0, 0).toString(16);
+    const dynamicLogoUrl = rawLogoUrl.includes('?')
+      ? `${rawLogoUrl}&v=${urlHash}`
+      : `${rawLogoUrl}?v=${urlHash}`;
 
-    let iconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (!iconLink) {
-      iconLink = document.createElement('link');
-      iconLink.rel = 'icon';
-      document.head.appendChild(iconLink);
-    }
-    iconLink.href = logoUrl;
+    // Target all icon link elements by ID or rel selector
+    const iconIds = ['app-favicon-ico', 'app-favicon-png', 'app-favicon-shortcut', 'app-apple-touch-icon'];
 
-    let appleIconLink = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
-    if (!appleIconLink) {
-      appleIconLink = document.createElement('link');
-      appleIconLink.rel = 'apple-touch-icon';
-      document.head.appendChild(appleIconLink);
-    }
-    appleIconLink.href = logoUrl;
+    iconIds.forEach((id) => {
+      const el = document.getElementById(id) as HTMLLinkElement | null;
+      if (el) {
+        el.href = dynamicLogoUrl;
+      }
+    });
+
+    // Fallback: search and update by rel if ID elements not found
+    const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
+    rels.forEach((rel) => {
+      const links = Array.from(document.querySelectorAll<HTMLLinkElement>(`link[rel="${rel}"]`));
+      if (links.length > 0) {
+        links.forEach((l) => { l.href = dynamicLogoUrl; });
+      } else {
+        const link = document.createElement('link');
+        link.rel = rel;
+        link.href = dynamicLogoUrl;
+        document.head.appendChild(link);
+      }
+    });
   } catch (err) {
     console.error('Hiba a beállítások érvényesítésekor:', err);
   }
