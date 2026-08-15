@@ -391,6 +391,11 @@ export interface Database {
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
+          email_confirmed_at?: string | null;
+          confirmed_at?: string | null;
+          last_sign_in_at?: string | null;
+          deleted_at?: string | null;
+          is_deleted?: boolean | null;
         };
         Insert: {
           id: string;
@@ -400,6 +405,11 @@ export interface Database {
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
+          email_confirmed_at?: string | null;
+          confirmed_at?: string | null;
+          last_sign_in_at?: string | null;
+          deleted_at?: string | null;
+          is_deleted?: boolean | null;
         };
         Update: {
           id?: string;
@@ -409,6 +419,11 @@ export interface Database {
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
+          email_confirmed_at?: string | null;
+          confirmed_at?: string | null;
+          last_sign_in_at?: string | null;
+          deleted_at?: string | null;
+          is_deleted?: boolean | null;
         };
       };
       glossary_term_relations: {
