@@ -132,7 +132,7 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
             >
               <img
                 src={logoUrl}
-                alt="ÉpítőTudás"
+                alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
                 className="h-9 max-h-10 max-w-[200px] w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/logo.png';
@@ -177,11 +177,10 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
                     if (fieldErrors.fullName) setFieldErrors(prev => ({ ...prev, fullName: undefined }));
                   }}
                   placeholder="Kovács János"
-                  className={`w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${
-                    fieldErrors.fullName
+                  className={`w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${fieldErrors.fullName
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
                       : 'border-[#d6d2ca] focus:border-[#0f4c5c] focus:ring-[#0f4c5c]/20'
-                  }`}
+                    }`}
                   autoComplete="name"
                   aria-invalid={Boolean(fieldErrors.fullName)}
                   aria-describedby={fieldErrors.fullName ? 'fullname-error' : undefined}
@@ -214,11 +213,10 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
                     if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
                   }}
                   placeholder="pelda@email.hu"
-                  className={`w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${
-                    fieldErrors.email
+                  className={`w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${fieldErrors.email
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
                       : 'border-[#d6d2ca] focus:border-[#0f4c5c] focus:ring-[#0f4c5c]/20'
-                  }`}
+                    }`}
                   autoComplete="email"
                   aria-invalid={Boolean(fieldErrors.email)}
                   aria-describedby={fieldErrors.email ? 'email-error' : undefined}
@@ -251,11 +249,10 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
                     if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
                   }}
                   placeholder="Legalább 8 karakter"
-                  className={`w-full bg-white border rounded-xl pl-10 pr-10 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${
-                    fieldErrors.password
+                  className={`w-full bg-white border rounded-xl pl-10 pr-10 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${fieldErrors.password
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
                       : 'border-[#d6d2ca] focus:border-[#0f4c5c] focus:ring-[#0f4c5c]/20'
-                  }`}
+                    }`}
                   autoComplete="new-password"
                   aria-invalid={Boolean(fieldErrors.password)}
                   aria-describedby={`password-requirements-text ${fieldErrors.password ? 'password-error' : ''}`}
@@ -315,11 +312,10 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
                     if (fieldErrors.confirmPassword) setFieldErrors(prev => ({ ...prev, confirmPassword: undefined }));
                   }}
                   placeholder="Jelszó újra"
-                  className={`w-full bg-white border rounded-xl pl-10 pr-10 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${
-                    fieldErrors.confirmPassword || (confirmPassword && password !== confirmPassword)
+                  className={`w-full bg-white border rounded-xl pl-10 pr-10 py-3 text-base md:text-sm text-[#202628] placeholder-[#5f6868]/60 focus:outline-none focus:ring-2 transition-all ${fieldErrors.confirmPassword || (confirmPassword && password !== confirmPassword)
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
                       : 'border-[#d6d2ca] focus:border-[#0f4c5c] focus:ring-[#0f4c5c]/20'
-                  }`}
+                    }`}
                   autoComplete="new-password"
                   aria-invalid={Boolean(fieldErrors.confirmPassword || (confirmPassword && password !== confirmPassword))}
                   aria-describedby={fieldErrors.confirmPassword ? 'confirm-password-error' : undefined}

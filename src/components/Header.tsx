@@ -109,11 +109,10 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         <button
           onClick={() => onNavigate('home')}
           className="flex items-center gap-2 shrink-0 group"
-          title="ÉpítőTudás főoldal"
         >
           <img
             src={siteSettings.logoUrl || '/logo.png'}
-            alt="ÉpítőTudás"
+            alt={`${siteSettings.siteTitle} logó`}
             className="h-8 md:h-10 max-h-10 max-w-[220px] w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/logo.png';
@@ -153,19 +152,17 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       onNavigate(item.page);
                       setActiveDropdown(null);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-colors duration-150 whitespace-nowrap flex items-center gap-1 ${
-                      active
+                    className={`px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-colors duration-150 whitespace-nowrap flex items-center gap-1 ${active
                         ? 'text-accent bg-accent/10 font-bold border border-accent/20'
                         : 'text-gray-300 group-hover:text-white group-hover:bg-white/5'
-                    }`}
+                      }`}
                   >
                     <span>{item.label}</span>
                     {hasSub && (
                       <ChevronDown
                         size={13}
-                        className={`transition-transform duration-200 opacity-70 group-hover:rotate-180 group-hover:text-accent ${
-                          isOpen ? 'rotate-180 text-accent' : ''
-                        }`}
+                        className={`transition-transform duration-200 opacity-70 group-hover:rotate-180 group-hover:text-accent ${isOpen ? 'rotate-180 text-accent' : ''
+                          }`}
                       />
                     )}
                   </button>
@@ -173,11 +170,10 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   {/* Dropdown Menu Wrapper (Always rendered for smooth CSS transition & unbroken hover zone) */}
                   {hasSub && (
                     <div
-                      className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 ease-out ${
-                        isOpen
+                      className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 ease-out ${isOpen
                           ? 'opacity-100 pointer-events-auto translate-y-0'
                           : 'opacity-0 pointer-events-none -translate-y-1 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0'
-                      }`}
+                        }`}
                       onMouseEnter={() => handleMouseEnter(item.page)}
                       onMouseLeave={handleMouseLeave}
                     >
@@ -196,11 +192,10 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                                 setActiveDropdown(null);
                                 onNavigate(sub.page);
                               }}
-                              className={`w-full px-4 py-2 text-left text-xs font-semibold flex items-center justify-between transition-colors ${
-                                isSubActive
+                              className={`w-full px-4 py-2 text-left text-xs font-semibold flex items-center justify-between transition-colors ${isSubActive
                                   ? 'text-accent bg-accent/10 font-bold'
                                   : 'text-gray-300 hover:text-white hover:bg-white/5'
-                              }`}
+                                }`}
                             >
                               <span>{sub.label}</span>
                               {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
@@ -219,9 +214,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className={`p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all ${
-                searchOpen ? 'bg-accent/20 text-accent border border-accent/30' : ''
-              }`}
+              className={`p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all ${searchOpen ? 'bg-accent/20 text-accent border border-accent/30' : ''
+                }`}
               title="Kereső megnyitása"
             >
               <Search size={18} />
@@ -369,18 +363,16 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       setMobileOpen(false);
                     }
                   }}
-                  className={`w-full text-left px-6 py-3.5 text-sm font-bold flex items-center justify-between min-h-[48px] active:bg-white/10 ${
-                    active ? 'text-accent bg-accent/10' : 'text-white hover:bg-white/5'
-                  } transition-all cursor-pointer`}
+                  className={`w-full text-left px-6 py-3.5 text-sm font-bold flex items-center justify-between min-h-[48px] active:bg-white/10 ${active ? 'text-accent bg-accent/10' : 'text-white hover:bg-white/5'
+                    } transition-all cursor-pointer`}
                 >
                   <span>{item.label}</span>
                   {hasSub && (
                     <div className="p-1 min-w-[36px] min-h-[36px] flex items-center justify-center">
                       <ChevronDown
                         size={18}
-                        className={`transition-transform duration-300 ${
-                          isExpanded ? 'rotate-180 text-accent' : 'text-gray-400'
-                        }`}
+                        className={`transition-transform duration-300 ${isExpanded ? 'rotate-180 text-accent' : 'text-gray-400'
+                          }`}
                       />
                     </div>
                   )}
@@ -389,9 +381,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 {/* Accordion Submenu (Seamless Indented Tree List) */}
                 {hasSub && (
                   <div
-                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                      isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                    }`}
+                    className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                      }`}
                   >
                     <div className="ml-7 my-1 pl-4 pr-4 border-l-2 border-accent/40 space-y-0.5 py-1">
                       {/* Hub Overview Page Link */}
@@ -400,11 +391,10 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                           onNavigate(item.page);
                           setMobileOpen(false);
                         }}
-                        className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-bold min-h-[44px] flex items-center justify-between active:bg-white/10 ${
-                          currentPage === item.page
+                        className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-bold min-h-[44px] flex items-center justify-between active:bg-white/10 ${currentPage === item.page
                             ? 'text-accent font-bold bg-accent/15'
                             : 'text-gray-200 hover:text-white hover:bg-white/5'
-                        } transition-colors`}
+                          } transition-colors`}
                       >
                         <span>Összes {item.label.toLowerCase()} megtekintése</span>
                         <span className="text-accent font-bold">→</span>
@@ -420,11 +410,10 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                               onNavigate(sub.page);
                               setMobileOpen(false);
                             }}
-                            className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-semibold min-h-[44px] flex items-center gap-2.5 active:bg-white/10 ${
-                              isSubActive
+                            className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-semibold min-h-[44px] flex items-center gap-2.5 active:bg-white/10 ${isSubActive
                                 ? 'text-accent font-bold bg-accent/15'
                                 : 'text-gray-300 hover:text-white hover:bg-white/5'
-                            } transition-colors`}
+                              } transition-colors`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSubActive ? 'bg-accent' : 'bg-gray-500'}`} />
                             <span>{sub.label}</span>

@@ -15,7 +15,7 @@ export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     <div className="flex items-center gap-3 shrink-0">
       <img
         src={logoUrl}
-        alt="ÉpítőTudás"
+        alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
         className={`${s.height} max-w-[220px] w-auto object-contain shrink-0`}
         onError={(e) => {
           (e.target as HTMLImageElement).src = '/logo.png';
@@ -32,7 +32,7 @@ export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
           )}
         </span>
         <span className={`text-gray-400 font-medium mt-0.5 ${s.slogan}`}>
-          {siteSettings.tagline || 'Építőipari tudásbázis'}
+          {siteSettings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}
         </span>
       </div>
     </div>

@@ -41,8 +41,8 @@ export interface SiteSettings {
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteTitle: 'ÉpítőTudás',
-  tagline: 'Építőipari tudásbázis',
-  logoUrl: '',
+  tagline: 'Építőipari Tudásbázis & Szakmai Enciklopédia',
+  logoUrl: '/logo.png',
   primaryColor: '#FFC400',
   themeMode: 'dark',
 
@@ -101,6 +101,13 @@ function adjustColorBrightness(hex: string, percent: number): string {
   }
 }
 
+function sanitizeLogoUrl(url: string | undefined): string {
+  if (!url || !url.trim() || url.startsWith('data:') || url.length > 200) {
+    return '/logo.png';
+  }
+  return url.trim();
+}
+
 export function applySiteSettings(settings: SiteSettings): void {
   try {
     if (typeof document === 'undefined') return;
@@ -111,11 +118,11 @@ export function applySiteSettings(settings: SiteSettings): void {
     document.documentElement.style.setProperty('--color-accent-light', adjustColorBrightness(accentColor, 15));
 
     if (settings?.siteTitle) {
-      document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari tudásbázis'}`;
+      document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
     }
 
-    // Dynamic Favicon & Apple Touch Icon from admin logoUrl
-    const logoUrl = (settings?.logoUrl && settings.logoUrl.trim()) ? settings.logoUrl.trim() : '/logo.png';
+    // Dynamic Favicon & Apple Touch Icon from clean short logoUrl
+    const logoUrl = sanitizeLogoUrl(settings?.logoUrl);
 
     let iconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (!iconLink) {
@@ -141,6 +148,7 @@ export function getSiteSettings(): SiteSettings {
   try {
     // 1. Check in-memory global window cache first
     if (typeof window !== 'undefined' && window.__GLOBAL_SITE_SETTINGS__) {
+      window.__GLOBAL_SITE_SETTINGS__.logoUrl = sanitizeLogoUrl(window.__GLOBAL_SITE_SETTINGS__.logoUrl);
       applySiteSettings(window.__GLOBAL_SITE_SETTINGS__);
       return window.__GLOBAL_SITE_SETTINGS__;
     }
@@ -152,6 +160,7 @@ export function getSiteSettings(): SiteSettings {
       const settings: SiteSettings = {
         ...DEFAULT_SITE_SETTINGS,
         ...parsed,
+        logoUrl: sanitizeLogoUrl(parsed.logoUrl),
         enabledNavItems: {
           ...DEFAULT_SITE_SETTINGS.enabledNavItems,
           ...(parsed.enabledNavItems || {}),

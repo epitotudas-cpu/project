@@ -54,10 +54,10 @@ export default function Footer({ onNavigate }: FooterProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
-            <button onClick={() => onNavigate('home')} className="flex items-center gap-2" title="ÉpítőTudás főoldal">
+            <button onClick={() => onNavigate('home')} className="flex items-center gap-2">
               <img
                 src={logoUrl}
-                alt="ÉpítőTudás"
+                alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
                 className="h-10 max-h-11 max-w-[200px] w-auto object-contain shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/logo.png';
