@@ -150,15 +150,15 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   }, [user]);
 
   // Profile Completion Percentage Calculation (Section 22)
-  const profileCompletion = useMemo(() => {
-    let completed = 0;
-    const total = 5;
-    if (fullName.trim()) completed++;
-    if (user?.email) completed++;
-    if (specialization.trim()) completed++;
-    if (experienceLevel) completed++;
-    if (selectedInterests.length > 0) completed++;
-    return Math.round((completed / total) * 100);
+  // Profile Completion Calculation (Subtle status badge)
+  const missingCount = useMemo(() => {
+    let missing = 0;
+    if (!fullName.trim()) missing++;
+    if (!user?.email) missing++;
+    if (!specialization.trim()) missing++;
+    if (!experienceLevel) missing++;
+    if (selectedInterests.length === 0) missing++;
+    return missing;
   }, [fullName, user, specialization, experienceLevel, selectedInterests]);
 
   async function handleSaveProfile() {
@@ -274,7 +274,25 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
                   {profile.role === 'admin' ? 'Adminisztrátor' : profile.role === 'editor' ? 'Szerkesztő' : 'Felhasználó'}
                 </span>
+
+                {/* Visszafogott 1-soros profil státusz */}
+                {missingCount === 0 ? (
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                    <CheckCircle2 size={13} /> Profil kész
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setActiveMainSection('settings');
+                      setActiveSettingsTab('trade_profile');
+                    }}
+                    className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5 hover:bg-amber-500/20 transition-all cursor-pointer"
+                  >
+                    <AlertTriangle size={13} /> Hiányzik {missingCount} adat
+                  </button>
+                )}
               </div>
+
               <p className="text-sm text-gray-400 font-mono truncate">{profile.email}</p>
 
               {/* Szakma + Tapasztalat tag */}
@@ -308,39 +326,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             >
               <Edit size={14} className="text-accent" /> Profil szerkesztése
             </button>
-          </div>
-        </div>
-
-        {/* 22. PROFIL TELJESSÉGE PROGRESS BAR */}
-        <div className="bg-[#08172B] border border-[#1B365D] rounded-2xl p-4 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-gray-300 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-accent" /> Profil teljessége
-            </span>
-            <span className="text-accent">{profileCompletion}%</span>
-          </div>
-          <div className="w-full h-2 bg-[#0C213E] rounded-full overflow-hidden border border-[#1E3A64]">
-            <div
-              className="h-full bg-accent rounded-full transition-all duration-500"
-              style={{ width: `${profileCompletion}%` }}
-            />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-[11px]">
-            <span className={fullName ? 'text-emerald-400 font-semibold' : 'text-gray-500'}>
-              {fullName ? '✓ Név' : '✕ Név hiányzik'}
-            </span>
-            <span className={user?.email ? 'text-emerald-400 font-semibold' : 'text-gray-500'}>
-              {user?.email ? '✓ E-mail' : '✕ E-mail hiányzik'}
-            </span>
-            <span className={specialization ? 'text-emerald-400 font-semibold' : 'text-gray-500'}>
-              {specialization ? '✓ Szakma' : '✕ Szakma hiányzik'}
-            </span>
-            <span className={experienceLevel ? 'text-emerald-400 font-semibold' : 'text-gray-500'}>
-              {experienceLevel ? '✓ Szint' : '✕ Szint hiányzik'}
-            </span>
-            <span className={selectedInterests.length > 0 ? 'text-emerald-400 font-semibold' : 'text-gray-500'}>
-              {selectedInterests.length > 0 ? '✓ Érdeklődés' : '✕ Érdeklődés hiányzik'}
-            </span>
           </div>
         </div>
       </div>
