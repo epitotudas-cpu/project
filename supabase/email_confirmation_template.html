@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regisztráció megerősítése - ÉpítőTudás</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0d1117; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #f0f6fc;">
+  
+  <!-- Outer Wrapper -->
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0d1117; padding: 30px 10px;">
+    <tr>
+      <td align="center">
+        
+        <!-- Main Container Card -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #161b22; border: 1px solid #30363d; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+          
+          <!-- Header Bar with Logo and Title -->
+          <tr>
+            <td style="background-color: #0b1329; border-bottom: 2px solid #FFC400; padding: 24px 32px; text-align: left;">
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 12px;">
+                    <!-- Supabase admin dynamic logo or fallback image -->
+                    <img src="https://epitotudas.hu/logo.png" alt="ÉpítőTudás" width="40" height="40" style="display: block; max-height: 40px; width: auto; max-width: 140px; border: 0; outline: none; text-decoration: none; object-contain: contain;">
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <!-- Brand Name matching Homepage styling -->
+                    <span style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px; line-height: 1; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                      Építő<span style="color: #FFC400;">Tudás</span>
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Content Section -->
+          <tr>
+            <td style="padding: 36px 32px 28px 32px; text-align: left;">
+              
+              <h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.3;">
+                Sikeres regisztráció! 🎉
+              </h1>
+              
+              <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #8b949e;">
+                Köszönjük, hogy regisztráltál a <strong style="color: #ffffff;">ÉpítőTudás</strong> szakmai platformon. A fiókod aktiválásához és az e-mail címed megerősítéséhez kattints az alábbi gombra:
+              </p>
+              
+              <!-- Primary CTA Button (Matching Platform #FFC400 Accent) -->
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+                <tr>
+                  <td align="center" style="border-radius: 10px; background-color: #FFC400;">
+                    <a href="{{ .ConfirmationURL }}" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 800; color: #0d1117; text-decoration: none; border-radius: 10px; background-color: #FFC400; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.2px;">
+                      E-mail cím megerősítése &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Alternative Direct Link Box -->
+              <div style="background-color: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px 16px; margin-top: 24px;">
+                <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600; color: #8b949e;">
+                  Ha a gomb nem működik, másold be az alábbi hivatkozást a böngésződbe:
+                </p>
+                <p style="margin: 0; font-size: 12px; word-break: break-all; color: #58a6ff; font-family: monospace;">
+                  {{ .ConfirmationURL }}
+                </p>
+              </div>
+              
+              <!-- Info note -->
+              <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #6e7681;">
+                Ha nem te kezdeményezted ezt a regisztrációt, nyugodtan hagyd figyelmen kívül ezt a levelet. A megerősítő hivatkozás biztonsági okokból korlátozott ideig érvényes.
+              </p>
+
+            </td>
+          </tr>
+          
+          <!-- Footer Section -->
+          <tr>
+            <td style="background-color: #0d1117; border-top: 1px solid #21262d; padding: 20px 32px; text-align: center;">
+              <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 700; color: #8b949e;">
+                ÉpítőTudás &ndash; Építőipari Tudásbázis &amp; Szakmai Enciklopédia
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #484f58;">
+                &copy; 2026 ÉpítőTudás. Minden jog fenntartva.
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+        
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
