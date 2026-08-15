@@ -49,17 +49,6 @@ export async function getAuthDebugInfo(): Promise<AuthDebugInfo> {
       };
     }
 
-    const metadataRole = (userData.user.user_metadata?.role as string | undefined) ?? null;
-    if (metadataRole === 'admin') {
-      return {
-        isAuthenticated: true,
-        userId: userData.user.id,
-        userEmail: userData.user.email || null,
-        hasAdminRole: true,
-        role: 'admin',
-      };
-    }
-
     let profileRole: string | null = null;
     try {
       profileRole = await getProfileRole(userData.user.id);
@@ -74,7 +63,7 @@ export async function getAuthDebugInfo(): Promise<AuthDebugInfo> {
       userId: userData.user.id,
       userEmail: userData.user.email || null,
       hasAdminRole: hasAdmin,
-      role: profileRole ?? metadataRole,
+      role: profileRole,
       error: hasAdmin ? undefined : `Nem admin szerepkör. Jelenlegi role: ${profileRole || 'nincs profil'}`,
     };
   } catch (err) {
