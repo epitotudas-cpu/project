@@ -9,6 +9,65 @@ export interface CreateJobPostingPayload {
   description: string;
 }
 
+export interface CareerTrajectory {
+  id: string;
+  title: string;
+  fromRole: string;
+  toRole: string;
+  steps: string[];
+  requiredSkills: string[];
+  recommendedCourseIds: string[];
+  experienceYears: string;
+  relatedTradeId: string;
+}
+
+export const DEFAULT_CAREER_TRAJECTORIES: CareerTrajectory[] = [
+  {
+    id: 'traj-1',
+    title: 'Kőművesből Művezető / Építésvezető',
+    fromRole: 'Szerkezetépítő Kőműves',
+    toRole: 'Kivitelezési Művezető',
+    steps: ['Szakmunkás alapok', 'Tervrajz olvasás & Műszaki irányítás', 'Zsaluzat & Monolit technológia', 'Brigádvezető / Művezető'],
+    requiredSkills: ['Tervrajz olvasás', 'Zsaluzat méretezés', 'Csapatirányítás', 'Munkavédelem'],
+    recommendedCourseIds: ['course-1', 'course-3', 'course-4'],
+    experienceYears: '3-5 év',
+    relatedTradeId: 'komuves',
+  },
+  {
+    id: 'traj-2',
+    title: 'Villanyszerelőből Önálló Vállalkozó',
+    fromRole: 'Villanyszerelő Technikus',
+    toRole: 'Egyéni Vállalkozó / Cégtulajdonos',
+    steps: ['Erősáramú alapok', 'Érintésvédelmi felülvizsgáló', 'KNX & Okosotthon képzés', 'Vállalkozásindítás'],
+    requiredSkills: ['Műszeres mérés', 'Érintésvédelem', 'Ügyfélkommunikáció', 'Árajánlatadás'],
+    recommendedCourseIds: ['course-5', 'course-3'],
+    experienceYears: '2-4 év',
+    relatedTradeId: 'villanyszerelo',
+  },
+  {
+    id: 'traj-3',
+    title: 'Segédmunkásból Szakmunkás',
+    fromRole: 'Építőipari Segédmunkás',
+    toRole: 'Minősített Falazó Kőműves',
+    steps: ['Helyszíni tapasztalat', 'Alap képzés elvégzése', 'Gyakorlati vizsga', 'Önálló szakmunkás status'],
+    requiredSkills: ['Betonozás', 'Habarcskeverés', 'Alapvető falazás', 'Munkavédelem'],
+    recommendedCourseIds: ['course-2', 'course-3'],
+    experienceYears: '1-2 év',
+    relatedTradeId: 'komuves',
+  },
+  {
+    id: 'traj-4',
+    title: 'Burkolóból Generálkivitelező',
+    fromRole: 'Hidegburkoló',
+    toRole: 'Belsőépítészeti Kivitelező',
+    steps: ['Gyakorlati burkolás', 'Vízszigetelés & Kőzetgyapot', 'Költségvetés-készítés', 'Generálkivitelezés'],
+    requiredSkills: ['Szintkiegyenlítés', 'Kenhető vízszigetelés', 'Anyagszükséglet számítás', 'Generálkoordináció'],
+    recommendedCourseIds: ['course-6', 'course-2'],
+    experienceYears: '4-6 év',
+    relatedTradeId: 'burkolo',
+  },
+];
+
 const DEFAULT_JOBS: JobPosting[] = [
   {
     id: 'job-1',
@@ -26,7 +85,7 @@ const DEFAULT_JOBS: JobPosting[] = [
     company_name: 'Wienerberger Zrt.',
     title: 'Szerkezetépítő Szakmai Gyakorlati Hely',
     job_type: 'apprenticeship',
-    location: 'Győr',
+    location: 'Győr-Moson-Sopron',
     salary_range: 'Versenyképes ösztöndíj',
     description: 'Duális szakképzés keretében történő oktatás és gyakorlat falazási, valamint kerámia tetőfedési szakterületen.',
     is_active: true,
@@ -37,9 +96,42 @@ const DEFAULT_JOBS: JobPosting[] = [
     company_name: 'Market Építő Zrt.',
     title: 'Építésvezető Mérnök Asszisztens',
     job_type: 'full_time',
-    location: 'Székesfehérvár',
+    location: 'Székesfehérvár (Fejér)',
     salary_range: 'Bruttó 550.000 - 700.000 Ft/hó',
     description: 'Helyszíni minőségellenőrzés, műszaki dokumentáció vezetés és alvállalkozói koordináció.',
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'job-4',
+    company_name: 'KÉSZ Csoport',
+    title: 'Gépész Műszaki Előkészítő Technikus',
+    job_type: 'full_time',
+    location: 'Kecskemét (Bács-Kiskun)',
+    salary_range: 'Bruttó 600.000 - 750.000 Ft/hó',
+    description: 'HVAC és csőhálózati felmérések, anyagszükséglet számítás és alvállalkozói ajánlatkérések.',
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'job-5',
+    company_name: 'Bayer Konstrukt Zrt.',
+    title: 'Betanított Szerkezetépítő & Zsaluzó',
+    job_type: 'full_time',
+    location: 'Debrecen (Hajdú-Bihar)',
+    salary_range: 'Bruttó 480.000 - 600.000 Ft/hó',
+    description: 'Előregyártott elemek beemelése, zsaluelemek összeszerelése betanítással és mentori kíséréssel.',
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'job-6',
+    company_name: 'Electro-Pro Kft.',
+    title: 'Villanyszerelő Technikus & Okosotthon Telepítő',
+    job_type: 'full_time',
+    location: 'Budapest',
+    salary_range: 'Bruttó 620.000 - 800.000 Ft/hó',
+    description: 'Erősáramú elosztók beépítése, okosotthon vezérlések programozása és mérések elvégzése.',
     is_active: true,
     created_at: new Date().toISOString(),
   },

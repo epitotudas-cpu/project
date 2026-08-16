@@ -22,6 +22,19 @@ export interface EducationData {
   questions: Record<string, QuizQuestion[]>;
 }
 
+export interface LearningPath {
+  id: string;
+  title: string;
+  description: string;
+  tradeId: string;
+  tradeName: string;
+  stepsCount: number;
+  level: string;
+  badgeColor: string;
+  courseIds: string[];
+  nextCareerStep: string;
+}
+
 export const DEFAULT_COURSES: Course[] = [
   {
     id: 'course-1',
@@ -29,6 +42,7 @@ export const DEFAULT_COURSES: Course[] = [
     slug: 'monolitikus-beton-mesterfogasai',
     description: 'Átfogó képzés a zsaluzási rendszerektől az öntömörödő beton technológiáig és utókezelésig.',
     category: 'Szerkezetépítés',
+    difficulty: 'intermediate',
     duration_hours: 6,
     is_published: true,
     created_at: new Date().toISOString(),
@@ -39,6 +53,7 @@ export const DEFAULT_COURSES: Course[] = [
     slug: 'energiahatekony-falazas-szigeteles',
     description: 'Korszerű hő- és hangszigetelési megoldások, szárazépítészet és homlokzati rendszerek.',
     category: 'Szigetelés & Falazás',
+    difficulty: 'beginner',
     duration_hours: 4,
     is_published: true,
     created_at: new Date().toISOString(),
@@ -49,9 +64,94 @@ export const DEFAULT_COURSES: Course[] = [
     slug: 'biztonsagtechnika-munkavedelem-2026',
     description: 'Kötelező munkavédelmi és biztonságtechnikai szabályok magasépítési helyszíneken.',
     category: 'Munkavédelem',
+    difficulty: 'beginner',
     duration_hours: 8,
     is_published: true,
     created_at: new Date().toISOString(),
+  },
+  {
+    id: 'course-4',
+    title: 'Szerkezetépítési és Zsaluzási Alapok',
+    slug: 'szerkezetepitesi-es-zsaluzasi-alapok',
+    description: 'A vázszerkezetek, pillérek és monolit födémek alapvető zsaluzási és dúcolási technikái.',
+    category: 'Szerkezetépítés',
+    difficulty: 'beginner',
+    duration_hours: 5,
+    is_published: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'course-5',
+    title: 'Okosotthon & Villanyszerelési Szabványok 2026',
+    slug: 'okosotthon-villanyszereles-2026',
+    description: 'Gyengeáramú és erősáramú hálózatépítés, KNX rendszerek és érintésvédelmi előírások.',
+    category: 'Épületgépészet',
+    difficulty: 'master',
+    duration_hours: 10,
+    is_published: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'course-6',
+    title: 'Modern Hideg- és Melegburkolási Technológia',
+    slug: 'modern-burkolasi-technologia',
+    description: 'Nagyformátumú kerámia lapok, kenhető vízszigetelések és szintkiegyenlítési módszerek.',
+    category: 'Szigetelés & Falazás',
+    difficulty: 'intermediate',
+    duration_hours: 5,
+    is_published: true,
+    created_at: new Date().toISOString(),
+  },
+];
+
+export const DEFAULT_LEARNING_PATHS: LearningPath[] = [
+  {
+    id: 'path-1',
+    title: 'Kezdő kőművesből szerkezetépítő mester',
+    description: 'Végighaladás a falazási alapoktól a zsaluzáson át a monolit vasbeton szerkezetekig.',
+    tradeId: 'komuves',
+    tradeName: 'Kőműves',
+    stepsCount: 3,
+    level: 'Alaptól Mesterig',
+    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
+    courseIds: ['course-2', 'course-4', 'course-1'],
+    nextCareerStep: 'Művezető / Brigádvezető',
+  },
+  {
+    id: 'path-2',
+    title: 'Munkavédelmi és biztonsági alapismeretek',
+    description: 'Egyéni védőeszközök, állványozási szabályzat és balesetmegelőzés magasépítésen.',
+    tradeId: 'munkavedelem',
+    tradeName: 'Kötelező Munkavédelem',
+    stepsCount: 2,
+    level: 'Alapszint',
+    badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    courseIds: ['course-3'],
+    nextCareerStep: 'Munkavédelmi Megbízott / Technikus',
+  },
+  {
+    id: 'path-3',
+    title: 'Energiahatékony és fenntartható építés',
+    description: 'Korszerű homlokzati hőszigetelés, hőhídmentes csomópontok és szárazépítészet.',
+    tradeId: 'epuletgepesz',
+    tradeName: 'Szigetelő & Energetikus',
+    stepsCount: 2,
+    level: 'Középhaladó',
+    badgeColor: 'bg-blue-100 text-blue-900 border-blue-300',
+    courseIds: ['course-2', 'course-6'],
+    nextCareerStep: 'Energetikai Szakértő Asszisztens',
+  },
+  {
+    id: 'path-4',
+    title: 'Szerkezetépítési alapok & zsaluzási technológia',
+    description: 'Zsaluzat felállítása, betonozás, vasalási rajzok olvasása és teherbírási számítások.',
+    tradeId: 'acs',
+    tradeName: 'Zsaluzó Ács & Szerkezetépítő',
+    stepsCount: 2,
+    level: 'Középhaladó',
+    badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
+    courseIds: ['course-4', 'course-1'],
+    nextCareerStep: 'Szerkezetépítő Építésvezető',
   },
 ];
 

@@ -298,8 +298,8 @@ function AppContent() {
       case 'paths': return <PathsHubPage onNavigate={navigate} />;
       case 'about': return <AboutHubPage onNavigate={navigate} />;
       case 'partners': return <PartnersPage onNavigate={navigate} />;
-      case 'courses': return <CoursesPage />;
-      case 'careers': return <CareersPage />;
+      case 'courses': return <CoursesPage onNavigate={navigate} />;
+      case 'careers': return <CareersPage onNavigate={navigate} />;
       case 'jogi': return <LegalHubPage onNavigate={navigate} />;
       case 'impressum': return <ImpressumPage onNavigate={navigate} />;
       case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;
