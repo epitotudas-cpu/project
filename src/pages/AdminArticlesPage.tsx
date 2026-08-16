@@ -5,6 +5,7 @@ import * as articleService from '../services/articleService';
 import { listCategories } from '../services/categoryService';
 import { useToast } from '../components/ToastProvider';
 import EditArticleModal from '../components/EditArticleModal';
+import ArticleSettingsModal from '../components/ArticleSettingsModal';
 
 interface ArticleRow extends Article {
   categories: { name: string } | null;
@@ -45,6 +46,7 @@ export default function AdminArticlesPage() {
 
   const [editing, setEditing] = useState<Article | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -158,6 +160,9 @@ export default function AdminArticlesPage() {
           <p className="text-sm text-gray-500 mt-1">{totalCount} cikk összesen</p>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-2 px-3 py-2 border border-[#FFC400]/40 text-[#FFC400] text-sm font-bold rounded-lg hover:bg-[#FFC400]/10 transition-colors">
+            Tudástár beállítások
+          </button>
           <button onClick={openCreate} className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] transition-colors">
             <Plus size={14} /> Új cikk
           </button>
@@ -336,10 +341,15 @@ export default function AdminArticlesPage() {
         <EditArticleModal
           article={editing}
           categories={categories}
-          onClose={closeEditor}
+          onClose={() => setEditorOpen(false)}
           onSaved={handleSaved}
         />
       )}
+
+      <ArticleSettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   );
 }

@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ChevronRight,
   Clock,
-  TrendingUp,
   Star,
   Search,
   Home,
@@ -28,10 +27,16 @@ import {
   FileText,
   Calculator,
   Library,
+  X,
+  ChevronDown,
+  Check,
+  Sparkles,
+  Calendar,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
 import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
+import { useArticleSettings } from '../services/articleSettingsService';
 import type { Category, Article } from '../lib/supabase';
 
 interface CategoryPageProps {
@@ -46,10 +51,10 @@ const difficultyLabels: Record<string, string> = {
 };
 
 const difficultyColors: Record<string, string> = {
-  beginner: 'bg-green-100 text-green-700 border-green-200',
-  intermediate: 'bg-blue-100 text-blue-700 border-blue-200',
-  advanced: 'bg-amber-100 text-amber-700 border-amber-200',
-  expert: 'bg-red-100 text-red-700 border-red-200',
+  beginner: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  intermediate: 'bg-blue-100 text-blue-800 border-blue-200',
+  advanced: 'bg-amber-100 text-amber-800 border-amber-200',
+  expert: 'bg-rose-100 text-rose-800 border-rose-200',
 };
 
 const categoryIconMap: Record<string, React.ElementType> = {
@@ -71,15 +76,66 @@ const categoryIconMap: Record<string, React.ElementType> = {
   Settings,
 };
 
+function formatDateHu(dateStr?: string | null): string {
+  if (!dateStr) return '2026. augusztus 16.';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '2026. augusztus 16.';
+    return d.toLocaleDateString('hu-HU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return '2026. augusztus 16.';
+  }
+}
+
 export default function CategoryPage({ onNavigate }: CategoryPageProps) {
+  const articleSettings = useArticleSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [adSlots, setAdSlots] = useState<AdvertisementSlot[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Filters State (Multi-select)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Modals / Dropdowns State
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState<number>(articleSettings.articlesPerPage || 12);
+
+  // --------------------------------------------------------------------------
+  // URL Hash Sync
+  // --------------------------------------------------------------------------
+  const syncFromHash = useCallback(() => {
+    try {
+      const hash = window.location.hash || '';
+      const queryPart = hash.includes('?') ? hash.split('?')[1] : '';
+      if (!queryPart) return;
+
+      const params = new URLSearchParams(queryPart);
+      const catParam = params.get('cat');
+      const levelParam = params.get('level');
+      const qParam = params.get('q');
+
+      if (catParam) {
+        setSelectedCategories(catParam.split(',').filter(Boolean));
+      }
+      if (levelParam) {
+        setSelectedLevels(levelParam.split(',').filter(Boolean));
+      }
+      if (qParam) {
+        setSearchQuery(qParam);
+      }
+    } catch {
+      // ignore parsing errors
+    }
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -87,12 +143,15 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
         setLoading(true);
         const [categoriesData, articlesData, slots] = await Promise.all([
           getCategories(),
-          getArticles({ limit: 50 }),
+          getArticles({ limit: 100 }),
           getAdvertisementSlots(),
         ]);
+
+        const publishedOnly = articlesData.filter((a) => a.status === 'published' || !a.status);
         setCategories(categoriesData);
-        setArticles(articlesData);
+        setArticles(publishedOnly);
         setAdSlots(slots);
+        syncFromHash();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Hiba történt az adatok betöltésekor');
       } finally {
@@ -100,17 +159,87 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       }
     }
     loadData();
+  }, [syncFromHash]);
+
+  // Update URL hash when filters change
+  const updateUrlParams = useCallback((cats: string[], levels: string[], q: string) => {
+    try {
+      const params = new URLSearchParams();
+      if (cats.length > 0) params.set('cat', cats.join(','));
+      if (levels.length > 0) params.set('level', levels.join(','));
+      if (q.trim()) params.set('q', q.trim());
+
+      const queryString = params.toString();
+      const newHash = queryString ? `#category?${queryString}` : '#category';
+
+      if (window.location.hash !== newHash) {
+        window.history.replaceState(null, '', newHash);
+      }
+    } catch {
+      // ignore
+    }
   }, []);
 
-  const formatViews = (views: number) => {
-    if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
-    return views.toString();
+  const handleCategoryToggle = (catId: string) => {
+    setSelectedCategories((prev) => {
+      const next = prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId];
+      updateUrlParams(next, selectedLevels, searchQuery);
+      return next;
+    });
   };
 
+  const handleLevelToggle = (lvlKey: string) => {
+    setSelectedLevels((prev) => {
+      const next = prev.includes(lvlKey) ? prev.filter((k) => k !== lvlKey) : [...prev, lvlKey];
+      updateUrlParams(selectedCategories, next, searchQuery);
+      return next;
+    });
+  };
+
+  const handleClearAllFilters = () => {
+    setSelectedCategories([]);
+    setSelectedLevels([]);
+    setSearchQuery('');
+    updateUrlParams([], [], '');
+  };
+
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCategoryModalOpen(false);
+        setIsLevelModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Compute Category Counts
+  const categoryCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    articles.forEach((a) => {
+      if (a.category_id) {
+        map.set(a.category_id, (map.get(a.category_id) || 0) + 1);
+      }
+    });
+    return map;
+  }, [articles]);
+
+  // Display Categories (Filtered by empty setting if configured)
+  const displayCategories = useMemo(() => {
+    let list = [...categories].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
+    if (!articleSettings.showEmptyCategoriesInFilter) {
+      list = list.filter((c) => (categoryCounts.get(c.id) || 0) > 0);
+    }
+    return list;
+  }, [categories, categoryCounts, articleSettings.showEmptyCategoriesInFilter]);
+
+  // Filtered & Sorted Articles
   const filteredArticles = useMemo(() => {
-    return articles.filter((article) => {
-      const matchCat = !selectedCategory || article.category_id === selectedCategory;
-      const matchDiff = !selectedDifficulty || article.difficulty === selectedDifficulty;
+    let list = articles.filter((article) => {
+      const matchCat = selectedCategories.length === 0 || (article.category_id && selectedCategories.includes(article.category_id));
+      const matchDiff = selectedLevels.length === 0 || (article.difficulty && selectedLevels.includes(article.difficulty));
       const q = searchQuery.toLowerCase().trim();
       const matchQuery =
         !q ||
@@ -119,19 +248,37 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
       return matchCat && matchDiff && matchQuery;
     });
-  }, [articles, selectedCategory, selectedDifficulty, searchQuery]);
 
-  const activeCategoryObj = useMemo(() => {
-    if (!selectedCategory) return null;
-    return categories.find((c) => c.id === selectedCategory) || null;
-  }, [categories, selectedCategory]);
+    // Apply Sorting Mode
+    switch (articleSettings.defaultSortMode) {
+      case 'featured':
+        list.sort((a, b) => (b.views || 0) - (a.views || 0));
+        break;
+      case 'popular':
+        list.sort((a, b) => (b.views || 0) - (a.views || 0));
+        break;
+      case 'manual':
+        // Keep order or default sort
+        break;
+      case 'latest':
+      default:
+        list.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+        break;
+    }
+
+    return list;
+  }, [articles, selectedCategories, selectedLevels, searchQuery, articleSettings.defaultSortMode]);
+
+  const paginatedArticles = useMemo(() => {
+    return filteredArticles.slice(0, visibleCount);
+  }, [filteredArticles, visibleCount]);
 
   if (loading) {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent border-r-transparent mb-3" />
-          <p className="text-gray-500 text-sm">Kategóriák és cikkek betöltése...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent mb-3" />
+          <p className="text-gray-600 text-sm font-medium">Cikkek és útmutatók betöltése...</p>
         </div>
       </div>
     );
@@ -146,7 +293,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           <p className="text-gray-600 text-sm">{error}</p>
           <button
             onClick={() => onNavigate('home')}
-            className="px-4 py-2 bg-accent text-black font-bold text-xs rounded-xl hover:bg-accent-hover transition-colors"
+            className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary-700 transition-colors"
           >
             Vissza a főoldalra
           </button>
@@ -155,78 +302,46 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     );
   }
 
-  return (
-    <div className="bg-background min-h-screen pb-16">
-      {/* Hero Header */}
-      <div className="relative bg-primary text-white border-b border-primary-700 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Banner image background if active category has banner_url or image_url */}
-        {activeCategoryObj?.banner_url || activeCategoryObj?.image_url ? (
-          <div className="absolute inset-0 z-0">
-            <img
-              src={activeCategoryObj.banner_url || activeCategoryObj.image_url || ''}
-              alt={activeCategoryObj.name}
-              className="w-full h-full object-cover opacity-25 scale-105 filter blur-xs"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-primary-900/90" />
-          </div>
-        ) : null}
+  const desktopGridClass =
+    articleSettings.desktopGridColumns === 2
+      ? 'lg:grid-cols-2'
+      : articleSettings.desktopGridColumns === 4
+      ? 'lg:grid-cols-4'
+      : 'lg:grid-cols-3';
 
-        <div className="relative z-10 max-w-7xl mx-auto space-y-4">
+  return (
+    <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
+      {/* Hero Header */}
+      <div className="relative bg-primary text-white border-b border-primary-700 py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <button onClick={() => onNavigate('home')} className="flex items-center gap-1 hover:text-white transition-colors">
               <Home size={13} /> Főoldal
             </button>
             <ChevronRight size={13} />
-            <span className="text-gray-200 font-semibold">
-              {activeCategoryObj ? activeCategoryObj.name : 'Összes Kategória & Cikkek'}
-            </span>
+            <button onClick={() => onNavigate('tudastar')} className="hover:text-white transition-colors">
+              Tudástár
+            </button>
+            <ChevronRight size={13} />
+            <span className="text-gray-200 font-medium">Cikkek &amp; Útmutatók</span>
           </div>
 
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              {activeCategoryObj ? (
-                (() => {
-                  const IconComp = (activeCategoryObj.icon_name && categoryIconMap[activeCategoryObj.icon_name]) || Layers;
-                  const categoryColor = activeCategoryObj.color || '#FFC400';
-                  return (
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl backdrop-blur-md shrink-0"
-                      style={{
-                        backgroundColor: `${categoryColor}25`,
-                        borderColor: `${categoryColor}60`,
-                        color: categoryColor,
-                      }}
-                    >
-                      <IconComp size={30} />
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className="p-3.5 bg-accent/15 border border-accent/30 rounded-2xl text-accent shrink-0">
-                  <BookOpen size={30} />
-                </div>
-              )}
-
-              <div>
-                <h1 className="text-2xl md:text-3xl font-black text-white">
-                  {activeCategoryObj
-                    ? activeCategoryObj.seo_title || activeCategoryObj.name
-                    : 'Építőipari Kategóriák & Szakmai Cikkek'}
-                </h1>
-                <p className="text-gray-300 text-sm mt-1 max-w-3xl leading-relaxed">
-                  {activeCategoryObj
-                    ? activeCategoryObj.seo_description || activeCategoryObj.description
-                    : 'Gyakorlati útmutatók, szabványok, technológiai leírások és kivitelezési tippek'}
-                </p>
-              </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
+                <FileText size={13} /> Építőipari Szakmai Cikkek &amp; Technológiák
+              </span>
+              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                {articleSettings.articlesPageTitle}
+              </h1>
+              <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
+                {articleSettings.articlesPageDescription}
+              </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs bg-accent/10 border border-accent/20 text-accent font-bold px-3.5 py-2 rounded-xl">
-                {categories.length} Kategória
-              </span>
-              <span className="text-xs bg-white/10 border border-white/10 text-gray-200 font-bold px-3.5 py-2 rounded-xl">
-                {articles.length} Szakcikk
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-xs bg-white/10 border border-white/20 text-white font-bold px-4 py-2 rounded-xl backdrop-blur-sm">
+                Összesen: <strong className="text-accent">{articles.length}</strong> publikált cikk
               </span>
             </div>
           </div>
@@ -266,14 +381,15 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
         {/* Active Partner & Sidebar Ad Banners */}
         {adSlots.filter((slot) => !slot.isPlaceholder && (slot.location === 'sidebar' || slot.location === 'in_feed')).length > 0 && (
-          <div className="bg-gradient-to-r from-primary to-primary-900 border border-accent/40 rounded-3xl p-6 space-y-4 shadow-xl">
+          <div className="bg-primary text-white border border-primary-700 rounded-3xl p-6 space-y-4 shadow-md">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-black bg-accent px-3 py-1 rounded-full uppercase tracking-wider">
-                📢 Kiemelt Partneri Hirdetések & Szponzori Ajánlatok
+                📢 Kiemelt Szponzori Ajánlatok
               </span>
-              <span className="text-[11px] text-gray-400 font-semibold">Oldalsáv / Cikk Hirdetések</span>
+              <span className="text-[11px] text-gray-400 font-semibold">Szakmai Partnereink</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {adSlots
@@ -285,7 +401,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => recordAdClick(slot.id)}
-                    className="bg-black/40 border border-accent/30 hover:border-accent rounded-2xl p-4 transition-all flex items-center justify-between group"
+                    className="bg-white/5 border border-white/10 hover:border-accent rounded-2xl p-4 transition-all flex items-center justify-between group"
                   >
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold text-accent uppercase tracking-wider">
@@ -311,262 +427,497 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           </div>
         )}
 
-        {/* Search Bar */}
-        <div className="relative max-w-2xl">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Keress cikket cím, kifejezés vagy tartalom alapján..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent shadow-sm"
-          />
+        {/* SEARCH AND COMPACT FILTER BAR */}
+        <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            
+            {/* Live Search Input */}
+            <div className="relative flex-1 w-full">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Keresés cikkek között (pl. betonozás, szigetelés, csempézés)..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  updateUrlParams(selectedCategories, selectedLevels, e.target.value);
+                }}
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    updateUrlParams(selectedCategories, selectedLevels, '');
+                  }}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            {/* Compact Filter Action Buttons */}
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+              
+              {/* Category Filter Button */}
+              <div className="relative flex-1 md:flex-initial">
+                <button
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  className={`w-full md:w-auto px-4 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-between gap-2 border shadow-xs ${
+                    selectedCategories.length > 0
+                      ? 'bg-primary text-white border-primary-700 shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter size={15} />
+                    <span>
+                      {selectedCategories.length > 0
+                        ? `Kategóriák (${selectedCategories.length})`
+                        : 'Kategóriák'}
+                    </span>
+                  </div>
+                  <ChevronDown size={15} />
+                </button>
+              </div>
+
+              {/* Level Filter Button */}
+              <div className="relative flex-1 md:flex-initial">
+                <button
+                  onClick={() => setIsLevelModalOpen((prev) => !prev)}
+                  className={`w-full md:w-auto px-4 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-between gap-2 border shadow-xs ${
+                    selectedLevels.length > 0
+                      ? 'bg-primary text-white border-primary-700 shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-800'
+                  }`}
+                >
+                  <span>
+                    {selectedLevels.length > 0
+                      ? `Szint (${selectedLevels.length})`
+                      : 'Szint'}
+                  </span>
+                  <ChevronDown size={15} />
+                </button>
+
+                {/* Level Dropdown Menu */}
+                {isLevelModalOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl p-3 z-40 space-y-1.5 animate-fadeIn">
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-100 px-2">
+                      <span className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
+                        Tudásszint
+                      </span>
+                      <button
+                        onClick={() => setIsLevelModalOpen(false)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedLevels([]);
+                        updateUrlParams(selectedCategories, [], searchQuery);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
+                        selectedLevels.length === 0 ? 'bg-primary/10 text-primary font-black' : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      <span>Összes szint</span>
+                      {selectedLevels.length === 0 && <Check size={14} className="text-primary" />}
+                    </button>
+
+                    {Object.entries(difficultyLabels).map(([key, label]) => {
+                      const isChecked = selectedLevels.includes(key);
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => handleLevelToggle(key)}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
+                            isChecked ? 'bg-primary/10 text-primary font-black' : 'hover:bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full border ${difficultyColors[key]}`} />
+                            {label}
+                          </span>
+                          {isChecked && <Check size={14} className="text-primary" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+
+          {/* ACTIVE FILTER REMOVABLE CHIPS */}
+          {(selectedCategories.length > 0 || selectedLevels.length > 0 || searchQuery.trim()) && (
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100">
+              <span className="text-xs font-bold text-gray-500">Aktív szűrők:</span>
+
+              {/* Category Chips */}
+              {selectedCategories.map((catId) => {
+                const cat = categories.find((c) => c.id === catId);
+                if (!cat) return null;
+                return (
+                  <span
+                    key={catId}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 text-primary-950 font-bold text-xs rounded-full shadow-2xs"
+                  >
+                    <span>{cat.name}</span>
+                    <button
+                      onClick={() => handleCategoryToggle(catId)}
+                      className="hover:bg-primary/20 rounded-full p-0.5"
+                    >
+                      <X size={13} />
+                    </button>
+                  </span>
+                );
+              })}
+
+              {/* Level Chips */}
+              {selectedLevels.map((lvlKey) => (
+                <span
+                  key={lvlKey}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-200 border border-gray-300 text-gray-800 font-bold text-xs rounded-full shadow-2xs"
+                >
+                  <span>{difficultyLabels[lvlKey] || lvlKey}</span>
+                  <button
+                    onClick={() => handleLevelToggle(lvlKey)}
+                    className="hover:bg-gray-300 rounded-full p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+
+              {/* Search Query Chip */}
+              {searchQuery.trim() && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs rounded-full shadow-2xs">
+                  <span>Keresés: „{searchQuery}”</span>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      updateUrlParams(selectedCategories, selectedLevels, '');
+                    }}
+                    className="hover:bg-amber-200 rounded-full p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              )}
+
+              {/* Clear All Button */}
+              <button
+                onClick={handleClearAllFilters}
+                className="text-xs font-bold text-accent hover:underline ml-2"
+              >
+                Összes szűrő törlése
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Category Filter Chips / Pills */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Filter size={12} /> Kategória választó:
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                selectedCategory === null
-                  ? 'bg-accent text-black shadow-md'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:border-accent/40'
-              }`}
-            >
-              Összes Kategória ({categories.length})
-            </button>
-
-            {[...categories]
-              .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
-              .map((cat) => {
-                const count = articles.filter((a) => a.category_id === cat.id).length;
-                const isSelected = selectedCategory === cat.id;
+        {/* OPTIONAL CATEGORY TILES BLOCK (OFF BY DEFAULT) */}
+        {articleSettings.showCategoryTilesBlock && !searchQuery && selectedCategories.length === 0 && (
+          <div className="space-y-4 bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-black text-gray-900">Építőipari Szakági Kategóriák</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayCategories.map((cat) => {
+                const count = categoryCounts.get(cat.id) || 0;
+                const IconComp = (cat.icon_name && categoryIconMap[cat.icon_name]) || Layers;
                 const catColor = cat.color || '#FFC400';
-
                 return (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategory(isSelected ? null : cat.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      isSelected
-                        ? 'bg-accent text-black shadow-md border border-accent'
-                        : 'bg-white border border-gray-200 text-gray-700 hover:border-accent/40'
-                    }`}
+                    onClick={() => handleCategoryToggle(cat.id)}
+                    className="p-4 rounded-2xl border border-gray-200 hover:border-primary text-left transition-all hover:shadow-md flex items-center justify-between group"
                   >
-                    <span
-                      className="w-2 h-2 rounded-full inline-block"
-                      style={{ backgroundColor: catColor }}
-                    />
-                    {cat.name} ({count})
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-2xs"
+                        style={{
+                          backgroundColor: `${catColor}20`,
+                          borderColor: `${catColor}50`,
+                          color: catColor,
+                        }}
+                      >
+                        <IconComp size={20} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">{cat.name}</h4>
+                        <p className="text-xs text-gray-500 mt-0.5">{count} cikk</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-primary group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 );
               })}
-          </div>
-        </div>
-
-        {/* Difficulty Filter Chips */}
-        <div className="flex items-center gap-2 flex-wrap text-xs">
-          <span className="font-bold text-gray-400 uppercase tracking-wider text-[11px]">Szint:</span>
-          <button
-            onClick={() => setSelectedDifficulty(null)}
-            className={`px-3 py-1 rounded-lg font-bold transition-all ${
-              selectedDifficulty === null
-                ? 'bg-primary text-white'
-                : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'
-            }`}
-          >
-            Összes Szint
-          </button>
-          {Object.entries(difficultyLabels).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setSelectedDifficulty(selectedDifficulty === key ? null : key)}
-              className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                selectedDifficulty === key
-                  ? 'bg-primary text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Category Cards Overview Grid (When no specific category is selected) */}
-        {!selectedCategory && !searchQuery && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">Építőipari Szakági Kategóriák</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...categories]
-                .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
-                .map((cat) => {
-                  const IconComponent = (cat.icon_name && categoryIconMap[cat.icon_name]) || Layers;
-                  const catArticlesCount = articles.filter((a) => a.category_id === cat.id).length;
-                  const categoryColor = cat.color || '#FFC400';
-
-                  return (
-                    <div
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className="group bg-white border border-gray-200 hover:border-accent rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between"
-                    >
-                      {/* Cover Image Header */}
-                      <div className="h-36 relative bg-gray-900 overflow-hidden flex items-center justify-center">
-                        {cat.image_url ? (
-                          <img
-                            src={cat.image_url}
-                            alt={cat.name}
-                            className="w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-85"
-                            style={{
-                              objectFit: (cat.image_fit as 'cover' | 'contain' | 'fill') || 'cover',
-                              objectPosition: cat.image_position || 'center',
-                              transform: cat.image_zoom && cat.image_zoom !== 100 ? `scale(${cat.image_zoom / 100})` : undefined,
-                              transformOrigin: cat.image_position || 'center',
-                            }}
-                          />
-                        ) : (
-                          <div
-                            className="w-full h-full flex items-center justify-center opacity-30"
-                            style={{ backgroundColor: categoryColor }}
-                          >
-                            <IconComponent size={64} className="text-white" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                        {/* Icon badge */}
-                        <div
-                          className="absolute bottom-3 left-4 w-11 h-11 rounded-xl flex items-center justify-center border shadow-lg backdrop-blur-md"
-                          style={{
-                            backgroundColor: `${categoryColor}25`,
-                            borderColor: `${categoryColor}80`,
-                            color: categoryColor,
-                          }}
-                        >
-                          <IconComponent size={22} />
-                        </div>
-
-                        {/* Badges top right */}
-                        <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                          {cat.featured && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#FFC400] text-black shadow-sm">
-                              <Star size={10} className="fill-black" /> Kiemelt
-                            </span>
-                          )}
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur border border-white/10">
-                            {catArticlesCount} cikk
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                        <div>
-                          <h3 className="text-base font-bold text-gray-900 group-hover:text-primary transition-colors">
-                            {cat.name}
-                          </h3>
-                          {cat.description && (
-                            <p className="mt-1.5 text-xs text-gray-600 leading-relaxed line-clamp-2">
-                              {cat.description}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="pt-3 border-t border-gray-100 text-xs font-bold text-accent flex items-center justify-between group-hover:translate-x-0.5 transition-transform">
-                          <span>Cikkek megtekintése</span>
-                          <ChevronRight size={14} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
             </div>
           </div>
         )}
 
-        {/* Articles List */}
-        <div className="space-y-4">
+        {/* MAIN ARTICLES TILE GRID */}
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">
-              {activeCategoryObj ? `${activeCategoryObj.name} cikkek` : 'Elérhető Szakmai Cikkek'} ({filteredArticles.length})
+            <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+              <FileText className="text-accent" size={22} />
+              <span>Elérhető Szakmai Cikkek</span>
+              <span className="text-xs font-normal text-gray-500">
+                ({filteredArticles.length} találat)
+              </span>
             </h2>
-
-            {(selectedCategory || selectedDifficulty || searchQuery) && (
-              <button
-                onClick={() => {
-                  setSelectedCategory(null);
-                  setSelectedDifficulty(null);
-                  setSearchQuery('');
-                }}
-                className="text-xs font-bold text-accent hover:underline"
-              >
-                Szűrők törlése
-              </button>
-            )}
           </div>
 
           {filteredArticles.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center max-w-md mx-auto space-y-3">
-              <BookOpen size={40} className="mx-auto text-gray-300" />
-              <h3 className="text-base font-bold text-gray-900">Nem található cikk</h3>
-              <p className="text-xs text-gray-500">Próbáld meg módosítani a keresési szűrőket vagy a kategóriát.</p>
+            <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center max-w-lg mx-auto space-y-4 shadow-sm">
+              <BookOpen size={48} className="mx-auto text-gray-300" />
+              <h3 className="text-lg font-bold text-gray-900">Nem található a megadott szűrésnek megfelelő cikk</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Nincs a megadott szűrésnek megfelelő cikk. Próbálj meg más kategóriát, tudásszintet vagy keresőkifejezést választani.
+              </p>
+              <button
+                onClick={handleClearAllFilters}
+                className="px-5 py-2.5 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary-700 transition-colors shadow-md"
+              >
+                Szűrők Alaphelyzetbe Állítása
+              </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredArticles.map((article) => {
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${desktopGridClass} gap-6 items-stretch`}>
+              {paginatedArticles.map((article) => {
                 const catObj = categories.find((c) => c.id === article.category_id);
+                const hasImage = Boolean(article.featured_image);
+
                 return (
-                  <div
+                  <article
                     key={article.id}
                     onClick={() => onNavigate('article', { articleSlug: article.slug })}
-                    className="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-accent shadow-sm hover:shadow-md text-left transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    className="h-full flex flex-col justify-between bg-white border border-gray-200 hover:border-primary/40 hover:shadow-xl rounded-3xl transition-all duration-300 group cursor-pointer overflow-hidden shadow-xs"
                   >
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {article.difficulty && (
-                          <span
-                            className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${difficultyColors[article.difficulty]}`}
-                          >
-                            {difficultyLabels[article.difficulty]}
-                          </span>
+                    <div>
+                      {/* Cover Header */}
+                      <div className="w-full aspect-[16/9] relative overflow-hidden bg-primary flex items-center justify-center">
+                        {hasImage ? (
+                          <img
+                            src={article.featured_image!}
+                            alt={article.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out opacity-90 group-hover:opacity-100"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary via-primary-800 to-primary-950 flex flex-col items-center justify-center p-4 text-center">
+                            <BookOpen size={36} className="text-accent mb-2 opacity-80" />
+                            <span className="text-white/70 text-[10px] font-bold uppercase tracking-wider">
+                              ÉpítőTudás Szakcikk
+                            </span>
+                          </div>
                         )}
-                        {catObj && (
-                          <span className="text-xs bg-gray-100 text-gray-700 font-semibold px-2.5 py-0.5 rounded-md">
-                            {catObj.name}
-                          </span>
-                        )}
+
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                        {/* Top Badges */}
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            {article.difficulty && (
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border backdrop-blur-md shadow-xs ${difficultyColors[article.difficulty]}`}>
+                                {difficultyLabels[article.difficulty] || article.difficulty}
+                              </span>
+                            )}
+                            {catObj && (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-black/60 text-white backdrop-blur-md border border-white/20">
+                                {catObj.name}
+                              </span>
+                            )}
+                          </div>
+
+                          {(article.views && article.views > 2500) && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-accent text-primary-950 shadow-sm">
+                              <Sparkles size={11} /> Kiemelt
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title Overlay in Cover */}
+                        <div className="absolute bottom-3 left-4 right-4 text-white">
+                          <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+                            {article.title}
+                          </h3>
+                        </div>
                       </div>
 
-                      <h3 className="text-base md:text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
-                        {article.title}
-                      </h3>
-                      <p className="text-gray-600 text-xs md:text-sm leading-relaxed line-clamp-2">
-                        {article.excerpt}
-                      </p>
+                      {/* Body Excerpt */}
+                      <div className="p-5 space-y-3">
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                          {article.excerpt || 'Részletes építőipari technológiai leírás, munkavédelmi előírások és gyakorlati útmutató.'}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center md:flex-col md:items-end justify-between border-t md:border-t-0 pt-3 md:pt-0 border-gray-100 text-xs text-gray-400 gap-2 shrink-0">
-                      <span className="flex items-center gap-1 font-medium text-gray-600">
-                        <TrendingUp size={13} className="text-accent" /> {formatViews(article.views)} megtekintés
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={13} /> {article.read_time} perc olvasás
-                      </span>
-                      <span className="flex items-center gap-1 text-amber-500 font-bold">
-                        <Star size={13} fill="currentColor" /> {article.rating.toFixed(1)}
-                      </span>
+                    {/* Card Footer Metadata (NO FAKE STATS) */}
+                    <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1">
+                          <Clock size={13} className="text-gray-400" />
+                          <span>{article.read_time || 5} perc olvasás</span>
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <Calendar size={13} className="text-gray-400" />
+                          <span>Frissítve: {formatDateHu(article.updated_at || article.created_at)}</span>
+                        </span>
+                      </div>
+
+                      {/* Display View Count ONLY if enabled in settings and real data exists */}
+                      {articleSettings.showViewCount && (article.views || 0) > 0 && (
+                        <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1">
+                          👁 {article.views}
+                        </span>
+                      )}
+
+                      {/* Display Rating ONLY if enabled in settings and rating_count > 0 */}
+                      {articleSettings.showRatings && (article.rating_count || 0) > 0 && (
+                        <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1">
+                          <Star size={12} className="fill-amber-400 text-amber-400" />
+                          {article.rating ? article.rating.toFixed(1) : '5.0'}/5 ({article.rating_count})
+                        </span>
+                      )}
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
           )}
+
+          {/* LOAD MORE BUTTON */}
+          {articleSettings.showLoadMoreButton && filteredArticles.length > visibleCount && (
+            <div className="text-center pt-6">
+              <button
+                onClick={() => setVisibleCount((prev) => prev + (articleSettings.articlesPerPage || 12))}
+                className="px-8 py-3.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all inline-flex items-center gap-2 cursor-pointer"
+              >
+                <span>További cikkek betöltése ({filteredArticles.length - visibleCount} maradt)</span>
+                <ChevronDown size={16} />
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* COMPACT CATEGORY FILTER MODAL / POPUP */}
+      {isCategoryModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsCategoryModalOpen(false);
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cat-modal-title"
+        >
+          <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-lg p-6 space-y-5 shadow-2xl relative text-gray-900 max-h-[85vh] flex flex-col overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="space-y-0.5">
+                <h3 id="cat-modal-title" className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Filter size={18} className="text-primary" /> Kategóriák Szűrése
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Válassz ki egy vagy több kategóriát a cikkek szűréséhez:
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"
+                aria-label="Bezárás"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Checkbox List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <button
+                onClick={() => {
+                  setSelectedCategories([]);
+                  updateUrlParams([], selectedLevels, searchQuery);
+                }}
+                className={`w-full p-3 rounded-2xl border text-left font-bold text-xs transition-all flex items-center justify-between ${
+                  selectedCategories.length === 0
+                    ? 'bg-primary/10 border-primary text-primary-950 font-black'
+                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span>Összes kategória</span>
+                <span className="text-xs bg-white px-2.5 py-0.5 rounded-full border border-gray-200">
+                  {articles.length} cikk
+                </span>
+              </button>
+
+              {displayCategories.map((cat) => {
+                const count = categoryCounts.get(cat.id) || 0;
+                const isChecked = selectedCategories.includes(cat.id);
+                const catColor = cat.color || '#FFC400';
+
+                return (
+                  <label
+                    key={cat.id}
+                    className={`w-full p-3 rounded-2xl border text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                      isChecked
+                        ? 'bg-primary/10 border-primary text-primary-950 shadow-2xs'
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleCategoryToggle(cat.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: catColor }}
+                      />
+                      <span>{cat.name}</span>
+                    </div>
+
+                    <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full border border-gray-200">
+                      {count} cikk
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  setSelectedCategories([]);
+                  updateUrlParams([], selectedLevels, searchQuery);
+                }}
+                className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-gray-900 underline decoration-dotted"
+              >
+                Szűrők törlése
+              </button>
+
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="px-6 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all"
+              >
+                Cikkek megjelenítése
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
