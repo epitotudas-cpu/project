@@ -1,8 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
-  Search, Home, ChevronRight, BookOpen, AlertCircle,
-  Lock, ArrowRight, Clock, Tag, GraduationCap,
-  ChevronDown, ChevronUp, LayoutList, LayoutGrid, FileText, Calculator, Library,
+  Search,
+  Home,
+  ChevronRight,
+  BookOpen,
+  AlertCircle,
+  Lock,
+  ArrowRight,
+  Clock,
+  Tag,
+  GraduationCap,
+  ChevronDown,
+  ChevronUp,
+  LayoutList,
+  LayoutGrid,
+  FileText,
+  Calculator,
+  Library,
+  Filter,
+  X,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useGlossary } from '../contexts/GlossaryContext';
@@ -109,7 +125,6 @@ function getTermGradient(cat?: string | null): string {
 export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const { user } = useAuth();
   const glossary = useGlossary();
-
   const categorySettings = useGlossaryCategorySettings();
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
@@ -131,16 +146,73 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   };
 
   const [activeTab, setActiveTab] = useState<'technical' | 'industry'>('technical');
-  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set());
 
+  // Category Filter Modal State
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [modalCategories, setModalCategories] = useState<string[]>([]);
+
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<GlossaryTermFromJson | null>(null);
+
+  // --------------------------------------------------------------------------
+  // URL Parameter Syncing
+  // --------------------------------------------------------------------------
+  const syncFromHash = useCallback(() => {
+    try {
+      const hash = window.location.hash || '';
+      const queryPart = hash.includes('?') ? hash.split('?')[1] : '';
+      if (!queryPart) return;
+
+      const params = new URLSearchParams(queryPart);
+      const catParam = params.get('cat');
+      const qParam = params.get('q');
+      const tabParam = params.get('tab');
+
+      if (catParam) {
+        setSelectedCategories(catParam.split(',').filter(Boolean));
+      }
+      if (qParam) {
+        setSearchQuery(qParam);
+      }
+      if (tabParam === 'industry' || tabParam === 'technical') {
+        setActiveTab(tabParam);
+      }
+    } catch {
+      // ignore parsing errors
+    }
+  }, []);
+
+  useEffect(() => {
+    syncFromHash();
+  }, [syncFromHash]);
+
+  const updateUrlParams = useCallback(
+    (cats: string[], q: string, tab?: 'technical' | 'industry') => {
+      try {
+        const currentTab = tab || activeTab;
+        const params = new URLSearchParams();
+        if (currentTab !== 'technical') params.set('tab', currentTab);
+        if (cats.length > 0) params.set('cat', cats.join(','));
+        if (q.trim()) params.set('q', q.trim());
+
+        const queryString = params.toString();
+        const newHash = queryString ? `#glossary?${queryString}` : '#glossary';
+
+        if (window.location.hash !== newHash) {
+          window.history.replaceState(null, '', newHash);
+        }
+      } catch {
+        // ignore
+      }
+    },
+    [activeTab]
+  );
 
   /* ── Handlers ─────────────────────────────────────────────── */
   function handleTermClick(item: GlossaryTermFromJson) {
@@ -160,10 +232,48 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
   function handleTabChange(tab: 'technical' | 'industry') {
     setActiveTab(tab);
-    setSelectedLetter(null);
-    setSelectedCategory(null);
+    setSelectedCategories([]);
     setSearchQuery('');
+    updateUrlParams([], '', tab);
   }
+
+  const handleOpenCategoryModal = () => {
+    setModalCategories([...selectedCategories]);
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleApplyCategoryModal = () => {
+    setSelectedCategories([...modalCategories]);
+    updateUrlParams(modalCategories, searchQuery);
+    setIsCategoryModalOpen(false);
+  };
+
+  const handleClearAllFilters = () => {
+    setSelectedCategories([]);
+    setModalCategories([]);
+    setSearchQuery('');
+    updateUrlParams([], '');
+    setIsCategoryModalOpen(false);
+  };
+
+  const handleRemoveCategoryChip = (catName: string) => {
+    setSelectedCategories((prev) => {
+      const next = prev.filter((c) => c !== catName);
+      updateUrlParams(next, searchQuery);
+      return next;
+    });
+  };
+
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCategoryModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   /* ── Derived data ─────────────────────────────────────────── */
   const tabTerms = useMemo(() => {
@@ -177,11 +287,26 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     [selectedTrade],
   );
 
-  const letters = useMemo(() => {
-    const set = new Set<string>();
-    tabTerms.forEach((t) => { const l = t.term.charAt(0).toUpperCase(); if (l) set.add(l); });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'hu'));
-  }, [tabTerms]);
+  // Calculate term counts per category for the current tab
+  const categoryCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    const deletedList = categorySettings.deletedCategories || [];
+    tabTerms.forEach((t) => {
+      if (t.category) {
+        const catName = t.category.trim();
+        if (deletedList.includes(catName) || deletedList.includes(t.category)) return;
+
+        const configItem = categorySettings.categoryItems?.[catName] || categorySettings.categoryItems?.[t.category];
+        if (configItem && configItem.enabled === false) return;
+        map.set(catName, (map.get(catName) ?? 0) + 1);
+      }
+    });
+    return map;
+  }, [tabTerms, categorySettings]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(categoryCounts.keys()).sort((a, b) => a.localeCompare(b, 'hu'));
+  }, [categoryCounts]);
 
   const filteredTerms = useMemo(() => {
     let res = tabTerms;
@@ -195,28 +320,11 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
           (t.usage_example ?? '').toLowerCase().includes(q),
       );
     }
-    if (selectedCategory && selectedCategory !== 'all')
-      res = res.filter((t) => t.category === selectedCategory);
-    if (selectedLetter)
-      res = res.filter((t) => t.term.charAt(0).toUpperCase() === selectedLetter);
+    if (selectedCategories.length > 0) {
+      res = res.filter((t) => t.category && selectedCategories.includes(t.category.trim()));
+    }
     return res.sort((a, b) => a.term.localeCompare(b.term, 'hu'));
-  }, [tabTerms, selectedLetter, selectedCategory, searchQuery]);
-
-  const categoryStats = useMemo(() => {
-    const map = new Map<string, number>();
-    const deletedList = categorySettings.deletedCategories || [];
-    tabTerms.forEach((t) => {
-      if (t.category) {
-        const catName = t.category.trim();
-        if (deletedList.includes(catName) || deletedList.includes(t.category)) return;
-
-        const configItem = categorySettings.categoryItems?.[catName] || categorySettings.categoryItems?.[t.category];
-        if (configItem && configItem.enabled === false) return;
-        map.set(catName, (map.get(catName) ?? 0) + 1);
-      }
-    });
-    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [tabTerms, categorySettings]);
+  }, [tabTerms, selectedCategories, searchQuery]);
 
   const latestTerms = useMemo(
     () => [...glossary.terms].slice(-6).reverse(),
@@ -281,7 +389,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             <span className="text-gray-300 font-medium">Fogalmak</span>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-end gap-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-end gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2.5 bg-accent/15 rounded-xl border border-accent/25">
@@ -318,22 +426,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 🗣 Zsargon Szótár
               </button>
             </div>
-          </div>
-
-          {/* Search */}
-          <div className="relative max-w-2xl">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder={
-                activeTab === 'technical'
-                  ? 'Keress a fogalmak között… (pl. hőszigetelek, betonacél)'
-                  : 'Keress a zsargon szavak között… (pl. Malter, Stafni, Trepedli)'
-              }
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/95 border border-white/20 focus:border-accent rounded-2xl pl-12 pr-4 py-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-accent/30 text-sm font-medium shadow-xl placeholder:text-gray-400 transition-all"
-            />
           </div>
         </div>
       </div>
@@ -387,7 +479,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
               <p className="text-xs text-gray-600 mt-1">{linkedOfficialTerm.definition}</p>
             </div>
             <button
-              onClick={() => { handleTabChange('technical'); setSearchQuery(linkedOfficialTerm.term); }}
+              onClick={() => { handleTabChange('technical'); setSearchQuery(linkedOfficialTerm.term); updateUrlParams([], linkedOfficialTerm.term, 'technical'); }}
               className="px-4 py-2 bg-accent text-black font-bold text-xs rounded-xl hover:bg-yellow-400 self-start md:self-auto transition-colors"
             >
               Ugrás a Szakmai Fogalomhoz ➔
@@ -395,109 +487,135 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
           </div>
         )}
 
+        {/* ═══════════ SEARCH AND COMPACT CATEGORY FILTER BAR ═══════════ */}
+        <div className="mb-8 bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            
+            {/* Live Search Input */}
+            <div className="relative flex-1 w-full">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder={
+                  activeTab === 'technical'
+                    ? 'Keress a fogalmak között… (pl. hőszigetelés, betonacél)'
+                    : 'Keress a zsargon szavak között… (pl. Malter, Stafni, Trepedli)'
+                }
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  updateUrlParams(selectedCategories, e.target.value);
+                }}
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    updateUrlParams(selectedCategories, '');
+                  }}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            {/* Compact Category Filter Action Button */}
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+              <div className="relative flex-1 md:flex-initial">
+                <button
+                  onClick={handleOpenCategoryModal}
+                  className={`w-full md:w-auto px-4 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-between gap-2 border shadow-xs ${
+                    selectedCategories.length > 0
+                      ? 'bg-primary text-white border-primary-700 shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter size={15} />
+                    <span>
+                      {selectedCategories.length > 0
+                        ? `Kategóriák (${selectedCategories.length})`
+                        : 'Kategóriák'}
+                    </span>
+                  </div>
+                  <ChevronDown size={15} />
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* ACTIVE FILTER REMOVABLE CHIPS */}
+          {(selectedCategories.length > 0 || searchQuery.trim()) && (
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100">
+              <span className="text-xs font-bold text-gray-500">Aktív szűrők:</span>
+
+              {/* Category Chips */}
+              {selectedCategories.map((catName) => (
+                <span
+                  key={catName}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 text-primary-950 font-bold text-xs rounded-full shadow-2xs"
+                >
+                  <span>{getCategoryIcon(catName, categorySettings)} {catName}</span>
+                  <button
+                    onClick={() => handleRemoveCategoryChip(catName)}
+                    className="hover:bg-primary/20 rounded-full p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+
+              {/* Search Query Chip */}
+              {searchQuery.trim() && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs rounded-full shadow-2xs">
+                  <span>Keresés: „{searchQuery}”</span>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      updateUrlParams(selectedCategories, '');
+                    }}
+                    className="hover:bg-amber-200 rounded-full p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              )}
+
+              {/* Clear All Button */}
+              <button
+                onClick={handleClearAllFilters}
+                className="text-xs font-bold text-accent hover:underline ml-2 cursor-pointer"
+              >
+                Összes szűrő törlése
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* ═══ FŐOSZLOP ═══ */}
           <div className="flex-1 min-w-0 space-y-8">
-            {categorySettings.showFeaturedCategories && !searchQuery && categoryStats.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-black text-gray-900">Kiemelt kategóriák</h2>
-                  <span className="text-xs text-gray-400">Kattints a szűréshez</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {categoryStats.map(([cat, count]) => {
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => {
-                          setSelectedCategory(selectedCategory === cat ? null : cat);
-                          setSelectedLetter(null);
-                          setSearchQuery('');
-                        }}
-                        className={`group p-4 rounded-2xl border text-left transition-all duration-200 hover:shadow-md ${
-                          selectedCategory === cat
-                            ? 'bg-accent border-accent/40 shadow-md scale-[1.02]'
-                            : 'bg-white border-gray-200 hover:border-accent/40 hover:scale-[1.01]'
-                        }`}
-                      >
-                        {renderCategoryIconElement(cat, categorySettings)}
-                        <div className={`text-sm font-black leading-tight ${selectedCategory === cat ? 'text-black' : 'text-gray-900'}`}>
-                          {cat}
-                        </div>
-                        <div className={`text-xs mt-1 font-medium ${selectedCategory === cat ? 'text-black/60' : 'text-gray-500'}`}>
-                          {count} cikk
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* A-Z betűnavigáció */}
-            {!selectedCategory && !searchQuery && letters.length > 0 && (
-              <section>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setSelectedLetter(null)}
-                    className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
-                      selectedLetter === null
-                        ? 'bg-accent text-black'
-                        : 'bg-white border border-gray-200 text-gray-600 hover:border-accent/40'
-                    }`}
-                  >
-                    Összes
-                  </button>
-                  {letters.map((letter) => (
-                    <button
-                      key={letter}
-                      onClick={() => setSelectedLetter(letter)}
-                      className={`w-9 h-9 rounded-lg font-bold text-xs transition-all ${
-                        selectedLetter === letter
-                          ? 'bg-accent text-black shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:border-accent/40'
-                      }`}
-                    >
-                      {letter}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Aktív kategória chip */}
-            {selectedCategory && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-bold text-gray-500">Szűrve:</span>
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-black text-xs font-black rounded-xl"
-                >
-                  {getCategoryIcon(selectedCategory, categorySettings)} {selectedCategory}
-                  <span className="ml-1 opacity-60">✕</span>
-                </button>
-              </div>
-            )}
 
             {/* Szakasz fejléc & Nézetváltó */}
             <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-gray-200/80 mb-6">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-black text-gray-900">
-                  {selectedCategory
-                    ? selectedCategory
-                    : selectedLetter
-                    ? `„${selectedLetter}" betűvel kezdődők`
+                  {selectedCategories.length > 0
+                    ? `Szűrt fogalmak (${selectedCategories.join(', ')})`
                     : searchQuery
                     ? 'Keresési eredmények'
-                    : 'Népszerű fogalmak'}
+                    : 'Összes fogalom'}
                 </h2>
                 <span className="text-xs text-gray-400 font-medium">
                   • {filteredTerms.length} fogalom
                 </span>
                 {searchQuery && (
                   <span className="text-xs text-gray-400 font-medium">
-                    a „{searchQuery}" keresésre
+                    a „{searchQuery}” keresésre
                   </span>
                 )}
               </div>
@@ -535,17 +653,23 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
             {/* ═══ FOGALOMKÁRTYÁK ═══ */}
             {filteredTerms.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-                <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-400 text-sm font-medium">
-                  Nincs találat a kiválasztott szűrőknek megfelelően.
+              <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center max-w-lg mx-auto space-y-4 shadow-sm">
+                <BookOpen size={48} className="mx-auto text-gray-300" />
+                <h3 className="text-lg font-bold text-gray-900">Nincs a kiválasztott szűrésnek megfelelő fogalom.</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Próbálj meg más kategóriát vagy keresőkifejezést választani.
                 </p>
+                <button
+                  onClick={handleClearAllFilters}
+                  className="px-5 py-2.5 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary-700 transition-colors shadow-md cursor-pointer"
+                >
+                  Szűrők Alaphelyzetbe Állítása
+                </button>
               </div>
             ) : viewMode === 'grid' ? (
               /* ── CSEMPESZERŰ TANULÓ KÁRTYA NÉZET (TILES WITH IMAGE) ── */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 items-stretch">
                 {filteredTerms.map((item) => {
-                  const normalizedLevel = item.szint ? item.szint.trim() : null;
                   const normalizedCat = item.category ? item.category.trim() : null;
                   const imageFailedToLoad = imageLoadErrors.has(item.id);
                   const hasImage = item.image_urls && item.image_urls.length > 0 && !imageFailedToLoad;
@@ -562,7 +686,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                         <div className={`w-full aspect-[16/10] sm:aspect-[16/10] relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
                           {hasImage ? (
                             <>
-                              {/* 1. Háttér kiegészítő elmosás (Backdrop fill for non-standard aspect ratios) */}
+                              {/* 1. Háttér kiegészítő elmosás */}
                               <img
                                 src={item.image_urls![0]}
                                 alt=""
@@ -570,7 +694,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                 className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-110 pointer-events-none select-none"
                               />
 
-                              {/* 2. Fő kép intelligens felső-középső fókuszálással */}
+                              {/* 2. Fő kép */}
                               <img
                                 src={item.image_urls![0]}
                                 alt={item.term}
@@ -584,7 +708,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                 }
                               />
 
-                              {/* Top shadow gradient layer for text/badge legibility */}
+                              {/* Top shadow gradient layer */}
                               <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-20 pointer-events-none" />
                             </>
                           ) : (
@@ -610,15 +734,11 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                               {item.entry_type === 'industry_term' ? 'Zsargon' : 'Szakmai'}
                             </span>
 
-                            {normalizedLevel ? (
-                              <span className="text-[10px] font-extrabold bg-black/60 text-white border border-white/20 backdrop-blur-md px-2 py-0.5 rounded shadow-sm">
-                                {normalizedLevel}
-                              </span>
-                            ) : !user ? (
+                            {!user && (
                               <span className="text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-500/40 backdrop-blur-md px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
                                 <Lock size={10} /> Zárt
                               </span>
-                            ) : null}
+                            )}
                           </div>
                         </div>
 
@@ -626,8 +746,9 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                         <div className="p-4 space-y-1.5">
                           {/* Kategória megnevezés */}
                           {normalizedCat && (
-                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">
-                              {normalizedCat}
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate flex items-center gap-1">
+                              <span>{getCategoryIcon(item.category, categorySettings)}</span>
+                              <span>{normalizedCat}</span>
                             </div>
                           )}
 
@@ -691,11 +812,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                 {getCategoryIcon(item.category, categorySettings)} {item.category}
                               </span>
                             )}
-                            {item.szint && (
-                              <span className="text-xs bg-primary/10 text-primary-900 border border-primary/20 font-semibold px-2 py-0.5 rounded-md">
-                                {item.szint}
-                              </span>
-                            )}
                             {item.jargon_subtype === 'brand_name' && (
                               <span className="text-xs bg-purple-50 text-purple-700 font-semibold px-2 py-0.5 rounded-md border border-purple-200">
                                 Márkanév
@@ -738,7 +854,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                     <div className="font-bold text-gray-900">
                                       <span className="text-amber-700">Hivatalos megfelelő: </span>
                                       <button
-                                        onClick={(e) => { e.stopPropagation(); handleTabChange('technical'); setSearchQuery(item.official_term_name || ''); }}
+                                        onClick={(e) => { e.stopPropagation(); handleTabChange('technical'); setSearchQuery(item.official_term_name || ''); updateUrlParams([], item.official_term_name || '', 'technical'); }}
                                         className="text-primary underline font-bold hover:text-amber-700"
                                       >
                                         ➡ {item.official_term_name}
@@ -795,7 +911,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                   {item.kapcsolodofogalmak.map((relTerm) => (
                                     <button
                                       key={relTerm}
-                                      onClick={(e) => { e.stopPropagation(); setSearchQuery(relTerm); }}
+                                      onClick={(e) => { e.stopPropagation(); setSearchQuery(relTerm); updateUrlParams(selectedCategories, relTerm); }}
                                       className="bg-primary/10 border border-primary/20 text-primary-900 font-medium px-2 py-0.5 rounded hover:bg-primary/20 transition-colors"
                                     >
                                       {relTerm}
@@ -943,7 +1059,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   {pathways.map((step, idx) => (
                     <div key={idx} className="bg-black/30 border border-white/10 p-3 rounded-xl">
                       <div className="flex items-center justify-between text-[10px] mb-1">
-                        <span className="font-bold text-accent">{step.level} szint</span>
+                        <span className="font-bold text-accent">{step.level}</span>
                         <span className="text-gray-400">{step.category}</span>
                       </div>
                       <h4 className="text-xs font-bold text-white mb-1.5">{step.title}</h4>
@@ -951,7 +1067,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                         {step.termNames.map((tName) => (
                           <button
                             key={tName}
-                            onClick={() => setSearchQuery(tName)}
+                            onClick={() => { setSearchQuery(tName); updateUrlParams(selectedCategories, tName); }}
                             className="text-[10px] bg-accent/10 border border-accent/20 text-accent px-2 py-0.5 rounded hover:bg-accent/20"
                           >
                             {tName}
@@ -998,6 +1114,115 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
           </aside>
         </div>
       </div>
+
+      {/* ── CATEGORY FILTER MODAL / POPUP ── */}
+      {isCategoryModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsCategoryModalOpen(false);
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cat-modal-title"
+        >
+          <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-lg p-6 space-y-5 shadow-2xl relative text-gray-900 max-h-[85vh] flex flex-col overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="space-y-0.5">
+                <h3 id="cat-modal-title" className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Filter size={18} className="text-primary" /> Kategóriák szűrése
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Válassz egy vagy több kategóriát a fogalmak szűréséhez.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"
+                aria-label="Bezárás"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Checkbox List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <button
+                onClick={() => setModalCategories([])}
+                className={`w-full p-3 rounded-2xl border text-left font-bold text-xs transition-all flex items-center justify-between ${
+                  modalCategories.length === 0
+                    ? 'bg-primary/10 border-primary text-primary-950 font-black'
+                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span>Összes kategória</span>
+                <span className="text-xs bg-white px-2.5 py-0.5 rounded-full border border-gray-200">
+                  {tabTerms.length} fogalom
+                </span>
+              </button>
+
+              {availableCategories.map((catName) => {
+                const count = categoryCounts.get(catName) || 0;
+                const isChecked = modalCategories.includes(catName);
+
+                return (
+                  <label
+                    key={catName}
+                    className={`w-full p-3 rounded-2xl border text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                      isChecked
+                        ? 'bg-primary/10 border-primary text-primary-950 shadow-2xs'
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setModalCategories((prev) =>
+                            prev.includes(catName)
+                              ? prev.filter((c) => c !== catName)
+                              : [...prev, catName]
+                          );
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span className="flex items-center gap-1">
+                        <span>{getCategoryIcon(catName, categorySettings)}</span>
+                        <span>{catName}</span>
+                      </span>
+                    </div>
+
+                    <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full border border-gray-200">
+                      {count} fogalom
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+              <button
+                onClick={handleClearAllFilters}
+                className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-gray-900 underline decoration-dotted cursor-pointer"
+              >
+                Szűrők törlése
+              </button>
+
+              <button
+                onClick={handleApplyCategoryModal}
+                className="px-6 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                Fogalmak megjelenítése
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ── Modálok ── */}
       <AuthPromptModal
