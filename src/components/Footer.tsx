@@ -1,4 +1,3 @@
-import { Mail } from 'lucide-react';
 import { useSiteSettings } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
@@ -20,20 +19,6 @@ export default function Footer({ onNavigate }: FooterProps) {
 
   return (
     <footer className="bg-primary border-t border-primary-700">
-      {/* Newsletter */}
-      <div className="bg-primary-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Mail size={20} className="text-accent" />
-              <span className="text-white font-bold text-lg">{siteSettings.newsletterTitle || 'Szakmai hírlevél'}</span>
-            </div>
-            <p className="text-gray-400 text-sm max-w-3xl leading-relaxed">
-              {siteSettings.newsletterDescription || 'Heti frissítések, új cikkek, szakmai tippek és iparági újdonságok közvetlenül az e-mail fiókodba.'}
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Links */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
