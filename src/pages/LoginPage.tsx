@@ -48,6 +48,21 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
     }
 
     setLoading(false);
+    try {
+      const returnPage = sessionStorage.getItem('auth_return_page');
+      if (returnPage) {
+        sessionStorage.removeItem('auth_return_page');
+        const returnHash = sessionStorage.getItem('auth_return_hash');
+        if (returnHash) {
+          sessionStorage.removeItem('auth_return_hash');
+          window.location.hash = returnHash;
+        }
+        onNavigate(returnPage);
+        return;
+      }
+    } catch {
+      // Storage unavailable fallback
+    }
     onNavigate('home');
   };
 

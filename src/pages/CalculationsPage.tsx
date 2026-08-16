@@ -31,6 +31,8 @@ import {
 import SectionSubNav from '../components/SectionSubNav';
 import { CalculatorInput, safeNum, parseNumberValue } from '../components/CalculatorInput';
 import { useCalculatorConfig } from '../services/calculatorConfigService';
+import { useAuth } from '../contexts/AuthContext';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 interface CalculationsPageProps {
   onNavigate: (page: string) => void;
@@ -865,6 +867,10 @@ const CALCULATION_ITEMS: CalculationItem[] = [
 ];
 
 export default function CalculationsPage({ onNavigate }: CalculationsPageProps) {
+  const { user } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingCalcTitle, setPendingCalcTitle] = useState<string | undefined>(undefined);
+
   const [viewMode, setViewMode] = useState<'categories' | 'category-list' | 'detail' | 'interactive-calculators'>('categories');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCalcId, setSelectedCalcId] = useState<string | null>(null);
@@ -989,6 +995,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
   const navigateToDetail = (calcId: string) => {
     const item = CALCULATION_ITEMS.find((c) => c.id === calcId);
     if (item) {
+      if (!user) {
+        setPendingCalcTitle(item.title);
+        setAuthModalOpen(true);
+        return;
+      }
       setSelectedCalcId(item.id);
       setSelectedCategory(item.categoryId);
       setViewMode('detail');
@@ -3014,6 +3025,15 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
           </div>
         </div>
       )}
+
+      <AuthPromptModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onNavigate={onNavigate}
+        contentType="calculator"
+        contentTitle={pendingCalcTitle}
+        returnPage="calculations"
+      />
 
     </div>
   );

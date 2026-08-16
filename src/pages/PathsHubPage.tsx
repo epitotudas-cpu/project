@@ -29,6 +29,8 @@ import {
 import SectionSubNav from '../components/SectionSubNav';
 import { type TradeDetail } from '../data/tradeDetailsData';
 import { useTrades } from '../services/tradeService';
+import { useAuth } from '../contexts/AuthContext';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 interface PathsHubPageProps {
   onNavigate: (page: string) => void;
@@ -46,9 +48,22 @@ const TRADE_CARDS = [
 ];
 
 export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
+  const { user } = useAuth();
   const trades = useTrades();
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
   const [tradeSearch, setTradeSearch] = useState<string>('');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingTradeName, setPendingTradeName] = useState<string | undefined>(undefined);
+
+  const handleTradeSelect = (tradeId: string, tradeName: string) => {
+    if (!user) {
+      setPendingTradeName(tradeName);
+      setAuthModalOpen(true);
+      return;
+    }
+    setSelectedTradeId(tradeId);
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
 
   const activeTrade: TradeDetail | null = useMemo(() => {
     if (!selectedTradeId) return null;
@@ -229,7 +244,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                     </div>
 
                     <button
-                      onClick={() => { setSelectedTradeId(card.id); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                      onClick={() => handleTradeSelect(card.id, card.name)}
                       className="w-full py-2.5 bg-primary hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 group-hover:bg-accent group-hover:text-primary"
                     >
                       <span>Szakma bemutatása</span>
@@ -604,6 +619,17 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
         )}
 
       </div>
+
+      {/* Auth Prompt Modal */}
+      <AuthPromptModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onNavigate={onNavigate}
+        contentType="trade"
+        contentTitle={pendingTradeName}
+        returnPage="paths"
+      />
+
     </div>
   );
 }

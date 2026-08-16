@@ -1004,7 +1004,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         onNavigate={onNavigate}
+        contentType="glossary"
+        contentTitle={selectedTerm?.term}
         termTitle={selectedTerm?.term}
+        returnPage="glossary"
       />
       <TermDetailModal
         isOpen={detailModalOpen}

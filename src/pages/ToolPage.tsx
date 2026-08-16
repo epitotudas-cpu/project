@@ -23,6 +23,8 @@ import { getAdsForTool, recordAdClick } from '../services/advertisementService';
 import type { Tool, AdCampaign } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 import { Laptop } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 interface ToolPageProps {
   onNavigate: (page: string) => void;
@@ -123,6 +125,7 @@ const CATEGORIES_CONFIG = [
 const ALL_PROFESSIONS = ['Ács', 'Zsaluzó ács', 'Tetőfedő', 'Kőműves', 'Burkoló', 'Villanyszerelő', 'Épületgépész', 'Lakatos', 'Gipszkartonozó'];
 
 export default function ToolPage({ onNavigate }: ToolPageProps) {
+  const { user } = useAuth();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -132,11 +135,22 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [activeViewTab, setActiveViewTab] = useState<'catalog' | 'wizard' | 'brands'>('catalog');
   const [partnerAds, setPartnerAds] = useState<AdCampaign[]>([]);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingToolName, setPendingToolName] = useState<string | undefined>(undefined);
 
   // Wizard state
   const [wizardStep, setWizardStep] = useState(1);
   const [wizardTask, setWizardTask] = useState<'beton_furas' | 'fem_vagas' | 'burkolas' | 'szintezes' | 'zsaluzas' | null>(null);
   const [wizardFrequency, setWizardFrequency] = useState<'hobby' | 'pro' | 'heavy' | null>(null);
+
+  const handleToolSelect = (tool: Tool) => {
+    if (!user) {
+      setPendingToolName(tool.name);
+      setAuthModalOpen(true);
+      return;
+    }
+    setSelectedTool(tool);
+  };
 
   useEffect(() => {
     async function loadTools() {
@@ -655,7 +669,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
 
                 <div className="pt-4 border-t border-amber-200 flex justify-center gap-3">
                   <button
-                    onClick={() => setSelectedTool(wizardResultTool)}
+                    onClick={() => handleToolSelect(wizardResultTool)}
                     className="px-6 py-3 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-800 transition-colors flex items-center gap-2 shadow-sm"
                   >
                     Szakmai Enciklopédia Adatlap Megnyitása <ArrowRight size={14} />
@@ -893,7 +907,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                   {filteredTools.map((tool) => (
                     <div
                       key={tool.id}
-                      onClick={() => setSelectedTool(tool)}
+                      onClick={() => handleToolSelect(tool)}
                       className="group bg-white border border-gray-200/80 hover:border-primary/50 hover:shadow-lg rounded-3xl p-6 transition-all cursor-pointer flex flex-col justify-between space-y-4 shadow-sm"
                     >
                       <div className="space-y-3">
@@ -927,6 +941,17 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
           </div>
         )}
       </div>
+
+      {/* Auth Prompt Modal */}
+      <AuthPromptModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onNavigate={onNavigate}
+        contentType="tool"
+        contentTitle={pendingToolName}
+        returnPage="tool"
+      />
+
     </div>
   );
 }

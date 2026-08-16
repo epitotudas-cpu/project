@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useBooks } from '../services/bookService';
+import { useAuth } from '../contexts/AuthContext';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 interface BooksPageProps {
   onNavigate: (page: string) => void;
@@ -50,11 +52,14 @@ export interface BookItem {
 }
 
 export default function BooksPage({ onNavigate }: BooksPageProps) {
+  const { user } = useAuth();
   const allBooks = useBooks();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingBookTitle, setPendingBookTitle] = useState<string | undefined>(undefined);
 
   // Filtered books
   const filteredBooks = useMemo(() => {
@@ -70,7 +75,21 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
     });
   }, [allBooks, selectedCategory, searchQuery]);
 
+  const handleBookSelect = (book: BookItem) => {
+    if (!user) {
+      setPendingBookTitle(book.title);
+      setAuthModalOpen(true);
+      return;
+    }
+    setSelectedBook(book);
+  };
+
   const handleDownload = (book: BookItem) => {
+    if (!user) {
+      setPendingBookTitle(book.title);
+      setAuthModalOpen(true);
+      return;
+    }
     setDownloadSuccess(`📥 "${book.title}" letöltése elindult!`);
     setTimeout(() => setDownloadSuccess(null), 4000);
   };
@@ -285,7 +304,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                 {/* Card Action Buttons */}
                 <div className="flex items-center gap-2 pt-2">
                   <button
-                    onClick={() => setSelectedBook(book)}
+                    onClick={() => handleBookSelect(book)}
                     className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
                   >
                     <Eye size={14} /> Tartalom &amp; Minta
@@ -406,6 +425,16 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
           </div>
         </div>
       )}
+
+      {/* Auth Prompt Modal */}
+      <AuthPromptModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onNavigate={onNavigate}
+        contentType="book"
+        contentTitle={pendingBookTitle}
+        returnPage="books"
+      />
 
     </div>
   );
