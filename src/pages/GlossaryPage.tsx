@@ -115,9 +115,9 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     try {
       const saved = sessionStorage.getItem('epitotudas_glossary_view_mode_v1');
-      return saved === 'grid' ? 'grid' : 'list';
+      return saved === 'list' ? 'list' : 'grid';
     } catch {
-      return 'list';
+      return 'grid';
     }
   });
 
