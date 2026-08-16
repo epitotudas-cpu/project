@@ -11,15 +11,6 @@ interface EditArticleModalProps {
   onSaved: (saved: Article) => void;
 }
 
-type DifficultyForm = '' | NonNullable<Article['difficulty']>;
-
-const DIFFICULTY_OPTIONS: { value: NonNullable<Article['difficulty']>; label: string }[] = [
-  { value: 'beginner', label: 'Kezdő' },
-  { value: 'intermediate', label: 'Közepes' },
-  { value: 'advanced', label: 'Haladó' },
-  { value: 'expert', label: 'Szakértő' },
-];
-
 const STATUS_OPTIONS: { value: Article['status'] | 'archived'; label: string }[] = [
   { value: 'draft', label: 'Piszkozat' },
   { value: 'review', label: 'Felülvizsgálaton' },
@@ -33,7 +24,6 @@ interface FormState {
   excerpt: string;
   content: string;
   category_id: string;
-  difficulty: DifficultyForm;
   status: Article['status'];
   author: string;
   read_time: number;
@@ -46,7 +36,6 @@ const EMPTY_FORM: FormState = {
   excerpt: '',
   content: '',
   category_id: '',
-  difficulty: '',
   status: 'draft',
   author: '',
   read_time: 5,
@@ -60,7 +49,6 @@ function formFromArticle(article: Article): FormState {
     excerpt: article.excerpt ?? '',
     content: article.content ?? '',
     category_id: article.category_id ?? '',
-    difficulty: (article.difficulty ?? '') as DifficultyForm,
     status: article.status || 'draft',
     author: article.author ?? '',
     read_time: article.read_time || 5,
@@ -138,7 +126,6 @@ function EditArticleModal({ article, categories, onClose, onSaved }: EditArticle
         excerpt: form.excerpt.trim() || null,
         content: form.content.trim() || null,
         category_id: form.category_id || null,
-        difficulty: (form.difficulty || null) as Article['difficulty'],
         status: form.status,
         author: form.author.trim() || null,
         read_time: Number(form.read_time) || 1,
@@ -272,23 +259,13 @@ function EditArticleModal({ article, categories, onClose, onSaved }: EditArticle
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Kategória</label>
                 <select className={fieldClass} value={form.category_id} onChange={(e) => update('category_id', e.target.value)}>
                   <option value="">— Nincs —</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={labelClass}>Tudásszint</label>
-                <select className={fieldClass} value={form.difficulty} onChange={(e) => update('difficulty', e.target.value as DifficultyForm)}>
-                  <option value="">— Nincs —</option>
-                  {DIFFICULTY_OPTIONS.map((d) => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
                   ))}
                 </select>
               </div>

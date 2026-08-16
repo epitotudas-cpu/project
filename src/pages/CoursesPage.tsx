@@ -139,7 +139,7 @@ export default function CoursesPage() {
               <div className="border-b border-[#1E1E1E] pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <span className="text-xs font-bold uppercase text-accent bg-accent/10 px-2.5 py-0.5 rounded">
-                    {selectedCourse.course.category} • {selectedCourse.course.difficulty}
+                    {selectedCourse.course.category}
                   </span>
                   <h2 className="text-xl font-bold text-white mt-2">{selectedCourse.course.title}</h2>
                 </div>

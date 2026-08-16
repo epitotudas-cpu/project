@@ -143,7 +143,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="inline-block rounded-md bg-accent/10 text-accent font-bold text-xs px-3 py-1 uppercase tracking-wider">
-              {article.difficulty ? `Szint: ${article.difficulty}` : 'Szakmai Útmutató'}
+              Szakmai Útmutató
             </span>
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <span className="flex items-center gap-1"><Clock size={13} /> {article.read_time} perc olvasás</span>

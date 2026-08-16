@@ -21,13 +21,6 @@ const STATUS_BADGE: Record<Article['status'], { label: string; class: string }> 
   published: { label: 'Közzétéve', class: 'bg-green-500/10 text-green-400 border-green-500/20' },
 };
 
-const DIFFICULTY_LABEL: Record<NonNullable<Article['difficulty']>, string> = {
-  beginner: 'Kezdő',
-  intermediate: 'Haladó',
-  advanced: 'Magas szint',
-  expert: 'Szakértő',
-};
-
 export default function AdminArticlesPage() {
   const toast = useToast();
   const [articles, setArticles] = useState<ArticleRow[]>([]);
@@ -39,7 +32,6 @@ export default function AdminArticlesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [difficultyFilter, setDifficultyFilter] = useState('all');
 
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -72,7 +64,6 @@ export default function AdminArticlesPage() {
         search: debouncedSearch || undefined,
         status: statusFilter,
         categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
-        difficulty: difficultyFilter as 'all' | NonNullable<Article['difficulty']>,
         page,
         pageSize: PAGE_SIZE,
       });
@@ -83,7 +74,7 @@ export default function AdminArticlesPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, statusFilter, categoryFilter, difficultyFilter, page]);
+  }, [debouncedSearch, statusFilter, categoryFilter, page]);
 
   useEffect(() => {
     loadArticles();
@@ -92,7 +83,7 @@ export default function AdminArticlesPage() {
   // Reset to page 1 when any filter changes
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter, categoryFilter, difficultyFilter]);
+  }, [debouncedSearch, statusFilter, categoryFilter]);
 
   async function togglePublish(article: ArticleRow) {
     const nextStatus: Article['status'] = article.status === 'published' ? 'draft' : 'published';
@@ -140,13 +131,13 @@ export default function AdminArticlesPage() {
     setEditing(null);
   }
 
-  const hasFilters = debouncedSearch || statusFilter !== 'all' || categoryFilter !== 'all' || difficultyFilter !== 'all';
+  const hasFilters = debouncedSearch || statusFilter !== 'all' || categoryFilter !== 'all';
 
   function clearFilters() {
     setSearch('');
     setStatusFilter('all');
     setCategoryFilter('all');
-    setDifficultyFilter('all');
+    setPage(1);
   }
 
   const selectClass =
@@ -197,13 +188,6 @@ export default function AdminArticlesPage() {
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
-        <select className={selectClass} value={difficultyFilter} onChange={(e) => setDifficultyFilter(e.target.value)}>
-          <option value="all">Összes nehézség</option>
-          <option value="beginner">Kezdő</option>
-          <option value="intermediate">Haladó</option>
-          <option value="advanced">Magas szint</option>
-          <option value="expert">Szakértő</option>
-        </select>
         {hasFilters && (
           <button onClick={clearFilters} className="inline-flex items-center gap-1 px-3 py-2 text-sm font-bold text-gray-400 hover:text-gray-200 transition-colors">
             <X size={14} /> Szűrők törlése
@@ -228,7 +212,6 @@ export default function AdminArticlesPage() {
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Cím</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Kategória</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Státusz</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Nehézség</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Megtekintés</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Módosítva</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">Műveletek</th>
@@ -241,7 +224,6 @@ export default function AdminArticlesPage() {
                     <td className="px-4 py-3.5"><div className="h-4 w-48 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-4 w-24 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-5 w-20 bg-[#1E1E1E] rounded-full animate-pulse" /></td>
-                    <td className="px-4 py-3.5"><div className="h-4 w-16 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-4 w-10 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-4 w-20 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-4 w-24 bg-[#1E1E1E] rounded animate-pulse ml-auto" /></td>
@@ -250,7 +232,7 @@ export default function AdminArticlesPage() {
 
               {!loading && articles.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center">
+                  <td colSpan={6} className="px-4 py-16 text-center">
                     <FileText size={32} className="mx-auto text-gray-700 mb-3" />
                     <p className="text-gray-500 text-sm">{hasFilters ? 'Nincs a szűrőknek megfelelő cikk.' : 'Még nincs cikk.'}</p>
                   </td>
@@ -272,9 +254,6 @@ export default function AdminArticlesPage() {
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${badge.class}`}>
                           {badge.label}
                         </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-gray-400 whitespace-nowrap">
-                        {a.difficulty ? DIFFICULTY_LABEL[a.difficulty] : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-gray-400 whitespace-nowrap">{a.views}</td>
                       <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap text-xs">

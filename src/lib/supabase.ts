@@ -123,7 +123,7 @@ export interface Database {
           content: string | null;
           category_id: string | null;
           author: string | null;
-          difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' | null;
+          difficulty?: 'beginner' | 'intermediate' | 'advanced' | 'expert' | null;
           read_time: number;
           views: number;
           rating: number;
@@ -680,7 +680,7 @@ export interface Database {
           slug: string;
           description: string;
           category: string;
-          difficulty: string;
+          difficulty?: string | null;
           duration_hours: number;
           is_published: boolean;
           created_at: string;

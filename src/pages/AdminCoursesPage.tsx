@@ -32,7 +32,6 @@ export default function AdminCoursesPage() {
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
   const [courseCategory, setCourseCategory] = useState('Szerkezetépítés');
-  const [courseDifficulty, setCourseDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
   const [courseDuration, setCourseDuration] = useState(4);
 
   // Lesson Form State
@@ -66,7 +65,6 @@ export default function AdminCoursesPage() {
     setCourseTitle('');
     setCourseDescription('');
     setCourseCategory('Szerkezetépítés');
-    setCourseDifficulty('intermediate');
     setCourseDuration(5);
     setShowCourseModal(true);
   };
@@ -76,7 +74,6 @@ export default function AdminCoursesPage() {
     setCourseTitle(course.title);
     setCourseDescription(course.description);
     setCourseCategory(course.category);
-    setCourseDifficulty(course.difficulty as 'beginner' | 'intermediate' | 'advanced');
     setCourseDuration(course.duration_hours);
     setShowCourseModal(true);
   };
@@ -112,7 +109,6 @@ export default function AdminCoursesPage() {
               slug: courseTitle.trim().toLowerCase().replace(/\s+/g, '-'),
               description: courseDescription.trim(),
               category: courseCategory.trim(),
-              difficulty: courseDifficulty,
               duration_hours: courseDuration,
             }
           : c
@@ -125,7 +121,6 @@ export default function AdminCoursesPage() {
         slug: courseTitle.trim().toLowerCase().replace(/\s+/g, '-'),
         description: courseDescription.trim(),
         category: courseCategory.trim(),
-        difficulty: courseDifficulty,
         duration_hours: courseDuration,
         is_published: true,
         created_at: new Date().toISOString(),
@@ -359,11 +354,8 @@ export default function AdminCoursesPage() {
                     <span className="px-2.5 py-1 bg-accent/10 border border-accent/30 text-accent font-bold text-[10px] rounded-full">
                       {course.category}
                     </span>
-                    <span className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold text-[10px] rounded-full uppercase">
-                      {course.difficulty}
-                    </span>
-                    <span className="text-xs text-gray-400 flex items-center gap-1 font-mono">
-                      <Clock size={13} /> {course.duration_hours} óra képzés
+                    <span className="text-gray-400 font-bold flex items-center gap-1">
+                      <Clock size={12} /> {course.duration_hours} óra képzés
                     </span>
                   </div>
 
@@ -522,29 +514,14 @@ export default function AdminCoursesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="font-bold text-gray-300 block mb-1">Nehézségi Szint</label>
-                  <select
-                    value={courseDifficulty}
-                    onChange={(e) => setCourseDifficulty(e.target.value as any)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
-                  >
-                    <option value="beginner">Kezdő</option>
-                    <option value="intermediate">Középhaladó</option>
-                    <option value="advanced">Haladó</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-gray-300 block mb-1">Képzés Időtartama (Óra)</label>
-                  <input
-                    type="number"
-                    value={courseDuration}
-                    onChange={(e) => setCourseDuration(Number(e.target.value))}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
-                  />
-                </div>
+              <div>
+                <label className="font-bold text-gray-300 block mb-1">Képzés Időtartama (Óra)</label>
+                <input
+                  type="number"
+                  value={courseDuration}
+                  onChange={(e) => setCourseDuration(Number(e.target.value))}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                />
               </div>
 
               <div>

@@ -8,7 +8,6 @@ export interface ListArticlesOptions {
   search?: string;
   status?: 'all' | Article['status'];
   categoryId?: string;
-  difficulty?: 'all' | NonNullable<Article['difficulty']>;
   page?: number;
   pageSize?: number;
 }
@@ -23,7 +22,6 @@ export async function listArticles(options: ListArticlesOptions = {}): Promise<L
     search,
     status = 'all',
     categoryId,
-    difficulty = 'all',
     page = 1,
     pageSize = 10,
   } = options;
@@ -38,9 +36,6 @@ export async function listArticles(options: ListArticlesOptions = {}): Promise<L
   }
   if (categoryId) {
     query = query.eq('category_id', categoryId);
-  }
-  if (difficulty !== 'all') {
-    query = query.eq('difficulty', difficulty);
   }
 
   const from = (page - 1) * pageSize;
@@ -82,7 +77,6 @@ A betonozás az építőipari kivitelezések egyik legkritikusabb folyamata. A m
     rating_count: 15,
     featured_image: null,
     read_time: 8,
-    difficulty: 'intermediate',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -106,7 +100,6 @@ A monolit födémek a legteherbíróbb szerkezetek a modern építészetben. Meg
     rating_count: 10,
     featured_image: null,
     read_time: 12,
-    difficulty: 'advanced',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -130,7 +123,6 @@ A hőszigetelés csökkenti az épület hőveszteségét és megakadályozza a b
     rating_count: 24,
     featured_image: null,
     read_time: 10,
-    difficulty: 'intermediate',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -154,7 +146,6 @@ Zuhanyzók és épített zuhany tálcák vízzáró szigetelése kenhető folyé
     rating_count: 8,
     featured_image: null,
     read_time: 6,
-    difficulty: 'beginner',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -178,7 +169,6 @@ Falhornyok marása horonymaró gép segítségével a teherhordó falak gyengít
     rating_count: 14,
     featured_image: null,
     read_time: 7,
-    difficulty: 'beginner',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -202,7 +192,6 @@ Nagy méretű (60x60 cm feletti) burkolólapok lerakása kétoldali ragasztózá
     rating_count: 18,
     featured_image: null,
     read_time: 9,
-    difficulty: 'advanced',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },

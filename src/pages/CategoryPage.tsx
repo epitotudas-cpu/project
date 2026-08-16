@@ -29,7 +29,6 @@ import {
   Library,
   X,
   ChevronDown,
-  Check,
   Sparkles,
   Calendar,
 } from 'lucide-react';
@@ -42,20 +41,6 @@ import type { Category, Article } from '../lib/supabase';
 interface CategoryPageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;
 }
-
-const difficultyLabels: Record<string, string> = {
-  beginner: 'Kezdő',
-  intermediate: 'Közepes',
-  advanced: 'Haladó',
-  expert: 'Szakértő',
-};
-
-const difficultyColors: Record<string, string> = {
-  beginner: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  intermediate: 'bg-blue-100 text-blue-800 border-blue-200',
-  advanced: 'bg-amber-100 text-amber-800 border-amber-200',
-  expert: 'bg-rose-100 text-rose-800 border-rose-200',
-};
 
 const categoryIconMap: Record<string, React.ElementType> = {
   Layers,
@@ -101,12 +86,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
   // Filters State (Multi-select)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals / Dropdowns State
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(articleSettings.articlesPerPage || 12);
 
   // --------------------------------------------------------------------------
@@ -120,14 +103,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
       const params = new URLSearchParams(queryPart);
       const catParam = params.get('cat');
-      const levelParam = params.get('level');
       const qParam = params.get('q');
 
       if (catParam) {
         setSelectedCategories(catParam.split(',').filter(Boolean));
-      }
-      if (levelParam) {
-        setSelectedLevels(levelParam.split(',').filter(Boolean));
       }
       if (qParam) {
         setSearchQuery(qParam);
@@ -162,11 +141,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   }, [syncFromHash]);
 
   // Update URL hash when filters change
-  const updateUrlParams = useCallback((cats: string[], levels: string[], q: string) => {
+  const updateUrlParams = useCallback((cats: string[], q: string) => {
     try {
       const params = new URLSearchParams();
       if (cats.length > 0) params.set('cat', cats.join(','));
-      if (levels.length > 0) params.set('level', levels.join(','));
       if (q.trim()) params.set('q', q.trim());
 
       const queryString = params.toString();
@@ -183,24 +161,15 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const handleCategoryToggle = (catId: string) => {
     setSelectedCategories((prev) => {
       const next = prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId];
-      updateUrlParams(next, selectedLevels, searchQuery);
-      return next;
-    });
-  };
-
-  const handleLevelToggle = (lvlKey: string) => {
-    setSelectedLevels((prev) => {
-      const next = prev.includes(lvlKey) ? prev.filter((k) => k !== lvlKey) : [...prev, lvlKey];
-      updateUrlParams(selectedCategories, next, searchQuery);
+      updateUrlParams(next, searchQuery);
       return next;
     });
   };
 
   const handleClearAllFilters = () => {
     setSelectedCategories([]);
-    setSelectedLevels([]);
     setSearchQuery('');
-    updateUrlParams([], [], '');
+    updateUrlParams([], '');
   };
 
   // Close modals on Escape key
@@ -208,7 +177,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsCategoryModalOpen(false);
-        setIsLevelModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -239,14 +207,13 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const filteredArticles = useMemo(() => {
     let list = articles.filter((article) => {
       const matchCat = selectedCategories.length === 0 || (article.category_id && selectedCategories.includes(article.category_id));
-      const matchDiff = selectedLevels.length === 0 || (article.difficulty && selectedLevels.includes(article.difficulty));
       const q = searchQuery.toLowerCase().trim();
       const matchQuery =
         !q ||
         article.title.toLowerCase().includes(q) ||
         (article.excerpt && article.excerpt.toLowerCase().includes(q));
 
-      return matchCat && matchDiff && matchQuery;
+      return matchCat && matchQuery;
     });
 
     // Apply Sorting Mode
@@ -267,7 +234,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     }
 
     return list;
-  }, [articles, selectedCategories, selectedLevels, searchQuery, articleSettings.defaultSortMode]);
+  }, [articles, selectedCategories, searchQuery, articleSettings.defaultSortMode]);
 
   const paginatedArticles = useMemo(() => {
     return filteredArticles.slice(0, visibleCount);
@@ -440,7 +407,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  updateUrlParams(selectedCategories, selectedLevels, e.target.value);
+                  updateUrlParams(selectedCategories, e.target.value);
                 }}
                 className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
               />
@@ -448,7 +415,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 <button
                   onClick={() => {
                     setSearchQuery('');
-                    updateUrlParams(selectedCategories, selectedLevels, '');
+                    updateUrlParams(selectedCategories, '');
                   }}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                 >
@@ -482,79 +449,11 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 </button>
               </div>
 
-              {/* Level Filter Button */}
-              <div className="relative flex-1 md:flex-initial">
-                <button
-                  onClick={() => setIsLevelModalOpen((prev) => !prev)}
-                  className={`w-full md:w-auto px-4 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-between gap-2 border shadow-xs ${
-                    selectedLevels.length > 0
-                      ? 'bg-primary text-white border-primary-700 shadow-md'
-                      : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-800'
-                  }`}
-                >
-                  <span>
-                    {selectedLevels.length > 0
-                      ? `Szint (${selectedLevels.length})`
-                      : 'Szint'}
-                  </span>
-                  <ChevronDown size={15} />
-                </button>
-
-                {/* Level Dropdown Menu */}
-                {isLevelModalOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl p-3 z-40 space-y-1.5 animate-fadeIn">
-                    <div className="flex items-center justify-between pb-2 border-b border-gray-100 px-2">
-                      <span className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
-                        Tudásszint
-                      </span>
-                      <button
-                        onClick={() => setIsLevelModalOpen(false)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedLevels([]);
-                        updateUrlParams(selectedCategories, [], searchQuery);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
-                        selectedLevels.length === 0 ? 'bg-primary/10 text-primary font-black' : 'hover:bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      <span>Összes szint</span>
-                      {selectedLevels.length === 0 && <Check size={14} className="text-primary" />}
-                    </button>
-
-                    {Object.entries(difficultyLabels).map(([key, label]) => {
-                      const isChecked = selectedLevels.includes(key);
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => handleLevelToggle(key)}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
-                            isChecked ? 'bg-primary/10 text-primary font-black' : 'hover:bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full border ${difficultyColors[key]}`} />
-                            {label}
-                          </span>
-                          {isChecked && <Check size={14} className="text-primary" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
             </div>
           </div>
 
           {/* ACTIVE FILTER REMOVABLE CHIPS */}
-          {(selectedCategories.length > 0 || selectedLevels.length > 0 || searchQuery.trim()) && (
+          {(selectedCategories.length > 0 || searchQuery.trim()) && (
             <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100">
               <span className="text-xs font-bold text-gray-500">Aktív szűrők:</span>
 
@@ -578,22 +477,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 );
               })}
 
-              {/* Level Chips */}
-              {selectedLevels.map((lvlKey) => (
-                <span
-                  key={lvlKey}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-200 border border-gray-300 text-gray-800 font-bold text-xs rounded-full shadow-2xs"
-                >
-                  <span>{difficultyLabels[lvlKey] || lvlKey}</span>
-                  <button
-                    onClick={() => handleLevelToggle(lvlKey)}
-                    className="hover:bg-gray-300 rounded-full p-0.5"
-                  >
-                    <X size={13} />
-                  </button>
-                </span>
-              ))}
-
               {/* Search Query Chip */}
               {searchQuery.trim() && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs rounded-full shadow-2xs">
@@ -601,7 +484,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                   <button
                     onClick={() => {
                       setSearchQuery('');
-                      updateUrlParams(selectedCategories, selectedLevels, '');
+                      updateUrlParams(selectedCategories, '');
                     }}
                     className="hover:bg-amber-200 rounded-full p-0.5"
                   >
@@ -677,7 +560,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               <BookOpen size={48} className="mx-auto text-gray-300" />
               <h3 className="text-lg font-bold text-gray-900">Nem található a megadott szűrésnek megfelelő cikk</h3>
               <p className="text-xs text-gray-500 leading-relaxed">
-                Nincs a megadott szűrésnek megfelelő cikk. Próbálj meg más kategóriát, tudásszintet vagy keresőkifejezést választani.
+                Nincs a megadott szűrésnek megfelelő cikk. Próbálj meg más kategóriát vagy keresőkifejezést választani.
               </p>
               <button
                 onClick={handleClearAllFilters}
@@ -721,11 +604,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                         {/* Top Badges */}
                         <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
-                            {article.difficulty && (
-                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border backdrop-blur-md shadow-xs ${difficultyColors[article.difficulty]}`}>
-                                {difficultyLabels[article.difficulty] || article.difficulty}
-                              </span>
-                            )}
                             {catObj && (
                               <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-black/60 text-white backdrop-blur-md border border-white/20">
                                 {catObj.name}
@@ -844,7 +722,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               <button
                 onClick={() => {
                   setSelectedCategories([]);
-                  updateUrlParams([], selectedLevels, searchQuery);
+                  updateUrlParams([], searchQuery);
                 }}
                 className={`w-full p-3 rounded-2xl border text-left font-bold text-xs transition-all flex items-center justify-between ${
                   selectedCategories.length === 0
@@ -899,7 +777,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               <button
                 onClick={() => {
                   setSelectedCategories([]);
-                  updateUrlParams([], selectedLevels, searchQuery);
+                  updateUrlParams([], searchQuery);
                 }}
                 className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-gray-900 underline decoration-dotted"
               >

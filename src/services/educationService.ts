@@ -29,7 +29,6 @@ export const DEFAULT_COURSES: Course[] = [
     slug: 'monolitikus-beton-mesterfogasai',
     description: 'Átfogó képzés a zsaluzási rendszerektől az öntömörödő beton technológiáig és utókezelésig.',
     category: 'Szerkezetépítés',
-    difficulty: 'intermediate',
     duration_hours: 6,
     is_published: true,
     created_at: new Date().toISOString(),
@@ -40,7 +39,6 @@ export const DEFAULT_COURSES: Course[] = [
     slug: 'energiahatekony-falazas-szigeteles',
     description: 'Korszerű hő- és hangszigetelési megoldások, szárazépítészet és homlokzati rendszerek.',
     category: 'Szigetelés & Falazás',
-    difficulty: 'beginner',
     duration_hours: 4,
     is_published: true,
     created_at: new Date().toISOString(),
@@ -51,7 +49,6 @@ export const DEFAULT_COURSES: Course[] = [
     slug: 'biztonsagtechnika-munkavedelem-2026',
     description: 'Kötelező munkavédelmi és biztonságtechnikai szabályok magasépítési helyszíneken.',
     category: 'Munkavédelem',
-    difficulty: 'advanced',
     duration_hours: 8,
     is_published: true,
     created_at: new Date().toISOString(),
@@ -228,11 +225,10 @@ export function useEducationData(): EducationData {
 
 const USER_CERTIFICATES_STORE: Map<string, UserCertificate[]> = new Map();
 
-export async function listCourses(category?: string, difficulty?: string): Promise<Course[]> {
+export async function listCourses(category?: string): Promise<Course[]> {
   const eduData = getEducationData();
   let list = eduData.courses;
   if (category && category !== 'all') list = list.filter((c) => c.category === category);
-  if (difficulty && difficulty !== 'all') list = list.filter((c) => c.difficulty === difficulty);
   return list;
 }
 
