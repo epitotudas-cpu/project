@@ -22,30 +22,15 @@ export default function Footer({ onNavigate }: FooterProps) {
     <footer className="bg-primary border-t border-primary-700">
       {/* Newsletter */}
       <div className="bg-primary-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Mail size={18} className="text-accent" />
-                <span className="text-white font-bold text-lg">{siteSettings.newsletterTitle || 'Szakmai hírlevél'}</span>
-              </div>
-              <p className="text-gray-400 text-sm max-w-md">
-                {siteSettings.newsletterDescription || 'Heti frissítések, új cikkek, szakmai tippek és iparági újdonságok közvetlenül az e-mail fiókodba.'}
-              </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Mail size={20} className="text-accent" />
+              <span className="text-white font-bold text-lg">{siteSettings.newsletterTitle || 'Szakmai hírlevél'}</span>
             </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-72">
-                <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input
-                  type="email"
-                  placeholder="email@cimed.hu"
-                  className="w-full bg-primary-700 border border-primary-600 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors"
-                />
-              </div>
-              <button className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-bold rounded-lg transition-all whitespace-nowrap">
-                Feliratkozás
-              </button>
-            </div>
+            <p className="text-gray-400 text-sm max-w-3xl leading-relaxed">
+              {siteSettings.newsletterDescription || 'Heti frissítések, új cikkek, szakmai tippek és iparági újdonságok közvetlenül az e-mail fiókodba.'}
+            </p>
           </div>
         </div>
       </div>
