@@ -139,16 +139,25 @@ function getInitialPage(): PageKey {
   return 'home';
 }
 
+function getInitialArticleSlug(): string | null {
+  try {
+    const hash = window.location.hash;
+    if (hash.includes('slug=')) {
+      const queryPart = hash.includes('?') ? hash.split('?')[1] : hash;
+      const params = new URLSearchParams(queryPart);
+      const slug = params.get('slug');
+      if (slug) return decodeURIComponent(slug);
+    }
+    return sessionStorage.getItem('epitotudas_article_slug');
+  } catch {
+    return null;
+  }
+}
+
 function AppContent() {
   const { user, loading, authEvent } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageKey>(getInitialPage);
-  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(() => {
-    try {
-      return sessionStorage.getItem('epitotudas_article_slug');
-    } catch {
-      return null;
-    }
-  });
+  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(getInitialArticleSlug);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
 
   useEffect(() => {
@@ -176,6 +185,10 @@ function AppContent() {
     function handleHashChange() {
       const page = getInitialPage();
       setCurrentPage(page);
+      const slug = getInitialArticleSlug();
+      if (slug) {
+        setSelectedArticleSlug(slug);
+      }
     }
     window.addEventListener('hashchange', handleHashChange);
     window.addEventListener('popstate', handleHashChange);

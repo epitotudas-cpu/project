@@ -1,14 +1,149 @@
 import { useState, useEffect } from 'react';
-import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library } from 'lucide-react';
+import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library, AlertTriangle, CheckSquare, Check, Lightbulb } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
 import { getRelatedArticles } from '../services/articleService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
+import { parseBlocksFromContent } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
 
 interface ArticlePageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;
   articleSlug?: string | null;
+}
+
+function ArticleContentRenderer({ content }: { content: string }) {
+  const { blocks } = parseBlocksFromContent(content);
+
+  if (!blocks || blocks.length === 0) {
+    const cleanContent = content ? content.replace(/\[EPITOTUDAS_.*\]$/s, '').trim() : '';
+    return (
+      <div className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
+        {cleanContent || 'A cikk tartalma hamarosan elérhető...'}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {blocks.map((block, index) => {
+        switch (block.type) {
+          case 'heading': {
+            if (block.level === 'h3') {
+              return <h3 key={block.id || index} className="text-xl font-bold text-gray-800 mt-6 mb-3">{block.content}</h3>;
+            }
+            if (block.level === 'h4') {
+              return <h4 key={block.id || index} className="text-lg font-semibold text-gray-800 mt-4 mb-2">{block.content}</h4>;
+            }
+            return <h2 key={block.id || index} className="text-2xl font-extrabold text-gray-900 mt-8 mb-4 border-b border-gray-100 pb-2">{block.content}</h2>;
+          }
+
+          case 'text':
+            return (
+              <p key={block.id || index} className="text-gray-700 text-base leading-relaxed my-3 whitespace-pre-line">
+                {block.content}
+              </p>
+            );
+
+          case 'image':
+            if (!block.imageUrl) return null;
+            return (
+              <figure key={block.id || index} className="my-6 rounded-2xl overflow-hidden border border-gray-200 shadow-md">
+                <img src={block.imageUrl} alt={block.imageAlt || ''} className="w-full h-auto max-h-96 object-cover" />
+                {block.imageCaption && (
+                  <figcaption className="p-3 text-center text-xs text-gray-500 bg-gray-50 italic border-t border-gray-100">
+                    {block.imageCaption}
+                  </figcaption>
+                )}
+              </figure>
+            );
+
+          case 'table':
+            if (!block.tableHeaders || block.tableHeaders.length === 0) return null;
+            return (
+              <div key={block.id || index} className="overflow-x-auto my-6 border border-gray-200 rounded-xl shadow-sm">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-primary/5 text-primary font-bold">
+                    <tr>
+                      {block.tableHeaders.map((header, hIdx) => (
+                        <th key={hIdx} className="px-4 py-3 text-left font-bold text-gray-900 border-b border-gray-200">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {block.tableRows?.map((row, rIdx) => (
+                      <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                        {row.map((cell, cIdx) => (
+                          <td key={cIdx} className="px-4 py-3 text-gray-700 font-medium">
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+
+          case 'warning':
+            return (
+              <div key={block.id || index} className="my-6 p-4 rounded-xl border-l-4 border-amber-500 bg-amber-50/90 text-amber-950 flex items-start gap-3 shadow-sm">
+                <AlertTriangle size={22} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-sm leading-relaxed font-medium">{block.content}</div>
+              </div>
+            );
+
+          case 'highlight':
+            return (
+              <div key={block.id || index} className="my-6 p-4 rounded-xl border-l-4 border-accent bg-accent/5 text-gray-900 space-y-1 shadow-sm">
+                <div className="font-bold text-accent text-xs uppercase tracking-wide flex items-center gap-1.5">
+                  <Lightbulb size={14} /> [{block.highlightType || 'Szakmai tipp'}] {block.highlightTitle}
+                </div>
+                <div className="text-sm text-gray-700 leading-relaxed">{block.content}</div>
+              </div>
+            );
+
+          case 'checklist':
+            return (
+              <div key={block.id || index} className="my-6 bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+                <div className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                  <CheckSquare size={16} className="text-accent" /> Minőségellenőrző Ellenőrzőlista
+                </div>
+                <div className="space-y-2">
+                  {block.checkItems?.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2.5 text-sm text-gray-800">
+                      <div className="w-5 h-5 rounded border border-accent/40 bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                        <Check size={13} strokeWidth={3} />
+                      </div>
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+
+          case 'list':
+          case 'numbered_list':
+            return (
+              <ul key={block.id || index} className="my-4 space-y-2 pl-5 list-disc text-gray-700 text-base leading-relaxed">
+                {block.items?.map((item, itemIdx) => (
+                  <li key={itemIdx}>{item}</li>
+                ))}
+              </ul>
+            );
+
+          default:
+            return (
+              <p key={block.id || index} className="text-gray-700 text-base leading-relaxed my-3 whitespace-pre-line">
+                {block.content}
+              </p>
+            );
+        }
+      })}
+    </div>
+  );
 }
 
 export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProps) {
@@ -22,7 +157,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
     async function loadData() {
       try {
         setLoading(true);
-        const slugToFetch = articleSlug || 'betonozas-lepesrol-lepesre';
+        const slugToFetch = articleSlug || 'gipszkarton-lapok-tipusai-melyiket-mikor-hasznaljuk';
         const [articleData, categoriesData] = await Promise.all([
           getArticleBySlug(slugToFetch),
           getCategories(),
@@ -74,6 +209,11 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
       </div>
     );
   }
+
+  const { seo } = parseBlocksFromContent(article.content);
+  const articleTags = seo.primaryKeyword
+    ? [seo.primaryKeyword, ...(seo.relatedKeywords?.split(',').map((k) => k.trim()) || [])]
+    : ['Gipszkarton', 'Szárazépítés', 'Anyagismeret', 'Kivitelezés'];
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,9 +271,9 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {/* Featured Image */}
-        <div className="rounded-2xl overflow-hidden h-72 md:h-96 shadow-lg border border-gray-200">
+        <div className="rounded-2xl overflow-hidden h-72 md:h-96 shadow-lg border border-gray-200 bg-gray-100">
           <img
-            src={article.featured_image || '/article-default.jpg'}
+            src={article.featured_image || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80'}
             alt={article.title}
             className="w-full h-full object-cover"
           />
@@ -172,14 +312,13 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           <h2 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
             <BookOpen size={20} className="text-accent" /> Részletes Leírás & Útmutató
           </h2>
-          <div className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
-            {article.content ? article.content.replace(/\[EPITOTUDAS_.*\]$/s, '').trim() : 'A cikk tartalma hamarosan elérhető...'}
-          </div>
+          
+          <ArticleContentRenderer content={article.content} />
 
           {/* Tags */}
           <div className="pt-6 border-t border-gray-100 flex items-center gap-2 flex-wrap">
             <Tag size={16} className="text-gray-400" />
-            {['Betonozás', 'Alapozás', 'Szilárdság', 'Szabványok'].map((tag) => (
+            {articleTags.map((tag) => (
               <span key={tag} className="text-xs bg-gray-100 border border-gray-200 text-gray-700 font-medium px-2.5 py-1 rounded-md">
                 #{tag}
               </span>
