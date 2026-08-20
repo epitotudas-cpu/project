@@ -173,7 +173,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             <BookOpen size={20} className="text-accent" /> Részletes Leírás & Útmutató
           </h2>
           <div className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
-            {article.content || 'A cikk tartalma hamarosan elérhető...'}
+            {article.content ? article.content.replace(/\[EPITOTUDAS_.*\]$/s, '').trim() : 'A cikk tartalma hamarosan elérhető...'}
           </div>
 
           {/* Tags */}
