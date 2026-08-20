@@ -210,7 +210,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
     );
   }
 
-  const { seo } = parseBlocksFromContent(article.content);
+  const { seo } = parseBlocksFromContent(article.content || '');
   const articleTags = seo.primaryKeyword
     ? [seo.primaryKeyword, ...(seo.relatedKeywords?.split(',').map((k) => k.trim()) || [])]
     : ['Gipszkarton', 'Szárazépítés', 'Anyagismeret', 'Kivitelezés'];
@@ -313,7 +313,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             <BookOpen size={20} className="text-accent" /> Részletes Leírás & Útmutató
           </h2>
           
-          <ArticleContentRenderer content={article.content} />
+          <ArticleContentRenderer content={article.content || ''} />
 
           {/* Tags */}
           <div className="pt-6 border-t border-gray-100 flex items-center gap-2 flex-wrap">
