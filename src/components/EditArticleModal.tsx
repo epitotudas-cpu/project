@@ -125,7 +125,7 @@ function formFromArticle(article: Article): FormState {
   };
 }
 
-function calculateReadTimeFromBlocks(blocks: ContentBlock[]): number {
+export function calculateReadTimeFromBlocks(blocks: ContentBlock[]): number {
   let wordCount = 0;
   blocks.forEach((b) => {
     if (b.content) wordCount += b.content.trim().split(/\s+/).length;
@@ -140,7 +140,7 @@ function calculateReadTimeFromBlocks(blocks: ContentBlock[]): number {
 // DATA SERIALIZATION & BACKWARD COMPATIBILITY HELPERS
 // ----------------------------------------------------------------------
 
-function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEOData): string {
+export function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEOData): string {
   let md = '';
 
   blocks.forEach((block) => {
@@ -258,7 +258,7 @@ function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEOData): st
   return md;
 }
 
-function parseBlocksFromContent(content: string): { blocks: ContentBlock[]; seo: GuideSEOData } {
+export function parseBlocksFromContent(content: string): { blocks: ContentBlock[]; seo: GuideSEOData } {
   if (!content) {
     return { blocks: [], seo: { ...DEFAULT_SEO } };
   }
@@ -453,6 +453,16 @@ function parseBlocksFromContent(content: string): { blocks: ContentBlock[]; seo:
     if (/^###\s+/.test(p)) {
       return { id: `p_h3_${idx}`, type: 'heading', level: 'h3', content: p.replace(/^###\s+/, '') };
     }
+    const imgMatch = p.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)\s*(?:\n\*(.*)\*)?/);
+    if (imgMatch) {
+      return {
+        id: `p_img_${idx}`,
+        type: 'image',
+        imageAlt: imgMatch[1],
+        imageUrl: imgMatch[2],
+        imageCaption: imgMatch[3] || '',
+      };
+    }
     return { id: `p_txt_${idx}`, type: 'text', content: p };
   });
 
@@ -463,7 +473,7 @@ function parseBlocksFromContent(content: string): { blocks: ContentBlock[]; seo:
 // STARTER TEMPLATES
 // ----------------------------------------------------------------------
 
-const STARTER_TEMPLATES: Record<
+export const STARTER_TEMPLATES: Record<
   string,
   { name: string; icon: string; description: string; getBlocks: () => ContentBlock[] }
 > = {

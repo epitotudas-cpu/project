@@ -38,12 +38,27 @@ function ArticleContentRenderer({ content }: { content: string }) {
             return <h2 key={block.id || index} className="text-2xl font-extrabold text-gray-900 mt-8 mb-4 border-b border-gray-100 pb-2">{block.content}</h2>;
           }
 
-          case 'text':
+          case 'text': {
+            const txt = block.content || '';
+            const imgMatch = txt.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)\s*(?:\n\*(.*)\*)?$/);
+            if (imgMatch) {
+              return (
+                <figure key={block.id || index} className="my-6 rounded-2xl overflow-hidden border border-gray-200 shadow-md">
+                  <img src={imgMatch[2]} alt={imgMatch[1] || ''} className="w-full h-auto max-h-96 object-cover" />
+                  {imgMatch[3] && (
+                    <figcaption className="p-3 text-center text-xs text-gray-500 bg-gray-50 italic border-t border-gray-100">
+                      {imgMatch[3]}
+                    </figcaption>
+                  )}
+                </figure>
+              );
+            }
             return (
               <p key={block.id || index} className="text-gray-700 text-base leading-relaxed my-3 whitespace-pre-line">
-                {block.content}
+                {txt}
               </p>
             );
+          }
 
           case 'image':
             if (!block.imageUrl) return null;
