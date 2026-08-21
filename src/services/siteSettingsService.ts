@@ -421,7 +421,7 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
 
     if (!catErr && catData?.description && catData.description.startsWith('{')) {
       const parsed = JSON.parse(catData.description);
-      const settings: SiteSettings = {
+      const cloudSettings: SiteSettings = {
         ...DEFAULT_SITE_SETTINGS,
         ...parsed,
         enabledNavItems: {
@@ -429,14 +429,40 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
           ...(parsed.enabledNavItems || {}),
         },
       };
+
+      // Check local storage timestamp vs cloud timestamp
+      const localRaw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY) : null;
+      if (localRaw) {
+        try {
+          const localParsed = JSON.parse(localRaw);
+          const localTime = localParsed.iconsUpdatedAt || 0;
+          const cloudTime = cloudSettings.iconsUpdatedAt || 0;
+
+          // If local settings are newer than cloud settings, keep local settings and repair cloud!
+          if (localTime > cloudTime) {
+            void supabase.from('categories').upsert({
+              id: SUPABASE_SYSTEM_ID,
+              name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
+              slug: 'system-site-settings-config',
+              description: JSON.stringify(localParsed),
+              banner_url: localParsed.logoUrl || '/logo.png',
+              article_count: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            } as any);
+            return localParsed;
+          }
+        } catch {}
+      }
+
       if (typeof window !== 'undefined') {
-        window.__GLOBAL_SITE_SETTINGS__ = settings;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-        localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(settings));
+        window.__GLOBAL_SITE_SETTINGS__ = cloudSettings;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudSettings));
+        localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(cloudSettings));
         window.dispatchEvent(new Event('site-settings-changed'));
       }
-      applySiteSettings(settings);
-      return settings;
+      applySiteSettings(cloudSettings);
+      return cloudSettings;
     }
   } catch (err) {
     console.warn('Cloud site settings fetch info:', err);
@@ -458,8 +484,11 @@ export function useSiteSettings(): SiteSettings {
 
     void fetchSiteSettingsFromCloud().then((cloudSettings) => {
       if (cloudSettings) {
-        setSettings(cloudSettings);
-        applySiteSettings(cloudSettings);
+        const local = getSiteSettings();
+        if ((cloudSettings.iconsUpdatedAt || 0) >= (local.iconsUpdatedAt || 0)) {
+          setSettings(cloudSettings);
+          applySiteSettings(cloudSettings);
+        }
       }
     });
 

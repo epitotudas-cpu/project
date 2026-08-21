@@ -413,9 +413,9 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        const updated = { ...settings, logoUrl: result };
+        const updated = { ...settings, logoUrl: result, iconsUpdatedAt: Date.now() };
         setSettings(updated);
-        applySiteSettings(updated);
+        saveSiteSettings(updated);
         setLogoStats({
           width: 240,
           height: 60,
@@ -453,9 +453,9 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           const optimizedDataUrl = canvas.toDataURL('image/png', 0.85);
           const approxKb = Math.round((optimizedDataUrl.length * 0.75) / 1024);
 
-          const updated = { ...settings, logoUrl: optimizedDataUrl };
+          const updated = { ...settings, logoUrl: optimizedDataUrl, iconsUpdatedAt: Date.now() };
           setSettings(updated);
-          applySiteSettings(updated);
+          saveSiteSettings(updated);
 
           setLogoStats({
             width,
@@ -602,7 +602,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           iconsUpdatedAt: Date.now(),
         };
         setSettings(updated);
-        applySiteSettings(updated);
+        saveSiteSettings(updated);
       };
       img.src = dataUrl;
     };
@@ -633,7 +633,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           iconsUpdatedAt: Date.now(),
         };
         setSettings(updated);
-        applySiteSettings(updated);
+        saveSiteSettings(updated);
       };
       img.src = dataUrl;
     };

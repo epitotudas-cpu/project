@@ -29,11 +29,25 @@
             document.title = s.siteTitle + ' - ' + (s.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia');
           }
 
-          var v = s.iconsUpdatedAt || 1;
+          var v = s.iconsUpdatedAt || Date.now();
           var appendV = function(u) {
             if (!u) return '';
+            if (u.indexOf('data:') === 0) return u;
             return u.indexOf('?') !== -1 ? u + '&v=' + v : u + '?v=' + v;
           };
+
+          var icoUrl = appendV(s.faviconIcoUrl || '/favicon.ico');
+          var pngUrl = appendV(s.faviconPngUrl || s.logoUrl || '/logo.png');
+          var appleUrl = appendV(s.appleTouchIconUrl || s.logoUrl || '/logo.png');
+
+          var elIco = document.getElementById('app-favicon-ico');
+          if (elIco) elIco.href = icoUrl;
+          var elPng = document.getElementById('app-favicon-png');
+          if (elPng) elPng.href = pngUrl;
+          var elShortcut = document.getElementById('app-favicon-shortcut');
+          if (elShortcut) elShortcut.href = pngUrl;
+          var elApple = document.getElementById('app-apple-touch-icon');
+          if (elApple) elApple.href = appleUrl;
 
           window.__INITIAL_SITE_SETTINGS__ = s;
         }
