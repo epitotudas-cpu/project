@@ -10,7 +10,7 @@ import EditGlossaryTermModal from '../components/EditGlossaryTermModal';
 import ImportGlossaryValidationModal from '../components/ImportGlossaryValidationModal';
 import BatchEditGlossaryModal from '../components/BatchEditGlossaryModal';
 import GlossaryCategorySettingsModal from '../components/GlossaryCategorySettingsModal';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 type GlossaryTermWithCount = GlossaryTerm & { articleCount: number };
 
