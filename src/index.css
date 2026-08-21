@@ -6,6 +6,13 @@
   --color-accent: #FFC400;
   --color-accent-hover: #e09d28;
   --color-accent-light: #fcd56b;
+
+  --color-admin-accent: #FFC400;
+  --color-admin-bg: #0A0A0A;
+  --color-admin-card-bg: #111111;
+  --color-admin-card-border: #1E1E1E;
+  --color-admin-card-highlight: #FFC400;
+  --color-admin-card-highlight-bg: rgba(255, 196, 0, 0.11);
 }
 
 @keyframes slideIn {

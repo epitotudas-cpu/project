@@ -12,6 +12,8 @@ export interface SiteSettings {
   // Admin Panel Custom Colors
   adminAccentColor?: string;
   adminBgColor?: string;
+  adminCardBgColor?: string;
+  adminCardHighlightColor?: string;
 
   // Customizable Section Texts & Content Styling
   heroMainTitle: string;
@@ -52,6 +54,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 
   adminAccentColor: '#FFC400',
   adminBgColor: '#0A0A0A',
+  adminCardBgColor: '#111111',
+  adminCardHighlightColor: '#FFC400',
 
   heroMainTitle: 'Magyarország vezető építőipari tudásbázisa',
   heroSubtitle: 'Szakmai enciklopédia, megbízható útmutatók, kalkulátorok és szerszámkatalógus szakembereknek, tanulóknak és kivitelezőknek egyaránt.',
@@ -126,6 +130,9 @@ export function applySiteSettings(settings: SiteSettings): void {
 
     const adminAccent = settings?.adminAccentColor || '#FFC400';
     const adminBg = settings?.adminBgColor || '#0A0A0A';
+    const adminCardBg = settings?.adminCardBgColor || '#111111';
+    const adminCardHighlight = settings?.adminCardHighlightColor || '#FFC400';
+
     document.documentElement.style.setProperty('--color-admin-accent', adminAccent);
     document.documentElement.style.setProperty('--color-admin-accent-hover', adjustColorBrightness(adminAccent, -15));
     document.documentElement.style.setProperty('--color-admin-accent-light', adjustColorBrightness(adminAccent, 15));
@@ -133,6 +140,11 @@ export function applySiteSettings(settings: SiteSettings): void {
     document.documentElement.style.setProperty('--color-admin-card', adjustColorBrightness(adminBg, 4));
     document.documentElement.style.setProperty('--color-admin-sidebar', adjustColorBrightness(adminBg, 2));
     document.documentElement.style.setProperty('--color-admin-border', adjustColorBrightness(adminBg, 12));
+
+    document.documentElement.style.setProperty('--color-admin-card-bg', adminCardBg);
+    document.documentElement.style.setProperty('--color-admin-card-border', adjustColorBrightness(adminCardBg, 12));
+    document.documentElement.style.setProperty('--color-admin-card-highlight', adminCardHighlight);
+    document.documentElement.style.setProperty('--color-admin-card-highlight-bg', `${adminCardHighlight}1C`);
 
     if (settings?.siteTitle) {
       document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;

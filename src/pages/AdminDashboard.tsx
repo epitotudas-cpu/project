@@ -5,6 +5,7 @@ import * as categoryService from '../services/categoryService';
 import * as glossaryService from '../services/glossaryService';
 import * as toolService from '../services/toolService';
 import * as userService from '../services/userService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 import type { AdminView } from '../components/AdminSidebar';
 
 interface AdminDashboardProps {
@@ -37,6 +38,12 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const innerCardBg = adjustColorBrightness(cardBg, 6);
 
   async function loadCounts() {
     setLoading(true);
@@ -78,14 +85,15 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-black text-white">Áttekintés</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-400 mt-1">
             Üdvözöljük{userEmail ? `, ${userEmail}` : ''}! Itt látja a tartalmak összesítését.
           </p>
         </div>
         {!loading && (
           <button
             onClick={loadCounts}
-            className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors"
+            style={{ backgroundColor: innerCardBg, borderColor: cardBorder }}
+            className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
           >
             <RefreshCw size={14} /> Frissítés
           </button>
@@ -112,15 +120,16 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
           return (
             <div
               key={key}
-              className="bg-[#111] border border-[#1E1E1E] rounded-xl p-5 hover:border-[#FFC400]/30 transition-colors flex flex-col"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="border rounded-xl p-5 hover:border-white/20 transition-all flex flex-col shadow-md"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-400 font-medium">{label}</span>
-                <Icon size={18} className="text-gray-600" />
+                <Icon size={18} style={{ color: cardHighlight }} />
               </div>
               <div className="mt-3 h-10 flex items-end">
                 {isLoading ? (
-                  <div className="h-7 w-16 bg-[#1E1E1E] rounded animate-pulse" />
+                  <div className="h-7 w-16 bg-white/10 rounded animate-pulse" />
                 ) : (
                   <p className="text-3xl font-black text-white">{value}</p>
                 )}
@@ -128,7 +137,8 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
               <button
                 disabled={isLoading}
                 onClick={() => onNavigateView(view)}
-                className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[#FFC400] hover:text-[#E6B000] disabled:opacity-40 disabled:cursor-not-allowed transition-colors self-start"
+                style={{ color: cardHighlight }}
+                className="mt-4 inline-flex items-center gap-1 text-xs font-bold hover:underline disabled:opacity-40 disabled:cursor-not-allowed transition-colors self-start cursor-pointer"
               >
                 Megnyitás <ArrowRight size={12} />
               </button>
@@ -140,72 +150,95 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
       {/* Moderation & Platform Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         {/* Moderation Widget */}
-        <div className="bg-[#111] border border-[#1E1E1E] rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E1E1E] pb-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-xl p-6 space-y-4 shadow-md">
+          <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: cardBorder }}>
             <div>
               <h2 className="text-lg font-bold text-white">Moderációs Várólista</h2>
-              <p className="text-xs text-gray-500">Jóváhagyásra váró tartalmak</p>
+              <p className="text-xs text-gray-400">Jóváhagyásra váró tartalmak</p>
             </div>
             <button
               onClick={() => onNavigateView('moderation')}
-              className="text-xs text-accent font-bold hover:underline flex items-center gap-1"
+              style={{ color: cardHighlight }}
+              className="text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer"
             >
               Várólista megnyitása <ArrowRight size={12} />
             </button>
           </div>
 
           <div className="space-y-3">
-            <div className="bg-[#161616] p-3.5 rounded-lg border border-[#222] flex items-center justify-between">
+            <div style={{ backgroundColor: innerCardBg, borderColor: cardBorder }} className="p-3.5 rounded-lg border flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-white">Monolitikus vasbeton szerkezetek zsaluzási technológiái</div>
-                <div className="text-xs text-gray-500">Cikk • Kovács Péter</div>
+                <div className="text-xs text-gray-400">Cikk • Kovács Péter</div>
               </div>
-              <span className="text-xs bg-yellow-500/10 text-yellow-400 px-2.5 py-1 rounded border border-yellow-500/20">Várakozik</span>
+              <span
+                style={{
+                  color: cardHighlight,
+                  backgroundColor: `${cardHighlight}1F`,
+                  borderColor: `${cardHighlight}40`,
+                }}
+                className="text-xs font-bold px-2.5 py-1 rounded border"
+              >
+                Várakozik
+              </span>
             </div>
-            <div className="bg-[#161616] p-3.5 rounded-lg border border-[#222] flex items-center justify-between">
+            <div style={{ backgroundColor: innerCardBg, borderColor: cardBorder }} className="p-3.5 rounded-lg border flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-white">Öntömörödő beton (SCC)</div>
-                <div className="text-xs text-gray-500">Fogalom • Tóth Balázs</div>
+                <div className="text-xs text-gray-400">Fogalom • Tóth Balázs</div>
               </div>
-              <span className="text-xs bg-yellow-500/10 text-yellow-400 px-2.5 py-1 rounded border border-yellow-500/20">Várakozik</span>
+              <span
+                style={{
+                  color: cardHighlight,
+                  backgroundColor: `${cardHighlight}1F`,
+                  borderColor: `${cardHighlight}40`,
+                }}
+                className="text-xs font-bold px-2.5 py-1 rounded border"
+              >
+                Várakozik
+              </span>
             </div>
           </div>
         </div>
 
         {/* Quick Platform Actions */}
-        <div className="bg-[#111] border border-[#1E1E1E] rounded-xl p-6 space-y-4">
-          <div className="border-b border-[#1E1E1E] pb-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-xl p-6 space-y-4 shadow-md">
+          <div className="border-b pb-4" style={{ borderColor: cardBorder }}>
             <h2 className="text-lg font-bold text-white">Gyors Platform Műveletek</h2>
-            <p className="text-xs text-gray-500">Modulok közvetlen elérése</p>
+            <p className="text-xs text-gray-400">Modulok közvetlen elérése</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => onNavigateView('roles')}
-              className="p-3.5 bg-[#161616] border border-[#222] hover:border-accent/40 rounded-xl text-left transition-colors"
+              style={{ backgroundColor: innerCardBg, borderColor: cardBorder }}
+              className="p-3.5 border hover:border-white/30 rounded-xl text-left transition-colors cursor-pointer"
             >
-              <div className="text-xs text-accent font-bold uppercase mb-1">RBAC</div>
+              <div className="text-xs font-bold uppercase mb-1" style={{ color: cardHighlight }}>RBAC</div>
               <div className="text-sm font-bold text-white">Jogosultságok</div>
             </button>
             <button
               onClick={() => onNavigateView('partners')}
-              className="p-3.5 bg-[#161616] border border-[#222] hover:border-accent/40 rounded-xl text-left transition-colors"
+              style={{ backgroundColor: innerCardBg, borderColor: cardBorder }}
+              className="p-3.5 border hover:border-white/30 rounded-xl text-left transition-colors cursor-pointer"
             >
-              <div className="text-xs text-accent font-bold uppercase mb-1">Partnerek</div>
+              <div className="text-xs font-bold uppercase mb-1" style={{ color: cardHighlight }}>Partnerek</div>
               <div className="text-sm font-bold text-white">Partner Kezelés</div>
             </button>
             <button
               onClick={() => onNavigateView('ads')}
-              className="p-3.5 bg-[#161616] border border-[#222] hover:border-accent/40 rounded-xl text-left transition-colors"
+              style={{ backgroundColor: innerCardBg, borderColor: cardBorder }}
+              className="p-3.5 border hover:border-white/30 rounded-xl text-left transition-colors cursor-pointer"
             >
-              <div className="text-xs text-accent font-bold uppercase mb-1">Hirdetés</div>
+              <div className="text-xs font-bold uppercase mb-1" style={{ color: cardHighlight }}>Hirdetés</div>
               <div className="text-sm font-bold text-white">Reklámhelyek</div>
             </button>
             <button
               onClick={() => onNavigateView('audit')}
-              className="p-3.5 bg-[#161616] border border-[#222] hover:border-accent/40 rounded-xl text-left transition-colors"
+              style={{ backgroundColor: innerCardBg, borderColor: cardBorder }}
+              className="p-3.5 border hover:border-white/30 rounded-xl text-left transition-colors cursor-pointer"
             >
-              <div className="text-xs text-accent font-bold uppercase mb-1">Biztonság</div>
+              <div className="text-xs font-bold uppercase mb-1" style={{ color: cardHighlight }}>Biztonság</div>
               <div className="text-sm font-bold text-white">Audit Napló</div>
             </button>
           </div>
