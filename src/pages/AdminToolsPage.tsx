@@ -4,7 +4,7 @@ import type { Tool } from '../lib/supabase';
 import { listTools, setToolStatus } from '../services/toolService';
 import { useToast } from '../components/ToastProvider';
 import EditToolModal from '../components/EditToolModal';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 type StatusFilter = 'all' | Tool['status'];
 
@@ -101,16 +101,20 @@ export default function AdminToolsPage() {
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
 
   const selectClass =
-    'border rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none transition-colors';
+    'border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors';
 
   return (
-    <div className="p-8">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="p-8 space-y-6" style={{ color: textColor }}>
+      <div className="flex items-start justify-between gap-4 flex-wrap border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
-          <h1 className="text-2xl font-black text-white">Eszközök & Szerszámok katalógusa</h1>
-          <p className="text-sm text-gray-500 mt-1">{tools.length} eszköz rögzítve</p>
+          <h1 style={{ color: textColor }} className="text-2xl font-black flex items-center gap-2.5">
+            <Wrench style={{ color: cardHighlight }} size={28} /> Eszközök &amp; Szerszámok katalógusa
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">{tools.length} eszköz rögzítve</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -123,8 +127,8 @@ export default function AdminToolsPage() {
           {!loading && (
             <button
               onClick={loadTools}
-              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-              className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="inline-flex items-center gap-2 px-3 py-2 border text-sm font-bold rounded-lg hover:opacity-90 transition-colors cursor-pointer"
             >
               <RefreshCw size={14} /> Frissítés
             </button>
@@ -134,17 +138,17 @@ export default function AdminToolsPage() {
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Keresés név, típus, márka..."
-            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
         <select
-          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
           className={selectClass}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}

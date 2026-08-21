@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface AddGlossaryTermModalProps {
   isOpen: boolean;
@@ -23,6 +24,24 @@ export default function AddGlossaryTermModal({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+  const labelStyle: React.CSSProperties = {
+    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
+  };
 
   if (!isOpen) return null;
 
@@ -74,13 +93,13 @@ export default function AddGlossaryTermModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-[#0D0D0D] rounded-xl border border-[#1E1E1E] w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-[#0D0D0D] border-b border-[#1E1E1E] px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Új fogalom hozzáadása</h2>
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-xl border w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="sticky top-0 border-b px-6 py-4 flex items-center justify-between">
+          <h2 style={{ color: textColor }} className="text-lg font-bold">Új fogalom hozzáadása</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-[#1E1E1E] rounded transition-colors"
+            className="p-1 hover:bg-white/10 rounded transition-colors cursor-pointer"
           >
             <X size={18} className="text-gray-400" />
           </button>
@@ -94,7 +113,7 @@ export default function AddGlossaryTermModal({
           )}
 
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-1.5">
+            <label style={labelStyle} className="block text-sm font-semibold mb-1.5">
               Fogalom neve
             </label>
             <input
@@ -103,12 +122,13 @@ export default function AddGlossaryTermModal({
               value={formData.term}
               onChange={handleChange}
               placeholder="pl. Betonacél"
-              className="w-full bg-[#111] border border-[#1E1E1E] rounded-lg px-3 py-2 text-gray-300 focus:border-[#FFC400] focus:outline-none transition-colors"
+              style={fieldStyle}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-1.5">
+            <label style={labelStyle} className="block text-sm font-semibold mb-1.5">
               Definíció
             </label>
             <textarea
@@ -117,19 +137,21 @@ export default function AddGlossaryTermModal({
               onChange={handleChange}
               placeholder="Írja be a fogalom definícióját..."
               rows={4}
-              className="w-full bg-[#111] border border-[#1E1E1E] rounded-lg px-3 py-2 text-gray-300 focus:border-[#FFC400] focus:outline-none transition-colors resize-none"
+              style={fieldStyle}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-1.5">
+            <label style={labelStyle} className="block text-sm font-semibold mb-1.5">
               Kategória
             </label>
             <select
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="w-full bg-[#111] border border-[#1E1E1E] rounded-lg px-3 py-2 text-gray-300 focus:border-[#FFC400] focus:outline-none transition-colors"
+              style={fieldStyle}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
             >
               {categories.map(cat => (
                 <option key={cat} value={cat}>
@@ -140,7 +162,7 @@ export default function AddGlossaryTermModal({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-1.5">
+            <label style={labelStyle} className="block text-sm font-semibold mb-1.5">
               Címkék (vesszővel elválasztva)
             </label>
             <input
@@ -149,22 +171,25 @@ export default function AddGlossaryTermModal({
               value={formData.tags}
               onChange={handleChange}
               placeholder="pl. beton, vas, szilárdság"
-              className="w-full bg-[#111] border border-[#1E1E1E] rounded-lg px-3 py-2 text-gray-300 focus:border-[#FFC400] focus:outline-none transition-colors"
+              style={fieldStyle}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 border-t" style={{ borderColor: cardBorder }}>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-[#1E1E1E] rounded-lg text-gray-300 hover:bg-[#1E1E1E] transition-colors font-medium"
+              className="flex-1 px-4 py-2 border text-gray-400 hover:text-white rounded-lg transition-colors font-medium cursor-pointer"
+              style={{ borderColor: cardBorder }}
             >
               Mégse
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-[#FFC400] text-black rounded-lg font-bold hover:bg-[#E6B000] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="flex-1 px-4 py-2 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-md"
             >
               {loading ? 'Mentés...' : 'Hozzáadás'}
             </button>

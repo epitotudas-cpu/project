@@ -15,7 +15,7 @@ import {
   DEFAULT_BOOKS,
   type BookItem,
 } from '../services/bookService';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 export default function AdminBooksPage() {
   const books = useBooks();
@@ -189,13 +189,15 @@ export default function AdminBooksPage() {
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6" style={{ color: textColor }}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
+          <h1 style={{ color: textColor }} className="text-2xl font-black flex items-center gap-2.5">
             <BookOpen style={{ color: cardHighlight }} size={28} /> Szakmai Könyvek &amp; Szakirodalom Kezelő
           </h1>
           <p className="text-xs text-gray-400 mt-1">
@@ -347,16 +349,17 @@ export default function AdminBooksPage() {
       {/* Add / Edit Book Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111111] border border-[#222] rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto admin-scroll">
-            <div className="flex items-center justify-between border-b border-[#222] pb-3">
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                <BookOpen size={18} className="text-accent" />
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto admin-scroll">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
+              <h3 style={{ color: textColor }} className="text-base font-extrabold flex items-center gap-2">
+                <BookOpen size={18} style={{ color: cardHighlight }} />
                 {editingBook ? 'Szakkönyv Szerkesztése' : 'Új Építőipari Szakkönyv Hozzáadása'}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-white text-xs font-bold px-2 py-1 bg-[#1A1A1A] rounded-lg"
+                style={{ backgroundColor: inputBg, color: textColor }}
+                className="text-xs font-bold px-2.5 py-1 rounded-lg cursor-pointer hover:opacity-90"
               >
                 ✕
               </button>
@@ -365,53 +368,58 @@ export default function AdminBooksPage() {
             <form onSubmit={handleSaveBook} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="font-bold text-gray-300 block mb-1">Könyv Címe *</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Könyv Címe *</label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 font-bold focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="font-bold text-gray-300 block mb-1">Alcím / Rövid témafókusz</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Alcím / Rövid témafókusz</label>
                   <input
                     type="text"
                     value={subtitle}
                     onChange={(e) => setSubtitle(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Szerző(k) *</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Szerző(k) *</label>
                   <input
                     type="text"
                     required
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Kiadó Neve</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Kiadó Neve</label>
                   <input
                     type="text"
                     value={publisher}
                     onChange={(e) => setPublisher(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Témakör / Kategória</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Témakör / Kategória</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as BookItem['category'])}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   >
                     <option value="szerkezet">Szerkezetépítés &amp; Alapozás</option>
                     <option value="gepeszet">Épületgépészet &amp; Villanyszerelés</option>
@@ -422,47 +430,51 @@ export default function AdminBooksPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">ISBN Szám</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">ISBN Szám</label>
                   <input
                     type="text"
                     value={isbn}
                     onChange={(e) => setIsbn(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent font-mono"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 font-mono focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Kiadás Éve</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Kiadás Éve</label>
                   <input
                     type="number"
                     value={year}
                     onChange={(e) => setYear(Number(e.target.value))}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Oldalszám</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Oldalszám</label>
                   <input
                     type="number"
                     value={pages}
                     onChange={(e) => setPages(Number(e.target.value))}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Kiemelt Jelvény Text</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Kiemelt Jelvény Text</label>
                   <input
                     type="text"
                     value={badge}
                     onChange={(e) => setBadge(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Értékelés (1.0 - 5.0)</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Értékelés (1.0 - 5.0)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -470,62 +482,69 @@ export default function AdminBooksPage() {
                     max="5"
                     value={rating}
                     onChange={(e) => setRating(Number(e.target.value))}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="font-bold text-gray-300 block mb-1">Borítókép URL</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Borítókép URL</label>
                   <input
                     type="text"
                     value={coverImage}
                     onChange={(e) => setCoverImage(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="font-bold text-gray-300 block mb-1">Részletes Leírás</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Részletes Leírás</label>
                   <textarea
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl p-3 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="font-bold text-gray-300 block mb-1">Tartalomjegyzék (Soronként 1 fejezet)</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Tartalomjegyzék (Soronként 1 fejezet)</label>
                   <textarea
                     rows={4}
                     value={tableOfContents}
                     onChange={(e) => setTableOfContents(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent font-mono text-[11px]"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl p-3 font-mono text-[11px] focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="font-bold text-gray-300 block mb-1">Minta / Részlet a könyvből</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Minta / Részlet a könyvből</label>
                   <textarea
                     rows={3}
                     value={sampleExcerpt}
                     onChange={(e) => setSampleExcerpt(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
+                    className="w-full border rounded-xl p-3 focus:outline-none transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#222]">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold rounded-xl transition-colors"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-bold rounded-xl transition-colors cursor-pointer hover:opacity-90"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-accent hover:bg-accent-hover text-black font-extrabold rounded-xl transition-all shadow-lg"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold rounded-xl transition-all shadow-lg cursor-pointer hover:opacity-90"
                 >
                   {editingBook ? 'Módosítások Mentése' : 'Könyv Létrehozása'}
                 </button>

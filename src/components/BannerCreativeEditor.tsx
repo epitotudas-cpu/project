@@ -27,6 +27,7 @@ import {
   saveStoredCreatives,
   resetCreativeToDefaults,
 } from '../services/bannerCreativeService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import type {
   AdCreative,
   BackgroundStyle,
@@ -50,6 +51,14 @@ export function BannerCreativeEditor() {
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [simulateReducedMotion, setSimulateReducedMotion] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
 
   useEffect(() => {
     refreshCreativesList();
@@ -225,15 +234,15 @@ export function BannerCreativeEditor() {
   // =========================================================================
   if (editorView === 'selector') {
     return (
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-8 animate-fade-in" style={{ color: textColor }}>
         {/* Header Bar */}
-        <div className="bg-[#111111] border border-[#222] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 text-xs font-bold uppercase tracking-wider">
               <Sparkles size={13} /> Kreatív Vizuális Kezelő Központ
             </div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              Hirdetések & Reklám Kreatívok Kiválasztása
+            <h2 style={{ color: textColor }} className="text-2xl md:text-3xl font-extrabold tracking-tight">
+              Hirdetések &amp; Reklám Kreatívok Kiválasztása
             </h2>
             <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
               Válaszd ki a szerkeszteni kívánt hirdetőt vagy hozz létre új vizuális banner kreatívot a kezdőlaphoz, cikkekhez vagy az aloldalakhoz.
@@ -242,7 +251,8 @@ export function BannerCreativeEditor() {
 
           <button
             onClick={() => handleCreateNewCreative(filterPlacement === 'all' ? 'top_banner' : filterPlacement)}
-            className="shrink-0 px-6 py-3.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-sm rounded-2xl shadow-lg transition-all duration-300 flex items-center gap-2.5 cursor-pointer hover:scale-[1.02]"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="shrink-0 px-6 py-3.5 font-extrabold text-sm rounded-2xl shadow-lg transition-all duration-300 flex items-center gap-2.5 cursor-pointer hover:opacity-90 hover:scale-[1.02]"
           >
             <Plus size={18} />
             <span>Új Hirdetés Hozzáadása</span>
@@ -250,15 +260,18 @@ export function BannerCreativeEditor() {
         </div>
 
         {/* Filter Bar & Summary Statistics */}
-        <div className="bg-[#111111] border border-[#222] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
           {/* Placement Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
             <button
               onClick={() => setFilterPlacement('all')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              style={
                 filterPlacement === 'all'
-                  ? 'bg-accent text-black shadow-sm font-extrabold'
-                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-4 py-2 border rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'all' ? 'shadow-sm font-extrabold' : 'hover:opacity-90'
               }`}
             >
               <Layers size={14} /> Összes ({storedCreatives.length})
@@ -266,10 +279,13 @@ export function BannerCreativeEditor() {
 
             <button
               onClick={() => setFilterPlacement('top_banner')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              style={
                 filterPlacement === 'top_banner'
-                  ? 'bg-accent text-black shadow-sm font-extrabold'
-                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-4 py-2 border rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'top_banner' ? 'shadow-sm font-extrabold' : 'hover:opacity-90'
               }`}
             >
               📍 Fejléc Banner ({topBannerCreatives.length})
@@ -277,10 +293,13 @@ export function BannerCreativeEditor() {
 
             <button
               onClick={() => setFilterPlacement('in_feed')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              style={
                 filterPlacement === 'in_feed'
-                  ? 'bg-accent text-black shadow-sm font-extrabold'
-                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-4 py-2 border rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'in_feed' ? 'shadow-sm font-extrabold' : 'hover:opacity-90'
               }`}
             >
               📍 In-Feed ({inFeedCreatives.length})
@@ -288,10 +307,13 @@ export function BannerCreativeEditor() {
 
             <button
               onClick={() => setFilterPlacement('sidebar')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              style={
                 filterPlacement === 'sidebar'
-                  ? 'bg-accent text-black shadow-sm font-extrabold'
-                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-4 py-2 border rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'sidebar' ? 'shadow-sm font-extrabold' : 'hover:opacity-90'
               }`}
             >
               📍 Oldalsáv ({sidebarCreatives.length})
@@ -299,10 +321,13 @@ export function BannerCreativeEditor() {
 
             <button
               onClick={() => setFilterPlacement('footer_banner')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              style={
                 filterPlacement === 'footer_banner'
-                  ? 'bg-accent text-black shadow-sm font-extrabold'
-                  : 'bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2B2B2B]'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-4 py-2 border rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'footer_banner' ? 'shadow-sm font-extrabold' : 'hover:opacity-90'
               }`}
             >
               📍 Lábléc Banner ({footerCreatives.length})

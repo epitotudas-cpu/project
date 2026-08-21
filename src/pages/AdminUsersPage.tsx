@@ -214,14 +214,15 @@ export default function AdminUsersPage() {
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6" style={{ color: textColor }}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
-            <Users className="text-accent" size={28} /> Felhasználók &amp; Jogosultságok Kezelője
+          <h1 style={{ color: textColor }} className="text-2xl font-black flex items-center gap-2.5">
+            <Users style={{ color: cardHighlight }} size={28} /> Felhasználók &amp; Jogosultságok Kezelője
           </h1>
           <p className="text-xs text-gray-400 mt-1">
             Regisztrált fiókok, szerepkörök, e-mail visszagazolás státuszok és auto-publikációs bizalmi pontok.
@@ -232,8 +233,8 @@ export default function AdminUsersPage() {
           {!loading && (
             <button
               onClick={loadUsers}
-              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 border text-gray-200 text-xs font-bold rounded-xl hover:text-white transition-all cursor-pointer shadow-sm"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border text-xs font-bold rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-sm"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Adatok Frissítése
             </button>
@@ -249,7 +250,7 @@ export default function AdminUsersPage() {
           </div>
           <div>
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Összes Felhasználó</span>
-            <span className="text-xl sm:text-2xl font-black text-white">{stats.total} fő</span>
+            <span style={{ color: textColor }} className="text-xl sm:text-2xl font-black">{stats.total} fő</span>
           </div>
         </div>
 

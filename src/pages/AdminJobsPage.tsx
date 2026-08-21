@@ -20,6 +20,7 @@ import {
   deleteJobPosting,
 } from '../services/careerService';
 import type { JobPosting } from '../lib/supabase';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
@@ -134,13 +135,22 @@ export default function AdminJobsPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
   return (
-    <div className="space-[#111] min-h-screen text-gray-200 p-4 md:p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-8 min-h-screen" style={{ color: textColor }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-6">
+      <div style={{ borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
-            <Briefcase className="text-accent" size={32} />
+          <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
+            <Briefcase style={{ color: cardHighlight }} size={32} />
             Állásajánlatok &amp; Pozíciók Kezelő
           </h1>
           <p className="text-sm text-gray-400 mt-1">
@@ -151,7 +161,8 @@ export default function AdminJobsPage() {
         <button
           type="button"
           onClick={handleOpenAddModal}
-          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          style={{ backgroundColor: cardHighlight, color: '#000000' }}
+          className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0 hover:opacity-90"
         >
           <Plus size={16} /> Új Álláshirdetés Feladása
         </button>
@@ -165,7 +176,7 @@ export default function AdminJobsPage() {
       )}
 
       {/* Search & Filter */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#111111] border border-[#1E1E1E] p-4 rounded-2xl">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border p-4 rounded-2xl shadow-sm">
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -173,7 +184,8 @@ export default function AdminJobsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Keresés pozíció, cég vagy város alapján..."
-            className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-accent"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+            className="w-full border rounded-xl pl-10 pr-4 py-2 text-xs placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
 
@@ -187,10 +199,13 @@ export default function AdminJobsPage() {
             <button
               key={cat.id}
               onClick={() => setSelectedType(cat.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+              style={
                 selectedType === cat.id
-                  ? 'bg-accent text-black font-extrabold'
-                  : 'bg-[#181818] border border-[#262626] text-gray-400 hover:text-white'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-3 py-1.5 border rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                selectedType === cat.id ? 'font-extrabold' : 'hover:opacity-90'
               }`}
             >
               {cat.label}
@@ -201,14 +216,15 @@ export default function AdminJobsPage() {
 
       {/* Grid */}
       {loading ? (
-        <div className="text-center py-12 text-gray-500 text-sm font-bold">Állások betöltése...</div>
+        <div className="text-center py-12 text-gray-400 text-sm font-bold">Állások betöltése...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredJobs.map((job) => (
             <div
               key={job.id}
-              className={`bg-[#111111] border rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-xl transition-all ${
-                job.is_active ? 'border-[#1E1E1E] hover:border-accent/40' : 'border-red-900/40 opacity-60'
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className={`border rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-xl transition-all ${
+                job.is_active ? '' : 'opacity-60'
               }`}
             >
               <div className="space-y-3">
@@ -236,9 +252,9 @@ export default function AdminJobsPage() {
 
                 <div>
                   <div className="text-xs font-bold text-gray-400 flex items-center gap-1.5 mb-1">
-                    <Building2 size={13} className="text-accent" /> {job.company_name}
+                    <Building2 size={13} style={{ color: cardHighlight }} /> {job.company_name}
                   </div>
-                  <h3 className="text-base font-extrabold text-white leading-snug">{job.title}</h3>
+                  <h3 style={{ color: textColor }} className="text-base font-extrabold leading-snug">{job.title}</h3>
                 </div>
 
                 <div className="space-y-1 text-xs text-gray-400 font-mono pt-1">
@@ -246,33 +262,37 @@ export default function AdminJobsPage() {
                     <MapPin size={13} className="text-gray-500" /> {job.location}
                   </div>
                   {job.salary_range && (
-                    <div className="flex items-center gap-1.5 text-accent font-bold">
+                    <div className="flex items-center gap-1.5 font-bold" style={{ color: cardHighlight }}>
                       <DollarSign size={13} /> {job.salary_range}
                     </div>
                   )}
                 </div>
 
-                <p className="text-xs text-gray-400 line-clamp-3 pt-2 border-t border-[#222]">
-                  {job.description}
-                </p>
+                {job.description && (
+                  <p className="text-xs text-gray-400 line-clamp-3 leading-relaxed border-t pt-2" style={{ borderColor: cardBorder }}>
+                    {job.description}
+                  </p>
+                )}
               </div>
 
               {/* Actions */}
-              <div className="pt-3 border-t border-[#222] flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t" style={{ borderColor: cardBorder }}>
                 <button
                   type="button"
                   onClick={() => handleOpenEditModal(job)}
-                  className="px-3 py-1.5 bg-[#222] hover:bg-[#333] text-gray-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="p-2 border rounded-xl transition-colors cursor-pointer hover:opacity-90"
+                  title="Szerkesztés"
                 >
-                  <Edit3 size={13} /> Szerkesztés
+                  <Edit3 size={15} />
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDeleteJob(job.id)}
-                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-colors cursor-pointer"
+                  className="p-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors cursor-pointer"
                   title="Törlés"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
@@ -283,51 +303,55 @@ export default function AdminJobsPage() {
       {/* Add / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111111] border border-[#222] rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl text-xs">
-            <div className="flex items-center justify-between border-b border-[#222] pb-3">
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                <Briefcase size={18} className="text-accent" />
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
+              <h3 style={{ color: textColor }} className="text-base font-extrabold flex items-center gap-2">
+                <Briefcase size={18} style={{ color: cardHighlight }} />
                 {editingJob ? 'Álláshirdetés Szerkesztése' : 'Új Álláshirdetés Feladása'}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-white text-xs font-bold px-2 py-1 bg-[#1A1A1A] rounded-lg"
+                style={{ backgroundColor: inputBg, color: textColor }}
+                className="text-xs font-bold px-2.5 py-1 rounded-lg cursor-pointer hover:opacity-90"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveJob} className="space-y-4">
+            <form onSubmit={handleSaveJob} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold text-gray-300 block mb-1">Munkáltató Cég Neve *</label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Munkáltató Cég Neve *</label>
                 <input
                   type="text"
                   required
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-accent"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-4 py-2 font-bold focus:outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-gray-300 block mb-1">Pozíció Megnevezése *</label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Pozíció Megnevezése *</label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-accent"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-4 py-2 font-bold focus:outline-none transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Foglalkoztatás Típusa</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Foglalkoztatás Típusa</label>
                   <select
                     value={jobType}
                     onChange={(e) => setJobType(e.target.value as any)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   >
                     <option value="full_time">Teljes Munkaidő</option>
                     <option value="part_time">Részmunkaidő</option>
@@ -336,50 +360,55 @@ export default function AdminJobsPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-300 block mb-1">Munkavégzés Helye</label>
+                  <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Munkavégzés Helye</label>
                   <input
                     type="text"
                     required
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-gray-300 block mb-1">Fizetési Sáv / Bérigény</label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Fizetési Sáv / Bérigény</label>
                 <input
                   type="text"
                   value={salaryRange}
                   onChange={(e) => setSalaryRange(e.target.value)}
                   placeholder="pl. Bruttó 600.000 - 800.000 Ft/hó"
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent font-mono"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-4 py-2 font-mono focus:outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-gray-300 block mb-1">Pozíció Részletes Leírása</label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Pozíció Részletes Leírása</label>
                 <textarea
                   rows={4}
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent leading-relaxed"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl p-3 leading-relaxed focus:outline-none transition-colors"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#222]">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold rounded-xl transition-colors"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-bold rounded-xl transition-colors cursor-pointer hover:opacity-90"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-accent hover:bg-accent-hover text-black font-extrabold rounded-xl transition-all shadow-lg"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold rounded-xl transition-all shadow-lg cursor-pointer hover:opacity-90"
                 >
                   {editingJob ? 'Módosítások Mentése' : 'Állás Feladása'}
                 </button>

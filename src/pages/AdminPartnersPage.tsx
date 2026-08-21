@@ -9,6 +9,7 @@ import {
   type PartnerCategory,
 } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 export default function AdminPartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -90,34 +91,44 @@ export default function AdminPartnersPage() {
     await loadPartners();
   }
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
   if (loading) {
     return (
       <div className="p-8 text-center text-gray-400">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent border-r-transparent mb-2" />
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent mb-2" style={{ borderColor: `${cardHighlight} transparent ${cardHighlight} ${cardHighlight}` }} />
         <div>Partnerek betöltése...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1E1E1E] pb-6">
+    <div className="p-6 md:p-8 space-y-6" style={{ color: textColor }}>
+      <div style={{ borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Building2 className="text-accent" size={26} />
-            Partner Kezelő Modul & Intézményi Ökoszisztéma
+          <h1 style={{ color: textColor }} className="text-2xl font-bold flex items-center gap-3">
+            <Building2 style={{ color: cardHighlight }} size={26} />
+            Partner Kezelő Modul &amp; Intézményi Ökoszisztéma
           </h1>
           <p className="text-gray-400 text-sm mt-1">
             Gyártók, Kereskedők, Cégek, Iskolák, Oktatási Központok és Támogatók profiljai
           </p>
         </div>
         <div className="flex items-center gap-3 self-start">
-          <span className="text-xs bg-accent/10 border border-accent/20 text-accent font-bold px-3 py-2 rounded-xl">
+          <span style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="text-xs border font-bold px-3 py-2 rounded-xl">
             {partners.length} Aktív Szervezet
           </span>
           <button
             onClick={openCreateModal}
-            className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-bold text-xs rounded-xl flex items-center gap-2 transition-colors"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-4 py-2 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors cursor-pointer hover:opacity-90 shadow-md"
           >
             <Plus size={16} /> Új Partner Hozzáadása
           </button>
@@ -130,10 +141,13 @@ export default function AdminPartnersPage() {
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            style={
               activeCategory === cat
-                ? 'bg-accent text-black font-bold'
-                : 'bg-[#111] border border-[#1E1E1E] text-gray-400 hover:text-white'
+                ? { backgroundColor: cardHighlight, color: '#000000' }
+                : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+            }
+            className={`px-3.5 py-1.5 border rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              activeCategory === cat ? 'font-bold' : 'hover:opacity-90'
             }`}
           >
             {cat === 'all' ? 'Összes Szervezet' : getCategoryLabel(cat)}
@@ -143,10 +157,10 @@ export default function AdminPartnersPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {partners.map((partner) => (
-          <div key={partner.id} className="bg-[#111111] border border-[#1E1E1E] rounded-xl p-6 space-y-4 flex flex-col justify-between hover:border-[#333] transition-colors">
+          <div key={partner.id} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-xl p-6 space-y-4 flex flex-col justify-between transition-colors shadow-lg">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded border border-accent/20">
+                <span style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded border">
                   {getCategoryLabel(partner.category)}
                 </span>
                 
@@ -158,33 +172,35 @@ export default function AdminPartnersPage() {
                   )}
                   <button
                     onClick={() => openEditModal(partner)}
-                    className="p-1.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-gray-300 hover:text-accent rounded-lg transition-colors"
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                    className="p-1.5 border rounded-lg transition-colors cursor-pointer hover:opacity-90"
                     title="Partner szerkesztése"
                   >
                     <Edit2 size={14} />
                   </button>
                   <button
                     onClick={() => handleDeletePartner(partner.id, partner.name)}
-                    className="p-1.5 bg-[#1A1A1A] hover:bg-red-500/20 text-gray-300 hover:text-red-400 rounded-lg transition-colors"
+                    className="p-1.5 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors cursor-pointer"
                     title="Partner törlése"
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
-              <h2 className="text-lg font-bold text-white">{partner.name}</h2>
+              <h2 style={{ color: textColor }} className="text-lg font-bold">{partner.name}</h2>
               {partner.description && (
                 <p className="text-sm text-gray-400 leading-relaxed line-clamp-3">{partner.description}</p>
               )}
             </div>
 
-            <div className="pt-3 border-t border-[#1E1E1E] flex items-center justify-between">
+            <div style={{ borderColor: cardBorder }} className="pt-3 border-t flex items-center justify-between">
               {partner.website_url ? (
                 <a
                   href={partner.website_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline"
+                  style={{ color: cardHighlight }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
                 >
                   <Globe size={14} /> Weboldal <ExternalLink size={12} />
                 </a>
@@ -194,7 +210,7 @@ export default function AdminPartnersPage() {
               
               <button
                 onClick={() => openEditModal(partner)}
-                className="text-xs font-bold text-gray-400 hover:text-white transition-colors"
+                className="text-xs font-bold text-gray-400 hover:text-white transition-colors cursor-pointer"
               >
                 Szerkesztés ➔
               </button>
@@ -206,33 +222,35 @@ export default function AdminPartnersPage() {
       {/* Partner Modal (Create / Edit) */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#222] pb-3">
-              <h2 className="text-lg font-bold text-white">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
+              <h2 style={{ color: textColor }} className="text-lg font-bold">
                 {editingPartner ? 'Partner Szervezet Szerkesztése' : 'Új Partner Szervezet Hozzáadása'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleSavePartner} className="space-y-4">
+            <form onSubmit={handleSavePartner} className="space-y-4 text-xs">
               <div>
-                <label className="text-xs text-gray-400 font-semibold block mb-1">Szervezet Neve <span className="text-red-400">*</span></label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-semibold block mb-1">Szervezet Neve <span className="text-red-400">*</span></label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="pl. Mapei Kft."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-gray-400 font-semibold block mb-1">Kategória</label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-semibold block mb-1">Kategória</label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as PartnerCategory)}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
                 >
                   <option value="gyarto">Gyártó</option>
                   <option value="kereskedo">Kereskedő</option>
@@ -244,23 +262,25 @@ export default function AdminPartnersPage() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-400 font-semibold block mb-1">Leírás</label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-semibold block mb-1">Leírás</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Rövid összefoglaló a szervezetről..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-accent h-20 resize-none"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm h-20 resize-none focus:outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-gray-400 font-semibold block mb-1">Weboldal URL</label>
+                <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-semibold block mb-1">Weboldal URL</label>
                 <input
                   type="url"
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
                 />
               </div>
 
@@ -270,24 +290,26 @@ export default function AdminPartnersPage() {
                   id="isVerifiedCheckbox"
                   checked={isVerified}
                   onChange={(e) => setIsVerified(e.target.checked)}
-                  className="rounded border-[#2A2A2A] text-accent focus:ring-accent"
+                  className="rounded cursor-pointer"
                 />
-                <label htmlFor="isVerifiedCheckbox" className="text-xs text-gray-300 font-medium">
+                <label htmlFor="isVerifiedCheckbox" className="font-medium cursor-pointer" style={{ color: textColor }}>
                   Minősített partner státusz (Verified badge)
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#222]">
+              <div style={{ borderColor: cardBorder }} className="flex justify-end gap-3 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-[#1A1A1A] text-gray-300 text-xs font-semibold rounded-xl hover:bg-[#222]"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-semibold rounded-xl cursor-pointer hover:opacity-90"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-accent text-black text-xs font-bold rounded-xl hover:bg-accent-hover"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 font-bold rounded-xl cursor-pointer hover:opacity-90 shadow-md"
                 >
                   {editingPartner ? 'Változtatások Mentése' : 'Mentés & Hozzáadás'}
                 </button>

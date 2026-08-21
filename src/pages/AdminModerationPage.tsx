@@ -7,12 +7,20 @@ import {
   type ContentLifecycleMetadata,
   type ContentLifecycleStatus,
 } from '../services/contentLifecycleService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 export default function AdminModerationPage() {
   const [items, setItems] = useState<ContentLifecycleMetadata[]>([]);
   const [activeFilter, setActiveFilter] = useState<ContentLifecycleStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
 
   useEffect(() => {
     loadItems();
@@ -39,31 +47,31 @@ export default function AdminModerationPage() {
   if (loading) {
     return (
       <div className="p-8 text-center text-gray-400">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent border-r-transparent mb-2" />
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent mb-2" style={{ borderColor: `${cardHighlight} transparent ${cardHighlight} ${cardHighlight}` }} />
         <div>Tartalom életciklus lista betöltése...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1E1E1E] pb-6">
+    <div className="p-6 md:p-8 space-y-6" style={{ color: textColor }}>
+      <div style={{ borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <CheckSquare className="text-accent" size={26} />
-            Tartalom Életciklus & Moderációs Workflow
+          <h1 style={{ color: textColor }} className="text-2xl font-bold flex items-center gap-3">
+            <CheckSquare style={{ color: cardHighlight }} size={26} />
+            Tartalom Életciklus &amp; Moderációs Workflow
           </h1>
           <p className="text-gray-400 text-sm mt-1">
             Egységes 6-lépcsős életciklus állapotgép (Piszkozat &rarr; Beküldve &rarr; Ellenőrzés &rarr; Jóváhagyva &rarr; Publikálva &rarr; Archiválva)
           </p>
         </div>
-        <span className="text-xs bg-accent/10 border border-accent/20 text-accent font-bold px-3 py-1.5 rounded-lg self-start">
+        <span style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="text-xs border font-bold px-3 py-1.5 rounded-lg self-start">
           {items.length} Tartalom Folyamatban
         </span>
       </div>
 
       {message && (
-        <div className="p-4 bg-accent/10 border border-accent/30 text-accent text-sm rounded-xl font-medium">
+        <div style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="p-4 border text-sm rounded-xl font-medium">
           {message}
         </div>
       )}
@@ -74,10 +82,13 @@ export default function AdminModerationPage() {
           <button
             key={st}
             onClick={() => setActiveFilter(st)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            style={
               activeFilter === st
-                ? 'bg-accent text-black font-bold'
-                : 'bg-[#111] border border-[#1E1E1E] text-gray-400 hover:text-white'
+                ? { backgroundColor: cardHighlight, color: '#000000' }
+                : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+            }
+            className={`px-3 py-1.5 border rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              activeFilter === st ? 'font-bold' : 'hover:opacity-90'
             }`}
           >
             {st === 'all' ? 'Összes Állapot' : getStatusLabel(st)}
@@ -89,14 +100,15 @@ export default function AdminModerationPage() {
         {items.map((item) => (
           <div
             key={item.id}
-            className="bg-[#111111] border border-[#1E1E1E] rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6"
+            style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            className="border rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-lg"
           >
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded bg-[#1A1A1A] border border-[#2A2A2A] text-accent">
+                <span style={{ backgroundColor: inputBg, borderColor: cardBorder, color: cardHighlight }} className="text-xs uppercase font-bold px-2.5 py-0.5 rounded border">
                   {item.contentType}
                 </span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-[#1A1A1A] text-gray-300 border border-[#2A2A2A]">
+                <span style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }} className="text-xs font-semibold px-2.5 py-0.5 rounded border">
                   Verzió: v{item.version}
                 </span>
                 <span className={`text-xs font-bold px-2.5 py-0.5 rounded ${
@@ -115,13 +127,13 @@ export default function AdminModerationPage() {
                   {getStatusLabel(item.status)}
                 </span>
               </div>
-              <h2 className="text-lg font-bold text-white">{item.title}</h2>
+              <h2 style={{ color: textColor }} className="text-lg font-bold">{item.title}</h2>
               {item.excerpt && <p className="text-sm text-gray-400">{item.excerpt}</p>}
               <div className="flex items-center gap-4 text-xs text-gray-500 pt-1 flex-wrap">
-                <span>Szerző: <strong className="text-gray-300">{item.author}</strong></span>
+                <span>Szerző: <strong style={{ color: textColor }}>{item.author}</strong></span>
                 <span className="flex items-center gap-1"><Clock size={12} /> {new Date(item.submittedAt).toLocaleString('hu-HU')}</span>
                 {item.approvedBy && (
-                  <span>Jóváhagyó: <strong className="text-accent">{item.approvedBy}</strong></span>
+                  <span>Jóváhagyó: <strong style={{ color: cardHighlight }}>{item.approvedBy}</strong></span>
                 )}
               </div>
             </div>
@@ -131,7 +143,7 @@ export default function AdminModerationPage() {
               {item.status === 'submitted' && (
                 <button
                   onClick={() => handleTransition(item.id, 'review')}
-                  className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold rounded-lg flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-blue-500/20"
                 >
                   <Eye size={14} /> Ellenőrzésre
                 </button>
@@ -139,7 +151,7 @@ export default function AdminModerationPage() {
               {(item.status === 'submitted' || item.status === 'review') && (
                 <button
                   onClick={() => handleTransition(item.id, 'approved')}
-                  className="px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold rounded-lg flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-cyan-500/20"
                 >
                   <CheckCircle2 size={14} /> Jóváhagyás
                 </button>
@@ -147,7 +159,8 @@ export default function AdminModerationPage() {
               {(item.status === 'approved' || item.status === 'review') && (
                 <button
                   onClick={() => handleTransition(item.id, 'published')}
-                  className="px-3 py-1.5 bg-accent text-black font-bold text-xs rounded-lg flex items-center gap-1.5"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-3 py-1.5 font-bold text-xs rounded-lg flex items-center gap-1.5 cursor-pointer hover:opacity-90 shadow-md"
                 >
                   <CheckCircle2 size={14} /> Publikálás
                 </button>
@@ -155,7 +168,7 @@ export default function AdminModerationPage() {
               {item.status !== 'archived' && (
                 <button
                   onClick={() => handleTransition(item.id, 'archived')}
-                  className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold rounded-lg flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-red-500/20"
                 >
                   <Archive size={14} /> Archiválás
                 </button>
