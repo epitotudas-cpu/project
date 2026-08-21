@@ -335,7 +335,6 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const headerBg = adjustColorBrightness(cardBg, 4);
-  const inputBg = adjustColorBrightness(cardBg, -6);
   const textColor = getContrastTextColor(cardBg);
 
   return (
