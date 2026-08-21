@@ -24,7 +24,7 @@ export const DEFAULT_CALCULATOR_CONFIG: CalculatorConfig = {
 };
 
 const STORAGE_KEY = 'epitotudas_calc_config_v1';
-const SUPABASE_CALC_ID = '00000000-0000-0000-0000-000000000004';
+const SUPABASE_CALC_ID = '00000000-0000-0000-0000-000000000005';
 
 declare global {
   interface Window {

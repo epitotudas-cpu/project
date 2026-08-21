@@ -1,7 +1,7 @@
 import { supabase, type AdCreative } from '../lib/supabase';
 
 const CREATIVES_STORAGE_KEY = 'epitotudas_ad_creatives_v1';
-const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000006';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000013';
 
 export const DEFAULT_AD_CREATIVES: AdCreative[] = [
   {

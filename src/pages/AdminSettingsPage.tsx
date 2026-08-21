@@ -126,12 +126,48 @@ const PRESET_ADMIN_CARD_HIGHLIGHTS = [
 ];
 
 export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
-  const [settings, setSettings] = useState<SiteSettings>(() => getSiteSettings());
-  const [impressumData, setImpressumData] = useState<ImpressumData>(() => getImpressumData());
-  const [heroState, setHeroState] = useState<HeroState>(() => getHeroState());
-  const [calcConfig, setCalcConfig] = useState<CalculatorConfig>(() => getCalculatorConfig());
-  const [legalDocs, setLegalDocs] = useState<LegalDocsData>(() => getLegalDocs());
-  const [aboutSettings, setAboutSettings] = useState<AboutSettings>(() => getAboutSettings());
+  const [settings, setSettings] = useState<SiteSettings>(() => {
+    const s = getSiteSettings();
+    return { ...DEFAULT_SITE_SETTINGS, ...s };
+  });
+  const [impressumData, setImpressumData] = useState<ImpressumData>(() => {
+    const i = getImpressumData();
+    return { ...DEFAULT_IMPRESSUM_DATA, ...i };
+  });
+  const [heroState, setHeroState] = useState<HeroState>(() => {
+    const h = getHeroState();
+    return {
+      config: { ...DEFAULT_HERO_CONFIG, ...(h?.config || {}) },
+      images: Array.isArray(h?.images) && h.images.length > 0 ? h.images : DEFAULT_HERO_IMAGES,
+    };
+  });
+  const [calcConfig, setCalcConfig] = useState<CalculatorConfig>(() => {
+    const c = getCalculatorConfig();
+    return { ...DEFAULT_CALCULATOR_CONFIG, ...c };
+  });
+  const [legalDocs, setLegalDocs] = useState<LegalDocsData>(() => {
+    const l = getLegalDocs();
+    return {
+      privacyPolicy: {
+        ...DEFAULT_LEGAL_DOCS.privacyPolicy,
+        ...(l?.privacyPolicy || {}),
+        sections: Array.isArray(l?.privacyPolicy?.sections) ? l.privacyPolicy.sections : DEFAULT_LEGAL_DOCS.privacyPolicy.sections,
+      },
+      terms: {
+        ...DEFAULT_LEGAL_DOCS.terms,
+        ...(l?.terms || {}),
+        sections: Array.isArray(l?.terms?.sections) ? l.terms.sections : DEFAULT_LEGAL_DOCS.terms.sections,
+      },
+      cookiePolicy: {
+        ...DEFAULT_LEGAL_DOCS.cookiePolicy,
+        ...(l?.cookiePolicy || {}),
+      },
+    };
+  });
+  const [aboutSettings, setAboutSettings] = useState<AboutSettings>(() => {
+    const a = getAboutSettings();
+    return { ...DEFAULT_ABOUT_SETTINGS, ...a };
+  });
   const navItems = useNavigationItems();
 
   const [activeTab, setActiveTab] = useState<'design' | 'hero' | 'impressum' | 'navigation' | 'calculators' | 'legal' | 'about' | 'ads' | 'system'>('design');

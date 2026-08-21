@@ -154,7 +154,7 @@ const DEFAULT_CAMPAIGNS: ExtendedAdCampaign[] = [
 ];
 
 const STORAGE_KEY_CAMPAIGNS = 'epitotudas_ad_campaigns_v2';
-const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000005';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000015';
 
 export function getStoredCampaigns(): ExtendedAdCampaign[] {
   try {

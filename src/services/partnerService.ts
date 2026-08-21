@@ -16,8 +16,8 @@ export interface CreatePartnerPayload {
   logo_url?: string;
 }
 
-const STORAGE_KEY = 'epitotudas_partners_store_v1';
-const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000004';
+const STORAGE_KEY = 'epitotudas_partners_v1';
+const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000011';
 
 const DEFAULT_PARTNERS: Partner[] = [
   {

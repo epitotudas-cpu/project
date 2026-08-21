@@ -28,7 +28,7 @@ export const DEFAULT_ARTICLE_SETTINGS: ArticleSettings = {
 };
 
 const STORAGE_KEY = 'epitotudas_article_settings_v1';
-const SUPABASE_ARTICLE_SETTINGS_ID = '00000000-0000-0000-0000-000000000005';
+const SUPABASE_ARTICLE_SETTINGS_ID = '00000000-0000-0000-0000-000000000014';
 
 declare global {
   interface Window {

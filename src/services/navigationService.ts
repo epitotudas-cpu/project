@@ -44,7 +44,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
 ];
 
 const STORAGE_KEY = 'epitotudas_nav_items_v1';
-const SUPABASE_NAV_ID = '00000000-0000-0000-0000-000000000002';
+const SUPABASE_NAV_ID = '00000000-0000-0000-0000-000000000004';
 
 declare global {
   interface Window {

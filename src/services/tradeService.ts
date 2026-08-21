@@ -18,7 +18,7 @@ export function buildDefaultTradeItems(): TradeItem[] {
 export const DEFAULT_TRADE_ITEMS: TradeItem[] = buildDefaultTradeItems();
 
 const STORAGE_KEY = 'epitotudas_trades_data_v1';
-const SUPABASE_TRADES_ID = '00000000-0000-0000-0000-000000000006';
+const SUPABASE_TRADES_ID = '00000000-0000-0000-0000-000000000007';
 
 declare global {
   interface Window {

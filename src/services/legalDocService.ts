@@ -32,7 +32,7 @@ export const DEFAULT_LEGAL_DOCS: LegalDocsData = {
 };
 
 const STORAGE_KEY = 'epitotudas_legal_docs_v1';
-const SUPABASE_LEGAL_ID = '00000000-0000-0000-0000-000000000005';
+const SUPABASE_LEGAL_ID = '00000000-0000-0000-0000-000000000006';
 
 declare global {
   interface Window {

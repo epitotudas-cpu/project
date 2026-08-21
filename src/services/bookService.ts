@@ -119,8 +119,8 @@ export const DEFAULT_BOOKS: BookItem[] = [
   },
 ];
 
-const STORAGE_KEY = 'epitotudas_books_data_v1';
-const SUPABASE_BOOKS_ID = '00000000-0000-0000-0000-000000000003';
+const STORAGE_KEY = 'epitotudas_books_v1';
+const SUPABASE_BOOKS_ID = '00000000-0000-0000-0000-000000000012';
 
 declare global {
   interface Window {
