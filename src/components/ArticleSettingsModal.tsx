@@ -6,6 +6,7 @@ import {
   type ArticleSettings,
 } from '../services/articleSettingsService';
 import { useToast } from './ToastProvider';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 interface ArticleSettingsModalProps {
   isOpen: boolean;
@@ -14,6 +15,12 @@ interface ArticleSettingsModalProps {
 
 export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSettingsModalProps) {
   const toast = useToast();
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+
   const [form, setForm] = useState<ArticleSettings>(() => getArticleSettings());
   const [saving, setSaving] = useState(false);
 
@@ -38,7 +45,7 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
   }
 
   const fieldClass =
-    'w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
+    'w-full border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors';
   const labelClass = 'block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide';
 
   return (
@@ -47,13 +54,17 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
       onClick={() => !saving && onClose()}
     >
       <div
-        className="bg-[#111] border border-[#1E1E1E] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+        className="border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E1E1E] sticky top-0 bg-[#111] z-10">
+        <div
+          style={{ backgroundColor: headerBg, borderColor: cardBorder }}
+          className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10"
+        >
           <div className="flex items-center gap-2">
-            <Settings className="text-[#FFC400]" size={20} />
+            <Settings style={{ color: cardHighlight }} size={20} />
             <h2 className="text-base font-black text-white">Tudástár – Cikkek és szűrők beállításai</h2>
           </div>
           <button onClick={onClose} disabled={saving} className="text-gray-500 hover:text-gray-300 disabled:opacity-40">
@@ -216,7 +227,7 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222]">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t" style={{ borderColor: cardBorder }}>
             <button
               type="button"
               onClick={onClose}
@@ -228,7 +239,8 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FFC400] text-black text-xs font-black rounded-xl hover:bg-[#E6B000] disabled:opacity-60 transition-colors shadow-md"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black rounded-xl hover:opacity-90 disabled:opacity-60 transition-colors shadow-md"
             >
               <Save size={14} /> {saving ? 'Mentés...' : 'Beállítások Mentése'}
             </button>

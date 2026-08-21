@@ -9,6 +9,7 @@ import {
 import { slugify } from '../lib/slugify';
 import type { Article, Category } from '../lib/supabase';
 import { createArticle, updateArticle } from '../services/articleService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 interface EditArticleModalProps {
   article: Article | null; // null = create mode
@@ -19,8 +20,8 @@ interface EditArticleModalProps {
 
 const STATUS_OPTIONS: { value: Article['status'] | 'archived'; label: string }[] = [
   { value: 'draft', label: 'Piszkozat' },
-  { value: 'review', label: 'Felülvizsgálaton' },
-  { value: 'published', label: 'Publikált' },
+  { value: 'review', label: 'Felülvizsgálatra vár' },
+  { value: 'published', label: 'Közzétéve' },
   { value: 'archived', label: 'Archivált' },
 ];
 
@@ -895,17 +896,36 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
     }
   }
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+
   const fieldClass =
-    'w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
+    'w-full border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors';
   const labelClass = 'block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md">
-      <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div
+        style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+        className="border rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+      >
         {/* MODAL HEADER */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#222] bg-[#141414] shrink-0">
+        <div
+          style={{ backgroundColor: headerBg, borderColor: cardBorder }}
+          className="flex items-center justify-between px-6 py-4 border-b shrink-0"
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#FFC400]/10 border border-[#FFC400]/20 rounded-lg text-[#FFC400]">
+            <div
+              style={{
+                backgroundColor: `${cardHighlight}1C`,
+                borderColor: `${cardHighlight}40`,
+                color: cardHighlight,
+              }}
+              className="p-2 border rounded-lg"
+            >
               <Wrench size={20} />
             </div>
             <div>
@@ -918,7 +938,10 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
           <div className="flex items-center gap-3">
             {/* Save Status Indicator */}
-            <span className="text-xs font-medium flex items-center gap-1.5 px-3 py-1 bg-[#1A1A1A] border border-[#2A2A2A] rounded-full text-gray-400">
+            <span
+              style={{ backgroundColor: adjustColorBrightness(cardBg, -3), borderColor: cardBorder }}
+              className="text-xs font-medium flex items-center gap-1.5 px-3 py-1 border rounded-full text-gray-400"
+            >
               {saving ? (
                 <>
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
@@ -938,12 +961,20 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
             </span>
 
             {/* Editor vs Preview Toggle */}
-            <div className="flex bg-[#0A0A0A] p-1 border border-[#222] rounded-xl">
+            <div
+              style={{ backgroundColor: adjustColorBrightness(cardBg, -5), borderColor: cardBorder }}
+              className="flex p-1 border rounded-xl"
+            >
               <button
                 type="button"
                 onClick={() => setActiveTab('editor')}
+                style={
+                  activeTab === 'editor'
+                    ? { backgroundColor: cardHighlight, color: '#000000' }
+                    : {}
+                }
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'editor' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'
+                  activeTab === 'editor' ? 'shadow-sm' : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
                 <FileText size={14} /> Szerkesztő

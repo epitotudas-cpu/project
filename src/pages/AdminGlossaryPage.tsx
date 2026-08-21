@@ -10,6 +10,7 @@ import EditGlossaryTermModal from '../components/EditGlossaryTermModal';
 import ImportGlossaryValidationModal from '../components/ImportGlossaryValidationModal';
 import BatchEditGlossaryModal from '../components/BatchEditGlossaryModal';
 import GlossaryCategorySettingsModal from '../components/GlossaryCategorySettingsModal';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 type GlossaryTermWithCount = GlossaryTerm & { articleCount: number };
 
@@ -133,6 +134,12 @@ export default function AdminGlossaryPage() {
     withTranslations: terms.filter((t) => t.translations && Object.keys(t.translations).length > 0).length,
   }), [terms]);
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+
   /* ── Render ───────────────────────────────────────────── */
   return (
     <div className="p-6 lg:p-8">
@@ -145,20 +152,27 @@ export default function AdminGlossaryPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] transition-colors"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-black rounded-lg hover:opacity-90 transition-all cursor-pointer shadow-md"
           >
             <Plus size={14} /> Új fogalom
           </button>
           <button
             onClick={() => setCatSettingsOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400]/10 border border-[#FFC400]/30 text-[#FFC400] text-sm font-bold rounded-lg hover:bg-[#FFC400]/20 transition-colors"
+            style={{
+              borderColor: `${cardHighlight}60`,
+              color: cardHighlight,
+              backgroundColor: `${cardHighlight}15`,
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 border text-sm font-bold rounded-lg hover:opacity-90 transition-all cursor-pointer"
             title="Kiemelt kategóriák és ikonok testreszabása"
           >
-            <Sparkles size={14} /> Kategória Ikonok & Megjelenítés
+            <Sparkles size={14} /> Kategória Ikonok &amp; Megjelenítés
           </button>
           <button
             onClick={() => setImportValidationOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] hover:text-white transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+            className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
             title="JSON fájl beolvasása és validálása"
           >
             <FileJson size={14} /> JSON validálás
@@ -166,7 +180,8 @@ export default function AdminGlossaryPage() {
           {!loading && (
             <button
               onClick={loadTerms}
-              className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+              className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
             >
               <RefreshCw size={14} /> Frissítés
             </button>
@@ -183,7 +198,11 @@ export default function AdminGlossaryPage() {
             { label: 'Zsargon / Szleng', value: stats.industry, icon: <Tag size={16} />, color: 'text-amber-400' },
             { label: 'Fordítással', value: stats.withTranslations, icon: <Globe size={16} />, color: 'text-emerald-400' },
           ].map((s) => (
-            <div key={s.label} className="bg-[#111] border border-[#1E1E1E] rounded-xl p-4">
+            <div
+              key={s.label}
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="border rounded-xl p-4 shadow-sm"
+            >
               <div className={`${s.color} mb-2`}>{s.icon}</div>
               <div className="text-2xl font-black text-white">{s.value}</div>
               <div className="text-xs text-gray-500 mt-0.5 font-medium">{s.label}</div>
@@ -201,7 +220,8 @@ export default function AdminGlossaryPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Keresés fogalom, definíció vagy témakör..."
-            className="w-full bg-[#111] border border-[#1E1E1E] rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+            className="w-full border rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors"
           />
         </div>
 

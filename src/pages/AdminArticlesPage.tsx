@@ -6,6 +6,7 @@ import { listCategories } from '../services/categoryService';
 import { useToast } from '../components/ToastProvider';
 import EditArticleModal from '../components/EditArticleModal';
 import ArticleSettingsModal from '../components/ArticleSettingsModal';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 interface ArticleRow extends Article {
   categories: { name: string } | null;
@@ -140,8 +141,14 @@ export default function AdminArticlesPage() {
     setPage(1);
   }
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+
   const selectClass =
-    'bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
+    'border rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none transition-colors';
 
   return (
     <div className="p-8">
@@ -151,14 +158,30 @@ export default function AdminArticlesPage() {
           <p className="text-sm text-gray-500 mt-1">{totalCount} cikk összesen</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-2 px-3 py-2 border border-[#FFC400]/40 text-[#FFC400] text-sm font-bold rounded-lg hover:bg-[#FFC400]/10 transition-colors">
+          <button
+            onClick={() => setSettingsOpen(true)}
+            style={{
+              borderColor: `${cardHighlight}60`,
+              color: cardHighlight,
+              backgroundColor: `${cardHighlight}15`,
+            }}
+            className="inline-flex items-center gap-2 px-3.5 py-2 border text-sm font-bold rounded-lg hover:opacity-90 transition-all cursor-pointer"
+          >
             Tudástár beállítások
           </button>
-          <button onClick={openCreate} className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] transition-colors">
+          <button
+            onClick={openCreate}
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 transition-all cursor-pointer shadow-md"
+          >
             <Plus size={14} /> Új cikk
           </button>
           {!loading && (
-            <button onClick={loadArticles} className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors">
+            <button
+              onClick={loadArticles}
+              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+              className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
+            >
               <RefreshCw size={14} /> Frissítés
             </button>
           )}
@@ -173,16 +196,27 @@ export default function AdminArticlesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Keresés cím szerint..."
-            className="w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors"
           />
         </div>
-        <select className={selectClass} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+        <select
+          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          className={selectClass}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+        >
           <option value="all">Összes státusz</option>
           <option value="draft">Piszkozat</option>
           <option value="review">Felülvizsgálat</option>
           <option value="published">Közzétéve</option>
         </select>
-        <select className={selectClass} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+        <select
+          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          className={selectClass}
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
           <option value="all">Összes kategória</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
@@ -204,11 +238,14 @@ export default function AdminArticlesPage() {
       )}
 
       {/* Table */}
-      <div className="mt-6 bg-[#111] border border-[#1E1E1E] rounded-xl overflow-hidden">
+      <div
+        style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+        className="mt-6 border rounded-xl overflow-hidden shadow-lg"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#1E1E1E] text-left">
+              <tr style={{ borderColor: cardBorder }} className="border-b text-left">
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Cím</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Kategória</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Státusz</th>

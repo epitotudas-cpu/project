@@ -3,6 +3,7 @@ import { X, Save, AlertCircle, Image, Video, Info } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { GlossaryTerm } from '../lib/supabase';
 import { createGlossaryTerm, updateGlossaryTerm } from '../services/glossaryService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 function isValidUrl(url: string): boolean {
   if (!url.trim()) return true;
@@ -274,13 +275,25 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
     }
   }
 
-  const fieldClass = 'w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+
+  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors';
   const labelClass = 'block text-[10px] font-bold text-gray-400 mb-1';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#222] flex items-center justify-between bg-[#161616]">
+      <div
+        style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+        className="border rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+      >
+        <div
+          style={{ backgroundColor: headerBg, borderColor: cardBorder }}
+          className="px-6 py-4 border-b flex items-center justify-between"
+        >
           <h2 className="text-lg font-black text-white">
             {isCreate ? 'Új fogalom hozzáadása' : `Fogalom szerkesztése: ${term?.term}`}
           </h2>
@@ -542,11 +555,16 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-3 pt-2 border-t" style={{ borderColor: cardBorder }}>
             <button type="button" onClick={onClose} disabled={saving} className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-gray-200 disabled:opacity-40 transition-colors">
               Mégse
             </button>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+            <button
+              type="submit"
+              disabled={saving}
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            >
               <Save size={14} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
             </button>
           </div>

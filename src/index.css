@@ -15,6 +15,32 @@
   --color-admin-card-highlight-bg: rgba(255, 196, 0, 0.11);
 }
 
+/* Dynamic Admin Panel, Card, Table & Modal Styling */
+.admin-card,
+.admin-panel,
+.admin-modal-box {
+  background-color: var(--color-admin-card-bg, #111111);
+  border-color: var(--color-admin-card-border, #1E1E1E);
+}
+
+.admin-panel-header,
+.admin-modal-header {
+  background-color: var(--color-admin-card-bg, #111111);
+  border-color: var(--color-admin-card-border, #1E1E1E);
+}
+
+.admin-card-highlight-text,
+.admin-highlight-text {
+  color: var(--color-admin-card-highlight, #FFC400);
+}
+
+.admin-card-highlight-badge,
+.admin-highlight-badge {
+  color: var(--color-admin-card-highlight, #FFC400);
+  background-color: var(--color-admin-card-highlight-bg, rgba(255, 196, 0, 0.11));
+  border-color: var(--color-admin-card-highlight, #FFC400);
+}
+
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(16px); }
   to { opacity: 1; transform: translateX(0); }
