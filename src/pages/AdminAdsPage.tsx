@@ -337,7 +337,6 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
   const headerBg = adjustColorBrightness(cardBg, 4);
   const inputBg = adjustColorBrightness(cardBg, -6);
   const textColor = getContrastTextColor(cardBg);
-  const inputTextColor = getContrastTextColor(inputBg);
 
   return (
     <div className="space-y-8 p-4 md:p-8 min-h-screen" style={{ color: textColor }}>

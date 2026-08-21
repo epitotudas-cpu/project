@@ -205,7 +205,6 @@ export default function ImportGlossaryValidationModal({
 
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
-  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const headerBg = adjustColorBrightness(cardBg, 4);
   const textColor = getContrastTextColor(cardBg);

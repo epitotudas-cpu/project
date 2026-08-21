@@ -34,6 +34,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
+import type { Category } from '../lib/supabase';
 import { createCategory, updateCategory } from '../services/categoryService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
