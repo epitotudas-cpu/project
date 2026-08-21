@@ -335,7 +335,15 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -4);
   const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
 
   return (
     <div className="space-y-8 p-4 md:p-8 min-h-screen" style={{ color: textColor }}>
@@ -372,7 +380,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       </div>
 
       {/* Sub-navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#222] overflow-x-auto pb-2">
+      <div style={{ borderColor: cardBorder }} className="flex items-center gap-2 border-b overflow-x-auto pb-2">
         {[
           { id: 'dashboard', label: '📊 Dashboard', count: null },
           { id: 'creative_editor', label: '🎨 Kreatív Szerkesztő', count: null },
@@ -390,18 +398,23 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              style={
                 isActive
-                  ? 'bg-accent text-black shadow-lg scale-105'
-                  : 'bg-[#141414] border border-[#222] text-gray-400 hover:text-white hover:bg-[#1A1A1A]'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer border ${
+                isActive ? 'shadow-lg scale-105' : 'hover:opacity-90'
               }`}
             >
               {tab.label}
               {tab.count !== null && tab.count > 0 && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] ${
-                    isActive ? 'bg-black text-accent' : 'bg-accent/20 text-accent font-bold'
-                  }`}
+                  style={{
+                    backgroundColor: isActive ? '#000000' : `${cardHighlight}25`,
+                    color: isActive ? cardHighlight : cardHighlight,
+                  }}
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold"
                 >
                   {tab.count}
                 </span>
@@ -415,96 +428,98 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {activeTab === 'dashboard' && (
         <div className="space-y-8">
           {/* Quick Creative Selector Banner Callout */}
-          <div className="bg-gradient-to-r from-teal-950/60 via-[#111] to-amber-950/60 border border-teal-500/30 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
             <div className="space-y-1.5 text-center md:text-left">
               <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-teal-400 bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full">
-                <Sparkles size={13} /> Vizuális Banner Szerkesztő & Hirdető Kiválasztó
+                <Sparkles size={13} /> Vizuális Banner Szerkesztő &amp; Hirdető Kiválasztó
               </div>
-              <h3 className="text-xl font-extrabold text-white">
-                Hirdetések & Reklám Kreatívok Kezelése
+              <h3 style={{ color: textColor }} className="text-xl font-extrabold">
+                Hirdetések &amp; Reklám Kreatívok Kezelése
               </h3>
-              <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
+              <p className="text-xs text-gray-400 max-w-2xl leading-relaxed">
                 Válaszd ki a szerkeszteni kívánt hirdetőt (Bosch, DeWalt, Stanley, Makita, Knauf), módosítsd a szövegeket, képeket, rotációs időtartamot (mp) és áttűnési animációkat.
               </p>
             </div>
 
             <button
               onClick={() => setActiveTab('creative_editor')}
-              className="shrink-0 px-6 py-3.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-2xl shadow-lg transition-all duration-300 flex items-center gap-2 cursor-pointer hover:scale-[1.02]"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="shrink-0 px-6 py-3.5 font-extrabold text-xs rounded-2xl shadow-lg transition-all duration-300 flex items-center gap-2 cursor-pointer hover:opacity-90 hover:scale-[1.02]"
             >
-              <span>Kreatív Kiválasztó & Szerkesztő Megnyitása</span>
+              <span>Kreatív Kiválasztó &amp; Szerkesztő Megnyitása</span>
               <ChevronRight size={16} />
             </button>
           </div>
 
           {/* KPI Metrics Overview Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-2 relative overflow-hidden">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-2 relative overflow-hidden shadow-lg">
               <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-green-400" /> Aktív Kampányok
               </div>
-              <div className="text-3xl font-extrabold text-white">{activeCount}</div>
-              <p className="text-[11px] text-gray-500">Jelenleg futó szponzori hirdetések</p>
+              <div style={{ color: textColor }} className="text-3xl font-extrabold">{activeCount}</div>
+              <p className="text-[11px] text-gray-400">Jelenleg futó szponzori hirdetések</p>
               <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-green-500/10 rounded-full blur-xl" />
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-2 relative overflow-hidden">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-2 relative overflow-hidden shadow-lg">
               <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <FileCheck size={16} className="text-yellow-400" /> Elfogadásra Váró Szerződés
               </div>
               <div className="text-3xl font-extrabold text-yellow-400">{pendingContractAcceptanceCount}</div>
-              <p className="text-[11px] text-gray-500">Partneri aláírásra kiküldött tételek</p>
+              <p className="text-[11px] text-gray-400">Partneri aláírásra kiküldött tételek</p>
               <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-yellow-500/10 rounded-full blur-xl" />
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-2 relative overflow-hidden">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-2 relative overflow-hidden shadow-lg">
               <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <DollarSign size={16} className="text-accent" /> Szerződéses Érték
+                <DollarSign size={16} style={{ color: cardHighlight }} /> Szerződéses Érték
               </div>
-              <div className="text-3xl font-extrabold text-accent">
+              <div style={{ color: cardHighlight }} className="text-3xl font-extrabold">
                 {totalRevenue.toLocaleString('hu-HU')} Ft
               </div>
-              <p className="text-[11px] text-gray-500">Szponzori & Affiliate bevételek</p>
-              <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-accent/10 rounded-full blur-xl" />
+              <p className="text-[11px] text-gray-400">Szponzori &amp; Affiliate bevételek</p>
+              <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-amber-500/10 rounded-full blur-xl" />
             </div>
           </div>
 
           {/* Real Live Performance Analytics Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-[#111] border border-[#222] rounded-3xl p-5 space-y-1 relative overflow-hidden">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-5 space-y-1 relative overflow-hidden shadow-lg">
               <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Eye size={16} className="text-cyan-400" /> Valós Összes Megjelenés
               </div>
-              <div className="text-2xl font-extrabold text-white">{totalImpressions.toLocaleString('hu-HU')}</div>
-              <p className="text-[11px] text-gray-500">Oldalon rögzített valós hirdetés megjelenések</p>
+              <div style={{ color: textColor }} className="text-2xl font-extrabold">{totalImpressions.toLocaleString('hu-HU')}</div>
+              <p className="text-[11px] text-gray-400">Oldalon rögzített valós hirdetés megjelenések</p>
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-3xl p-5 space-y-1 relative overflow-hidden">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-5 space-y-1 relative overflow-hidden shadow-lg">
               <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <MousePointer size={16} className="text-accent" /> Valós Összes Kattintás
+                <MousePointer size={16} style={{ color: cardHighlight }} /> Valós Összes Kattintás
               </div>
-              <div className="text-2xl font-extrabold text-accent">{totalClicks.toLocaleString('hu-HU')}</div>
-              <p className="text-[11px] text-gray-500">Látogatók által kattintott partner hivatkozások</p>
+              <div style={{ color: cardHighlight }} className="text-2xl font-extrabold">{totalClicks.toLocaleString('hu-HU')}</div>
+              <p className="text-[11px] text-gray-400">Látogatók által kattintott partner hivatkozások</p>
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-3xl p-5 space-y-1 relative overflow-hidden">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-5 space-y-1 relative overflow-hidden shadow-lg">
               <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <BarChart3 size={16} className="text-green-400" /> Átlagos Átkattintási Arány (CTR)
               </div>
               <div className="text-2xl font-extrabold text-green-400">{avgCtr}%</div>
-              <p className="text-[11px] text-gray-500">Valós idejű konverziós mutató</p>
+              <p className="text-[11px] text-gray-400">Valós idejű konverziós mutató</p>
             </div>
           </div>
 
           {/* Quick Active Campaign Highlights */}
-          <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-6">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <TrendingUp className="text-accent" size={20} /> Kiemelt Aktív Kampányok & Szerződés Állapot
+              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                <TrendingUp style={{ color: cardHighlight }} size={20} /> Kiemelt Aktív Kampányok &amp; Szerződés Állapot
               </h2>
               <button
                 onClick={() => setActiveTab('campaigns')}
-                className="text-xs font-bold text-accent hover:underline flex items-center gap-1"
+                style={{ color: cardHighlight }}
+                className="text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer"
               >
                 Összes Kampány Megtekintése <ChevronRight size={14} />
               </button>
@@ -520,30 +535,30 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                 const statusCfg = STATUS_V2_CONFIG[camp.status_v2 || 'active'];
 
                 return (
-                  <div key={camp.id} className="bg-[#161616] border border-[#222] rounded-2xl p-5 space-y-3">
+                  <div key={camp.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-3 shadow-md">
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
                         {statusCfg.icon} {statusCfg.label}
                       </span>
-                      <span className="text-xs font-mono text-accent font-bold">
+                      <span style={{ color: cardHighlight }} className="text-xs font-mono font-bold">
                         {camp.price_huf ? `${camp.price_huf.toLocaleString('hu-HU')} Ft` : 'Egyedi'}
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-white">{camp.title}</h3>
-                    <p className="text-xs text-gray-400">Partner: <strong className="text-gray-200">{camp.sponsor_name}</strong></p>
+                    <h3 style={{ color: textColor }} className="text-base font-bold">{camp.title}</h3>
+                    <p className="text-xs text-gray-400">Partner: <strong style={{ color: textColor }}>{camp.sponsor_name}</strong></p>
 
-                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#222] text-center">
-                      <div className="bg-[#1A1A1A] p-2 rounded-xl">
-                        <span className="text-[10px] text-gray-500 block">Megjelenés</span>
-                        <span className="text-xs font-bold text-white">{camp.impressions_count.toLocaleString('hu-HU')}</span>
+                    <div style={{ borderColor: cardBorder }} className="grid grid-cols-3 gap-2 pt-2 border-t text-center">
+                      <div style={{ backgroundColor: cardBg }} className="p-2 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-gray-400 block">Megjelenés</span>
+                        <span style={{ color: textColor }} className="text-xs font-bold">{camp.impressions_count.toLocaleString('hu-HU')}</span>
                       </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-xl">
-                        <span className="text-[10px] text-gray-500 block">Kattintás</span>
-                        <span className="text-xs font-bold text-accent">{camp.clicks_count.toLocaleString('hu-HU')}</span>
+                      <div style={{ backgroundColor: cardBg }} className="p-2 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-gray-400 block">Kattintás</span>
+                        <span style={{ color: cardHighlight }} className="text-xs font-bold">{camp.clicks_count.toLocaleString('hu-HU')}</span>
                       </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-xl">
-                        <span className="text-[10px] text-gray-500 block">CTR Átlag</span>
+                      <div style={{ backgroundColor: cardBg }} className="p-2 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-gray-400 block">CTR Átlag</span>
                         <span className="text-xs font-bold text-green-400">{ctr}%</span>
                       </div>
                     </div>
@@ -562,13 +577,18 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {activeTab === 'campaigns' && (
         <div className="space-y-6">
           {/* Status Filter Bar */}
-          <div className="flex items-center justify-between flex-wrap gap-4 bg-[#111] border border-[#222] p-4 rounded-2xl">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex items-center justify-between flex-wrap gap-4 border p-4 rounded-2xl shadow-md">
             <div className="flex items-center gap-2 overflow-x-auto">
               <span className="text-xs font-bold text-gray-400 pr-2">Szűrés állapotra:</span>
               <button
                 onClick={() => setFilterStatus('all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  filterStatus === 'all' ? 'bg-accent text-black' : 'bg-[#1A1A1A] text-gray-400 hover:text-white'
+                style={
+                  filterStatus === 'all'
+                    ? { backgroundColor: cardHighlight, color: '#000000' }
+                    : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+                }
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                  filterStatus === 'all' ? 'font-extrabold shadow-sm' : 'hover:opacity-90'
                 }`}
               >
                 Összes ({campaigns.length})
@@ -577,8 +597,13 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                 <button
                   key={st}
                   onClick={() => setFilterStatus(st)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                    filterStatus === st ? 'bg-accent text-black' : 'bg-[#1A1A1A] text-gray-400 hover:text-white'
+                  style={
+                    filterStatus === st
+                      ? { backgroundColor: cardHighlight, color: '#000000' }
+                      : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+                  }
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1 ${
+                    filterStatus === st ? 'font-extrabold shadow-sm' : 'hover:opacity-90'
                   }`}
                 >
                   <span>{STATUS_V2_CONFIG[st].icon}</span>
@@ -599,7 +624,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                 const paymentCfg = PAYMENT_STATUS_CONFIG[camp.payment_status || 'paid'];
 
                 return (
-                  <div key={camp.id} className="bg-[#111111] border border-[#1E1E1E] hover:border-accent/40 rounded-3xl p-6 space-y-5 flex flex-col justify-between shadow-xl transition-all">
+                  <div key={camp.id} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-5 flex flex-col justify-between shadow-xl transition-all">
                     <div className="space-y-4">
                       {/* Top status bar */}
                       <div className="flex items-center justify-between gap-2">
@@ -612,17 +637,17 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                       </div>
 
                       <div>
-                        <span className="text-[10px] font-extrabold text-accent uppercase tracking-wider block mb-1">
+                        <span style={{ color: cardHighlight }} className="text-[10px] font-extrabold uppercase tracking-wider block mb-1">
                           {camp.package_tier?.toUpperCase() || 'GOLD'} CSOMAG • {camp.sponsor_name}
                         </span>
-                        <h2 className="text-base font-bold text-white line-clamp-2">{camp.title}</h2>
+                        <h2 style={{ color: textColor }} className="text-base font-bold line-clamp-2">{camp.title}</h2>
                       </div>
 
                       {/* Contact Info Box */}
                       {camp.contact_person && (
-                        <div className="p-3 bg-[#161616] border border-[#222] rounded-2xl space-y-1 text-xs">
-                          <div className="font-bold text-gray-200 flex items-center gap-1.5">
-                            <UserCheck size={14} className="text-accent" /> {camp.contact_person.name}
+                        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-2xl space-y-1 text-xs">
+                          <div style={{ color: textColor }} className="font-bold flex items-center gap-1.5">
+                            <UserCheck size={14} style={{ color: cardHighlight }} /> {camp.contact_person.name}
                           </div>
                           <div className="text-gray-400 flex items-center gap-1.5 text-[11px]">
                             <Mail size={12} /> {camp.contact_person.email}
@@ -634,14 +659,15 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                       )}
 
                       {/* Where to find on site box */}
-                      <div className="p-3 bg-[#181F33] border border-blue-500/30 rounded-2xl space-y-2">
+                      <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl space-y-2">
                         <div className="text-[11px] font-extrabold text-blue-300">
                           {loc.label}
                         </div>
                         {onNavigate && (
                           <button
                             onClick={() => onNavigate(loc.page)}
-                            className="w-full py-1.5 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-accent-hover transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                            className="w-full py-1.5 font-extrabold text-xs rounded-xl hover:opacity-90 transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             🚀 Ugrás az oldalra (Megtekintés)
                           </button>
@@ -649,19 +675,20 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                       </div>
 
                       {/* Price & Contract Dates */}
-                      <div className="flex items-center justify-between text-xs pt-2 border-t border-[#222]">
-                        <span className="text-gray-400">Díj: <strong className="text-white">{camp.price_huf ? `${camp.price_huf.toLocaleString('hu-HU')} Ft` : 'Egyedi'}</strong></span>
+                      <div style={{ borderColor: cardBorder }} className="flex items-center justify-between text-xs pt-2 border-t">
+                        <span className="text-gray-400">Díj: <strong style={{ color: textColor }}>{camp.price_huf ? `${camp.price_huf.toLocaleString('hu-HU')} Ft` : 'Egyedi'}</strong></span>
                         <span className="text-gray-400">Lejárat: <strong className="text-amber-400">{camp.end_date ? new Date(camp.end_date).toLocaleDateString('hu-HU') : 'Határozatlan'}</strong></span>
                       </div>
                     </div>
 
                     {/* Status Switcher Dropdown */}
-                    <div className="space-y-2 pt-3 border-t border-[#1E1E1E]">
+                    <div style={{ borderColor: cardBorder }} className="space-y-2 pt-3 border-t">
                       <div className="flex items-center gap-2">
                         <select
                           value={camp.status_v2 || 'active'}
                           onChange={(e) => handleStatusChange(camp.id, e.target.value as CampaignStatusV2)}
-                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                          style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                          className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none cursor-pointer"
                         >
                           {(Object.keys(STATUS_V2_CONFIG) as CampaignStatusV2[]).map((st) => (
                             <option key={st} value={st}>
@@ -673,7 +700,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                         <select
                           value={camp.payment_status || 'paid'}
                           onChange={(e) => handlePaymentChange(camp.id, e.target.value as PaymentStatus)}
-                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                          style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                          className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none cursor-pointer"
                         >
                           {(Object.keys(PAYMENT_STATUS_CONFIG) as PaymentStatus[]).map((pst) => (
                             <option key={pst} value={pst}>
@@ -695,11 +723,11 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {activeTab === 'contracts' && (
         <div className="space-y-8">
           {/* Top Contract Management Header */}
-          <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-4 shadow-xl">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-                  <FileText className="text-accent" size={24} /> Szerződés Kezelő & Sablon Rendszer
+                <h2 style={{ color: textColor }} className="text-xl font-extrabold flex items-center gap-2">
+                  <FileText style={{ color: cardHighlight }} size={24} /> Szerződés Kezelő &amp; Sablon Rendszer
                 </h2>
                 <p className="text-xs text-gray-400 mt-1">
                   Generálj egykattintásos szerződéseket sablon alapján, állíts be v1/v2/v3 verziókat és rögzítsd a partneri elfogadást bizonyító IP és időbélyeggel.
@@ -709,7 +737,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowModal(true)}
-                  className="px-4 py-2 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-accent-hover transition-all flex items-center gap-2"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 font-extrabold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-md"
                 >
                   <Plus size={14} /> Új Szerződés Generálása
                 </button>
@@ -718,15 +747,15 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
           </div>
 
           {/* Contracts List Table */}
-          <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <FileCheck size={18} className="text-accent" /> Rögzített Reklámszerződések & Elfogadások
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h3 style={{ color: textColor }} className="text-base font-bold flex items-center gap-2">
+              <FileCheck size={18} style={{ color: cardHighlight }} /> Rögzített Reklámszerződések &amp; Elfogadások
             </h3>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#222] text-xs text-gray-400 uppercase tracking-wider">
+                  <tr style={{ borderColor: cardBorder }} className="border-b text-xs text-gray-400 uppercase tracking-wider">
                     <th className="py-3 px-4">Szerződés Azonosító</th>
                     <th className="py-3 px-4">Partner Cég</th>
                     <th className="py-3 px-4">Kampány</th>
@@ -736,19 +765,19 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     <th className="py-3 px-4 text-right">Műveletek</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#222] text-xs text-gray-300">
+                <tbody style={{ borderColor: cardBorder }} className="divide-y text-xs">
                   {contracts.map((contract) => {
                     const stCfg = CONTRACT_STATUS_CONFIG[contract.status || 'draft'];
                     const latestVersion = contract.versions?.[contract.versions.length - 1];
 
                     return (
-                      <tr key={contract.id} className="hover:bg-[#161616]">
-                        <td className="py-3 px-4 font-mono font-extrabold text-accent">
+                      <tr key={contract.id} style={{ backgroundColor: inputBg }} className="hover:opacity-90">
+                        <td style={{ color: cardHighlight }} className="py-3 px-4 font-mono font-extrabold">
                           {contract.contractNumber}
                         </td>
-                        <td className="py-3 px-4 font-bold text-white">{contract.partnerName}</td>
-                        <td className="py-3 px-4 line-clamp-1">{contract.campaignTitle}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-white">
+                        <td style={{ color: textColor }} className="py-3 px-4 font-bold">{contract.partnerName}</td>
+                        <td style={{ color: textColor }} className="py-3 px-4 line-clamp-1">{contract.campaignTitle}</td>
+                        <td style={{ color: textColor }} className="py-3 px-4 font-mono font-bold">
                           {contract.amount.toLocaleString('hu-HU')} Ft
                         </td>
                         <td className="py-3 px-4 font-bold text-blue-400">
@@ -762,7 +791,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                         <td className="py-3 px-4 text-right space-x-2">
                           <button
                             onClick={() => setShowContractViewer(contract)}
-                            className="px-3 py-1.5 bg-[#181F33] border border-blue-500/30 text-blue-300 hover:bg-blue-600 hover:text-white font-bold text-xs rounded-xl transition-all inline-flex items-center gap-1"
+                            className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-300 hover:bg-blue-600 hover:text-white font-bold text-xs rounded-xl transition-all inline-flex items-center gap-1 cursor-pointer"
                           >
                             <Eye size={12} /> Megtekintés / PDF
                           </button>
@@ -771,7 +800,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                               setShowVersionModal(contract);
                               setNewVersionAmount(contract.amount);
                             }}
-                            className="px-3 py-1.5 bg-accent/10 border border-accent/30 text-accent hover:bg-accent hover:text-black font-bold text-xs rounded-xl transition-all inline-flex items-center gap-1"
+                            style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                            className="px-3 py-1.5 border font-bold text-xs rounded-xl transition-all inline-flex items-center gap-1 cursor-pointer hover:opacity-90"
                           >
                             <History size={12} /> Új Verzió (v{(latestVersion?.versionNumber || 1) + 1})
                           </button>
@@ -785,25 +815,25 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
           </div>
 
           {/* Contract Template System Gallery */}
-          <div className="bg-[#111] border border-[#222] rounded-3xl p-6 space-y-6">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <FileText size={18} className="text-accent" /> Rendszer Szerződés Sablonok (Template Engine)
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h3 style={{ color: textColor }} className="text-base font-bold flex items-center gap-2">
+              <FileText size={18} style={{ color: cardHighlight }} /> Rendszer Szerződés Sablonok (Template Engine)
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {templates.map((tmpl) => (
-                <div key={tmpl.id} className="bg-[#161616] border border-[#222] rounded-2xl p-5 space-y-3">
+                <div key={tmpl.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-3 shadow-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-accent bg-accent/10 px-2.5 py-1 rounded border border-accent/20">
+                    <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-bold px-2.5 py-1 rounded border">
                       Aktív Sablon
                     </span>
                     <FileText size={16} className="text-gray-400" />
                   </div>
 
-                  <h4 className="text-sm font-bold text-white">{tmpl.name}</h4>
+                  <h4 style={{ color: textColor }} className="text-sm font-bold">{tmpl.name}</h4>
                   <p className="text-xs text-gray-400">{tmpl.description}</p>
 
-                  <div className="p-3 bg-[#0D0D0D] border border-[#222] rounded-xl text-[10px] font-mono text-gray-400 line-clamp-4 leading-relaxed">
+                  <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-3 border rounded-xl text-[10px] font-mono text-gray-400 line-clamp-4 leading-relaxed">
                     {tmpl.body}
                   </div>
                 </div>
@@ -815,11 +845,11 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
       {/* TAB 4: PARTNER ADVERTISERS */}
       {activeTab === 'partners' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#222] pb-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+          <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Building2 size={20} className="text-accent" /> Hirdető Partnerek & Kapcsolattartók
+              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                <Building2 size={20} style={{ color: cardHighlight }} /> Hirdető Partnerek &amp; Kapcsolattartók
               </h2>
               <p className="text-xs text-gray-400 mt-1">
                 A partner cégek és felelős marketing kapcsolattartóik regisztere.
@@ -833,24 +863,24 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               const firstContact = partnerCamps[0]?.contact_person;
 
               return (
-                <div key={sponsor} className="bg-[#161616] border border-[#222] rounded-2xl p-6 space-y-4">
+                <div key={sponsor} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-6 space-y-4 shadow-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold bg-accent/10 border border-accent/20 text-accent px-3 py-1 rounded-full uppercase">
+                    <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-bold border px-3 py-1 rounded-full uppercase">
                       Minősített Hirdető Partner
                     </span>
                     <span className="text-xs font-bold text-gray-400">{partnerCamps.length} kampány</span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-white">{sponsor}</h3>
+                  <h3 style={{ color: textColor }} className="text-lg font-bold">{sponsor}</h3>
 
                   {firstContact ? (
-                    <div className="p-3 bg-[#111] border border-[#222] rounded-xl space-y-1 text-xs">
-                      <div className="font-bold text-gray-200">{firstContact.name} ({firstContact.role})</div>
+                    <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1 text-xs">
+                      <div style={{ color: textColor }} className="font-bold">{firstContact.name} ({firstContact.role})</div>
                       <div className="text-gray-400 flex items-center gap-1.5"><Mail size={12} /> {firstContact.email}</div>
                       <div className="text-gray-400 flex items-center gap-1.5"><Phone size={12} /> {firstContact.phone}</div>
                     </div>
                   ) : (
-                    <div className="text-xs text-gray-500">Nincs rögzített kapcsolattartó.</div>
+                    <div className="text-xs text-gray-400">Nincs rögzített kapcsolattartó.</div>
                   )}
 
                   <button
@@ -858,7 +888,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                       setSponsorName(sponsor);
                       setShowModal(true);
                     }}
-                    className="w-full py-2 bg-accent/10 border border-accent/30 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-black transition-all flex items-center justify-center gap-2"
+                    style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                    className="w-full py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Plus size={14} /> Új Kampány ehhez a Partnerhez
                   </button>
@@ -873,8 +904,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {activeTab === 'packages' && (
         <div className="space-y-8">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-2">
-              <Package size={20} className="text-accent" /> Reklámcsomagok & Elhelyezések Árazása
+            <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2 mb-2">
+              <Package size={20} style={{ color: cardHighlight }} /> Reklámcsomagok &amp; Elhelyezések Árazása
             </h2>
             <p className="text-xs text-gray-400">
               Előre definiált csomagárak és megjelenési lehetőségek az ÉpítőTudás portálon.
@@ -883,21 +914,21 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {AD_PACKAGES.map((pkg) => (
-              <div key={pkg.id} className="bg-[#111] border border-[#222] hover:border-accent/40 rounded-3xl p-6 space-y-6 flex flex-col justify-between shadow-xl">
+              <div key={pkg.id} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 flex flex-col justify-between shadow-xl">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold uppercase bg-accent/10 text-accent px-3 py-1 rounded-full border border-accent/20">
+                    <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-extrabold uppercase px-3 py-1 rounded-full border">
                       {pkg.id} Csomag
                     </span>
-                    <Tag size={16} className="text-accent" />
+                    <Tag size={16} style={{ color: cardHighlight }} />
                   </div>
 
-                  <h3 className="text-xl font-extrabold text-white">{pkg.name}</h3>
-                  <div className="text-2xl font-black text-accent font-mono">
+                  <h3 style={{ color: textColor }} className="text-xl font-extrabold">{pkg.name}</h3>
+                  <div style={{ color: cardHighlight }} className="text-2xl font-black font-mono">
                     {pkg.monthlyPriceHuf.toLocaleString('hu-HU')} Ft <span className="text-xs font-normal text-gray-400">/ hó + ÁFA</span>
                   </div>
 
-                  <ul className="space-y-2 pt-4 border-t border-[#222]">
+                  <ul style={{ borderColor: cardBorder }} className="space-y-2 pt-4 border-t">
                     {pkg.features.map((feat, idx) => (
                       <li key={idx} className="text-xs text-gray-300 flex items-center gap-2">
                         <CheckCircle2 size={14} className="text-green-400 shrink-0" />
@@ -914,7 +945,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     setPlacementSlot(pkg.recommendedPlacement);
                     setShowModal(true);
                   }}
-                  className="w-full py-2.5 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-accent-hover transition-colors shadow-md flex items-center justify-center gap-2"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="w-full py-2.5 font-extrabold text-xs rounded-xl hover:opacity-90 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Plus size={14} /> Kampány Létrehozása Ezzel a Csomaggal
                 </button>
@@ -926,11 +958,11 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
       {/* TAB 6: PAYMENTS & INVOICING */}
       {activeTab === 'payments' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#222] pb-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+          <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <FileText size={20} className="text-accent" /> Fizetések & Számlázási Előkészítő Lista
+              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                <FileText size={20} style={{ color: cardHighlight }} /> Fizetések &amp; Számlázási Előkészítő Lista
               </h2>
               <p className="text-xs text-gray-400 mt-1">
                 Aktív és lejárt számlázási tételek nyomon követése a pénzügy számára.
@@ -939,7 +971,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
             <button
               onClick={() => alert('Számlázási lista sikeresen exportálva CSV formátumban!')}
-              className="px-4 py-2 bg-accent/10 border border-accent/30 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-black transition-all flex items-center gap-2"
+              style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
             >
               <Download size={14} /> Számlázási Export (CSV)
             </button>
@@ -948,7 +981,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#222] text-xs text-gray-400 uppercase tracking-wider">
+                <tr style={{ borderColor: cardBorder }} className="border-b text-xs text-gray-400 uppercase tracking-wider">
                   <th className="py-3 px-4">Partner</th>
                   <th className="py-3 px-4">Kampány</th>
                   <th className="py-3 px-4">Összeg</th>
@@ -957,18 +990,18 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   <th className="py-3 px-4 text-right">Művelet</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#222] text-xs text-gray-300">
+              <tbody style={{ borderColor: cardBorder }} className="divide-y text-xs">
                 {campaigns.map((camp) => {
                   const payCfg = PAYMENT_STATUS_CONFIG[camp.payment_status || 'paid'];
 
                   return (
-                    <tr key={camp.id} className="hover:bg-[#161616]">
-                      <td className="py-3 px-4 font-bold text-white">{camp.sponsor_name}</td>
-                      <td className="py-3 px-4">{camp.title}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-accent">
+                    <tr key={camp.id} style={{ backgroundColor: inputBg }} className="hover:opacity-90">
+                      <td style={{ color: textColor }} className="py-3 px-4 font-bold">{camp.sponsor_name}</td>
+                      <td style={{ color: textColor }} className="py-3 px-4">{camp.title}</td>
+                      <td style={{ color: cardHighlight }} className="py-3 px-4 font-mono font-bold">
                         {camp.price_huf ? `${camp.price_huf.toLocaleString('hu-HU')} Ft` : '49 000 Ft'}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 text-gray-400">
                         {camp.end_date ? new Date(camp.end_date).toLocaleDateString('hu-HU') : 'Folyamatos'}
                       </td>
                       <td className="py-3 px-4">
@@ -979,7 +1012,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => handlePaymentChange(camp.id, camp.payment_status === 'paid' ? 'unpaid' : 'paid')}
-                          className="px-3 py-1 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-[11px] font-bold text-gray-200 rounded-lg"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="px-3 py-1 border text-[11px] font-bold rounded-lg hover:opacity-80 transition-all cursor-pointer"
                         >
                           {camp.payment_status === 'paid' ? 'Megjelölés Várakozóként' : 'Kiegyenlítve'}
                         </button>
@@ -995,10 +1029,10 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
       {/* TAB 7: NOTIFICATIONS & EXPIRATION WARNINGS */}
       {activeTab === 'notifications' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <BellRing size={20} className="text-accent" /> Automatikus Lejárati & Értesítési Központ
+            <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+              <BellRing size={20} style={{ color: cardHighlight }} /> Automatikus Lejárati &amp; Értesítési Központ
             </h2>
             <p className="text-xs text-gray-400 mt-1">
               60 napos, 30 napos és 7 napos automatikus partneri figyelmeztetések logja.
@@ -1025,24 +1059,25 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               }
 
               return (
-                <div key={camp.id} className="p-4 bg-[#161616] border border-[#222] rounded-2xl flex items-center justify-between flex-wrap gap-4">
+                <div key={camp.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-center justify-between flex-wrap gap-4 shadow-sm">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded border ${warningClass}`}>
                         {warningBadge}
                       </span>
-                      <span className="text-xs font-bold text-white">{camp.sponsor_name}</span>
+                      <span style={{ color: textColor }} className="text-xs font-bold">{camp.sponsor_name}</span>
                     </div>
-                    <h4 className="text-sm font-bold text-gray-200">{camp.title}</h4>
+                    <h4 style={{ color: textColor }} className="text-sm font-bold">{camp.title}</h4>
                     <p className="text-xs text-gray-400">
-                      Kapcsolattartó: <strong>{camp.contact_person?.name || 'Partner'}</strong> ({camp.contact_person?.email || '-'})
+                      Kapcsolattartó: <strong style={{ color: textColor }}>{camp.contact_person?.name || 'Partner'}</strong> ({camp.contact_person?.email || '-'})
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => alert(`Automatikus lejárati emlékeztető kiküldve a(z) ${camp.contact_person?.email || 'partner'} címre!`)}
-                      className="px-3 py-1.5 bg-accent/10 border border-accent/30 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-black transition-all flex items-center gap-1.5"
+                      style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                      className="px-3 py-1.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer"
                     >
                       <Mail size={12} /> Emlékeztető Küldése
                     </button>
@@ -1056,11 +1091,11 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
       {/* TAB 8: REPORTS & CTR ANALYTICS */}
       {activeTab === 'reports' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#222] pb-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+          <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <BarChart3 size={20} className="text-accent" /> Kampány Riportok & Teljesítmény Elemzés
+              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                <BarChart3 size={20} style={{ color: cardHighlight }} /> Kampány Riportok &amp; Teljesítmény Elemzés
               </h2>
               <p className="text-xs text-gray-400 mt-1">
                 Megjelenések, Kattintások és CTR (Click-Through Rate) partneri elszámolásokhoz.
@@ -1069,7 +1104,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
             <button
               onClick={() => alert('Teljesítmény riport PDF formátumban letöltve!')}
-              className="px-4 py-2 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-accent-hover transition-all flex items-center gap-2 shadow-md"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="px-4 py-2 font-extrabold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 shadow-md cursor-pointer"
             >
               <Download size={14} /> Riport Letöltése (PDF)
             </button>
@@ -1083,9 +1119,9 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   : '0.0';
 
               return (
-                <div key={camp.id} className="p-5 bg-[#161616] border border-[#222] rounded-2xl space-y-4">
+                <div key={camp.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-accent uppercase tracking-wider">
+                    <span style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider">
                       {camp.sponsor_name}
                     </span>
                     <span className="text-xs font-bold text-green-400 bg-green-500/10 px-2.5 py-0.5 rounded border border-green-500/20">
@@ -1093,16 +1129,16 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold text-white">{camp.title}</h3>
+                  <h3 style={{ color: textColor }} className="text-base font-bold">{camp.title}</h3>
 
                   <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="p-3 bg-[#111] rounded-xl space-y-1">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1"><Eye size={12} /> Összes Megjelenés</span>
-                      <span className="text-sm font-extrabold text-white">{camp.impressions_count.toLocaleString('hu-HU')}</span>
+                    <div style={{ backgroundColor: cardBg }} className="p-3 rounded-xl space-y-1 border border-white/5">
+                      <span className="text-[10px] text-gray-400 flex items-center gap-1"><Eye size={12} /> Összes Megjelenés</span>
+                      <span style={{ color: textColor }} className="text-sm font-extrabold">{camp.impressions_count.toLocaleString('hu-HU')}</span>
                     </div>
-                    <div className="p-3 bg-[#111] rounded-xl space-y-1">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1"><MousePointer size={12} /> Összes Kattintás</span>
-                      <span className="text-sm font-extrabold text-accent">{camp.clicks_count.toLocaleString('hu-HU')}</span>
+                    <div style={{ backgroundColor: cardBg }} className="p-3 rounded-xl space-y-1 border border-white/5">
+                      <span className="text-[10px] text-gray-400 flex items-center gap-1"><MousePointer size={12} /> Összes Kattintás</span>
+                      <span style={{ color: cardHighlight }} className="text-sm font-extrabold">{camp.clicks_count.toLocaleString('hu-HU')}</span>
                     </div>
                   </div>
                 </div>
@@ -1116,15 +1152,15 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {activeTab === 'partner_portal' && (
         <div className="space-y-8 max-w-4xl mx-auto">
           {/* Welcome Card for Partner */}
-          <div className="bg-gradient-to-r from-[#181F33] to-[#0D121F] border border-blue-500/40 rounded-3xl p-6 space-y-3 shadow-2xl">
+          <div className="bg-gradient-to-r from-blue-950/60 to-slate-900 border border-blue-500/40 rounded-3xl p-6 space-y-3 shadow-2xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-blue-300 bg-blue-500/10 px-3 py-1 rounded-full uppercase border border-blue-500/20">
                 🤝 Partner Fiók – Szerződés Elfogadás
               </span>
               <span className="text-xs font-bold text-gray-400">Üdvözlünk, Partner!</span>
             </div>
-            <h2 className="text-2xl font-extrabold text-white">
-              Szerződés Elfogadása & Visszaigazolása
+            <h2 style={{ color: textColor }} className="text-2xl font-extrabold">
+              Szerződés Elfogadása &amp; Visszaigazolása
             </h2>
             <p className="text-xs text-gray-300 leading-relaxed">
               Az ÉpítőTudás által kiállított hirdetési megállapodás megtekintése és elektronikus elfogadása. Az elfogadás rögzíti az e-mail címed, időbélyeged és IP címed.
@@ -1139,7 +1175,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   const match = contracts.find((c) => c.id === e.target.value);
                   if (match) setSelectedPartnerContract(match);
                 }}
-                className="w-full bg-[#111726] border border-[#232F47] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
               >
                 {contracts.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -1158,20 +1195,20 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
           )}
 
           {selectedPartnerContract && (
-            <div className="bg-[#111111] border border-[#222] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
               {/* Header Box */}
-              <div className="flex items-center justify-between border-b border-[#222] pb-4">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
                 <div>
-                  <span className="text-xs font-mono font-extrabold text-accent block">
+                  <span style={{ color: cardHighlight }} className="text-xs font-mono font-extrabold block">
                     {selectedPartnerContract.contractNumber}
                   </span>
-                  <h3 className="text-xl font-extrabold text-white">
+                  <h3 style={{ color: textColor }} className="text-xl font-extrabold">
                     {selectedPartnerContract.campaignTitle}
                   </h3>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-xl font-black text-accent font-mono">
+                  <div style={{ color: cardHighlight }} className="text-xl font-black font-mono">
                     {selectedPartnerContract.amount.toLocaleString('hu-HU')} Ft <span className="text-xs font-normal text-gray-400">+ ÁFA</span>
                   </div>
                   <span className="text-xs text-gray-400">Érvényes: {selectedPartnerContract.startDate} - {selectedPartnerContract.endDate}</span>
@@ -1179,7 +1216,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               </div>
 
               {/* Document Text Box */}
-              <div className="p-6 bg-[#0B0F19] border border-[#1E293B] rounded-2xl font-mono text-xs text-gray-300 leading-relaxed space-y-4 whitespace-pre-wrap">
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }} className="p-6 border rounded-2xl font-mono text-xs leading-relaxed space-y-4 whitespace-pre-wrap">
                 {selectedPartnerContract.content}
               </div>
 
@@ -1200,9 +1237,9 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
               {/* Acceptance Form if not yet accepted */}
               {selectedPartnerContract.status !== 'accepted' && (
-                <form onSubmit={handlePartnerAcceptance} className="p-6 bg-[#161616] border border-[#222] rounded-2xl space-y-4">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <FileCheck size={18} className="text-accent" /> Nyilatkozat & Elfogadás Rögzítése
+                <form onSubmit={handlePartnerAcceptance} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-6 border rounded-2xl space-y-4 shadow-md">
+                  <h4 style={{ color: textColor }} className="text-sm font-bold flex items-center gap-2">
+                    <FileCheck size={18} style={{ color: cardHighlight }} /> Nyilatkozat &amp; Elfogadás Rögzítése
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1213,7 +1250,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                         required
                         value={partnerSignName}
                         onChange={(e) => setPartnerSignName(e.target.value)}
-                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1223,7 +1261,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                         required
                         value={partnerSignEmail}
                         onChange={(e) => setPartnerSignEmail(e.target.value)}
-                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1236,14 +1275,16 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                         alert('Módosítási kérelem továbbítva az adminisztrátornak!');
                         loadData();
                       }}
-                      className="px-4 py-2.5 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl flex items-center gap-2"
+                      style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                      className="px-4 py-2.5 border font-bold text-xs rounded-xl flex items-center gap-2 cursor-pointer hover:opacity-80"
                     >
                       <XCircle size={14} className="text-red-400" /> Kérdés / Módosítás Kérése
                     </button>
 
                     <button
                       type="submit"
-                      className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                      style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                      className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
                     >
                       <Check size={16} /> [ Elfogadom a Szerződést ]
                     </button>
@@ -1258,20 +1299,21 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {/* PRINTABLE CONTRACT VIEW MODAL */}
       {showContractViewer && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#111] border border-[#222] rounded-3xl w-full max-w-3xl p-6 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#222] pb-3">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl w-full max-w-3xl p-6 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
               <div>
-                <span className="text-xs font-mono font-bold text-accent">{showContractViewer.contractNumber}</span>
-                <h3 className="text-lg font-bold text-white">Szerződéses Hivatalos Dokumentum</h3>
+                <span style={{ color: cardHighlight }} className="text-xs font-mono font-bold">{showContractViewer.contractNumber}</span>
+                <h3 style={{ color: textColor }} className="text-lg font-bold">Szerződéses Hivatalos Dokumentum</h3>
               </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => window.print()}
-                  className="px-3 py-1.5 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-accent-hover flex items-center gap-1.5"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-3 py-1.5 font-extrabold text-xs rounded-xl hover:opacity-90 flex items-center gap-1.5 cursor-pointer shadow-md"
                 >
                   <Printer size={14} /> Nyomtatás / PDF
                 </button>
-                <button onClick={() => setShowContractViewer(null)} className="text-gray-400 hover:text-white text-xl">✕</button>
+                <button onClick={() => setShowContractViewer(null)} className="text-gray-400 hover:text-white text-xl cursor-pointer">✕</button>
               </div>
             </div>
 
@@ -1296,12 +1338,12 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {/* VERSION MODAL */}
       {showVersionModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111] border border-[#222] rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#222] pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <History size={18} className="text-accent" /> Új Verzió Létrehozása (v{(showVersionModal.versions?.length || 1) + 1})
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
+              <h3 style={{ color: textColor }} className="text-base font-bold flex items-center gap-2">
+                <History size={18} style={{ color: cardHighlight }} /> Új Verzió Létrehozása (v{(showVersionModal.versions?.length || 1) + 1})
               </h3>
-              <button onClick={() => setShowVersionModal(null)} className="text-gray-400 hover:text-white">✕</button>
+              <button onClick={() => setShowVersionModal(null)} className="text-gray-400 hover:text-white cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleCreateVersionSubmit} className="space-y-4">
@@ -1312,7 +1354,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   required
                   value={newVersionAmount}
                   onChange={(e) => setNewVersionAmount(Number(e.target.value))}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
                 />
               </div>
 
@@ -1323,21 +1366,24 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   value={newVersionNote}
                   onChange={(e) => setNewVersionNote(e.target.value)}
                   placeholder="pl. Díj emelése 299 000 Ft-ra új felületi kiemelés miatt..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl p-3 text-xs focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#222]">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setShowVersionModal(null)}
-                  className="px-4 py-2 bg-[#1A1A1A] text-gray-400 font-semibold text-xs rounded-xl hover:text-white"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-semibold text-xs rounded-xl hover:opacity-80 transition-colors cursor-pointer"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-accent-hover shadow-lg"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-colors cursor-pointer hover:opacity-90"
                 >
                   Új Verzió Mentése
                 </button>
@@ -1350,12 +1396,12 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
       {/* NEW CAMPAIGN V2 MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111] border border-[#222] rounded-3xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#222] pb-3">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Plus size={20} className="text-accent" /> Új Reklámkampány & Szerződés Indítása
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
+              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                <Plus size={20} style={{ color: cardHighlight }} /> Új Reklámkampány &amp; Szerződés Indítása
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white text-xl">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white text-xl cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleCreateCampaign} className="space-y-4">
@@ -1368,7 +1414,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     value={sponsorName}
                     onChange={(e) => setSponsorName(e.target.value)}
                     placeholder="pl. Bosch Professional"
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
 
@@ -1380,7 +1427,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="pl. Akkus Szerszámgépek 2026"
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
 
@@ -1397,7 +1445,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                         setPlacementSlot(pkg.recommendedPlacement);
                       }
                     }}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
                   >
                     <option value="bronze">Bronze Csomag (49 000 Ft/hó)</option>
                     <option value="silver">Silver Csomag (99 000 Ft/hó)</option>
@@ -1411,7 +1460,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   <select
                     value={placementSlot}
                     onChange={(e) => setPlacementSlot(e.target.value as 'top_banner' | 'sidebar' | 'in_feed')}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
                   >
                     <option value="top_banner">Fejléc Banner (top_banner)</option>
                     <option value="sidebar">Oldalsáv Kártya (sidebar)</option>
@@ -1425,7 +1475,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     type="number"
                     value={priceHuf}
                     onChange={(e) => setPriceHuf(Number(e.target.value))}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
                   />
                 </div>
 
@@ -1434,7 +1485,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   <select
                     value={paymentStatus}
                     onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
                   >
                     <option value="paid">Kiegyenlítve</option>
                     <option value="unpaid">Fizetésre vár</option>
@@ -1448,7 +1500,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   <select
                     value={contractType}
                     onChange={(e) => setContractType(e.target.value as ContractType)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
                   >
                     <option value="once">Egyszeri Kampány</option>
                     <option value="monthly">Havi Előfizetés</option>
@@ -1461,7 +1514,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   <select
                     value={statusV2}
                     onChange={(e) => setStatusV2(e.target.value as CampaignStatusV2)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
                   >
                     <option value="draft">🟡 Ajánlat készül</option>
                     <option value="contracting">🟠 Szerződés alatt</option>
@@ -1477,7 +1531,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
 
@@ -1487,35 +1542,39 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Contact Person Details */}
-              <div className="pt-3 border-t border-[#222] space-y-3">
-                <span className="text-xs font-bold text-accent block">Kapcsolattartó Adatai</span>
+              <div style={{ borderColor: cardBorder }} className="pt-3 border-t space-y-3">
+                <span style={{ color: cardHighlight }} className="text-xs font-bold block">Kapcsolattartó Adatai</span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <input
                     type="text"
                     placeholder="Név (pl. Nagy Péter)"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="border rounded-xl px-3 py-2 text-xs focus:outline-none"
                   />
                   <input
                     type="email"
                     placeholder="Email (pl. nagy@partner.hu)"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="border rounded-xl px-3 py-2 text-xs focus:outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Telefon (pl. +36 30 123 4567)"
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
-                    className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="border rounded-xl px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -1527,23 +1586,26 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222]">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-4 border-t">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-[#1A1A1A] text-gray-400 font-semibold text-xs rounded-xl hover:text-white"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-semibold text-xs rounded-xl hover:opacity-80 transition-colors cursor-pointer"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-accent-hover shadow-lg"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold text-xs rounded-xl hover:opacity-90 shadow-lg cursor-pointer transition-colors"
                 >
-                  Kampány & Szerződés Indítása
+                  Kampány &amp; Szerződés Indítása
                 </button>
               </div>
             </form>
