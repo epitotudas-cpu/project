@@ -74,6 +74,7 @@ import {
 import {
   getAboutSettings,
   saveAboutSettings,
+  DEFAULT_ABOUT_SETTINGS,
   type AboutSettings,
 } from '../services/aboutService';
 
