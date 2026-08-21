@@ -15,6 +15,7 @@ import {
   DEFAULT_TRADE_ITEMS,
   type TradeItem,
 } from '../services/tradeService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 export default function AdminTradesPage() {
   const trades = useTrades();
@@ -106,24 +107,30 @@ export default function AdminTradesPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+
   return (
-    <div className="space-[#111] min-h-screen text-gray-200 p-4 md:p-8 space-y-8">
+    <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
-            <Briefcase className="text-accent" size={32} />
-            Szakmák &amp; Karrierutak Kezelő
+          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
+            <Briefcase style={{ color: cardHighlight }} size={28} /> Építőipari Szakmák Áttekintése &amp; Szerkesztése
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Az ÉpítőTudás 8 fő építőipari szakmájának leírásai, feladatkörei, fizetései és karrierútjai.
+          <p className="text-xs text-gray-400 mt-1">
+            Testreszabhatod a szakmai karrierutak leírásait, feladatait, előnyeit és elhelyezkedési lehetőségeit.
           </p>
         </div>
 
         <button
           type="button"
           onClick={handleResetDefaults}
-          className="px-4 py-2.5 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          className="px-4 py-2.5 border text-gray-300 font-bold text-xs rounded-xl hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
         >
           <RotateCcw size={14} /> Alapértelmezett Visszaállítása
         </button>
@@ -137,14 +144,15 @@ export default function AdminTradesPage() {
       )}
 
       {/* Filter */}
-      <div className="bg-[#111111] border border-[#1E1E1E] p-4 rounded-2xl max-w-md relative">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border p-4 rounded-2xl max-w-md relative shadow-sm">
         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Keresés szakma név vagy leírás alapján..."
-          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-accent"
+          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          className="w-full border rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition-colors"
         />
       </div>
 
@@ -153,13 +161,14 @@ export default function AdminTradesPage() {
         {filteredTrades.map((trade) => (
           <div
             key={trade.id}
-            className={`bg-[#111111] border rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-xl transition-all ${
-              trade.isActive !== false ? 'border-[#1E1E1E] hover:border-accent/40' : 'border-red-900/40 opacity-60'
+            style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            className={`border rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-xl transition-all ${
+              trade.isActive !== false ? 'hover:border-gray-500' : 'border-red-900/40 opacity-60'
             }`}
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-1 bg-accent/10 border border-accent/30 text-accent font-bold text-[10px] rounded-full">
+                <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="px-2.5 py-1 border font-bold text-[10px] rounded-full">
                   {trade.categoryLabel}
                 </span>
                 <button

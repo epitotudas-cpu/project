@@ -4,6 +4,7 @@ import type { Tool } from '../lib/supabase';
 import { listTools, setToolStatus } from '../services/toolService';
 import { useToast } from '../components/ToastProvider';
 import EditToolModal from '../components/EditToolModal';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 type StatusFilter = 'all' | Tool['status'];
 
@@ -95,22 +96,36 @@ export default function AdminToolsPage() {
     closeEditor();
   }
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+
   const selectClass =
-    'bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
+    'border rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none transition-colors';
 
   return (
     <div className="p-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-white">Eszközök</h1>
-          <p className="text-sm text-gray-500 mt-1">{tools.length} eszköz</p>
+          <h1 className="text-2xl font-black text-white">Eszközök & Szerszámok katalógusa</h1>
+          <p className="text-sm text-gray-500 mt-1">{tools.length} eszköz rögzítve</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={openCreate} className="inline-flex items-center gap-2 px-3 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] transition-colors">
+          <button
+            onClick={openCreate}
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 transition-all cursor-pointer shadow-md"
+          >
             <Plus size={14} /> Új eszköz
           </button>
           {!loading && (
-            <button onClick={loadTools} className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-lg hover:bg-[#1E1E1E] transition-colors">
+            <button
+              onClick={loadTools}
+              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+              className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
+            >
               <RefreshCw size={14} /> Frissítés
             </button>
           )}
@@ -124,10 +139,16 @@ export default function AdminToolsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Keresés név, típus, márka..."
-            className="w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors"
           />
         </div>
-        <select className={selectClass} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+        <select
+          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          className={selectClass}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+        >
           <option value="all">Összes státusz</option>
           <option value="active">Aktív</option>
           <option value="discontinued">Kivezetve</option>
@@ -142,11 +163,11 @@ export default function AdminToolsPage() {
         </div>
       )}
 
-      <div className="mt-6 bg-[#111] border border-[#1E1E1E] rounded-xl overflow-hidden">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="mt-6 border rounded-xl overflow-hidden shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#1E1E1E] text-left">
+              <tr style={{ borderColor: cardBorder }} className="border-b text-left">
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Eszköz</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Típus</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Leírás</th>

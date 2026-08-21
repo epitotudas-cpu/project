@@ -15,6 +15,7 @@ import {
   DEFAULT_BOOKS,
   type BookItem,
 } from '../services/bookService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 export default function AdminBooksPage() {
   const books = useBooks();
@@ -183,16 +184,21 @@ export default function AdminBooksPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+
   return (
-    <div className="space-[#111] min-h-screen text-gray-200 p-4 md:p-8 space-y-8">
+    <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
-            <BookOpen className="text-accent" size={32} />
-            Szakmai Könyvek &amp; Szakirodalom Kezelő
+          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
+            <BookOpen style={{ color: cardHighlight }} size={28} /> Szakmai Könyvek &amp; Szakirodalom Kezelő
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             Építőipari szakkönyvek, mérnöki útmutatók, tananyagok és kézikönyvek központi bevitele és szerkesztése.
           </p>
         </div>
@@ -201,14 +207,16 @@ export default function AdminBooksPage() {
           <button
             type="button"
             onClick={handleResetDefaults}
-            className="px-4 py-2.5 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+            className="px-4 py-2.5 border text-gray-300 font-bold text-xs rounded-xl hover:text-white transition-all flex items-center gap-2 cursor-pointer"
           >
             <RotateCcw size={14} /> Alapértelmezett
           </button>
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
           >
             <Plus size={16} /> Új Szakkönyv Hozzáadása
           </button>
@@ -223,7 +231,7 @@ export default function AdminBooksPage() {
       )}
 
       {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#111111] border border-[#1E1E1E] p-4 rounded-2xl">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border p-4 rounded-2xl shadow-sm">
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -231,7 +239,8 @@ export default function AdminBooksPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Keresés cím, szerző vagy ISBN szerint..."
-            className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-accent"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+            className="w-full border rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
 
@@ -247,10 +256,15 @@ export default function AdminBooksPage() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+              style={
                 selectedCategory === cat.id
-                  ? 'bg-accent text-black font-extrabold'
-                  : 'bg-[#181818] border border-[#262626] text-gray-400 hover:text-white'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : {}
+              }
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                selectedCategory === cat.id
+                  ? 'shadow-md font-extrabold'
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
               {cat.label}

@@ -23,6 +23,8 @@ import {
   incrementTrustScore,
   type UserTrustProfile,
 } from '../services/trustService';
+import { useToast } from '../components/ToastProvider';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
   admin: { label: 'Adminisztrátor', class: 'bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/30' },
@@ -195,7 +197,6 @@ export default function AdminUsersPage() {
 
       if (!matchesSearch) return false;
 
-      // Tab filter
       const isConfirmed = checkIsConfirmed(u);
       const tp = trustProfiles[u.id];
 
@@ -208,24 +209,31 @@ export default function AdminUsersPage() {
     });
   }, [users, search, activeTab, trustProfiles]);
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Page Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="p-6 lg:p-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-            <Users className="text-accent shrink-0" size={28} />
-            Felhasználói Fiókok &amp; Bizalmi Rendszer Audit
+          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
+            <Users className="text-accent" size={28} /> Felhasználók &amp; Jogosultságok Kezelője
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1.5 max-w-3xl leading-relaxed">
-            Áttekinthető adatkezelő panel: regisztrációk, e-mail megerősítések, aktivitás, bizalmi pontszámok és fiók törlések teljes audit naplója.
+          <p className="text-xs text-gray-400 mt-1">
+            Regisztrált fiókok, szerepkörök, e-mail visszagazolás státuszok és auto-publikációs bizalmi pontok.
           </p>
         </div>
+
         <div className="flex items-center gap-2">
           {!loading && (
             <button
               onClick={loadUsers}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#161616] border border-[#2A2A2A] text-gray-200 text-xs font-bold rounded-xl hover:bg-[#202020] hover:text-white transition-all cursor-pointer shadow-sm"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border text-gray-200 text-xs font-bold rounded-xl hover:text-white transition-all cursor-pointer shadow-sm"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Adatok Frissítése
             </button>
@@ -235,7 +243,7 @@ export default function AdminUsersPage() {
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 bg-[#111111] border border-[#1E1E1E] rounded-2xl flex items-center gap-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-center gap-4 shadow-sm">
           <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
             <Users size={22} />
           </div>
@@ -245,7 +253,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="p-4 bg-[#111111] border border-[#1E1E1E] rounded-2xl flex items-center gap-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-center gap-4 shadow-sm">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
             <UserCheck size={22} />
           </div>
@@ -255,7 +263,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="p-4 bg-[#111111] border border-[#1E1E1E] rounded-2xl flex items-center gap-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-center gap-4 shadow-sm">
           <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
             <Clock size={22} />
           </div>
@@ -265,20 +273,20 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="p-4 bg-[#111111] border border-[#1E1E1E] rounded-2xl flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-center gap-4 shadow-sm">
+          <div style={{ backgroundColor: `${cardHighlight}1A`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="w-12 h-12 rounded-xl border flex items-center justify-center shrink-0">
             <Zap size={22} />
           </div>
           <div>
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Megbízható Feltöltők</span>
-            <span className="text-xl sm:text-2xl font-black text-accent">{stats.trustedCount} fő</span>
+            <span style={{ color: cardHighlight }} className="text-xl sm:text-2xl font-black">{stats.trustedCount} fő</span>
           </div>
         </div>
       </div>
 
       {/* Trust System Info Banner */}
-      <div className="p-4 bg-[#121724] border border-blue-500/20 rounded-2xl flex items-start gap-3 text-xs text-gray-300">
-        <Zap size={20} className="text-accent shrink-0 mt-0.5" />
+      <div style={{ backgroundColor: adjustColorBrightness(cardBg, 3), borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-start gap-3 text-xs text-gray-300">
+        <Zap size={20} style={{ color: cardHighlight }} className="shrink-0 mt-0.5" />
         <div className="space-y-1">
           <strong className="text-white text-sm font-bold block">Szakmai Moderációs és Bizalmi Rendszer (Auto-Approve Invariant):</strong>
           <p className="leading-relaxed text-gray-400">
@@ -286,14 +294,6 @@ export default function AdminUsersPage() {
           </p>
         </div>
       </div>
-
-      {/* Success / Error Alerts */}
-      {successMsg && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-bold flex items-center justify-between">
-          <span>✓ {successMsg}</span>
-          <button onClick={() => setSuccessMsg(null)} className="text-xs text-emerald-400/80 hover:text-emerald-300">✕</button>
-        </div>
-      )}
 
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">

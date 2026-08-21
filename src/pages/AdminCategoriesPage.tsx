@@ -28,6 +28,7 @@ import type { Category } from '../lib/supabase';
 import { listCategories, countArticlesForCategories, deleteCategory } from '../services/categoryService';
 import { useToast } from '../components/ToastProvider';
 import EditCategoryModal from '../components/EditCategoryModal';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 type CategoryWithCount = Category & { articleCount: number };
 
@@ -129,6 +130,12 @@ export default function AdminCategoriesPage() {
     closeEditor();
   }
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+
   return (
     <div className="p-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -139,14 +146,16 @@ export default function AdminCategoriesPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFC400] text-black text-sm font-black rounded-xl hover:bg-[#E6B000] transition-all shadow-lg shadow-[#FFC400]/10"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-xl hover:opacity-90 transition-all shadow-lg cursor-pointer"
           >
             <Plus size={16} /> Új kategória
           </button>
           {!loading && (
             <button
               onClick={loadCategories}
-              className="inline-flex items-center gap-2 px-3 py-2 border border-[#1E1E1E] text-gray-300 text-sm font-bold rounded-xl hover:bg-[#1E1E1E] transition-colors"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+              className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-xl hover:text-white transition-colors"
             >
               <RefreshCw size={14} /> Frissítés
             </button>
@@ -167,15 +176,22 @@ export default function AdminCategoriesPage() {
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading &&
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-[#111] border border-[#1E1E1E] rounded-2xl p-5 overflow-hidden">
-              <div className="h-32 bg-[#1E1E1E] rounded-xl animate-pulse" />
-              <div className="h-5 w-32 bg-[#1E1E1E] rounded animate-pulse mt-4" />
-              <div className="h-4 w-full bg-[#1E1E1E] rounded animate-pulse mt-2" />
+            <div
+              key={i}
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="border rounded-2xl p-5 overflow-hidden"
+            >
+              <div className="h-32 bg-white/5 rounded-xl animate-pulse" />
+              <div className="h-5 w-32 bg-white/5 rounded animate-pulse mt-4" />
+              <div className="h-4 w-full bg-white/5 rounded animate-pulse mt-2" />
             </div>
           ))}
 
         {!loading && categories.length === 0 && (
-          <div className="col-span-full bg-[#111] border border-[#1E1E1E] rounded-2xl p-16 text-center">
+          <div
+            style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            className="col-span-full border rounded-2xl p-16 text-center"
+          >
             <FolderTree size={36} className="mx-auto text-gray-700 mb-3" />
             <p className="text-gray-500 text-sm font-medium">Még nincs kategória rögzítve.</p>
           </div>
@@ -184,12 +200,13 @@ export default function AdminCategoriesPage() {
         {!loading &&
           categories.map((c) => {
             const IconComp = (c.icon_name && ICON_MAP[c.icon_name]) || Layers;
-            const categoryColor = c.color || '#FFC400';
+            const categoryColor = c.color || cardHighlight;
 
             return (
               <div
                 key={c.id}
-                className="bg-[#111] border border-[#1E1E1E] rounded-2xl overflow-hidden hover:border-[#FFC400]/40 transition-all flex flex-col group shadow-lg"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+                className="border rounded-2xl overflow-hidden hover:border-gray-500 transition-all flex flex-col group shadow-lg"
               >
                 {/* Fejléc / Borítókép */}
                 <div className="h-36 relative bg-[#0D0D0D] overflow-hidden flex items-center justify-center">
