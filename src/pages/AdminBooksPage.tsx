@@ -190,7 +190,6 @@ export default function AdminBooksPage() {
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
   const textColor = getContrastTextColor(cardBg);
-  const inputTextColor = getContrastTextColor(inputBg);
 
   return (
     <div className="p-6 lg:p-8 space-y-6" style={{ color: textColor }}>

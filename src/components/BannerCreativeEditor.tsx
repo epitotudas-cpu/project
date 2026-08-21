@@ -58,7 +58,6 @@ export function BannerCreativeEditor() {
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
   const textColor = getContrastTextColor(cardBg);
-  const inputTextColor = getContrastTextColor(inputBg);
 
   useEffect(() => {
     refreshCreativesList();

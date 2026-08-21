@@ -67,10 +67,10 @@ export default function AdminTradesPage() {
     setCategoryLabel(trade.categoryLabel);
     setOverview(trade.overview);
     setTasksText((trade.whatDoesDo?.tasks || []).join('\n'));
-    setProsText((trade.prosCons?.pros || []).join('\n'));
-    setConsText((trade.prosCons?.cons || []).join('\n'));
-    setWorkplacesText((trade.whereCanWork?.places || []).join('\n'));
-    setCareerPathText((trade.careerPath?.steps || []).join('\n'));
+    setProsText((trade.pros || []).join('\n'));
+    setConsText((trade.cons || []).join('\n'));
+    setWorkplacesText((trade.workplaces || []).join('\n'));
+    setCareerPathText((trade.careerPath || []).join('\n'));
     setShowModal(true);
   };
 
@@ -96,18 +96,10 @@ export default function AdminTradesPage() {
           ...t.whatDoesDo,
           tasks: parseLines(tasksText),
         },
-        prosCons: {
-          pros: parseLines(prosText),
-          cons: parseLines(consText),
-        },
-        whereCanWork: {
-          ...t.whereCanWork,
-          places: parseLines(workplacesText),
-        },
-        careerPath: {
-          ...t.careerPath,
-          steps: parseLines(careerPathText),
-        },
+        pros: parseLines(prosText),
+        cons: parseLines(consText),
+        workplaces: parseLines(workplacesText),
+        careerPath: parseLines(careerPathText),
       };
     });
 
