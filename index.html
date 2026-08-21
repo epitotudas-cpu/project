@@ -10,22 +10,21 @@
         var raw = localStorage.getItem('epitotudas_site_settings_v1') || 
                   localStorage.getItem('epitotudas_site_settings_backup_v1') ||
                   sessionStorage.getItem('epitotudas_site_settings_v1');
-        if (raw) {
-          var s = JSON.parse(raw);
-          var root = document.documentElement;
-          var accent = s.primaryColor || '#FFC400';
-          var adminAccent = s.adminAccentColor || '#FFC400';
-          var adminBg = s.adminBgColor || '#0A0A0A';
-          var adminCardBg = s.adminCardBgColor || '#111111';
-          var adminCardHighlight = s.adminCardHighlightColor || adminAccent;
+        var s = raw ? JSON.parse(raw) : null;
+        var root = document.documentElement;
+        var accent = (s && s.primaryColor) || '#4165b4';
+        var adminAccent = (s && s.adminAccentColor) || '#3B82F6';
+        var adminBg = (s && s.adminBgColor) || '#423f3e';
+        var adminCardBg = (s && s.adminCardBgColor) || '#2b2e36';
+        var adminCardHighlight = (s && (s.adminCardHighlightColor || s.adminAccentColor)) || '#EC4899';
 
-          root.style.setProperty('--color-accent', accent);
-          root.style.setProperty('--color-admin-accent', adminAccent);
-          root.style.setProperty('--color-admin-bg', adminBg);
-          root.style.setProperty('--color-admin-card-bg', adminCardBg);
-          root.style.setProperty('--color-admin-card-border', adminCardBg);
-          root.style.setProperty('--color-admin-card-highlight', adminCardHighlight);
-          root.style.setProperty('--color-admin-card-highlight-bg', adminCardHighlight + '1C');
+        root.style.setProperty('--color-accent', accent);
+        root.style.setProperty('--color-admin-accent', adminAccent);
+        root.style.setProperty('--color-admin-bg', adminBg);
+        root.style.setProperty('--color-admin-card-bg', adminCardBg);
+        root.style.setProperty('--color-admin-card-border', adminCardBg);
+        root.style.setProperty('--color-admin-card-highlight', adminCardHighlight);
+        root.style.setProperty('--color-admin-card-highlight-bg', adminCardHighlight + '1C');
 
           if (s.siteTitle) {
             document.title = s.siteTitle + ' - ' + (s.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia');

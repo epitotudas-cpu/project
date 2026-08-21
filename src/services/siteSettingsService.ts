@@ -68,13 +68,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteTitle: 'ÉpítőTudás',
   tagline: 'Építőipari Tudásbázis & Szakmai Enciklopédia',
   logoUrl: '/logo.png',
-  primaryColor: '#FFC400',
+  primaryColor: '#4165b4',
   themeMode: 'dark',
 
-  adminAccentColor: '#FFC400',
-  adminBgColor: '#0A0A0A',
-  adminCardBgColor: '#111111',
-  adminCardHighlightColor: '#FFC400',
+  adminAccentColor: '#3B82F6',
+  adminBgColor: '#423f3e',
+  adminCardBgColor: '#2b2e36',
+  adminCardHighlightColor: '#EC4899',
 
   heroMainTitle: 'Magyarország vezető építőipari tudásbázisa',
   heroSubtitle: 'Szakmai enciklopédia, megbízható útmutatók, kalkulátorok és szerszámkatalógus szakembereknek, tanulóknak és kivitelezőknek egyaránt.',
@@ -109,10 +109,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 
   pwaAppName: 'ÉpítőTudás',
   pwaShortName: 'ÉpítőTudás',
-  pwaThemeColor: '#f59e0b',
-  pwaBackgroundColor: '#ffffff',
+  pwaThemeColor: '#484b6a',
+  pwaBackgroundColor: '#2b2e36',
 
-  iconsUpdatedAt: Date.now(),
+  iconsUpdatedAt: 1787313602476,
 
   maintenanceMode: false,
   maintenanceMessage: 'Az oldal jelenleg karbantartás alatt áll. Kérjük, látogass vissza később!',

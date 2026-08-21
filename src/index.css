@@ -3,16 +3,16 @@
 @import "tailwindcss/utilities";
 
 :root {
-  --color-accent: #FFC400;
-  --color-accent-hover: #e09d28;
-  --color-accent-light: #fcd56b;
+  --color-accent: #4165b4;
+  --color-accent-hover: #355395;
+  --color-accent-light: #5f80cc;
 
-  --color-admin-accent: #FFC400;
-  --color-admin-bg: #0A0A0A;
-  --color-admin-card-bg: #111111;
-  --color-admin-card-border: #1E1E1E;
-  --color-admin-card-highlight: #FFC400;
-  --color-admin-card-highlight-bg: rgba(255, 196, 0, 0.11);
+  --color-admin-accent: #3B82F6;
+  --color-admin-bg: #423f3e;
+  --color-admin-card-bg: #2b2e36;
+  --color-admin-card-border: #3c404b;
+  --color-admin-card-highlight: #EC4899;
+  --color-admin-card-highlight-bg: rgba(236, 72, 153, 0.11);
 }
 
 /* Dynamic Admin Panel, Card, Table & Modal Styling */
