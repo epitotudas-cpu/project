@@ -38,6 +38,25 @@ export interface SiteSettings {
   showSidebarAds: boolean;
   showAffiliateOffers: boolean;
 
+  // Webhely ikonok, gyorshívó és megosztás (Icons, PWA & Social Sharing)
+  faviconIcoUrl?: string;
+  faviconSvgUrl?: string;
+  faviconPngUrl?: string;
+  pwaIcon192Url?: string;
+  pwaIcon512Url?: string;
+  appleTouchIconUrl?: string;
+
+  ogImageUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+
+  pwaAppName?: string;
+  pwaShortName?: string;
+  pwaThemeColor?: string;
+  pwaBackgroundColor?: string;
+
+  iconsUpdatedAt?: number;
+
   // System & Security
   maintenanceMode: boolean;
   maintenanceMessage: string;
@@ -76,6 +95,24 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   showTopBanners: true,
   showSidebarAds: true,
   showAffiliateOffers: true,
+
+  faviconIcoUrl: '/favicon.ico',
+  faviconSvgUrl: '',
+  faviconPngUrl: '/logo.png',
+  pwaIcon192Url: '/logo.png',
+  pwaIcon512Url: '/logo.png',
+  appleTouchIconUrl: '/logo.png',
+
+  ogImageUrl: '/logo.png',
+  ogTitle: 'ÉpítőTudás',
+  ogDescription: 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek.',
+
+  pwaAppName: 'ÉpítőTudás',
+  pwaShortName: 'ÉpítőTudás',
+  pwaThemeColor: '#f59e0b',
+  pwaBackgroundColor: '#ffffff',
+
+  iconsUpdatedAt: Date.now(),
 
   maintenanceMode: false,
   maintenanceMessage: 'Az oldal jelenleg karbantartás alatt áll. Kérjük, látogass vissza később!',
@@ -137,6 +174,35 @@ function sanitizeLogoUrl(url: string | undefined): string {
   return url.trim();
 }
 
+export function generateManifestJson(settings: SiteSettings) {
+  const v = settings.iconsUpdatedAt || 1;
+  const appendV = (url?: string) => {
+    if (!url) return '';
+    return url.includes('?') ? `${url}&v=${v}` : `${url}?v=${v}`;
+  };
+
+  return {
+    name: settings.pwaAppName || settings.siteTitle || 'ÉpítőTudás',
+    short_name: settings.pwaShortName || 'ÉpítőTudás',
+    start_url: '/',
+    display: 'standalone',
+    background_color: settings.pwaBackgroundColor || '#ffffff',
+    theme_color: settings.pwaThemeColor || '#f59e0b',
+    icons: [
+      {
+        src: appendV(settings.pwaIcon192Url || settings.logoUrl || '/logo.png'),
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: appendV(settings.pwaIcon512Url || settings.logoUrl || '/logo.png'),
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
+  };
+}
+
 export function applySiteSettings(settings: SiteSettings): void {
   try {
     if (typeof document === 'undefined') return;
@@ -168,38 +234,75 @@ export function applySiteSettings(settings: SiteSettings): void {
       document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
     }
 
-    // Dynamic Favicon & Apple Touch Icon from admin-configurable logoUrl with cache-busting
-    const rawLogoUrl = sanitizeLogoUrl(settings?.logoUrl);
-    
-    // Add cache buster query parameter based on logo URL so browsers don't hold aggressive old favicon caches
-    const urlHash = Array.from(rawLogoUrl).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) >>> 0, 0).toString(16);
-    const dynamicLogoUrl = rawLogoUrl.includes('?')
-      ? `${rawLogoUrl}&v=${urlHash}`
-      : `${rawLogoUrl}?v=${urlHash}`;
+    // Dynamic Versioning Parameter for Cache-Busting
+    const v = settings.iconsUpdatedAt || Date.now();
+    const withVersion = (url: string | undefined, defaultFallback: string) => {
+      const target = (url && url.trim()) ? url.trim() : defaultFallback;
+      if (!target) return '';
+      return target.includes('?') ? `${target}&v=${v}` : `${target}?v=${v}`;
+    };
 
-    // Target all icon link elements by ID or rel selector
-    const iconIds = ['app-favicon-ico', 'app-favicon-png', 'app-favicon-shortcut', 'app-apple-touch-icon'];
-
-    iconIds.forEach((id) => {
-      const el = document.getElementById(id) as HTMLLinkElement | null;
-      if (el) {
-        el.href = dynamicLogoUrl;
-      }
-    });
-
-    // Fallback: search and update by rel if ID elements not found
-    const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
-    rels.forEach((rel) => {
-      const links = Array.from(document.querySelectorAll<HTMLLinkElement>(`link[rel="${rel}"]`));
-      if (links.length > 0) {
-        links.forEach((l) => { l.href = dynamicLogoUrl; });
-      } else {
-        const link = document.createElement('link');
-        link.rel = rel;
-        link.href = dynamicLogoUrl;
+    // Helper: update or inject <link> tags in <head>
+    const setLink = (id: string, rel: string, href: string, type?: string, sizes?: string) => {
+      if (!href) return;
+      let link = document.getElementById(id) as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.id = id;
         document.head.appendChild(link);
       }
-    });
+      link.rel = rel;
+      link.href = href;
+      if (type) link.type = type;
+      if (sizes) link.setAttribute('sizes', sizes);
+    };
+
+    // Helper: update or inject <meta> tags in <head>
+    const setMeta = (attr: { property?: string; name?: string }, content: string) => {
+      const key = attr.property ? 'property' : 'name';
+      const val = attr.property || attr.name;
+      let meta = document.querySelector(`meta[${key}="${val}"]`) as HTMLMetaElement | null;
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute(key, val!);
+        document.head.appendChild(meta);
+      }
+      meta.content = content;
+    };
+
+    // 1. Browser & Shortcut Favicons
+    setLink('app-favicon-ico', 'icon', withVersion(settings.faviconIcoUrl, '/favicon.ico'), 'image/x-icon', 'any');
+    if (settings.faviconSvgUrl) {
+      setLink('app-favicon-svg', 'icon', withVersion(settings.faviconSvgUrl, ''), 'image/svg+xml');
+    }
+    setLink('app-favicon-png', 'icon', withVersion(settings.faviconPngUrl, settings.logoUrl || '/logo.png'), 'image/png', '32x32');
+    setLink('app-pwa-192', 'icon', withVersion(settings.pwaIcon192Url, settings.logoUrl || '/logo.png'), 'image/png', '192x192');
+    setLink('app-apple-touch-icon', 'apple-touch-icon', withVersion(settings.appleTouchIconUrl, settings.logoUrl || '/logo.png'), undefined, '180x180');
+
+    // 2. Web App Manifest
+    setLink('app-webmanifest-link', 'manifest', `/site.webmanifest?v=${v}`);
+    if (typeof window !== 'undefined') {
+      (window as any).__EPITOTUDAS_MANIFEST__ = generateManifestJson(settings);
+    }
+
+    // 3. PWA Theme Color
+    setMeta({ name: 'theme-color' }, settings.pwaThemeColor || '#f59e0b');
+
+    // 4. Open Graph & Social Meta Tags
+    const canonicalUrl = typeof window !== 'undefined' ? window.location.href : 'https://epitotudas.hu';
+    const ogTitleText = settings.ogTitle || settings.siteTitle || 'ÉpítőTudás';
+    const ogDescText = settings.ogDescription || settings.tagline || 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek.';
+    const ogImgUrl = withVersion(settings.ogImageUrl || settings.logoUrl, '/logo.png');
+
+    setMeta({ property: 'og:title' }, ogTitleText);
+    setMeta({ property: 'og:description' }, ogDescText);
+    setMeta({ property: 'og:image' }, ogImgUrl);
+    setMeta({ property: 'og:url' }, canonicalUrl);
+    setMeta({ property: 'og:type' }, 'website');
+
+    setMeta({ name: 'twitter:title' }, ogTitleText);
+    setMeta({ name: 'twitter:description' }, ogDescText);
+    setMeta({ name: 'twitter:image' }, ogImgUrl);
   } catch (err) {
     console.error('Hiba a beállítások érvényesítésekor:', err);
   }

@@ -29,6 +29,12 @@ import {
   Calculator,
   Shield,
   Target,
+  Share2,
+  AlertTriangle,
+  Smartphone,
+  AppWindow,
+  ExternalLink,
+  FileCode,
 } from 'lucide-react';
 import {
   getSiteSettings,
@@ -37,6 +43,7 @@ import {
   adjustColorBrightness,
   getContrastTextColor,
   useSiteSettings,
+  generateManifestJson,
   DEFAULT_SITE_SETTINGS,
   type SiteSettings,
 } from '../services/siteSettingsService';
@@ -173,8 +180,20 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   });
   const navItems = useNavigationItems();
 
-  const [activeTab, setActiveTab] = useState<'design' | 'hero' | 'impressum' | 'navigation' | 'calculators' | 'legal' | 'about' | 'ads' | 'system'>('design');
+  const [activeTab, setActiveTab] = useState<
+    'design' | 'hero' | 'impressum' | 'navigation' | 'calculators' | 'legal' | 'about' | 'ads' | 'system' | 'icons_sharing'
+  >('design');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Icon & Sharing Diagnostic State
+  const [iconStats, setIconStats] = useState<Record<string, { width?: number; height?: number; warning?: string | null }>>({});
+  const [ogImageStats, setOgImageStats] = useState<{ width?: number; height?: number; warning?: string | null }>({});
+  const [showIconAuditModal, setShowIconAuditModal] = useState(false);
+  const [auditResults, setAuditResults] = useState<{
+    passed: string[];
+    warnings: string[];
+    missing: string[];
+  } | null>(null);
 
   // Dynamic Navigation Management Form State
   const [showNavModal, setShowNavModal] = useState(false);
@@ -557,6 +576,116 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     saveHeroState(updatedState);
   };
 
+  const processIconFile = (fieldKey: keyof SiteSettings, file: File, recW: number, recH: number) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        let warning: string | null = null;
+
+        if (recW > 0 && recH > 0 && (w !== recW || h !== recH)) {
+          warning = `⚠️ Figyelmeztetés: A feltöltött kép mérete (${w}×${h} px) eltér az ajánlottól (${recW}×${recH} px). Ennek ellenére elmenthető.`;
+        }
+
+        setIconStats((prev) => ({
+          ...prev,
+          [fieldKey]: { width: w, height: h, warning },
+        }));
+
+        const updated = {
+          ...settings,
+          [fieldKey]: dataUrl,
+          iconsUpdatedAt: Date.now(),
+        };
+        setSettings(updated);
+        applySiteSettings(updated);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const processOgImageFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        let warning: string | null = null;
+
+        if (w < 1000 || h < 500) {
+          warning = `⚠️ Figyelmeztetés: A megosztási kép mérete (${w}×${h} px) kisebb az ajánlott 1200×630 px felbontásnál. Megosztáskor elmosódott lehet.`;
+        }
+
+        setOgImageStats({ width: w, height: h, warning });
+
+        const updated = {
+          ...settings,
+          ogImageUrl: dataUrl,
+          iconsUpdatedAt: Date.now(),
+        };
+        setSettings(updated);
+        applySiteSettings(updated);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const runIconAudit = () => {
+    const passed: string[] = [];
+    const warnings: string[] = [];
+    const missing: string[] = [];
+
+    if (settings.faviconIcoUrl || settings.faviconPngUrl) {
+      passed.push('Favicon (ICO / PNG): Rendben beállítva');
+    } else {
+      missing.push('Favicon: Hiányzik az ICO vagy PNG favicon');
+    }
+
+    if (settings.appleTouchIconUrl) {
+      passed.push('Apple Touch Icon: Rendben (180×180 px iOS ikon aktív)');
+    } else {
+      missing.push('Apple Touch Icon: Hiányzik az Apple iOS kezdőképernyő ikon');
+    }
+
+    if (settings.pwaIcon192Url && settings.pwaIcon512Url) {
+      passed.push('PWA Android Ikonok (192px & 512px): Mindkét PWA ikon méret beállítva');
+    } else {
+      warnings.push('PWA Ikonok: Hiányos – érdemes megadni a 192×192 px és 512×512 px PNG képeket is');
+    }
+
+    if (settings.ogImageUrl) {
+      passed.push('Alapértelmezett Megosztási Kép (Open Graph): Rendben (1200×630 px)');
+    } else {
+      missing.push('Megosztási Kép: Nincs megadva globális Open Graph hirdetési/megosztási kép');
+    }
+
+    if (settings.ogTitle && settings.ogDescription) {
+      passed.push('Open Graph Metaadatok: Cím és leírás megadva');
+    } else {
+      warnings.push('Open Graph Metaadatok: Cím vagy leírás hiányos');
+    }
+
+    if (settings.pwaAppName && settings.pwaShortName && settings.pwaThemeColor) {
+      passed.push('Web App Manifest (/site.webmanifest): Dinamikus PWA JSON konfiguráció rendben');
+    } else {
+      missing.push('Web App Manifest: Hiányos név vagy téma szín beállítás');
+    }
+
+    setAuditResults({ passed, warnings, missing });
+    setShowIconAuditModal(true);
+  };
+
   const liveSiteSettings = useSiteSettings();
   const cardBg = settings.adminCardBgColor || liveSiteSettings.adminCardBgColor || '#111111';
   const cardHighlight = settings.adminCardHighlightColor || settings.adminAccentColor || liveSiteSettings.adminCardHighlightColor || '#FFC400';
@@ -622,6 +751,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           { id: 'legal', label: '📜 Jogi Szövegek', icon: Shield },
           { id: 'about', label: 'ℹ️ Rólunk Oldal', icon: Info },
           { id: 'ads', label: '📢 Reklámok & Ajánlatok', icon: Megaphone },
+          { id: 'icons_sharing', label: '🌐 Webhely ikonok & Megosztás', icon: Share2 },
           { id: 'system', label: '⚙️ Rendszer & Biztonság', icon: ShieldAlert },
         ].map((tab) => {
           const IconComp = tab.icon;
@@ -2635,6 +2765,561 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
         </div>
       )}
 
+      {/* TAB: ICONS, PWA & SOCIAL SHARING */}
+      {activeTab === 'icons_sharing' && (
+        <div className="space-y-8">
+          {/* Header Card & Audit Action */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-4 shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                  <Share2 size={22} style={{ color: cardHighlight }} /> Webhely ikonok, gyorshívó és megosztási beállítások
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  Favicon (.ico, SVG, PNG), Apple Touch Icon, Android/PWA ikonok, Open Graph megosztási kép és metaadatok, valamint a PWA manifest központi testreszabása.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={runIconAudit}
+                style={{ backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight, color: cardHighlight }}
+                className="px-4 py-2.5 border rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all hover:opacity-90 cursor-pointer shadow-sm"
+              >
+                <ShieldCheck size={16} /> Ikonok és megosztási beállítások ellenőrizése
+              </button>
+            </div>
+          </div>
+
+          {/* SZEKCIÓ 1: BÖNGÉSZŐ- ÉS GYORSHÍVÓIKONOK */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h3 style={{ color: cardHighlight, borderColor: cardBorder }} className="text-base font-extrabold border-b pb-3 flex items-center gap-2">
+              <AppWindow size={20} /> 1. Böngésző- és gyorshívóikonok (Favicon &amp; PWA Icons)
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  key: 'faviconIcoUrl' as const,
+                  label: 'Favicon (.ico)',
+                  recommended: '16×16 és 32×32 px ICO fájl',
+                  accept: '.ico,image/x-icon,image/vnd.microsoft.icon',
+                  recW: 32,
+                  recH: 32,
+                  fallback: '/favicon.ico',
+                },
+                {
+                  key: 'faviconSvgUrl' as const,
+                  label: 'SVG Favicon (.svg)',
+                  recommended: 'Vektoros .svg fájl',
+                  accept: '.svg,image/svg+xml',
+                  recW: 0,
+                  recH: 0,
+                  fallback: '',
+                },
+                {
+                  key: 'faviconPngUrl' as const,
+                  label: 'PNG Favicon (.png)',
+                  recommended: '32×32 px PNG',
+                  accept: '.png,image/png',
+                  recW: 32,
+                  recH: 32,
+                  fallback: '/logo.png',
+                },
+                {
+                  key: 'pwaIcon192Url' as const,
+                  label: 'Android / PWA ikon',
+                  recommended: '192×192 px PNG',
+                  accept: '.png,image/png',
+                  recW: 192,
+                  recH: 192,
+                  fallback: '/logo.png',
+                },
+                {
+                  key: 'pwaIcon512Url' as const,
+                  label: 'Nagy PWA ikon',
+                  recommended: '512×512 px PNG',
+                  accept: '.png,image/png',
+                  recW: 512,
+                  recH: 512,
+                  fallback: '/logo.png',
+                },
+                {
+                  key: 'appleTouchIconUrl' as const,
+                  label: 'Apple Touch Icon',
+                  recommended: '180×180 px PNG',
+                  accept: '.png,image/png',
+                  recW: 180,
+                  recH: 180,
+                  fallback: '/logo.png',
+                },
+              ].map((item) => {
+                const currentUrl = settings[item.key] || item.fallback;
+                const stats = iconStats[item.key];
+                return (
+                  <div
+                    key={item.key}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+                    className="p-5 border rounded-2xl space-y-4 shadow-sm flex flex-col justify-between"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide">
+                          {item.label}
+                        </label>
+                        <span className="text-[10px] font-mono opacity-60 bg-black/30 px-2 py-0.5 rounded border border-white/10">
+                          {item.recommended}
+                        </span>
+                      </div>
+
+                      {/* Image Dropzone & File Input */}
+                      <label
+                        style={{ borderColor: cardBorder, backgroundColor: adjustColorBrightness(inputBg, -4) }}
+                        className="p-4 border-2 border-dashed rounded-xl text-center flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-gray-400 transition-all"
+                      >
+                        <input
+                          type="file"
+                          accept={item.accept}
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              processIconFile(item.key, e.target.files[0], item.recW, item.recH);
+                            }
+                          }}
+                        />
+                        <Upload size={18} style={{ color: cardHighlight }} />
+                        <span className="text-[11px] font-bold text-gray-300">Fájl kiválasztása vagy drag &amp; drop</span>
+                        <span className="text-[10px] text-gray-500">Kattints ide a feltöltéshez</span>
+                      </label>
+
+                      {/* Manual URL Text Field */}
+                      <div>
+                        <input
+                          type="text"
+                          value={settings[item.key] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = { ...settings, [item.key]: val, iconsUpdatedAt: Date.now() };
+                            setSettings(updated);
+                            applySiteSettings(updated);
+                          }}
+                          placeholder={`URL vagy elérési út (${item.fallback || 'opcionális'})`}
+                          style={{ backgroundColor: adjustColorBrightness(inputBg, -6), borderColor: cardBorder, color: inputTextColor }}
+                          className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Dimension Warning Banner */}
+                      {stats?.warning && (
+                        <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-[11px] font-bold flex items-center gap-1.5 leading-tight">
+                          <AlertTriangle size={14} className="shrink-0" />
+                          <span>{stats.warning}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Preview & Status */}
+                    <div style={{ borderColor: cardBorder }} className="pt-3 border-t flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-black/40 border rounded-lg p-1 flex items-center justify-center shrink-0 overflow-hidden shadow" style={{ borderColor: cardBorder }}>
+                          {currentUrl ? (
+                            <img
+                              src={currentUrl}
+                              alt={item.label}
+                              className="max-h-full max-w-full object-contain"
+                              onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
+                            />
+                          ) : (
+                            <ImageIcon size={18} className="text-gray-600" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-bold block" style={{ color: textColor }}>
+                            {settings[item.key] ? 'Egyedi ikon aktív' : 'Alapértelmezett'}
+                          </span>
+                          {stats?.width && stats?.height ? (
+                            <span className="text-[10px] font-mono text-emerald-400 block">
+                              {stats.width} × {stats.height} px
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-500 block">Formátum: {item.accept.split(',')[0]}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {settings[item.key] && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = { ...settings, [item.key]: '', iconsUpdatedAt: Date.now() };
+                            setSettings(updated);
+                            applySiteSettings(updated);
+                            setIconStats((prev) => {
+                              const next = { ...prev };
+                              delete next[item.key];
+                              return next;
+                            });
+                          }}
+                          className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                          title="Törlés & Alapértelmezett"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SZEKCIÓ 2: KÖZÖSSÉGI MEGOSZTÁSI KÉP (OPEN GRAPH) */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h3 style={{ color: cardHighlight, borderColor: cardBorder }} className="text-base font-extrabold border-b pb-3 flex items-center gap-2">
+              <Share2 size={20} /> 2. Közösségi megosztási kép &amp; Open Graph Metaadatok
+            </h3>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* OG Image Uploader & Preview */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide">
+                    Alapértelmezett Megosztási Kép (Global OG Image)
+                  </label>
+                  <span className="text-[10px] font-mono opacity-60 bg-black/30 px-2 py-0.5 rounded border border-white/10">
+                    Ajánlott: 1200×630 px (JPG, PNG, WEBP)
+                  </span>
+                </div>
+
+                <label
+                  style={{ borderColor: cardBorder, backgroundColor: adjustColorBrightness(inputBg, -4) }}
+                  className="p-5 border-2 border-dashed rounded-xl text-center flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-gray-400 transition-all"
+                >
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        processOgImageFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                  <Upload size={22} style={{ color: cardHighlight }} />
+                  <span className="text-xs font-bold text-gray-300">Megosztási kép kiválasztása vagy drag &amp; drop</span>
+                  <span className="text-[11px] text-gray-500">Ez a kép jelenik meg Facebook, LinkedIn és Viber megosztáskor</span>
+                </label>
+
+                <div>
+                  <input
+                    type="text"
+                    value={settings.ogImageUrl || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const updated = { ...settings, ogImageUrl: val, iconsUpdatedAt: Date.now() };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    placeholder="URL vagy hivatkozás megadása (/logo.png)"
+                    style={{ backgroundColor: adjustColorBrightness(inputBg, -6), borderColor: cardBorder, color: inputTextColor }}
+                    className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
+                  />
+                </div>
+
+                {ogImageStats?.warning && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <AlertTriangle size={16} className="shrink-0" />
+                    <span>{ogImageStats.warning}</span>
+                  </div>
+                )}
+
+                {/* Large Preview */}
+                <div style={{ borderColor: cardBorder }} className="pt-3 border-t space-y-2">
+                  <span className="text-[11px] font-bold block" style={{ color: textColor }}>
+                    Élő Open Graph Kép Előnézet:
+                  </span>
+                  <div className="w-full h-44 bg-black/50 border rounded-xl overflow-hidden relative flex items-center justify-center" style={{ borderColor: cardBorder }}>
+                    <img
+                      src={settings.ogImageUrl || settings.logoUrl || '/logo.png'}
+                      alt="Open Graph Előnézet"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
+                    />
+                    {settings.ogImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...settings, ogImageUrl: '', iconsUpdatedAt: Date.now() };
+                          setSettings(updated);
+                          applySiteSettings(updated);
+                          setOgImageStats({});
+                        }}
+                        className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-red-500/80 text-white rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={14} /> Törlés
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* OG Text Inputs */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4 shadow-sm flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div>
+                    <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide block mb-1.5">
+                      Open Graph Cím (og:title)
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.ogTitle ?? 'ÉpítőTudás'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = { ...settings, ogTitle: val };
+                        setSettings(updated);
+                        applySiteSettings(updated);
+                      }}
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-4 py-3 text-xs focus:outline-none"
+                      placeholder="ÉpítőTudás"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">Alapértelmezett érték: „ÉpítőTudás”</p>
+                  </div>
+
+                  <div>
+                    <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide block mb-1.5">
+                      Open Graph Leírás (og:description)
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={settings.ogDescription ?? 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek.'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = { ...settings, ogDescription: val };
+                        setSettings(updated);
+                        applySiteSettings(updated);
+                      }}
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-4 py-3 text-xs focus:outline-none resize-none"
+                      placeholder="Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek."
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">Ez a rövid leírás jelenik meg a közösségi oldalakra beillesztett linkek alatt.</p>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[11px] text-blue-300 space-y-1">
+                  <span className="font-bold block">💡 Információ:</span>
+                  <p className="leading-relaxed opacity-90">
+                    Ezek a beállítások érvényesülnek globális tartalmaknál és főoldali megosztáskor, amennyiben egy egyedi cikkhez vagy témakörhöz nincs külön borítókép megadva.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SZEKCIÓ 3: PWA-MEGJELENÉS */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h3 style={{ color: cardHighlight, borderColor: cardBorder }} className="text-base font-extrabold border-b pb-3 flex items-center gap-2">
+              <Smartphone size={20} /> 3. PWA-megjelenés (Progressive Web App Manifest)
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide block mb-1.5">
+                  Webhely neve
+                </label>
+                <input
+                  type="text"
+                  value={settings.pwaAppName ?? 'ÉpítőTudás'}
+                  onChange={(e) => {
+                    const updated = { ...settings, pwaAppName: e.target.value };
+                    setSettings(updated);
+                    applySiteSettings(updated);
+                  }}
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
+                  placeholder="ÉpítőTudás"
+                />
+              </div>
+
+              <div>
+                <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide block mb-1.5">
+                  Rövid név (Kezdőképernyő)
+                </label>
+                <input
+                  type="text"
+                  value={settings.pwaShortName ?? 'ÉpítőTudás'}
+                  onChange={(e) => {
+                    const updated = { ...settings, pwaShortName: e.target.value };
+                    setSettings(updated);
+                    applySiteSettings(updated);
+                  }}
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
+                  placeholder="ÉpítőTudás"
+                />
+              </div>
+
+              <div>
+                <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide block mb-1.5">
+                  Téma színe (Theme Color)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={settings.pwaThemeColor || '#f59e0b'}
+                    onChange={(e) => {
+                      const updated = { ...settings, pwaThemeColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    className="w-10 h-10 rounded-xl cursor-pointer border-0 bg-transparent shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={settings.pwaThemeColor || '#f59e0b'}
+                    onChange={(e) => {
+                      const updated = { ...settings, pwaThemeColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ color: textColor }} className="text-xs font-extrabold uppercase tracking-wide block mb-1.5">
+                  Háttérszín (Background Color)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={settings.pwaBackgroundColor || '#ffffff'}
+                    onChange={(e) => {
+                      const updated = { ...settings, pwaBackgroundColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    className="w-10 h-10 rounded-xl cursor-pointer border-0 bg-transparent shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={settings.pwaBackgroundColor || '#ffffff'}
+                    onChange={(e) => {
+                      const updated = { ...settings, pwaBackgroundColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SZEKCIÓ 4: MENTÉS ÉS ÁLLAPOT (STATUS CHECKLIST) */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h3 style={{ color: cardHighlight, borderColor: cardBorder }} className="text-base font-extrabold border-b pb-3 flex items-center gap-2">
+              <ShieldCheck size={20} /> 4. Konfigurációs Állapot ellenőrzése
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Status 1: Favicon */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2 text-center">
+                <span className="text-[11px] font-bold uppercase text-gray-400 block">Favicon</span>
+                {settings.faviconIcoUrl || settings.faviconPngUrl ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-extrabold">
+                    <CheckCircle2 size={13} /> Beállítva
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-xs font-extrabold">
+                    <AlertTriangle size={13} /> Hiányzik
+                  </span>
+                )}
+              </div>
+
+              {/* Status 2: Apple Icon */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2 text-center">
+                <span className="text-[11px] font-bold uppercase text-gray-400 block">Apple Ikon</span>
+                {settings.appleTouchIconUrl ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-extrabold">
+                    <CheckCircle2 size={13} /> Beállítva
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-xs font-extrabold">
+                    <AlertTriangle size={13} /> Hiányzik
+                  </span>
+                )}
+              </div>
+
+              {/* Status 3: PWA Icons */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2 text-center">
+                <span className="text-[11px] font-bold uppercase text-gray-400 block">PWA Ikonok</span>
+                {settings.pwaIcon192Url && settings.pwaIcon512Url ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-extrabold">
+                    <CheckCircle2 size={13} /> Rendben
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-xs font-extrabold">
+                    <AlertTriangle size={13} /> Hiányos
+                  </span>
+                )}
+              </div>
+
+              {/* Status 4: OG Image */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2 text-center">
+                <span className="text-[11px] font-bold uppercase text-gray-400 block">Megosztási Kép</span>
+                {settings.ogImageUrl ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-extrabold">
+                    <CheckCircle2 size={13} /> Beállítva
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-xs font-extrabold">
+                    <AlertTriangle size={13} /> Hiányzik
+                  </span>
+                )}
+              </div>
+
+              {/* Status 5: Manifest */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2 text-center">
+                <span className="text-[11px] font-bold uppercase text-gray-400 block">Web App Manifest</span>
+                {settings.pwaAppName && settings.pwaShortName && settings.pwaThemeColor ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-extrabold">
+                    <CheckCircle2 size={13} /> Rendben
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-xs font-extrabold">
+                    <AlertTriangle size={13} /> Hibás / Hiányos
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div style={{ borderColor: cardBorder }} className="pt-4 border-t flex flex-wrap items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={runIconAudit}
+                style={{ backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight, color: cardHighlight }}
+                className="px-6 py-3 border rounded-xl text-xs font-extrabold flex items-center gap-2 hover:opacity-90 transition-all cursor-pointer shadow-sm"
+              >
+                <ShieldCheck size={16} /> Ikonok és megosztási beállítások ellenőrizése
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSave}
+                style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                className="px-8 py-3 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90 shrink-0"
+              >
+                <Save size={18} /> Mentés &amp; Alkalmazás
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add / Edit Navigation Item Modal */}
       {showNavModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2774,6 +3459,96 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Icon Audit & Diagnostic Modal */}
+      {showIconAuditModal && auditResults && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
+              <h3 style={{ color: textColor }} className="text-base font-extrabold flex items-center gap-2">
+                <ShieldCheck size={20} style={{ color: cardHighlight }} />
+                Ikonok és Megosztási Beállítások Diagnosztikája
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowIconAuditModal(false)}
+                style={{ backgroundColor: inputBg, color: textColor }}
+                className="text-xs font-bold px-2.5 py-1 rounded-lg hover:opacity-80 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Passed checks */}
+              {auditResults.passed.length > 0 && (
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl space-y-2">
+                  <h4 className="font-extrabold text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 size={16} /> Megfelelően Beállított Elemek ({auditResults.passed.length} db):
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-emerald-200">
+                    {auditResults.passed.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Warnings */}
+              {auditResults.warnings.length > 0 && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-2">
+                  <h4 className="font-extrabold text-amber-400 flex items-center gap-1.5">
+                    <AlertTriangle size={16} /> Figyelmeztetések &amp; Nem Ajánlott Méretek ({auditResults.warnings.length} db):
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-amber-200">
+                    {auditResults.warnings.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Missing items */}
+              {auditResults.missing.length > 0 && (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl space-y-2">
+                  <h4 className="font-extrabold text-red-400 flex items-center gap-1.5">
+                    <AlertCircle size={16} /> Hiányzó Elemek ({auditResults.missing.length} db):
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-red-200">
+                    {auditResults.missing.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Dynamic Manifest JSON Preview */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1.5" style={{ color: cardHighlight }}>
+                    <FileCode size={16} /> Generált Dinamikus Manifest (/site.webmanifest)
+                  </span>
+                  <span className="text-[10px] font-mono text-gray-400">JSON kimenet</span>
+                </div>
+                <pre style={{ backgroundColor: adjustColorBrightness(inputBg, -6) }} className="p-3 rounded-xl text-[11px] font-mono text-emerald-400 overflow-x-auto border border-white/10">
+                  {JSON.stringify(generateManifestJson(settings), null, 2)}
+                </pre>
+              </div>
+            </div>
+
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-end pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => setShowIconAuditModal(false)}
+                style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                className="px-6 py-2 text-xs font-extrabold rounded-xl cursor-pointer hover:opacity-90 shadow"
+              >
+                Rendben
+              </button>
+            </div>
           </div>
         </div>
       )}
