@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSiteSettings, getDynamicImageUrl, type SiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
 interface HeaderProps {
