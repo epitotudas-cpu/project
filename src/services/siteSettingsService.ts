@@ -175,27 +175,32 @@ function sanitizeLogoUrl(url: string | undefined): string {
 }
 
 export function generateManifestJson(settings: SiteSettings) {
-  const v = settings.iconsUpdatedAt || 1;
+  const v = settings?.iconsUpdatedAt || Date.now();
   const appendV = (url?: string) => {
     if (!url) return '';
+    if (url.startsWith('data:')) return url;
     return url.includes('?') ? `${url}&v=${v}` : `${url}?v=${v}`;
   };
 
+  const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/logo.png';
+  const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : effectiveLogo;
+  const effectivePwa512 = (settings?.pwaIcon512Url && settings.pwaIcon512Url !== '/logo.png') ? settings.pwaIcon512Url : effectiveLogo;
+
   return {
-    name: settings.pwaAppName || settings.siteTitle || 'ÉpítőTudás',
-    short_name: settings.pwaShortName || 'ÉpítőTudás',
+    name: settings?.pwaAppName || settings?.siteTitle || 'ÉpítőTudás',
+    short_name: settings?.pwaShortName || 'ÉpítőTudás',
     start_url: '/',
     display: 'standalone',
-    background_color: settings.pwaBackgroundColor || '#ffffff',
-    theme_color: settings.pwaThemeColor || '#f59e0b',
+    background_color: settings?.pwaBackgroundColor || '#ffffff',
+    theme_color: settings?.pwaThemeColor || '#f59e0b',
     icons: [
       {
-        src: appendV(settings.pwaIcon192Url || settings.logoUrl || '/logo.png'),
+        src: appendV(effectivePwa192),
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: appendV(settings.pwaIcon512Url || settings.logoUrl || '/logo.png'),
+        src: appendV(effectivePwa512),
         sizes: '512x512',
         type: 'image/png',
       },
@@ -235,26 +240,28 @@ export function applySiteSettings(settings: SiteSettings): void {
     }
 
     // Dynamic Versioning Parameter for Cache-Busting
-    const v = settings.iconsUpdatedAt || Date.now();
+    const v = settings?.iconsUpdatedAt || Date.now();
     const withVersion = (url: string | undefined, defaultFallback: string) => {
       const target = (url && url.trim()) ? url.trim() : defaultFallback;
       if (!target) return '';
+      if (target.startsWith('data:')) return target;
       return target.includes('?') ? `${target}&v=${v}` : `${target}?v=${v}`;
     };
 
-    // Helper: update or inject <link> tags in <head>
+    // Helper: update or inject <link> tags with DOM replacement for instant browser favicon refresh
     const setLink = (id: string, rel: string, href: string, type?: string, sizes?: string) => {
       if (!href) return;
-      let link = document.getElementById(id) as HTMLLinkElement | null;
-      if (!link) {
-        link = document.createElement('link');
-        link.id = id;
-        document.head.appendChild(link);
+      const existing = document.getElementById(id);
+      if (existing) {
+        existing.remove();
       }
+      const link = document.createElement('link');
+      link.id = id;
       link.rel = rel;
       link.href = href;
       if (type) link.type = type;
       if (sizes) link.setAttribute('sizes', sizes);
+      document.head.appendChild(link);
     };
 
     // Helper: update or inject <meta> tags in <head>
@@ -270,14 +277,22 @@ export function applySiteSettings(settings: SiteSettings): void {
       meta.content = content;
     };
 
+    // Compute effective icon URLs (prioritize custom icon, fallback to custom logo, fallback to default)
+    const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/logo.png';
+    const effectiveIco = (settings?.faviconIcoUrl && settings.faviconIcoUrl !== '/favicon.ico') ? settings.faviconIcoUrl : effectiveLogo;
+    const effectivePng = (settings?.faviconPngUrl && settings.faviconPngUrl !== '/logo.png') ? settings.faviconPngUrl : effectiveLogo;
+    const effectiveApple = (settings?.appleTouchIconUrl && settings.appleTouchIconUrl !== '/logo.png') ? settings.appleTouchIconUrl : effectiveLogo;
+    const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : effectiveLogo;
+
     // 1. Browser & Shortcut Favicons
-    setLink('app-favicon-ico', 'icon', withVersion(settings.faviconIcoUrl, '/favicon.ico'), 'image/x-icon', 'any');
-    if (settings.faviconSvgUrl) {
+    setLink('app-favicon-ico', 'icon', withVersion(effectiveIco, '/favicon.ico'), 'image/x-icon', 'any');
+    if (settings?.faviconSvgUrl) {
       setLink('app-favicon-svg', 'icon', withVersion(settings.faviconSvgUrl, ''), 'image/svg+xml');
     }
-    setLink('app-favicon-png', 'icon', withVersion(settings.faviconPngUrl, settings.logoUrl || '/logo.png'), 'image/png', '32x32');
-    setLink('app-pwa-192', 'icon', withVersion(settings.pwaIcon192Url, settings.logoUrl || '/logo.png'), 'image/png', '192x192');
-    setLink('app-apple-touch-icon', 'apple-touch-icon', withVersion(settings.appleTouchIconUrl, settings.logoUrl || '/logo.png'), undefined, '180x180');
+    setLink('app-favicon-png', 'icon', withVersion(effectivePng, '/logo.png'), 'image/png', '32x32');
+    setLink('app-favicon-shortcut', 'shortcut icon', withVersion(effectivePng, '/logo.png'));
+    setLink('app-pwa-192', 'icon', withVersion(effectivePwa192, '/logo.png'), 'image/png', '192x192');
+    setLink('app-apple-touch-icon', 'apple-touch-icon', withVersion(effectiveApple, '/logo.png'), undefined, '180x180');
 
     // 2. Web App Manifest
     setLink('app-webmanifest-link', 'manifest', `/site.webmanifest?v=${v}`);
@@ -286,13 +301,13 @@ export function applySiteSettings(settings: SiteSettings): void {
     }
 
     // 3. PWA Theme Color
-    setMeta({ name: 'theme-color' }, settings.pwaThemeColor || '#f59e0b');
+    setMeta({ name: 'theme-color' }, settings?.pwaThemeColor || '#f59e0b');
 
     // 4. Open Graph & Social Meta Tags
     const canonicalUrl = typeof window !== 'undefined' ? window.location.href : 'https://epitotudas.hu';
-    const ogTitleText = settings.ogTitle || settings.siteTitle || 'ÉpítőTudás';
-    const ogDescText = settings.ogDescription || settings.tagline || 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek.';
-    const ogImgUrl = withVersion(settings.ogImageUrl || settings.logoUrl, '/logo.png');
+    const ogTitleText = settings?.ogTitle || settings?.siteTitle || 'ÉpítőTudás';
+    const ogDescText = settings?.ogDescription || settings?.tagline || 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek.';
+    const ogImgUrl = withVersion(settings?.ogImageUrl || effectiveLogo, '/logo.png');
 
     setMeta({ property: 'og:title' }, ogTitleText);
     setMeta({ property: 'og:description' }, ogDescText);

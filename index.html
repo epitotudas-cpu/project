@@ -36,9 +36,14 @@
             return u.indexOf('?') !== -1 ? u + '&v=' + v : u + '?v=' + v;
           };
 
-          var icoUrl = appendV(s.faviconIcoUrl || '/favicon.ico');
-          var pngUrl = appendV(s.faviconPngUrl || s.logoUrl || '/logo.png');
-          var appleUrl = appendV(s.appleTouchIconUrl || s.logoUrl || '/logo.png');
+          var effectiveLogo = (s.logoUrl && s.logoUrl !== '/logo.png') ? s.logoUrl : '/logo.png';
+          var effectiveIco = (s.faviconIcoUrl && s.faviconIcoUrl !== '/favicon.ico') ? s.faviconIcoUrl : effectiveLogo;
+          var effectivePng = (s.faviconPngUrl && s.faviconPngUrl !== '/logo.png') ? s.faviconPngUrl : effectiveLogo;
+          var effectiveApple = (s.appleTouchIconUrl && s.appleTouchIconUrl !== '/logo.png') ? s.appleTouchIconUrl : effectiveLogo;
+
+          var icoUrl = appendV(effectiveIco);
+          var pngUrl = appendV(effectivePng);
+          var appleUrl = appendV(effectiveApple);
 
           var elIco = document.getElementById('app-favicon-ico');
           if (elIco) elIco.href = icoUrl;
