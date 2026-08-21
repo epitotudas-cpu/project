@@ -23,8 +23,7 @@ import {
   incrementTrustScore,
   type UserTrustProfile,
 } from '../services/trustService';
-import { useToast } from '../components/ToastProvider';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
   admin: { label: 'Adminisztrátor', class: 'bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/30' },
@@ -123,40 +122,26 @@ export default function AdminUsersPage() {
     }));
   }
 
-  async function handleAdjustScore(userId: string, points: number) {
-    const updated = await incrementTrustScore(userId, points);
+  async function handleAdjustScore(userId: string, delta: number) {
+    const updated = await incrementTrustScore(userId, delta);
     setTrustProfiles((prev) => ({
       ...prev,
       [userId]: updated,
     }));
   }
 
-  async function handleDeleteUser(targetUser: Profile) {
-    if (currentUser?.id === targetUser.id) {
-      alert('Saját magadat nem törölheted az admin felületen!');
+  async function handleDeleteUser(userToDelete: Profile) {
+    if (!window.confirm(`Biztosan törölni szeretnéd "${userToDelete.full_name || userToDelete.email}" fiókját? Ez a művelet visszavonhatatlan!`)) {
       return;
     }
 
-    const nameStr = targetUser.full_name || targetUser.email || 'felhasználó';
-    if (
-      !window.confirm(
-        `Biztosan törölni szeretnéd a(z) "${nameStr}" (${targetUser.email || targetUser.id}) felhasználót?\n\nEz a művelet végleges és nem visszavonható!`
-      )
-    ) {
-      return;
-    }
-
-    setDeletingId(targetUser.id);
-    setError(null);
-    setSuccessMsg(null);
-
+    setDeletingId(userToDelete.id);
     try {
-      await deleteUser(targetUser.id);
-      setUsers((prev) => prev.filter((u) => u.id !== targetUser.id));
-      if (selectedUserDetail?.id === targetUser.id) {
+      await deleteUser(userToDelete.id);
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+      if (selectedUserDetail?.id === userToDelete.id) {
         setSelectedUserDetail(null);
       }
-      setSuccessMsg(`A(z) "${nameStr}" felhasználó sikeresen törölve lett.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'A felhasználó törlése nem sikerült.');
     } finally {
@@ -213,8 +198,16 @@ export default function AdminUsersPage() {
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
   const inputBg = adjustColorBrightness(cardBg, -4);
   const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
 
   return (
     <div className="p-6 lg:p-8 space-y-6" style={{ color: textColor }}>
