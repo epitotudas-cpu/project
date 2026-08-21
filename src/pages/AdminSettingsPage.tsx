@@ -872,7 +872,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           {/* Right Column: Theme & Live Preview */}
           <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
             <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Palette size={20} className="text-accent" /> Színtéma & Paletták
+              <Palette size={20} className="text-accent" /> Színtéma &amp; Paletták
             </h2>
 
             <div className="space-y-3">
@@ -881,10 +881,11 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 {PRESET_PALETTES.map((preset) => (
                   <button
                     key={preset.name}
+                    type="button"
                     onClick={() => {
                       const updated = { ...settings, primaryColor: preset.primary };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
                       settings.primaryColor === preset.primary
@@ -908,7 +909,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   onChange={(e) => {
                     const updated = { ...settings, primaryColor: e.target.value };
                     setSettings(updated);
-                    applySiteSettings(updated);
+                    saveSiteSettings(updated);
                   }}
                   className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                 />
@@ -918,7 +919,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   onChange={(e) => {
                     const updated = { ...settings, primaryColor: e.target.value };
                     setSettings(updated);
-                    applySiteSettings(updated);
+                    saveSiteSettings(updated);
                   }}
                   className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
                 />
@@ -967,7 +968,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       onClick={() => {
                         const updated = { ...settings, adminAccentColor: preset.color };
                         setSettings(updated);
-                        applySiteSettings(updated);
+                        saveSiteSettings(updated);
                       }}
                       className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
                         (settings.adminAccentColor || '#FFC400') === preset.color
@@ -988,7 +989,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminAccentColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                   />
@@ -998,7 +999,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminAccentColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
                   />
@@ -1016,7 +1017,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       onClick={() => {
                         const updated = { ...settings, adminBgColor: preset.color };
                         setSettings(updated);
-                        applySiteSettings(updated);
+                        saveSiteSettings(updated);
                       }}
                       className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
                         (settings.adminBgColor || '#0A0A0A') === preset.color
@@ -1037,7 +1038,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminBgColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                   />
@@ -1047,7 +1048,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminBgColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
                   />
@@ -1065,7 +1066,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       onClick={() => {
                         const updated = { ...settings, adminCardBgColor: preset.color };
                         setSettings(updated);
-                        applySiteSettings(updated);
+                        saveSiteSettings(updated);
                       }}
                       className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
                         (settings.adminCardBgColor || '#111111') === preset.color
@@ -1086,7 +1087,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminCardBgColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                   />
@@ -1096,7 +1097,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminCardBgColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
                   />
@@ -1114,7 +1115,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       onClick={() => {
                         const updated = { ...settings, adminCardHighlightColor: preset.color };
                         setSettings(updated);
-                        applySiteSettings(updated);
+                        saveSiteSettings(updated);
                       }}
                       className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
                         (settings.adminCardHighlightColor || '#FFC400') === preset.color
@@ -1135,7 +1136,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminCardHighlightColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                   />
@@ -1145,7 +1146,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     onChange={(e) => {
                       const updated = { ...settings, adminCardHighlightColor: e.target.value };
                       setSettings(updated);
-                      applySiteSettings(updated);
+                      saveSiteSettings(updated);
                     }}
                     className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
                   />
@@ -1207,6 +1208,18 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Explicit Arculat Mentése Button */}
+              <div className="pt-6 border-t border-[#222] flex items-center justify-between gap-4">
+                <p className="text-xs text-gray-400">A kiválasztott arculati és admin színek azonnal mentésre és alkalmazásra kerülnek.</p>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                >
+                  <Save size={16} /> Arculat &amp; Színek Mentése
+                </button>
               </div>
             </div>
           </div>
