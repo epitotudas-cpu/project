@@ -9,7 +9,7 @@ import {
 import { slugify } from '../lib/slugify';
 import type { Article, Category } from '../lib/supabase';
 import { createArticle, updateArticle } from '../services/articleService';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface EditArticleModalProps {
   article: Article | null; // null = create mode
@@ -901,10 +901,22 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const headerBg = adjustColorBrightness(cardBg, 4);
+  const sectionBg = adjustColorBrightness(cardBg, 3);
+  const blockBg = adjustColorBrightness(cardBg, -3);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
 
-  const fieldClass =
-    'w-full border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors';
-  const labelClass = 'block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide';
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors';
+  const labelClass = 'block text-xs font-bold mb-1.5 uppercase tracking-wide';
+  const labelStyle: React.CSSProperties = {
+    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md">
@@ -1038,18 +1050,19 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
             /* EDITOR FORM VIEW */
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* SECTION 1: CIKK ADATAI */}
-              <div className="bg-[#141414] border border-[#222] rounded-2xl p-5 space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#222]">
-                  <BookMarked size={18} className="text-[#FFC400]" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-[#FFC400]">
+              <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-4 shadow-sm">
+                <div style={{ borderColor: cardBorder }} className="flex items-center gap-2 pb-2 border-b">
+                  <BookMarked size={18} style={{ color: cardHighlight }} />
+                  <h3 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
                     1. Cikk Alapadatok &amp; Megjelenés
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>Cikk Címe <span className="text-red-400">*</span></label>
+                    <label style={labelStyle} className={labelClass}>Cikk Címe <span className="text-red-400">*</span></label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       value={form.title}
                       onChange={(e) => handleTitleChange(e.target.value)}
@@ -1057,8 +1070,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>URL-Azonosító (Slug) <span className="text-red-400">*</span></label>
+                    <label style={labelStyle} className={labelClass}>URL-Azonosító (Slug) <span className="text-red-400">*</span></label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       value={form.slug}
                       onChange={(e) => handleSlugChange(e.target.value)}
@@ -1069,12 +1083,13 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className={labelClass}>Rövid Kivonat (Csempe leírás)</label>
+                    <label style={labelStyle} className={labelClass}>Rövid Kivonat (Csempe leírás)</label>
                     <span className={`text-[11px] font-mono ${form.excerpt.length > 180 ? 'text-amber-400' : 'text-gray-500'}`}>
                       {form.excerpt.length} kar.
                     </span>
                   </div>
                   <textarea
+                    style={fieldStyle}
                     className={`${fieldClass} resize-none`}
                     rows={2}
                     value={form.excerpt}
@@ -1085,8 +1100,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className={labelClass}>Borítókép URL</label>
+                    <label style={labelStyle} className={labelClass}>Borítókép URL</label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       value={form.featured_image}
                       onChange={(e) => updateForm('featured_image', e.target.value)}
@@ -1095,8 +1111,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                   </div>
 
                   <div>
-                    <label className={labelClass}>Kategória</label>
+                    <label style={labelStyle} className={labelClass}>Kategória</label>
                     <select
+                      style={fieldStyle}
                       className={fieldClass}
                       value={form.category_id}
                       onChange={(e) => updateForm('category_id', e.target.value)}
@@ -1109,8 +1126,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                   </div>
 
                   <div>
-                    <label className={labelClass}>Publikálási Státusz</label>
+                    <label style={labelStyle} className={labelClass}>Publikálási Státusz</label>
                     <select
+                      style={fieldStyle}
                       className={fieldClass}
                       value={form.status}
                       onChange={(e) => updateForm('status', e.target.value as Article['status'])}
@@ -1125,11 +1143,12 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className={labelClass}>Olvasási Idő (perc)</label>
+                      <label style={labelStyle} className={labelClass}>Olvasási Idő (perc)</label>
                       <button
                         type="button"
                         onClick={handleAutoReadTime}
-                        className="text-[11px] text-[#FFC400] font-bold hover:underline flex items-center gap-1"
+                        style={{ color: cardHighlight }}
+                        className="text-[11px] font-bold hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         <Calculator size={11} /> Automatikus Számítás
                       </button>
@@ -1137,6 +1156,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                     <input
                       type="number"
                       min={1}
+                      style={fieldStyle}
                       className={fieldClass}
                       value={form.read_time}
                       onChange={(e) => updateForm('read_time', Number(e.target.value))}
@@ -1144,8 +1164,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                   </div>
 
                   <div>
-                    <label className={labelClass}>Szerző / Forrás</label>
+                    <label style={labelStyle} className={labelClass}>Szerző / Forrás</label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       value={form.author}
                       onChange={(e) => updateForm('author', e.target.value)}
@@ -1156,10 +1177,10 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
               </div>
 
               {/* SECTION 2: KEZDŐSABLONOK */}
-              <div className="p-4 bg-[#141414] border border-[#222] rounded-2xl space-y-3">
+              <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-[#FFC400]" />
-                  <span className="text-xs font-black uppercase text-gray-300 tracking-wide">
+                  <Sparkles size={16} style={{ color: cardHighlight }} />
+                  <span style={{ color: textColor }} className="text-xs font-black uppercase tracking-wide">
                     Opcionális Kezdősablon Betöltése:
                   </span>
                 </div>
@@ -1169,10 +1190,11 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                       key={key}
                       type="button"
                       onClick={() => applyTemplate(key)}
-                      className="p-2.5 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-left transition-colors flex flex-col justify-between group"
+                      style={{ backgroundColor: blockBg, borderColor: cardBorder, color: textColor }}
+                      className="p-2.5 border rounded-xl text-left transition-colors flex flex-col justify-between group cursor-pointer hover:opacity-90"
                     >
                       <span className="text-base mb-1">{t.icon}</span>
-                      <span className="text-xs font-bold text-gray-200 group-hover:text-[#FFC400]">
+                      <span style={{ color: textColor }} className="text-xs font-bold truncate">
                         {t.name}
                       </span>
                     </button>
@@ -1181,11 +1203,11 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
               </div>
 
               {/* SECTION 3: CIKK TARTALMA (BLOKKALAPÚ EDITOR) */}
-              <div className="bg-[#141414] border border-[#222] rounded-2xl p-5 space-y-6">
-                <div className="flex items-center justify-between pb-3 border-b border-[#222]">
+              <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-6 shadow-sm">
+                <div style={{ borderColor: cardBorder }} className="flex items-center justify-between pb-3 border-b">
                   <div className="flex items-center gap-2">
-                    <FileText size={18} className="text-[#FFC400]" />
-                    <h3 className="text-xs font-black uppercase tracking-wider text-[#FFC400]">
+                    <FileText size={18} style={{ color: cardHighlight }} />
+                    <h3 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
                       2. Cikk Tartalma ({blocks.length} blokk)
                     </h3>
                   </div>
@@ -1196,9 +1218,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                 {/* BLOCK LIST */}
                 {blocks.length === 0 ? (
-                  <div className="text-center py-10 bg-[#0A0A0A] border border-dashed border-[#333] rounded-2xl space-y-3">
+                  <div style={{ backgroundColor: blockBg, borderColor: cardBorder }} className="text-center py-10 border border-dashed rounded-2xl space-y-3">
                     <Type size={32} className="mx-auto text-gray-600" />
-                    <p className="text-sm text-gray-400 font-medium">A cikk jelenleg üres.</p>
+                    <p className="text-sm font-medium" style={{ color: textColor }}>A cikk jelenleg üres.</p>
                     <p className="text-xs text-gray-500">Kattints az alábbi gombok egyikére a tartalom felépítéséhez!</p>
                   </div>
                 ) : (
@@ -1206,15 +1228,16 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                     {blocks.map((block, idx) => (
                       <div
                         key={block.id}
-                        className="bg-[#0A0A0A] border border-[#222] rounded-xl p-4 space-y-3 relative group transition-colors hover:border-[#333]"
+                        style={{ backgroundColor: blockBg, borderColor: cardBorder }}
+                        className="border rounded-xl p-4 space-y-3 relative group transition-colors shadow-sm"
                       >
                         {/* BLOCK CONTROLS HEADER */}
-                        <div className="flex items-center justify-between pb-2 border-b border-[#1A1A1A]">
+                        <div style={{ borderColor: cardBorder }} className="flex items-center justify-between pb-2 border-b">
                           <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-[#1E1E1E] text-[#FFC400] text-[10px] font-bold flex items-center justify-center">
+                            <span style={{ backgroundColor: sectionBg, color: cardHighlight }} className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center">
                               {idx + 1}
                             </span>
-                            <span className="text-xs font-black uppercase tracking-wider text-gray-300">
+                            <span style={{ color: textColor }} className="text-xs font-black uppercase tracking-wider">
                               {block.type === 'text' && '📝 Szöveg'}
                               {block.type === 'heading' && `📌 Címsor (${block.level || 'h2'})`}
                               {block.type === 'image' && '🖼️ Kép'}

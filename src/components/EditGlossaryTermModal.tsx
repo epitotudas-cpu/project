@@ -3,7 +3,7 @@ import { X, Save, AlertCircle, Image, Video, Info } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { GlossaryTerm } from '../lib/supabase';
 import { createGlossaryTerm, updateGlossaryTerm } from '../services/glossaryService';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 function isValidUrl(url: string): boolean {
   if (!url.trim()) return true;
@@ -280,21 +280,32 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
 
-  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors';
-  const labelClass = 'block text-[10px] font-bold text-gray-400 mb-1';
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors';
+  const labelClass = 'block text-[10px] font-bold uppercase tracking-wide mb-1';
+  const labelStyle: React.CSSProperties = {
+    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
       <div
-        style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+        style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
         className="border rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
       >
         <div
           style={{ backgroundColor: headerBg, borderColor: cardBorder }}
           className="px-6 py-4 border-b flex items-center justify-between"
         >
-          <h2 className="text-lg font-black text-white">
+          <h2 style={{ color: textColor }} className="text-lg font-black">
             {isCreate ? 'Új fogalom hozzáadása' : `Fogalom szerkesztése: ${term?.term}`}
           </h2>
           <button onClick={onClose} disabled={saving} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">

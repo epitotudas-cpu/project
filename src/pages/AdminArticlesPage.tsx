@@ -6,7 +6,7 @@ import { listCategories } from '../services/categoryService';
 import { useToast } from '../components/ToastProvider';
 import EditArticleModal from '../components/EditArticleModal';
 import ArticleSettingsModal from '../components/ArticleSettingsModal';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface ArticleRow extends Article {
   categories: { name: string } | null;
@@ -146,16 +146,24 @@ export default function AdminArticlesPage() {
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const inputStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
 
   const selectClass =
-    'border rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none transition-colors';
+    'border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors';
 
   return (
-    <div className="p-8">
+    <div className="p-8" style={{ color: textColor }}>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-white">Cikkek</h1>
-          <p className="text-sm text-gray-500 mt-1">{totalCount} cikk összesen</p>
+          <h1 style={{ color: textColor }} className="text-2xl font-black">Cikkek Kezelője</h1>
+          <p className="text-sm text-gray-400 mt-1">{totalCount} cikk összesen</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -179,8 +187,8 @@ export default function AdminArticlesPage() {
           {!loading && (
             <button
               onClick={loadArticles}
-              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-              className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+              className="inline-flex items-center gap-2 px-3 py-2 border text-sm font-bold rounded-lg hover:opacity-90 transition-colors"
             >
               <RefreshCw size={14} /> Frissítés
             </button>
@@ -191,17 +199,17 @@ export default function AdminArticlesPage() {
       {/* Filters */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Keresés cím szerint..."
-            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors"
+            style={inputStyle}
+            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
         <select
-          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          style={inputStyle}
           className={selectClass}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
@@ -212,7 +220,7 @@ export default function AdminArticlesPage() {
           <option value="published">Közzétéve</option>
         </select>
         <select
-          style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+          style={inputStyle}
           className={selectClass}
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}

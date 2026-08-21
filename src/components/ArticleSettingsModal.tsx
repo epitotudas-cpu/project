@@ -44,9 +44,21 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
     }
   }
 
-  const fieldClass =
-    'w-full border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors';
-  const labelClass = 'block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide';
+  const sectionBg = adjustColorBrightness(cardBg, 3);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors';
+  const labelClass = 'block text-xs font-bold mb-1.5 uppercase tracking-wide';
+  const labelStyle: React.CSSProperties = {
+    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
+  };
 
   return (
     <div
@@ -54,7 +66,7 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
       onClick={() => !saving && onClose()}
     >
       <div
-        style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+        style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
         className="border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -65,9 +77,9 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
         >
           <div className="flex items-center gap-2">
             <Settings style={{ color: cardHighlight }} size={20} />
-            <h2 className="text-base font-black text-white">Tudástár – Cikkek és szűrők beállításai</h2>
+            <h2 style={{ color: textColor }} className="text-base font-black">Tudástár – Cikkek és szűrők beállításai</h2>
           </div>
-          <button onClick={onClose} disabled={saving} className="text-gray-500 hover:text-gray-300 disabled:opacity-40">
+          <button onClick={onClose} disabled={saving} className="text-gray-400 hover:text-white disabled:opacity-40 cursor-pointer">
             <X size={18} />
           </button>
         </div>
@@ -76,14 +88,15 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
         <form onSubmit={handleSave} className="px-6 py-5 space-y-6">
           
           {/* Page Titles */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase text-[#FFC400] tracking-wider">
+          <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-4 shadow-sm">
+            <h3 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
               1. Nyilvános Oldal Fejléc &amp; SEO Szövegek
             </h3>
             
             <div>
-              <label className={labelClass}>Oldalcím</label>
+              <label style={labelStyle} className={labelClass}>Oldalcím</label>
               <input
+                style={fieldStyle}
                 className={fieldClass}
                 value={form.articlesPageTitle}
                 onChange={(e) => update('articlesPageTitle', e.target.value)}
@@ -92,8 +105,9 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
             </div>
 
             <div>
-              <label className={labelClass}>Bevezető Szöveg</label>
+              <label style={labelStyle} className={labelClass}>Bevezető Szöveg</label>
               <textarea
+                style={fieldStyle}
                 className={`${fieldClass} resize-none`}
                 rows={2}
                 value={form.articlesPageDescription}
@@ -104,18 +118,19 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
           </div>
 
           {/* Grid Layout & Pagination */}
-          <div className="space-y-4 pt-4 border-t border-[#222]">
-            <h3 className="text-xs font-black uppercase text-[#FFC400] tracking-wider">
+          <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-4 shadow-sm">
+            <h3 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
               2. Megjelenítés &amp; Rács Elrendezés
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Oldalankénti Cikkszám</label>
+                <label style={labelStyle} className={labelClass}>Oldalankénti Cikkszám</label>
                 <input
                   type="number"
                   min={3}
                   max={48}
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.articlesPerPage}
                   onChange={(e) => update('articlesPerPage', Number(e.target.value))}
@@ -123,8 +138,9 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
               </div>
 
               <div>
-                <label className={labelClass}>Asztali Oszlopszám</label>
+                <label style={labelStyle} className={labelClass}>Asztali Oszlopszám</label>
                 <select
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.desktopGridColumns}
                   onChange={(e) => update('desktopGridColumns', Number(e.target.value) as 2 | 3 | 4)}
@@ -138,8 +154,9 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Alapértelmezett Rendezési Mód</label>
+                <label style={labelStyle} className={labelClass}>Alapértelmezett Rendezési Mód</label>
                 <select
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.defaultSortMode}
                   onChange={(e) => update('defaultSortMode', e.target.value as ArticleSettings['defaultSortMode'])}
@@ -152,12 +169,12 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
               </div>
 
               <div className="flex items-center pt-6">
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-300">
+                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold" style={{ color: textColor }}>
                   <input
                     type="checkbox"
                     checked={form.showLoadMoreButton}
                     onChange={(e) => update('showLoadMoreButton', e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-700 text-[#FFC400] focus:ring-[#FFC400]"
+                    className="w-4 h-4 rounded"
                   />
                   <span>„További cikkek betöltése” gomb engedélyezése</span>
                 </label>
@@ -166,61 +183,61 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
           </div>
 
           {/* Section Visibility & Toggles */}
-          <div className="space-y-4 pt-4 border-t border-[#222]">
-            <h3 className="text-xs font-black uppercase text-[#FFC400] tracking-wider">
+          <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-4 shadow-sm">
+            <h3 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
               3. Blokkok &amp; Statisztikák Megjelenítése
             </h3>
 
             <div className="space-y-3">
-              <label className="flex items-center justify-between p-3 bg-[#161616] border border-[#222] rounded-xl cursor-pointer">
+              <label style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center justify-between p-3 border rounded-xl cursor-pointer">
                 <div>
-                  <span className="text-xs font-extrabold text-white block">Nagy Kategóriacsempe-blokk megjelenítése</span>
-                  <span className="text-[11px] text-gray-500">Alapértelmezetten KIKAPCSOLVA (a cikkrács közvetlenül a szűrők alá kerül).</span>
+                  <span style={{ color: textColor }} className="text-xs font-extrabold block">Nagy Kategóriacsempe-blokk megjelenítése</span>
+                  <span className="text-[11px] text-gray-400">Alapértelmezetten KIKAPCSOLVA (a cikkrács közvetlenül a szűrők alá kerül).</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={form.showCategoryTilesBlock}
                   onChange={(e) => update('showCategoryTilesBlock', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-700 text-[#FFC400] focus:ring-[#FFC400]"
+                  className="w-4 h-4 rounded"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-[#161616] border border-[#222] rounded-xl cursor-pointer">
+              <label style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center justify-between p-3 border rounded-xl cursor-pointer">
                 <div>
-                  <span className="text-xs font-extrabold text-white block">Üres kategóriák megjelenítése a szűrőben</span>
-                  <span className="text-[11px] text-gray-500">Engedélyezi a 0 cikkes kategóriák láthatóságát a szűrőpanelben.</span>
+                  <span style={{ color: textColor }} className="text-xs font-extrabold block">Üres kategóriák megjelenítése a szűrőben</span>
+                  <span className="text-[11px] text-gray-400">Engedélyezi a 0 cikkes kategóriák láthatóságát a szűrőpanelben.</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={form.showEmptyCategoriesInFilter}
                   onChange={(e) => update('showEmptyCategoriesInFilter', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-700 text-[#FFC400] focus:ring-[#FFC400]"
+                  className="w-4 h-4 rounded"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-[#161616] border border-[#222] rounded-xl cursor-pointer">
+              <label style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center justify-between p-3 border rounded-xl cursor-pointer">
                 <div>
-                  <span className="text-xs font-extrabold text-white block">Megtekintések számának megjelenítése a csempéken</span>
-                  <span className="text-[11px] text-gray-500">Alapértelmezetten KIKAPCSOLVA (csak valós, automatikus statisztika jelenhet meg).</span>
+                  <span style={{ color: textColor }} className="text-xs font-extrabold block">Megtekintések számának megjelenítése a csempéken</span>
+                  <span className="text-[11px] text-gray-400">Alapértelmezetten KIKAPCSOLVA (csak valós, automatikus statisztika jelenhet meg).</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={form.showViewCount}
                   onChange={(e) => update('showViewCount', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-700 text-[#FFC400] focus:ring-[#FFC400]"
+                  className="w-4 h-4 rounded"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-[#161616] border border-[#222] rounded-xl cursor-pointer">
+              <label style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center justify-between p-3 border rounded-xl cursor-pointer">
                 <div>
-                  <span className="text-xs font-extrabold text-white block">Értékelések (csillagok) megjelenítése a csempéken</span>
-                  <span className="text-[11px] text-gray-500">Alapértelmezetten KIKAPCSOLVA (csak valós szavazatok meglétekor jelenhet meg).</span>
+                  <span style={{ color: textColor }} className="text-xs font-extrabold block">Értékelések (csillagok) megjelenítése a csempéken</span>
+                  <span className="text-[11px] text-gray-400">Alapértelmezetten KIKAPCSOLVA (csak valós szavazatok meglétekor jelenhet meg).</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={form.showRatings}
                   onChange={(e) => update('showRatings', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-700 text-[#FFC400] focus:ring-[#FFC400]"
+                  className="w-4 h-4 rounded"
                 />
               </label>
             </div>
