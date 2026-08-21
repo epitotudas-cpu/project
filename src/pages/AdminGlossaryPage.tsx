@@ -139,15 +139,19 @@ export default function AdminGlossaryPage() {
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
 
   /* ── Render ───────────────────────────────────────────── */
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 space-y-6" style={{ color: textColor }}>
       {/* ── Fejléc ── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
-          <h1 className="text-2xl font-black text-white">Fogalomtár</h1>
-          <p className="text-sm text-gray-500 mt-1">{terms.length} fogalom összesen</p>
+          <h1 style={{ color: textColor }} className="text-2xl font-black flex items-center gap-2.5">
+            <BookOpen style={{ color: cardHighlight }} size={28} /> Fogalomtár Kezelő
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">{terms.length} fogalom összesen</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -171,8 +175,8 @@ export default function AdminGlossaryPage() {
           </button>
           <button
             onClick={() => setImportValidationOpen(true)}
-            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-            className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+            className="inline-flex items-center gap-2 px-3 py-2 border text-sm font-bold rounded-lg hover:opacity-90 transition-colors cursor-pointer"
             title="JSON fájl beolvasása és validálása"
           >
             <FileJson size={14} /> JSON validálás
@@ -180,8 +184,8 @@ export default function AdminGlossaryPage() {
           {!loading && (
             <button
               onClick={loadTerms}
-              style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-              className="inline-flex items-center gap-2 px-3 py-2 border text-gray-300 text-sm font-bold rounded-lg hover:text-white transition-colors"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="inline-flex items-center gap-2 px-3 py-2 border text-sm font-bold rounded-lg hover:opacity-90 transition-colors cursor-pointer"
             >
               <RefreshCw size={14} /> Frissítés
             </button>
@@ -191,28 +195,28 @@ export default function AdminGlossaryPage() {
 
       {/* ── Stat kártyák ── */}
       {!loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Összes fogalom', value: stats.total, icon: <BookOpen size={16} />, color: 'text-[#FFC400]' },
-            { label: 'Szakmai fogalom', value: stats.technical, icon: <Hash size={16} />, color: 'text-blue-400' },
-            { label: 'Zsargon / Szleng', value: stats.industry, icon: <Tag size={16} />, color: 'text-amber-400' },
-            { label: 'Fordítással', value: stats.withTranslations, icon: <Globe size={16} />, color: 'text-emerald-400' },
+            { label: 'Összes fogalom', value: stats.total, icon: <BookOpen size={16} />, color: cardHighlight },
+            { label: 'Szakmai fogalom', value: stats.technical, icon: <Hash size={16} />, color: '#60A5FA' },
+            { label: 'Zsargon / Szleng', value: stats.industry, icon: <Tag size={16} />, color: '#F59E0B' },
+            { label: 'Fordítással', value: stats.withTranslations, icon: <Globe size={16} />, color: '#34D399' },
           ].map((s) => (
             <div
               key={s.label}
               style={{ backgroundColor: cardBg, borderColor: cardBorder }}
               className="border rounded-xl p-4 shadow-sm"
             >
-              <div className={`${s.color} mb-2`}>{s.icon}</div>
-              <div className="text-2xl font-black text-white">{s.value}</div>
-              <div className="text-xs text-gray-500 mt-0.5 font-medium">{s.label}</div>
+              <div style={{ color: s.color }} className="mb-2">{s.icon}</div>
+              <div style={{ color: textColor }} className="text-2xl font-black">{s.value}</div>
+              <div className="text-xs text-gray-400 mt-0.5 font-medium">{s.label}</div>
             </div>
           ))}
         </div>
       )}
 
       {/* ── Keresés + szűrők ── */}
-      <div className="flex items-center gap-3 flex-wrap mb-4">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -220,13 +224,13 @@ export default function AdminGlossaryPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Keresés fogalom, definíció vagy témakör..."
-            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-            className="w-full border rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+            className="w-full border rounded-lg pl-9 pr-4 py-2.5 text-sm placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
 
         {/* Típus szűrő */}
-        <div className="flex items-center gap-1 bg-[#0A0A0A] border border-[#1E1E1E] p-1 rounded-lg">
+        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center gap-1 border p-1 rounded-lg">
           {[
             { key: 'all', label: 'Összes' },
             { key: 'technical_concept', label: '📘 Szakmai' },
@@ -235,10 +239,13 @@ export default function AdminGlossaryPage() {
             <button
               key={f.key}
               onClick={() => setFilterType(f.key as typeof filterType)}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+              style={
                 filterType === f.key
-                  ? 'bg-[#FFC400] text-black'
-                  : 'text-gray-400 hover:text-white'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { color: textColor }
+              }
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                filterType === f.key ? 'font-extrabold' : 'hover:opacity-80'
               }`}
             >
               {f.label}
@@ -247,17 +254,27 @@ export default function AdminGlossaryPage() {
         </div>
 
         {/* Grid / Lista nézet váltó */}
-        <div className="flex items-center gap-1 bg-[#0A0A0A] border border-[#1E1E1E] p-1 rounded-lg ml-auto">
+        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center gap-1 border p-1 rounded-lg ml-auto">
           <button
             onClick={() => setViewMode('grid')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${viewMode === 'grid' ? 'bg-[#1E1E1E] text-white' : 'text-gray-500 hover:text-white'}`}
+            style={
+              viewMode === 'grid'
+                ? { backgroundColor: cardHighlight, color: '#000000' }
+                : { color: textColor }
+            }
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === 'grid' ? 'font-extrabold' : 'hover:opacity-80'}`}
             title="Rács nézet"
           >
             ⊞ Rács
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-[#1E1E1E] text-white' : 'text-gray-500 hover:text-white'}`}
+            style={
+              viewMode === 'list'
+                ? { backgroundColor: cardHighlight, color: '#000000' }
+                : { color: textColor }
+            }
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === 'list' ? 'font-extrabold' : 'hover:opacity-80'}`}
             title="Lista nézet"
           >
             ☰ Lista
@@ -267,7 +284,7 @@ export default function AdminGlossaryPage() {
 
       {/* ── Hiba ── */}
       {error && (
-        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
           <AlertCircle size={18} className="text-red-400 flex-shrink-0" />
           <p className="text-red-400 text-sm flex-1">{error}</p>
           <button onClick={loadTerms} className="text-red-400 text-sm font-bold hover:text-red-300">
@@ -278,18 +295,20 @@ export default function AdminGlossaryPage() {
 
       {/* ── Batch akció sáv ── */}
       {selected.size > 0 && !loading && (
-        <div className="mb-4 p-4 bg-[#0A0A0A] border border-[#FFC400]/30 rounded-xl flex items-center gap-3 flex-wrap">
-          <ListChecks size={18} className="text-[#FFC400] flex-shrink-0" />
-          <span className="text-sm font-bold text-white">{selected.size} kijelölve</span>
+        <div style={{ backgroundColor: cardBg, borderColor: `${cardHighlight}60` }} className="p-4 border rounded-xl flex items-center gap-3 flex-wrap shadow-md">
+          <ListChecks size={18} style={{ color: cardHighlight }} className="flex-shrink-0" />
+          <span style={{ color: textColor }} className="text-sm font-bold">{selected.size} kijelölve</span>
           <button
             onClick={openBatch}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFC400] text-black text-xs font-black rounded-md hover:bg-[#E6B000] transition-colors"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-md hover:opacity-90 transition-colors cursor-pointer shadow-sm"
           >
             <Pencil size={12} /> Csoportos szerkesztés
           </button>
           <button
             onClick={clearSelection}
-            className="inline-flex items-center px-3 py-1.5 text-xs font-bold text-gray-400 border border-[#1E1E1E] rounded-md hover:bg-[#1E1E1E] hover:text-white transition-colors"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+            className="inline-flex items-center px-3 py-1.5 text-xs font-bold border rounded-md hover:opacity-90 transition-colors cursor-pointer"
           >
             Kijelölés törlése
           </button>
@@ -298,13 +317,13 @@ export default function AdminGlossaryPage() {
 
       {/* ── "Mind kijelölése" ── */}
       {!loading && filtered.length > 0 && (
-        <div className="flex items-center gap-3 px-1 pb-3">
-          <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wide cursor-pointer select-none">
+        <div className="flex items-center gap-3 px-1 pb-1">
+          <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide cursor-pointer select-none">
             <input
               type="checkbox"
               checked={selected.size === filtered.length && filtered.length > 0}
               onChange={toggleSelectAll}
-              className="h-4 w-4 rounded border-[#1E1E1E] bg-[#0A0A0A] text-[#FFC400] focus:ring-[#FFC400]/50"
+              className="h-4 w-4 rounded cursor-pointer"
             />
             Mind kijelölése ({filtered.length})
           </label>
@@ -315,10 +334,10 @@ export default function AdminGlossaryPage() {
       {loading && (
         <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-3'}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-[#111] border border-[#1E1E1E] rounded-xl p-5">
-              <div className="h-5 w-36 bg-[#1E1E1E] rounded animate-pulse" />
-              <div className="h-3 w-full bg-[#1E1E1E] rounded animate-pulse mt-3" />
-              <div className="h-3 w-2/3 bg-[#1E1E1E] rounded animate-pulse mt-2" />
+            <div key={i} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-xl p-5">
+              <div style={{ backgroundColor: cardBorder }} className="h-5 w-36 rounded animate-pulse" />
+              <div style={{ backgroundColor: cardBorder }} className="h-3 w-full rounded animate-pulse mt-3" />
+              <div style={{ backgroundColor: cardBorder }} className="h-3 w-2/3 rounded animate-pulse mt-2" />
             </div>
           ))}
         </div>
@@ -326,13 +345,13 @@ export default function AdminGlossaryPage() {
 
       {/* ── Üres állapot ── */}
       {!loading && filtered.length === 0 && (
-        <div className="bg-[#111] border border-[#1E1E1E] rounded-xl p-16 text-center">
-          <BookOpen size={32} className="mx-auto text-gray-700 mb-3" />
-          <p className="text-gray-500 text-sm">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-xl p-16 text-center shadow-lg">
+          <BookOpen size={32} className="mx-auto text-gray-500 mb-3" />
+          <p className="text-gray-400 text-sm">
             {query || filterType !== 'all' ? 'Nincs a keresésnek megfelelő fogalom.' : 'Még nincs fogalom.'}
           </p>
           {!query && (
-            <button onClick={openCreate} className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] transition-colors">
+            <button onClick={openCreate} style={{ backgroundColor: cardHighlight, color: '#000000' }} className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 transition-colors cursor-pointer shadow-md">
               <Plus size={14} /> Első fogalom létrehozása
             </button>
           )}
@@ -345,9 +364,11 @@ export default function AdminGlossaryPage() {
           {filtered.map((t) => (
             <div
               key={t.id}
-              className={`bg-[#111] border rounded-2xl p-5 hover:border-[#FFC400]/30 transition-all duration-200 group relative flex flex-col gap-3 ${
-                selected.has(t.id) ? 'border-[#FFC400]/50' : 'border-[#1E1E1E]'
-              }`}
+              style={{
+                backgroundColor: cardBg,
+                borderColor: selected.has(t.id) ? cardHighlight : cardBorder,
+              }}
+              className="border rounded-2xl p-5 transition-all duration-200 group relative flex flex-col gap-3 shadow-lg"
             >
               {/* Fejléc */}
               <div className="flex items-start gap-3">
@@ -355,45 +376,46 @@ export default function AdminGlossaryPage() {
                   type="checkbox"
                   checked={selected.has(t.id)}
                   onChange={() => toggleSelected(t.id)}
-                  className="mt-0.5 h-4 w-4 rounded border-[#1E1E1E] bg-[#0A0A0A] text-[#FFC400] focus:ring-[#FFC400]/50 flex-shrink-0"
+                  className="mt-0.5 h-4 w-4 rounded cursor-pointer flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                    <h3 className="text-base font-black text-white group-hover:text-[#FFC400] transition-colors">
+                    <h3 style={{ color: textColor }} className="text-base font-black leading-snug">
                       {t.term}
                     </h3>
                     <TypeBadge type={t.entry_type ?? 'technical_concept'} />
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/20">
+                    <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border">
                       {t.articleCount} cikk
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap mb-2">
                     {t.category && (
-                      <span className="text-[10px] text-gray-500 border border-[#1E1E1E] rounded px-2 py-0.5 font-medium">
+                      <span style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }} className="text-[10px] border rounded px-2 py-0.5 font-medium">
                         {t.category}
                       </span>
                     )}
                     {t.szint && (
-                      <span className="text-[10px] text-[#FFC400]/70 border border-[#FFC400]/20 rounded px-2 py-0.5 font-medium">
+                      <span style={{ backgroundColor: `${cardHighlight}10`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="text-[10px] border rounded px-2 py-0.5 font-medium">
                         {t.szint}
                       </span>
                     )}
                     {t.translations && Object.keys(t.translations).length > 0 && (
-                      <span className="text-[10px] text-emerald-400 border border-emerald-400/20 rounded px-2 py-0.5 font-medium flex items-center gap-1">
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-400/20 rounded px-2 py-0.5 font-medium flex items-center gap-1">
                         <Globe size={9} /> Fordítás
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-500 text-xs leading-relaxed line-clamp-2">{t.definition}</p>
-                  <p className="text-gray-700 text-[10px] mt-1 font-mono">/{t.slug}</p>
+                  <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">{t.definition}</p>
+                  <p className="text-gray-500 text-[10px] mt-1 font-mono">/{t.slug}</p>
                 </div>
               </div>
 
               {/* Lábléc */}
-              <div className="flex items-center justify-end pt-2 border-t border-[#1A1A1A]">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end pt-2 border-t">
                 <button
                   onClick={() => openEdit(t)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-lg hover:bg-[#FFC400] hover:text-black hover:border-[#FFC400] transition-all"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-all cursor-pointer"
                 >
                   <Pencil size={12} /> Szerkesztés
                 </button>
@@ -409,9 +431,11 @@ export default function AdminGlossaryPage() {
           {filtered.map((t) => (
             <div
               key={t.id}
-              className={`bg-[#111] border rounded-xl p-4 hover:border-[#FFC400]/30 transition-colors ${
-                selected.has(t.id) ? 'border-[#FFC400]/50' : 'border-[#1E1E1E]'
-              }`}
+              style={{
+                backgroundColor: cardBg,
+                borderColor: selected.has(t.id) ? cardHighlight : cardBorder,
+              }}
+              className="border rounded-xl p-4 transition-colors shadow-md"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -419,28 +443,29 @@ export default function AdminGlossaryPage() {
                     type="checkbox"
                     checked={selected.has(t.id)}
                     onChange={() => toggleSelected(t.id)}
-                    className="mt-1 h-4 w-4 rounded border-[#1E1E1E] bg-[#0A0A0A] text-[#FFC400] focus:ring-[#FFC400]/50 flex-shrink-0"
+                    className="mt-1 h-4 w-4 rounded cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base font-black text-white">{t.term}</h3>
+                      <h3 style={{ color: textColor }} className="text-base font-black">{t.term}</h3>
                       <TypeBadge type={t.entry_type ?? 'technical_concept'} />
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/20 flex-shrink-0">
+                      <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0">
                         {t.articleCount} cikk
                       </span>
                       {t.category && (
-                        <span className="text-xs text-gray-500 border border-[#1E1E1E] rounded px-2 py-0.5">
+                        <span style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }} className="text-xs border rounded px-2 py-0.5">
                           {t.category}
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-600 text-[10px] mt-0.5">/{t.slug}</p>
+                    <p className="text-gray-500 text-[10px] mt-0.5 font-mono">/{t.slug}</p>
                     <p className="text-gray-400 text-sm mt-1.5 line-clamp-2">{t.definition}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => openEdit(t)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-md hover:bg-[#1E1E1E] hover:text-white transition-colors flex-shrink-0"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold border rounded-md hover:opacity-80 transition-colors flex-shrink-0 cursor-pointer"
                 >
                   <Pencil size={12} /> Szerkesztés
                 </button>
