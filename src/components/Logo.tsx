@@ -1,8 +1,8 @@
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 
 export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const siteSettings = useSiteSettings();
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
   const sizes = {
     sm: { height: 'h-7 max-h-7', text: 'text-lg', slogan: 'text-[10px]' },

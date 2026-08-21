@@ -1,5 +1,5 @@
 import { LayoutDashboard, FileText, FolderTree, BookOpen, Library, Wrench, Settings, Home, Users, CheckSquare, Shield, Building2, Megaphone, Activity, X, Briefcase, GraduationCap, Compass } from 'lucide-react';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getDynamicImageUrl } from '../services/siteSettingsService';
 
 export type AdminView =
   | 'dashboard'
@@ -23,8 +23,8 @@ interface AdminSidebarProps {
   activeView: AdminView;
   onNavigateView: (view: AdminView) => void;
   onNavigateHome: () => void;
-  mobileOpen: boolean;
-  onCloseMobile: () => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 interface NavItem {
@@ -92,7 +92,7 @@ export default function AdminSidebar({
   onCloseMobile,
 }: AdminSidebarProps) {
   const siteSettings = useSiteSettings();
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
   const adminAccent = siteSettings.adminAccentColor || '#FFC400';
   const adminBg = siteSettings.adminBgColor || '#0A0A0A';
 

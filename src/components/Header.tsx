@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getSiteSettings, type SiteSettings } from '../services/siteSettingsService';
+import { getSiteSettings, getDynamicImageUrl, type SiteSettings } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
 interface HeaderProps {
@@ -111,7 +111,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
           className="flex items-center gap-2 shrink-0 group"
         >
           <img
-            src={siteSettings.logoUrl || '/logo.png'}
+            src={getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt)}
             alt={`${siteSettings.siteTitle} logó`}
             className="h-8 md:h-10 max-h-10 max-w-[220px] w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
             onError={(e) => {

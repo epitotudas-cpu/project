@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
@@ -29,7 +29,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
   });
 
   const siteSettings = useSiteSettings();
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

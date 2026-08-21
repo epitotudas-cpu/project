@@ -1,4 +1,4 @@
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
 interface FooterProps {
@@ -9,7 +9,7 @@ export default function Footer({ onNavigate }: FooterProps) {
   const siteSettings = useSiteSettings();
   const rawNavItems = useNavigationItems();
   const structuredNav = getStructuredNav(rawNavItems, false);
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
   const mainNavLinks = structuredNav.map((item) => ({ l: item.label, p: item.page }));
   const subNavLinks = structuredNav

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { User, Mail, Lock, UserPlus, AlertCircle, Eye, EyeOff, CheckCircle, ArrowLeft, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 
 interface RegisterPageProps {
   onNavigate: (page: string) => void;
@@ -32,7 +32,7 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
   const siteSettings = useSiteSettings();
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

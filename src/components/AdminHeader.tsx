@@ -1,7 +1,7 @@
 import { LogOut, Menu } from 'lucide-react';
 import GlobalSearch from './GlobalSearch';
 import type { AdminView } from './AdminSidebar';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getDynamicImageUrl } from '../services/siteSettingsService';
 
 interface AdminHeaderProps {
   userEmail: string | null;
@@ -19,7 +19,7 @@ export default function AdminHeader({
   onOpenSidebar,
 }: AdminHeaderProps) {
   const siteSettings = useSiteSettings();
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
   const adminBg = siteSettings.adminBgColor || '#0A0A0A';
 
   const headerBg = `${adjustColorBrightness(adminBg, 2)}F0`;

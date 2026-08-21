@@ -308,6 +308,15 @@ export function applySiteSettings(settings: SiteSettings): void {
   }
 }
 
+export function getDynamicImageUrl(url?: string, defaultFallback = '/logo.png', versionTimestamp?: number): string {
+  const target = (url && url.trim()) ? url.trim() : defaultFallback;
+  if (!target) return defaultFallback;
+  if (target.startsWith('data:')) return target;
+
+  const v = versionTimestamp || (typeof window !== 'undefined' && window.__GLOBAL_SITE_SETTINGS__?.iconsUpdatedAt) || Date.now();
+  return target.includes('?') ? `${target}&v=${v}` : `${target}?v=${v}`;
+}
+
 export function getSiteSettings(): SiteSettings {
   try {
     // 1. Check in-memory global window cache first
@@ -317,7 +326,24 @@ export function getSiteSettings(): SiteSettings {
       return window.__GLOBAL_SITE_SETTINGS__;
     }
 
-    // 2. Check primary and backup localStorage
+    // 2. Check initial settings loaded synchronously in <head>
+    if (typeof window !== 'undefined' && (window as any).__INITIAL_SITE_SETTINGS__) {
+      const init = (window as any).__INITIAL_SITE_SETTINGS__;
+      const settings: SiteSettings = {
+        ...DEFAULT_SITE_SETTINGS,
+        ...init,
+        logoUrl: sanitizeLogoUrl(init.logoUrl),
+        enabledNavItems: {
+          ...DEFAULT_SITE_SETTINGS.enabledNavItems,
+          ...(init.enabledNavItems || {}),
+        },
+      };
+      window.__GLOBAL_SITE_SETTINGS__ = settings;
+      applySiteSettings(settings);
+      return settings;
+    }
+
+    // 3. Check primary and backup localStorage
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -340,7 +366,7 @@ export function getSiteSettings(): SiteSettings {
     console.error('Hiba a beállítások olvasásakor:', err);
   }
 
-  // 3. Fallback
+  // 4. Fallback
   if (typeof window !== 'undefined') {
     window.__GLOBAL_SITE_SETTINGS__ = DEFAULT_SITE_SETTINGS;
   }
@@ -350,24 +376,28 @@ export function getSiteSettings(): SiteSettings {
 
 export function saveSiteSettings(settings: SiteSettings): void {
   try {
+    const updatedSettings: SiteSettings = {
+      ...settings,
+      iconsUpdatedAt: Date.now(),
+    };
     if (typeof window !== 'undefined') {
-      window.__GLOBAL_SITE_SETTINGS__ = settings;
+      window.__GLOBAL_SITE_SETTINGS__ = updatedSettings;
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(settings));
-    applySiteSettings(settings);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+    localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(updatedSettings));
+    applySiteSettings(updatedSettings);
     window.dispatchEvent(new Event('site-settings-changed'));
 
-    // Cloud sync to Supabase table 'categories' (which exists and works without 404 error)
+    // Cloud sync to Supabase table 'categories'
     void (async () => {
-      const payloadString = JSON.stringify(settings);
+      const payloadString = JSON.stringify(updatedSettings);
       try {
         await supabase.from('categories').upsert({
           id: SUPABASE_SYSTEM_ID,
           name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
           slug: 'system-site-settings-config',
           description: payloadString,
-          banner_url: settings.logoUrl || '/logo.png',
+          banner_url: updatedSettings.logoUrl || '/logo.png',
           article_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

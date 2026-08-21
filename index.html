@@ -3,6 +3,44 @@
 
 <head>
   <meta charset="UTF-8" />
+  <!-- Instant Synchronous Theme & Icon Initializer to Prevent FOUC (Flash of Unstyled Content) -->
+  <script>
+    (function() {
+      try {
+        var raw = localStorage.getItem('epitotudas_site_settings_v1') || localStorage.getItem('epitotudas_site_settings_backup_v1');
+        if (raw) {
+          var s = JSON.parse(raw);
+          var root = document.documentElement;
+          var accent = s.primaryColor || '#FFC400';
+          var adminAccent = s.adminAccentColor || '#FFC400';
+          var adminBg = s.adminBgColor || '#0A0A0A';
+          var adminCardBg = s.adminCardBgColor || '#111111';
+          var adminCardHighlight = s.adminCardHighlightColor || adminAccent;
+
+          root.style.setProperty('--color-accent', accent);
+          root.style.setProperty('--color-admin-accent', adminAccent);
+          root.style.setProperty('--color-admin-bg', adminBg);
+          root.style.setProperty('--color-admin-card-bg', adminCardBg);
+          root.style.setProperty('--color-admin-card-border', adminCardBg);
+          root.style.setProperty('--color-admin-card-highlight', adminCardHighlight);
+          root.style.setProperty('--color-admin-card-highlight-bg', adminCardHighlight + '1C');
+
+          if (s.siteTitle) {
+            document.title = s.siteTitle + ' - ' + (s.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia');
+          }
+
+          var v = s.iconsUpdatedAt || 1;
+          var appendV = function(u) {
+            if (!u) return '';
+            return u.indexOf('?') !== -1 ? u + '&v=' + v : u + '?v=' + v;
+          };
+
+          window.__INITIAL_SITE_SETTINGS__ = s;
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <link rel="icon" type="image/x-icon" href="/favicon.ico?v=1" id="app-favicon-ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/logo.png?v=1" id="app-favicon-png" />
   <link rel="shortcut icon" href="/logo.png?v=1" id="app-favicon-shortcut" />

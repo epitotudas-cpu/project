@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, Mail, LogIn, AlertCircle } from 'lucide-react';
 import { signInAdmin } from '../lib/authService';
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -14,7 +14,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   const [error, setError] = useState<string | null>(null);
 
   const siteSettings = useSiteSettings();
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

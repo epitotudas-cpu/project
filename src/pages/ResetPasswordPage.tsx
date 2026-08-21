@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, AlertCircle, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 
 interface ResetPasswordPageProps {
   onNavigate: (page: string) => void;
@@ -18,7 +18,7 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
   const [success, setSuccess] = useState(false);
 
   const siteSettings = useSiteSettings();
-  const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
