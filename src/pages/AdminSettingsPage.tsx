@@ -35,6 +35,8 @@ import {
   saveSiteSettings,
   applySiteSettings,
   adjustColorBrightness,
+  getContrastTextColor,
+  useSiteSettings,
   DEFAULT_SITE_SETTINGS,
   type SiteSettings,
 } from '../services/siteSettingsService';
@@ -544,7 +546,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     const updatedState = { ...heroState, images: newImages };
     setHeroState(updatedState);
     saveHeroState(updatedState);
-  };
+};
 
   const handleUpdateHeroConfig = (updates: Partial<HeroState['config']>) => {
     const updatedState: HeroState = {
@@ -555,13 +557,28 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     saveHeroState(updatedState);
   };
 
+  const liveSiteSettings = useSiteSettings();
+  const cardBg = settings.adminCardBgColor || liveSiteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = settings.adminCardHighlightColor || settings.adminAccentColor || liveSiteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+
   return (
-    <div className="space-[#111] min-h-screen text-gray-200 p-4 md:p-8 space-y-8">
+    <div style={{ color: textColor }} className="min-h-screen p-4 md:p-8 space-y-8">
       {/* Top Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#222] pb-6">
+      <div style={{ borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
-            <Palette className="text-accent" size={32} />
+          <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
+            <Palette style={{ color: cardHighlight }} size={32} />
             Rendszer- és Design Beállítások
           </h1>
           <p className="text-sm text-gray-400 mt-1">
@@ -572,13 +589,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
         <div className="flex items-center gap-3">
           <button
             onClick={handleResetDefaults}
-            className="px-4 py-2.5 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+            className="px-4 py-2.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <RotateCcw size={14} /> Alapértelmezett
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
           >
             <Save size={16} /> Mentés &amp; Alkalmazás
           </button>
@@ -593,7 +612,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       )}
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-[#222] overflow-x-auto pb-2">
+      <div style={{ borderColor: cardBorder }} className="flex items-center gap-2 border-b overflow-x-auto pb-2">
         {[
           { id: 'design', label: '🎨 Arculat & Színek', icon: Palette },
           { id: 'hero', label: '🖼️ Főoldali Hero Képek', icon: ImageIcon },
@@ -611,10 +630,13 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-5 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              style={
                 isActive
-                  ? 'bg-accent text-black shadow-lg scale-105'
-                  : 'bg-[#141414] border border-[#222] text-gray-400 hover:text-white hover:bg-[#1A1A1A]'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: cardBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-5 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer border ${
+                isActive ? 'shadow-lg scale-105' : 'hover:opacity-90'
               }`}
             >
               <IconComp size={16} />
@@ -628,91 +650,98 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       {activeTab === 'design' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Branding Inputs */}
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <ImageIcon size={20} className="text-accent" /> Weboldal Arculati Adatok
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <ImageIcon size={20} style={{ color: cardHighlight }} /> Weboldal Arculati Adatok
             </h2>
 
             <div>
-              <label className="text-xs font-bold text-gray-300 block mb-2">Weboldal Neve (Site Title)</label>
+              <label className="text-xs font-bold text-gray-400 block mb-2">Weboldal Neve (Site Title)</label>
               <input
                 type="text"
                 value={settings.siteTitle}
                 onChange={(e) => setSettings({ ...settings, siteTitle: e.target.value })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                 placeholder="ÉpítőTudás"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-300 block mb-2">Weboldal Szlogenje (Tagline)</label>
+              <label className="text-xs font-bold text-gray-400 block mb-2">Weboldal Szlogenje (Tagline)</label>
               <input
                 type="text"
                 value={settings.tagline}
                 onChange={(e) => setSettings({ ...settings, tagline: e.target.value })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                 placeholder="Építőipari Tudásbázis & Szakmai Enciklopédia"
               />
             </div>
 
             {/* Customizable Public Section Texts */}
-            <div className="space-y-4 pt-4 border-t border-[#222]">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-accent flex items-center gap-1.5">
-                <FileText size={14} /> Főoldali & Globális Szöveges Tartalmak
+            <div style={{ borderColor: cardBorder }} className="space-y-4 pt-4 border-t">
+              <h3 style={{ color: cardHighlight }} className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                <FileText size={14} /> Főoldali &amp; Globális Szöveges Tartalmak
               </h3>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5">Főoldali Hero Főcím</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1.5">Főoldali Hero Főcím</label>
                 <textarea
                   rows={2}
                   value={settings.heroMainTitle || ''}
                   onChange={(e) => setSettings({ ...settings, heroMainTitle: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                   placeholder="Magyarország vezető építőipari tudásbázisa"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5">Főoldali Hero Alcím / Leírás</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1.5">Főoldali Hero Alcím / Leírás</label>
                 <textarea
                   rows={2}
                   value={settings.heroSubtitle || ''}
                   onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                   placeholder="Szakmai enciklopédia, megbízható útmutatók..."
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Hírlevél Blokkcím</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1.5">Hírlevél Blokkcím</label>
                   <input
                     type="text"
                     value={settings.newsletterTitle || ''}
                     onChange={(e) => setSettings({ ...settings, newsletterTitle: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                     placeholder="Szakmai hírlevél"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Hírlevél Leírás</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1.5">Hírlevél Leírás</label>
                   <input
                     type="text"
                     value={settings.newsletterDescription || ''}
                     onChange={(e) => setSettings({ ...settings, newsletterDescription: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                     placeholder="Heti frissítések..."
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5">Lábjegyzet (Footer) Leírás</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1.5">Lábjegyzet (Footer) Leírás</label>
                 <input
                   type="text"
                   value={settings.footerDescription || ''}
                   onChange={(e) => setSettings({ ...settings, footerDescription: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                   placeholder="Magyarország legátfogóbb online építőipari tudásbázisa."
                 />
               </div>
@@ -870,13 +899,13 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           </div>
 
           {/* Right Column: Theme & Live Preview */}
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Palette size={20} className="text-accent" /> Színtéma &amp; Paletták
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <Palette size={20} style={{ color: cardHighlight }} /> Színtéma &amp; Paletták
             </h2>
 
             <div className="space-y-3">
-              <label className="text-xs font-bold text-gray-300 block">Előre összeállított színpaletták</label>
+              <label className="text-xs font-bold text-gray-400 block">Előre összeállított színpaletták</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PRESET_PALETTES.map((preset) => (
                   <button
@@ -887,21 +916,22 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       setSettings(updated);
                       saveSiteSettings(updated);
                     }}
-                    className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
+                    style={
                       settings.primaryColor === preset.primary
-                        ? 'border-accent bg-accent/10'
-                        : 'border-[#222] bg-[#161616] hover:border-gray-500'
-                    }`}
+                        ? { backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight }
+                        : { backgroundColor: inputBg, borderColor: cardBorder }
+                    }
+                    className="p-3 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer hover:opacity-90"
                   >
                     <div className="w-6 h-6 rounded-full shrink-0 shadow" style={{ backgroundColor: preset.previewBg }} />
-                    <span className="text-xs font-bold text-white">{preset.name}</span>
+                    <span style={{ color: textColor }} className="text-xs font-bold">{preset.name}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-300 block mb-2">Egyedi Elsődleges Színkód (Primary Color Hex)</label>
+              <label className="text-xs font-bold text-gray-400 block mb-2">Egyedi Elsődleges Színkód (Primary Color Hex)</label>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
@@ -921,15 +951,16 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     setSettings(updated);
                     saveSiteSettings(updated);
                   }}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Live Header Preview Card */}
-            <div className="pt-4 border-t border-[#222] space-y-2">
+            <div style={{ borderColor: cardBorder }} className="pt-4 border-t space-y-2">
               <span className="text-xs font-bold text-gray-400 block">Fejléc Élő Előnézete</span>
-              <div className="p-4 bg-[#0A0D14] border border-[#222] rounded-2xl flex items-center justify-between">
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-2">
                   <img
                     src={settings.logoUrl || '/logo.png'}
@@ -939,7 +970,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       (e.target as HTMLImageElement).src = '/logo.png';
                     }}
                   />
-                  <span className="text-base font-bold text-white">
+                  <span style={{ color: textColor }} className="text-base font-bold">
                     {settings.siteTitle || 'ÉpítőTudás'}
                   </span>
                 </div>
@@ -952,14 +983,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             </div>
 
             {/* ADMIN PANEL STYLING SECTION */}
-            <div className="pt-6 border-t border-[#222] space-y-6">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Shield size={18} className="text-accent" /> Admin Panel Testreszabása (Kiemelés &amp; Háttér)
+            <div style={{ borderColor: cardBorder }} className="pt-6 border-t space-y-6">
+              <h3 style={{ color: textColor }} className="text-sm font-bold flex items-center gap-2">
+                <Shield size={18} style={{ color: cardHighlight }} /> Admin Panel Testreszabása (Kiemelés &amp; Háttér)
               </h3>
 
               {/* Admin Accent Color */}
               <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-300 block">Admin Panel Kiemelés Színe (Admin Accent Color)</label>
+                <label className="text-xs font-bold text-gray-400 block">Admin Panel Kiemelés Színe (Admin Accent Color)</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {PRESET_ADMIN_ACCENTS.map((preset) => (
                     <button
@@ -970,14 +1001,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         setSettings(updated);
                         saveSiteSettings(updated);
                       }}
-                      className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                      style={
                         (settings.adminAccentColor || '#FFC400') === preset.color
-                          ? 'border-accent bg-accent/10'
-                          : 'border-[#222] bg-[#161616] hover:border-gray-500'
-                      }`}
+                          ? { backgroundColor: `${preset.color}20`, borderColor: preset.color }
+                          : { backgroundColor: inputBg, borderColor: cardBorder }
+                      }
+                      className="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer hover:opacity-90"
                     >
                       <div className="w-4 h-4 rounded-full shrink-0 shadow" style={{ backgroundColor: preset.color }} />
-                      <span className="text-[11px] font-bold text-gray-200 truncate">{preset.name}</span>
+                      <span style={{ color: textColor }} className="text-[11px] font-bold truncate">{preset.name}</span>
                     </button>
                   ))}
                 </div>
@@ -1001,14 +1033,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       setSettings(updated);
                       saveSiteSettings(updated);
                     }}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Admin Background Color */}
-              <div className="space-y-3 pt-3 border-t border-[#222]">
-                <label className="text-xs font-bold text-gray-300 block">Admin Panel Háttér Színe (Admin Background Color)</label>
+              <div style={{ borderColor: cardBorder }} className="space-y-3 pt-3 border-t">
+                <label className="text-xs font-bold text-gray-400 block">Admin Panel Háttér Színe (Admin Background Color)</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {PRESET_ADMIN_BACKGROUNDS.map((preset) => (
                     <button
@@ -1019,14 +1052,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         setSettings(updated);
                         saveSiteSettings(updated);
                       }}
-                      className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                      style={
                         (settings.adminBgColor || '#0A0A0A') === preset.color
-                          ? 'border-accent bg-accent/10'
-                          : 'border-[#222] bg-[#161616] hover:border-gray-500'
-                      }`}
+                          ? { backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight }
+                          : { backgroundColor: inputBg, borderColor: cardBorder }
+                      }
+                      className="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer hover:opacity-90"
                     >
                       <div className="w-4 h-4 rounded-full shrink-0 border border-gray-600 shadow" style={{ backgroundColor: preset.color }} />
-                      <span className="text-[11px] font-bold text-gray-200 truncate">{preset.name}</span>
+                      <span style={{ color: textColor }} className="text-[11px] font-bold truncate">{preset.name}</span>
                     </button>
                   ))}
                 </div>
@@ -1050,14 +1084,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       setSettings(updated);
                       saveSiteSettings(updated);
                     }}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Admin Card Background Color */}
-              <div className="space-y-3 pt-3 border-t border-[#222]">
-                <label className="text-xs font-bold text-gray-300 block">Admin Csempék Háttérszíne (Admin Card/Tile Background)</label>
+              <div style={{ borderColor: cardBorder }} className="space-y-3 pt-3 border-t">
+                <label className="text-xs font-bold text-gray-400 block">Admin Csempék Háttérszíne (Admin Card/Tile Background)</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {PRESET_ADMIN_CARD_BGS.map((preset) => (
                     <button
@@ -1068,14 +1103,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         setSettings(updated);
                         saveSiteSettings(updated);
                       }}
-                      className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                      style={
                         (settings.adminCardBgColor || '#111111') === preset.color
-                          ? 'border-accent bg-accent/10'
-                          : 'border-[#222] bg-[#161616] hover:border-gray-500'
-                      }`}
+                          ? { backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight }
+                          : { backgroundColor: inputBg, borderColor: cardBorder }
+                      }
+                      className="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer hover:opacity-90"
                     >
                       <div className="w-4 h-4 rounded-full shrink-0 border border-gray-600 shadow" style={{ backgroundColor: preset.color }} />
-                      <span className="text-[11px] font-bold text-gray-200 truncate">{preset.name}</span>
+                      <span style={{ color: textColor }} className="text-[11px] font-bold truncate">{preset.name}</span>
                     </button>
                   ))}
                 </div>
@@ -1099,14 +1135,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       setSettings(updated);
                       saveSiteSettings(updated);
                     }}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Admin Card Text & Badge Highlight Color */}
-              <div className="space-y-3 pt-3 border-t border-[#222]">
-                <label className="text-xs font-bold text-gray-300 block">Csempéken Szövegkiemelések Színe (Card Text &amp; Badge Highlight)</label>
+              <div style={{ borderColor: cardBorder }} className="space-y-3 pt-3 border-t">
+                <label className="text-xs font-bold text-gray-400 block">Csempéken Szövegkiemelések Színe (Card Text &amp; Badge Highlight)</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {PRESET_ADMIN_CARD_HIGHLIGHTS.map((preset) => (
                     <button
@@ -1117,14 +1154,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         setSettings(updated);
                         saveSiteSettings(updated);
                       }}
-                      className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                      style={
                         (settings.adminCardHighlightColor || '#FFC400') === preset.color
-                          ? 'border-accent bg-accent/10'
-                          : 'border-[#222] bg-[#161616] hover:border-gray-500'
-                      }`}
+                          ? { backgroundColor: `${preset.color}20`, borderColor: preset.color }
+                          : { backgroundColor: inputBg, borderColor: cardBorder }
+                      }
+                      className="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer hover:opacity-90"
                     >
                       <div className="w-4 h-4 rounded-full shrink-0 shadow" style={{ backgroundColor: preset.color }} />
-                      <span className="text-[11px] font-bold text-gray-200 truncate">{preset.name}</span>
+                      <span style={{ color: textColor }} className="text-[11px] font-bold truncate">{preset.name}</span>
                     </button>
                   ))}
                 </div>
@@ -1148,16 +1186,17 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       setSettings(updated);
                       saveSiteSettings(updated);
                     }}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Live Admin Layout Preview */}
-              <div className="pt-4 border-t border-[#222] space-y-2">
+              <div style={{ borderColor: cardBorder }} className="pt-4 border-t space-y-2">
                 <span className="text-xs font-bold text-gray-400 block">Admin Panel Élő Előnézete (Oldalsáv + Kártyák)</span>
                 <div
-                  className="p-4 rounded-2xl border transition-all space-y-3"
+                  className="p-4 rounded-2xl border transition-all space-y-3 shadow-md"
                   style={{
                     backgroundColor: settings.adminBgColor || '#0A0A0A',
                     borderColor: `${settings.adminAccentColor || '#FFC400'}40`,
@@ -1204,19 +1243,20 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                           Csempe Kiemelés
                         </span>
                       </div>
-                      <div className="text-[11px] font-extrabold text-white">42 Aktív Cikk</div>
+                      <div style={{ color: getContrastTextColor(settings.adminCardBgColor || '#111111') }} className="text-[11px] font-extrabold">42 Aktív Cikk</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Explicit Arculat Mentése Button */}
-              <div className="pt-6 border-t border-[#222] flex items-center justify-between gap-4">
+              <div style={{ borderColor: cardBorder }} className="pt-6 border-t flex items-center justify-between gap-4">
                 <p className="text-xs text-gray-400">A kiválasztott arculati és admin színek azonnal mentésre és alkalmazásra kerülnek.</p>
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0 hover:opacity-90"
                 >
                   <Save size={16} /> Arculat &amp; Színek Mentése
                 </button>
@@ -1231,13 +1271,13 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Rotation Mode & Interval Settings */}
-            <div className="lg:col-span-1 bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl h-fit">
-              <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-                <ImageIcon size={20} className="text-accent" /> Hero Működési Mód &amp; Időzítés
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="lg:col-span-1 border rounded-3xl p-6 space-y-6 shadow-xl h-fit">
+              <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+                <ImageIcon size={20} style={{ color: cardHighlight }} /> Hero Működési Mód &amp; Időzítés
               </h2>
 
               <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-300 block">Váltási Mód (Rotation Mode)</label>
+                <label className="text-xs font-bold text-gray-400 block">Váltási Mód (Rotation Mode)</label>
                 <div className="space-y-2">
                   {[
                     {
@@ -1259,16 +1299,17 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     <button
                       key={item.mode}
                       onClick={() => handleUpdateHeroConfig({ rotationMode: item.mode as HeroRotationMode })}
-                      className={`w-full p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                      style={
                         heroState.config.rotationMode === item.mode
-                          ? 'border-accent bg-accent/10 text-white font-bold'
-                          : 'border-[#222] bg-[#161616] text-gray-400 hover:border-gray-600'
-                      }`}
+                          ? { backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight, color: textColor }
+                          : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+                      }
+                      className="w-full p-4 rounded-2xl border text-left transition-all cursor-pointer hover:opacity-90"
                     >
                       <div className="text-sm font-bold flex items-center justify-between">
                         <span>{item.title}</span>
                         {heroState.config.rotationMode === item.mode && (
-                          <span className="w-2.5 h-2.5 rounded-full bg-accent" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cardHighlight }} />
                         )}
                       </div>
                       <p className="text-xs text-gray-400 mt-1 leading-relaxed">{item.desc}</p>
@@ -1278,8 +1319,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               </div>
 
               {heroState.config.rotationMode === 'slideshow' && (
-                <div className="pt-2 border-t border-[#222]">
-                  <label className="text-xs font-bold text-gray-300 block mb-2">
+                <div style={{ borderColor: cardBorder }} className="pt-2 border-t">
+                  <label className="text-xs font-bold text-gray-400 block mb-2">
                     Váltási Időköz (Másodperc)
                   </label>
                   <div className="flex items-center gap-3">
@@ -1293,7 +1334,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                           rotationIntervalSeconds: Math.max(2, parseInt(e.target.value) || 5),
                         })
                       }
-                      className="w-24 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                      style={fieldStyle}
+                      className="w-24 border rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none"
                     />
                     <span className="text-xs text-gray-400 font-semibold">másodperc képenként</span>
                   </div>
@@ -1301,8 +1343,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               )}
 
               {/* Indicator Dots Toggle */}
-              <div className="pt-3 border-t border-[#222] space-y-2">
-                <label className="text-xs font-bold text-gray-300 block">
+              <div style={{ borderColor: cardBorder }} className="pt-3 border-t space-y-2">
+                <label className="text-xs font-bold text-gray-400 block">
                   Navigációs Indikátor Pöttyök
                 </label>
                 <button
@@ -1312,11 +1354,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       showIndicators: !(heroState.config.showIndicators !== false),
                     })
                   }
-                  className={`w-full p-3 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                  style={
                     heroState.config.showIndicators !== false
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-white'
-                      : 'border-[#222] bg-[#161616] text-gray-400'
-                  }`}
+                      ? { backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)', color: textColor }
+                      : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+                  }
+                  className="w-full p-3 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer"
                 >
                   <div className="space-y-0.5">
                     <span className="text-xs font-bold block">
@@ -1342,14 +1385,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             {/* Hero Images Management & Upload */}
             <div className="lg:col-span-2 space-y-6">
               {/* Add New Hero Image Card */}
-              <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Plus size={20} className="text-accent" /> Új Hero Kép Hozzáadása
+              <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-4 shadow-xl">
+                <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                  <Plus size={20} style={{ color: cardHighlight }} /> Új Hero Kép Hozzáadása
                 </h2>
                 <form onSubmit={handleAddHeroImage} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">
                         Kép URL Hivatkozás (Image URL)
                       </label>
                       <input
@@ -1358,11 +1401,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         value={newImageUrl}
                         onChange={(e) => setNewImageUrl(e.target.value)}
                         placeholder="https://images.unsplash.com/... vagy /hero-bg.jpg"
-                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">
                         Kép Leírása / Alt Szöveg
                       </label>
                       <input
@@ -1370,13 +1414,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         value={newAltText}
                         onChange={(e) => setNewAltText(e.target.value)}
                         placeholder="pl. Építőipari gépek munkában"
-                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                       />
                     </div>
                   </div>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="px-5 py-2.5 font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2 shadow-md hover:opacity-90"
                   >
                     <Plus size={16} /> Kép Hozzáadása a Rendszerhez
                   </button>
@@ -1384,10 +1430,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               </div>
 
               {/* Images List */}
-              <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-[#222] pb-3">
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <ImageIcon size={18} className="text-accent" /> Aktív Hero Képek Listája ({heroState.images.length})
+              <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-4 shadow-xl">
+                <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
+                  <h3 style={{ color: textColor }} className="text-base font-bold flex items-center gap-2">
+                    <ImageIcon size={18} style={{ color: cardHighlight }} /> Aktív Hero Képek Listája ({heroState.images.length})
                   </h3>
                   <span className="text-xs text-gray-400">
                     {heroState.images.filter((i) => i.isActive).length} aktív megjelenítésben
@@ -1398,25 +1444,28 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   {heroState.images.map((img, index) => (
                     <div
                       key={img.id}
+                      style={{
+                        backgroundColor: img.isActive ? inputBg : cardBg,
+                        borderColor: cardBorder,
+                      }}
                       className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-                        img.isActive
-                          ? 'bg-[#161616] border-[#262626]'
-                          : 'bg-[#0E0E0E] border-[#1A1A1A] opacity-60'
+                        img.isActive ? '' : 'opacity-60'
                       }`}
                     >
                       <div className="flex items-center gap-4 min-w-0 flex-1">
                         <img
                           src={img.imageUrl}
                           alt={img.altText}
-                          className="w-24 h-16 rounded-xl object-cover border border-[#333] shrink-0 bg-[#0A0A0A]"
+                          style={{ borderColor: cardBorder }}
+                          className="w-24 h-16 rounded-xl object-cover border shrink-0 bg-black/40"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = '/hero-construction.jpg';
                           }}
                         />
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-accent">#{img.displayOrder}</span>
-                            <span className="text-sm font-bold text-white truncate max-w-[220px]">
+                            <span style={{ color: cardHighlight }} className="text-xs font-bold">#{img.displayOrder}</span>
+                            <span style={{ color: textColor }} className="text-sm font-bold truncate max-w-[220px]">
                               {img.altText || 'Hero Kép'}
                             </span>
                             {img.isActive ? (
@@ -1429,7 +1478,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                               </span>
                             )}
                           </div>
-                          <p className="text-xs font-mono text-gray-500 truncate max-w-[300px]">
+                          <p className="text-xs font-mono text-gray-400 truncate max-w-[300px]">
                             {img.imageUrl}
                           </p>
                         </div>
@@ -1441,7 +1490,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                           onClick={() => handleMoveHeroImage(index, 'up')}
                           disabled={index === 0}
                           title="Mozgatás felfelé"
-                          className="p-2 bg-[#222] hover:bg-[#333] disabled:opacity-30 text-gray-300 rounded-lg transition-colors cursor-pointer"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="p-2 border disabled:opacity-30 rounded-lg transition-colors cursor-pointer hover:opacity-80"
                         >
                           <ArrowUp size={14} />
                         </button>
@@ -1449,7 +1499,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                           onClick={() => handleMoveHeroImage(index, 'down')}
                           disabled={index === heroState.images.length - 1}
                           title="Mozgatás lefelé"
-                          className="p-2 bg-[#222] hover:bg-[#333] disabled:opacity-30 text-gray-300 rounded-lg transition-colors cursor-pointer"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="p-2 border disabled:opacity-30 rounded-lg transition-colors cursor-pointer hover:opacity-80"
                         >
                           <ArrowDown size={14} />
                         </button>
@@ -1484,78 +1535,84 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       {activeTab === 'impressum' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Szolgáltatói & Kapcsolati Adatok */}
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <ShieldCheck size={20} className="text-accent" /> 1. Szolgáltató Cégadatai &amp; Kapcsolat
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <ShieldCheck size={20} style={{ color: cardHighlight }} /> 1. Szolgáltató Cégadatai &amp; Kapcsolat
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
-                  <Building size={14} className="text-accent" /> Hivatalos Cégnév
+                <label className="text-xs font-bold text-gray-400 block mb-1.5 flex items-center gap-1.5">
+                  <Building size={14} style={{ color: cardHighlight }} /> Hivatalos Cégnév
                 </label>
                 <input
                   type="text"
                   value={impressumData.companyName}
                   onChange={(e) => setImpressumData({ ...impressumData, companyName: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Cégjegyzékszám</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1.5">Cégjegyzékszám</label>
                   <input
                     type="text"
                     value={impressumData.regNumber}
                     onChange={(e) => setImpressumData({ ...impressumData, regNumber: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1.5">Adószám</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1.5">Adószám</label>
                   <input
                     type="text"
                     value={impressumData.taxNumber}
                     onChange={(e) => setImpressumData({ ...impressumData, taxNumber: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
-                  <MapPin size={14} className="text-accent" /> Székhely Címe
+                <label className="text-xs font-bold text-gray-400 block mb-1.5 flex items-center gap-1.5">
+                  <MapPin size={14} style={{ color: cardHighlight }} /> Székhely Címe
                 </label>
                 <input
                   type="text"
                   value={impressumData.address}
                   onChange={(e) => setImpressumData({ ...impressumData, address: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
-                    <Mail size={14} className="text-accent" /> Központi Email Cím
+                  <label className="text-xs font-bold text-gray-400 block mb-1.5 flex items-center gap-1.5">
+                    <Mail size={14} style={{ color: cardHighlight }} /> Központi Email Cím
                   </label>
                   <input
                     type="email"
                     value={impressumData.email}
                     onChange={(e) => setImpressumData({ ...impressumData, email: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1.5 flex items-center gap-1.5">
-                    <Phone size={14} className="text-accent" /> Telefonszám
+                  <label className="text-xs font-bold text-gray-400 block mb-1.5 flex items-center gap-1.5">
+                    <Phone size={14} style={{ color: cardHighlight }} /> Telefonszám
                   </label>
                   <input
                     type="text"
                     value={impressumData.phone}
                     onChange={(e) => setImpressumData({ ...impressumData, phone: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                   />
                 </div>
               </div>
@@ -1565,76 +1622,82 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           {/* Right Column: Tárhelyszolgáltató, Dokumentum metaadatok & Szerzői jogok */}
           <div className="space-y-6">
             {/* Tárhelyszolgáltató */}
-            <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
-              <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-                <Globe size={20} className="text-accent" /> 2. Tárhelyszolgáltató Adatai
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-4 shadow-xl">
+              <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+                <Globe size={20} style={{ color: cardHighlight }} /> 2. Tárhelyszolgáltató Adatai
               </h2>
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Szolgáltató Neve</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Szolgáltató Neve</label>
                   <input
                     type="text"
                     value={impressumData.hostingName}
                     onChange={(e) => setImpressumData({ ...impressumData, hostingName: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Cím / Székhely</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Cím / Székhely</label>
                   <input
                     type="text"
                     value={impressumData.hostingAddress}
                     onChange={(e) => setImpressumData({ ...impressumData, hostingAddress: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Weboldal URL</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Weboldal URL</label>
                   <input
                     type="text"
                     value={impressumData.hostingWebsite}
                     onChange={(e) => setImpressumData({ ...impressumData, hostingWebsite: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             {/* Dokumentum Verzió & Szerzői jogok */}
-            <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-4 shadow-xl">
-              <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-                <FileText size={20} className="text-accent" /> 3. Jogi Nyilatkozat &amp; Verzió
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-4 shadow-xl">
+              <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+                <FileText size={20} style={{ color: cardHighlight }} /> 3. Jogi Nyilatkozat &amp; Verzió
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Hatálybalépés Kelte</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Hatálybalépés Kelte</label>
                   <input
                     type="text"
                     value={impressumData.effectiveDate}
                     onChange={(e) => setImpressumData({ ...impressumData, effectiveDate: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-300 block mb-1">Verziószám</label>
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Verziószám</label>
                   <input
                     type="text"
                     value={impressumData.version}
                     onChange={(e) => setImpressumData({ ...impressumData, version: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Szerzői Jogok Nyilatkozata</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Szerzői Jogok Nyilatkozata</label>
                 <textarea
                   rows={4}
                   value={impressumData.copyrightContent}
                   onChange={(e) => setImpressumData({ ...impressumData, copyrightContent: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-accent leading-relaxed"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl p-3 text-xs focus:outline-none leading-relaxed"
                 />
               </div>
             </div>
@@ -1645,11 +1708,11 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       {/* TAB 2: NAVIGATION & MENU ITEMS */}
       {activeTab === 'navigation' && (
         <div className="space-y-6">
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 shadow-xl space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 shadow-xl space-y-6">
+            <div style={{ borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Compass size={20} className="text-accent" /> Dinamikus Menü- és Almenüszerkesztő Modul
+                <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                  <Compass size={20} style={{ color: cardHighlight }} /> Dinamikus Menü- és Almenüszerkesztő Modul
                 </h2>
                 <p className="text-xs text-gray-400 mt-1">
                   Kezeld a weboldalon megjelenő összes főmenüt és almenüt: adj hozzá új elemeket, szerkeszd, töröld, mozgasd vagy tedd inaktívvá őket egyetlen kattintással.
@@ -1660,14 +1723,16 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 <button
                   type="button"
                   onClick={handleResetNavTree}
-                  className="px-3.5 py-2 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-3.5 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <RotateCcw size={14} /> Alaphelyzet
                 </button>
                 <button
                   type="button"
                   onClick={() => handleOpenAddNavModal(null)}
-                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-lg cursor-pointer"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-lg cursor-pointer hover:opacity-90"
                 >
                   <Plus size={16} /> Új Főmenü Hozzáadása
                 </button>
@@ -1675,14 +1740,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             </div>
 
             {/* Information Guidance Banner */}
-            <div className="p-4 bg-[#141824] border border-blue-500/20 rounded-2xl flex items-start gap-3 text-xs text-gray-300">
-              <Info size={18} className="text-accent shrink-0 mt-0.5" />
+            <div style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30` }} className="p-4 border rounded-2xl flex items-start gap-3 text-xs">
+              <Info size={18} style={{ color: cardHighlight }} className="shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="font-bold text-white">Szerkesztési útmutató &amp; Élő Jelzések:</p>
+                <p style={{ color: textColor }} className="font-bold">Szerkesztési útmutató &amp; Élő Jelzések:</p>
                 <ul className="list-disc list-inside text-gray-400 space-y-0.5 text-[11px] leading-relaxed">
                   <li><strong>Főmenük:</strong> A legfelső szinten megjelenő fülek a fejlécben.</li>
                   <li><strong>Almenük:</strong> A főmenü alá behúzott elemek, melyek a legördülő menüben és mobil harmonikában jelennek meg.</li>
-                  <li><strong>Inaktívvá tétel:</strong> A szem ikonra (<Eye size={12} className="inline mx-0.5 text-accent" /> / <EyeOff size={12} className="inline mx-0.5 text-gray-500" />) kattintva elrejtheted az elemet a látogatók elől anélkül, hogy törölnéd az adatbázisból.</li>
+                  <li><strong>Inaktívvá tétel:</strong> A szem ikonra (<Eye size={12} style={{ color: cardHighlight }} className="inline mx-0.5" /> / <EyeOff size={12} className="inline mx-0.5 text-gray-500" />) kattintva elrejtheted az elemet a látogatók elől anélkül, hogy törölnéd az adatbázisból.</li>
                   <li><strong>Sorrendezése:</strong> A nyilakkal (<ArrowUp size={12} className="inline" /> / <ArrowDown size={12} className="inline" />) megváltoztathatod a menüpontok sorrendjét.</li>
                 </ul>
               </div>
@@ -1694,19 +1759,25 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 const subItems = navItems.filter((sub) => sub.parentId === mainItem.id).sort((a, b) => a.displayOrder - b.displayOrder);
 
                 return (
-                  <div key={mainItem.id} className="border border-[#222] rounded-2xl overflow-hidden bg-[#161616]">
+                  <div key={mainItem.id} style={{ borderColor: cardBorder, backgroundColor: inputBg }} className="border rounded-2xl overflow-hidden shadow-sm">
                     {/* Main Item Row */}
-                    <div className={`p-4 flex flex-wrap items-center justify-between gap-3 ${mainItem.isActive ? 'bg-[#1C1C1C]' : 'bg-[#121212] opacity-60'}`}>
+                    <div
+                      style={{ backgroundColor: mainItem.isActive ? headerBg : cardBg }}
+                      className={`p-4 flex flex-wrap items-center justify-between gap-3 ${mainItem.isActive ? '' : 'opacity-60'}`}
+                    >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-6 h-6 rounded-lg bg-accent/10 border border-accent/30 text-accent font-extrabold text-xs flex items-center justify-center shrink-0">
+                        <span
+                          style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                          className="w-6 h-6 rounded-lg border font-extrabold text-xs flex items-center justify-center shrink-0"
+                        >
                           {mainItem.displayOrder}
                         </span>
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-extrabold text-white truncate">{mainItem.label}</span>
+                            <span style={{ color: textColor }} className="text-sm font-extrabold truncate">{mainItem.label}</span>
                             {mainItem.badge && (
-                              <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">
+                              <span style={{ backgroundColor: `${cardHighlight}30`, color: cardHighlight }} className="text-[10px] px-2 py-0.5 rounded-full font-bold">
                                 {mainItem.badge}
                               </span>
                             )}
@@ -1716,7 +1787,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                               </span>
                             )}
                           </div>
-                          <span className="text-xs font-mono text-gray-500">Útvonal: #{mainItem.page}</span>
+                          <span className="text-xs font-mono text-gray-400">Útvonal: #{mainItem.page}</span>
                         </div>
                       </div>
 
@@ -1741,7 +1812,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                           type="button"
                           disabled={mainIdx === 0}
                           onClick={() => handleMoveNav(mainItem.id, 'up')}
-                          className="p-2 rounded-xl bg-[#222] hover:bg-[#333] text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="p-2 border rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:opacity-80"
                           title="Mozgatás felfelé"
                         >
                           <ArrowUp size={14} />
@@ -1750,7 +1822,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                           type="button"
                           disabled={mainIdx === mainArr.length - 1}
                           onClick={() => handleMoveNav(mainItem.id, 'down')}
-                          className="p-2 rounded-xl bg-[#222] hover:bg-[#333] text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="p-2 border rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:opacity-80"
                           title="Mozgatás lefelé"
                         >
                           <ArrowDown size={14} />
@@ -1769,7 +1842,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         <button
                           type="button"
                           onClick={() => handleOpenEditNavModal(mainItem)}
-                          className="p-2 rounded-xl bg-[#222] hover:bg-[#333] text-gray-300 hover:text-white transition-colors"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="p-2 border rounded-xl hover:opacity-80 transition-colors"
                           title="Szerkesztés"
                         >
                           <Edit3 size={14} />
@@ -1789,23 +1863,28 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
                     {/* Child Submenu Tree */}
                     {subItems.length > 0 && (
-                      <div className="bg-[#111111] px-4 py-3 border-t border-[#222] space-y-2">
-                        <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                          <ChevronRight size={12} className="text-accent" /> Almenü Pontok ({subItems.length} db)
+                      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="px-4 py-3 border-t space-y-2">
+                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <ChevronRight size={12} style={{ color: cardHighlight }} /> Almenü Pontok ({subItems.length} db)
                         </div>
 
                         {subItems.map((subItem, subIdx) => (
                           <div
                             key={subItem.id}
-                            className={`ml-4 pl-4 border-l-2 border-accent/40 py-2 px-3 rounded-xl border border-[#222] flex flex-wrap items-center justify-between gap-2 transition-all ${
-                              subItem.isActive ? 'bg-[#161922]' : 'bg-[#141414] opacity-50'
+                            style={{
+                              borderColor: cardBorder,
+                              borderLeftColor: cardHighlight,
+                              backgroundColor: subItem.isActive ? inputBg : cardBg,
+                            }}
+                            className={`ml-4 pl-4 border-l-2 py-2 px-3 rounded-xl border flex flex-wrap items-center justify-between gap-2 transition-all ${
+                              subItem.isActive ? '' : 'opacity-50'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cardHighlight }} />
                               <div className="min-w-0">
-                                <span className="text-xs font-bold text-gray-200">{subItem.label}</span>
-                                <span className="text-[11px] font-mono text-gray-500 ml-2">#{subItem.page}</span>
+                                <span style={{ color: textColor }} className="text-xs font-bold">{subItem.label}</span>
+                                <span className="text-[11px] font-mono text-gray-400 ml-2">#{subItem.page}</span>
                               </div>
                             </div>
 
@@ -1828,7 +1907,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                                 type="button"
                                 disabled={subIdx === 0}
                                 onClick={() => handleMoveNav(subItem.id, 'up')}
-                                className="p-1.5 rounded-lg bg-[#222] hover:bg-[#333] text-gray-400 disabled:opacity-30 transition-colors"
+                                style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                                className="p-1.5 border rounded-lg disabled:opacity-30 transition-colors hover:opacity-80"
                               >
                                 <ArrowUp size={12} />
                               </button>
@@ -1836,7 +1916,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                                 type="button"
                                 disabled={subIdx === subItems.length - 1}
                                 onClick={() => handleMoveNav(subItem.id, 'down')}
-                                className="p-1.5 rounded-lg bg-[#222] hover:bg-[#333] text-gray-400 disabled:opacity-30 transition-colors"
+                                style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                                className="p-1.5 border rounded-lg disabled:opacity-30 transition-colors hover:opacity-80"
                               >
                                 <ArrowDown size={12} />
                               </button>
@@ -1845,7 +1926,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditNavModal(subItem)}
-                                className="p-1.5 rounded-lg bg-[#222] hover:bg-[#333] text-gray-300 transition-colors"
+                                style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                                className="p-1.5 border rounded-lg hover:opacity-80 transition-colors"
                               >
                                 <Edit3 size={13} />
                               </button>
@@ -1873,10 +1955,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* TAB: CALCULATOR PRICING CONFIGURATOR */}
       {activeTab === 'calculators' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
           <div>
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Calculator size={20} className="text-accent" /> Kalkulátor Anyag- és Munkadíj Egységárak
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <Calculator size={20} style={{ color: cardHighlight }} /> Kalkulátor Anyag- és Munkadíj Egységárak
             </h2>
             <p className="text-xs text-gray-400 mt-1">
               Az itt megadott alapértelmezett egységárak és szorzók alapján számítja ki a rendszer az anyagköltségeket a Számítások &amp; Kalkulátorok oldalon.
@@ -1884,93 +1966,101 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">C20/25 Transzportbeton Egységár (Ft / m³)</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">C20/25 Transzportbeton Egységár (Ft / m³)</label>
               <input
                 type="number"
                 value={calcConfig.concretePricePerM3}
                 onChange={(e) => setCalcConfig({ ...calcConfig, concretePricePerM3: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">Alapértelmezett: 32,000 Ft / m³</span>
+              <span className="text-[11px] text-gray-400">Alapértelmezett: 32,000 Ft / m³</span>
             </div>
 
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Falazóhabarcs Egységár (Ft / m²)</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">Falazóhabarcs Egységár (Ft / m²)</label>
               <input
                 type="number"
                 value={calcConfig.masonryMortarPricePerM2}
                 onChange={(e) => setCalcConfig({ ...calcConfig, masonryMortarPricePerM2: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">Alapértelmezett: 4,500 Ft / m²</span>
+              <span className="text-[11px] text-gray-400">Alapértelmezett: 4,500 Ft / m²</span>
             </div>
 
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Homlokzati Hőszigetelés Egységár (Ft / m²)</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">Homlokzati Hőszigetelés Egységár (Ft / m²)</label>
               <input
                 type="number"
                 value={calcConfig.insulationPricePerM2}
                 onChange={(e) => setCalcConfig({ ...calcConfig, insulationPricePerM2: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">Alapértelmezett: 6,800 Ft / m²</span>
+              <span className="text-[11px] text-gray-400">Alapértelmezett: 6,800 Ft / m²</span>
             </div>
 
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Csemperagasztó Egységár (Ft / kg)</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">Csemperagasztó Egységár (Ft / kg)</label>
               <input
                 type="number"
                 value={calcConfig.tilingAdhesivePricePerKg}
                 onChange={(e) => setCalcConfig({ ...calcConfig, tilingAdhesivePricePerKg: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">Alapértelmezett: 350 Ft / kg</span>
+              <span className="text-[11px] text-gray-400">Alapértelmezett: 350 Ft / kg</span>
             </div>
 
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Gipszkarton Tábla Egységár (Ft / m²)</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">Gipszkarton Tábla Egységár (Ft / m²)</label>
               <input
                 type="number"
                 value={calcConfig.drywallBoardPricePerM2}
                 onChange={(e) => setCalcConfig({ ...calcConfig, drywallBoardPricePerM2: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">Alapértelmezett: 2,200 Ft / m²</span>
+              <span className="text-[11px] text-gray-400">Alapértelmezett: 2,200 Ft / m²</span>
             </div>
 
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Tetőcserép Egységár (Ft / m²)</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">Tetőcserép Egységár (Ft / m²)</label>
               <input
                 type="number"
                 value={calcConfig.roofingTilePricePerM2}
                 onChange={(e) => setCalcConfig({ ...calcConfig, roofingTilePricePerM2: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">Alapértelmezett: 5,400 Ft / m²</span>
+              <span className="text-[11px] text-gray-400">Alapértelmezett: 5,400 Ft / m²</span>
             </div>
 
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Munkadíj Becslési Szorzó</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">Munkadíj Becslési Szorzó</label>
               <input
                 type="number"
                 step="0.05"
                 value={calcConfig.laborCostMultiplier}
                 onChange={(e) => setCalcConfig({ ...calcConfig, laborCostMultiplier: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">pl. 1.25 = anyagköltség + 25% munkadíj</span>
+              <span className="text-[11px] text-gray-400">pl. 1.25 = anyagköltség + 25% munkadíj</span>
             </div>
 
-            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">ÁFA Kulcs (%)</label>
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+              <label className="text-xs font-bold text-gray-400 block">ÁFA Kulcs (%)</label>
               <input
                 type="number"
                 value={calcConfig.vatRatePercent}
                 onChange={(e) => setCalcConfig({ ...calcConfig, vatRatePercent: Number(e.target.value) })}
-                className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
               />
-              <span className="text-[11px] text-gray-500">Alapértelmezett: 27 %</span>
+              <span className="text-[11px] text-gray-400">Alapértelmezett: 27 %</span>
             </div>
           </div>
         </div>
@@ -1978,11 +2068,11 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* TAB: LEGAL DOCUMENTS WYSIWYG SECTION EDITOR */}
       {activeTab === 'legal' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-4">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
+          <div style={{ borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Shield size={20} className="text-accent" /> Jogi Szövegek &amp; Szabályzatok Szerkesztője
+              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                <Shield size={20} style={{ color: cardHighlight }} /> Jogi Szövegek &amp; Szabályzatok Szerkesztője
               </h2>
               <p className="text-xs text-gray-400 mt-1">
                 Szerkeszd élőben az Adatvédelmi Tájékoztató (GDPR), az ÁSZF és a Süti Szabályzat szekcióit, törzsszövegeit és felsorolási pontjait.
@@ -1991,7 +2081,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           </div>
 
           {/* Subtab Selector */}
-          <div className="flex items-center gap-2 bg-[#161616] p-1.5 rounded-2xl border border-[#222] overflow-x-auto">
+          <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center gap-2 p-1.5 rounded-2xl border overflow-x-auto">
             {[
               { key: 'privacyPolicy', label: '🔒 Adatvédelem (GDPR)' },
               { key: 'terms', label: '📄 ÁSZF Szerződési Feltételek' },
@@ -2001,11 +2091,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 key={sub.key}
                 type="button"
                 onClick={() => setActiveLegalDocTab(sub.key as typeof activeLegalDocTab)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                style={
                   activeLegalDocTab === sub.key
-                    ? 'bg-accent text-black shadow-md font-extrabold'
-                    : 'text-gray-400 hover:text-white hover:bg-[#222]'
-                }`}
+                    ? { backgroundColor: cardHighlight, color: '#000000' }
+                    : { backgroundColor: cardBg, color: textColor }
+                }
+                className="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer hover:opacity-90"
               >
                 {sub.label}
               </button>
@@ -2013,13 +2104,13 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           </div>
 
           {/* DOCUMENT HEADER METADATA */}
-          <div className="bg-[#161616] p-5 rounded-2xl border border-[#222] space-y-4">
-            <h3 className="text-xs font-bold text-accent uppercase tracking-wider">
+          <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 rounded-2xl border space-y-4 shadow-sm">
+            <h3 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider">
               Dokumentum Fejléc Adatok ({activeLegalDocTab})
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div className="sm:col-span-2">
-                <label className="font-bold text-gray-300 block mb-1">Címsor *</label>
+                <label className="font-bold text-gray-400 block mb-1">Címsor *</label>
                 <input
                   type="text"
                   value={legalDocs[activeLegalDocTab].title}
@@ -2029,11 +2120,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       [activeLegalDocTab]: { ...legalDocs[activeLegalDocTab], title: e.target.value },
                     })
                   }
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="font-bold text-gray-300 block mb-1">Verziószám *</label>
+                <label className="font-bold text-gray-400 block mb-1">Verziószám *</label>
                 <input
                   type="text"
                   value={legalDocs[activeLegalDocTab].version}
@@ -2043,7 +2135,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       [activeLegalDocTab]: { ...legalDocs[activeLegalDocTab], version: e.target.value },
                     })
                   }
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white focus:outline-none focus:border-accent font-mono"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2 font-mono focus:outline-none"
                 />
               </div>
             </div>
@@ -2053,13 +2146,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           {(activeLegalDocTab === 'privacyPolicy' || activeLegalDocTab === 'terms') && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <FileText size={16} className="text-accent" /> Szekciók &amp; Törzsszövegek ({legalDocs[activeLegalDocTab].sections.length} db szekció)
+                <h3 style={{ color: textColor }} className="text-sm font-bold flex items-center gap-2">
+                  <FileText size={16} style={{ color: cardHighlight }} /> Szekciók &amp; Törzsszövegek ({legalDocs[activeLegalDocTab].sections.length} db szekció)
                 </h3>
                 <button
                   type="button"
                   onClick={() => handleAddLegalSection(activeLegalDocTab)}
-                  className="px-3.5 py-1.5 bg-accent/10 border border-accent/30 hover:bg-accent hover:text-black text-accent text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                  style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                  className="px-3.5 py-1.5 border text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer hover:opacity-90"
                 >
                   <Plus size={14} /> Új Szekció Hozzáadása
                 </button>
@@ -2067,15 +2161,16 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
               <div className="space-y-4">
                 {legalDocs[activeLegalDocTab].sections.map((sec, idx) => (
-                  <div key={idx} className="bg-[#161616] border border-[#222] rounded-2xl p-5 space-y-4 shadow-sm hover:border-[#333] transition-colors">
-                    <div className="flex items-center justify-between gap-3 border-b border-[#222] pb-3">
-                      <span className="text-xs font-mono font-bold text-accent">#{idx + 1}. Szekció</span>
+                  <div key={idx} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-4 shadow-sm hover:opacity-95 transition-colors">
+                    <div style={{ borderColor: cardBorder }} className="flex items-center justify-between gap-3 border-b pb-3">
+                      <span style={{ color: cardHighlight }} className="text-xs font-mono font-bold">#{idx + 1}. Szekció</span>
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleMoveLegalSection(activeLegalDocTab, idx, 'up')}
                           disabled={idx === 0}
-                          className="p-1.5 bg-[#222] hover:bg-[#333] disabled:opacity-40 text-gray-300 rounded-lg text-xs"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="p-1.5 border disabled:opacity-40 rounded-lg text-xs hover:opacity-80"
                           title="Mozgatás Fel"
                         >
                           <ArrowUp size={13} />
@@ -2084,7 +2179,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                           type="button"
                           onClick={() => handleMoveLegalSection(activeLegalDocTab, idx, 'down')}
                           disabled={idx === legalDocs[activeLegalDocTab].sections.length - 1}
-                          className="p-1.5 bg-[#222] hover:bg-[#333] disabled:opacity-40 text-gray-300 rounded-lg text-xs"
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                          className="p-1.5 border disabled:opacity-40 rounded-lg text-xs hover:opacity-80"
                           title="Mozgatás Le"
                         >
                           <ArrowDown size={13} />
@@ -2102,22 +2198,24 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
                     <div className="space-y-3 text-xs">
                       <div>
-                        <label className="font-bold text-gray-300 block mb-1">Szekció Címsor (Alcím)</label>
+                        <label className="font-bold text-gray-400 block mb-1">Szekció Címsor (Alcím)</label>
                         <input
                           type="text"
                           value={sec.title}
                           onChange={(e) => handleUpdateLegalSection(activeLegalDocTab, idx, 'title', e.target.value)}
-                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-accent"
+                          style={fieldStyle}
+                          className="w-full border rounded-xl px-4 py-2 font-bold focus:outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="font-bold text-gray-300 block mb-1">Szekció Törzsszövege (RichText / Bekezdések)</label>
+                        <label className="font-bold text-gray-400 block mb-1">Szekció Törzsszövege (RichText / Bekezdések)</label>
                         <textarea
                           rows={4}
                           value={sec.text}
                           onChange={(e) => handleUpdateLegalSection(activeLegalDocTab, idx, 'text', e.target.value)}
-                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent font-sans leading-relaxed"
+                          style={fieldStyle}
+                          className="w-full border rounded-xl p-3 focus:outline-none leading-relaxed"
                         />
                       </div>
 
@@ -2135,7 +2233,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                             )
                           }
                           placeholder="pl. 1. Pontos név és címtárolás&#10;2. Email cím titkosított hash formátumban"
-                          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-white focus:outline-none focus:border-accent font-mono text-[11px]"
+                          style={fieldStyle}
+                          className="w-full border rounded-xl p-3 font-mono text-[11px] focus:outline-none"
                         />
                       </div>
                     </div>
@@ -2150,194 +2249,211 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       {/* TAB: ABOUT PAGE SETTINGS */}
       {activeTab === 'about' && (
         <div className="space-y-8 max-w-4xl">
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Info size={20} className="text-accent" /> 1. Rólunk Fejléc &amp; Hero Szövegek
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <Info size={20} style={{ color: cardHighlight }} /> 1. Rólunk Fejléc &amp; Hero Szövegek
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Hero Kiemelt Címke (Tagline)</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Hero Kiemelt Címke (Tagline)</label>
                 <input
                   type="text"
                   value={aboutSettings.heroTagline}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, heroTagline: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Hero Főcím</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Hero Főcím</label>
                 <input
                   type="text"
                   value={aboutSettings.heroTitle}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, heroTitle: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Hero Alcím / Bevezető Szöveg</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Hero Alcím / Bevezető Szöveg</label>
                 <textarea
                   rows={3}
                   value={aboutSettings.heroDescription}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, heroDescription: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-accent leading-relaxed"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl p-3 text-sm focus:outline-none leading-relaxed"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Building size={20} className="text-accent" /> 2. Bemutatkozás Szövegek
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <Building size={20} style={{ color: cardHighlight }} /> 2. Bemutatkozás Szövegek
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Bemutatkozás Címsor</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Bemutatkozás Címsor</label>
                 <input
                   type="text"
                   value={aboutSettings.introTitle}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, introTitle: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Bemutatkozás Leírása</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Bemutatkozás Leírása</label>
                 <textarea
                   rows={3}
                   value={aboutSettings.introDescription}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, introDescription: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-accent leading-relaxed"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl p-3 text-sm focus:outline-none leading-relaxed"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Target size={20} className="text-accent" /> 3. Küldetés &amp; Vízió (Jövőkép)
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <Target size={20} style={{ color: cardHighlight }} /> 3. Küldetés &amp; Vízió (Jövőkép)
             </h2>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-300 block">Küldetés Címsor</label>
+                  <label className="text-xs font-bold text-gray-400 block">Küldetés Címsor</label>
                   <input
                     type="text"
                     value={aboutSettings.missionTitle}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, missionTitle: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-sm text-white font-bold"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2 text-sm font-bold"
                   />
                   <label className="text-xs font-bold text-gray-400 block pt-1">Küldetés Leírása</label>
                   <textarea
                     rows={4}
                     value={aboutSettings.missionDescription}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, missionDescription: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white leading-relaxed"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl p-3 text-sm leading-relaxed"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-300 block">Vízió (Jövőkép) Címsor</label>
+                  <label className="text-xs font-bold text-gray-400 block">Vízió (Jövőkép) Címsor</label>
                   <input
                     type="text"
                     value={aboutSettings.visionTitle}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, visionTitle: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2 text-sm text-white font-bold"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2 text-sm font-bold"
                   />
                   <label className="text-xs font-bold text-gray-400 block pt-1">Vízió Leírása</label>
                   <textarea
                     rows={4}
                     value={aboutSettings.visionDescription}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, visionDescription: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white leading-relaxed"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl p-3 text-sm leading-relaxed"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <ShieldCheck size={20} className="text-accent" /> 4. Alapértékek &amp; Pillérek
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <ShieldCheck size={20} style={{ color: cardHighlight }} /> 4. Alapértékek &amp; Pillérek
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Értékek Címsor</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Értékek Címsor</label>
                 <input
                   type="text"
                   value={aboutSettings.valuesTitle}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, valuesTitle: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-bold"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-sm font-bold"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1">Értékek Bevezető Leírása</label>
+                <label className="text-xs font-bold text-gray-400 block mb-1">Értékek Bevezető Leírása</label>
                 <textarea
                   rows={2}
                   value={aboutSettings.valuesDescription}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, valuesDescription: e.target.value })}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-sm text-white leading-relaxed"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl p-3 text-sm leading-relaxed"
                 />
               </div>
 
-              <div className="pt-4 border-t border-[#222] space-y-4">
-                <h3 className="text-sm font-extrabold text-accent">Három Fő Pillér</h3>
+              <div style={{ borderColor: cardBorder }} className="pt-4 border-t space-y-4">
+                <h3 style={{ color: cardHighlight }} className="text-sm font-extrabold">Három Fő Pillér</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-                    <label className="text-xs font-bold text-white block">1. Pillér Címe</label>
+                  <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+                    <label style={{ color: textColor }} className="text-xs font-bold block">1. Pillér Címe</label>
                     <input
                       type="text"
                       value={aboutSettings.pillar1Title}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar1Title: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white font-bold"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-1.5 text-xs font-bold"
                     />
                     <label className="text-xs font-bold text-gray-400 block pt-1">1. Pillér Leírása</label>
                     <textarea
                       rows={3}
                       value={aboutSettings.pillar1Desc}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar1Desc: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white leading-relaxed"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl p-2 text-xs leading-relaxed"
                     />
                   </div>
 
-                  <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-                    <label className="text-xs font-bold text-white block">2. Pillér Címe</label>
+                  <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+                    <label style={{ color: textColor }} className="text-xs font-bold block">2. Pillér Címe</label>
                     <input
                       type="text"
                       value={aboutSettings.pillar2Title}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar2Title: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white font-bold"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-1.5 text-xs font-bold"
                     />
                     <label className="text-xs font-bold text-gray-400 block pt-1">2. Pillér Leírása</label>
                     <textarea
                       rows={3}
                       value={aboutSettings.pillar2Desc}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar2Desc: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white leading-relaxed"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl p-2 text-xs leading-relaxed"
                     />
                   </div>
 
-                  <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-2">
-                    <label className="text-xs font-bold text-white block">3. Pillér Címe</label>
+                  <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
+                    <label style={{ color: textColor }} className="text-xs font-bold block">3. Pillér Címe</label>
                     <input
                       type="text"
                       value={aboutSettings.pillar3Title}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar3Title: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-white font-bold"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-1.5 text-xs font-bold"
                     />
                     <label className="text-xs font-bold text-gray-400 block pt-1">3. Pillér Leírása</label>
                     <textarea
                       rows={3}
                       value={aboutSettings.pillar3Desc}
                       onChange={(e) => setAboutSettings({ ...aboutSettings, pillar3Desc: e.target.value })}
-                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-2 text-xs text-white leading-relaxed"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl p-2 text-xs leading-relaxed"
                     />
                   </div>
                 </div>
@@ -2349,10 +2465,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* TAB 3: ADS & MONETIZATION */}
       {activeTab === 'ads' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
           <div>
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <Megaphone size={20} className="text-accent" /> Reklámok & Partneri Ajánlatok Globális Kapcsolói
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <Megaphone size={20} style={{ color: cardHighlight }} /> Reklámok &amp; Partneri Ajánlatok Globális Kapcsolói
             </h2>
             <p className="text-xs text-gray-400 mt-1">
               Engedélyezd vagy tiltsd le a weboldalon megjelenő reklám- és affiliate felületeket.
@@ -2382,23 +2498,24 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             ].map((adOption) => (
               <div
                 key={adOption.key}
-                className="p-5 bg-[#161616] border border-[#222] rounded-2xl flex items-center justify-between"
+                style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+                className="p-5 border rounded-2xl flex items-center justify-between"
               >
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-white">{adOption.title}</h4>
+                  <h4 style={{ color: textColor }} className="text-sm font-bold">{adOption.title}</h4>
                   <p className="text-xs text-gray-400">{adOption.desc}</p>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() =>
                     setSettings((prev) => ({
                       ...prev,
                       [adOption.key]: !prev[adOption.key as keyof SiteSettings],
                     }))
                   }
-                  className={`w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                    adOption.value ? 'bg-accent' : 'bg-gray-700'
-                  }`}
+                  style={adOption.value ? { backgroundColor: cardHighlight } : { backgroundColor: '#374151' }}
+                  className="w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer"
                 >
                   <div
                     className={`w-5 h-5 rounded-full bg-black absolute top-0.5 transition-transform ${
@@ -2411,11 +2528,13 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           </div>
 
           {onNavigate && (
-            <div className="pt-4 border-t border-[#222] flex items-center justify-between">
+            <div style={{ borderColor: cardBorder }} className="pt-4 border-t flex items-center justify-between">
               <span className="text-xs text-gray-400">Egyedi reklámkampányok kezelése az Admin Ads menüben</span>
               <button
+                type="button"
                 onClick={() => onNavigate('ads')}
-                className="px-4 py-2 bg-accent/10 border border-accent/30 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-black transition-all"
+                style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all cursor-pointer"
               >
                 Ugrás a Reklámkezelőbe
               </button>
@@ -2426,10 +2545,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* TAB 4: SYSTEM & SECURITY */}
       {activeTab === 'system' && (
-        <div className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl max-w-4xl">
           <div>
-            <h2 className="text-lg font-bold text-white border-b border-[#222] pb-3 flex items-center gap-2">
-              <ShieldAlert size={20} className="text-accent" /> Rendszer & Biztonsági Beállítások
+            <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+              <ShieldAlert size={20} style={{ color: cardHighlight }} /> Rendszer &amp; Biztonsági Beállítások
             </h2>
             <p className="text-xs text-gray-400 mt-1">
               Karbantartási mód, látogatói korlátozások és regisztráció kezelése.
@@ -2445,6 +2564,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   <p className="text-xs text-amber-200/80">Ha be van kapcsolva, a látogatóknak karbantartási üzenet jelenik meg.</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSettings({ ...settings, maintenanceMode: !settings.maintenanceMode })}
                   className={`w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
                     settings.maintenanceMode ? 'bg-amber-500' : 'bg-gray-700'
@@ -2465,23 +2585,24 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     rows={2}
                     value={settings.maintenanceMessage}
                     onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-accent"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl p-3 text-xs focus:outline-none"
                   />
                 </div>
               )}
             </div>
 
             {/* Registration toggle */}
-            <div className="p-5 bg-[#161616] border border-[#222] rounded-2xl flex items-center justify-between">
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-bold text-white">Új Felhasználók Regisztrációjának Engedélyezése</h4>
+                <h4 style={{ color: textColor }} className="text-sm font-bold">Új Felhasználók Regisztrációjának Engedélyezése</h4>
                 <p className="text-xs text-gray-400">Ha kikapcsolod, az új regisztrációk ideiglenesen fel vannak függesztve.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setSettings({ ...settings, allowRegistration: !settings.allowRegistration })}
-                className={`w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                  settings.allowRegistration ? 'bg-accent' : 'bg-gray-700'
-                }`}
+                style={settings.allowRegistration ? { backgroundColor: cardHighlight } : { backgroundColor: '#374151' }}
+                className="w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer"
               >
                 <div
                   className={`w-5 h-5 rounded-full bg-black absolute top-0.5 transition-transform ${
@@ -2492,16 +2613,16 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             </div>
 
             {/* Auth requirement for detailed glossary */}
-            <div className="p-5 bg-[#161616] border border-[#222] rounded-2xl flex items-center justify-between">
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-bold text-white">Részletes Fogalomtár Regisztrációhoz Kötése</h4>
+                <h4 style={{ color: textColor }} className="text-sm font-bold">Részletes Fogalomtár Regisztrációhoz Kötése</h4>
                 <p className="text-xs text-gray-400">A fogalmak részletes videói, leírásai és diáit csak a bejelentkezett userek láthatják.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setSettings({ ...settings, requireAuthForDetailedGlossary: !settings.requireAuthForDetailedGlossary })}
-                className={`w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                  settings.requireAuthForDetailedGlossary ? 'bg-accent' : 'bg-gray-700'
-                }`}
+                style={settings.requireAuthForDetailedGlossary ? { backgroundColor: cardHighlight } : { backgroundColor: '#374151' }}
+                className="w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer"
               >
                 <div
                   className={`w-5 h-5 rounded-full bg-black absolute top-0.5 transition-transform ${
@@ -2517,16 +2638,17 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       {/* Add / Edit Navigation Item Modal */}
       {showNavModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111111] border border-[#222] rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between border-b border-[#222] pb-4">
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                <Compass size={18} className="text-accent" />
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
+              <h3 style={{ color: textColor }} className="text-base font-extrabold flex items-center gap-2">
+                <Compass size={18} style={{ color: cardHighlight }} />
                 {editingNavItem ? 'Menüpont Szerkesztése' : 'Új Menü- vagy Almenüpont Hozzáadása'}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowNavModal(false)}
-                className="text-gray-400 hover:text-white text-xs font-bold px-2 py-1 bg-[#1A1A1A] rounded-lg"
+                style={{ backgroundColor: inputBg, color: textColor }}
+                className="text-xs font-bold px-2 py-1 rounded-lg hover:opacity-80"
               >
                 ✕
               </button>
@@ -2534,7 +2656,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
             <form onSubmit={handleSaveNavForm} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                <label className="text-xs font-bold text-gray-400 block mb-1.5">
                   Menüpont Megnevezése (Megjelenő Felirat) *
                 </label>
                 <input
@@ -2543,18 +2665,20 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   value={navFormLabel}
                   onChange={(e) => setNavFormLabel(e.target.value)}
                   placeholder="pl. Blog cikkek, Szakmai szótár..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                <label className="text-xs font-bold text-gray-400 block mb-1.5">
                   Szülő Menüpont (Helyzet a Menüfa Struktúrában)
                 </label>
                 <select
                   value={navFormParentId || ''}
                   onChange={(e) => setNavFormParentId(e.target.value === '' ? null : e.target.value)}
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                 >
                   <option value="">-- Gyökér Szintű Főmenü (Felső menüsor) --</option>
                   {navItems
@@ -2568,7 +2692,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                <label className="text-xs font-bold text-gray-400 block mb-1.5">
                   Cél Oldal / Útvonal Identifikátor (#page) *
                 </label>
                 <div className="space-y-2">
@@ -2578,7 +2702,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     value={navFormPage}
                     onChange={(e) => setNavFormPage(e.target.value)}
                     placeholder="home, category, glossary, tool, paths, courses..."
-                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent font-mono"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none"
                   />
 
                   {/* Quick Preset Selector */}
@@ -2605,11 +2730,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         type="button"
                         key={p}
                         onClick={() => setNavFormPage(p)}
-                        className={`text-[10px] font-mono px-2 py-1 rounded-md border transition-all ${
+                        style={
                           navFormPage === p
-                            ? 'bg-accent text-black font-bold border-accent'
-                            : 'bg-[#181818] border-[#2A2A2A] text-gray-400 hover:text-white'
-                        }`}
+                            ? { backgroundColor: cardHighlight, color: '#000000', borderColor: cardHighlight }
+                            : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+                        }
+                        className="text-[10px] font-mono px-2 py-1 rounded-md border transition-all hover:opacity-90 font-bold"
                       >
                         #{p}
                       </button>
@@ -2619,7 +2745,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-300 block mb-1.5">
+                <label className="text-xs font-bold text-gray-400 block mb-1.5">
                   Kiemelt Jelvény / Badge Szöveg (Opcionális)
                 </label>
                 <input
@@ -2627,11 +2753,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   value={navFormBadge}
                   onChange={(e) => setNavFormBadge(e.target.value)}
                   placeholder="pl. Új, Hot, Béta..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  style={fieldStyle}
+                  className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222]">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-4 border-t">
                 <button
                   type="button"
                   onClick={() => setShowNavModal(false)}
