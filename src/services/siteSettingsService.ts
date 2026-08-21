@@ -283,16 +283,20 @@ export function applySiteSettings(settings: SiteSettings): void {
     const effectivePng = (settings?.faviconPngUrl && settings.faviconPngUrl !== '/logo.png') ? settings.faviconPngUrl : effectiveLogo;
     const effectiveApple = (settings?.appleTouchIconUrl && settings.appleTouchIconUrl !== '/logo.png') ? settings.appleTouchIconUrl : effectiveLogo;
     const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : effectiveLogo;
+    const effectivePwa512 = (settings?.pwaIcon512Url && settings.pwaIcon512Url !== '/logo.png') ? settings.pwaIcon512Url : effectiveLogo;
 
-    // 1. Browser & Shortcut Favicons
+    // 1. Browser, Opera Speed Dial & Shortcut Favicons
     setLink('app-favicon-ico', 'icon', withVersion(effectiveIco, '/favicon.ico'), 'image/x-icon', 'any');
     if (settings?.faviconSvgUrl) {
       setLink('app-favicon-svg', 'icon', withVersion(settings.faviconSvgUrl, ''), 'image/svg+xml');
     }
     setLink('app-favicon-png', 'icon', withVersion(effectivePng, '/logo.png'), 'image/png', '32x32');
     setLink('app-favicon-shortcut', 'shortcut icon', withVersion(effectivePng, '/logo.png'));
+    setLink('app-image-src', 'image_src', withVersion(effectiveLogo, '/logo.png'));
     setLink('app-pwa-192', 'icon', withVersion(effectivePwa192, '/logo.png'), 'image/png', '192x192');
+    setLink('app-pwa-512', 'icon', withVersion(effectivePwa512, '/logo.png'), 'image/png', '512x512');
     setLink('app-apple-touch-icon', 'apple-touch-icon', withVersion(effectiveApple, '/logo.png'), undefined, '180x180');
+    setLink('app-apple-touch-precomposed', 'apple-touch-icon-precomposed', withVersion(effectiveApple, '/logo.png'));
 
     // 2. Web App Manifest
     setLink('app-webmanifest-link', 'manifest', `/site.webmanifest?v=${v}`);
@@ -301,7 +305,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     }
 
     // 3. PWA Theme Color
-    setMeta({ name: 'theme-color' }, settings?.pwaThemeColor || '#f59e0b');
+    setMeta({ name: 'theme-color' }, settings?.pwaThemeColor || '#4165b4');
 
     // 4. Open Graph & Social Meta Tags
     const canonicalUrl = typeof window !== 'undefined' ? window.location.href : 'https://epitotudas.hu';

@@ -52,8 +52,16 @@
           if (elPng) elPng.href = pngUrl;
           var elShortcut = document.getElementById('app-favicon-shortcut');
           if (elShortcut) elShortcut.href = pngUrl;
+          var elImageSrc = document.getElementById('app-image-src');
+          if (elImageSrc) elImageSrc.href = pngUrl;
           var elApple = document.getElementById('app-apple-touch-icon');
           if (elApple) elApple.href = appleUrl;
+          var elApplePre = document.getElementById('app-apple-touch-precomposed');
+          if (elApplePre) elApplePre.href = appleUrl;
+          var elPwa192 = document.getElementById('app-pwa-192');
+          if (elPwa192) elPwa192.href = pngUrl;
+          var elPwa512 = document.getElementById('app-pwa-512');
+          if (elPwa512) elPwa512.href = pngUrl;
 
           window.__INITIAL_SITE_SETTINGS__ = s;
         }
@@ -61,10 +69,17 @@
     })();
   </script>
 
-  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=1" id="app-favicon-ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/logo.png?v=1" id="app-favicon-png" />
-  <link rel="shortcut icon" href="/logo.png?v=1" id="app-favicon-shortcut" />
-  <link rel="apple-touch-icon" href="/logo.png?v=1" id="app-apple-touch-icon" />
+  <!-- PWA & Opera Speed Dial / Apple Icons -->
+  <link rel="manifest" href="/site.webmanifest?v=1787313602476" id="app-webmanifest-link" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=1787313602476" id="app-favicon-ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/logo.png?v=1787313602476" id="app-favicon-png" />
+  <link rel="shortcut icon" href="/logo.png?v=1787313602476" id="app-favicon-shortcut" />
+  <link rel="image_src" href="/logo.png?v=1787313602476" id="app-image-src" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo.png?v=1787313602476" id="app-apple-touch-icon" />
+  <link rel="apple-touch-icon-precomposed" href="/logo.png?v=1787313602476" id="app-apple-touch-precomposed" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/logo.png?v=1787313602476" id="app-pwa-192" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/logo.png?v=1787313602476" id="app-pwa-512" />
+  <meta name="theme-color" content="#4165b4" id="app-theme-color" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>ÉpítőTudás – Építőipari tudásbázis és szakmai képzések</title>
