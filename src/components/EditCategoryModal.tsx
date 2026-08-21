@@ -34,8 +34,8 @@ import {
   Upload,
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
-import type { Category } from '../lib/supabase';
 import { createCategory, updateCategory } from '../services/categoryService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface EditCategoryModalProps {
   category: Category | null; // null = create mode
@@ -330,17 +330,33 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
     }
   }
 
-  const fieldClass =
-    'w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
-  const labelClass = 'block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide';
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors';
+  const labelClass = 'block text-xs font-bold mb-1.5 uppercase tracking-wide';
+  const labelStyle: React.CSSProperties = {
+    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
+  };
 
   const SelectedIconComp = AVAILABLE_ICONS.find((i) => i.name === form.icon_name)?.Icon || Layers;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111] border border-[#1E1E1E] rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Fejléc */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E1E1E] bg-[#141414]">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center border shadow-inner transition-all"
@@ -353,23 +369,23 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
               <SelectedIconComp size={20} />
             </div>
             <div>
-              <h2 className="text-base font-black text-white">
+              <h2 style={{ color: textColor }} className="text-base font-black">
                 {isCreate ? 'Új kategória létrehozása' : `Kategória szerkesztése: ${form.name || ''}`}
               </h2>
-              <p className="text-xs text-gray-500">Testreszabhatja a kategória adatait, képeit és megjelenését.</p>
+              <p className="text-xs text-gray-400">Testreszabhatja a kategória adatait, képeit és megjelenését.</p>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={saving}
-            className="p-2 text-gray-500 hover:text-gray-200 hover:bg-[#1E1E1E] rounded-lg disabled:opacity-40 transition-colors"
+            className="p-2 text-gray-400 hover:text-white rounded-lg disabled:opacity-40 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Fülek */}
-        <div className="flex items-center gap-1 px-6 border-b border-[#1E1E1E] bg-[#0E0E0E] overflow-x-auto">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center gap-1 px-6 border-b overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('general')}
@@ -433,10 +449,11 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
           {activeTab === 'general' && (
             <div className="space-y-4">
               <div>
-                <label className={labelClass}>
+                <label style={labelStyle} className={labelClass}>
                   Kategória neve <span className="text-red-400">*</span>
                 </label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.name}
                   onChange={(e) => handleNameChange(e.target.value)}
@@ -446,12 +463,13 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
               </div>
 
               <div>
-                <label className={labelClass}>
+                <label style={labelStyle} className={labelClass}>
                   Slug (URL azonosító) <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-xs text-gray-600 font-mono">/kategoria/</span>
                   <input
+                    style={fieldStyle}
                     className={`${fieldClass} pl-24 font-mono text-xs`}
                     value={form.slug}
                     onChange={(e) => handleSlugChange(e.target.value)}
@@ -464,8 +482,9 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
               </div>
 
               <div>
-                <label className={labelClass}>Leírás</label>
+                <label style={labelStyle} className={labelClass}>Leírás</label>
                 <textarea
+                  style={fieldStyle}
                   className={`${fieldClass} resize-none`}
                   rows={4}
                   value={form.description}
@@ -476,11 +495,12 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
 
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className={labelClass}>Megjelenítési sorrend</label>
+                  <label style={labelStyle} className={labelClass}>Megjelenítési sorrend</label>
                   <input
                     type="number"
                     min={1}
                     max={99}
+                    style={fieldStyle}
                     className={fieldClass}
                     value={form.sort_order}
                     onChange={(e) => update('sort_order', parseInt(e.target.value) || 1)}
@@ -886,26 +906,28 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
           {activeTab === 'seo' && (
             <div className="space-y-4">
               <div>
-                <label className={labelClass}>SEO Cím (Title Tag)</label>
+                <label style={labelStyle} className={labelClass}>SEO Cím (Title Tag)</label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.seo_title}
                   onChange={(e) => update('seo_title', e.target.value)}
                   placeholder={form.name ? `${form.name} – Cikkek és Útmutatók | Építőtudás` : 'Kategória SEO Cím...'}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Keresőmotorokban megjelenő egyedi oldalcím.</p>
+                <p className="text-[11px] text-gray-400 mt-1">Keresőmotorokban megjelenő egyedi oldalcím.</p>
               </div>
 
               <div>
-                <label className={labelClass}>SEO Meta Leírás (Description Tag)</label>
+                <label style={labelStyle} className={labelClass}>SEO Meta Leírás (Description Tag)</label>
                 <textarea
+                  style={fieldStyle}
                   className={`${fieldClass} resize-none`}
                   rows={4}
                   value={form.seo_description}
                   onChange={(e) => update('seo_description', e.target.value)}
                   placeholder="Google keresőben megjelenő rövid összefoglaló (max. 160 karakter)..."
                 />
-                <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+                <div className="flex justify-between text-[10px] text-gray-400 mt-1">
                   <span>Google keresési snippet ajánlott hossza: 120-160 karakter.</span>
                   <span className={form.seo_description.length > 160 ? 'text-amber-400 font-bold' : ''}>
                     {form.seo_description.length} karakter
@@ -917,8 +939,8 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
         </form>
 
         {/* Lábjegyzet gombok */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#1E1E1E] bg-[#141414]">
-          <span className="text-xs text-gray-500">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between px-6 py-4 border-t sticky bottom-0 z-10">
+          <span className="text-xs text-gray-400">
             {isCreate ? 'Új kategória mentése' : 'Módosítások mentése'}
           </span>
           <div className="flex items-center gap-3">
@@ -926,17 +948,18 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-200 disabled:opacity-40 transition-colors"
+              className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white disabled:opacity-40 transition-colors cursor-pointer"
             >
               Mégse
             </button>
             <button
-              type="button"
+              type="submit"
               onClick={handleSubmit}
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FFC400] text-black text-xs font-black rounded-xl hover:bg-[#E6B000] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#FFC400]/10"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-black rounded-xl hover:opacity-90 disabled:opacity-60 transition-colors shadow-md cursor-pointer"
             >
-              <Save size={15} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
+              <Save size={16} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
             </button>
           </div>
         </div>

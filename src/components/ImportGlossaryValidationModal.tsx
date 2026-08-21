@@ -29,6 +29,7 @@ import {
   type GlossaryImportResult,
 } from '../lib/glossaryImportService';
 import { getAuthDebugInfo, type AuthDebugInfo } from '../lib/authService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface ImportGlossaryValidationModalProps {
   isOpen: boolean;
@@ -202,16 +203,23 @@ export default function ImportGlossaryValidationModal({
     }
   };
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const textColor = getContrastTextColor(cardBg);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-[#0D0D0D] rounded-xl border border-[#1E1E1E] w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-[#0D0D0D] border-b border-[#1E1E1E] px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-xl border w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="sticky top-0 border-b px-6 py-4 flex items-center justify-between z-10">
+          <h2 style={{ color: textColor }} className="text-lg font-bold">
             Fogalomtár JSON import — Validálás
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-[#1E1E1E] rounded transition-colors"
+            className="p-1 hover:bg-white/10 rounded transition-colors cursor-pointer"
           >
             <X size={18} className="text-gray-400" />
           </button>

@@ -43,6 +43,7 @@ import {
   interpolateTemplate,
 } from '../services/contractService';
 import { BannerCreativeEditor } from '../components/BannerCreativeEditor';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import type {
   ExtendedAdCampaign,
   CampaignStatusV2,
@@ -329,16 +330,25 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
     return c.status_v2 === filterStatus;
   });
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
   return (
-    <div className="space-y-8 p-4 md:p-8 min-h-screen bg-[#0A0A0A] text-gray-200">
+    <div className="space-y-8 p-4 md:p-8 min-h-screen" style={{ color: textColor }}>
       {/* Executive Suite Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#222] pb-6">
+      <div style={{ borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-4 border-b pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20 mb-2">
+          <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="inline-flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full border mb-2">
             <Megaphone size={14} /> ÉpítőTudás Reklámkezelő v2.1 – Szerződés Suite
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white">
-            Partneri & Reklámkampány Kezelő Központ
+          <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-extrabold">
+            Partneri &amp; Reklámkampány Kezelő Központ
           </h1>
           <p className="text-sm text-gray-400 mt-1">
             Kampány életciklusok, automatikus szerződés generátor, verziózás, legal audit logs és partner portál.
@@ -348,15 +358,17 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setActiveTab('partner_portal')}
-            className="px-4 py-2.5 bg-[#181F33] border border-blue-500/40 text-blue-300 font-bold text-xs rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2"
+            style={{ backgroundColor: headerBg, borderColor: cardBorder, color: textColor }}
+            className="px-4 py-2.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
           >
             <UserCheck size={16} /> Partner Elfogadási Portál Nézet
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
           >
-            <Plus size={16} /> Új Kampány & Szerződés Indítása
+            <Plus size={16} /> Új Kampány &amp; Szerződés Indítása
           </button>
         </div>
       </div>

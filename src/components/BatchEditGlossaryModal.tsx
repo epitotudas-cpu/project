@@ -3,6 +3,8 @@ import { X, Save, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import type { GlossaryTerm } from '../lib/supabase';
 import { updateGlossaryTerm } from '../services/glossaryService';
 
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+
 interface BatchEditGlossaryModalProps {
   terms: GlossaryTerm[];
   onClose: () => void;
@@ -114,21 +116,37 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
     onClose();
   }
 
-  const fieldClass =
-    'w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors';
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors';
+  const labelStyle: React.CSSProperties = {
+    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
+  };
 
   const anyEnabled = Object.values(enabled).some(Boolean);
   const isDone = result !== null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111] border border-[#1E1E1E] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E1E1E] sticky top-0 bg-[#111] z-10">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10">
           <div>
-            <h2 className="text-base font-black text-white">Csoportos szerkesztés</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{terms.length} fogalom kijelölve</p>
+            <h2 style={{ color: textColor }} className="text-base font-black">Csoportos szerkesztés</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{terms.length} fogalom kijelölve</p>
           </div>
-          <button onClick={handleClose} disabled={saving} className="text-gray-500 hover:text-gray-300 disabled:opacity-40">
+          <button onClick={handleClose} disabled={saving} className="text-gray-400 hover:text-white disabled:opacity-40 cursor-pointer">
             <X size={18} />
           </button>
         </div>
@@ -136,13 +154,13 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {isDone && (
             <div className="space-y-3">
-              <div className="p-3 bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg">
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-lg">
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle2 size={16} className="text-green-400 flex-shrink-0" />
-                  <span className="text-gray-300 font-bold">{result!.successCount} sikeres módosítás</span>
+                  <span style={{ color: textColor }} className="font-bold">{result!.successCount} sikeres módosítás</span>
                 </div>
                 {result!.failureCount > 0 && (
-                  <div className="flex items-center gap-2 text-sm mt-2 pt-2 border-t border-[#1E1E1E]">
+                  <div style={{ borderColor: cardBorder }} className="flex items-center gap-2 text-sm mt-2 pt-2 border-t">
                     <AlertCircle size={16} className="text-red-400 flex-shrink-0" />
                     <span className="text-red-400 font-bold">{result!.failureCount} sikertelen módosítás</span>
                   </div>
@@ -163,7 +181,7 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 text-sm font-bold text-gray-300 hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-white transition-colors cursor-pointer"
                 >
                   Bezárás
                 </button>
@@ -173,7 +191,7 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
 
           {!isDone && (
             <>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-400">
                 Csak az engedélyezett mezők kerülnek frissítésre a kijelölt fogalmaknál. A többi mező érintetlen marad.
               </p>
 
@@ -181,8 +199,10 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
                 label="Témakör"
                 enabled={enabled.category}
                 onToggle={() => toggleEnabled('category')}
+                labelStyle={labelStyle}
               >
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.category}
                   onChange={(e) => update('category', e.target.value)}
@@ -195,8 +215,10 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
                 label="Szint"
                 enabled={enabled.szint}
                 onToggle={() => toggleEnabled('szint')}
+                labelStyle={labelStyle}
               >
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.szint}
                   onChange={(e) => update('szint', e.target.value)}
@@ -209,8 +231,10 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
                 label="Kulcsszavak (vesszővel)"
                 enabled={enabled.kulcsszavak}
                 onToggle={() => toggleEnabled('kulcsszavak')}
+                labelStyle={labelStyle}
               >
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.kulcsszavak}
                   onChange={(e) => update('kulcsszavak', e.target.value)}
@@ -223,8 +247,10 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
                 label="Kapcsolódó fogalmak (vesszővel)"
                 enabled={enabled.kapcsolodofogalmak}
                 onToggle={() => toggleEnabled('kapcsolodofogalmak')}
+                labelStyle={labelStyle}
               >
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.kapcsolodofogalmak}
                   onChange={(e) => update('kapcsolodofogalmak', e.target.value)}
@@ -234,17 +260,17 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
               </BatchField>
 
               {saving && progress && (
-                <div className="p-3 bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg">
-                  <div className="flex items-center gap-2 text-sm text-gray-300">
-                    <Loader2 size={16} className="animate-spin text-[#FFC400] flex-shrink-0" />
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-lg">
+                  <div className="flex items-center gap-2 text-sm" style={{ color: textColor }}>
+                    <Loader2 size={16} className="animate-spin flex-shrink-0" style={{ color: cardHighlight }} />
                     <span className="font-bold">
                       Mentés... {progress.done} / {progress.total}
                     </span>
                   </div>
-                  <div className="mt-2 h-1.5 bg-[#1E1E1E] rounded-full overflow-hidden">
+                  <div style={{ backgroundColor: headerBg }} className="mt-2 h-1.5 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#FFC400] transition-all"
-                      style={{ width: `${progress.total > 0 ? (progress.done / progress.total) * 100 : 0}%` }}
+                      className="h-full transition-all"
+                      style={{ backgroundColor: cardHighlight, width: `${progress.total > 0 ? (progress.done / progress.total) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -255,14 +281,15 @@ export default function BatchEditGlossaryModal({ terms, onClose, onSaved }: Batc
                   type="button"
                   onClick={handleClose}
                   disabled={saving}
-                  className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-gray-200 disabled:opacity-40 transition-colors"
+                  className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-white disabled:opacity-40 transition-colors cursor-pointer"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
                   disabled={saving || !anyEnabled}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFC400] text-black text-sm font-black rounded-lg hover:bg-[#E6B000] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-md"
                 >
                   <Save size={14} /> {saving ? 'Mentés...' : 'Mentés'}
                 </button>
@@ -279,17 +306,19 @@ function BatchField({
   label,
   enabled,
   onToggle,
+  labelStyle,
   children,
 }: {
   label: string;
   enabled: boolean;
   onToggle: () => void;
+  labelStyle?: React.CSSProperties;
   children: React.ReactNode;
 }) {
   return (
     <div className={!enabled ? 'opacity-60' : ''}>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">{label}</label>
+        <label style={labelStyle} className="text-xs font-bold uppercase tracking-wide">{label}</label>
         <button
           type="button"
           onClick={onToggle}

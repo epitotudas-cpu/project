@@ -1294,6 +1294,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                         {/* BLOCK EDITORS */}
                         {block.type === 'text' && (
                           <textarea
+                            style={fieldStyle}
                             className={`${fieldClass} resize-y min-h-[80px]`}
                             rows={3}
                             placeholder="Írd ide a bekezdés tartalmát..."
@@ -1312,6 +1313,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                         {block.type === 'heading' && (
                           <div className="flex items-center gap-2">
                             <select
+                              style={fieldStyle}
                               className={`${fieldClass} w-32 shrink-0`}
                               value={block.level || 'h2'}
                               onChange={(e) => {
@@ -1328,6 +1330,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               <option value="h4">H4 (Aféle)</option>
                             </select>
                             <input
+                              style={fieldStyle}
                               className={fieldClass}
                               placeholder="Címsor szövege..."
                               value={block.content || ''}
@@ -1347,10 +1350,11 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                           <div className="space-y-3">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className={labelClass}>Kép URL</label>
+                                <label style={labelStyle} className={labelClass}>Kép URL (Közvetlen kép link, https://...)</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
-                                  placeholder="https://..."
+                                  placeholder="https://images.pexels.com/photos/..."
                                   value={block.imageUrl || ''}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -1363,10 +1367,11 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 />
                               </div>
                               <div>
-                                <label className={labelClass}>Képaláírás</label>
+                                <label style={labelStyle} className={labelClass}>Képaláírás</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
-                                  placeholder="Pl. Beépítési illusztráció"
+                                  placeholder="Megjelenő felirat a kép alatt..."
                                   value={block.imageCaption || ''}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -1382,10 +1387,11 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className={labelClass}>ALT Szöveg</label>
+                                <label style={labelStyle} className={labelClass}>ALT Leíró Szöveg (SEO/Akadálymentesség)</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
-                                  placeholder="Keresőleírás"
+                                  placeholder="Rövid leírás a képről..."
                                   value={block.imageAlt || ''}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -1398,8 +1404,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 />
                               </div>
                               <div>
-                                <label className={labelClass}>AI Generálási Prompt (Opcionális)</label>
+                                <label style={labelStyle} className={labelClass}>AI Generálási Prompt (Opcionális)</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Képleírás az AI generátorhoz..."
                                   value={block.imagePrompt || ''}
@@ -1416,7 +1423,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                             </div>
 
                             {block.imageUrl && (
-                              <div className="h-32 w-full overflow-hidden rounded-lg border border-[#222]">
+                              <div style={{ borderColor: cardBorder }} className="h-32 w-full overflow-hidden rounded-lg border">
                                 <img src={block.imageUrl} alt={block.imageAlt || 'Előnézet'} className="h-full w-full object-cover" />
                               </div>
                             )}
@@ -1425,10 +1432,11 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                         {block.type === 'gallery' && (
                           <div className="space-y-3">
-                            <label className={labelClass}>Képek a galériában ({block.galleryImages?.length || 0} db)</label>
+                            <label style={labelStyle} className={labelClass}>Képek a galériában ({block.galleryImages?.length || 0} db)</label>
                             {block.galleryImages?.map((gImg, gIdx) => (
-                              <div key={gImg.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-[#141414] border border-[#222] rounded-lg">
+                              <div key={gImg.id} style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 border rounded-lg">
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Kép URL"
                                   value={gImg.url}
@@ -1444,6 +1452,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                   }}
                                 />
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Képaláírás"
                                   value={gImg.caption}
@@ -1460,6 +1469,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 />
                                 <div className="flex items-center gap-2">
                                   <input
+                                    style={fieldStyle}
                                     className={fieldClass}
                                     placeholder="ALT szöveg"
                                     value={gImg.alt}
@@ -1483,7 +1493,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                         return next;
                                       });
                                     }}
-                                    className="p-2 text-gray-500 hover:text-red-400"
+                                    className="p-2 text-gray-400 hover:text-red-400 cursor-pointer"
                                   >
                                     <Trash2 size={14} />
                                   </button>
@@ -1501,7 +1511,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                   return next;
                                 });
                               }}
-                              className="px-3 py-1.5 bg-[#1E1E1E] hover:bg-[#252525] text-xs font-bold text-[#FFC400] rounded-lg border border-[#333] flex items-center gap-1"
+                              style={{ backgroundColor: sectionBg, borderColor: cardBorder, color: cardHighlight }}
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1 cursor-pointer hover:opacity-90"
                             >
                               <Plus size={14} /> Új Kép a Galériába
                             </button>
@@ -1516,6 +1527,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                   {block.type === 'numbered_list' ? `${itemIdx + 1}.` : '•'}
                                 </span>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Lista elem szövege..."
                                   value={item}
@@ -1539,7 +1551,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                       return next;
                                     });
                                   }}
-                                  className="p-1.5 text-gray-500 hover:text-red-400"
+                                  className="p-1.5 text-gray-400 hover:text-red-400 cursor-pointer"
                                 >
                                   <Trash2 size={14} />
                                 </button>
@@ -1555,7 +1567,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                   return next;
                                 });
                               }}
-                              className="px-3 py-1.5 bg-[#1E1E1E] hover:bg-[#252525] text-xs font-bold text-[#FFC400] rounded-lg border border-[#333] flex items-center gap-1"
+                              style={{ backgroundColor: sectionBg, borderColor: cardBorder, color: cardHighlight }}
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1 cursor-pointer hover:opacity-90"
                             >
                               <Plus size={14} /> Új Lista Elem
                             </button>
@@ -1565,7 +1578,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                         {block.type === 'table' && (
                           <div className="space-y-3 overflow-x-auto">
                             <div className="flex items-center justify-between">
-                              <label className={labelClass}>Táblázat Fejlécek és Sorok</label>
+                              <label style={labelStyle} className={labelClass}>Táblázat Fejlécek és Sorok</label>
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
@@ -1579,7 +1592,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                       return next;
                                     });
                                   }}
-                                  className="px-2 py-1 bg-[#1E1E1E] text-[11px] font-bold text-gray-300 rounded border border-[#333]"
+                                  style={{ backgroundColor: sectionBg, borderColor: cardBorder, color: textColor }}
+                                  className="px-2 py-1 text-[11px] font-bold rounded border cursor-pointer hover:opacity-90"
                                 >
                                   + Oszlop
                                 </button>
@@ -1594,7 +1608,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                       return next;
                                     });
                                   }}
-                                  className="px-2 py-1 bg-[#1E1E1E] text-[11px] font-bold text-gray-300 rounded border border-[#333]"
+                                  style={{ backgroundColor: sectionBg, borderColor: cardBorder, color: textColor }}
+                                  className="px-2 py-1 text-[11px] font-bold rounded border cursor-pointer hover:opacity-90"
                                 >
                                   + Sor
                                 </button>
@@ -1606,7 +1621,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               {block.tableHeaders?.map((header, hIdx) => (
                                 <input
                                   key={hIdx}
-                                  className={`${fieldClass} font-bold text-center bg-[#141414] min-w-[120px]`}
+                                  style={fieldStyle}
+                                  className={`${fieldClass} font-bold text-center min-w-[120px]`}
                                   value={header}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -1628,6 +1644,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 {row.map((cell, cIdx) => (
                                   <input
                                     key={cIdx}
+                                    style={fieldStyle}
                                     className={`${fieldClass} min-w-[120px]`}
                                     value={cell}
                                     onChange={(e) => {
@@ -1652,7 +1669,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                       return next;
                                     });
                                   }}
-                                  className="p-1.5 text-gray-500 hover:text-red-400 shrink-0"
+                                  className="p-1.5 text-gray-400 hover:text-red-400 shrink-0 cursor-pointer"
                                 >
                                   <Trash2 size={14} />
                                 </button>
@@ -1665,6 +1682,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                           <div className="space-y-3">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <select
+                                style={fieldStyle}
                                 className={fieldClass}
                                 value={block.highlightType || 'Szakmai tipp'}
                                 onChange={(e) => {
@@ -1683,6 +1701,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 <option value="Biztonság">🛑 Biztonság</option>
                               </select>
                               <input
+                                style={fieldStyle}
                                 className={fieldClass}
                                 placeholder="Kiemelés címe..."
                                 value={block.highlightTitle || ''}
@@ -1697,6 +1716,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               />
                             </div>
                             <textarea
+                              style={fieldStyle}
                               className={`${fieldClass} resize-none`}
                               rows={2}
                               placeholder="Kiemelés szöveges tartalma..."
@@ -1716,6 +1736,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                         {block.type === 'warning' && (
                           <div className="space-y-2">
                             <select
+                              style={fieldStyle}
                               className={`${fieldClass} w-48`}
                               value={block.warningType || 'warning'}
                               onChange={(e) => {
@@ -1733,6 +1754,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               <option value="technical">📌 Műszaki feltétel</option>
                             </select>
                             <input
+                              style={fieldStyle}
                               className={fieldClass}
                               placeholder="Figyelmeztető vagy biztonsági előírás..."
                               value={block.content || ''}
@@ -1754,6 +1776,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               <div key={ci.id} className="flex items-center gap-2">
                                 <CheckCircle2 size={16} className="text-gray-500 shrink-0" />
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Ellenőrző pont..."
                                   value={ci.text}
@@ -1777,7 +1800,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                       return next;
                                     });
                                   }}
-                                  className="p-1.5 text-gray-500 hover:text-red-400"
+                                  className="p-1.5 text-gray-400 hover:text-red-400 cursor-pointer"
                                 >
                                   <Trash2 size={14} />
                                 </button>
@@ -1793,7 +1816,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                   return next;
                                 });
                               }}
-                              className="px-3 py-1.5 bg-[#1E1E1E] hover:bg-[#252525] text-xs font-bold text-[#FFC400] rounded-lg border border-[#333] flex items-center gap-1"
+                              style={{ backgroundColor: sectionBg, borderColor: cardBorder, color: cardHighlight }}
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1 cursor-pointer hover:opacity-90"
                             >
                               <Plus size={14} /> Új Ellenőrző Pont
                             </button>
@@ -1804,8 +1828,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                           <div className="space-y-3">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className={labelClass}>Kiinduló adatok</label>
+                                <label style={labelStyle} className={labelClass}>Kiinduló adatok</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Pl. Fal hossza: 4m, magasság: 2.5m"
                                   value={block.calcInput || ''}
@@ -1820,8 +1845,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 />
                               </div>
                               <div>
-                                <label className={labelClass}>Képlet</label>
+                                <label style={labelStyle} className={labelClass}>Képlet</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Pl. 4 x 2.5 = 10 m²"
                                   value={block.calcFormula || ''}
@@ -1838,8 +1864,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className={labelClass}>Eredmény</label>
+                                <label style={labelStyle} className={labelClass}>Eredmény</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Pl. 22 m² gipszkarton lap"
                                   value={block.calcResult || ''}
@@ -1854,8 +1881,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 />
                               </div>
                               <div>
-                                <label className={labelClass}>Megjegyzés / Hulladék</label>
+                                <label style={labelStyle} className={labelClass}>Megjegyzés / Hulladék</label>
                                 <input
+                                  style={fieldStyle}
                                   className={fieldClass}
                                   placeholder="Pl. 10% szorzóval számolva"
                                   value={block.calcNote || ''}
@@ -1875,7 +1903,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                         {block.type === 'divider' && (
                           <div className="py-2 flex items-center justify-center">
-                            <div className="w-full border-t border-[#333]" />
+                            <div style={{ borderColor: cardBorder }} className="w-full border-t" />
                           </div>
                         )}
                       </div>
@@ -1884,123 +1912,53 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                 )}
 
                 {/* ADD BLOCK TOOLBAR */}
-                <div className="pt-4 border-t border-[#222] space-y-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-[#FFC400] block mb-2">
+                <div style={{ borderColor: cardBorder }} className="pt-4 border-t space-y-2">
+                  <span style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider block mb-2">
                     + Tartalom Hozzáadása:
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => addBlock('text')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Type size={14} /> Szöveg
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('heading')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Heading size={14} /> Címsor
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('image')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ImageIcon size={14} /> Kép
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('gallery')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ImageIcon size={14} /> Galéria
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('list')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <List size={14} /> Lista
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('numbered_list')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ListOrdered size={14} /> Számozott
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('table')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <TableIcon size={14} /> Táblázat
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('highlight')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Sparkles size={14} /> Kiemelés
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('warning')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ShieldAlert size={14} /> Munkavédelem
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('checklist')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <CheckSquare size={14} /> Checklist
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('calculation')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Calculator size={14} /> Számítás
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => addBlock('divider')}
-                      className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#282828] border border-[#333] rounded-xl text-xs font-bold text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Minus size={14} /> Elválasztó
-                    </button>
+                    {[
+                      { type: 'text', label: 'Szöveg', icon: <Type size={14} /> },
+                      { type: 'heading', label: 'Címsor', icon: <Heading size={14} /> },
+                      { type: 'image', label: 'Kép', icon: <ImageIcon size={14} /> },
+                      { type: 'gallery', label: 'Galéria', icon: <ImageIcon size={14} /> },
+                      { type: 'list', label: 'Lista', icon: <List size={14} /> },
+                      { type: 'numbered_list', label: 'Számozott', icon: <ListOrdered size={14} /> },
+                      { type: 'table', label: 'Táblázat', icon: <TableIcon size={14} /> },
+                      { type: 'highlight', label: 'Kiemelés', icon: <Sparkles size={14} /> },
+                      { type: 'warning', label: 'Munkavédelem', icon: <ShieldAlert size={14} /> },
+                      { type: 'checklist', label: 'Checklist', icon: <CheckSquare size={14} /> },
+                      { type: 'calculation', label: 'Számítás', icon: <Calculator size={14} /> },
+                      { type: 'divider', label: 'Elválasztó', icon: <Minus size={14} /> },
+                    ].map((btn) => (
+                      <button
+                        key={btn.type}
+                        type="button"
+                        onClick={() => addBlock(btn.type as any)}
+                        style={{ backgroundColor: blockBg, borderColor: cardBorder, color: textColor }}
+                        className="px-3 py-2 border rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer hover:opacity-90 shadow-sm"
+                      >
+                        {btn.icon} {btn.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {/* SECTION 4: SEO ÉS METAADATOK */}
-              <div className="bg-[#141414] border border-[#222] rounded-2xl p-5 space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#222]">
-                  <Tag size={18} className="text-[#FFC400]" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-[#FFC400]">
+              <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-4 shadow-sm">
+                <div style={{ borderColor: cardBorder }} className="flex items-center gap-2 pb-2 border-b">
+                  <Tag size={18} style={{ color: cardHighlight }} />
+                  <h3 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
                     3. SEO és Metaadatok (Opcionális)
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>SEO Cím</label>
+                    <label style={labelStyle} className={labelClass}>SEO Cím</label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       placeholder="Keresőoptimalizált cím..."
                       value={seo.seoTitle}
@@ -2011,8 +1969,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Meta Leírás</label>
+                    <label style={labelStyle} className={labelClass}>Meta Leírás</label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       placeholder="Keresőmotor leírás..."
                       value={seo.metaDescription}
@@ -2026,8 +1985,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>Fő Kulcsszó</label>
+                    <label style={labelStyle} className={labelClass}>Fő Kulcsszó</label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       placeholder="Pl. lemezmegmunkálás"
                       value={seo.primaryKeyword}
@@ -2038,8 +1998,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Kapcsolódó Kulcsszavak</label>
+                    <label style={labelStyle} className={labelClass}>Kapcsolódó Kulcsszavak</label>
                     <input
+                      style={fieldStyle}
                       className={fieldClass}
                       placeholder="Pl. alaksajtolás, hidegalakítás, sajtolás"
                       value={seo.relatedKeywords}
@@ -2053,8 +2014,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
               </div>
 
               {/* MODAL FOOTER */}
-              <div className="flex items-center justify-between pt-4 border-t border-[#222] shrink-0 sticky bottom-0 bg-[#111] z-10 py-3">
-                <span className="text-[11px] text-gray-500 italic">
+              <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between pt-4 border-t shrink-0 sticky bottom-0 z-10 py-3 px-2 rounded-b-2xl">
+                <span className="text-[11px] text-gray-400 italic">
                   Csak „Publikált” státuszú cikkek jelennek meg a nyilvános Tudástárban.
                 </span>
 
@@ -2063,14 +2024,15 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                     type="button"
                     onClick={onClose}
                     disabled={saving}
-                    className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-200 disabled:opacity-40 transition-colors"
+                    className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white disabled:opacity-40 transition-colors cursor-pointer"
                   >
                     Mégse
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#FFC400] text-black text-xs font-black rounded-xl hover:bg-[#E6B000] disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-md"
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-black rounded-xl hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-md cursor-pointer"
                   >
                     <Save size={16} /> {saving ? 'Mentés...' : isCreate ? 'Cikk Létrehozása' : 'Módosítások Mentése'}
                   </button>

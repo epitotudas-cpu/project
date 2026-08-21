@@ -8,6 +8,7 @@ import {
   type GlossaryCategorySettingItem,
 } from '../services/glossaryCategorySettingsService';
 import { useToast } from './ToastProvider';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface GlossaryCategorySettingsModalProps {
   isOpen: boolean;
@@ -219,6 +220,24 @@ export default function GlossaryCategorySettingsModal({
     reader.readAsDataURL(file);
   }
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+  const labelStyle: React.CSSProperties = {
+    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
       {/* Hidden File Input */}
@@ -230,15 +249,15 @@ export default function GlossaryCategorySettingsModal({
         className="hidden"
       />
 
-      <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Modal Header */}
-        <div className="px-6 py-5 border-b border-[#222] flex items-center justify-between bg-[#161616]">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="px-6 py-5 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#FFC400]/10 border border-[#FFC400]/20 text-[#FFC400] rounded-xl">
+            <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="p-2.5 border rounded-xl">
               <Sparkles size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-black text-white">Fogalomtár Kategóriák & Ikonok Kezelője</h2>
+              <h2 style={{ color: textColor }} className="text-lg font-black">Fogalomtár Kategóriák & Ikonok Kezelője</h2>
               <p className="text-xs text-gray-400 mt-0.5">
                 Állíts be meglévő kategória ikonokat, tölts fel saját ikonképet (PNG, SVG, JPG) vagy adj hozzá új kategóriát.
               </p>
@@ -246,19 +265,19 @@ export default function GlossaryCategorySettingsModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm text-gray-200">
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
           {/* Global Switches */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#181818] border border-[#282828] rounded-xl p-4">
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="grid grid-cols-1 sm:grid-cols-2 gap-4 border rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="font-bold text-white text-xs sm:text-sm">Kiemelt Kategóriák Szekció</div>
+                <div style={{ color: textColor }} className="font-bold text-xs sm:text-sm">Kiemelt Kategóriák Szekció</div>
                 <div className="text-[11px] text-gray-400">Szekció megjelenítése a Fogalomtárban</div>
               </div>
               <button
@@ -298,39 +317,41 @@ export default function GlossaryCategorySettingsModal({
           </div>
 
           {/* Add New Category Panel Toggle */}
-          <div className="bg-[#181818] border border-[#282828] rounded-xl p-4 space-y-4">
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="border rounded-xl p-4 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Plus size={16} className="text-[#FFC400]" />
-                <h3 className="font-bold text-white text-xs sm:text-sm">Új Kategória &amp; Saját Ikon Felvitele</h3>
+                <Plus size={16} style={{ color: cardHighlight }} />
+                <h3 style={{ color: textColor }} className="font-bold text-xs sm:text-sm">Új Kategória &amp; Saját Ikon Felvitele</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="px-3 py-1 bg-[#282828] hover:bg-[#333] text-gray-300 rounded-lg text-xs font-bold transition-colors"
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-3 py-1 border rounded-lg text-xs font-bold transition-colors cursor-pointer hover:opacity-90"
               >
                 {showAddForm ? 'Bezárás' : '+ Kategória Felvitele'}
               </button>
             </div>
 
             {showAddForm && (
-              <div className="pt-3 border-t border-[#282828] space-y-4 animate-fadeIn">
+              <div style={{ borderColor: cardBorder }} className="pt-3 border-t space-y-4 animate-fadeIn">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2 space-y-1">
-                    <label className="text-xs font-bold text-gray-300 block">Kategória Neve</label>
+                    <label style={labelStyle} className="text-xs font-bold block">Kategória Neve</label>
                     <input
                       type="text"
                       placeholder="Pl. Bádogozás, Kertépítés..."
                       value={newCatName}
                       onChange={(e) => setNewCatName(e.target.value)}
-                      className="w-full bg-[#222] border border-[#333] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#FFC400]"
+                      style={fieldStyle}
+                      className="w-full border rounded-lg px-3 py-2 text-xs placeholder-gray-500 focus:outline-none transition-colors"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-300 block">Ikon Emoji VAGY Kép</label>
+                    <label style={labelStyle} className="text-xs font-bold block">Ikon Emoji VAGY Kép</label>
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-lg bg-[#282828] border border-[#383838] flex items-center justify-center text-lg shrink-0 overflow-hidden">
+                      <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="w-9 h-9 rounded-lg border flex items-center justify-center text-lg shrink-0 overflow-hidden">
                         {newCatImageUrl ? (
                           <img src={newCatImageUrl} alt="" className="w-full h-full object-contain p-1" />
                         ) : (
@@ -345,7 +366,8 @@ export default function GlossaryCategorySettingsModal({
                           setNewCatImageUrl('');
                         }}
                         placeholder="Emoji"
-                        className="w-full bg-[#222] border border-[#333] rounded-lg px-2.5 py-2 text-xs text-center font-bold text-white focus:outline-none focus:border-[#FFC400]"
+                        style={fieldStyle}
+                        className="w-full border rounded-lg px-2.5 py-2 text-xs text-center font-bold focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -354,15 +376,16 @@ export default function GlossaryCategorySettingsModal({
                 {/* Custom Image URL or Upload */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                   <div className="sm:col-span-2 space-y-1">
-                    <label className="text-xs font-bold text-gray-300 block flex items-center gap-1">
-                      <Link size={12} className="text-[#FFC400]" /> Saját Ikon Kép URL (Opcionális)
+                    <label style={labelStyle} className="text-xs font-bold block flex items-center gap-1">
+                      <Link size={12} style={{ color: cardHighlight }} /> Saját Ikon Kép URL (Opcionális)
                     </label>
                     <input
                       type="url"
                       placeholder="https://domain.com/my-icon.png"
                       value={newCatImageUrl}
                       onChange={(e) => setNewCatImageUrl(e.target.value)}
-                      className="w-full bg-[#222] border border-[#333] rounded-lg px-3 py-1.5 text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-[#FFC400]"
+                      style={fieldStyle}
+                      className="w-full border rounded-lg px-3 py-1.5 text-xs font-mono placeholder-gray-500 focus:outline-none transition-colors"
                     />
                   </div>
 
@@ -370,9 +393,10 @@ export default function GlossaryCategorySettingsModal({
                     <button
                       type="button"
                       onClick={() => triggerLocalFileUpload(null)}
-                      className="w-full py-1.5 px-3 bg-[#282828] hover:bg-[#333] border border-[#383838] text-gray-200 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                      className="w-full py-1.5 px-3 border text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-90"
                     >
-                      <Upload size={13} className="text-[#FFC400]" /> Saját Kép Feltöltése
+                      <Upload size={13} style={{ color: cardHighlight }} /> Saját Kép Feltöltése
                     </button>
                   </div>
                 </div>

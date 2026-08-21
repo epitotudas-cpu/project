@@ -17,6 +17,7 @@ import {
   DEFAULT_EDUCATION_DATA,
 } from '../services/educationService';
 import type { Course, Lesson, QuizQuestion } from '../lib/supabase';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 export default function AdminCoursesPage() {
   const eduData = useEducationData();
@@ -283,13 +284,22 @@ export default function AdminCoursesPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
+  const inputBg = adjustColorBrightness(cardBg, -6);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
   return (
-    <div className="space-[#111] min-h-screen text-gray-200 p-4 md:p-8 space-y-8">
+    <div className="min-h-screen p-4 md:p-8 space-y-8" style={{ color: textColor }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222] pb-6">
+      <div style={{ borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
-            <GraduationCap className="text-accent" size={32} />
+          <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
+            <GraduationCap style={{ color: cardHighlight }} size={32} />
             Képzések &amp; Tanfolyamok Kezelő
           </h1>
           <p className="text-sm text-gray-400 mt-1">
@@ -301,14 +311,16 @@ export default function AdminCoursesPage() {
           <button
             type="button"
             onClick={handleResetDefaults}
-            className="px-4 py-2.5 bg-[#1A1A1A] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+            style={{ backgroundColor: headerBg, borderColor: cardBorder, color: textColor }}
+            className="px-4 py-2.5 border font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
           >
             <RotateCcw size={14} /> Alapértelmezett
           </button>
           <button
             type="button"
             onClick={handleOpenAddCourse}
-            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
           >
             <Plus size={16} /> Új Kurzus Létrehozása
           </button>
@@ -323,7 +335,7 @@ export default function AdminCoursesPage() {
       )}
 
       {/* Filter */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#111111] border border-[#1E1E1E] p-4 rounded-2xl">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border p-4 rounded-2xl shadow-sm">
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -331,7 +343,8 @@ export default function AdminCoursesPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Keresés kurzus cím vagy kategória szerint..."
-            className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-accent"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+            className="w-full border rounded-xl pl-10 pr-4 py-2 text-xs placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
       </div>
@@ -346,7 +359,8 @@ export default function AdminCoursesPage() {
           return (
             <div
               key={course.id}
-              className="bg-[#111111] border border-[#1E1E1E] rounded-3xl p-6 space-y-5 shadow-xl hover:border-accent/40 transition-all"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="border rounded-3xl p-6 space-y-5 shadow-xl transition-all"
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#222] pb-4">
                 <div className="space-y-2">
