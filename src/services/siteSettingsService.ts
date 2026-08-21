@@ -307,21 +307,27 @@ export function applySiteSettings(settings: SiteSettings): void {
     // 3. PWA Theme Color
     setMeta({ name: 'theme-color' }, settings?.pwaThemeColor || '#4165b4');
 
-    // 4. Open Graph & Social Meta Tags
+    // 4. Open Graph, Twitter & Speed Dial Meta Tags
     const canonicalUrl = typeof window !== 'undefined' ? window.location.href : 'https://epitotudas.hu';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://epitotudas.hu';
     const ogTitleText = settings?.ogTitle || settings?.siteTitle || 'ÉpítőTudás';
     const ogDescText = settings?.ogDescription || settings?.tagline || 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek.';
     const ogImgUrl = withVersion(settings?.ogImageUrl || effectiveLogo, '/logo.png');
+    const absoluteOgImage = (ogImgUrl.startsWith('http') || ogImgUrl.startsWith('data:')) ? ogImgUrl : `${origin}${ogImgUrl.startsWith('/') ? '' : '/'}${ogImgUrl}`;
 
     setMeta({ property: 'og:title' }, ogTitleText);
     setMeta({ property: 'og:description' }, ogDescText);
-    setMeta({ property: 'og:image' }, ogImgUrl);
+    setMeta({ property: 'og:image' }, absoluteOgImage);
+    setMeta({ property: 'og:image:secure_url' }, absoluteOgImage);
     setMeta({ property: 'og:url' }, canonicalUrl);
     setMeta({ property: 'og:type' }, 'website');
 
     setMeta({ name: 'twitter:title' }, ogTitleText);
     setMeta({ name: 'twitter:description' }, ogDescText);
-    setMeta({ name: 'twitter:image' }, ogImgUrl);
+    setMeta({ name: 'twitter:image' }, absoluteOgImage);
+    setMeta({ name: 'thumbnail' }, absoluteOgImage);
+    setMeta({ name: 'msapplication-TileImage' }, absoluteOgImage);
+    setMeta({ name: 'msapplication-TileColor' }, settings?.pwaThemeColor || '#4165b4');
   } catch (err) {
     console.error('Hiba a beállítások érvényesítésekor:', err);
   }
