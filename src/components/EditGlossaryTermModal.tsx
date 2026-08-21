@@ -322,8 +322,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           )}
 
           <div>
-            <label className={labelClass}>Tartalom Típusa</label>
+            <label style={labelStyle} className={labelClass}>Tartalom Típusa</label>
             <select
+              style={fieldStyle}
               className={fieldClass}
               value={form.entry_type}
               onChange={(e) => update('entry_type', e.target.value as 'technical_concept' | 'industry_term')}
@@ -334,8 +335,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           </div>
 
           <div>
-            <label className={labelClass}>Kifejezés neve <span className="text-red-400">*</span></label>
+            <label style={labelStyle} className={labelClass}>Kifejezés neve <span className="text-red-400">*</span></label>
             <input
+              style={fieldStyle}
               className={fieldClass}
               value={form.term}
               onChange={(e) => handleTermChange(e.target.value)}
@@ -345,13 +347,14 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           </div>
 
           <div>
-            <label className={labelClass}>Slug</label>
-            <input className={fieldClass} value={form.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="url-barat-azonosito" />
+            <label style={labelStyle} className={labelClass}>Slug</label>
+            <input style={fieldStyle} className={fieldClass} value={form.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="url-barat-azonosito" />
           </div>
 
           <div>
-            <label className={labelClass}>{form.entry_type === 'industry_term' ? 'Jelentése / Leírás' : 'Definíció'} <span className="text-red-400">*</span></label>
+            <label style={labelStyle} className={labelClass}>{form.entry_type === 'industry_term' ? 'Jelentése / Leírás' : 'Definíció'} <span className="text-red-400">*</span></label>
             <textarea
+              style={fieldStyle}
               className={`${fieldClass} resize-none`}
               rows={3}
               value={form.definition}
@@ -363,8 +366,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           {form.entry_type === 'industry_term' ? (
             <>
               <div>
-                <label className={labelClass}>Hivatalos Szakmai Megfelelő Neve</label>
+                <label style={labelStyle} className={labelClass}>Hivatalos Szakmai Megfelelő Neve</label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.official_term_name}
                   onChange={(e) => update('official_term_name', e.target.value)}
@@ -373,8 +377,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
               </div>
 
               <div>
-                <label className={labelClass}>Használati Példamondat</label>
+                <label style={labelStyle} className={labelClass}>Használati Példamondat</label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.usage_example}
                   onChange={(e) => update('usage_example', e.target.value)}
@@ -383,8 +388,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
               </div>
 
               <div>
-                <label className={labelClass}>Zsargon Sub-típus</label>
+                <label style={labelStyle} className={labelClass}>Zsargon Sub-típus</label>
                 <select
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.jargon_subtype}
                   onChange={(e) => update('jargon_subtype', e.target.value as FormState['jargon_subtype'])}
@@ -398,8 +404,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
               </div>
 
               <div>
-                <label className={labelClass}>Eredet / Etimológia</label>
+                <label style={labelStyle} className={labelClass}>Eredet / Etimológia</label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.origin_note}
                   onChange={(e) => update('origin_note', e.target.value)}
@@ -410,8 +417,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           ) : (
             <>
               <div>
-                <label className={labelClass}>Részletes Műszaki Leírás</label>
+                <label style={labelStyle} className={labelClass}>Részletes Műszaki Leírás</label>
                 <textarea
+                  style={fieldStyle}
                   className={`${fieldClass} resize-none`}
                   rows={3}
                   value={form.detailed_description}
@@ -421,8 +429,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
               </div>
 
               <div>
-                <label className={labelClass}>Gyakorlati Alkalmazás</label>
+                <label style={labelStyle} className={labelClass}>Gyakorlati Alkalmazás</label>
                 <textarea
+                  style={fieldStyle}
                   className={`${fieldClass} resize-none`}
                   rows={2}
                   value={form.practical_applications}
@@ -432,8 +441,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
               </div>
 
               <div>
-                <label className={labelClass}>Gyakori Kivitelezési Hibák</label>
+                <label style={labelStyle} className={labelClass}>Gyakori Kivitelezési Hibák</label>
                 <textarea
+                  style={fieldStyle}
                   className={`${fieldClass} resize-none`}
                   rows={2}
                   value={form.common_mistakes}
@@ -445,12 +455,13 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           )}
 
           {/* Multilingual Translation Inputs */}
-          <div className="p-4 bg-[#161616] border border-[#222] rounded-xl space-y-3">
-            <h4 className="text-xs font-bold text-[#FFC400] uppercase tracking-wider">🌐 Többnyelvű Szakszótár (HU - EN - DE - RO)</h4>
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
+            <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider">🌐 Többnyelvű Szakszótár (HU - EN - DE - RO)</h4>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 mb-1">🇬🇧 Angol (EN)</label>
+                <label style={labelStyle} className="block text-[10px] font-bold mb-1">🇬🇧 Angol (EN)</label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.trans_en}
                   onChange={(e) => update('trans_en', e.target.value)}
@@ -458,8 +469,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 mb-1">🇩🇪 Német (DE)</label>
+                <label style={labelStyle} className="block text-[10px] font-bold mb-1">🇩🇪 Német (DE)</label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.trans_de}
                   onChange={(e) => update('trans_de', e.target.value)}
@@ -467,8 +479,9 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 mb-1">🇷🇴 Román (RO)</label>
+                <label style={labelStyle} className="block text-[10px] font-bold mb-1">🇷🇴 Román (RO)</label>
                 <input
+                  style={fieldStyle}
                   className={fieldClass}
                   value={form.trans_ro}
                   onChange={(e) => update('trans_ro', e.target.value)}
@@ -480,32 +493,33 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Szakág / Témakör</label>
-              <input className={fieldClass} value={form.category} onChange={(e) => update('category', e.target.value)} placeholder="pl. Falazás" />
+              <label style={labelStyle} className={labelClass}>Szakág / Témakör</label>
+              <input style={fieldStyle} className={fieldClass} value={form.category} onChange={(e) => update('category', e.target.value)} placeholder="pl. Falazás" />
             </div>
             <div>
-              <label className={labelClass}>Szint</label>
-              <input className={fieldClass} value={form.szint} onChange={(e) => update('szint', e.target.value)} placeholder="pl. Kezdő" />
+              <label style={labelStyle} className={labelClass}>Szint</label>
+              <input style={fieldStyle} className={fieldClass} value={form.szint} onChange={(e) => update('szint', e.target.value)} placeholder="pl. Kezdő" />
             </div>
           </div>
 
           <div>
-            <label className={labelClass}>Kulcsszavak (vesszővel)</label>
-            <input className={fieldClass} value={form.kulcsszavak} onChange={(e) => update('kulcsszavak', e.target.value)} placeholder="beton, vas, szilárdság" />
+            <label style={labelStyle} className={labelClass}>Kulcsszavak (vesszővel)</label>
+            <input style={fieldStyle} className={fieldClass} value={form.kulcsszavak} onChange={(e) => update('kulcsszavak', e.target.value)} placeholder="beton, vas, szilárdság" />
           </div>
 
           {/* Kép és Videó URL-ek */}
-          <div className="p-4 bg-[#161616] border border-[#222] rounded-xl space-y-3">
-            <h4 className="text-xs font-bold text-[#FFC400] uppercase tracking-wider flex items-center gap-2">
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
+            <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
               <Image size={12} /> Média (Képek &amp; Videó)
             </h4>
 
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 mb-1">
+              <label style={labelStyle} className="block text-[10px] font-bold mb-1">
                 <Image size={10} className="inline mr-1" />
                 Kép URL-ek (soronként egy, https://... kezdetű)
               </label>
               <textarea
+                style={fieldStyle}
                 className={`${fieldClass} resize-none font-mono text-[11px]`}
                 rows={3}
                 value={form.image_urls}
@@ -536,15 +550,16 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
                   </div>
                 </div>
               )}
-              <p className="text-[10px] text-gray-600 mt-1">Ha nem tölt be a kép, a fogalomkártyán automatikusan kategória ikon jeleník meg helyette.</p>
+              <p className="text-[10px] text-gray-400 mt-1">Ha nem tölt be a kép, a fogalomkártyán automatikusan kategória ikon jeleník meg helyette.</p>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 mb-1">
-                <Video size={10} className="inline mr-1 text-[#FFC400]" />
+              <label style={labelStyle} className="block text-[10px] font-bold mb-1">
+                <Video size={10} className="inline mr-1" style={{ color: cardHighlight }} />
                 Videó URL-ek (YouTube / Vimeo, soronként egy URL)
               </label>
               <textarea
+                style={fieldStyle}
                 className={`${fieldClass} font-mono text-[11px] h-20 leading-snug`}
                 value={form.video_urls}
                 onChange={(e) => update('video_urls', e.target.value)}
@@ -562,7 +577,7 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
                   })}
                 </div>
               )}
-              <p className="text-[10px] text-gray-600 mt-1">Több videó megadása esetén a látogatók a részletes adatlap oktatóvideó füle alatt válogathatnak a videók között.</p>
+              <p className="text-[10px] text-gray-400 mt-1">Több videó megadása esetén a látogatók a részletes adatlap oktatóvideó füle alatt válogathatnak a videók között.</p>
             </div>
           </div>
 

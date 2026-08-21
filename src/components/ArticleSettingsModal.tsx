@@ -6,7 +6,7 @@ import {
   type ArticleSettings,
 } from '../services/articleSettingsService';
 import { useToast } from './ToastProvider';
-import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface ArticleSettingsModalProps {
   isOpen: boolean;
