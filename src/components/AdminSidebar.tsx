@@ -156,7 +156,7 @@ export default function AdminSidebar({
                       key={id}
                       onClick={() => {
                         onNavigateView(id);
-                        onCloseMobile();
+                        onCloseMobile?.();
                       }}
                       style={
                         active

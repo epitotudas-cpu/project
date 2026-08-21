@@ -33,7 +33,6 @@ import {
   AlertTriangle,
   Smartphone,
   AppWindow,
-  ExternalLink,
   FileCode,
 } from 'lucide-react';
 import {
