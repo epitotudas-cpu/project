@@ -278,25 +278,25 @@ export function applySiteSettings(settings: SiteSettings): void {
     };
 
     // Compute effective icon URLs (prioritize custom icon, fallback to custom logo, fallback to default)
-    const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/logo.png';
-    const effectiveIco = (settings?.faviconIcoUrl && settings.faviconIcoUrl !== '/favicon.ico') ? settings.faviconIcoUrl : effectiveLogo;
-    const effectivePng = (settings?.faviconPngUrl && settings.faviconPngUrl !== '/logo.png') ? settings.faviconPngUrl : effectiveLogo;
-    const effectiveApple = (settings?.appleTouchIconUrl && settings.appleTouchIconUrl !== '/logo.png') ? settings.appleTouchIconUrl : effectiveLogo;
-    const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : effectiveLogo;
-    const effectivePwa512 = (settings?.pwaIcon512Url && settings.pwaIcon512Url !== '/logo.png') ? settings.pwaIcon512Url : effectiveLogo;
+    const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/site-tile.png';
+    const effectiveIco = (settings?.faviconIcoUrl && settings.faviconIcoUrl !== '/favicon.ico') ? settings.faviconIcoUrl : '/favicon.ico';
+    const effectivePng = (settings?.faviconPngUrl && settings.faviconPngUrl !== '/logo.png') ? settings.faviconPngUrl : '/favicon-32x32.png';
+    const effectiveApple = (settings?.appleTouchIconUrl && settings.appleTouchIconUrl !== '/logo.png') ? settings.appleTouchIconUrl : '/apple-touch-icon.png';
+    const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : '/android-chrome-192x192.png';
+    const effectivePwa512 = (settings?.pwaIcon512Url && settings.pwaIcon512Url !== '/logo.png') ? settings.pwaIcon512Url : '/android-chrome-512x512.png';
 
-    // 1. Browser, Opera Speed Dial & Shortcut Favicons
+    // 1. Browser, Opera Speed Dial, Firefox Top Sites & Shortcut Favicons
     setLink('app-favicon-ico', 'icon', withVersion(effectiveIco, '/favicon.ico'), 'image/x-icon', 'any');
     if (settings?.faviconSvgUrl) {
       setLink('app-favicon-svg', 'icon', withVersion(settings.faviconSvgUrl, ''), 'image/svg+xml');
     }
-    setLink('app-favicon-png', 'icon', withVersion(effectivePng, '/logo.png'), 'image/png', '32x32');
-    setLink('app-favicon-shortcut', 'shortcut icon', withVersion(effectivePng, '/logo.png'));
-    setLink('app-image-src', 'image_src', withVersion(effectiveLogo, '/logo.png'));
-    setLink('app-pwa-192', 'icon', withVersion(effectivePwa192, '/logo.png'), 'image/png', '192x192');
-    setLink('app-pwa-512', 'icon', withVersion(effectivePwa512, '/logo.png'), 'image/png', '512x512');
-    setLink('app-apple-touch-icon', 'apple-touch-icon', withVersion(effectiveApple, '/logo.png'), undefined, '180x180');
-    setLink('app-apple-touch-precomposed', 'apple-touch-icon-precomposed', withVersion(effectiveApple, '/logo.png'));
+    setLink('app-favicon-png', 'icon', withVersion(effectivePng, '/favicon-32x32.png'), 'image/png', '32x32');
+    setLink('app-favicon-shortcut', 'shortcut icon', withVersion(effectivePng, '/favicon-32x32.png'));
+    setLink('app-image-src', 'image_src', withVersion(effectiveLogo, '/site-tile.png'));
+    setLink('app-pwa-192', 'icon', withVersion(effectivePwa192, '/android-chrome-192x192.png'), 'image/png', '192x192');
+    setLink('app-pwa-512', 'icon', withVersion(effectivePwa512, '/android-chrome-512x512.png'), 'image/png', '512x512');
+    setLink('app-apple-touch-icon', 'apple-touch-icon', withVersion(effectiveApple, '/apple-touch-icon.png'), undefined, '180x180');
+    setLink('app-apple-touch-precomposed', 'apple-touch-icon-precomposed', withVersion(effectiveApple, '/apple-touch-icon-precomposed.png'));
 
     // 2. Web App Manifest
     setLink('app-webmanifest-link', 'manifest', `/site.webmanifest?v=${v}`);
