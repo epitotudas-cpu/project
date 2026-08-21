@@ -34,6 +34,7 @@ import {
   getSiteSettings,
   saveSiteSettings,
   applySiteSettings,
+  adjustColorBrightness,
   DEFAULT_SITE_SETTINGS,
   type SiteSettings,
 } from '../services/siteSettingsService';
