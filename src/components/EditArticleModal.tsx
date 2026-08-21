@@ -983,10 +983,10 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                 style={
                   activeTab === 'editor'
                     ? { backgroundColor: cardHighlight, color: '#000000' }
-                    : {}
+                    : { color: textColor }
                 }
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'editor' ? 'shadow-sm' : 'text-gray-400 hover:text-gray-200'
+                  activeTab === 'editor' ? 'shadow-sm' : 'hover:opacity-80'
                 }`}
               >
                 <FileText size={14} /> Szerkesztő
@@ -994,8 +994,13 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
+                style={
+                  activeTab === 'preview'
+                    ? { backgroundColor: cardHighlight, color: '#000000' }
+                    : { color: textColor }
+                }
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'preview' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'
+                  activeTab === 'preview' ? 'shadow-sm' : 'hover:opacity-80'
                 }`}
               >
                 <Eye size={14} /> Előnézet
@@ -1005,7 +1010,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
             <button
               onClick={onClose}
               disabled={saving}
-              className="text-gray-500 hover:text-gray-300 p-1.5 rounded-lg border border-[#222] hover:bg-[#1E1E1E]"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="p-1.5 rounded-lg border hover:opacity-80 transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -1023,26 +1029,29 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
           {activeTab === 'preview' ? (
             /* PREVIEW VIEW */
-            <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 space-y-6 text-gray-200">
-              <div className="border-b border-[#222] pb-4 flex items-center justify-between">
-                <span className="text-xs font-black uppercase text-[#FFC400] tracking-wider">
+            <div
+              style={{ backgroundColor: sectionBg, borderColor: cardBorder, color: textColor }}
+              className="border rounded-2xl p-6 space-y-6"
+            >
+              <div style={{ borderColor: cardBorder }} className="border-b pb-4 flex items-center justify-between">
+                <span style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
                   Cikkmegjelenítés Élő Előnézete
                 </span>
-                <span className="text-xs text-gray-500">Formázott nézet mint a nyilvános Tudástárban</span>
+                <span className="text-xs opacity-70">Formázott nézet mint a nyilvános Tudástárban</span>
               </div>
 
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{form.title || 'Cikk címe'}</h1>
-                <p className="text-sm text-gray-400 mt-2">{form.excerpt || 'Kivonat nem lett megadva.'}</p>
+                <h1 style={{ color: textColor }} className="text-2xl sm:text-3xl font-extrabold">{form.title || 'Cikk címe'}</h1>
+                <p className="text-sm opacity-80 mt-2">{form.excerpt || 'Kivonat nem lett megadva.'}</p>
               </div>
 
               {form.featured_image && (
-                <div className="rounded-xl overflow-hidden h-64 border border-[#222]">
+                <div style={{ borderColor: cardBorder }} className="rounded-xl overflow-hidden h-64 border">
                   <img src={form.featured_image} alt={form.title} className="w-full h-full object-cover" />
                 </div>
               )}
 
-              <div className="space-y-6 text-sm leading-relaxed font-sans whitespace-pre-line border-t border-[#222] pt-6">
+              <div style={{ borderColor: cardBorder, color: textColor }} className="space-y-6 text-sm leading-relaxed font-sans whitespace-pre-line border-t pt-6">
                 {serializeBlocksToContent(blocks, seo).replace(/\[EPITOTUDAS_BLOCKS_DATA:.*\]$/s, '')}
               </div>
             </div>
