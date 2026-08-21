@@ -307,13 +307,16 @@ export default function AdminUsersPage() {
       {/* Controls Bar: Search & Filter Tabs */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#121212] border border-[#1E1E1E] rounded-xl overflow-x-auto">
+        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center gap-1.5 p-1 border rounded-xl overflow-x-auto">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            style={
               activeTab === 'all'
-                ? 'bg-accent text-black shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-[#1E1E1E]'
+                ? { backgroundColor: cardHighlight, color: '#000000' }
+                : { color: textColor }
+            }
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'all' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
             }`}
           >
             Összes ({stats.total})
@@ -321,10 +324,13 @@ export default function AdminUsersPage() {
 
           <button
             onClick={() => setActiveTab('confirmed')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            style={
               activeTab === 'confirmed'
-                ? 'bg-emerald-500 text-black shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-[#1E1E1E]'
+                ? { backgroundColor: '#10B981', color: '#000000' }
+                : { color: textColor }
+            }
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'confirmed' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
             }`}
           >
             Megerősített ({stats.confirmed})
@@ -332,10 +338,13 @@ export default function AdminUsersPage() {
 
           <button
             onClick={() => setActiveTab('pending')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            style={
               activeTab === 'pending'
-                ? 'bg-amber-500 text-black shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-[#1E1E1E]'
+                ? { backgroundColor: '#F59E0B', color: '#000000' }
+                : { color: textColor }
+            }
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'pending' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
             }`}
           >
             Megerősítésre Vár ({stats.pending})
@@ -343,10 +352,13 @@ export default function AdminUsersPage() {
 
           <button
             onClick={() => setActiveTab('staff')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            style={
               activeTab === 'staff'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-[#1E1E1E]'
+                ? { backgroundColor: '#3B82F6', color: '#FFFFFF' }
+                : { color: textColor }
+            }
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'staff' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
             }`}
           >
             Adminok &amp; Szerkesztők
@@ -354,10 +366,13 @@ export default function AdminUsersPage() {
 
           <button
             onClick={() => setActiveTab('trusted')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            style={
               activeTab === 'trusted'
-                ? 'bg-purple-500 text-white shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-[#1E1E1E]'
+                ? { backgroundColor: '#A855F7', color: '#FFFFFF' }
+                : { color: textColor }
+            }
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'trusted' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
             }`}
           >
             Megbízhatóak ({stats.trustedCount})
@@ -371,17 +386,18 @@ export default function AdminUsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Keresés e-mail, név, ID..."
-            className="w-full bg-[#121212] border border-[#1E1E1E] rounded-xl pl-9 pr-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-accent transition-colors"
+            style={fieldStyle}
+            className="w-full border rounded-xl pl-9 pr-3 py-2 text-xs placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
       </div>
 
-      {/* Main Transparent Data Table */}
-      <div className="bg-[#111111] border border-[#1E1E1E] rounded-2xl overflow-hidden shadow-2xl">
+      {/* Main Data Table */}
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="border-b border-[#1E1E1E] bg-[#161616] text-gray-400 font-bold uppercase tracking-wider">
+              <tr style={{ backgroundColor: headerBg, borderColor: cardBorder, color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="border-b font-bold uppercase tracking-wider">
                 <th className="px-4 py-3.5">Felhasználó / E-mail</th>
                 <th className="px-4 py-3.5 whitespace-nowrap">Szerepkör</th>
                 <th className="px-4 py-3.5 whitespace-nowrap">E-mail Visszaigazolás</th>
@@ -392,27 +408,27 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3.5 whitespace-nowrap text-right">Műveletek</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1E1E1E]/60">
+            <tbody style={{ borderColor: cardBorder }} className="divide-y">
               {loading &&
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-4"><div className="h-4 w-48 bg-[#1E1E1E] rounded" /></td>
-                    <td className="px-4 py-4"><div className="h-5 w-20 bg-[#1E1E1E] rounded-full" /></td>
-                    <td className="px-4 py-4"><div className="h-5 w-24 bg-[#1E1E1E] rounded-md" /></td>
-                    <td className="px-4 py-4"><div className="h-4 w-28 bg-[#1E1E1E] rounded" /></td>
-                    <td className="px-4 py-4"><div className="h-4 w-24 bg-[#1E1E1E] rounded" /></td>
-                    <td className="px-4 py-4"><div className="h-5 w-20 bg-[#1E1E1E] rounded-md" /></td>
-                    <td className="px-4 py-4"><div className="h-5 w-24 bg-[#1E1E1E] rounded-md" /></td>
-                    <td className="px-4 py-4 text-right"><div className="h-7 w-20 bg-[#1E1E1E] rounded-xl ml-auto" /></td>
+                    <td className="px-4 py-4"><div style={{ backgroundColor: cardBorder }} className="h-4 w-48 rounded" /></td>
+                    <td className="px-4 py-4"><div style={{ backgroundColor: cardBorder }} className="h-5 w-20 rounded-full" /></td>
+                    <td className="px-4 py-4"><div style={{ backgroundColor: cardBorder }} className="h-5 w-24 rounded-md" /></td>
+                    <td className="px-4 py-4"><div style={{ backgroundColor: cardBorder }} className="h-4 w-28 rounded" /></td>
+                    <td className="px-4 py-4"><div style={{ backgroundColor: cardBorder }} className="h-4 w-24 rounded" /></td>
+                    <td className="px-4 py-4"><div style={{ backgroundColor: cardBorder }} className="h-5 w-20 rounded-md" /></td>
+                    <td className="px-4 py-4"><div style={{ backgroundColor: cardBorder }} className="h-5 w-24 rounded-md" /></td>
+                    <td className="px-4 py-4 text-right"><div style={{ backgroundColor: cardBorder }} className="h-7 w-20 rounded-xl ml-auto" /></td>
                   </tr>
                 ))}
 
               {!loading && filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-16 text-center">
-                    <Users size={36} className="mx-auto text-gray-600 mb-3" />
+                    <Users size={36} className="mx-auto text-gray-500 mb-3" />
                     <p className="text-gray-400 font-bold text-sm">Nincs megjeleníthető felhasználó a megadott szűrőkkel.</p>
-                    <p className="text-gray-600 text-xs mt-1">Próbáld meg tisztítani a keresési mezőt vagy a szűrőfüleket.</p>
+                    <p className="text-gray-500 text-xs mt-1">Próbáld meg tisztítani a keresési mezőt vagy a szűrőfüleket.</p>
                   </td>
                 </tr>
               )}
@@ -429,15 +445,15 @@ export default function AdminUsersPage() {
                   const lastActiveIso = u.last_sign_in_at || u.updated_at || u.created_at;
 
                   return (
-                    <tr key={u.id} className="hover:bg-[#161616]/70 transition-colors">
+                    <tr key={u.id} style={{ backgroundColor: inputBg }} className="hover:opacity-90 transition-colors">
                       {/* User Info */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#202020] border border-[#303030] flex items-center justify-center font-bold text-accent text-xs shrink-0">
+                          <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shrink-0">
                             {(u.full_name || u.email || 'U').substring(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <span className="text-white font-bold block truncate max-w-[200px]">
+                            <span style={{ color: textColor }} className="font-bold block truncate max-w-[200px]">
                               {u.full_name || 'Nincs név megadva'}
                             </span>
                             <span className="text-gray-400 font-mono text-[11px] block truncate max-w-[200px]">
@@ -493,17 +509,25 @@ export default function AdminUsersPage() {
                       {/* Trust Score Adjustment */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className={`inline-flex items-center gap-1 font-extrabold text-[11px] px-2 py-0.5 rounded-md border ${
-                            tp.trustScore >= 50
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                              : 'bg-[#181818] border-[#2A2A2A] text-accent'
-                          }`}>
+                          <span
+                            style={
+                              tp.trustScore >= 50
+                                ? undefined
+                                : { backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }
+                            }
+                            className={`inline-flex items-center gap-1 font-extrabold text-[11px] px-2 py-0.5 rounded-md border ${
+                              tp.trustScore >= 50
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                : ''
+                            }`}
+                          >
                             <Award size={12} /> {tp.trustScore} pt
                           </span>
                           <button
                             onClick={() => handleAdjustScore(u.id, 10)}
                             title="+10 bizalmi pont adása"
-                            className="px-1.5 py-0.5 text-[10px] font-bold bg-accent/10 text-accent border border-accent/20 rounded hover:bg-accent/20 transition-colors cursor-pointer"
+                            style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                            className="px-1.5 py-0.5 text-[10px] font-bold border rounded hover:opacity-90 transition-colors cursor-pointer"
                           >
                             +10
                           </button>
@@ -514,10 +538,15 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleTrusted(u.id, tp.isTrusted)}
+                          style={
+                            tp.isTrusted || tp.autoApprovalEnabled
+                              ? undefined
+                              : { backgroundColor: cardBg, borderColor: cardBorder, color: textColor }
+                          }
                           className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
                             tp.isTrusted || tp.autoApprovalEnabled
                               ? 'bg-purple-500/15 text-purple-300 border-purple-500/30 hover:bg-purple-500/25'
-                              : 'bg-[#181818] text-gray-400 border-[#2A2A2A] hover:bg-[#222] hover:text-white'
+                              : 'hover:opacity-80'
                           }`}
                         >
                           {tp.isTrusted ? '✓ Auto-Publikál' : '+ Megbízhatóvá tétel'}
@@ -531,7 +560,8 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => setSelectedUserDetail(u)}
                             title="Részletes adatok megtekintése"
-                            className="p-1.5 bg-[#181818] text-gray-300 border border-[#2A2A2A] hover:bg-[#222] hover:text-white rounded-lg transition-colors cursor-pointer"
+                            style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                            className="p-1.5 border hover:opacity-80 rounded-lg transition-colors cursor-pointer"
                           >
                             <Eye size={14} />
                           </button>
@@ -562,15 +592,15 @@ export default function AdminUsersPage() {
       {/* User Full Details Modal */}
       {selectedUserDetail && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#121212] border border-[#222222] rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl space-y-0">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl space-y-0">
             {/* Modal Header */}
-            <div className="p-6 bg-[#161616] border-b border-[#222222] flex items-center justify-between">
+            <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-6 border-b flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center font-black text-accent text-sm">
+                <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="w-10 h-10 rounded-2xl border flex items-center justify-center font-black text-sm">
                   {(selectedUserDetail.full_name || selectedUserDetail.email || 'U').substring(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">
+                  <h3 style={{ color: textColor }} className="text-base font-extrabold">
                     {selectedUserDetail.full_name || 'Névtelen Felhasználó'}
                   </h3>
                   <p className="text-xs text-gray-400 font-mono">{selectedUserDetail.email || 'Nincs e-mail'}</p>
@@ -578,39 +608,39 @@ export default function AdminUsersPage() {
               </div>
               <button
                 onClick={() => setSelectedUserDetail(null)}
-                className="p-2 text-gray-400 hover:text-white hover:bg-[#222222] rounded-xl transition-colors cursor-pointer"
+                className="p-2 text-gray-400 hover:text-white rounded-xl transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Modal Body: Full Information Audit */}
-            <div className="p-6 space-y-4 text-xs text-gray-300">
+            <div className="p-6 space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Felhasználói ID (UUID)</span>
-                  <span className="font-mono text-gray-200 text-[11px] block truncate select-all">{selectedUserDetail.id}</span>
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Felhasználói ID (UUID)</span>
+                  <span style={{ color: textColor }} className="font-mono text-[11px] block truncate select-all">{selectedUserDetail.id}</span>
                 </div>
 
-                <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Rendszer Szerepkör</span>
-                  <span className="font-bold text-accent block capitalize">{selectedUserDetail.role}</span>
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Rendszer Szerepkör</span>
+                  <span style={{ color: cardHighlight }} className="font-bold block capitalize">{selectedUserDetail.role}</span>
                 </div>
 
-                <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Regisztráció Időpontja</span>
-                  <span className="font-mono text-gray-200 block">{formatHungarianDate(selectedUserDetail.created_at)}</span>
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Regisztráció Időpontja</span>
+                  <span style={{ color: textColor }} className="font-mono block">{formatHungarianDate(selectedUserDetail.created_at)}</span>
                 </div>
 
-                <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Utolsó Aktivitás / Belépés</span>
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Utolsó Aktivitás / Belépés</span>
                   <span className="font-mono text-emerald-400 block">
                     {formatHungarianDate(selectedUserDetail.last_sign_in_at || selectedUserDetail.updated_at || selectedUserDetail.created_at)}
                   </span>
                 </div>
 
-                <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">E-mail Visszaigazolás Status</span>
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">E-mail Visszaigazolás Status</span>
                   {checkIsConfirmed(selectedUserDetail) ? (
                     <span className="font-bold text-emerald-400 block">
                       Megerősítve ✓ {selectedUserDetail.email_confirmed_at || selectedUserDetail.confirmed_at ? `(${formatHungarianDate(selectedUserDetail.email_confirmed_at || selectedUserDetail.confirmed_at)})` : ''}
@@ -622,16 +652,16 @@ export default function AdminUsersPage() {
                   )}
                 </div>
 
-                <div className="p-3 bg-[#181818] border border-[#262626] rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Bizalmi Pontszám (Trust)</span>
-                  <span className="font-extrabold text-accent block">
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Bizalmi Pontszám (Trust)</span>
+                  <span style={{ color: cardHighlight }} className="font-extrabold block">
                     {(trustProfiles[selectedUserDetail.id]?.trustScore || 10)} pont
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons in Modal */}
-              <div className="pt-4 border-t border-[#222222] flex items-center justify-between gap-3">
+              <div style={{ borderColor: cardBorder }} className="pt-4 border-t flex items-center justify-between gap-3">
                 <button
                   onClick={() => handleToggleTrusted(selectedUserDetail.id, trustProfiles[selectedUserDetail.id]?.isTrusted || false)}
                   className="px-4 py-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold rounded-xl hover:bg-purple-500/30 transition-colors cursor-pointer text-xs"
