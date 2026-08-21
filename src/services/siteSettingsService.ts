@@ -358,8 +358,10 @@ export function getSiteSettings(): SiteSettings {
       return settings;
     }
 
-    // 3. Check primary and backup localStorage
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY);
+    // 3. Check primary, backup & session storage
+    const raw = (typeof window !== 'undefined')
+      ? (localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY))
+      : null;
     if (raw) {
       const parsed = JSON.parse(raw);
       const settings: SiteSettings = {
@@ -397,9 +399,14 @@ export function saveSiteSettings(settings: SiteSettings): void {
     };
     if (typeof window !== 'undefined') {
       window.__GLOBAL_SITE_SETTINGS__ = updatedSettings;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+        localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(updatedSettings));
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+      } catch (e) {
+        console.warn('Storage write info:', e);
+      }
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
-    localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(updatedSettings));
     applySiteSettings(updatedSettings);
     window.dispatchEvent(new Event('site-settings-changed'));
 

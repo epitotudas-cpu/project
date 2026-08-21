@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getSiteSettings, getDynamicImageUrl, type SiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, getDynamicImageUrl, type SiteSettings } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
 interface HeaderProps {
@@ -22,7 +22,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
+  const siteSettings = useSiteSettings();
 
   useEffect(() => {
     if (mobileOpen) {
@@ -58,14 +58,6 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         clearTimeout(closeTimeoutRef.current);
       }
     };
-  }, []);
-
-  useEffect(() => {
-    function handleSettingsChange() {
-      setSiteSettings(getSiteSettings());
-    }
-    window.addEventListener('site-settings-changed', handleSettingsChange);
-    return () => window.removeEventListener('site-settings-changed', handleSettingsChange);
   }, []);
 
   useEffect(() => {
