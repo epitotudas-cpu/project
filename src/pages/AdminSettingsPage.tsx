@@ -87,6 +87,23 @@ const PRESET_PALETTES = [
   { name: 'Munkavédelmi Smaragdzöld', primary: '#059669', previewBg: '#059669' },
 ];
 
+const PRESET_ADMIN_ACCENTS = [
+  { name: 'Építkezős Arany', color: '#FFC400' },
+  { name: 'Elektromos Kék', color: '#3B82F6' },
+  { name: 'Munkavédelmi Zöld', color: '#10B981' },
+  { name: 'Ibolya Lila', color: '#8B5CF6' },
+  { name: 'Korall Piros', color: '#EF4444' },
+  { name: 'Szakmai Narancs', color: '#F97316' },
+];
+
+const PRESET_ADMIN_BACKGROUNDS = [
+  { name: 'Sötét Fekete (Klasszikus)', color: '#0A0A0A' },
+  { name: 'Éjféli Mélykék', color: '#0F172A' },
+  { name: 'Grafitszürke', color: '#18181B' },
+  { name: 'Sötét Smaragdzöld', color: '#064E3B' },
+  { name: 'Csokoládé Barna', color: '#1C1917' },
+];
+
 export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
   const [settings, setSettings] = useState<SiteSettings>(() => getSiteSettings());
   const [impressumData, setImpressumData] = useState<ImpressumData>(() => getImpressumData());
@@ -871,6 +888,147 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   <span className="px-3 py-1 rounded-lg text-xs font-extrabold text-black" style={{ backgroundColor: settings.primaryColor }}>
                     Kiemelés
                   </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ADMIN PANEL STYLING SECTION */}
+            <div className="pt-6 border-t border-[#222] space-y-6">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Shield size={18} className="text-accent" /> Admin Panel Testreszabása (Kiemelés &amp; Háttér)
+              </h3>
+
+              {/* Admin Accent Color */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-gray-300 block">Admin Panel Kiemelés Színe (Admin Accent Color)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {PRESET_ADMIN_ACCENTS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        const updated = { ...settings, adminAccentColor: preset.color };
+                        setSettings(updated);
+                        applySiteSettings(updated);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                        (settings.adminAccentColor || '#FFC400') === preset.color
+                          ? 'border-accent bg-accent/10'
+                          : 'border-[#222] bg-[#161616] hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="w-4 h-4 rounded-full shrink-0 shadow" style={{ backgroundColor: preset.color }} />
+                      <span className="text-[11px] font-bold text-gray-200 truncate">{preset.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <input
+                    type="color"
+                    value={settings.adminAccentColor || '#FFC400'}
+                    onChange={(e) => {
+                      const updated = { ...settings, adminAccentColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={settings.adminAccentColor || '#FFC400'}
+                    onChange={(e) => {
+                      const updated = { ...settings, adminAccentColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              {/* Admin Background Color */}
+              <div className="space-y-3 pt-3 border-t border-[#222]">
+                <label className="text-xs font-bold text-gray-300 block">Admin Panel Háttér Színe (Admin Background Color)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {PRESET_ADMIN_BACKGROUNDS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        const updated = { ...settings, adminBgColor: preset.color };
+                        setSettings(updated);
+                        applySiteSettings(updated);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                        (settings.adminBgColor || '#0A0A0A') === preset.color
+                          ? 'border-accent bg-accent/10'
+                          : 'border-[#222] bg-[#161616] hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="w-4 h-4 rounded-full shrink-0 border border-gray-600 shadow" style={{ backgroundColor: preset.color }} />
+                      <span className="text-[11px] font-bold text-gray-200 truncate">{preset.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <input
+                    type="color"
+                    value={settings.adminBgColor || '#0A0A0A'}
+                    onChange={(e) => {
+                      const updated = { ...settings, adminBgColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    className="w-12 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={settings.adminBgColor || '#0A0A0A'}
+                    onChange={(e) => {
+                      const updated = { ...settings, adminBgColor: e.target.value };
+                      setSettings(updated);
+                      applySiteSettings(updated);
+                    }}
+                    className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              {/* Live Admin Layout Preview */}
+              <div className="pt-4 border-t border-[#222] space-y-2">
+                <span className="text-xs font-bold text-gray-400 block">Admin Panel Élő Előnézete</span>
+                <div
+                  className="p-4 rounded-2xl border transition-all space-y-3"
+                  style={{
+                    backgroundColor: settings.adminBgColor || '#0A0A0A',
+                    borderColor: `${settings.adminAccentColor || '#FFC400'}40`,
+                  }}
+                >
+                  <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: `${settings.adminAccentColor || '#FFC400'}30` }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase tracking-wider" style={{ color: settings.adminAccentColor || '#FFC400' }}>
+                        ADMIN PANEL
+                      </span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold text-black" style={{ backgroundColor: settings.adminAccentColor || '#FFC400' }}>
+                      Aktív Szín
+                    </span>
+                  </div>
+
+                  <div className="flex gap-3 text-xs">
+                    <div className="w-1/3 p-2.5 rounded-xl border space-y-1.5" style={{ backgroundColor: `${settings.adminAccentColor || '#FFC400'}1C`, borderColor: settings.adminAccentColor || '#FFC400' }}>
+                      <div className="font-bold text-[11px]" style={{ color: settings.adminAccentColor || '#FFC400' }}>
+                        ● Menüpont
+                      </div>
+                      <div className="text-[10px] text-gray-400">Aktív kijelölés</div>
+                    </div>
+                    <div className="flex-1 p-2.5 rounded-xl border border-white/10 bg-white/5 space-y-1">
+                      <div className="font-bold text-white text-[11px]">Tartalmi Terület</div>
+                      <div className="text-[10px] text-gray-400">Egyedi háttérszín alkalmazva</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

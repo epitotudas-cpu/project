@@ -1,7 +1,7 @@
 import { LogOut, Menu } from 'lucide-react';
 import GlobalSearch from './GlobalSearch';
 import type { AdminView } from './AdminSidebar';
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 interface AdminHeaderProps {
   userEmail: string | null;
@@ -20,13 +20,20 @@ export default function AdminHeader({
 }: AdminHeaderProps) {
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const adminBg = siteSettings.adminBgColor || '#0A0A0A';
+
+  const headerBg = `${adjustColorBrightness(adminBg, 2)}F0`;
+  const borderColor = adjustColorBrightness(adminBg, 12);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0D0D0D]/95 backdrop-blur border-b border-[#1E1E1E] flex-shrink-0">
+    <header
+      style={{ backgroundColor: headerBg, borderColor }}
+      className="sticky top-0 z-40 backdrop-blur border-b flex-shrink-0 transition-all duration-200"
+    >
       <div className="px-4 sm:px-6 py-3 flex items-center gap-3">
         <button
           onClick={onOpenSidebar}
-          className="lg:hidden p-2 -ml-2 text-gray-400 hover:bg-[#1E1E1E] rounded-lg transition-colors"
+          className="lg:hidden p-2 -ml-2 text-gray-400 hover:bg-white/10 rounded-lg transition-colors"
           aria-label="Menü megnyitása"
         >
           <Menu size={18} />
@@ -45,11 +52,11 @@ export default function AdminHeader({
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="text-right hidden sm:block">
             <p className="text-xs text-gray-400 truncate max-w-[180px]">{userEmail || '—'}</p>
-            <p className="text-xs text-green-400 font-medium capitalize">{role}</p>
+            <p className="text-xs text-emerald-400 font-medium capitalize">{role}</p>
           </div>
           <button
             onClick={onSignOut}
-            className="p-2 hover:bg-[#1E1E1E] rounded-lg transition-colors"
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
             title="Kijelentkezés"
             aria-label="Kijelentkezés"
           >

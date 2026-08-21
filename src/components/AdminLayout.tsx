@@ -1,6 +1,7 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChange } from '../lib/authClient';
 import { getAuthDebugInfo, signOutAdmin, type AuthDebugInfo } from '../lib/authService';
+import { useSiteSettings } from '../services/siteSettingsService';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import AdminLogin from './AdminLogin';
@@ -17,6 +18,10 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
   const [authChecked, setAuthChecked] = useState(false);
   const [view, setView] = useState<AdminView>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const siteSettings = useSiteSettings();
+
+  const adminBg = siteSettings.adminBgColor || '#0A0A0A';
+  const adminAccent = siteSettings.adminAccentColor || '#FFC400';
 
   useEffect(() => {
     checkAuth();
@@ -39,9 +44,12 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: adminBg }}>
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#FFC400] border-r-transparent"></div>
+          <div
+            className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent"
+            style={{ borderColor: adminAccent, borderRightColor: 'transparent' }}
+          />
           <p className="mt-4 text-gray-500 text-sm">Hitelesítés ellenőrzése...</p>
         </div>
       </div>
@@ -50,7 +58,7 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
 
   if (!authInfo?.isAuthenticated) {
     return (
-      <div>
+      <div style={{ backgroundColor: adminBg }} className="min-h-screen">
         <AdminLogin onLoginSuccess={checkAuth} />
         <div className="text-center mt-4 px-4">
           <button
@@ -76,7 +84,7 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] lg:flex">
+    <div className="min-h-screen lg:flex transition-colors duration-200" style={{ backgroundColor: adminBg }}>
       <AdminSidebar
         activeView={view}
         onNavigateView={setView}

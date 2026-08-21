@@ -1,5 +1,5 @@
 import { LayoutDashboard, FileText, FolderTree, BookOpen, Library, Wrench, Settings, Home, Users, CheckSquare, Shield, Building2, Megaphone, Activity, X, Briefcase, GraduationCap, Compass } from 'lucide-react';
-import { useSiteSettings } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 export type AdminView =
   | 'dashboard'
@@ -93,6 +93,11 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings.logoUrl || '/logo.png';
+  const adminAccent = siteSettings.adminAccentColor || '#FFC400';
+  const adminBg = siteSettings.adminBgColor || '#0A0A0A';
+
+  const sidebarBg = adjustColorBrightness(adminBg, 2);
+  const borderColor = adjustColorBrightness(adminBg, 12);
 
   return (
     <>
@@ -106,11 +111,12 @@ export default function AdminSidebar({
       )}
 
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen lg:h-screen w-64 bg-[#0D0D0D] border-r border-[#1E1E1E] flex flex-col flex-shrink-0 transition-transform duration-200 lg:translate-x-0 ${
+        style={{ backgroundColor: sidebarBg, borderColor }}
+        className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen lg:h-screen w-64 border-r flex flex-col flex-shrink-0 transition-all duration-200 lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="px-5 py-4 border-b border-[#1E1E1E] flex items-center justify-between">
+        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor }}>
           <div className="flex items-center gap-2.5 overflow-hidden">
             <img
               src={logoUrl}
@@ -121,13 +127,15 @@ export default function AdminSidebar({
               }}
             />
             <div className="min-w-0">
-              <h2 className="text-xs font-black uppercase tracking-wider text-[#FFC400] truncate">Admin</h2>
-              <p className="text-[10px] text-gray-500 truncate">Panel</p>
+              <h2 className="text-xs font-black uppercase tracking-wider truncate" style={{ color: adminAccent }}>
+                Admin
+              </h2>
+              <p className="text-[10px] text-gray-400 truncate">Panel</p>
             </div>
           </div>
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 text-gray-500 hover:bg-[#1E1E1E] rounded-md transition-colors shrink-0"
+            className="lg:hidden p-1.5 text-gray-400 hover:bg-white/10 rounded-md transition-colors shrink-0"
             aria-label="Menü bezárása"
           >
             <X size={18} />
@@ -137,7 +145,7 @@ export default function AdminSidebar({
         <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto admin-scroll">
           {NAV_GROUPS.map((group) => (
             <div key={group.title} className="space-y-1">
-              <h3 className="px-3 text-[10px] font-black tracking-widest text-gray-500 uppercase">
+              <h3 className="px-3 text-[10px] font-black tracking-widest text-gray-400 uppercase opacity-75">
                 {group.title}
               </h3>
               <div className="space-y-0.5">
@@ -150,13 +158,22 @@ export default function AdminSidebar({
                         onNavigateView(id);
                         onCloseMobile();
                       }}
+                      style={
+                        active
+                          ? {
+                              backgroundColor: `${adminAccent}1C`,
+                              color: adminAccent,
+                              borderLeftColor: adminAccent,
+                            }
+                          : {}
+                      }
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         active
-                          ? 'bg-[#FFC400]/10 text-[#FFC400] font-bold border-l-2 border-[#FFC400]'
-                          : 'text-gray-400 hover:bg-[#1E1E1E] hover:text-gray-200'
+                          ? 'font-bold border-l-2'
+                          : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'
                       }`}
                     >
-                      <Icon size={15} className={active ? 'text-[#FFC400]' : 'text-gray-500'} />
+                      <Icon size={15} style={active ? { color: adminAccent } : {}} className={active ? '' : 'text-gray-400'} />
                       {label}
                     </button>
                   );
@@ -166,12 +183,12 @@ export default function AdminSidebar({
           ))}
         </nav>
 
-        <div className="px-3 py-4 border-t border-[#1E1E1E]">
+        <div className="px-3 py-4 border-t" style={{ borderColor }}>
           <button
             onClick={onNavigateHome}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-[#1E1E1E] hover:text-gray-200 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
           >
-            <Home size={16} className="text-gray-500" />
+            <Home size={16} className="text-gray-400" />
             Vissza a főoldalra
           </button>
         </div>

@@ -9,6 +9,10 @@ export interface SiteSettings {
   primaryColor: string;
   themeMode: 'dark' | 'light';
 
+  // Admin Panel Custom Colors
+  adminAccentColor?: string;
+  adminBgColor?: string;
+
   // Customizable Section Texts & Content Styling
   heroMainTitle: string;
   heroSubtitle: string;
@@ -46,6 +50,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   primaryColor: '#FFC400',
   themeMode: 'dark',
 
+  adminAccentColor: '#FFC400',
+  adminBgColor: '#0A0A0A',
+
   heroMainTitle: 'Magyarország vezető építőipari tudásbázisa',
   heroSubtitle: 'Szakmai enciklopédia, megbízható útmutatók, kalkulátorok és szerszámkatalógus szakembereknek, tanulóknak és kivitelezőknek egyaránt.',
   newsletterTitle: 'Szakmai hírlevél',
@@ -82,7 +89,7 @@ declare global {
   }
 }
 
-function adjustColorBrightness(hex: string, percent: number): string {
+export function adjustColorBrightness(hex: string, percent: number): string {
   try {
     const num = parseInt((hex || '#FFC400').replace('#', ''), 16);
     if (isNaN(num)) return hex || '#FFC400';
@@ -116,6 +123,16 @@ export function applySiteSettings(settings: SiteSettings): void {
     document.documentElement.style.setProperty('--color-accent', accentColor);
     document.documentElement.style.setProperty('--color-accent-hover', adjustColorBrightness(accentColor, -15));
     document.documentElement.style.setProperty('--color-accent-light', adjustColorBrightness(accentColor, 15));
+
+    const adminAccent = settings?.adminAccentColor || '#FFC400';
+    const adminBg = settings?.adminBgColor || '#0A0A0A';
+    document.documentElement.style.setProperty('--color-admin-accent', adminAccent);
+    document.documentElement.style.setProperty('--color-admin-accent-hover', adjustColorBrightness(adminAccent, -15));
+    document.documentElement.style.setProperty('--color-admin-accent-light', adjustColorBrightness(adminAccent, 15));
+    document.documentElement.style.setProperty('--color-admin-bg', adminBg);
+    document.documentElement.style.setProperty('--color-admin-card', adjustColorBrightness(adminBg, 4));
+    document.documentElement.style.setProperty('--color-admin-sidebar', adjustColorBrightness(adminBg, 2));
+    document.documentElement.style.setProperty('--color-admin-border', adjustColorBrightness(adminBg, 12));
 
     if (settings?.siteTitle) {
       document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
