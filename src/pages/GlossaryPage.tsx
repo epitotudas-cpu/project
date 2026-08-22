@@ -413,7 +413,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                📘 Szakmai Fogalomtár
+                Szakmai Fogalomtár
               </button>
               <button
                 onClick={() => handleTabChange('industry')}
@@ -423,7 +423,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                🗣 Zsargon Szótár
+                Zsargon Szótár
               </button>
             </div>
           </div>
@@ -470,7 +470,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
           <div className="mb-8 p-5 bg-accent/10 border border-accent/30 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="text-xs font-bold text-accent uppercase tracking-wider mb-1">
-                🗣 Összekapcsolt Szakmai Találat
+                Összekapcsolt Szakmai Találat
               </div>
               <h4 className="text-base font-bold text-gray-900">
                 Kapcsolódó hivatalos műszaki fogalom:{' '}
@@ -533,7 +533,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Filter size={15} />
                     <span>
                       {selectedCategories.length > 0
                         ? `Kategóriák (${selectedCategories.length})`
@@ -558,7 +557,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   key={catName}
                   className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 text-primary-950 font-bold text-xs rounded-full shadow-2xs"
                 >
-                  <span>{getCategoryIcon(catName, categorySettings)} {catName}</span>
+                  <span>{catName}</span>
                   <button
                     onClick={() => handleRemoveCategoryChip(catName)}
                     className="hover:bg-primary/20 rounded-full p-0.5"
@@ -1131,8 +1130,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div className="space-y-0.5">
-                <h3 id="cat-modal-title" className="text-lg font-black text-gray-900 flex items-center gap-2">
-                  <Filter size={18} className="text-primary" /> Kategóriák szűrése
+                <h3 id="cat-modal-title" className="text-lg font-black text-gray-900">
+                  Kategóriák szűrése
                 </h3>
                 <p className="text-xs text-gray-500">
                   Válassz egy vagy több kategóriát a fogalmak szűréséhez.
@@ -1189,10 +1188,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                         }}
                         className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                       />
-                      <span className="flex items-center gap-1">
-                        <span>{getCategoryIcon(catName, categorySettings)}</span>
-                        <span>{catName}</span>
-                      </span>
+                      <span>{catName}</span>
                     </div>
 
                     <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full border border-gray-200">
