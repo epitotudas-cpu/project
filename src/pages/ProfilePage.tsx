@@ -1434,6 +1434,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 ) : (
                   <span>Fiók Végleges Törlése</span>
                 )}
+              </button>
             </div>
           </div>
         </div>

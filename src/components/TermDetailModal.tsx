@@ -44,14 +44,12 @@ interface TermDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   term: GlossaryTermFromJson | null;
-  onRequireAuth?: () => void;
 }
 
 export default function TermDetailModal({
   isOpen,
   onClose,
   term,
-  onRequireAuth,
 }: TermDetailModalProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'details' | 'slides' | 'video' | 'gallery' | 'dictionary'>('details');

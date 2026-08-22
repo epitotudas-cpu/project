@@ -24,7 +24,7 @@ import {
 import SectionSubNav from '../components/SectionSubNav';
 import { useGlossary } from '../contexts/GlossaryContext';
 import { useAuth } from '../contexts/AuthContext';
-import { isItemSaved, toggleSaveItem, getSavedItems } from '../services/bookmarkService';
+import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import { getTradeEducationalPathways } from '../services/glossaryService';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -1011,11 +1011,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                               </button>
 
                               {!user && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                                  <Lock size={12} /> Regisztráció szükséges
-                                </span>
-                              )}
-                            </div>
                                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
                                   <Lock size={12} /> Regisztráció szükséges
                                 </span>
