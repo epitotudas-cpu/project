@@ -13,6 +13,7 @@ import {
   Compass,
   HardHat,
   ArrowRight,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SectionSubNav from '../components/SectionSubNav';
@@ -155,9 +156,18 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
     setSelectedRoleCategory('all');
   };
 
+  if (loading) {
+    return (
+      <div className="bg-[#f8fafc] min-h-screen p-8 text-center text-gray-500">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent border-r-transparent mb-2" />
+        <div>Állásajánlatok betöltése...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
-      {/* Hero Header Banner */}
+      {/* Hero Header */}
       <div className="bg-primary text-white border-b border-primary-700 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -172,22 +182,22 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
               onClick={() => onNavigate?.('paths')}
               className="hover:text-white transition-colors flex items-center gap-1"
             >
-              Pályák &amp; Képzések
+              Pályák
             </button>
             <ChevronRight size={13} />
-            <span className="text-gray-200 font-medium">Karrier &amp; Állások</span>
+            <span className="text-gray-200 font-medium">Karrier & Állások</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <Briefcase size={14} /> ÉpítőIpari KarrierPortál &amp; Szakmai Állásbörze
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
+                <Briefcase size={13} /> Építőipari Karrier &amp; Állásbörze
               </span>
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-                Találd meg a helyed az építőiparban
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                Építőipari Állások &amp; Karrierlehetőségek
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Fedezd fel a szakmákat, fejleszd a tudásodat, és találd meg a következő karrierlehetőségedet.
+                Találd meg a neked megfelelő kivitelezői, mérnöki vagy szakmunkát, és építsd tudatosan a karrieredet!
               </p>
             </div>
 
@@ -196,7 +206,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
                 href="#allasok"
                 className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
               >
-                <Search size={16} /> Állások böngészése
+                <Search size={16} /> Állások keresése
               </a>
               <button
                 onClick={() => onNavigate?.('paths')}
@@ -211,38 +221,32 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
 
       {/* Standardized Secondary Sub-navigation Bar */}
       <SectionSubNav
-        ariaLabel="Karrier navigáció"
+        ariaLabel="Pályák navigáció"
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Állásajánlatok',
-            href: '#allasok',
-            icon: <Briefcase size={14} className="text-accent" />,
-            active: true,
-          },
-          {
-            label: 'Karrierutak',
-            href: '#karrierutak',
-            icon: <Compass size={14} className="text-accent" />,
+            label: 'Építőipari szakmák',
+            page: 'paths',
+            icon: <HardHat size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Ajánlott Képzések',
-            href: '#kepzesek',
+            label: 'Tanulási útvonalak',
+            page: 'paths',
+            icon: <Layers size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Képzések & kurzusok',
+            page: 'courses',
             icon: <GraduationCap size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Munkaadóknak',
-            href: '#munkaadok',
-            icon: <Building size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Pályák & Szakmák',
-            page: 'paths',
-            icon: <HardHat size={14} className="text-accent" />,
-            active: false,
+            label: 'Karrier & állások',
+            page: 'careers',
+            icon: <Briefcase size={14} className="text-accent" />,
+            active: true,
           },
         ]}
       />
@@ -250,6 +254,37 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
         
+        {/* Internal Page Quick Navigation (Karrieroldal részei) */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-sm flex flex-wrap items-center gap-2">
+          <span className="text-xs font-extrabold text-gray-500 uppercase tracking-wider px-2 flex items-center gap-1.5">
+            <Compass size={14} className="text-accent" /> Karrieroldal részei:
+          </span>
+          <a
+            href="#allasok"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          >
+            <Briefcase size={14} className="text-accent" /> Állásajánlatok
+          </a>
+          <a
+            href="#karrierutak"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          >
+            <Compass size={14} className="text-accent" /> Karrierutak
+          </a>
+          <a
+            href="#kepzesek"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          >
+            <GraduationCap size={14} className="text-accent" /> Ajánlott képzések
+          </a>
+          <a
+            href="#munkaadok"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          >
+            <Building size={14} className="text-accent" /> Munkaadóknak
+          </a>
+        </div>
+
         {/* SEARCH & FILTERS SECTION */}
         <section id="allasok" className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

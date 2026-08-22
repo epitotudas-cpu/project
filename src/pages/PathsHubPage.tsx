@@ -170,19 +170,25 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Szakmák',
-            href: '#szakmak',
+            label: 'Építőipari szakmák',
+            page: 'paths',
             icon: <HardHat size={14} className="text-accent" />,
             active: !selectedTradeId,
           },
           {
-            label: 'Képzések',
+            label: 'Tanulási útvonalak',
+            page: 'paths',
+            icon: <Layers size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Képzések & kurzusok',
             page: 'courses',
             icon: <GraduationCap size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Karrier',
+            label: 'Karrier & állások',
             page: 'careers',
             icon: <Briefcase size={14} className="text-accent" />,
             active: false,

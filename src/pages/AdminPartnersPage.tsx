@@ -95,7 +95,6 @@ export default function AdminPartnersPage() {
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
-  const headerBg = adjustColorBrightness(cardBg, 4);
   const inputBg = adjustColorBrightness(cardBg, -4);
   const textColor = getContrastTextColor(cardBg);
   const inputTextColor = getContrastTextColor(inputBg);

@@ -32,10 +32,10 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-selector', label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', isActive: true, displayOrder: 3 },
 
   // Pályák Submenu
-  { id: 'sub-professions', label: 'Építőipari Szakmák', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
-  { id: 'sub-paths', label: 'Tanulási Útvonalak', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
-  { id: 'sub-courses', label: 'Képzések & Kurzusok', page: 'courses', parentId: 'nav-paths', isActive: true, displayOrder: 3 },
-  { id: 'sub-careers', label: 'Karrier & Állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
+  { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
+  { id: 'sub-paths', label: 'Tanulási útvonalak', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
+  { id: 'sub-courses', label: 'Képzések & kurzusok', page: 'courses', parentId: 'nav-paths', isActive: true, displayOrder: 3 },
+  { id: 'sub-careers', label: 'Karrier & állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 
   // Rólunk Submenu
   { id: 'sub-mission', label: 'Küldetésünk & Rólunk', page: 'about', parentId: 'nav-about', isActive: true, displayOrder: 1 },
@@ -52,17 +52,48 @@ declare global {
   }
 }
 
+function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
+  const labelMap: Record<string, string> = {
+    'sub-professions': 'Építőipari szakmák',
+    'sub-paths': 'Tanulási útvonalak',
+    'sub-courses': 'Képzések & kurzusok',
+    'sub-careers': 'Karrier & állások',
+  };
+  let changed = false;
+  const updated = items.map((item) => {
+    if (labelMap[item.id] && item.label !== labelMap[item.id]) {
+      changed = true;
+      return { ...item, label: labelMap[item.id] };
+    }
+    return item;
+  });
+  if (changed) {
+    try {
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_NAV_ITEMS__ = updated;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      }
+      // Save normalized back to cloud
+      saveNavItems(updated);
+    } catch (err) {
+      console.warn('Hiba a navigációs elemek mentésekor:', err);
+    }
+  }
+  return updated;
+}
+
 export function getNavItems(): MenuItem[] {
   try {
     if (typeof window !== 'undefined' && window.__GLOBAL_NAV_ITEMS__) {
-      return window.__GLOBAL_NAV_ITEMS__;
+      return normalizeNavLabels(window.__GLOBAL_NAV_ITEMS__);
     }
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        if (typeof window !== 'undefined') window.__GLOBAL_NAV_ITEMS__ = parsed;
-        return parsed;
+        const normalized = normalizeNavLabels(parsed);
+        if (typeof window !== 'undefined') window.__GLOBAL_NAV_ITEMS__ = normalized;
+        return normalized;
       }
     }
   } catch (err) {
@@ -113,12 +144,13 @@ export async function fetchNavFromCloud(): Promise<MenuItem[] | null> {
     if (!error && data?.description && data.description.startsWith('[')) {
       const parsed = JSON.parse(data.description);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        const normalized = normalizeNavLabels(parsed);
         if (typeof window !== 'undefined') {
-          window.__GLOBAL_NAV_ITEMS__ = parsed;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+          window.__GLOBAL_NAV_ITEMS__ = normalized;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
           window.dispatchEvent(new Event('nav-structure-changed'));
         }
-        return parsed;
+        return normalized;
       }
     }
   } catch (err) {

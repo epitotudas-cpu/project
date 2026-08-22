@@ -201,29 +201,29 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
 
       {/* Standardized Secondary Sub-navigation Bar */}
       <SectionSubNav
-        ariaLabel="Képzések navigáció"
+        ariaLabel="Pályák navigáció"
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Kurzuskatalógus',
-            href: '#katalogus',
-            icon: <BookOpen size={14} className="text-accent" />,
-            active: true,
-          },
-          {
-            label: 'Tanulási Útvonalak',
-            href: '#utvonalak',
-            icon: <Compass size={14} className="text-accent" />,
+            label: 'Építőipari szakmák',
+            page: 'paths',
+            icon: <HardHat size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Pályák & Szakmák',
+            label: 'Tanulási útvonalak',
             page: 'paths',
             icon: <Layers size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Karrier & Állások',
+            label: 'Képzések & kurzusok',
+            page: 'courses',
+            icon: <GraduationCap size={14} className="text-accent" />,
+            active: true,
+          },
+          {
+            label: 'Karrier & állások',
             page: 'careers',
             icon: <Briefcase size={14} className="text-accent" />,
             active: false,
