@@ -7,7 +7,7 @@ import CommunityCommentsSection from '../components/CommunityCommentsSection';
 import { parseBlocksFromContent } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
+import SocialShareButton, { updateArticleMetaTags } from '../components/SocialShareButton';
 import AuthPromptModal from '../components/AuthPromptModal';
 
 interface ArticlePageProps {
@@ -208,6 +208,12 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         ]);
         setArticle(articleData);
         if (articleData) {
+          updateArticleMetaTags(
+            articleData.title,
+            articleData.excerpt || 'ÉpítőTudás szakmai cikk és útmutató',
+            articleData.featured_image || undefined
+          );
+
           const cat = categoriesData.find((c) => c.id === articleData.category_id || c.slug === articleData.category_id);
           setCategoryObj(cat || null);
 
@@ -358,27 +364,35 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
               </div>
             </div>
 
-            <button
-              onClick={handleToggleBookmark}
-              className={`px-4 py-2.5 rounded-xl border transition-all flex items-center gap-2 text-xs font-extrabold ${
-                saved
-                  ? 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200 shadow-2xs'
-                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-              title={saved ? 'Mentés eltávolítása' : 'Cikk elmentése a mentéseim közé'}
-            >
-              {saved ? (
-                <>
-                  <BookmarkCheck size={16} className="text-amber-700 fill-amber-500" />
-                  <span>Cikk elmentve</span>
-                </>
-              ) : (
-                <>
-                  <Bookmark size={16} />
-                  <span>Cikk mentése</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <SocialShareButton
+                title={article.title}
+                excerpt={article.excerpt || ''}
+                imageUrl={article.featured_image || undefined}
+              />
+
+              <button
+                onClick={handleToggleBookmark}
+                className={`px-4 py-2.5 rounded-xl border transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer ${
+                  saved
+                    ? 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200 shadow-2xs'
+                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+                title={saved ? 'Mentés eltávolítása' : 'Cikk elmentése a mentéseim közé'}
+              >
+                {saved ? (
+                  <>
+                    <BookmarkCheck size={16} className="text-amber-700 fill-amber-500" />
+                    <span>Cikk elmentve</span>
+                  </>
+                ) : (
+                  <>
+                    <Bookmark size={16} />
+                    <span>Cikk mentése</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
