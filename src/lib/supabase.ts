@@ -39,7 +39,11 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    lock: false,
+  },
+});
 
 export type Json =
   | string

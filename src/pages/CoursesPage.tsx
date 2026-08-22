@@ -18,6 +18,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
+  HardHat,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SectionSubNav from '../components/SectionSubNav';
