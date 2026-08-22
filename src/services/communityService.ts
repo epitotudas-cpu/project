@@ -145,6 +145,53 @@ function saveCommentLocally(contentType: string, contentId: string, comment: Com
   }
 }
 
+export async function updateComment(
+  commentId: string,
+  userId: string | null | undefined,
+  text: string,
+  rating: number
+): Promise<boolean> {
+  if (!commentId || !text.trim()) return false;
+
+  try {
+    const { error } = await supabase
+      .from('comments')
+      .update({
+        comment_text: text.trim(),
+        rating: rating,
+      })
+      .eq('id', commentId);
+
+    if (!error) return true;
+    console.error('Failed to update comment in Supabase:', error);
+  } catch (err) {
+    console.error('Error updating comment:', err);
+  }
+
+  return false;
+}
+
+export async function deleteComment(
+  commentId: string,
+  userId: string | null | undefined
+): Promise<boolean> {
+  if (!commentId) return false;
+
+  try {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (!error) return true;
+    console.error('Failed to delete comment from Supabase:', error);
+  } catch (err) {
+    console.error('Error deleting comment:', err);
+  }
+
+  return false;
+}
+
 export async function toggleFavorite(userId: string, itemType: string, itemId: string): Promise<boolean> {
   const key = `${userId}:${itemType}:${itemId}`;
   if (IN_MEMORY_FAVORITES.has(key)) {

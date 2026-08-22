@@ -52,3 +52,19 @@ CREATE POLICY "Users delete own comments" ON public.comments
       WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor')
     ))
   );
+
+DROP POLICY IF EXISTS "Users update own comments" ON public.comments;
+CREATE POLICY "Users update own comments" ON public.comments
+  FOR UPDATE USING (
+    (auth.uid() = user_id) OR
+    (EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor')
+    ))
+  ) WITH CHECK (
+    (auth.uid() = user_id) OR
+    (EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor')
+    ))
+  );
