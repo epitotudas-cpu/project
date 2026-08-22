@@ -175,20 +175,16 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    if (article && user) {
-      setSaved(isItemSaved(user.id, article.id, 'article'));
+    if (article) {
+      setSaved(isItemSaved(user?.id, article.id, 'article'));
     } else {
       setSaved(false);
     }
   }, [article, user]);
 
   const handleToggleBookmark = () => {
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
     if (!article) return;
-    const res = toggleSaveItem(user.id, {
+    const res = toggleSaveItem(user?.id, {
       itemId: article.id,
       itemType: 'article',
       title: article.title,

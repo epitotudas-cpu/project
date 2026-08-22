@@ -60,8 +60,8 @@ export default function TermDetailModal({
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (term && user) {
-      setSaved(isItemSaved(user.id, term.id, 'glossary'));
+    if (term) {
+      setSaved(isItemSaved(user?.id, term.id, 'glossary'));
     } else {
       setSaved(false);
     }
@@ -76,17 +76,13 @@ export default function TermDetailModal({
 
   const handleToggleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!user) {
-      if (onRequireAuth) onRequireAuth();
-      return;
-    }
-    const res = toggleSaveItem(user.id, {
+    const res = toggleSaveItem(user?.id, {
       itemId: term.id,
       itemType: 'glossary',
       title: term.term,
       subtitle: term.category || undefined,
       description: term.definition,
-      slug: term.slug,
+      slug: term.slug || term.id,
     });
     setSaved(res.isSaved);
   };

@@ -164,38 +164,37 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (user) {
-      const items = getSavedItems(user.id);
-      const glossaryIds = new Set(
-        items.filter((i) => i.itemType === 'glossary').map((i) => i.itemId)
-      );
-      setSavedItemIds(glossaryIds);
-    } else {
-      setSavedItemIds(new Set());
-    }
+    const items = getSavedItems(user?.id);
+    const glossaryIds = new Set<string>();
+    items.filter((i) => i.itemType === 'glossary').forEach((i) => {
+      glossaryIds.add(i.itemId);
+      if (i.slug) glossaryIds.add(i.slug);
+      if (i.title) glossaryIds.add(i.title);
+    });
+    setSavedItemIds(glossaryIds);
   }, [user]);
 
   const handleToggleBookmark = (e: React.MouseEvent, item: GlossaryTermFromJson) => {
     e.stopPropagation();
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
-    const res = toggleSaveItem(user.id, {
+    const res = toggleSaveItem(user?.id, {
       itemId: item.id,
       itemType: 'glossary',
       title: item.term,
       subtitle: item.category || undefined,
       description: item.definition,
-      slug: item.slug,
+      slug: item.slug || item.id,
     });
 
     setSavedItemIds((prev) => {
       const next = new Set(prev);
       if (res.isSaved) {
         next.add(item.id);
+        if (item.slug) next.add(item.slug);
+        if (item.term) next.add(item.term);
       } else {
         next.delete(item.id);
+        if (item.slug) next.delete(item.slug);
+        if (item.term) next.delete(item.term);
       }
       return next;
     });

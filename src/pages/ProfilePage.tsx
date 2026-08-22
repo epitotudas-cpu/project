@@ -123,11 +123,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [savedTermModalOpen, setSavedTermModalOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setSavedItems(getSavedItems(user.id));
-    } else {
-      setSavedItems([]);
-    }
+    setSavedItems(getSavedItems(user?.id));
   }, [user, activeMainSection]);
 
   const filteredSavedItems = useMemo(() => {
@@ -143,8 +139,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   }, [savedItems, savedFilter, savedSearchQuery]);
 
   const handleRemoveSaved = (item: SavedItem) => {
-    if (!user) return;
-    const updated = removeSavedItem(user.id, item.itemId, item.itemType);
+    const updated = removeSavedItem(user?.id, item.itemId, item.itemType);
     setSavedItems(updated);
   };
 

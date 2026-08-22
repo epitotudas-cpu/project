@@ -102,24 +102,18 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const [savedArticleIds, setSavedArticleIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (user) {
-      const items = getSavedItems(user.id);
-      const articleIds = new Set(
-        items.filter((i) => i.itemType === 'article').map((i) => i.itemId)
-      );
-      setSavedArticleIds(articleIds);
-    } else {
-      setSavedArticleIds(new Set());
-    }
+    const items = getSavedItems(user?.id);
+    const articleIds = new Set<string>();
+    items.filter((i) => i.itemType === 'article').forEach((i) => {
+      articleIds.add(i.itemId);
+      if (i.slug) articleIds.add(i.slug);
+    });
+    setSavedArticleIds(articleIds);
   }, [user]);
 
   const handleToggleBookmark = (e: React.MouseEvent, article: Article, catName?: string) => {
     e.stopPropagation();
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
-    const res = toggleSaveItem(user.id, {
+    const res = toggleSaveItem(user?.id, {
       itemId: article.id,
       itemType: 'article',
       title: article.title,
@@ -134,8 +128,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       const next = new Set(prev);
       if (res.isSaved) {
         next.add(article.id);
+        if (article.slug) next.add(article.slug);
       } else {
         next.delete(article.id);
+        if (article.slug) next.delete(article.slug);
       }
       return next;
     });
