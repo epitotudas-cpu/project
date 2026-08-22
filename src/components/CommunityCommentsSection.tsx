@@ -13,6 +13,7 @@ interface CommunityCommentsSectionProps {
 export default function CommunityCommentsSection({ contentType, contentId, altContentId, title }: CommunityCommentsSectionProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
+  const [guestName, setGuestName] = useState('');
   const [newComment, setNewComment] = useState('');
   const [rating, setRating] = useState(5);
   const [isFav, setIsFav] = useState(false);
@@ -44,7 +45,7 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
 
     const userName = user
       ? user.user_metadata?.full_name || user.email?.split('@')[0] || 'Szakmai Felhasználó'
-      : 'Vendég Látogató';
+      : guestName.trim() || 'Vendég Látogató';
     const userId = user?.id || 'guest';
 
     const created = await addComment(userId, userName, contentType, contentId, newComment, rating);
@@ -88,47 +89,65 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
         )}
       </div>
 
-      {/* New Comment Input */}
-      {user ? (
-        <form onSubmit={handleSubmitComment} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-semibold">Értékelés:</span>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  type="button"
-                  key={star}
-                  onClick={() => setRating(star)}
-                  className="text-amber-400 hover:scale-110 transition-transform"
-                >
-                  <Star size={16} className={star <= rating ? 'fill-amber-400' : 'text-gray-600'} />
-                </button>
-              ))}
+      {/* New Comment Input (Available to Logged in users & Visitors) */}
+      <form onSubmit={handleSubmitComment} className="space-y-3">
+        {!user && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-[#181818] border border-[#262626] rounded-xl">
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+              <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Neved:</span>
+              <input
+                type="text"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                placeholder="Pl. Kovács Péter (Építőipari kivitelező)"
+                className="w-full bg-[#111] border border-[#333] text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-accent"
+              />
             </div>
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              type="text"
-              required
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Írj szakmai észrevételt vagy tapasztalatot..."
-              className="flex-1 bg-[#161616] border border-[#222] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
-            />
             <button
-              type="submit"
-              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
+              type="button"
+              onClick={() => {
+                window.location.hash = '#login';
+              }}
+              className="text-xs text-accent font-bold hover:underline whitespace-nowrap"
             >
-              <Send size={14} /> Küldés
+              Vagy jelentkezz be fiókodba ➔
             </button>
           </div>
-        </form>
-      ) : (
-        <div className="p-4 bg-[#161616] border border-[#222] rounded-xl text-xs text-gray-400 text-center">
-          Hozzászólás írásához jelentkezz be fiókodba!
+        )}
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400 font-semibold">Értékelés:</span>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                type="button"
+                key={star}
+                onClick={() => setRating(star)}
+                className="text-amber-400 hover:scale-110 transition-transform"
+              >
+                <Star size={16} className={star <= rating ? 'fill-amber-400' : 'text-gray-600'} />
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            required
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Írj szakmai észrevételt vagy tapasztalatot..."
+            className="flex-1 bg-[#161616] border border-[#222] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
+          />
+          <button
+            type="submit"
+            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Send size={14} /> Küldés
+          </button>
+        </div>
+      </form>
 
       {/* Comments List */}
       <div className="space-y-4 pt-2">
