@@ -177,7 +177,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
           },
           {
             label: 'Tanulási útvonalak',
-            page: 'paths',
+            page: 'courses#utvonalak',
             icon: <Layers size={14} className="text-accent" />,
             active: false,
           },

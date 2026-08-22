@@ -232,7 +232,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
           },
           {
             label: 'Tanulási útvonalak',
-            page: 'paths',
+            page: 'courses#utvonalak',
             icon: <Layers size={14} className="text-accent" />,
             active: false,
           },

@@ -33,7 +33,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
 
   // Pályák Submenu
   { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
-  { id: 'sub-paths', label: 'Tanulási útvonalak', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
+  { id: 'sub-paths', label: 'Tanulási útvonalak', page: 'courses#utvonalak', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
   { id: 'sub-courses', label: 'Képzések & kurzusok', page: 'courses', parentId: 'nav-paths', isActive: true, displayOrder: 3 },
   { id: 'sub-careers', label: 'Karrier & állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 
@@ -53,17 +53,18 @@ declare global {
 }
 
 function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
-  const labelMap: Record<string, string> = {
-    'sub-professions': 'Építőipari szakmák',
-    'sub-paths': 'Tanulási útvonalak',
-    'sub-courses': 'Képzések & kurzusok',
-    'sub-careers': 'Karrier & állások',
+  const itemMap: Record<string, { label: string; page: string }> = {
+    'sub-professions': { label: 'Építőipari szakmák', page: 'paths' },
+    'sub-paths': { label: 'Tanulási útvonalak', page: 'courses#utvonalak' },
+    'sub-courses': { label: 'Képzések & kurzusok', page: 'courses' },
+    'sub-careers': { label: 'Karrier & állások', page: 'careers' },
   };
   let changed = false;
   const updated = items.map((item) => {
-    if (labelMap[item.id] && item.label !== labelMap[item.id]) {
+    const target = itemMap[item.id];
+    if (target && (item.label !== target.label || item.page !== target.page)) {
       changed = true;
-      return { ...item, label: labelMap[item.id] };
+      return { ...item, label: target.label, page: target.page };
     }
     return item;
   });

@@ -124,9 +124,10 @@ function getInitialPage(): PageKey {
       return 'login';
     }
 
-    const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
-    if (hash && ALL_VALID_PAGES.includes(hash as PageKey)) {
-      return hash as PageKey;
+    const rawHash = window.location.hash.replace(/^#\/?/, '');
+    const mainHash = rawHash.split('?')[0].split('#')[0];
+    if (mainHash && ALL_VALID_PAGES.includes(mainHash as PageKey)) {
+      return mainHash as PageKey;
     }
 
     const savedSessionPage = sessionStorage.getItem('epitotudas_active_page');
@@ -199,7 +200,9 @@ function AppContent() {
   }, []);
 
   const navigate = (page: string, params?: { articleSlug?: string }) => {
-    const mainPage = page.split('?')[0];
+    const rawTarget = page.replace(/^#\/?/, '');
+    const mainPage = rawTarget.split('?')[0].split('#')[0];
+    const targetAnchor = rawTarget.includes('#') ? '#' + rawTarget.split('#')[1].split('?')[0] : '';
     const validPage = (ALL_VALID_PAGES.includes(mainPage as PageKey) ? mainPage : 'home') as PageKey;
 
     if (params?.articleSlug) {
@@ -216,13 +219,25 @@ function AppContent() {
     try {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('epitotudas_active_page', validPage);
-        const targetHash = validPage === 'home' ? '' : params?.articleSlug ? `#article?slug=${params.articleSlug}` : page.includes('?') ? `#${page}` : `#${validPage}`;
+        const targetHash = validPage === 'home' ? '' : params?.articleSlug ? `#article?slug=${params.articleSlug}` : page.includes('?') || page.includes('#') ? `#${page}` : `#${validPage}`;
         if (window.location.hash !== targetHash) {
           window.history.pushState(null, '', targetHash || window.location.pathname);
         }
         window.dispatchEvent(new Event('popstate'));
         window.dispatchEvent(new Event('hashchange'));
-        window.scrollTo(0, 0);
+
+        if (targetAnchor) {
+          setTimeout(() => {
+            const el = document.querySelector(targetAnchor);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            } else {
+              window.scrollTo(0, 0);
+            }
+          }, 150);
+        } else {
+          window.scrollTo(0, 0);
+        }
       }
     } catch {
       // ignore
