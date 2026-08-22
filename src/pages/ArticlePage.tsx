@@ -7,6 +7,7 @@ import CommunityCommentsSection from '../components/CommunityCommentsSection';
 import { parseBlocksFromContent } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
 import SocialShareButton, { updateArticleMetaTags } from '../components/SocialShareButton';
 import AuthPromptModal from '../components/AuthPromptModal';
 
