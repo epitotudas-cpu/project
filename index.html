@@ -26,10 +26,11 @@
         root.style.setProperty('--color-admin-card-highlight', adminCardHighlight);
         root.style.setProperty('--color-admin-card-highlight-bg', adminCardHighlight + '1C');
 
-          if (s.siteTitle) {
-            document.title = s.siteTitle + ' - ' + (s.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia');
-          }
+        if (s && s.siteTitle) {
+          document.title = s.siteTitle + ' - ' + (s.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia');
+        }
 
+        if (s) {
           var v = s.iconsUpdatedAt || Date.now();
           var appendV = function(u) {
             if (!u) return '';
@@ -64,6 +65,7 @@
           if (elPwa512) elPwa512.href = pngUrl;
 
           window.__INITIAL_SITE_SETTINGS__ = s;
+        }
       } catch (e) {}
     })();
   </script>

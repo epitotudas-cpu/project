@@ -41,7 +41,7 @@ if (typeof window !== 'undefined') {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    lock: false,
+    lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => await fn(),
   },
 });
 
