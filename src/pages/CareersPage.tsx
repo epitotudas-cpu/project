@@ -66,6 +66,21 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
   }, [selectedType, locationSearch]);
 
   useEffect(() => {
+    if (!loading && typeof window !== 'undefined' && window.location.hash.includes('#')) {
+      const hash = window.location.hash;
+      const anchor = hash.includes('#') ? '#' + hash.split('#').pop()?.split('?')[0] : '';
+      if (anchor) {
+        setTimeout(() => {
+          const el = document.querySelector(anchor);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 150);
+      }
+    }
+  }, [loading]);
+
+  useEffect(() => {
     if (user) {
       setApplicantName(user.user_metadata?.full_name || '');
       setApplicantEmail(user.email || '');

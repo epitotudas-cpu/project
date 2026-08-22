@@ -72,6 +72,21 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
   }, [selectedTradeId, trades]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('#')) {
+      const hash = window.location.hash;
+      const anchor = hash.includes('#') ? '#' + hash.split('#').pop()?.split('?')[0] : '';
+      if (anchor) {
+        setTimeout(() => {
+          const el = document.querySelector(anchor);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 150);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (activeTrade) {
       const pageTitle = `${activeTrade.name} szakma – Feladatok, képzés, munkakörülmények | ÉpítőTudás`;
       const pageDesc = `Ismerd meg a ${activeTrade.name.toLowerCase()} szakmát: ${activeTrade.tagline.toLowerCase()}. Mit csinál, milyen eszközökkel dolgozik és milyen szakmai lehetőségek várnak rád.`;

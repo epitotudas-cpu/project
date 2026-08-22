@@ -66,6 +66,21 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!loading && typeof window !== 'undefined' && window.location.hash.includes('#')) {
+      const hash = window.location.hash;
+      const anchor = hash.includes('#') ? '#' + hash.split('#').pop()?.split('?')[0] : '';
+      if (anchor) {
+        setTimeout(() => {
+          const el = document.querySelector(anchor);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 150);
+      }
+    }
+  }, [loading]);
+
   async function loadCatalog() {
     try {
       setLoading(true);
