@@ -192,6 +192,30 @@ export async function getPopularArticles(limit: number = 6): Promise<Article[]> 
   return getPublishedArticles({ limit, orderBy: 'views' });
 }
 
+export async function incrementArticleViews(articleId: string): Promise<number> {
+  if (!articleId) return 0;
+  try {
+    const { data, error } = await supabase.rpc('increment_article_views', {
+      article_id_input: articleId,
+    });
+    if (!error && typeof data === 'number') {
+      return data;
+    }
+  } catch (e) {
+    console.error('Failed to increment article views via RPC:', e);
+  }
+
+  try {
+    const key = `epitotudas_article_views_${articleId}`;
+    const current = parseInt(localStorage.getItem(key) || '0', 10);
+    const updated = current + 1;
+    localStorage.setItem(key, updated.toString());
+    return updated;
+  } catch {
+    return 1;
+  }
+}
+
 export async function getRelatedArticles(
   currentArticleId: string,
   categoryId?: string | null,

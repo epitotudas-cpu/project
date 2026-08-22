@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library, AlertTriangle, CheckSquare, Check, Lightbulb, Bookmark, BookmarkCheck } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
-import { getRelatedArticles } from '../services/articleService';
+import { getRelatedArticles, incrementArticleViews } from '../services/articleService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
 import { parseBlocksFromContent } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
@@ -213,6 +213,13 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
 
           const related = await getRelatedArticles(articleData.id, articleData.category_id, 3);
           setRelatedArticles(related);
+
+          // Increment view count in Supabase / DB
+          incrementArticleViews(articleData.id).then((newViews) => {
+            if (newViews > 0) {
+              setArticle((prev) => (prev ? { ...prev, views: newViews } : prev));
+            }
+          });
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Hiba történt');

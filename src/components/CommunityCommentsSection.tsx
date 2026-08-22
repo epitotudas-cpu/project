@@ -39,11 +39,15 @@ export default function CommunityCommentsSection({ contentType, contentId, title
 
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
-    if (!newComment.trim() || !user) return;
+    if (!newComment.trim()) return;
 
-    const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Szakmai Felhasználó';
-    const created = await addComment(user.id, userName, contentType, contentId, newComment, rating);
-    setComments([created, ...comments]);
+    const userName = user
+      ? user.user_metadata?.full_name || user.email?.split('@')[0] || 'Szakmai Felhasználó'
+      : 'Vendég Látogató';
+    const userId = user?.id || 'guest';
+
+    const created = await addComment(userId, userName, contentType, contentId, newComment, rating);
+    setComments((prev) => [created, ...prev.filter((c) => c.id !== created.id)]);
     setNewComment('');
   }
 
