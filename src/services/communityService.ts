@@ -147,7 +147,7 @@ function saveCommentLocally(contentType: string, contentId: string, comment: Com
 
 export async function updateComment(
   commentId: string,
-  userId: string | null | undefined,
+  _userId: string | null | undefined,
   text: string,
   rating: number
 ): Promise<boolean> {
@@ -173,7 +173,7 @@ export async function updateComment(
 
 export async function deleteComment(
   commentId: string,
-  userId: string | null | undefined
+  _userId: string | null | undefined
 ): Promise<boolean> {
   if (!commentId) return false;
 

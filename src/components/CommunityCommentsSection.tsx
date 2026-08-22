@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Star, Send, Heart, Edit3, Trash2, Save, X } from 'lucide-react';
+import { MessageSquare, Star, Send, Heart, Edit3, Trash2, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getComments, addComment, updateComment, deleteComment, toggleFavorite, isFavorite, type Comment } from '../services/communityService';
 
