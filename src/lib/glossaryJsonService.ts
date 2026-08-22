@@ -11,6 +11,7 @@ export interface GlossaryTermFromJson {
   category: string;
   tags: string[];
   updatedAt: string;
+  slug?: string;
   szint?: string;
   kapcsolodofogalmak?: string[];
   entry_type?: 'technical_concept' | 'industry_term';

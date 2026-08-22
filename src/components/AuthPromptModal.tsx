@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { X, Lock, CheckCircle2, UserPlus, LogIn, Sparkles } from 'lucide-react';
 
-export type ContentType = 'glossary' | 'calculator' | 'book' | 'tool' | 'trade';
+export type ContentType = 'glossary' | 'calculator' | 'book' | 'tool' | 'trade' | 'article';
 
 export interface AuthPromptModalProps {
   isOpen: boolean;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X,
   BookOpen,
@@ -13,9 +13,13 @@ import {
   Layers,
   Sparkles,
   ExternalLink,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import { getVideoUrls } from '../lib/glossaryJsonService';
+import { useAuth } from '../contexts/AuthContext';
+import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
 
 export function getEmbedVideoUrl(url: string | null | undefined): string | null {
   if (!url || !url.trim()) return null;
@@ -40,16 +44,28 @@ interface TermDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   term: GlossaryTermFromJson | null;
+  onRequireAuth?: () => void;
 }
 
 export default function TermDetailModal({
   isOpen,
   onClose,
   term,
+  onRequireAuth,
 }: TermDetailModalProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'details' | 'slides' | 'video' | 'gallery' | 'dictionary'>('details');
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (term && user) {
+      setSaved(isItemSaved(user.id, term.id, 'glossary'));
+    } else {
+      setSaved(false);
+    }
+  }, [term, user]);
 
   if (!isOpen || !term) return null;
 
@@ -57,6 +73,23 @@ export default function TermDetailModal({
   const imageGallery = term.image_urls || [];
   const videoUrls = getVideoUrls(term);
   const translations = term.translations || {};
+
+  const handleToggleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
+    const res = toggleSaveItem(user.id, {
+      itemId: term.id,
+      itemType: 'glossary',
+      title: term.term,
+      subtitle: term.category || undefined,
+      description: term.definition,
+      slug: term.slug,
+    });
+    setSaved(res.isSaved);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
@@ -81,12 +114,37 @@ export default function TermDetailModal({
             </div>
             <h2 className="text-2xl font-black text-gray-900">{term.term}</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-200/60 transition-colors"
-          >
-            <X size={24} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleBookmark}
+              className={`p-2.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold ${
+                saved
+                  ? 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+              title={saved ? 'Mentés eltávolítása' : 'Fogalom elmentése a mentéseim közé'}
+            >
+              {saved ? (
+                <>
+                  <BookmarkCheck size={18} className="text-amber-700 fill-amber-500" />
+                  <span className="hidden sm:inline">Mentve</span>
+                </>
+              ) : (
+                <>
+                  <Bookmark size={18} />
+                  <span className="hidden sm:inline">Mentés</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2.5 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-200/60 transition-colors"
+              aria-label="Bezárás"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Modal Navigation Tabs */}

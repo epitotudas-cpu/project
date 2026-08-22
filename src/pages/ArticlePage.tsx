@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library, AlertTriangle, CheckSquare, Check, Lightbulb } from 'lucide-react';
+import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library, AlertTriangle, CheckSquare, Check, Lightbulb, Bookmark, BookmarkCheck } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
 import { getRelatedArticles } from '../services/articleService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
 import { parseBlocksFromContent } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 interface ArticlePageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;
@@ -162,11 +165,41 @@ function ArticleContentRenderer({ content }: { content: string }) {
 }
 
 export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProps) {
+  const { user } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [categoryObj, setCategoryObj] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (article && user) {
+      setSaved(isItemSaved(user.id, article.id, 'article'));
+    } else {
+      setSaved(false);
+    }
+  }, [article, user]);
+
+  const handleToggleBookmark = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (!article) return;
+    const res = toggleSaveItem(user.id, {
+      itemId: article.id,
+      itemType: 'article',
+      title: article.title,
+      subtitle: categoryObj?.name || article.author || 'ÉpítőTudás',
+      description: article.excerpt || undefined,
+      slug: article.slug,
+      imageUrl: article.featured_image || undefined,
+      readTime: article.read_time,
+    });
+    setSaved(res.isSaved);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -310,40 +343,68 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">{article.title}</h1>
           <p className="text-gray-600 text-base leading-relaxed">{article.excerpt}</p>
 
-          {/* Author Badge */}
-          <div className="flex items-center gap-3 pt-3 border-t border-gray-100 text-sm">
-            <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-accent font-bold">
-              <UserCheck size={18} />
+          {/* Author Badge & Bookmark button */}
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 text-sm flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-accent font-bold">
+                <UserCheck size={18} />
+              </div>
+              <div>
+                <div className="font-bold text-gray-900">{article.author || 'ÉpítőTudás Szerkesztőség'}</div>
+                <div className="text-xs text-gray-500">Minősített Szakmai Szerző</div>
+              </div>
             </div>
-            <div>
-              <div className="font-bold text-gray-900">{article.author || 'ÉpítőTudás Szerkesztőség'}</div>
-              <div className="text-xs text-gray-500">Minősített Szakmai Szerző</div>
-            </div>
+
+            <button
+              onClick={handleToggleBookmark}
+              className={`px-4 py-2.5 rounded-xl border transition-all flex items-center gap-2 text-xs font-extrabold ${
+                saved
+                  ? 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200 shadow-2xs'
+                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+              title={saved ? 'Mentés eltávolítása' : 'Cikk elmentése a mentéseim közé'}
+            >
+              {saved ? (
+                <>
+                  <BookmarkCheck size={16} className="text-amber-700 fill-amber-500" />
+                  <span>Cikk elmentve</span>
+                </>
+              ) : (
+                <>
+                  <Bookmark size={16} />
+                  <span>Cikk mentése</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
         {/* Content Body */}
         <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm space-y-6">
           <h2 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-            <BookOpen size={20} className="text-accent" /> Részletes Leírás & Útmutató
+            <BookOpen size={20} className="text-accent" /> Részletes Leírás &amp; Útmutató
           </h2>
           
           <ArticleContentRenderer content={article.content || ''} />
+        </div>
 
-          {/* Tags */}
-          <div className="pt-6 border-t border-gray-100 flex items-center gap-2 flex-wrap">
-            <Tag size={16} className="text-gray-400" />
-            {articleTags.map((tag) => (
-              <span key={tag} className="text-xs bg-gray-100 border border-gray-200 text-gray-700 font-medium px-2.5 py-1 rounded-md">
+        {/* Article Tags */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm space-y-3">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Tag size={13} /> Szakmai Kulcsszavak &amp; Témakörök
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {articleTags.map((tag, i) => (
+              <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full border border-gray-200">
                 #{tag}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Related Articles Section */}
+        {/* Related Articles */}
         {relatedArticles.length > 0 && (
-          <div className="space-y-4 pt-4">
+          <div className="space-y-4">
             <h2 className="text-2xl font-bold text-gray-900">Kapcsolódó Cikkek</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {relatedArticles.map((rel) => (
@@ -372,6 +433,15 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           />
         )}
       </div>
+
+      <AuthPromptModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onNavigate={onNavigate}
+        contentType="article"
+        contentTitle={article?.title}
+        returnPage="article"
+      />
     </div>
   );
 }

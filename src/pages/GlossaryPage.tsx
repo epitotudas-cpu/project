@@ -18,10 +18,13 @@ import {
   Calculator,
   Library,
   X,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useGlossary } from '../contexts/GlossaryContext';
 import { useAuth } from '../contexts/AuthContext';
+import { isItemSaved, toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import { getTradeEducationalPathways } from '../services/glossaryService';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -158,6 +161,45 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<GlossaryTermFromJson | null>(null);
+  const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (user) {
+      const items = getSavedItems(user.id);
+      const glossaryIds = new Set(
+        items.filter((i) => i.itemType === 'glossary').map((i) => i.itemId)
+      );
+      setSavedItemIds(glossaryIds);
+    } else {
+      setSavedItemIds(new Set());
+    }
+  }, [user]);
+
+  const handleToggleBookmark = (e: React.MouseEvent, item: GlossaryTermFromJson) => {
+    e.stopPropagation();
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    const res = toggleSaveItem(user.id, {
+      itemId: item.id,
+      itemType: 'glossary',
+      title: item.term,
+      subtitle: item.category || undefined,
+      description: item.definition,
+      slug: item.slug,
+    });
+
+    setSavedItemIds((prev) => {
+      const next = new Set(prev);
+      if (res.isSaved) {
+        next.add(item.id);
+      } else {
+        next.delete(item.id);
+      }
+      return next;
+    });
+  };
 
   // --------------------------------------------------------------------------
   // URL Parameter Syncing
@@ -767,11 +809,28 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                         <span className="text-primary group-hover:underline flex items-center gap-1">
                           Részletek ➔
                         </span>
-                        {!user && (
-                          <span className="text-[10px] text-amber-700 font-bold flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
-                            <Lock size={10} /> Regisztráció
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => handleToggleBookmark(e, item)}
+                            className={`p-1.5 rounded-lg border transition-all ${
+                              savedItemIds.has(item.id)
+                                ? 'bg-amber-100 border-amber-300 text-amber-900 shadow-2xs'
+                                : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                            }`}
+                            title={savedItemIds.has(item.id) ? 'Mentés eltávolítása' : 'Elmentés a mentéseim közé'}
+                          >
+                            {savedItemIds.has(item.id) ? (
+                              <BookmarkCheck size={15} className="text-amber-700 fill-amber-500" />
+                            ) : (
+                              <Bookmark size={15} />
+                            )}
+                          </button>
+                          {!user && (
+                            <span className="text-[10px] text-amber-700 font-bold flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
+                              <Lock size={10} /> Regisztráció
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </article>
                   );
@@ -930,7 +989,34 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                 Részletek ➔
                               </button>
 
+                              <button
+                                onClick={(e) => handleToggleBookmark(e, item)}
+                                className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition-all flex items-center gap-1 ${
+                                  savedItemIds.has(item.id)
+                                    ? 'bg-amber-100 border-amber-300 text-amber-900'
+                                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                                }`}
+                                title={savedItemIds.has(item.id) ? 'Mentés eltávolítása' : 'Elmentés a mentéseim közé'}
+                              >
+                                {savedItemIds.has(item.id) ? (
+                                  <>
+                                    <BookmarkCheck size={14} className="text-amber-700 fill-amber-500" />
+                                    <span>Mentve</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Bookmark size={14} />
+                                    <span>Mentés</span>
+                                  </>
+                                )}
+                              </button>
+
                               {!user && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                                  <Lock size={12} /> Regisztráció szükséges
+                                </span>
+                              )}
+                            </div>
                                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
                                   <Lock size={12} /> Regisztráció szükséges
                                 </span>

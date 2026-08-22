@@ -20,14 +20,22 @@ import {
   Sparkles,
   Search,
   Check,
+  LayoutGrid,
+  LayoutList,
+  Trash2,
+  ExternalLink,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
 import { getTradeItems } from '../services/tradeService';
 import { deleteUser } from '../services/userService';
+import { getSavedItems, removeSavedItem, type SavedItem } from '../services/bookmarkService';
+import { glossaryJsonService, type GlossaryTermFromJson } from '../lib/glossaryJsonService';
+import TermDetailModal from '../components/TermDetailModal';
 
 interface ProfilePageProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, params?: { articleSlug?: string }) => void;
 }
 
 type MainSection = 'overview' | 'learning' | 'saved' | 'history' | 'settings' | 'help';
@@ -105,6 +113,70 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       window.removeEventListener('popstate', handleTabSync);
     };
   }, []);
+
+  // Mentéseim (Saved Items) State
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
+  const [savedFilter, setSavedFilter] = useState<'all' | 'article' | 'glossary'>('all');
+  const [savedViewMode, setSavedViewMode] = useState<'grid' | 'list'>('grid');
+  const [savedSearchQuery, setSavedSearchQuery] = useState('');
+  const [selectedSavedTerm, setSelectedSavedTerm] = useState<GlossaryTermFromJson | null>(null);
+  const [savedTermModalOpen, setSavedTermModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setSavedItems(getSavedItems(user.id));
+    } else {
+      setSavedItems([]);
+    }
+  }, [user, activeMainSection]);
+
+  const filteredSavedItems = useMemo(() => {
+    return savedItems.filter((item) => {
+      const matchesFilter = savedFilter === 'all' || item.itemType === savedFilter;
+      const matchesSearch =
+        !savedSearchQuery.trim() ||
+        item.title.toLowerCase().includes(savedSearchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(savedSearchQuery.toLowerCase())) ||
+        (item.subtitle && item.subtitle.toLowerCase().includes(savedSearchQuery.toLowerCase()));
+      return matchesFilter && matchesSearch;
+    });
+  }, [savedItems, savedFilter, savedSearchQuery]);
+
+  const handleRemoveSaved = (item: SavedItem) => {
+    if (!user) return;
+    const updated = removeSavedItem(user.id, item.itemId, item.itemType);
+    setSavedItems(updated);
+  };
+
+  const handleOpenSavedItem = async (item: SavedItem) => {
+    if (item.itemType === 'article') {
+      if (onNavigate) {
+        onNavigate('article', { articleSlug: item.slug });
+      } else {
+        window.location.hash = `#article?slug=${item.slug}`;
+      }
+    } else if (item.itemType === 'glossary') {
+      try {
+        const terms = await glossaryJsonService.getAllTerms();
+        const found = terms.find((t) => t.id === item.itemId || t.slug === item.slug || t.term === item.title);
+        if (found) {
+          setSelectedSavedTerm(found);
+          setSavedTermModalOpen(true);
+        } else {
+          if (onNavigate) {
+            onNavigate('glossary');
+            window.location.hash = `#glossary?q=${encodeURIComponent(item.title)}`;
+          } else {
+            window.location.hash = `#glossary?q=${encodeURIComponent(item.title)}`;
+          }
+        }
+      } catch {
+        if (onNavigate) {
+          onNavigate('glossary');
+        }
+      }
+    }
+  };
 
   // Form Fields State
   const [fullName, setFullName] = useState('');
@@ -530,22 +602,255 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         </div>
       )}
 
-      {/* 6. MENTÉSEIM */}
+      {/* 6. MENTÉSEIM (FULL MANAGEMENT DASHBOARD) */}
       {activeMainSection === 'saved' && (
-        <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-8 text-center space-y-4">
-          <Bookmark size={48} className="mx-auto text-purple-400 opacity-60" />
-          <div className="space-y-1 max-w-md mx-auto">
-            <h3 className="text-lg font-bold text-white">Még nem mentettél el tartalmat</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Cikkek, fogalomtári kifejezések és számítási segédletek olvasásakor a könyvjelző ikonra kattintva elmentheted a kedvenceidet.
-            </p>
+        <div className="space-y-6">
+          {/* Header & Controls Bar */}
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                  <Bookmark className="text-accent" size={22} />
+                  <span>Mentett Tartalmaim</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent/20 border border-accent/40 text-accent font-bold">
+                    {filteredSavedItems.length} elem
+                  </span>
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Itt éred el az elmentett szakmai cikkeket és fogalomtári kifejezéseket.
+                </p>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-1 bg-[#142C4E] p-1 rounded-xl border border-[#234775] self-start md:self-auto">
+                <button
+                  onClick={() => setSavedViewMode('grid')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    savedViewMode === 'grid'
+                      ? 'bg-accent text-black font-extrabold shadow-sm'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  title="Csempe nézet"
+                >
+                  <LayoutGrid size={15} />
+                  <span>Csempék</span>
+                </button>
+
+                <button
+                  onClick={() => setSavedViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    savedViewMode === 'list'
+                      ? 'bg-accent text-black font-extrabold shadow-sm'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  title="Lista nézet"
+                >
+                  <LayoutList size={15} />
+                  <span>Lista</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Tabs & Search */}
+            <div className="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-[#1E3A64]">
+              {/* Tabs */}
+              <div className="flex items-center gap-1 w-full md:w-auto overflow-x-auto">
+                <button
+                  onClick={() => setSavedFilter('all')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    savedFilter === 'all'
+                      ? 'bg-[#4165b4] text-white'
+                      : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
+                  }`}
+                >
+                  Összes mentés ({savedItems.length})
+                </button>
+                <button
+                  onClick={() => setSavedFilter('article')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    savedFilter === 'article'
+                      ? 'bg-[#4165b4] text-white'
+                      : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
+                  }`}
+                >
+                  📄 Cikkek ({savedItems.filter((i) => i.itemType === 'article').length})
+                </button>
+                <button
+                  onClick={() => setSavedFilter('glossary')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    savedFilter === 'glossary'
+                      ? 'bg-[#4165b4] text-white'
+                      : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
+                  }`}
+                >
+                  📘 Fogalmak ({savedItems.filter((i) => i.itemType === 'glossary').length})
+                </button>
+              </div>
+
+              {/* Search input */}
+              <div className="relative flex-1 w-full">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Keresés a mentett elemek között..."
+                  value={savedSearchQuery}
+                  onChange={(e) => setSavedSearchQuery(e.target.value)}
+                  className="w-full bg-[#142C4E] border border-[#234775] text-white rounded-xl pl-9 pr-8 py-1.5 text-xs placeholder-gray-400 focus:outline-none focus:border-accent"
+                />
+                {savedSearchQuery && (
+                  <button
+                    onClick={() => setSavedSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => onNavigate?.('tudastar')}
-            className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
-          >
-            <Search size={14} /> Tudástár böngészése
-          </button>
+
+          {/* Saved Items Content */}
+          {filteredSavedItems.length === 0 ? (
+            <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-12 text-center space-y-4">
+              <Bookmark size={48} className="mx-auto text-purple-400 opacity-60" />
+              <div className="space-y-1 max-w-md mx-auto">
+                <h3 className="text-lg font-bold text-white">
+                  {savedItems.length === 0
+                    ? 'Még nem mentettél el tartalmat'
+                    : 'Nincs a szűrésnek megfelelő mentett elem'}
+                </h3>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  {savedItems.length === 0
+                    ? 'Cikkek és fogalmak böngészése közben a mentés ikonra kattintva eltárolhatod a kedvenceidet a gyors eléréshez.'
+                    : 'Próbáld meg törölni a keresőt vagy válts másik szűrő fülre.'}
+                </p>
+              </div>
+              <button
+                onClick={() => onNavigate?.('category')}
+                className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+              >
+                <Search size={14} /> Tudástár böngészése
+              </button>
+            </div>
+          ) : savedViewMode === 'grid' ? (
+            /* CSEMPE (GRID) NÉZET */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredSavedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-[#0C213E]/90 border border-[#1E3A64] hover:border-accent/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition-all group"
+                >
+                  <div className="space-y-3">
+                    {/* Header Badges */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                          item.itemType === 'article'
+                            ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        }`}
+                      >
+                        {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
+                      </span>
+                      {item.subtitle && (
+                        <span className="text-[10px] text-gray-400 font-medium truncate max-w-[150px]">
+                          {item.subtitle}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors line-clamp-2">
+                      {item.title}
+                    </h4>
+
+                    {/* Description Excerpt */}
+                    {item.description && (
+                      <p className="text-xs text-gray-300 line-clamp-3 leading-relaxed">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Footer Action buttons */}
+                  <div className="pt-3 border-t border-[#1E3A64] flex items-center justify-between gap-2 text-xs">
+                    <button
+                      onClick={() => handleOpenSavedItem(item)}
+                      className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Megtekintés</span>
+                      <ExternalLink size={13} />
+                    </button>
+
+                    <button
+                      onClick={() => handleRemoveSaved(item)}
+                      className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                      title="Törlés a mentések közül"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* LISTA (LIST) NÉZET */
+            <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl divide-y divide-[#1E3A64] overflow-hidden">
+              {filteredSavedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors"
+                >
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                          item.itemType === 'article'
+                            ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        }`}
+                      >
+                        {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
+                      </span>
+                      {item.subtitle && (
+                        <span className="text-xs text-gray-400 font-medium">
+                          • {item.subtitle}
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className="text-base font-bold text-white hover:text-accent transition-colors">
+                      {item.title}
+                    </h4>
+
+                    {item.description && (
+                      <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleOpenSavedItem(item)}
+                      className="px-3.5 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Megnyitás</span>
+                      <ExternalLink size={13} />
+                    </button>
+
+                    <button
+                      onClick={() => handleRemoveSaved(item)}
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                      title="Törlés a mentések közül"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1134,11 +1439,20 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 ) : (
                   <span>Fiók Végleges Törlése</span>
                 )}
-              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Term Detail Modal for Saved Glossary Terms */}
+      <TermDetailModal
+        isOpen={savedTermModalOpen}
+        onClose={() => {
+          setSavedTermModalOpen(false);
+          setSelectedSavedTerm(null);
+        }}
+        term={selectedSavedTerm}
+      />
     </div>
   );
 }

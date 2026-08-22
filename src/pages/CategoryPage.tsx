@@ -31,12 +31,17 @@ import {
   ChevronDown,
   Sparkles,
   Calendar,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
 import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
 import { useArticleSettings } from '../services/articleSettingsService';
 import type { Category, Article } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 interface CategoryPageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;
@@ -77,6 +82,7 @@ function formatDateHu(dateStr?: string | null): string {
 }
 
 export default function CategoryPage({ onNavigate }: CategoryPageProps) {
+  const { user } = useAuth();
   const articleSettings = useArticleSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -91,6 +97,49 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   // Modals / Dropdowns State
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(articleSettings.articlesPerPage || 12);
+
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [savedArticleIds, setSavedArticleIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (user) {
+      const items = getSavedItems(user.id);
+      const articleIds = new Set(
+        items.filter((i) => i.itemType === 'article').map((i) => i.itemId)
+      );
+      setSavedArticleIds(articleIds);
+    } else {
+      setSavedArticleIds(new Set());
+    }
+  }, [user]);
+
+  const handleToggleBookmark = (e: React.MouseEvent, article: Article, catName?: string) => {
+    e.stopPropagation();
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    const res = toggleSaveItem(user.id, {
+      itemId: article.id,
+      itemType: 'article',
+      title: article.title,
+      subtitle: catName || article.author || 'ÉpítőTudás',
+      description: article.excerpt || undefined,
+      slug: article.slug,
+      imageUrl: article.featured_image || undefined,
+      readTime: article.read_time,
+    });
+
+    setSavedArticleIds((prev) => {
+      const next = new Set(prev);
+      if (res.isSaved) {
+        next.add(article.id);
+      } else {
+        next.delete(article.id);
+      }
+      return next;
+    });
+  };
 
   // --------------------------------------------------------------------------
   // URL Hash Sync
@@ -602,7 +651,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
                         {/* Top Badges */}
-                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
                           <div className="flex items-center gap-1.5">
                             {catObj && (
                               <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-black/60 text-white backdrop-blur-md border border-white/20">
@@ -611,11 +660,28 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                             )}
                           </div>
 
-                          {(article.views && article.views > 2500) && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-accent text-primary-950 shadow-sm">
-                              <Sparkles size={11} /> Kiemelt
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {(article.views && article.views > 2500) && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-accent text-primary-950 shadow-sm">
+                                <Sparkles size={11} /> Kiemelt
+                              </span>
+                            )}
+                            <button
+                              onClick={(e) => handleToggleBookmark(e, article, catObj?.name)}
+                              className={`p-1.5 rounded-full backdrop-blur-md transition-all shadow-md ${
+                                savedArticleIds.has(article.id)
+                                  ? 'bg-amber-400 text-primary-950'
+                                  : 'bg-black/50 text-white hover:bg-black/70'
+                              }`}
+                              title={savedArticleIds.has(article.id) ? 'Mentés eltávolítása' : 'Elmentés a mentéseim közé'}
+                            >
+                              {savedArticleIds.has(article.id) ? (
+                                <BookmarkCheck size={14} className="fill-primary-950" />
+                              ) : (
+                                <Bookmark size={14} />
+                              )}
+                            </button>
+                          </div>
                         </div>
 
                         {/* Title Overlay in Cover */}
@@ -796,6 +862,14 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
         </div>
       )}
 
+      {/* Auth Prompt Modal */}
+      <AuthPromptModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onNavigate={onNavigate}
+        contentType="article"
+        returnPage="category"
+      />
     </div>
   );
 }
