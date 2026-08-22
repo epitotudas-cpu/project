@@ -432,6 +432,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           <CommunityCommentsSection
             contentType="article"
             contentId={article.id}
+            altContentId={article.slug}
             title={article.title}
           />
         )}

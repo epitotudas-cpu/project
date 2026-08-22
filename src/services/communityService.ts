@@ -34,14 +34,29 @@ const IN_MEMORY_COMMENTS: Map<string, Comment[]> = new Map([
 const IN_MEMORY_FAVORITES: Set<string> = new Set();
 const IN_MEMORY_FOLLOWS: Set<string> = new Set();
 
-export async function getComments(contentType: string, contentId: string): Promise<Comment[]> {
+export async function getComments(
+  contentType: string,
+  contentId: string,
+  altContentId?: string
+): Promise<Comment[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('comments')
       .select('*')
-      .eq('content_type', contentType)
-      .eq('content_id', contentId)
-      .order('created_at', { ascending: false });
+      .eq('content_type', contentType);
+
+    const idsToMatch = [contentId];
+    if (altContentId && altContentId !== contentId) {
+      idsToMatch.push(altContentId);
+    }
+
+    if (idsToMatch.length > 1) {
+      query = query.in('content_id', idsToMatch);
+    } else {
+      query = query.eq('content_id', contentId);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (!error && data && data.length > 0) {
       return data as Comment[];

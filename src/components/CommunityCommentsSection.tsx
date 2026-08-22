@@ -6,10 +6,11 @@ import { getComments, addComment, toggleFavorite, isFavorite, type Comment } fro
 interface CommunityCommentsSectionProps {
   contentType: 'article' | 'glossary' | 'tool' | 'course';
   contentId: string;
+  altContentId?: string;
   title?: string;
 }
 
-export default function CommunityCommentsSection({ contentType, contentId, title }: CommunityCommentsSectionProps) {
+export default function CommunityCommentsSection({ contentType, contentId, altContentId, title }: CommunityCommentsSectionProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -20,12 +21,12 @@ export default function CommunityCommentsSection({ contentType, contentId, title
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentType, contentId]);
+  }, [contentType, contentId, altContentId]);
 
   async function loadData() {
     try {
       setLoading(true);
-      const data = await getComments(contentType, contentId);
+      const data = await getComments(contentType, contentId, altContentId);
       setComments(data);
 
       if (user) {
