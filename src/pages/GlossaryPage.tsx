@@ -17,7 +17,6 @@ import {
   FileText,
   Calculator,
   Library,
-  Filter,
   X,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
