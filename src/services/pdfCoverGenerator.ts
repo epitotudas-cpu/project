@@ -14,6 +14,26 @@ export interface PdfCoverResult {
 }
 
 /**
+ * Normalizes cloud storage URLs (Google Drive, Dropbox, OneDrive) to direct download links.
+ */
+export function normalizePdfUrl(urlStr: string): string {
+  let url = urlStr.trim();
+
+  // Convert Google Drive view URL to direct download URL
+  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+  if (driveMatch && driveMatch[1]) {
+    return `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+  }
+
+  // Convert Dropbox share URL dl=0 to dl=1
+  if (url.includes('dropbox.com') && url.includes('dl=0')) {
+    return url.replace('dl=0', 'dl=1');
+  }
+
+  return url;
+}
+
+/**
  * Validates protocol, hostname, and SSRF restrictions on target URL.
  */
 export function isValidPdfUrl(urlStr: string): { valid: boolean; error?: string } {
@@ -51,40 +71,40 @@ export function isValidPdfUrl(urlStr: string): { valid: boolean; error?: string 
 }
 
 /**
- * Fetches PDF binary ArrayBuffer using direct fetch + CORS proxies fallback.
+ * Multi-stage fetch for PDF ArrayBuffer with CORS proxy fallbacks.
  */
 async function fetchPdfArrayBuffer(cleanUrl: string): Promise<ArrayBuffer | null> {
+  const normalized = normalizePdfUrl(cleanUrl);
+
   // Strategy 1: Direct fetch
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
-    const response = await fetch(cleanUrl, {
+    const response = await fetch(normalized, {
       signal: controller.signal,
-      headers: {
-        Accept: 'application/pdf,application/octet-stream,*/*',
-      },
+      headers: { Accept: 'application/pdf,application/octet-stream,*/*' },
     });
     clearTimeout(timeoutId);
     if (response.ok) {
       const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > 0 && buffer.byteLength <= 35000000) {
+      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
         return buffer;
       }
     }
   } catch (e) {
-    console.warn('Direct PDF fetch failed (likely CORS restriction), trying proxy 1...', e);
+    console.warn('Direct PDF fetch failed, trying proxy 1...', e);
   }
 
-  // Strategy 2: CORS Proxy (corsproxy.io)
+  // Strategy 2: CORS Proxy 1 (corsproxy.io)
   try {
-    const proxyUrl1 = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
+    const proxy1 = `https://corsproxy.io/?${encodeURIComponent(normalized)}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
-    const response = await fetch(proxyUrl1, { signal: controller.signal });
+    const response = await fetch(proxy1, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (response.ok) {
       const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > 0 && buffer.byteLength <= 35000000) {
+      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
         return buffer;
       }
     }
@@ -92,28 +112,80 @@ async function fetchPdfArrayBuffer(cleanUrl: string): Promise<ArrayBuffer | null
     console.warn('Proxy 1 fetch failed, trying proxy 2...', e);
   }
 
-  // Strategy 3: CORS Proxy (allorigins)
+  // Strategy 3: CORS Proxy 2 (allorigins)
   try {
-    const proxyUrl2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`;
+    const proxy2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(normalized)}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
-    const response = await fetch(proxyUrl2, { signal: controller.signal });
+    const response = await fetch(proxy2, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (response.ok) {
       const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > 0 && buffer.byteLength <= 35000000) {
+      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
         return buffer;
       }
     }
   } catch (e) {
-    console.warn('Proxy 2 fetch failed...', e);
+    console.warn('Proxy 2 fetch failed, trying proxy 3...', e);
+  }
+
+  // Strategy 4: CORS Proxy 3 (codetabs)
+  try {
+    const proxy3 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(normalized)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const response = await fetch(proxy3, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (response.ok) {
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
+        return buffer;
+      }
+    }
+  } catch (e) {
+    console.warn('Proxy 3 fetch failed...', e);
   }
 
   return null;
 }
 
 /**
- * Downloads page 1 of target PDF, renders it to a 2:3 ratio PNG/JPEG DataURL.
+ * Fallback helper to render direct image URLs (JPG, PNG, WebP) to 2:3 canvas.
+ */
+async function tryRenderAsImage(urlStr: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 600;
+        canvas.height = 900;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(null);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 600, 900);
+
+        const scale = Math.min(600 / img.width, 900 / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        const x = (600 - w) / 2;
+        const y = (900 - h) / 2;
+
+        ctx.drawImage(img, x, y, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.88));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = urlStr;
+  });
+}
+
+/**
+ * Downloads page 1 of target PDF or image, renders it to a 2:3 ratio PNG/JPEG DataURL.
  */
 export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverResult> {
   // 1. URL validation
@@ -126,103 +198,100 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
   }
 
   const cleanUrl = urlStr.trim();
+  const normalizedUrl = normalizePdfUrl(cleanUrl);
 
   try {
-    // 2. Fetch binary buffer via direct or CORS proxies
-    const arrayBuffer = await fetchPdfArrayBuffer(cleanUrl);
+    // 2. Fetch binary buffer via multi-proxy strategies
+    const arrayBuffer = await fetchPdfArrayBuffer(normalizedUrl);
 
-    if (!arrayBuffer) {
+    let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+
+    if (arrayBuffer && arrayBuffer.byteLength > 0) {
+      try {
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+        pdfDoc = await loadingTask.promise;
+      } catch (err) {
+        console.warn('PDF loading from ArrayBuffer failed, trying direct URL load...', err);
+      }
+    }
+
+    // 3. If ArrayBuffer loading failed, try pdfjsLib direct URL loading
+    if (!pdfDoc) {
+      try {
+        const loadingTask = pdfjsLib.getDocument({ url: normalizedUrl });
+        pdfDoc = await loadingTask.promise;
+      } catch (err) {
+        console.warn('PDF loading from direct URL failed...', err);
+      }
+    }
+
+    // 4. If PDF doc loaded successfully, render Page 1
+    if (pdfDoc && pdfDoc.numPages >= 1) {
+      const page = await pdfDoc.getPage(1);
+
+      const targetWidth = 600;
+      const targetHeight = 900;
+
+      const unscaledViewport = page.getViewport({ scale: 1.0 });
+      const scaleX = targetWidth / unscaledViewport.width;
+      const scaleY = targetHeight / unscaledViewport.height;
+      const scale = Math.min(scaleX, scaleY);
+
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return {
+          success: false,
+          error: 'Az első oldal feldolgozása sikertelen volt.',
+        };
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+      const offsetX = (targetWidth - viewport.width) / 2;
+      const offsetY = (targetHeight - viewport.height) / 2;
+
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+
+      const renderContext = {
+        canvasContext: ctx,
+        viewport: viewport,
+      };
+
+      await page.render(renderContext).promise;
+      ctx.restore();
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+
       return {
-        success: false,
-        error: 'A dokumentum nem érhető el vagy nem tölthető le.',
+        success: true,
+        imageUrl: dataUrl,
+        generatedAt: new Date().toISOString(),
+        sourceUrl: cleanUrl,
       };
     }
 
-    if (arrayBuffer.byteLength > 35000000) {
+    // 5. Fallback: try loading as an Image (e.g. PNG / JPG link)
+    const imageCover = await tryRenderAsImage(cleanUrl);
+    if (imageCover) {
       return {
-        success: false,
-        error: 'A dokumentum mérete meghaladja a megengedett 30 MB-os limitet.',
+        success: true,
+        imageUrl: imageCover,
+        generatedAt: new Date().toISOString(),
+        sourceUrl: cleanUrl,
       };
     }
-
-    // 3. Verify PDF signature: look for `%PDF-` in the first 1024 bytes
-    const sampleHeader = new Uint8Array(arrayBuffer.slice(0, Math.min(1024, arrayBuffer.byteLength)));
-    let headerStr = '';
-    for (let i = 0; i < sampleHeader.length; i++) {
-      headerStr += String.fromCharCode(sampleHeader[i]);
-    }
-
-    if (!headerStr.includes('%PDF-')) {
-      return {
-        success: false,
-        error: 'A megadott hivatkozás nem közvetlen PDF-fájlra mutat.',
-      };
-    }
-
-    // 4. Load PDF with pdfjs-dist
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
-    const pdfDoc = await loadingTask.promise;
-
-    if (pdfDoc.numPages < 1) {
-      return {
-        success: false,
-        error: 'Az első oldal feldolgozása sikertelen volt.',
-      };
-    }
-
-    // Get Page 1
-    const page = await pdfDoc.getPage(1);
-
-    // Prepare 2:3 Canvas (600px width x 900px height)
-    const targetWidth = 600;
-    const targetHeight = 900;
-
-    const unscaledViewport = page.getViewport({ scale: 1.0 });
-    const scaleX = targetWidth / unscaledViewport.width;
-    const scaleY = targetHeight / unscaledViewport.height;
-    const scale = Math.min(scaleX, scaleY);
-
-    const viewport = page.getViewport({ scale });
-
-    const canvas = document.createElement('canvas');
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      return {
-        success: false,
-        error: 'Az első oldal feldolgozása sikertelen volt.',
-      };
-    }
-
-    // Fill clean white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-    // Center page on canvas
-    const offsetX = (targetWidth - viewport.width) / 2;
-    const offsetY = (targetHeight - viewport.height) / 2;
-
-    ctx.save();
-    ctx.translate(offsetX, offsetY);
-
-    const renderContext = {
-      canvasContext: ctx,
-      viewport: viewport,
-    };
-
-    await page.render(renderContext).promise;
-    ctx.restore();
-
-    // Convert canvas to Data URL
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
 
     return {
-      success: true,
-      imageUrl: dataUrl,
-      generatedAt: new Date().toISOString(),
-      sourceUrl: cleanUrl,
+      success: false,
+      error: 'A dokumentum nem érhető el vagy nem tölthető le.',
     };
   } catch (err: any) {
     console.error('PDF Cover generation error:', err);

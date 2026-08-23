@@ -243,10 +243,14 @@ export default function AdminBooksPage() {
 
   // ════════════════ PDF COVER GENERATOR HANDLERS ════════════════
   const handleGenerateCoverFromPdf = async () => {
-    const targetUrl = (previewUrl && previewUrl.trim() !== 'https://' ? previewUrl.trim() : digitalUrl.trim());
+    const targetUrl = (
+      previewUrl && previewUrl.trim() !== 'https://' ? previewUrl.trim() :
+      digitalUrl && digitalUrl.trim() !== 'https://' ? digitalUrl.trim() :
+      coverImage && coverImage.trim() !== 'https://' ? coverImage.trim() : ''
+    );
 
     if (!targetUrl || targetUrl === 'https://' || !/^https?:\/\//i.test(targetUrl)) {
-      setCoverGenErrorMsg('Kérjük, adj meg egy érvényes előnézeti vagy digitális kiadvány PDF URL-t!');
+      setCoverGenErrorMsg('Kérjük, adj meg egy érvényes előnézeti, letöltési vagy borítókép PDF URL-t!');
       setCoverGenSuccessMsg(null);
       return;
     }
