@@ -243,8 +243,10 @@ export default function AdminBooksPage() {
 
   // ════════════════ PDF COVER GENERATOR HANDLERS ════════════════
   const handleGenerateCoverFromPdf = async () => {
-    if (!previewUrl || !previewUrl.trim() || previewUrl === 'https://') {
-      setCoverGenErrorMsg('Az előnézeti URL nem érvényes.');
+    const targetUrl = (previewUrl && previewUrl.trim() !== 'https://' ? previewUrl.trim() : digitalUrl.trim());
+
+    if (!targetUrl || targetUrl === 'https://' || !/^https?:\/\//i.test(targetUrl)) {
+      setCoverGenErrorMsg('Kérjük, adj meg egy érvényes előnézeti vagy digitális kiadvány PDF URL-t!');
       setCoverGenSuccessMsg(null);
       return;
     }
@@ -253,7 +255,7 @@ export default function AdminBooksPage() {
     setCoverGenErrorMsg(null);
     setCoverGenSuccessMsg(null);
 
-    const res = await generateCoverFromPdfUrl(previewUrl);
+    const res = await generateCoverFromPdfUrl(targetUrl);
 
     setIsGeneratingCover(false);
 
@@ -261,8 +263,8 @@ export default function AdminBooksPage() {
       setGeneratedCoverImageUrl(res.imageUrl);
       setCoverImageSource('generated_from_preview');
       setGeneratedCoverAt(res.generatedAt || new Date().toISOString());
-      setGeneratedCoverSourceUrl(res.sourceUrl || previewUrl.trim());
-      setCoverGenSuccessMsg('Borítókép automatikusan létrehozva az előnézet első oldalából.');
+      setGeneratedCoverSourceUrl(res.sourceUrl || targetUrl);
+      setCoverGenSuccessMsg('Borítókép automatikusan létrehozva a PDF első oldalából.');
     } else {
       setCoverGenErrorMsg(res.error || 'A meglévő borítókép változatlan maradt.');
     }
@@ -1241,7 +1243,7 @@ export default function AdminBooksPage() {
                             />
 
                             {/* Actions & Auto Generation UI */}
-                            {previewUrl && previewUrl.trim() && /^https?:\/\//i.test(previewUrl.trim()) && (
+                            {((previewUrl && previewUrl.trim() && /^https?:\/\//i.test(previewUrl.trim())) || (digitalUrl && digitalUrl.trim() && /^https?:\/\//i.test(digitalUrl.trim()))) && (
                               <div className="pt-2 border-t border-gray-800 space-y-3">
                                 <div className="flex items-center gap-3 flex-wrap">
                                   <button

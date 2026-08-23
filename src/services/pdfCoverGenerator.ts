@@ -18,12 +18,12 @@ export interface PdfCoverResult {
  */
 export function isValidPdfUrl(urlStr: string): { valid: boolean; error?: string } {
   if (!urlStr || !urlStr.trim()) {
-    return { valid: false, error: 'Az előnézeti URL nem érvényes.' };
+    return { valid: false, error: 'Az előnézeti / letöltési URL nem érvényes.' };
   }
 
   const trimmed = urlStr.trim();
   if (!/^https?:\/\//i.test(trimmed)) {
-    return { valid: false, error: 'Az előnézeti URL nem érvényes.' };
+    return { valid: false, error: 'Az előnézeti / letöltési URL nem érvényes.' };
   }
 
   try {
@@ -41,13 +41,75 @@ export function isValidPdfUrl(urlStr: string): { valid: boolean; error?: string 
       host.startsWith('169.254.') ||
       /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
     ) {
-      return { valid: false, error: 'Az előnézeti URL biztonsági okokból nem dolgozható fel.' };
+      return { valid: false, error: 'Az URL biztonsági okokból nem dolgozható fel.' };
     }
 
     return { valid: true };
   } catch {
-    return { valid: false, error: 'Az előnézeti URL nem érvényes.' };
+    return { valid: false, error: 'Az előnézeti / letöltési URL nem érvényes.' };
   }
+}
+
+/**
+ * Fetches PDF binary ArrayBuffer using direct fetch + CORS proxies fallback.
+ */
+async function fetchPdfArrayBuffer(cleanUrl: string): Promise<ArrayBuffer | null> {
+  // Strategy 1: Direct fetch
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const response = await fetch(cleanUrl, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/pdf,application/octet-stream,*/*',
+      },
+    });
+    clearTimeout(timeoutId);
+    if (response.ok) {
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > 0 && buffer.byteLength <= 35000000) {
+        return buffer;
+      }
+    }
+  } catch (e) {
+    console.warn('Direct PDF fetch failed (likely CORS restriction), trying proxy 1...', e);
+  }
+
+  // Strategy 2: CORS Proxy (corsproxy.io)
+  try {
+    const proxyUrl1 = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const response = await fetch(proxyUrl1, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (response.ok) {
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > 0 && buffer.byteLength <= 35000000) {
+        return buffer;
+      }
+    }
+  } catch (e) {
+    console.warn('Proxy 1 fetch failed, trying proxy 2...', e);
+  }
+
+  // Strategy 3: CORS Proxy (allorigins)
+  try {
+    const proxyUrl2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const response = await fetch(proxyUrl2, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (response.ok) {
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > 0 && buffer.byteLength <= 35000000) {
+        return buffer;
+      }
+    }
+  } catch (e) {
+    console.warn('Proxy 2 fetch failed...', e);
+  }
+
+  return null;
 }
 
 /**
@@ -59,64 +121,38 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
   if (!validation.valid) {
     return {
       success: false,
-      error: validation.error || 'Az előnézeti URL nem érvényes.',
+      error: validation.error || 'Az előnézeti / letöltési URL nem érvényes.',
     };
   }
 
   const cleanUrl = urlStr.trim();
 
   try {
-    // 2. Fetch with 15-second timeout & 30 MB max size check
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    // 2. Fetch binary buffer via direct or CORS proxies
+    const arrayBuffer = await fetchPdfArrayBuffer(cleanUrl);
 
-    let response: Response;
-    try {
-      response = await fetch(cleanUrl, {
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/pdf,application/octet-stream,*/*',
-        },
-      });
-    } catch {
-      clearTimeout(timeoutId);
-      return {
-        success: false,
-        error: 'A dokumentum nem érhető el vagy nem tölthető le.',
-      };
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    if (!response.ok) {
+    if (!arrayBuffer) {
       return {
         success: false,
         error: 'A dokumentum nem érhető el vagy nem tölthető le.',
       };
     }
 
-    // Check Content-Length header (30MB limit = 31457280 bytes)
-    const contentLength = response.headers.get('content-length');
-    if (contentLength && parseInt(contentLength, 10) > 31457280) {
+    if (arrayBuffer.byteLength > 35000000) {
       return {
         success: false,
         error: 'A dokumentum mérete meghaladja a megengedett 30 MB-os limitet.',
       };
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-
-    if (arrayBuffer.byteLength > 31457280) {
-      return {
-        success: false,
-        error: 'A dokumentum mérete meghaladja a megengedett 30 MB-os limitet.',
-      };
+    // 3. Verify PDF signature: look for `%PDF-` in the first 1024 bytes
+    const sampleHeader = new Uint8Array(arrayBuffer.slice(0, Math.min(1024, arrayBuffer.byteLength)));
+    let headerStr = '';
+    for (let i = 0; i < sampleHeader.length; i++) {
+      headerStr += String.fromCharCode(sampleHeader[i]);
     }
 
-    // 3. Verify PDF signature: first 5 bytes must be `%PDF-` (0x25, 0x50, 0x44, 0x46, 0x2D)
-    const uint8 = new Uint8Array(arrayBuffer.slice(0, 5));
-    const headerStr = String.fromCharCode(...uint8);
-    if (!headerStr.startsWith('%PDF-')) {
+    if (!headerStr.includes('%PDF-')) {
       return {
         success: false,
         error: 'A megadott hivatkozás nem közvetlen PDF-fájlra mutat.',
@@ -137,7 +173,7 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
     // Get Page 1
     const page = await pdfDoc.getPage(1);
 
-    // Prepare 2:3 Canvas (e.g., 600px width x 900px height)
+    // Prepare 2:3 Canvas (600px width x 900px height)
     const targetWidth = 600;
     const targetHeight = 900;
 
