@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { optimizeImageUrl } from '../utils/imageOptimizer';
 import { ExternalLink, Sparkles, ShieldCheck, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { recordAdClick, recordAdImpression, type AdvertisementSlot } from '../services/advertisementService';
 import { getCreativesByPlacementSync } from '../services/bannerCreativeService';
@@ -559,7 +560,7 @@ export function SidebarAdBanner() {
 
       {activeCreative.image_url && (
         <div className="rounded-xl overflow-hidden aspect-video border border-white/10">
-          <img src={activeCreative.image_url} alt={activeCreative.headline} className="w-full h-full object-cover" />
+          <img src={optimizeImageUrl(activeCreative.image_url, 600)} alt={activeCreative.headline} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         </div>
       )}
 

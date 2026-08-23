@@ -227,18 +227,24 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             {/* Right - Dynamic Hero Image Element */}
             <div className="mt-10 lg:mt-0 relative">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[300px] md:h-[400px] bg-[#0A0D14] border border-white/10 group">
-                {activeHeroImages.map((img, idx) => (
-                  <img
-                    key={img.id || idx}
-                    src={img.imageUrl}
-                    alt={img.altText || 'ÉpítőTudás vizuális elem'}
-                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out ${
-                      idx === currentHeroIndex
-                        ? 'opacity-100 scale-100 z-10'
-                        : 'opacity-0 scale-105 z-0 pointer-events-none'
-                    }`}
-                  />
-                ))}
+                {activeHeroImages.map((img, idx) => {
+                  const isCurrent = idx === currentHeroIndex;
+                  return (
+                    <img
+                      key={img.id || idx}
+                      src={optimizeImageUrl(img.imageUrl, 800)}
+                      alt={img.altText || 'ÉpítőTudás vizuális elem'}
+                      loading={isCurrent ? 'eager' : 'lazy'}
+                      fetchPriority={isCurrent ? 'high' : 'low'}
+                      decoding="async"
+                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out ${
+                        isCurrent
+                          ? 'opacity-100 scale-100 z-10'
+                          : 'opacity-0 scale-105 z-0 pointer-events-none'
+                      }`}
+                    />
+                  );
+                })}
 
                 {/* Slideshow dots when slideshow mode is active and indicators are enabled */}
                 {heroState.config.rotationMode === 'slideshow' &&
