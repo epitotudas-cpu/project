@@ -51,7 +51,11 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Settings,
 };
 
-export default function AdminCategoriesPage() {
+interface AdminCategoriesPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategoriesPageProps = {}) {
   const toast = useToast();
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +63,13 @@ export default function AdminCategoriesPage() {
   const [editing, setEditing] = useState<Category | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   const loadCategories = useCallback(async () => {
     setLoading(true);
@@ -80,6 +91,31 @@ export default function AdminCategoriesPage() {
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
+
+  const filteredCategories = categories.filter((c) => {
+    return (
+      !searchQuery.trim() ||
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.description ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
+  useEffect(() => {
+    if (searchQuery && filteredCategories.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-category-${filteredCategories[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, filteredCategories]);
 
   function openCreate() {
     setEditing(null);
@@ -198,13 +234,14 @@ export default function AdminCategoriesPage() {
         )}
 
         {!loading &&
-          categories.map((c) => {
+          filteredCategories.map((c) => {
             const IconComp = (c.icon_name && ICON_MAP[c.icon_name]) || Layers;
             const categoryColor = c.color || cardHighlight;
 
             return (
               <div
                 key={c.id}
+                id={`admin-category-${c.id}`}
                 style={{ backgroundColor: cardBg, borderColor: cardBorder }}
                 className="border rounded-2xl overflow-hidden hover:border-gray-500 transition-all flex flex-col group shadow-lg"
               >

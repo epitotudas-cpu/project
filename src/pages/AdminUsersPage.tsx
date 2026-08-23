@@ -77,16 +77,26 @@ function checkIsConfirmed(u: Profile): boolean {
   return false;
 }
 
-export default function AdminUsersPage() {
+interface AdminUsersPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPageProps = {}) {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<Profile[]>([]);
   const [trustProfiles, setTrustProfiles] = useState<Record<string, UserTrustProfile>>({});
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearchQuery || '');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [selectedUserDetail, setSelectedUserDetail] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearch(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -192,6 +202,22 @@ export default function AdminUsersPage() {
       return true;
     });
   }, [users, search, activeTab, trustProfiles]);
+
+  useEffect(() => {
+    if (search && filteredUsers.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-user-${filteredUsers[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [search, filteredUsers]);
 
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
@@ -437,7 +463,7 @@ export default function AdminUsersPage() {
                   const lastActiveIso = u.last_sign_in_at || u.updated_at || u.created_at;
 
                   return (
-                    <tr key={u.id} style={{ backgroundColor: inputBg }} className="hover:opacity-90 transition-colors">
+                    <tr key={u.id} id={`admin-user-${u.id}`} style={{ backgroundColor: inputBg }} className="hover:opacity-90 transition-colors">
                       {/* User Info */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">

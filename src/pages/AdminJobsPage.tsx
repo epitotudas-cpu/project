@@ -22,12 +22,22 @@ import {
 import type { JobPosting } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
-export default function AdminJobsPage() {
+interface AdminJobsPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps = {}) {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -64,6 +74,22 @@ export default function AdminJobsPage() {
       j.location.toLowerCase().includes(searchQuery.toLowerCase());
     return matchType && matchQuery;
   });
+
+  useEffect(() => {
+    if (searchQuery && filteredJobs.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-job-${filteredJobs[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, filteredJobs]);
 
   const handleOpenAddModal = () => {
     setEditingJob(null);
@@ -221,6 +247,7 @@ export default function AdminJobsPage() {
           {filteredJobs.map((job) => (
             <div
               key={job.id}
+              id={`admin-job-${job.id}`}
               style={{ backgroundColor: cardBg, borderColor: cardBorder }}
               className={`border rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-xl transition-all ${
                 job.is_active ? '' : 'opacity-60'

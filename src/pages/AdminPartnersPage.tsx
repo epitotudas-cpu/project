@@ -11,12 +11,23 @@ import {
 import type { Partner } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
-export default function AdminPartnersPage() {
+interface AdminPartnersPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersPageProps = {}) {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [showModal, setShowModal] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   // Form State
   const [name, setName] = useState('');
@@ -39,6 +50,30 @@ export default function AdminPartnersPage() {
       setLoading(false);
     }
   }
+
+  const filteredPartners = partners.filter((p) => {
+    return (
+      !searchQuery.trim() ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description ?? '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
+  useEffect(() => {
+    if (searchQuery && filteredPartners.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-partner-${filteredPartners[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, filteredPartners]);
 
   function openCreateModal() {
     setEditingPartner(null);
@@ -155,8 +190,8 @@ export default function AdminPartnersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {partners.map((partner) => (
-          <div key={partner.id} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-xl p-6 space-y-4 flex flex-col justify-between transition-colors shadow-lg">
+        {filteredPartners.map((partner) => (
+          <div key={partner.id} id={`admin-partner-${partner.id}`} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-xl p-6 space-y-4 flex flex-col justify-between transition-colors shadow-lg">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded border">

@@ -42,15 +42,25 @@ import {
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import { generateCoverFromPdfUrl, getPdfPageCount } from '../services/pdfCoverGenerator';
 
-export default function AdminBooksPage() {
+interface AdminBooksPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPageProps = {}) {
   const books = useBooks();
   const categories = useBookCategories();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('A könyvadatbázis módosításai sikeresen elmentve!');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   // Book Modal State
   const [showModal, setShowModal] = useState(false);
@@ -610,6 +620,24 @@ export default function AdminBooksPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
+
+
+  useEffect(() => {
+    if (searchQuery && filteredBooks.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-book-${filteredBooks[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, filteredBooks]);
+
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
@@ -713,6 +741,7 @@ export default function AdminBooksPage() {
           return (
             <div
               key={book.id}
+              id={`admin-book-${book.id}`}
               className="bg-[#111111] border border-[#1E1E1E] rounded-3xl overflow-hidden shadow-xl flex flex-col justify-between group hover:border-accent/40 transition-all"
             >
               <div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Briefcase,
   Search,
@@ -17,9 +17,19 @@ import {
 } from '../services/tradeService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
-export default function AdminTradesPage() {
+interface AdminTradesPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageProps = {}) {
   const trades = useTrades();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Modal State
@@ -53,6 +63,22 @@ export default function AdminTradesPage() {
       t.tagline.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
+
+  useEffect(() => {
+    if (searchQuery && filteredTrades.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-trade-${filteredTrades[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, filteredTrades]);
 
   const handleToggleActive = (id: string) => {
     const updated = trades.map((t) => (t.id === id ? { ...t, isActive: !t.isActive } : t));
@@ -168,6 +194,7 @@ export default function AdminTradesPage() {
         {filteredTrades.map((trade) => (
           <div
             key={trade.id}
+            id={`admin-trade-${trade.id}`}
             style={{ backgroundColor: cardBg, borderColor: cardBorder }}
             className={`border rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-xl transition-all ${
               trade.isActive !== false ? '' : 'opacity-60'

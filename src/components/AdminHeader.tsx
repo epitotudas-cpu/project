@@ -7,7 +7,7 @@ interface AdminHeaderProps {
   userEmail: string | null;
   role: string;
   onSignOut: () => void;
-  onNavigateView: (view: AdminView) => void;
+  onNavigateView: (view: AdminView, searchQuery?: string) => void;
   onOpenSidebar: () => void;
 }
 

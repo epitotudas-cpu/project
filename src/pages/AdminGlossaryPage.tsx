@@ -31,14 +31,24 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 /* ══════════════════════════════════════════════════════════════ */
-export default function AdminGlossaryPage() {
+interface AdminGlossaryPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryPageProps = {}) {
   const toast = useToast();
   const [terms, setTerms] = useState<GlossaryTermWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<GlossaryTerm | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialSearchQuery || '');
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
   const [importValidationOpen, setImportValidationOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchOpen, setBatchOpen] = useState(false);
@@ -65,17 +75,39 @@ export default function AdminGlossaryPage() {
 
   /* ── Filtered terms ───────────────────────────────────── */
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let res = terms;
-    if (filterType !== 'all') res = res.filter((t) => t.entry_type === filterType);
-    if (!q) return res;
-    return res.filter(
-      (t) =>
+    return terms.filter((t) => {
+      const q = query.trim().toLowerCase();
+      const matchesQuery =
+        !q ||
         t.term.toLowerCase().includes(q) ||
         t.definition.toLowerCase().includes(q) ||
-        (t.category ?? '').toLowerCase().includes(q),
-    );
+        t.slug.toLowerCase().includes(q) ||
+        (t.category ?? '').toLowerCase().includes(q);
+
+      if (!matchesQuery) return false;
+      if (filterType !== 'all') {
+        const tType = t.entry_type ?? 'technical_concept';
+        if (tType !== filterType) return false;
+      }
+      return true;
+    });
   }, [terms, query, filterType]);
+
+  useEffect(() => {
+    if (query && filtered.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-glossary-${filtered[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [query, filtered]);
 
   /* ── Handlers ─────────────────────────────────────────── */
   function openCreate() { setEditing(null); setEditorOpen(true); }
@@ -364,6 +396,7 @@ export default function AdminGlossaryPage() {
           {filtered.map((t) => (
             <div
               key={t.id}
+              id={`admin-glossary-${t.id}`}
               style={{
                 backgroundColor: cardBg,
                 borderColor: selected.has(t.id) ? cardHighlight : cardBorder,
@@ -431,6 +464,7 @@ export default function AdminGlossaryPage() {
           {filtered.map((t) => (
             <div
               key={t.id}
+              id={`admin-glossary-${t.id}`}
               style={{
                 backgroundColor: cardBg,
                 borderColor: selected.has(t.id) ? cardHighlight : cardBorder,

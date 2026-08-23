@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   GraduationCap,
   Plus,
@@ -19,9 +19,19 @@ import {
 import type { Course, Lesson, QuizQuestion } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
-export default function AdminCoursesPage() {
+interface AdminCoursesPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPageProps = {}) {
   const eduData = useEducationData();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Active Selected Course for Editing Lessons/Quiz
@@ -60,6 +70,22 @@ export default function AdminCoursesPage() {
       c.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
+
+  useEffect(() => {
+    if (searchQuery && filteredCourses.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-course-${filteredCourses[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, filteredCourses]);
 
   const handleOpenAddCourse = () => {
     setEditingCourse(null);
@@ -359,6 +385,7 @@ export default function AdminCoursesPage() {
           return (
             <div
               key={course.id}
+              id={`admin-course-${course.id}`}
               style={{ backgroundColor: cardBg, borderColor: cardBorder }}
               className="border rounded-3xl p-6 space-y-5 shadow-xl transition-all"
             >

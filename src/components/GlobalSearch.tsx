@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Loader2, FileText, FolderTree, BookOpen, Wrench, X } from 'lucide-react';
+import { Search, Loader2, FileText, FolderTree, BookOpen, Wrench, BookMarked, Users, X } from 'lucide-react';
 import { searchAll } from '../services/searchService';
 import type { AdminView } from './AdminSidebar';
 
 interface GlobalSearchProps {
-  onNavigateView: (view: AdminView) => void;
+  onNavigateView: (view: AdminView, searchQuery?: string) => void;
 }
 
 interface ResultItem {
@@ -24,6 +24,8 @@ interface ArticleRow { id: string; title: string; status: string }
 interface CategoryRow { id: string; name: string }
 interface GlossaryRow { id: string; term: string; category: string | null }
 interface ToolRow { id: string; name: string; type: string | null }
+interface BookRow { id: string; title: string; author: string | null }
+interface UserRow { id: string; email: string | null; full_name: string | null }
 
 export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
   const [query, setQuery] = useState('');
@@ -42,7 +44,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
   const runSearch = useCallback(async (q: string) => {
     setLoading(true);
     try {
-      const { articles, categories, glossary, tools } = await searchAll(q, 5);
+      const { articles, categories, glossary, tools, books, users } = await searchAll(q, 5);
 
       const next: ResultGroup[] = [];
       const artsData = articles as ArticleRow[];
@@ -52,6 +54,15 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           title: 'Cikkek',
           icon: FileText,
           items: artsData.map((a) => ({ id: a.id, label: a.title, sublabel: a.status })),
+        });
+      }
+      const booksData = books as BookRow[];
+      if (booksData.length) {
+        next.push({
+          view: 'books',
+          title: 'Szakkönyvek',
+          icon: BookMarked,
+          items: booksData.map((b) => ({ id: b.id, label: b.title, sublabel: b.author ?? undefined })),
         });
       }
       const catsData = categories as CategoryRow[];
@@ -79,6 +90,15 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           title: 'Eszközök',
           icon: Wrench,
           items: toolsData.map((t) => ({ id: t.id, label: t.name, sublabel: t.type ?? undefined })),
+        });
+      }
+      const usersData = users as UserRow[];
+      if (usersData.length) {
+        next.push({
+          view: 'users',
+          title: 'Felhasználók',
+          icon: Users,
+          items: usersData.map((u) => ({ id: u.id, label: u.full_name || u.email || 'Felhasználó', sublabel: u.email ?? undefined })),
         });
       }
       setGroups(next);
@@ -110,8 +130,8 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  function select(view: AdminView) {
-    onNavigateView(view);
+  function select(view: AdminView, searchParam?: string) {
+    onNavigateView(view, searchParam || debounced);
     setOpen(false);
     setQuery('');
     setDebounced('');
@@ -139,7 +159,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
       }
       for (const g of groups) {
         if (idx < g.items.length) {
-          select(g.view);
+          select(g.view, g.items[idx].label);
           return;
         }
         idx -= g.items.length;
@@ -164,7 +184,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Keresés cikkek, kategóriák, fogalmak, eszközök..."
+          placeholder="Keresés cikkek, könyvek, fogalmak, eszközök..."
           className="w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg pl-9 pr-9 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors"
         />
         {loading && (
@@ -215,16 +235,16 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
                   return (
                     <button
                       key={`${g.view}-${item.id}`}
-                      onClick={() => select(g.view)}
+                      onClick={() => select(g.view, item.label)}
                       onMouseEnter={() => setActiveIndex(idx)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors cursor-pointer ${
                         active ? 'bg-[#FFC400]/10' : 'hover:bg-[#1E1E1E]/40'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className={`text-sm truncate ${active ? 'text-white' : 'text-gray-300'}`}>{item.label}</p>
+                        <p className={`text-sm truncate ${active ? 'text-white font-bold' : 'text-gray-300'}`}>{item.label}</p>
                         {item.sublabel && (
-                          <p className="text-xs text-gray-600 truncate capitalize">{item.sublabel}</p>
+                          <p className="text-xs text-gray-500 truncate capitalize">{item.sublabel}</p>
                         )}
                       </div>
                     </button>
@@ -235,10 +255,10 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
 
           {!loading && flatCount > 0 && (
             <button
-              onClick={() => select(groups[0].view)}
-              className="w-full px-4 py-2.5 text-left text-xs text-gray-600 border-t border-[#1E1E1E] hover:text-gray-400 hover:bg-[#1E1E1E]/30 transition-colors"
+              onClick={() => select(groups[0].view, groups[0].items[0]?.label)}
+              className="w-full px-4 py-2.5 text-left text-xs text-gray-400 border-t border-[#1E1E1E] hover:text-amber-400 hover:bg-[#1E1E1E]/30 transition-colors cursor-pointer font-bold"
             >
-              Enter → ugrás az első találat szakaszára
+              Enter → Ugrás az első találathoz ({groups[0].items[0]?.label})
             </button>
           )}
         </div>

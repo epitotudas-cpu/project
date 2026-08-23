@@ -22,17 +22,28 @@ const STATUS_BADGE: Record<Article['status'], { label: string; class: string }> 
   published: { label: 'Közzétéve', class: 'bg-green-500/10 text-green-400 border-green-500/20' },
 };
 
-export default function AdminArticlesPage() {
+interface AdminArticlesPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesPageProps = {}) {
   const toast = useToast();
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [search, setSearch] = useState(initialSearchQuery || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearchQuery || '');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearch(initialSearchQuery);
+      setDebouncedSearch(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -80,6 +91,22 @@ export default function AdminArticlesPage() {
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
+
+  useEffect(() => {
+    if (debouncedSearch && articles.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-article-${articles[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [debouncedSearch, articles]);
 
   // Reset to page 1 when any filter changes
   useEffect(() => {
@@ -289,7 +316,7 @@ export default function AdminArticlesPage() {
                   const badge = STATUS_BADGE[a.status];
                   const isPublished = a.status === 'published';
                   return (
-                    <tr key={a.id} className="border-b border-[#1E1E1E]/50 hover:bg-[#1E1E1E]/30 transition-colors">
+                    <tr key={a.id} id={`admin-article-${a.id}`} className="border-b border-[#1E1E1E]/50 hover:bg-[#1E1E1E]/30 transition-colors">
                       <td className="px-4 py-3.5">
                         <p className="font-bold text-gray-200 line-clamp-1">{a.title}</p>
                         <p className="text-gray-600 text-xs line-clamp-1 mt-0.5">{a.excerpt || '—'}</p>

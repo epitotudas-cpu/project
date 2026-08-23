@@ -278,20 +278,20 @@ function AppContent() {
     case 'admin':
       return (
         <AdminLayout onNavigate={navigate}>
-          {(view, userEmail, onNavigateView) => {
+          {(view, userEmail, onNavigateView, searchQuery) => {
             if (view === 'dashboard') return <AdminDashboard userEmail={userEmail} onNavigateView={onNavigateView} />;
             if (view === 'moderation') return <AdminModerationPage />;
-            if (view === 'articles') return <AdminArticlesPage />;
-            if (view === 'categories') return <AdminCategoriesPage />;
-            if (view === 'glossary') return <AdminGlossaryPage />;
-            if (view === 'trades') return <AdminTradesPage />;
-            if (view === 'books') return <AdminBooksPage />;
-            if (view === 'tools') return <AdminToolsPage />;
-            if (view === 'jobs') return <AdminJobsPage />;
-            if (view === 'courses') return <AdminCoursesPage />;
-            if (view === 'users') return <AdminUsersPage />;
+            if (view === 'articles') return <AdminArticlesPage initialSearchQuery={searchQuery} />;
+            if (view === 'categories') return <AdminCategoriesPage initialSearchQuery={searchQuery} />;
+            if (view === 'glossary') return <AdminGlossaryPage initialSearchQuery={searchQuery} />;
+            if (view === 'trades') return <AdminTradesPage initialSearchQuery={searchQuery} />;
+            if (view === 'books') return <AdminBooksPage initialSearchQuery={searchQuery} />;
+            if (view === 'tools') return <AdminToolsPage initialSearchQuery={searchQuery} />;
+            if (view === 'jobs') return <AdminJobsPage initialSearchQuery={searchQuery} />;
+            if (view === 'courses') return <AdminCoursesPage initialSearchQuery={searchQuery} />;
+            if (view === 'users') return <AdminUsersPage initialSearchQuery={searchQuery} />;
             if (view === 'roles') return <AdminRolesPage />;
-            if (view === 'partners') return <AdminPartnersPage />;
+            if (view === 'partners') return <AdminPartnersPage initialSearchQuery={searchQuery} />;
             if (view === 'ads') return <AdminAdsPage onNavigate={navigate} />;
             if (view === 'audit') return <AdminAuditPage />;
             if (view === 'settings') return <AdminSettingsPage onNavigate={navigate} />;

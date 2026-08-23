@@ -13,16 +13,26 @@ const STATUS_BADGE: Record<Tool['status'], { label: string; class: string }> = {
   discontinued: { label: 'Kivezetve', class: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
 };
 
-export default function AdminToolsPage() {
+interface AdminToolsPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminToolsPage({ initialSearchQuery }: AdminToolsPageProps = {}) {
   const toast = useToast();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearchQuery || '');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [editing, setEditing] = useState<Tool | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearch(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   const loadTools = useCallback(async () => {
     setLoading(true);
@@ -52,6 +62,22 @@ export default function AdminToolsPage() {
         (t.description ?? '').toLowerCase().includes(q)
     );
   }, [tools, search]);
+
+  useEffect(() => {
+    if (search && filtered.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-tool-${filtered[0].id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-amber-400');
+          }, 2500);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [search, filtered]);
 
   async function toggleStatus(tool: Tool) {
     const next: Tool['status'] = tool.status === 'active' ? 'discontinued' : 'active';
@@ -205,7 +231,7 @@ export default function AdminToolsPage() {
                   const badge = STATUS_BADGE[t.status];
                   const isActive = t.status === 'active';
                   return (
-                    <tr key={t.id} className="border-b border-[#1E1E1E]/50 hover:bg-[#1E1E1E]/30 transition-colors">
+                    <tr key={t.id} id={`admin-tool-${t.id}`} className="border-b border-[#1E1E1E]/50 hover:bg-[#1E1E1E]/30 transition-colors">
                       <td className="px-4 py-3.5">
                         <p className="font-bold text-gray-200 line-clamp-1">{t.name}</p>
                         {t.brand && <p className="text-gray-600 text-xs line-clamp-1 mt-0.5">{t.brand}</p>}

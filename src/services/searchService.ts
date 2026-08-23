@@ -23,16 +23,30 @@ export interface GlobalSearchToolResult {
   type: string | null;
 }
 
+export interface GlobalSearchBookResult {
+  id: string;
+  title: string;
+  author: string | null;
+}
+
+export interface GlobalSearchUserResult {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+}
+
 export interface GlobalSearchAllResult {
   articles: GlobalSearchArticleResult[];
   categories: GlobalSearchCategoryResult[];
   glossary: GlobalSearchGlossaryResult[];
   tools: GlobalSearchToolResult[];
+  books: GlobalSearchBookResult[];
+  users: GlobalSearchUserResult[];
 }
 
 export async function searchAll(query: string, limit = 5): Promise<GlobalSearchAllResult> {
   const like = `%${query}%`;
-  const [arts, cats, gloss, tools] = await Promise.all([
+  const [arts, cats, gloss, tools, books, users] = await Promise.all([
     supabase
       .from('articles')
       .select('id, title, status')
@@ -57,6 +71,17 @@ export async function searchAll(query: string, limit = 5): Promise<GlobalSearchA
       .ilike('name', like)
       .order('name')
       .limit(limit),
+    supabase
+      .from('books')
+      .select('id, title, author')
+      .ilike('title', like)
+      .order('title')
+      .limit(limit),
+    supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .or(`email.ilike.${like},full_name.ilike.${like}`)
+      .limit(limit),
   ]);
 
   return {
@@ -64,5 +89,7 @@ export async function searchAll(query: string, limit = 5): Promise<GlobalSearchA
     categories: (cats.data ?? []) as GlobalSearchCategoryResult[],
     glossary: (gloss.data ?? []) as GlobalSearchGlossaryResult[],
     tools: (tools.data ?? []) as GlobalSearchToolResult[],
+    books: (books.data ?? []) as GlobalSearchBookResult[],
+    users: (users.data ?? []) as GlobalSearchUserResult[],
   };
 }

@@ -10,18 +10,29 @@ import type { AdminView } from './AdminSidebar';
 
 interface AdminLayoutProps {
   onNavigate: (page: string) => void;
-  children: (view: AdminView, userEmail: string | null, onNavigateView: (view: AdminView) => void) => ReactNode;
+  children: (
+    view: AdminView,
+    userEmail: string | null,
+    onNavigateView: (view: AdminView, searchQuery?: string) => void,
+    searchQuery?: string
+  ) => ReactNode;
 }
 
 export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) {
   const [authInfo, setAuthInfo] = useState<AuthDebugInfo | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [view, setView] = useState<AdminView>('dashboard');
+  const [activeSearchQuery, setActiveSearchQuery] = useState<string>('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const siteSettings = useSiteSettings();
 
   const adminBg = siteSettings.adminBgColor || '#0A0A0A';
   const adminAccent = siteSettings.adminAccentColor || '#FFC400';
+
+  const handleNavigateView = (nextView: AdminView, searchQuery?: string) => {
+    setView(nextView);
+    setActiveSearchQuery(searchQuery || '');
+  };
 
   useEffect(() => {
     checkAuth();
@@ -87,7 +98,7 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
     <div className="min-h-screen lg:flex transition-colors duration-200" style={{ backgroundColor: adminBg }}>
       <AdminSidebar
         activeView={view}
-        onNavigateView={setView}
+        onNavigateView={handleNavigateView}
         onNavigateHome={() => onNavigate('home')}
         mobileOpen={sidebarOpen}
         onCloseMobile={() => setSidebarOpen(false)}
@@ -97,10 +108,10 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
           userEmail={authInfo.userEmail}
           role={authInfo.hasAdminRole ? 'admin' : 'user'}
           onSignOut={handleSignOut}
-          onNavigateView={setView}
+          onNavigateView={handleNavigateView}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
-        <main className="flex-1 overflow-auto admin-scroll">{children(view, authInfo.userEmail, setView)}</main>
+        <main className="flex-1 overflow-auto admin-scroll">{children(view, authInfo.userEmail, handleNavigateView, activeSearchQuery)}</main>
       </div>
     </div>
   );
