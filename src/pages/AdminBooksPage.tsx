@@ -60,13 +60,15 @@ export default function AdminBooksPage() {
   const [rating, setRating] = useState(5.0);
 
   const filteredBooks = books.filter((b) => {
+    if (!b) return false;
     const matchCat = selectedCategory === 'all' || b.category === selectedCategory;
-    const matchQuery =
-      !searchQuery.trim() ||
-      b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.isbn.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCat && matchQuery;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return matchCat;
+
+    const titleMatch = (b.title || '').toLowerCase().includes(q);
+    const authorMatch = (b.author || '').toLowerCase().includes(q);
+    const isbnMatch = (b.isbn || '').toLowerCase().includes(q);
+    return matchCat && (titleMatch || authorMatch || isbnMatch);
   });
 
   // ════════════════ CATEGORY EDITOR HANDLERS ════════════════
@@ -478,7 +480,13 @@ export default function AdminBooksPage() {
               <div className="space-y-2">
                 {editableCategories.map((cat, idx) => {
                   const isAll = cat.id === 'all';
-                  const bookCount = books.filter((b) => b.category === cat.id || b.categoryLabel.toLowerCase().includes(cat.label.toLowerCase())).length;
+                  const catLabelLower = (cat.label || '').toLowerCase();
+                  const bookCount = books.filter((b) => {
+                    if (!b) return false;
+                    if (b.category === cat.id) return true;
+                    const bLabel = (b.categoryLabel || '').toLowerCase();
+                    return Boolean(catLabelLower && bLabel.includes(catLabelLower));
+                  }).length;
 
                   return (
                     <div
