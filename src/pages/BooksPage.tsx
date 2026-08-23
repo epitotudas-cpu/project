@@ -24,6 +24,7 @@ import { useBooks, useBookCategories, type BookItem } from '../services/bookServ
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import AuthPromptModal from '../components/AuthPromptModal';
+import BookCoverImage from '../components/BookCoverImage';
 
 interface BooksPageProps {
   onNavigate: (page: string) => void;
@@ -140,19 +141,66 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
     return result;
   }, [allBooks, selectedCategory, searchQuery, sortBy]);
 
+  const [digitalError, setDigitalError] = useState<string | null>(null);
+
   const handleBookSelect = (book: BookItem) => {
     setSelectedBook(book);
   };
 
-  const handleDownload = (e: React.MouseEvent, book: BookItem) => {
+  const triggerDigitalAction = (e: React.MouseEvent, book: BookItem, actionType?: 'preview' | 'digital') => {
     e.stopPropagation();
-    if (!user) {
+
+    const da = book.digitalAccess;
+    const url = book.digitalFileUrl || da?.digitalFileUrl || da?.digitalUrl || book.downloadUrl;
+    const previewUrl = book.digitalPreviewUrl || da?.previewUrl;
+    const accessType = book.digitalAccessType || da?.digitalAccessType || da?.accessType || 'none';
+
+    // Preview action
+    if (actionType === 'preview') {
+      if (previewUrl && /^https?:\/\//i.test(previewUrl.trim())) {
+        window.open(previewUrl.trim(), '_blank', 'noopener,noreferrer');
+        return;
+      }
+      setDigitalError('A kiadvány előnézete jelenleg nem érhető el. Kérjük, próbálja meg később!');
+      setTimeout(() => setDigitalError(null), 5000);
+      return;
+    }
+
+    // Direct digital action
+    if (accessType === 'none' || !url || !url.trim() || url === '#' || url.includes('invalid-broken-link')) {
+      setDigitalError('A digitális kiadvány jelenleg nem érhető el. Kérjük, próbálja meg később, vagy tekintse meg a kiadói oldalt.');
+      setTimeout(() => setDigitalError(null), 5000);
+      return;
+    }
+
+    if (!user && (da?.requiresLogin || book.requiresLogin)) {
       setPendingBookTitle(book.title);
       setAuthModalOpen(true);
       return;
     }
-    setDownloadSuccess(`📥 "${book.title}" letöltése elindult!`);
-    setTimeout(() => setDownloadSuccess(null), 4000);
+
+    if (!/^https?:\/\//i.test(url.trim())) {
+      setDigitalError('A digitális kiadvány jelenleg nem érhető el. Kérjük, próbálja meg később, vagy tekintse meg a kiadói oldalt.');
+      setTimeout(() => setDigitalError(null), 5000);
+      return;
+    }
+
+    // Direct file download or open external link
+    if (accessType === 'direct_download' || da?.accessType === 'free_download') {
+      setDownloadSuccess(`📥 "${book.title}" letöltése elindult!`);
+      setTimeout(() => setDownloadSuccess(null), 4000);
+
+      const link = document.createElement('a');
+      link.href = url.trim();
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      if (book.fileName) link.download = book.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      window.open(url.trim(), '_blank', 'noopener,noreferrer');
+    }
   };
 
   const getDifficultyBadge = (difficulty?: string) => {
@@ -244,7 +292,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Toast Notification */}
+        {/* Toast Notifications */}
         {downloadSuccess && (
           <div className="mb-6 p-4 bg-emerald-600 text-white rounded-2xl shadow-xl flex items-center justify-between font-bold text-sm animate-in fade-in">
             <div className="flex items-center gap-2">
@@ -252,6 +300,18 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
               <span>{downloadSuccess}</span>
             </div>
             <button onClick={() => setDownloadSuccess(null)} className="hover:opacity-80">
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
+        {digitalError && (
+          <div className="mb-6 p-4 bg-red-600 text-white rounded-2xl shadow-xl flex items-center justify-between font-bold text-sm animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <X size={20} className="shrink-0" />
+              <span>{digitalError}</span>
+            </div>
+            <button onClick={() => setDigitalError(null)} className="hover:opacity-80">
               <X size={18} />
             </button>
           </div>
@@ -426,24 +486,13 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                       onClick={() => handleBookSelect(book)}
                       className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 flex flex-col sm:flex-row p-5 sm:p-6 gap-6 group cursor-pointer"
                     >
-                      {/* Book Cover (Vertical 2:3 aspect ratio, real book styling) */}
+                      {/* Book Cover with Fallback Support */}
                       <div className="w-full sm:w-40 md:w-48 shrink-0 flex flex-col items-center">
-                        <div className="relative aspect-[2/3] w-36 sm:w-full rounded-xl overflow-hidden shadow-md group-hover:shadow-2xl transition-all duration-500 border border-gray-200/80 bg-white relative">
-                          <img
-                            src={book.coverImage}
-                            alt={book.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          {/* Spine highlight effect */}
-                          <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-black/30 via-transparent to-transparent pointer-events-none" />
-                          <div className="absolute inset-0 border border-black/10 rounded-xl pointer-events-none" />
-
-                          {/* Rating badge overlay */}
-                          <div className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
-                            <Star size={11} className="text-amber-400 fill-amber-400" />
-                            <span>{book.rating}</span>
-                          </div>
-                        </div>
+                        <BookCoverImage
+                          book={book}
+                          size="md"
+                          onClick={() => handleBookSelect(book)}
+                        />
                       </div>
 
                       {/* Book Information Section */}
@@ -509,19 +558,50 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                             <span>Formátum: <strong className="text-gray-800">{book.format}</strong></span>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          {/* Contextual Action Buttons */}
+                          <div className="flex items-center gap-2 flex-wrap justify-end">
+                            {/* Always: Részletek */}
                             <button
                               onClick={() => handleBookSelect(book)}
                               className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                             >
                               <Eye size={14} /> Részletek
                             </button>
-                            <button
-                              onClick={(e) => handleDownload(e, book)}
-                              className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
-                            >
-                              <Download size={14} /> Letöltés
-                            </button>
+
+                            {/* Optional Preview Button */}
+                            {(book.digitalPreviewUrl || book.digitalAccess?.previewUrl) && (
+                              <button
+                                onClick={(e) => triggerDigitalAction(e, book, 'preview')}
+                                className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                              >
+                                <Eye size={13} className="text-blue-600" /> Előnézet
+                              </button>
+                            )}
+
+                            {/* Dynamic Action Button (Only if digital access exists & is not 'none') */}
+                            {((book.digitalAccessType && book.digitalAccessType !== 'none') || (book.digitalAccess && book.digitalAccess.accessType !== 'none')) && (
+                              <button
+                                onClick={(e) => triggerDigitalAction(e, book, 'digital')}
+                                className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                              >
+                                {book.digitalAccessType === 'online_reading' || book.digitalAccess?.accessType === 'free_online' ? (
+                                  <>
+                                    <BookOpen size={14} className="text-accent" />
+                                    <span>Online olvasás</span>
+                                  </>
+                                ) : book.digitalAccessType === 'external_publisher' || book.digitalAccess?.accessType === 'external_link' ? (
+                                  <>
+                                    <Globe size={14} className="text-accent" />
+                                    <span>Kiadói oldal</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download size={14} />
+                                    <span>{book.digitalLinkLabel || book.digitalAccess?.buttonLabel || 'PDF letöltése'}</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -648,10 +728,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
               
               {/* Cover & Excerpt layout */}
               <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div className="w-36 shrink-0 aspect-[2/3] rounded-xl overflow-hidden shadow-lg border border-gray-200 relative mx-auto sm:mx-0">
-                  <img src={selectedBook.coverImage} alt={selectedBook.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-y-0 left-0 w-2 bg-black/20" />
-                </div>
+                <BookCoverImage book={selectedBook} size="lg" className="mx-auto sm:mx-0 shadow-xl" />
 
                 <div className="space-y-3 flex-1">
                   <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">A Kiadvány Ismertetője</h3>
@@ -875,12 +952,26 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                 >
                   Bezárás
                 </button>
-                <button
-                  onClick={(e) => { handleDownload(e, selectedBook); setSelectedBook(null); }}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-primary font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-                >
-                  <Download size={16} /> Könyv Letöltése
-                </button>
+                {((selectedBook.digitalAccessType && selectedBook.digitalAccessType !== 'none') || (selectedBook.digitalAccess && selectedBook.digitalAccess.accessType !== 'none')) && (
+                  <button
+                    onClick={(e) => triggerDigitalAction(e, selectedBook, 'digital')}
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-primary font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    {selectedBook.digitalAccessType === 'online_reading' || selectedBook.digitalAccess?.accessType === 'free_online' ? (
+                      <>
+                        <BookOpen size={16} /> Online Olvasás
+                      </>
+                    ) : selectedBook.digitalAccessType === 'external_publisher' || selectedBook.digitalAccess?.accessType === 'external_link' ? (
+                      <>
+                        <Globe size={16} /> Kiadói Oldal
+                      </>
+                    ) : (
+                      <>
+                        <Download size={16} /> {selectedBook.digitalLinkLabel || selectedBook.digitalAccess?.buttonLabel || 'PDF Letöltése'}
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
