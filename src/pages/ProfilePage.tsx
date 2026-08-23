@@ -26,11 +26,8 @@ import {
   ExternalLink,
   X,
   BookOpen,
-  Globe,
   ShoppingBag,
   Eye,
-  Star,
-  BookmarkCheck,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
@@ -41,6 +38,35 @@ import { glossaryJsonService, type GlossaryTermFromJson } from '../lib/glossaryJ
 import TermDetailModal from '../components/TermDetailModal';
 import { useBooks, type BookItem } from '../services/bookService';
 import BookCoverImage from '../components/BookCoverImage';
+
+function getMatchingBook(item: SavedItem, allBooks: BookItem[]): BookItem {
+  const found = allBooks.find((b) => b.id === item.itemId || b.id === item.slug || b.title === item.title);
+  if (found) return found;
+
+  return {
+    id: item.itemId,
+    title: item.title,
+    subtitle: item.subtitle || '',
+    author: item.subtitle || 'Szakmai Szerző',
+    publisher: 'Építőipari Kiadó',
+    year: 2026,
+    pages: 350,
+    isbn: '978-963-16-0000-0',
+    category: 'szerkezet',
+    categoryLabel: item.subtitle || 'Szakkönyv',
+    badge: 'Szakkönyv',
+    badgeColor: 'amber',
+    coverImage: item.imageUrl || '',
+    coverImageUrl: item.imageUrl || '',
+    downloadUrl: '#',
+    format: 'Nyomtatott + PDF',
+    description: item.description || '',
+    tableOfContents: [],
+    sampleExcerpt: '',
+    rating: 5.0,
+    reviewsCount: 1,
+  };
+}
 
 interface ProfilePageProps {
   onNavigate?: (page: string, params?: { articleSlug?: string }) => void;
@@ -181,35 +207,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         }
       }
     } else if (item.itemType === 'book') {
-      const foundBook = allBooks.find(
-        (b) => b.id === item.itemId || b.id === item.slug || b.title === item.title
-      );
-      if (foundBook) {
-        setSelectedSavedBook(foundBook);
-      } else {
-        const fallbackBook: BookItem = {
-          id: item.itemId,
-          title: item.title,
-          subtitle: item.subtitle || '',
-          author: item.subtitle || 'Szakmai Szerző',
-          publisher: 'Építőipari Kiadó',
-          year: 2026,
-          pages: 350,
-          isbn: '978-963-16-0000-0',
-          category: 'szerkezet',
-          categoryLabel: 'Szerkezetépítés',
-          coverImage: item.imageUrl || '',
-          coverImageUrl: item.imageUrl || '',
-          downloadUrl: '#',
-          format: 'Nyomtatott + PDF',
-          description: item.description || '',
-          tableOfContents: [],
-          sampleExcerpt: '',
-          rating: 5.0,
-          reviewsCount: 1,
-        };
-        setSelectedSavedBook(fallbackBook);
-      }
+      const bookObj = getMatchingBook(item, allBooks);
+      setSelectedSavedBook(bookObj);
     }
   };
 
@@ -782,7 +781,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredSavedItems.map((item) => {
                 if (item.itemType === 'book') {
-                  const matchingBook = allBooks.find((b) => b.id === item.itemId || b.id === item.slug);
+                  const matchingBook = getMatchingBook(item, allBooks);
                   return (
                     <div
                       key={item.id}
@@ -793,13 +792,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         {/* Cover Image Header & Badge */}
                         <div className="relative aspect-[2/3] w-full max-h-60 rounded-2xl overflow-hidden shadow-md bg-black/40 flex items-center justify-center group-hover:scale-[1.02] transition-transform">
                           <BookCoverImage
-                            book={matchingBook || {
-                              id: item.itemId,
-                              title: item.title,
-                              coverImage: item.imageUrl || '',
-                              coverImageUrl: item.imageUrl || '',
-                              categoryLabel: item.subtitle || 'Szakkönyv',
-                            }}
+                            book={matchingBook}
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-70 group-hover:opacity-50 transition-opacity" />
@@ -914,7 +907,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl divide-y divide-[#1E3A64] overflow-hidden">
               {filteredSavedItems.map((item) => {
                 if (item.itemType === 'book') {
-                  const matchingBook = allBooks.find((b) => b.id === item.itemId || b.id === item.slug);
+                  const matchingBook = getMatchingBook(item, allBooks);
                   return (
                     <div
                       key={item.id}
@@ -925,12 +918,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         {/* Cover Image Thumbnail */}
                         <div className="w-12 aspect-[2/3] rounded-xl overflow-hidden bg-black shrink-0 border border-amber-500/30 shadow-md">
                           <BookCoverImage
-                            book={matchingBook || {
-                              id: item.itemId,
-                              title: item.title,
-                              coverImage: item.imageUrl || '',
-                              coverImageUrl: item.imageUrl || '',
-                            }}
+                            book={matchingBook}
                             className="w-full h-full object-cover"
                           />
                         </div>
