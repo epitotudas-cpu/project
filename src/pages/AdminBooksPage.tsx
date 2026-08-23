@@ -28,6 +28,7 @@ import {
   type BookCategory,
   type PublicationType,
   type AccessType,
+  type DigitalAccessType,
   type CopyrightStatus,
   type OfferFormat,
   type OfferAvailability,
@@ -375,10 +376,19 @@ export default function AdminBooksPage() {
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
 
-    const digitalAccessObj = {
+    const calculatedAccessType: DigitalAccessType =
+      accessType === 'none'
+        ? 'none'
+        : accessType === 'free_online'
+        ? 'online_reading'
+        : accessType === 'external_link'
+        ? 'external_publisher'
+        : 'direct_download';
+
+    const digitalAccessObj: BookDigitalAccess = {
       publicationType,
       accessType,
-      digitalAccessType: accessType === 'none' ? 'none' : accessType === 'free_online' ? 'online_reading' : accessType === 'external_link' ? 'external_publisher' : 'direct_download',
+      digitalAccessType: calculatedAccessType,
       digitalUrl: accessType === 'none' ? '' : digitalUrl.trim(),
       digitalFileUrl: accessType === 'none' ? '' : digitalUrl.trim(),
       buttonLabel: buttonLabel.trim() || 'PDF Letöltése',
