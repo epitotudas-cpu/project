@@ -263,6 +263,7 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
       const renderContext = {
         canvasContext: ctx,
         viewport: viewport,
+        canvas: canvas as any,
       };
 
       await page.render(renderContext).promise;
