@@ -84,7 +84,7 @@ async function fetchPdfArrayBuffer(normalizedUrl: string): Promise<ArrayBuffer |
   // Strategy 1: Direct fetch
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     const response = await fetch(normalizedUrl, {
       signal: controller.signal,
       headers: { Accept: 'application/pdf,application/octet-stream,*/*' },
@@ -92,24 +92,24 @@ async function fetchPdfArrayBuffer(normalizedUrl: string): Promise<ArrayBuffer |
     clearTimeout(timeoutId);
     if (response.ok) {
       const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
+      if (buffer.byteLength > 0 && buffer.byteLength <= 45000000) {
         return buffer;
       }
     }
   } catch (e) {
-    console.warn('Direct PDF fetch failed, trying proxy 1...', e);
+    console.warn('Direct PDF fetch failed (likely CORS restriction), trying proxies...', e);
   }
 
-  // Strategy 2: CORS Proxy 1 (corsproxy.io)
+  // Strategy 2: CORS Proxy (corsproxy.io)
   try {
     const proxy1 = `https://corsproxy.io/?${normalizedUrl}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     const response = await fetch(proxy1, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (response.ok) {
       const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
+      if (buffer.byteLength > 0 && buffer.byteLength <= 45000000) {
         return buffer;
       }
     }
@@ -117,51 +117,41 @@ async function fetchPdfArrayBuffer(normalizedUrl: string): Promise<ArrayBuffer |
     console.warn('Proxy 1 fetch failed, trying proxy 2...', e);
   }
 
-  // Strategy 3: CORS Proxy 2 (allorigins)
+  // Strategy 3: CORS Proxy (allorigins)
   try {
     const proxy2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(normalizedUrl)}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     const response = await fetch(proxy2, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (response.ok) {
       const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
+      if (buffer.byteLength > 0 && buffer.byteLength <= 45000000) {
         return buffer;
       }
     }
   } catch (e) {
-    console.warn('Proxy 2 fetch failed, trying proxy 3...', e);
-  }
-
-  // Strategy 4: CORS Proxy 3 (codetabs)
-  try {
-    const proxy3 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(normalizedUrl)}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch(proxy3, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    if (response.ok) {
-      const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > 0 && buffer.byteLength <= 40000000) {
-        return buffer;
-      }
-    }
-  } catch (e) {
-    console.warn('Proxy 3 fetch failed...', e);
+    console.warn('Proxy 2 fetch failed...', e);
   }
 
   return null;
 }
 
 /**
- * Fallback helper to render direct image URLs (JPG, PNG, WebP) to 2:3 canvas.
+ * Renders an Image URL (or wsrv PDF page 1 URL) onto a 2:3 ratio Canvas and returns DataURL.
  */
 async function tryRenderAsImage(urlStr: string): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+
+    const timeoutId = setTimeout(() => {
+      img.src = '';
+      resolve(null);
+    }, 15000);
+
     img.onload = () => {
+      clearTimeout(timeoutId);
       try {
         const canvas = document.createElement('canvas');
         canvas.width = 600;
@@ -184,13 +174,19 @@ async function tryRenderAsImage(urlStr: string): Promise<string | null> {
         resolve(null);
       }
     };
-    img.onerror = () => resolve(null);
+
+    img.onerror = () => {
+      clearTimeout(timeoutId);
+      resolve(null);
+    };
+
     img.src = urlStr;
   });
 }
 
 /**
- * Downloads page 1 of target PDF or image, renders it to a 2:3 ratio PNG/JPEG DataURL.
+ * Renders Page 1 of target PDF using High-Performance Cloudflare renderer (wsrv)
+ * with fallback to local pdfjs-dist and direct Image rendering.
  */
 export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverResult> {
   // 1. URL validation
@@ -206,9 +202,22 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
   const normalizedUrl = normalizePdfUrl(cleanUrl);
 
   try {
-    // 2. Fetch binary buffer via multi-proxy strategies
-    const arrayBuffer = await fetchPdfArrayBuffer(normalizedUrl);
+    // 2. High-Performance Strategy 1: Cloudflare-powered PDF Page 1 renderer (wsrv.nl)
+    // Renders Page 1 of target PDF into a 600x900 image with full CORS support
+    const wsrvPdfPage1Url = `https://wsrv.nl/?url=${encodeURIComponent(normalizedUrl)}&page=1&w=600&h=900&fit=contain&output=jpg&q=88`;
+    const cloudCover = await tryRenderAsImage(wsrvPdfPage1Url);
 
+    if (cloudCover) {
+      return {
+        success: true,
+        imageUrl: cloudCover,
+        generatedAt: new Date().toISOString(),
+        sourceUrl: cleanUrl,
+      };
+    }
+
+    // 3. Strategy 2: Local pdfjs-dist via direct fetch / CORS proxies ArrayBuffer
+    const arrayBuffer = await fetchPdfArrayBuffer(normalizedUrl);
     let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
 
     if (arrayBuffer && arrayBuffer.byteLength > 0) {
@@ -216,11 +225,11 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
         const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
         pdfDoc = await loadingTask.promise;
       } catch (err) {
-        console.warn('PDF loading from ArrayBuffer failed, trying direct URL load...', err);
+        console.warn('PDF loading from ArrayBuffer failed...', err);
       }
     }
 
-    // 3. If ArrayBuffer loading failed, try pdfjsLib direct URL loading
+    // Try pdfjs-dist direct URL load
     if (!pdfDoc) {
       try {
         const loadingTask = pdfjsLib.getDocument({ url: normalizedUrl });
@@ -230,7 +239,6 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
       }
     }
 
-    // 4. If PDF doc loaded successfully, render Page 1
     if (pdfDoc && pdfDoc.numPages >= 1) {
       const page = await pdfDoc.getPage(1);
 
@@ -284,12 +292,12 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
       };
     }
 
-    // 5. Fallback: try loading as an Image (e.g. PNG / JPG link)
-    const imageCover = await tryRenderAsImage(normalizedUrl);
-    if (imageCover) {
+    // 4. Strategy 3: Direct Image Link Rendering (for PNG, JPG, WebP)
+    const directImageCover = await tryRenderAsImage(normalizedUrl);
+    if (directImageCover) {
       return {
         success: true,
-        imageUrl: imageCover,
+        imageUrl: directImageCover,
         generatedAt: new Date().toISOString(),
         sourceUrl: cleanUrl,
       };
