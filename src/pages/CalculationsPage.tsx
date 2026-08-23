@@ -3178,7 +3178,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Teljesítmény (kW)"
                         step="0.5"
                         value={cablePower}
-                        onChange={setCablePower}
+                        onChange={(v) => setCablePower(v.toString())}
                         placeholder="pl. 3.5"
                         helpText="A csatlakoztatni kívánt eszközök összteljesítménye"
                       />
@@ -3186,7 +3186,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Kábelhossz (m)"
                         step="1"
                         value={cableLength}
-                        onChange={setCableLength}
+                        onChange={(v) => setCableLength(v.toString())}
                         placeholder="pl. 25"
                         helpText="Az elosztó és a fogyasztó közötti távolság"
                       />
@@ -3194,7 +3194,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Teljesítménytényező (cos φ)"
                         step="0.01"
                         value={cableCosPhi}
-                        onChange={setCableCosPhi}
+                        onChange={(v) => setCableCosPhi(v.toString())}
                         placeholder="0.95"
                         helpText="Motoroknál 0.85-0.95, rezisztívnél 1.0"
                       />
@@ -3222,33 +3222,33 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Szoba Hossza (m)"
                         step="0.1"
                         value={roomLength}
-                        onChange={setRoomLength}
+                        onChange={(v) => setRoomLength(v.toString())}
                         placeholder="pl. 5.0"
                       />
                       <CalculatorInput
                         label="Szoba Szélessége (m)"
                         step="0.1"
                         value={roomWidth}
-                        onChange={setRoomWidth}
+                        onChange={(v) => setRoomWidth(v.toString())}
                         placeholder="pl. 4.0"
                       />
                       <CalculatorInput
                         label="Belmagasság (m)"
                         step="0.1"
                         value={roomHeight}
-                        onChange={setRoomHeight}
+                        onChange={(v) => setRoomHeight(v.toString())}
                         placeholder="pl. 2.7"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                       <CalculatorInput
                         label="Nyílászárók Területe (m²)"
                         step="0.5"
                         value={openingArea}
-                        onChange={setOpeningArea}
+                        onChange={(v) => setOpeningArea(v.toString())}
                         placeholder="pl. 4.5"
-                        helpText="Kivonandó ablakok és ajtók összfelülete"
+                        helpText="Ablakok és ajtók felülete"
                       />
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1">Festék Rétegszám</label>
@@ -3263,12 +3263,20 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         </select>
                       </div>
                       <CalculatorInput
+                        label="Festék Kiadósság (m²/L)"
+                        step="0.5"
+                        value={paintCoverage}
+                        onChange={(v) => setPaintCoverage(v.toString())}
+                        placeholder="pl. 8.0"
+                        helpText="Gyári fedőképesség m²/liter"
+                      />
+                      <CalculatorInput
                         label="Glettvastagság (mm)"
                         step="0.5"
                         value={glettThickness}
-                        onChange={setGlettThickness}
+                        onChange={(v) => setGlettThickness(v.toString())}
                         placeholder="pl. 1.5"
-                        helpText="1.0 - 2.0 mm normál glettelésnél"
+                        helpText="1.0 - 2.0 mm glettelésnél"
                       />
                     </div>
                   </div>
@@ -3294,7 +3302,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Térkövezendő Felület (m²)"
                         step="1"
                         value={pavingArea}
-                        onChange={setPavingArea}
+                        onChange={(v) => setPavingArea(v.toString())}
                         placeholder="pl. 45"
                         helpText="Kocsibeálló, terasz vagy járda területe"
                       />
@@ -3302,7 +3310,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Szegélykő Hosszúság / Kerület (m)"
                         step="1"
                         value={pavingPerimeter}
-                        onChange={setPavingPerimeter}
+                        onChange={(v) => setPavingPerimeter(v.toString())}
                         placeholder="pl. 28"
                         helpText="Kerti szegélykövek összhossza"
                       />
@@ -3337,7 +3345,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Homokágyazat Vastagság (cm)"
                         step="1"
                         value={beddingThickness}
-                        onChange={setBeddingThickness}
+                        onChange={(v) => setBeddingThickness(v.toString())}
                         placeholder="pl. 4"
                         helpText="Fektető zúzottkő/homok ágyazat (3-5 cm)"
                       />
@@ -3360,26 +3368,52 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       </div>
                     </div>
 
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Kiemelés Típusa</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setEarthType('pit')}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
+                            earthType === 'pit'
+                              ? 'bg-primary text-white border-primary shadow-sm'
+                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          Pincetömb / Medence Munkagödör
+                        </button>
+                        <button
+                          onClick={() => setEarthType('trench')}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
+                            earthType === 'trench'
+                              ? 'bg-primary text-white border-primary shadow-sm'
+                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          Sávalap Árok / Közműárok
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <CalculatorInput
                         label="Gödör / Árok Hossza (m)"
                         step="0.5"
                         value={earthLength}
-                        onChange={setEarthLength}
+                        onChange={(v) => setEarthLength(v.toString())}
                         placeholder="pl. 10.0"
                       />
                       <CalculatorInput
                         label="Gödör Szélessége (m)"
                         step="0.5"
                         value={earthWidth}
-                        onChange={setEarthWidth}
+                        onChange={(v) => setEarthWidth(v.toString())}
                         placeholder="pl. 8.0"
                       />
                       <CalculatorInput
                         label="Mélység (m)"
                         step="0.1"
                         value={earthDepth}
-                        onChange={setEarthDepth}
+                        onChange={(v) => setEarthDepth(v.toString())}
                         placeholder="pl. 1.2"
                       />
                     </div>
@@ -3402,7 +3436,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Zúzottkő Ágyazat Vastagság (cm)"
                         step="5"
                         value={gravelBedThickness}
-                        onChange={setGravelBedThickness}
+                        onChange={(v) => setGravelBedThickness(v.toString())}
                         placeholder="pl. 20"
                         helpText="Teherhordó zúzottkő réteg a gödör aljára"
                       />
@@ -3430,7 +3464,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Fűtött Alapterület (m²)"
                         step="1"
                         value={ufArea}
-                        onChange={setUfArea}
+                        onChange={(v) => setUfArea(v.toString())}
                         placeholder="pl. 35"
                         helpText="A padlófűtéssel ellátandó helyiség mérete"
                       />
@@ -3468,7 +3502,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         label="Max Körhossz (m)"
                         step="5"
                         value={ufMaxCircuit}
-                        onChange={setUfMaxCircuit}
+                        onChange={(v) => setUfMaxCircuit(v.toString())}
                         placeholder="pl. 90"
                         helpText="Ajánlott maximum: 90 - 100 m/kör"
                       />
