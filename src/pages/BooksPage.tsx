@@ -11,24 +11,14 @@ import {
   Star,
   CheckCircle2,
   X,
-  Filter,
   SlidersHorizontal,
   Bookmark,
   BookmarkCheck,
-  Building,
-  Zap,
-  ShieldCheck,
-  Book,
-  GraduationCap,
-  Sparkles,
-  Layers,
-  FileCheck,
-  Check,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useBooks, BOOK_CATEGORIES, type BookItem } from '../services/bookService';
 import { useAuth } from '../contexts/AuthContext';
-import { isItemSaved, toggleSaveItem, getSavedItems } from '../services/bookmarkService';
+import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import AuthPromptModal from '../components/AuthPromptModal';
 
 interface BooksPageProps {
@@ -70,6 +60,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
       title: book.title,
       subtitle: book.categoryLabel || book.author,
       description: book.description,
+      slug: book.id,
       imageUrl: book.coverImage,
     });
 

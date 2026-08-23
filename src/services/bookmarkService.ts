@@ -1,11 +1,11 @@
 export interface SavedItem {
   id: string; // Composite unique key: e.g. "glossary_term123" or "article_art456"
   itemId: string;
-  itemType: 'article' | 'glossary';
+  itemType: 'article' | 'glossary' | 'tool' | 'course' | 'book';
   title: string;
   subtitle?: string; // category name or author
   description?: string; // excerpt or definition snippet
-  slug: string;
+  slug?: string;
   imageUrl?: string;
   savedAt: string; // ISO timestamp
   readTime?: number;
@@ -64,7 +64,7 @@ export function getSavedItems(userId: string | null | undefined): SavedItem[] {
 export function isItemSaved(
   userId: string | null | undefined,
   itemId: string,
-  itemType: 'article' | 'glossary'
+  itemType: 'article' | 'glossary' | 'tool' | 'course' | 'book'
 ): boolean {
   if (!itemId) return false;
   const items = getSavedItems(userId);
@@ -114,7 +114,7 @@ export function saveItem(
 export function removeSavedItem(
   userId: string | null | undefined,
   itemId: string,
-  itemType: 'article' | 'glossary'
+  itemType: 'article' | 'glossary' | 'tool' | 'course' | 'book'
 ): SavedItem[] {
   if (typeof window === 'undefined') return [];
   const effectiveId = getEffectiveUserId(userId);
