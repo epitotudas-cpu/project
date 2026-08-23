@@ -443,63 +443,92 @@ export function saveSiteSettings(settings: SiteSettings): void {
   }
 }
 
+let inFlightFetchPromise: Promise<SiteSettings | null> | null = null;
+let lastCloudFetchTime = 0;
+let cachedCloudSettings: SiteSettings | null = null;
+const CLOUD_CACHE_TTL_MS = 300000; // 5 minutes cache
+
 export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null> {
-  try {
-    const { data: catData, error: catErr } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_SYSTEM_ID)
-      .maybeSingle();
-
-    if (!catErr && catData?.description && catData.description.startsWith('{')) {
-      const parsed = JSON.parse(catData.description);
-      const cloudSettings: SiteSettings = {
-        ...DEFAULT_SITE_SETTINGS,
-        ...parsed,
-        enabledNavItems: {
-          ...DEFAULT_SITE_SETTINGS.enabledNavItems,
-          ...(parsed.enabledNavItems || {}),
-        },
-      };
-
-      // Check local storage timestamp vs cloud timestamp
-      const localRaw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY) : null;
-      if (localRaw) {
-        try {
-          const localParsed = JSON.parse(localRaw);
-          const localTime = localParsed.iconsUpdatedAt || 0;
-          const cloudTime = cloudSettings.iconsUpdatedAt || 0;
-
-          // If local settings are newer than cloud settings, keep local settings and repair cloud!
-          if (localTime > cloudTime) {
-            void supabase.from('categories').upsert({
-              id: SUPABASE_SYSTEM_ID,
-              name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
-              slug: 'system-site-settings-config',
-              description: JSON.stringify(localParsed),
-              banner_url: localParsed.logoUrl || '/logo.png',
-              article_count: 0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            } as any);
-            return localParsed;
-          }
-        } catch {}
-      }
-
-      if (typeof window !== 'undefined') {
-        window.__GLOBAL_SITE_SETTINGS__ = cloudSettings;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudSettings));
-        localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(cloudSettings));
-        window.dispatchEvent(new Event('site-settings-changed'));
-      }
-      applySiteSettings(cloudSettings);
-      return cloudSettings;
-    }
-  } catch (err) {
-    console.warn('Cloud site settings fetch info:', err);
+  const now = Date.now();
+  if (cachedCloudSettings && now - lastCloudFetchTime < CLOUD_CACHE_TTL_MS) {
+    return cachedCloudSettings;
   }
-  return null;
+
+  if (inFlightFetchPromise) {
+    return inFlightFetchPromise;
+  }
+
+  inFlightFetchPromise = (async () => {
+    try {
+      // 1.5 second timeout to prevent blocking UI if network or CORS is slow
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500));
+
+      const fetchPromise = (async () => {
+        const { data: catData, error: catErr } = await supabase
+          .from('categories')
+          .select('description')
+          .eq('id', SUPABASE_SYSTEM_ID)
+          .maybeSingle();
+
+        if (!catErr && catData?.description && catData.description.startsWith('{')) {
+          const parsed = JSON.parse(catData.description);
+          const cloudSettings: SiteSettings = {
+            ...DEFAULT_SITE_SETTINGS,
+            ...parsed,
+            enabledNavItems: {
+              ...DEFAULT_SITE_SETTINGS.enabledNavItems,
+              ...(parsed.enabledNavItems || {}),
+            },
+          };
+
+          const localRaw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) || localStorage.getItem(BACKUP_STORAGE_KEY) : null;
+          if (localRaw) {
+            try {
+              const localParsed = JSON.parse(localRaw);
+              const localTime = localParsed.iconsUpdatedAt || 0;
+              const cloudTime = cloudSettings.iconsUpdatedAt || 0;
+
+              if (localTime > cloudTime) {
+                void supabase.from('categories').upsert({
+                  id: SUPABASE_SYSTEM_ID,
+                  name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
+                  slug: 'system-site-settings-config',
+                  description: JSON.stringify(localParsed),
+                  banner_url: localParsed.logoUrl || '/logo.png',
+                  article_count: 0,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                } as any);
+                return localParsed;
+              }
+            } catch {}
+          }
+
+          if (typeof window !== 'undefined') {
+            window.__GLOBAL_SITE_SETTINGS__ = cloudSettings;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudSettings));
+            localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(cloudSettings));
+            window.dispatchEvent(new Event('site-settings-changed'));
+          }
+          applySiteSettings(cloudSettings);
+          cachedCloudSettings = cloudSettings;
+          lastCloudFetchTime = Date.now();
+          return cloudSettings;
+        }
+        return null;
+      })();
+
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      return result;
+    } catch (err) {
+      console.warn('Cloud site settings fetch info:', err);
+      return null;
+    } finally {
+      inFlightFetchPromise = null;
+    }
+  })();
+
+  return inFlightFetchPromise;
 }
 
 export function useSiteSettings(): SiteSettings {

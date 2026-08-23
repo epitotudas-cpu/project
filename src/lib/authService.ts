@@ -10,58 +10,62 @@ export interface AuthDebugInfo {
   error?: string;
 }
 
+let roleCache: { userId: string; role: string | null; timestamp: number } | null = null;
+const CACHE_TTL_MS = 60000; // 1 minute cache
+
+export function clearRoleCache() {
+  roleCache = null;
+}
+
+async function getCachedProfileRole(userId: string): Promise<string | null> {
+  const now = Date.now();
+  if (roleCache && roleCache.userId === userId && now - roleCache.timestamp < CACHE_TTL_MS) {
+    return roleCache.role;
+  }
+  try {
+    const role = await getProfileRole(userId);
+    roleCache = { userId, role, timestamp: now };
+    return role;
+  } catch (err) {
+    console.error('Profile fetch hiba:', err);
+    return roleCache?.userId === userId ? roleCache.role : null;
+  }
+}
+
 export async function getAuthDebugInfo(): Promise<AuthDebugInfo> {
   try {
     const { data: sessionData, error: sessionError } = await authClient.getSession();
 
-    if (sessionError) {
+    if (sessionError || !sessionData.session) {
       return {
         isAuthenticated: false,
         userId: null,
         userEmail: null,
         hasAdminRole: false,
         role: null,
-        error: `Session hiba: ${sessionError.message}`,
+        error: sessionError ? `Session hiba: ${sessionError.message}` : 'Nincs bejelentkezési session',
       };
     }
 
-    if (!sessionData.session) {
+    const user = sessionData.session.user;
+    if (!user) {
       return {
         isAuthenticated: false,
         userId: null,
         userEmail: null,
         hasAdminRole: false,
         role: null,
-        error: 'Nincs bejelentkezési session',
+        error: 'Nincs felhasználói adat a session-ben',
       };
     }
 
-    const { data: userData, error: userError } = await authClient.getUser();
-
-    if (userError || !userData.user) {
-      return {
-        isAuthenticated: false,
-        userId: null,
-        userEmail: null,
-        hasAdminRole: false,
-        role: null,
-        error: `User fetch hiba: ${userError?.message || 'ismeretlen'}`,
-      };
-    }
-
-    let profileRole: string | null = null;
-    try {
-      profileRole = await getProfileRole(userData.user.id);
-    } catch (err) {
-      console.error('Profile fetch hiba:', err);
-    }
-
+    const profileRole = await getCachedProfileRole(user.id);
     const hasAdmin = profileRole === 'admin' || profileRole === 'editor';
 
     return {
       isAuthenticated: true,
-      userId: userData.user.id,
-      userEmail: userData.user.email || null,
+      userId: user.id,
+      userEmail: user.email || null,
       hasAdminRole: hasAdmin,
       role: profileRole,
       error: hasAdmin ? undefined : `Nem admin szerepkör. Jelenlegi role: ${profileRole || 'nincs profil'}`,
@@ -80,6 +84,7 @@ export async function getAuthDebugInfo(): Promise<AuthDebugInfo> {
 
 export async function signInAdmin(email: string, password: string): Promise<{ success: boolean; error?: string }> {
   try {
+    clearRoleCache();
     const { data, error } = await authClient.signInWithPassword(email, password);
 
     if (error) {
@@ -90,15 +95,11 @@ export async function signInAdmin(email: string, password: string): Promise<{ su
       return { success: false, error: 'Nincs user adat a bejelentkezés után' };
     }
 
-    let profileRole: string | null = null;
-    try {
-      profileRole = await getProfileRole(data.user.id);
-    } catch (err) {
-      return { success: false, error: `Profile lekérdezési hiba: ${err instanceof Error ? err.message : 'ismeretlen'}` };
-    }
+    const profileRole = await getCachedProfileRole(data.user.id);
 
     if (!profileRole || (profileRole !== 'admin' && profileRole !== 'editor')) {
       await authClient.signOut();
+      clearRoleCache();
       return { success: false, error: `Nincs admin jogosultság. Role: ${profileRole || 'nincs profil'}` };
     }
 
@@ -109,11 +110,13 @@ export async function signInAdmin(email: string, password: string): Promise<{ su
 }
 
 export async function signOutAdmin(): Promise<void> {
+  clearRoleCache();
   await authClient.signOut();
 }
 
 export function onAuthStateChange(callback: (isAuthenticated: boolean) => void) {
   return authClient.onAuthStateChange((_event, session) => {
+    if (!session) clearRoleCache();
     callback(!!session);
   });
 }
