@@ -203,8 +203,8 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
 
   try {
     // 2. High-Performance Strategy 1: Cloudflare-powered PDF Page 1 renderer (wsrv.nl)
-    // Renders Page 1 of target PDF into a 600x900 image with full CORS support
-    const wsrvPdfPage1Url = `https://wsrv.nl/?url=${encodeURIComponent(normalizedUrl)}&page=1&w=600&h=900&fit=contain&output=jpg&q=88`;
+    // Renders Page 1 (page=0 in 0-indexed libvips) of target PDF into a 600x900 image with full CORS support
+    const wsrvPdfPage1Url = `https://wsrv.nl/?url=${encodeURIComponent(normalizedUrl)}&page=0&w=600&h=900&fit=contain&output=jpg&q=88`;
     const cloudCover = await tryRenderAsImage(wsrvPdfPage1Url);
 
     if (cloudCover) {
