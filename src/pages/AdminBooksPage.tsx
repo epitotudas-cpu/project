@@ -13,12 +13,7 @@ import {
   ArrowDown,
   X,
   Globe,
-  Download,
   ShoppingBag,
-  ExternalLink,
-  Tag,
-  ShieldCheck,
-  Building,
   Check,
   AlertTriangle,
 } from 'lucide-react';
