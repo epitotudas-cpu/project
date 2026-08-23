@@ -7,6 +7,12 @@
   <script>
     (function() {
       try {
+        if (window.location.hostname === 'epitotudas.hu') {
+          window.location.replace('https://www.epitotudas.hu' + window.location.pathname + window.location.search + window.location.hash);
+          return;
+        }
+      } catch (err) {}
+      try {
         var raw = localStorage.getItem('epitotudas_site_settings_v1') || 
                   localStorage.getItem('epitotudas_site_settings_backup_v1') ||
                   sessionStorage.getItem('epitotudas_site_settings_v1');
@@ -88,12 +94,12 @@
   
   <title>ÉpítőTudás – Építőipari tudásbázis és szakmai képzések</title>
   <meta name="description" content="Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek. Szakmai fogalmak, technológiák, szakmák, számítások és gyakorlati tudás egy helyen." />
-  <link rel="canonical" href="https://epitotudas.hu" />
+  <link rel="canonical" href="https://www.epitotudas.hu" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:site_name" content="ÉpítőTudás" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://epitotudas.hu" />
+  <meta property="og:url" content="https://www.epitotudas.hu" />
   <meta property="og:title" content="ÉpítőTudás – Építőipari tudásbázis és szakmai képzések" />
   <meta property="og:description" content="Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek. Szakmai fogalmak, technológiák, szakmák, számítások és gyakorlati tudás egy helyen." />
   <meta property="og:image" content="/site-tile.png?v=1787313602476" />
