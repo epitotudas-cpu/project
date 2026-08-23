@@ -256,11 +256,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                           key={img.id || idx}
                           onClick={() => setCurrentHeroIndex(idx)}
                           title={img.altText || `Kép ${idx + 1}`}
-                          className={`h-2 rounded-full transition-all cursor-pointer ${
-                            idx === currentHeroIndex ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'
-                          }`}
+                          className="p-1.5 flex items-center justify-center cursor-pointer min-w-[24px] min-h-[24px]"
                           aria-label={`Ugrás a(z) ${idx + 1}. képre`}
-                        />
+                        >
+                          <span className={`h-2 rounded-full transition-all ${
+                            idx === currentHeroIndex ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'
+                          }`} />
+                        </button>
                       ))}
                     </div>
                   )}
@@ -433,10 +435,10 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       {article.excerpt}
                     </p>
                   )}
-                  <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center justify-between text-sm text-gray-700 font-medium">
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1">
-                        <TrendingUp size={14} className="text-green-500" />
+                        <TrendingUp size={14} className="text-green-600" />
                         {formatViews(article.views)}
                       </span>
                       <span className="flex items-center gap-1">
@@ -444,7 +446,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         {article.read_time} perc
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-amber-500">
+                    <span className="flex items-center gap-1 text-amber-700 font-bold">
                       <Star size={14} fill="currentColor" />
                       {article.rating.toFixed(1)}
                     </span>
@@ -497,7 +499,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded">
                     {partner.category}
                   </span>
-                  <span className="text-xs text-gray-400 font-medium flex items-center gap-1 group-hover:text-accent transition-colors">
+                  <span className="text-xs text-gray-600 font-semibold flex items-center gap-1 group-hover:text-accent transition-colors">
                     Minősített Partner <ExternalLink size={12} />
                   </span>
                 </div>

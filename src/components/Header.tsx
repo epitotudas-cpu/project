@@ -345,6 +345,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             <button
               className="xl:hidden p-2 text-gray-300 hover:text-white"
               onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? "Navigációs menü bezárása" : "Navigációs menü megnyitása"}
+              title={mobileOpen ? "Menü bezárása" : "Menü megnyitása"}
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>

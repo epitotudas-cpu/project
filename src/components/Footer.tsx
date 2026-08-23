@@ -47,13 +47,13 @@ export default function Footer({ onNavigate }: FooterProps) {
             { title: 'Jogi & Info', links: [{ l: 'Jogi Nyilatkozatok', p: 'jogi' }, { l: 'Impresszum', p: 'impressum' }, { l: 'Adatvédelem', p: 'privacy' }, { l: 'ÁSZF', p: 'terms' }, { l: 'Cookie-kezelés', p: 'cookies' }] },
           ].map((col) => (
             <div key={col.title}>
-              <h4 className="text-white font-semibold text-sm mb-4">{col.title}</h4>
+              <h3 className="text-white font-semibold text-sm mb-4">{col.title}</h3>
               <ul className="space-y-2">
                 {col.links.map((link) => (
                   <li key={link.l}>
                     <button
                       onClick={() => onNavigate(link.p)}
-                      className="text-gray-400 hover:text-accent text-sm transition-colors"
+                      className="text-gray-200 hover:text-accent text-sm transition-colors"
                     >
                       {link.l}
                     </button>
@@ -65,7 +65,7 @@ export default function Footer({ onNavigate }: FooterProps) {
         </div>
 
         <div className="border-t border-primary-700 mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-gray-500 text-xs">
+          <p className="text-gray-300 text-xs">
             © 2026 ÉpítőTudás. Minden jog fenntartva.
           </p>
           <div className="flex flex-wrap items-center gap-4">
@@ -79,7 +79,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               <button
                 key={item.page}
                 onClick={() => onNavigate(item.page)}
-                className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
+                className="text-gray-300 hover:text-white text-xs transition-colors"
               >
                 {item.label}
               </button>
