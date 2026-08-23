@@ -14,21 +14,27 @@ export interface PdfCoverResult {
 }
 
 /**
- * Normalizes cloud storage URLs (Google Drive, Dropbox, OneDrive) to direct download links.
+ * Normalizes cloud storage URLs (Google Drive, Dropbox) AND encodes non-ASCII characters (e.g. Hungarian accents ö, ő, á, é, í, ó, ú, ü, ű).
  */
 export function normalizePdfUrl(urlStr: string): string {
+  if (!urlStr) return '';
   let url = urlStr.trim();
 
   // Convert Google Drive view URL to direct download URL
   const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
   if (driveMatch && driveMatch[1]) {
-    return `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+    url = `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
   }
 
   // Convert Dropbox share URL dl=0 to dl=1
   if (url.includes('dropbox.com') && url.includes('dl=0')) {
-    return url.replace('dl=0', 'dl=1');
+    url = url.replace('dl=0', 'dl=1');
   }
+
+  // Safely encode non-ASCII characters in URL paths (e.g. Wienerberger tetőfedő kisokos)
+  try {
+    url = encodeURI(decodeURI(url));
+  } catch {}
 
   return url;
 }
@@ -41,13 +47,14 @@ export function isValidPdfUrl(urlStr: string): { valid: boolean; error?: string 
     return { valid: false, error: 'Az előnézeti / letöltési URL nem érvényes.' };
   }
 
-  const trimmed = urlStr.trim();
-  if (!/^https?:\/\//i.test(trimmed)) {
+  const normalized = normalizePdfUrl(urlStr);
+
+  if (!/^https?:\/\//i.test(normalized)) {
     return { valid: false, error: 'Az előnézeti / letöltési URL nem érvényes.' };
   }
 
   try {
-    const parsed = new URL(trimmed);
+    const parsed = new URL(normalized);
     const host = parsed.hostname.toLowerCase();
 
     // SSRF & Local IP Blocking
@@ -73,14 +80,12 @@ export function isValidPdfUrl(urlStr: string): { valid: boolean; error?: string 
 /**
  * Multi-stage fetch for PDF ArrayBuffer with CORS proxy fallbacks.
  */
-async function fetchPdfArrayBuffer(cleanUrl: string): Promise<ArrayBuffer | null> {
-  const normalized = normalizePdfUrl(cleanUrl);
-
+async function fetchPdfArrayBuffer(normalizedUrl: string): Promise<ArrayBuffer | null> {
   // Strategy 1: Direct fetch
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
-    const response = await fetch(normalized, {
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(normalizedUrl, {
       signal: controller.signal,
       headers: { Accept: 'application/pdf,application/octet-stream,*/*' },
     });
@@ -97,9 +102,9 @@ async function fetchPdfArrayBuffer(cleanUrl: string): Promise<ArrayBuffer | null
 
   // Strategy 2: CORS Proxy 1 (corsproxy.io)
   try {
-    const proxy1 = `https://corsproxy.io/?${encodeURIComponent(normalized)}`;
+    const proxy1 = `https://corsproxy.io/?${normalizedUrl}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(proxy1, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (response.ok) {
@@ -114,9 +119,9 @@ async function fetchPdfArrayBuffer(cleanUrl: string): Promise<ArrayBuffer | null
 
   // Strategy 3: CORS Proxy 2 (allorigins)
   try {
-    const proxy2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(normalized)}`;
+    const proxy2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(normalizedUrl)}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(proxy2, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (response.ok) {
@@ -131,9 +136,9 @@ async function fetchPdfArrayBuffer(cleanUrl: string): Promise<ArrayBuffer | null
 
   // Strategy 4: CORS Proxy 3 (codetabs)
   try {
-    const proxy3 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(normalized)}`;
+    const proxy3 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(normalizedUrl)}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(proxy3, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (response.ok) {
@@ -280,7 +285,7 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
     }
 
     // 5. Fallback: try loading as an Image (e.g. PNG / JPG link)
-    const imageCover = await tryRenderAsImage(cleanUrl);
+    const imageCover = await tryRenderAsImage(normalizedUrl);
     if (imageCover) {
       return {
         success: true,
