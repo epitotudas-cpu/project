@@ -191,13 +191,13 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <Library size={13} /> Digitális Építőipari Könyvtár
+                <Library size={13} /> Digitális Építőipari Könyvtár &amp; Szakkönyvek
               </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Szakmai Könyvek
+                Szakmai Könyvek &amp; Digitális Kiadványok
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Építőipari szakkönyvek, kézikönyvek és tananyagok egy helyen.
+                Akkreditált szakkönyvek, mérnöki kézikönyvek, Eurocode szabványismertetők és letölthető kivitelezési segédletek szakembereknek és tanulóknak.
               </p>
             </div>
           </div>
