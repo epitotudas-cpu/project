@@ -12,9 +12,27 @@ interface BookCoverImageProps {
 export default function BookCoverImage({ book, className = '', size = 'md', onClick }: BookCoverImageProps) {
   const [imageError, setImageError] = useState(false);
 
-  const coverSrc = book.coverImageUpload || book.coverImageUrl || book.coverImage;
-  const altText = book.coverImageAlt || `${book.title} borítója`;
+  // Priority Rule:
+  // 1. Generated from preview PDF
+  // 2. Manual upload (base64)
+  // 3. External coverImageUrl / coverImage
+  // 4. Fallback generated cover
+  let coverSrc = '';
+  const da = book.digitalAccess;
 
+  const generatedUrl = book.generatedCoverImageUrl || da?.generatedCoverImageUrl;
+  const uploadUrl = book.coverImageUpload;
+  const externalUrl = book.coverImageUrl || book.coverImage;
+
+  if (generatedUrl && generatedUrl.trim()) {
+    coverSrc = generatedUrl.trim();
+  } else if (uploadUrl && uploadUrl.trim()) {
+    coverSrc = uploadUrl.trim();
+  } else if (externalUrl && externalUrl.trim()) {
+    coverSrc = externalUrl.trim();
+  }
+
+  const altText = book.coverImageAlt || `${book.title} borítója`;
   const hasValidImageSrc = coverSrc && coverSrc.trim() && coverSrc !== '#' && !imageError;
 
   // Sizes
@@ -77,7 +95,7 @@ export default function BookCoverImage({ book, className = '', size = 'md', onCl
         </div>
       )}
 
-      {/* Book Spine Overlay & Rating Badge */}
+      {/* Book Spine Overlay */}
       <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-black/30 via-transparent to-transparent pointer-events-none" />
       <div className="absolute inset-0 border border-black/10 rounded-xl pointer-events-none" />
     </div>

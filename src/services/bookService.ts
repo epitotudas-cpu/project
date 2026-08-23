@@ -32,6 +32,12 @@ export type CopyrightStatus =
   | 'public_external'
   | 'preview_only';
 
+export type CoverImageSource =
+  | 'generated_from_preview'
+  | 'manual_upload'
+  | 'external_url'
+  | 'fallback';
+
 export interface BookDigitalAccess {
   publicationType: PublicationType;
   accessType: AccessType;
@@ -50,6 +56,13 @@ export interface BookDigitalAccess {
   fileSize?: string;
   fileSizeMb?: number;
   downloadEnabled?: boolean;
+
+  // Generated Cover Fields
+  generatedCoverImageUrl?: string;
+  coverImageSource?: CoverImageSource;
+  generatedCoverAt?: string;
+  generatedCoverError?: string;
+  generatedCoverSourceUrl?: string;
 }
 
 export type OfferFormat =
@@ -99,12 +112,19 @@ export interface BookItem {
   badge: string;
   badgeColor: string;
 
-  // Cover image fields
+  // Cover image fields & sources
   coverImage: string;
   coverImageUrl?: string;
   coverImageUpload?: string;
   coverImageAlt?: string;
   coverImageFallback?: string;
+
+  // Generated Cover fields
+  generatedCoverImageUrl?: string;
+  coverImageSource?: CoverImageSource;
+  generatedCoverAt?: string;
+  generatedCoverError?: string;
+  generatedCoverSourceUrl?: string;
 
   // Legacy & digital fields
   downloadUrl: string;
@@ -169,6 +189,7 @@ export const DEFAULT_BOOKS: BookItem[] = [
     coverImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
     coverImageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
     coverImageAlt: 'Monolitikus Vasbeton Szerkezetek könyv borítója',
+    coverImageSource: 'external_url',
     downloadUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
     format: 'Nyomtatott + PDF',
     fileSizeMb: 18.5,
@@ -176,6 +197,7 @@ export const DEFAULT_BOOKS: BookItem[] = [
     fileName: 'Vasbeton_Szerkezetek_Tervezese.pdf',
     digitalAccessType: 'direct_download',
     digitalFileUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+    digitalPreviewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
     digitalLinkLabel: 'PDF Letöltése',
     downloadEnabled: true,
     description:
@@ -199,11 +221,13 @@ export const DEFAULT_BOOKS: BookItem[] = [
       digitalFileUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
       buttonLabel: 'PDF Letöltése',
       digitalLinkLabel: 'PDF Letöltése',
-      previewUrl: 'https://mozilla.github.io/pdf.js/web/viewer.html',
+      previewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+      digitalPreviewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
       accessNote: 'Ingyenesen letölthető mérnöki tananyag.',
       copyrightStatus: 'publisher_permission',
       publisherUrl: 'https://muszakikonyvkiado.hu',
       downloadEnabled: true,
+      coverImageSource: 'external_url',
     },
     storeOffers: [
       {
@@ -241,13 +265,14 @@ export const DEFAULT_BOOKS: BookItem[] = [
     badge: 'Új Kiadás',
     badgeColor: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
     coverImage: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?q=80&w=800&auto=format&fit=crop',
+    coverImageSource: 'external_url',
     downloadUrl: '',
     format: 'E-könyv',
     fileSizeMb: 14.8,
     fileSize: '14.8 MB',
     digitalAccessType: 'online_reading',
     digitalFileUrl: 'https://mozilla.github.io/pdf.js/web/viewer.html',
-    digitalPreviewUrl: 'https://mozilla.github.io/pdf.js/web/viewer.html',
+    digitalPreviewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
     digitalLinkLabel: 'Online olvasás',
     downloadEnabled: false,
     description:
@@ -267,9 +292,11 @@ export const DEFAULT_BOOKS: BookItem[] = [
       digitalUrl: 'https://mozilla.github.io/pdf.js/web/viewer.html',
       buttonLabel: 'Online olvasás',
       digitalLinkLabel: 'Online olvasás',
-      previewUrl: 'https://mozilla.github.io/pdf.js/web/viewer.html',
+      previewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+      digitalPreviewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
       accessNote: 'Böngészőben ingyenesen olvasható szakkönyv.',
       copyrightStatus: 'publisher_permission',
+      coverImageSource: 'external_url',
     },
     storeOffers: [],
   },
@@ -290,6 +317,7 @@ export const DEFAULT_BOOKS: BookItem[] = [
     badge: 'Nyomtatott Kiadás',
     badgeColor: 'bg-red-500/10 text-red-600 border-red-500/30',
     coverImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop',
+    coverImageSource: 'external_url',
     downloadUrl: '',
     format: 'Nyomtatott könyv',
     digitalAccessType: 'none',
@@ -308,6 +336,7 @@ export const DEFAULT_BOOKS: BookItem[] = [
       publicationType: 'nyomtatott',
       accessType: 'none',
       digitalAccessType: 'none',
+      coverImageSource: 'external_url',
     },
     storeOffers: [
       {
@@ -343,14 +372,16 @@ export const DEFAULT_BOOKS: BookItem[] = [
     difficulty: 'haladó',
     badge: 'Generált Borító Teszt',
     badgeColor: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-    coverImage: 'https://invalid-broken-domain-999.com/broken-cover.jpg', // BROKEN COVER URL -> Triggers fallback
+    coverImage: 'https://invalid-broken-domain-999.com/broken-cover.jpg',
     coverImageUrl: 'https://invalid-broken-domain-999.com/broken-cover.jpg',
     coverImageAlt: 'Szárazépítészeti Technológia borítója',
+    coverImageSource: 'fallback',
     downloadUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
     format: 'Nyomtatott + PDF',
     fileSizeMb: 11.5,
     digitalAccessType: 'direct_download',
     digitalFileUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+    digitalPreviewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
     digitalLinkLabel: 'PDF Letöltése',
     downloadEnabled: true,
     description:
@@ -369,10 +400,13 @@ export const DEFAULT_BOOKS: BookItem[] = [
       digitalAccessType: 'direct_download',
       digitalUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
       digitalFileUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+      previewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+      digitalPreviewUrl: 'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
       buttonLabel: 'PDF Letöltése',
       accessNote: 'Hivatalos szakkönyv kiadás PDF-ben.',
       copyrightStatus: 'own_upload',
       downloadEnabled: true,
+      coverImageSource: 'fallback',
     },
     storeOffers: [],
   },
@@ -393,7 +427,8 @@ export const DEFAULT_BOOKS: BookItem[] = [
     badge: 'Hibás Link Teszt',
     badgeColor: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30',
     coverImage: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: 'http://invalid-broken-link-404.example.com/file.pdf', // BROKEN DIGITAL LINK
+    coverImageSource: 'external_url',
+    downloadUrl: 'http://invalid-broken-link-404.example.com/file.pdf',
     format: 'PDF E-könyv',
     fileSizeMb: 21.0,
     digitalAccessType: 'direct_download',
@@ -420,12 +455,13 @@ export const DEFAULT_BOOKS: BookItem[] = [
       accessNote: 'Mérnöki kézikönyv.',
       copyrightStatus: 'publisher_permission',
       downloadEnabled: true,
+      coverImageSource: 'external_url',
     },
     storeOffers: [],
   },
 ];
 
-const STORAGE_KEY = 'epitotudas_books_v4';
+const STORAGE_KEY = 'epitotudas_books_v5';
 const CATEGORIES_STORAGE_KEY = 'epitotudas_book_categories_v2';
 
 const SUPABASE_BOOKS_ID = '00000000-0000-0000-0000-000000000012';
@@ -542,7 +578,7 @@ export function getBooks(): BookItem[] {
           author: b.author || 'ÉpítőTudás',
           description: b.description || '',
           isbn: b.isbn || '',
-          coverImage: b.coverImage || b.coverImageUrl || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
+          coverImage: b.generatedCoverImageUrl || b.coverImageUpload || b.coverImageUrl || b.coverImage || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
           digitalAccess: b.digitalAccess || {
             publicationType: b.publicationType || 'pdf',
             accessType: b.accessType || 'free_download',

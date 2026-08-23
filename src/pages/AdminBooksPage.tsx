@@ -16,6 +16,9 @@ import {
   ShoppingBag,
   Check,
   AlertTriangle,
+  Sparkles,
+  FileImage,
+  Loader2,
 } from 'lucide-react';
 import {
   useBooks,
@@ -30,12 +33,14 @@ import {
   type AccessType,
   type DigitalAccessType,
   type CopyrightStatus,
+  type CoverImageSource,
   type OfferFormat,
   type OfferAvailability,
   type BookDigitalAccess,
   type BookStoreOffer,
 } from '../services/bookService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import { generateCoverFromPdfUrl } from '../services/pdfCoverGenerator';
 
 export default function AdminBooksPage() {
   const books = useBooks();
@@ -73,7 +78,7 @@ export default function AdminBooksPage() {
   const [sampleExcerpt, setSampleExcerpt] = useState('');
   const [rating, setRating] = useState(5.0);
 
-  // Digital Access State
+  // Digital Access & Cover Image State
   const [publicationType, setPublicationType] = useState<PublicationType>('pdf');
   const [accessType, setAccessType] = useState<AccessType>('free_download');
   const [digitalUrl, setDigitalUrl] = useState('');
@@ -82,6 +87,15 @@ export default function AdminBooksPage() {
   const [accessNote, setAccessNote] = useState('');
   const [copyrightStatus, setCopyrightStatus] = useState<CopyrightStatus>('publisher_permission');
   const [publisherUrl, setPublisherUrl] = useState('');
+
+  // Generated Cover State
+  const [generatedCoverImageUrl, setGeneratedCoverImageUrl] = useState<string>('');
+  const [coverImageSource, setCoverImageSource] = useState<CoverImageSource>('external_url');
+  const [generatedCoverAt, setGeneratedCoverAt] = useState<string>('');
+  const [generatedCoverSourceUrl, setGeneratedCoverSourceUrl] = useState<string>('');
+  const [isGeneratingCover, setIsGeneratingCover] = useState<boolean>(false);
+  const [coverGenSuccessMsg, setCoverGenSuccessMsg] = useState<string | null>(null);
+  const [coverGenErrorMsg, setCoverGenErrorMsg] = useState<string | null>(null);
 
   // Store Offers State
   const [storeOffers, setStoreOffers] = useState<BookStoreOffer[]>([]);
@@ -227,6 +241,41 @@ export default function AdminBooksPage() {
     setStoreOffers(next);
   };
 
+  // ════════════════ PDF COVER GENERATOR HANDLERS ════════════════
+  const handleGenerateCoverFromPdf = async () => {
+    if (!previewUrl || !previewUrl.trim() || previewUrl === 'https://') {
+      setCoverGenErrorMsg('Az előnézeti URL nem érvényes.');
+      setCoverGenSuccessMsg(null);
+      return;
+    }
+
+    setIsGeneratingCover(true);
+    setCoverGenErrorMsg(null);
+    setCoverGenSuccessMsg(null);
+
+    const res = await generateCoverFromPdfUrl(previewUrl);
+
+    setIsGeneratingCover(false);
+
+    if (res.success && res.imageUrl) {
+      setGeneratedCoverImageUrl(res.imageUrl);
+      setCoverImageSource('generated_from_preview');
+      setGeneratedCoverAt(res.generatedAt || new Date().toISOString());
+      setGeneratedCoverSourceUrl(res.sourceUrl || previewUrl.trim());
+      setCoverGenSuccessMsg('Borítókép automatikusan létrehozva az előnézet első oldalából.');
+    } else {
+      setCoverGenErrorMsg(res.error || 'A meglévő borítókép változatlan maradt.');
+    }
+  };
+
+  const handleRemoveGeneratedCover = () => {
+    setGeneratedCoverImageUrl('');
+    setCoverImageSource('external_url');
+    setGeneratedCoverSourceUrl('');
+    setCoverGenSuccessMsg(null);
+    setCoverGenErrorMsg(null);
+  };
+
   // ════════════════ BOOK MODAL OPEN & SAVE HANDLERS ════════════════
   const handleOpenAddModal = () => {
     setEditingBook(null);
@@ -257,6 +306,14 @@ export default function AdminBooksPage() {
     setAccessNote('Ingyenesen letölthető kiadvány.');
     setCopyrightStatus('publisher_permission');
     setPublisherUrl('');
+
+    // Generated Cover Reset
+    setGeneratedCoverImageUrl('');
+    setCoverImageSource('external_url');
+    setGeneratedCoverAt('');
+    setGeneratedCoverSourceUrl('');
+    setCoverGenSuccessMsg(null);
+    setCoverGenErrorMsg(null);
 
     // Offers
     setStoreOffers([]);
@@ -294,6 +351,14 @@ export default function AdminBooksPage() {
     setAccessNote(da?.accessNote || '');
     setCopyrightStatus(da?.copyrightStatus || 'publisher_permission');
     setPublisherUrl(da?.publisherUrl || '');
+
+    // Generated Cover
+    setGeneratedCoverImageUrl(book.generatedCoverImageUrl || da?.generatedCoverImageUrl || '');
+    setCoverImageSource(book.coverImageSource || da?.coverImageSource || 'external_url');
+    setGeneratedCoverAt(book.generatedCoverAt || da?.generatedCoverAt || '');
+    setGeneratedCoverSourceUrl(book.generatedCoverSourceUrl || da?.generatedCoverSourceUrl || '');
+    setCoverGenSuccessMsg(null);
+    setCoverGenErrorMsg(null);
 
     // Offers
     setStoreOffers(Array.isArray(book.storeOffers) ? [...book.storeOffers] : []);
@@ -398,6 +463,12 @@ export default function AdminBooksPage() {
       accessNote: accessNote.trim(),
       copyrightStatus,
       publisherUrl: publisherUrl.trim(),
+
+      // Generated Cover Fields
+      generatedCoverImageUrl,
+      coverImageSource,
+      generatedCoverAt,
+      generatedCoverSourceUrl,
     };
 
     if (editingBook) {
@@ -418,6 +489,13 @@ export default function AdminBooksPage() {
               coverImage: coverImage.trim(),
               coverImageUrl: coverImage.trim(),
               coverImageAlt: `${title.trim()} borítója`,
+
+              // Generated Cover Fields
+              generatedCoverImageUrl,
+              coverImageSource,
+              generatedCoverAt,
+              generatedCoverSourceUrl,
+
               description: description.trim(),
               tableOfContents: tocArray,
               sampleExcerpt: sampleExcerpt.trim(),
@@ -450,6 +528,13 @@ export default function AdminBooksPage() {
         coverImage: coverImage.trim() || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
         coverImageUrl: coverImage.trim(),
         coverImageAlt: `${title.trim()} borítója`,
+
+        // Generated Cover Fields
+        generatedCoverImageUrl,
+        coverImageSource,
+        generatedCoverAt,
+        generatedCoverSourceUrl,
+
         downloadUrl: digitalUrl.trim() || '#',
         format: accessType === 'none' ? 'Nyomtatott könyv' : 'Nyomtatott + PDF',
         fileSizeMb: 15.0,
@@ -1142,8 +1227,10 @@ export default function AdminBooksPage() {
                             />
                           </div>
 
-                          <div>
-                            <label className="font-bold text-gray-300 block mb-1">Előnézet / Minta URL (opcionális)</label>
+                          <div className="sm:col-span-2 p-4 bg-[#111115] border border-gray-800 rounded-2xl space-y-3">
+                            <label className="font-bold text-gray-300 block mb-1">
+                              Előnézet / Minta URL <span className="text-gray-500 font-normal">(opcionális PDF hivatkozás)</span>
+                            </label>
                             <input
                               type="text"
                               placeholder="https://kiado.hu/minta.pdf"
@@ -1152,6 +1239,111 @@ export default function AdminBooksPage() {
                               style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
                               className="w-full border rounded-xl px-4 py-2 font-mono text-xs focus:outline-none"
                             />
+
+                            {/* Actions & Auto Generation UI */}
+                            {previewUrl && previewUrl.trim() && /^https?:\/\//i.test(previewUrl.trim()) && (
+                              <div className="pt-2 border-t border-gray-800 space-y-3">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <button
+                                    type="button"
+                                    disabled={isGeneratingCover}
+                                    onClick={handleGenerateCoverFromPdf}
+                                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                                    className="px-4 py-2 text-xs font-black rounded-xl shadow-md hover:opacity-90 transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                  >
+                                    {isGeneratingCover ? (
+                                      <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span>Első oldal renderelése...</span>
+                                      </>
+                                    ) : generatedCoverImageUrl ? (
+                                      <>
+                                        <Sparkles size={14} />
+                                        <span>Borítókép frissítése az első oldalból</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FileImage size={14} />
+                                        <span>Borítókép előállítása az első oldalból</span>
+                                      </>
+                                    )}
+                                  </button>
+
+                                  {generatedCoverImageUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={handleRemoveGeneratedCover}
+                                      className="px-3.5 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-xs font-extrabold rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <Trash2 size={13} />
+                                      <span>Borítókép eltávolítása</span>
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Warning if previewUrl changed after generation */}
+                                {generatedCoverSourceUrl && previewUrl.trim() !== generatedCoverSourceUrl && (
+                                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-semibold flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <AlertTriangle size={15} className="shrink-0" />
+                                      <span>Az előnézeti URL megváltozott, a meglévő automatikus borítókép elavult lehet.</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={handleGenerateCoverFromPdf}
+                                      className="px-2.5 py-1 bg-amber-500 text-black font-extrabold text-[11px] rounded-lg shrink-0 hover:bg-amber-400 cursor-pointer"
+                                    >
+                                      Újragenerálás
+                                    </button>
+                                  </div>
+                                )}
+
+                                {/* Success Notification */}
+                                {coverGenSuccessMsg && (
+                                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                                    <CheckCircle2 size={16} />
+                                    <span>{coverGenSuccessMsg}</span>
+                                  </div>
+                                )}
+
+                                {/* Error Notification */}
+                                {coverGenErrorMsg && (
+                                  <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-xs font-bold space-y-1 animate-in fade-in">
+                                    <div className="flex items-center gap-2">
+                                      <X size={16} />
+                                      <span>{coverGenErrorMsg}</span>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 italic">A meglévő borítókép változatlan maradt.</p>
+                                  </div>
+                                )}
+
+                                {/* Live Preview of Generated Cover */}
+                                {generatedCoverImageUrl && (
+                                  <div className="pt-2 flex items-center gap-4 border-t border-gray-800">
+                                    <div className="w-20 aspect-[2/3] rounded-xl overflow-hidden shadow-lg border-2 border-amber-500/60 bg-black shrink-0 relative">
+                                      <img src={generatedCoverImageUrl} alt="Generált borító előnézete" className="w-full h-full object-cover" />
+                                      <div className="absolute top-1 right-1 bg-amber-500 text-black font-black text-[9px] px-1.5 py-0.5 rounded">
+                                        PDF P1
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1 text-xs text-gray-300">
+                                      <div className="font-extrabold text-amber-400 flex items-center gap-1.5">
+                                        <CheckCircle2 size={14} />
+                                        <span>Borítókép automatikusan létrehozva az előnézet első oldalából.</span>
+                                      </div>
+                                      <p className="text-[11px] text-gray-400">
+                                        Ez a generált borító prioritást élvez a kézi és külső borítóképekkel szemben.
+                                      </p>
+                                      {generatedCoverAt && (
+                                        <p className="text-[10px] text-gray-500 font-mono">
+                                          Generálva: {new Date(generatedCoverAt).toLocaleString('hu-HU')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           <div>
