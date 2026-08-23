@@ -27,6 +27,9 @@ import {
   HelpCircle,
   CheckSquare,
   FileSpreadsheet,
+  Paintbrush,
+  Truck,
+  Flame,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { CalculatorInput, safeNum, parseNumberValue } from '../components/CalculatorInput';
@@ -38,7 +41,19 @@ interface CalculationsPageProps {
   onNavigate: (page: string) => void;
 }
 
-type CalculatorTab = 'concrete' | 'masonry' | 'insulation' | 'tiling' | 'drywall' | 'roofing' | 'rafter';
+type CalculatorTab =
+  | 'concrete'
+  | 'masonry'
+  | 'insulation'
+  | 'tiling'
+  | 'drywall'
+  | 'roofing'
+  | 'rafter'
+  | 'cable'
+  | 'paint'
+  | 'paving'
+  | 'earthwork'
+  | 'underfloor';
 
 interface MainCategory {
   id: string;
@@ -111,6 +126,56 @@ const MAIN_CATEGORIES: MainCategory[] = [
     badgeColor: 'text-red-700 bg-red-100 border-red-300',
     bgColor: 'bg-red-50/60 hover:bg-red-50',
     borderColor: 'border-red-200 hover:border-red-400',
+  },
+  {
+    id: 'villamossag',
+    title: '7. VILLAMOSSÁG & ENERGETIKA',
+    subtitle: 'VILLANYSZERELÉS',
+    description: 'Kábel keresztmetszet, feszültségesés, áramfelvétel és biztosítékok.',
+    icon: Zap,
+    badgeColor: 'text-amber-800 bg-amber-100 border-amber-300',
+    bgColor: 'bg-amber-50/60 hover:bg-amber-50',
+    borderColor: 'border-amber-200 hover:border-amber-400',
+  },
+  {
+    id: 'festes',
+    title: '8. FESTÉS & GLETTELÉS',
+    subtitle: 'FINOMBURKOLATOK',
+    description: 'Beltéri és kültéri festék, mélyalapozó és glettanyag zsákszükséglet.',
+    icon: Paintbrush,
+    badgeColor: 'text-sky-800 bg-sky-100 border-sky-300',
+    bgColor: 'bg-sky-50/60 hover:bg-sky-50',
+    borderColor: 'border-sky-200 hover:border-sky-400',
+  },
+  {
+    id: 'terko',
+    title: '9. KERTÉPÍTÉS & TÉRKŐ',
+    subtitle: 'KÜLTÉR',
+    description: 'Térkő felület, szegélykő, ágyazati zúzottkő és besöprőhomok.',
+    icon: Layers,
+    badgeColor: 'text-teal-800 bg-teal-100 border-teal-300',
+    bgColor: 'bg-teal-50/60 hover:bg-teal-50',
+    borderColor: 'border-teal-200 hover:border-teal-400',
+  },
+  {
+    id: 'foldmunka',
+    title: '10. FÖLDMUNKA & TÖMÖRÍTÉS',
+    subtitle: 'ALAPOZÁS',
+    description: 'Kitermelt földtömeg, lazultság, billencs fuvarszám és kavicságyazat.',
+    icon: Truck,
+    badgeColor: 'text-orange-800 bg-orange-100 border-orange-300',
+    bgColor: 'bg-orange-50/60 hover:bg-orange-50',
+    borderColor: 'border-orange-200 hover:border-orange-400',
+  },
+  {
+    id: 'gepeszet',
+    title: '11. ÉPÜLETGÉPÉSZET & PADLÓFŰTÉS',
+    subtitle: 'GÉPÉSZET',
+    description: 'Padlófűtés csőhossz, körelosztás, osztó-gyűjtő és fűtési hőigény.',
+    icon: Flame,
+    badgeColor: 'text-rose-800 bg-rose-100 border-rose-300',
+    bgColor: 'bg-rose-50/60 hover:bg-rose-50',
+    borderColor: 'border-rose-200 hover:border-rose-400',
   },
 ];
 
@@ -864,6 +929,201 @@ const CALCULATION_ITEMS: CalculationItem[] = [
     kapcsolodoSzamitasok: ['Pitagorasz-tétel és derékszög kitűzése', 'Tetőszerkezet felülete és cserépigény', 'Síkidomok területe és kerülete'],
     calculatorTab: 'rafter',
   },
+  {
+    id: 'kabel-keresztmetszet',
+    categoryId: 'villamossag',
+    title: 'Kábel Keresztmetszet és Feszültségesés Számítása',
+    shortDesc: 'Elektromos vezetékek keresztmetszetének, feszültségesésének (ΔU%) és maximális terhelhetőségének kiszámítása.',
+    level: 'Középhaladó',
+    miEz: 'A kábelméretezés a terhelési teljesítmény (kW), a hálózati feszültség (230V/400V) és a kábeltávolság alapján határozza meg a vezeték szükséges keresztmetszetét (mm²), elkerülve a vezeték túlmelegedését és a feszültségesést (max 2.5%).',
+    mireHasznaljuk: 'Családi házak villamos hálózatának méretezéséhez, hőszivattyúk, szaunák, töltők és kerti tápvezetékek kiépítéséhez.',
+    szuksegesAdatok: ['Terhelési teljesítmény (P, kW)', 'Kábelhossz (L, méter)', 'Hálózat (1-fázis 230V vagy 3-fázis 400V)', 'Vezető anyaga (Réz Cu vagy Alumínium Al)'],
+    keplet: 'ΔU = (2 × L × I) / (σ × A) [1-fázis],   ΔU% = (ΔU / U_n) × 100',
+    jelolesek: [
+      { symbol: 'I', name: 'Áramfelvétel (Amper)' },
+      { symbol: 'L', name: 'Kábelhossz egy irányban (m)' },
+      { symbol: 'A', name: 'Keresztmetszet (mm²)' },
+      { symbol: 'σ', name: 'Vezetőképesség (Cu: 56, Al: 35)' },
+    ],
+    lepesek: [
+      'Számítsd ki a névleges áramerősséget: I = P / (U × cos φ).',
+      'Válassz egy kiinduló keresztmetszetet (pl. 2.5 mm²).',
+      'Számítsd ki a feszültségesést (ΔU Volt) és a százalékos értéket (ΔU%).',
+      'Ha ΔU% > 2.5%, válassz egy fokozattal nagyobb keresztmetszetet.',
+    ],
+    gyakorlatiPelda: {
+      title: '3.5 kW-os hőszivattyú táplálása 25 méter távolságra 1-fázisú rézkábellel',
+      steps: [
+        'Áramfelvétel: I = 3500W / (230V × 0.95) = 16.0 A',
+        '2.5 mm² rezénél a feszültségesés: ΔU = (2 × 25m × 16A) / (56 × 2.5) = 5.71 V',
+        'Százalékos feszültségesés: (5.71 / 230) × 100 = 2.48% (MEGFELELT ≤ 2.5%)',
+      ],
+      result: 'Ajánlott vezeték keresztmetszet: 3x2.5 mm² Cu (16A megszakítóval)',
+    },
+    ellenorzes: 'Hosszú kábelszakaszoknál (30 méter felett) mindig ellenőrizd a feszültségesést, mert hiába bírja el a kábel az áramot, az eszköz feszültségingadozást tapasztalhat!',
+    gyakoriHibak: [
+      '1.5 mm²-es vezeték használata 16A-es kismegszakítóhoz (1.5 mm² max 13A-re biztosítható!).',
+      'A cos φ teljesítménytényező elhagyása a motoros/kompresszoros berendezéseknél.',
+    ],
+    gyakorlatiMegjegyzes: 'Gerincvezetékeknél és főelosztóknál célszerű legfeljebb 1% feszültségesésre méretezni.',
+    kapcsolodoSzamitasok: ['Mértékegységek és átváltások', 'Épületgépészet és padlófűtés'],
+    calculatorTab: 'cable',
+  },
+  {
+    id: 'festek-glett-igeny',
+    categoryId: 'festes',
+    title: 'Festék és Glettanyag Szükséglet Számítása',
+    shortDesc: 'Szobák és falfelületek festendő m²-ének, festék literigényének és glettanyag zsákszükségletének pontos meghatározása.',
+    level: 'Alap',
+    miEz: 'A festési anyagszükséglet-számítás a szoba méreteiből (hossz, szélesség, magasság) kiszámítja a nettó falfelületet és a plafont, majd megadja a glettanyag (kg/zsák) és a beltéri falfesték (liter/vödör) mennyiségét.',
+    mireHasznaljuk: 'Lakásfelújítások, tisztasági festések és új építésű falak festési és glettelési anyagrendeléséhez.',
+    szuksegesAdatok: ['Szoba hossza, szélessége, belmagassága (m)', 'Ablakok és ajtók felülete (m²)', 'Festék rétegszám (2 vagy 3 réteg)', 'Glettvastagság (mm)'],
+    keplet: 'A_fal = 2 × (L + W) × H - A_nyílás,   V_festék = (A_összes × n_réteg) / k_kiadó',
+    jelolesek: [
+      { symbol: 'A_fal', name: 'Nettó falfelület (m²)' },
+      { symbol: 'k_kiadó', name: 'Festék kiadóssága (kb. 8-10 m²/liter/réteg)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a négy fal felületét és levonjuk az ablakokat/ajtókat.',
+      'Hozzáadjuk a plafon területét (L × W).',
+      'Megszorozzuk a rétegszámmal és elosztjuk a festék kiadósságával.',
+      'Glettelésnél 1 mm vastagsághoz kb. 1.4 kg/m² szárazanyagot számolunk.',
+    ],
+    gyakorlatiPelda: {
+      title: '5m x 4m-es, 2.7m magas szoba festése (4.5 m² ablak/ajtó levonással, 2 rétegben)',
+      steps: [
+        'Falfelület: 2 × (5 + 4) × 2.7 - 4.5 = 44.1 m²',
+        'Plafon felület: 5 × 4 = 20 m² | Összfelület: 64.1 m²',
+        'Festékigény (8 m²/L kiadósság, 2 réteg + 10% veszteség): (64.1 × 2 / 8) × 1.1 = 17.6 liter',
+        'Glettigény (1.5 mm vastagságban): 64.1 × 1.5 × 1.4 × 1.08 = 145 kg',
+      ],
+      result: 'Rendelendő: 1 db 14L + 1 db 5L vödör falfesték és 6 zsák 25kg-os glettgipsz',
+    },
+    ellenorzes: 'Egy átlagos 20 m² alapterületű szobához kb. 15-18 liter festékre van szükség 2 rétegben.',
+    gyakoriHibak: [
+      'Az alapozó (mélyalapozó) kihagyása új gipszkarton vagy vakolt felületnél (a bevonat foltosodhat és sokat szív fel!).',
+    ],
+    gyakorlatiMegjegyzes: 'Erős színekről fehérre váltásnál 3 réteg falfestékkel érdemes kalkulálni.',
+    kapcsolodoSzamitasok: ['Síkidomok területe és kerülete', 'Gipszkarton tábla és profil szükséglet'],
+    calculatorTab: 'paint',
+  },
+  {
+    id: 'terko-szegelyko',
+    categoryId: 'terko',
+    title: 'Térkő, Szegélykő és Besöprőhomok Számítása',
+    shortDesc: 'Térkő felületek, raklapszámok, kerti szegélykövek, támasztóbeton és fugázó besöprőhomok kiszámítása.',
+    level: 'Középhaladó',
+    miEz: 'A térkő kalkulátor a nettó felület és kerület alapján meghatározza a térkő m²-t (vágási veszteséggel), a szegélykövek darabszámát, az alaptámasztó beton m³-t és a homokágyazat/besöprőhomok tömegét.',
+    mireHasznaljuk: 'Kocsibeállók, teraszok, kerti járdák és udvarok térkövezési anyagkiírásához.',
+    szuksegesAdatok: ['Térkő felület (m²)', 'Kerület / szegélyhossz (m)', 'Térkő vastagság (6 cm gyalogos / 8 cm autós)', 'Fektetési minta (egyenes vagy átlós)'],
+    keplet: 'A_bruttó = A_nettó × (1 + v%),   N_szegély = ⌈ L_kerület / 1.0 ⌉',
+    jelolesek: [
+      { symbol: 'A', name: 'Térkő felület (m²)' },
+      { symbol: 'v%', name: 'Vágási veszteség (egyenes: 5%, átlós: 10%)' },
+    ],
+    lepesek: [
+      'Számítsd ki a nettó térkövezendő felületet.',
+      'Adj hozzá 5% (egyenes) vagy 10% (átlós) vágási veszteséget.',
+      'Számítsd ki a szegélyköveket (1m/db) és a megtámasztó C12/15 betonalapot (kb. 0.05 m³/fm).',
+      'Számítsd ki a 3.5 kg/m² besöprőhomok szükségletet.',
+    ],
+    gyakorlatiPelda: {
+      title: '45 m² udvari kocsibeálló térkövezése 28 méter szegélykővel',
+      steps: [
+        'Bruttó térkő felület (5% veszteséggel): 45 × 1.05 = 47.25 m²',
+        'Térkő raklapszám (kb. 10 m²/raklap): 5 raklap (50 m²)',
+        'Kerti szegélykő (100x20x5 cm): 28 m × 1.05 = 30 db',
+        'Szegélyágyazati C12/15 beton: 28m × 0.05 m³/m × 1.1 = 1.54 m³',
+        'Fugázó besöprőhomok: 45 m² × 3.5 kg/m² = 158 kg',
+      ],
+      result: 'Rendelendő: 50 m² térkő (5 raklap), 30 db szegélykő, 1.55 m³ beton és 160 kg besöprőhomok',
+    },
+    ellenorzes: 'Személyautó beállóhoz legalább 6 cm (teherautóhoz 8 cm) vastag térkövet és 15-20 cm zúzottkő alapot kell használni!',
+    gyakoriHibak: [
+      'A fugázóhomok kihagyása (ha nincs besöpörve a fuga, a térkövek elmozdulnak és letörik a szélük!).',
+    ],
+    gyakorlatiMegjegyzes: 'Térkő besöpréshez kizárólag osztályozott mészmentes kvarchomokot használj a virágzás elkerülésére.',
+    kapcsolodoSzamitasok: ['Földkitermelés és kavicságyazat', 'Sávalap betonszükségletének számítása'],
+    calculatorTab: 'paving',
+  },
+  {
+    id: 'foldkitermeles-kavics',
+    categoryId: 'foldmunka',
+    title: 'Földkitermelés és Kavicságyazat Tömörödés',
+    shortDesc: 'Aknák, árkok munkagödör térfogatának, a kiemelt föld lazultsági szorzójának és a zúzottkő tömörödésnek a számítása.',
+    level: 'Középhaladó',
+    miEz: 'A földmunkakalkulátor a tömör (helyszíni) gödörméretből a lazultsági tényezővel (1.15-1.30x) kiszámítja a szállítandó laza föld köbméterét és a billencs teherautó fuvarszámot, valamint a kavicságyazat tömörödési tömegét (tonna).',
+    mireHasznaljuk: 'Munkagödrök, sávalap árkok, pincék kiásásához és teherhordó zúzottkő ágyazatok méretezéséhez.',
+    szuksegesAdatok: ['Gödör hossza, szélessége, mélysége (m)', 'Talaj típusa (Agyag, Homok, Kavics)', 'Teherautó kapacitása (10 m³/fuvar)', 'Kavicságyazat vastagsága (cm)'],
+    keplet: 'V_laza = V_tömör × f_lazultság,   m_kavics = V_ágyazat × 1.25 × 1.8 tonna/m³',
+    jelolesek: [
+      { symbol: 'V_tömör', name: 'Beásott gödör nettó térfogata (m³)' },
+      { symbol: 'f_lazultság', name: 'Talaj lazultsági szorzó (Agyag: 1.30, Homok: 1.15)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a munkagödör mért térfogatát (L × W × D).',
+      'Megszorozzuk a talajtípus lazultsági szorzójával.',
+      'Kiszámítjuk a 10 m³-es billencs teherautók fordulószámát.',
+      'Zúzottkő ágyazatnál 1.25-ös tömörödési tényezővel és 1.8 t/m³ sűrűséggel számolunk.',
+    ],
+    gyakorlatiPelda: {
+      title: '10m x 8m-es, 1.2m mély munkagödör kiásása agyagtalajban, 20 cm zúzottkő ágyazattal',
+      steps: [
+        'Tömör munkagödör térfogat: 10 × 8 × 1.2 = 96 m³',
+        'Kiemelt laza földtömeg (1.30 szorzóval): 96 × 1.30 = 124.8 m³',
+        'Billencs fuvarszám (10 m³/fuvar): 124.8 / 10 = 12.48 -> 13 fuvar',
+        '20 cm Zúzottkő tömörített térfogata: 10 × 8 × 0.20 = 16 m³',
+        'Szükséges laza zúzottkő tömeg (1.25 tömörödés × 1.8 t/m³): 16 × 1.25 × 1.8 = 36.0 tonna',
+      ],
+      result: 'Kiemelt föld: 125 m³ laza föld (13 teherautó fuvar). Zúzottkőigény: 36 tonna',
+    },
+    ellenorzes: 'Kiemeléskor a föld mindig jelentősen megnő térfogatra (duzzad), ezért a teherautó megrendelésnél mindig a laza köbméterrel számolj!',
+    gyakoriHibak: [
+      'A rézsűzés (dőlt gödörfal) figyelmen kívül hagyása 1.5m-nél mélyebb kiemelésnél.',
+    ],
+    gyakorlatiMegjegyzes: 'A zúzottkő ágyazatot 10-15 cm-es rétegekben, lapvibrátorral kell tömöríteni.',
+    kapcsolodoSzamitasok: ['Sávalap betonszükségletének számítása', 'Térkő és szegélykő'],
+    calculatorTab: 'earthwork',
+  },
+  {
+    id: 'padlofutes-hoigeny',
+    categoryId: 'gepeszet',
+    title: 'Padlófűtés Csőigény és Hőigény Számítás',
+    shortDesc: 'Padlófűtési csőhossz (m), körelosztás, osztó-gyűjtő csonkszám és becsült fűtési hőigény (kW) méretezése.',
+    level: 'Haladó',
+    miEz: 'A padlófűtés-kalkulátor a fűtött alapterület, az épület hőszigeteltségi szintje és a csőtávolság (10/15/20 cm) alapján megadja a PE-RT/Alu-PEX csőigényt, a körök számát és a szükséges fűtési kW teljesítményt.',
+    mireHasznaljuk: 'Új és felújított családi házak padlófűtési rendszereinek gyors méretezéséhez és gépészeti kiírásához.',
+    szuksegesAdatok: ['Fűtött alapterület (m²)', 'Épület szigeteltsége (Korszerű / Átlagos / Régi)', 'Csőtávolság (10 cm vizes helyiség / 15 cm szoba)', 'Max körhossz (90-100 m)'],
+    keplet: 'L_cső = A × k_sűrűség × 1.08,   N_kör = ⌈ L_cső / L_maxkör ⌉',
+    jelolesek: [
+      { symbol: 'k_sűrűség', name: 'Csősűrűség (10 cm: 10 m/m², 15 cm: 6.7 m/m², 20 cm: 5 m/m²)' },
+      { symbol: 'L_maxkör', name: 'Maximális javasolt körhossz (kb. 90-100m)' },
+    ],
+    lepesek: [
+      'Kiszámítjuk a helyiség / lakás fűtési hőigényét (W/m² × m²).',
+      'A megadott csőtávolságból meghatározzuk a csőhosszat 8% gerincvezeték ráhagyással.',
+      'Elosztjuk a maximális körhosszal (90m) a körök számának meghatározásához.',
+      'Kiszámítjuk az esztrich beton szűkségletet (kb. 6.5 cm vastagságban).',
+    ],
+    gyakorlatiPelda: {
+      title: '35 m²-es nappali padlófűtése 15 cm-es csőtávolsággal korszerű épületben',
+      steps: [
+        'Becsült hőigény (55 W/m² korszerű szigeteléssel): 35 × 55 = 1925 W (1.93 kW)',
+        'Összes csőigény (15 cm táv = 6.7 m/m² + 8% gerinc): 35 × 6.7 × 1.08 = 253 méter',
+        'Padlófűtési körök száma (max 90m/kör): 253 / 90 = 2.81 -> 3 kör',
+        'Átlagos körhossz: 253 / 3 = 84.3 méter/kör',
+        'Esztrich betonigény (6.5 cm vastagságban): 35 × 0.065 = 2.28 m³',
+      ],
+      result: 'Rendelendő: 255 m PE-RT 16x2 mm cső, 3-as osztó-gyűjtő, 2.3 m³ esztrich beton',
+    },
+    ellenorzes: 'Soha ne engedj 100 méternél hosszabb fűtési kört, mert a szivattyú ellenállása túlságosan megnő és nem fog átáramlani benne a melegvíz!',
+    gyakoriHibak: [
+      'A peremszigetelő sáv elhagyása a falak mentén (a beton hőtágulása miatt elrepedhet a burkolat!).',
+    ],
+    gyakorlatiMegjegyzes: 'Fürdőszobában és hideg külső falak mentén mindig sűrűbb (10 cm-es) csőfektetést alkalmazz.',
+    kapcsolodoSzamitasok: ['Rétegrendi U-érték', 'Hidegburkolat és csemperagasztó'],
+    calculatorTab: 'underfloor',
+  },
 ];
 
 export default function CalculationsPage({ onNavigate }: CalculationsPageProps) {
@@ -1416,6 +1676,200 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     };
   }, [rSpan, rAngle, rOverhang, rSpacing, rRoofLength]);
 
+  // 8. KÁBEL KERESZTMETSZET STATE & MEMO
+  const [cablePhase, setCablePhase] = useState<'1phase' | '3phase'>('1phase');
+  const [cablePower, setCablePower] = useState<string>('3.5');
+  const [cableLength, setCableLength] = useState<string>('25');
+  const [cableMaterial, setCableMaterial] = useState<'cu' | 'al'>('cu');
+  const [cableCosPhi, setCableCosPhi] = useState<string>('0.95');
+
+  const cableCalc = useMemo(() => {
+    const pKw = safeNum(cablePower);
+    const lenM = safeNum(cableLength);
+    const cosP = safeNum(cableCosPhi) || 0.95;
+    if (pKw <= 0 || lenM <= 0) return { isReady: false, currentA: 0, recommendedGauge: 1.5, deltaV: 0, deltaPercent: 0, isOk: false, gaugeList: [] };
+
+    const powerW = pKw * 1000;
+    const sigma = cableMaterial === 'cu' ? 56 : 35;
+    const vNom = cablePhase === '1phase' ? 230 : 400;
+
+    const currentA = cablePhase === '1phase'
+      ? (powerW / (230 * cosP))
+      : (powerW / (Math.sqrt(3) * 400 * cosP));
+
+    const gauges = [1.5, 2.5, 4, 6, 10, 16, 25, 35];
+    const maxCurrentCu: Record<number, number> = { 1.5: 16, 2.5: 21, 4: 29, 6: 37, 10: 51, 16: 68, 25: 89, 35: 110 };
+    const maxCurrentAl: Record<number, number> = { 1.5: 12, 2.5: 16, 4: 22, 6: 29, 10: 39, 16: 52, 25: 68, 35: 85 };
+
+    const gaugeList = gauges.map((g) => {
+      const dV = cablePhase === '1phase'
+        ? (2 * lenM * currentA) / (sigma * g)
+        : (Math.sqrt(3) * lenM * currentA * cosP) / (sigma * g);
+      const dPct = (dV / vNom) * 100;
+      const maxI = cableMaterial === 'cu' ? maxCurrentCu[g] : maxCurrentAl[g];
+      const isOk = dPct <= 2.5 && currentA <= maxI;
+      return { gauge: g, deltaV: dV, deltaPercent: dPct, maxI, isOk };
+    });
+
+    const recommended = gaugeList.find((gr) => gr.isOk) || gaugeList[gaugeList.length - 1];
+
+    return {
+      isReady: true,
+      currentA: Math.round(currentA * 10) / 10,
+      recommendedGauge: recommended.gauge,
+      deltaV: Math.round(recommended.deltaV * 100) / 100,
+      deltaPercent: Math.round(recommended.deltaPercent * 100) / 100,
+      isOk: recommended.isOk,
+      gaugeList,
+    };
+  }, [cablePhase, cablePower, cableLength, cableMaterial, cableCosPhi]);
+
+  // 9. FESTÉK & GLETT STATE & MEMO
+  const [roomLength, setRoomLength] = useState<string>('5.0');
+  const [roomWidth, setRoomWidth] = useState<string>('4.0');
+  const [roomHeight, setRoomHeight] = useState<string>('2.7');
+  const [openingArea, setOpeningArea] = useState<string>('4.5');
+  const [paintCoats, setPaintCoats] = useState<number>(2);
+  const [paintCoverage, setPaintCoverage] = useState<string>('8.0');
+  const [glettThickness, setGlettThickness] = useState<string>('1.5');
+
+  const paintCalc = useMemo(() => {
+    const l = safeNum(roomLength);
+    const w = safeNum(roomWidth);
+    const h = safeNum(roomHeight);
+    const op = safeNum(openingArea);
+    const cov = safeNum(paintCoverage) || 8;
+    const gTh = safeNum(glettThickness) || 1.5;
+
+    if (l <= 0 || w <= 0 || h <= 0) return { isReady: false, wallArea: 0, totalArea: 0, paintLiters: 0, cans14L: 0, cans5L: 0, cans25L: 0, glettKg: 0, glettBags: 0 };
+
+    const wallArea = Math.max(0, 2 * (l + w) * h - op);
+    const ceilingArea = l * w;
+    const totalArea = wallArea + ceilingArea;
+
+    const paintLitersGross = ((totalArea * paintCoats) / cov) * 1.10;
+    const cans14L = Math.floor(paintLitersGross / 14);
+    const rem14 = paintLitersGross % 14;
+    const cans5L = Math.floor(rem14 / 5);
+    const rem5 = rem14 % 5;
+    const cans25L = Math.ceil(rem5 / 2.5);
+
+    const glettKgGross = totalArea * gTh * 1.4 * 1.08;
+    const glettBags = Math.ceil(glettKgGross / 25);
+
+    return {
+      isReady: true,
+      wallArea: Math.round(wallArea * 10) / 10,
+      totalArea: Math.round(totalArea * 10) / 10,
+      paintLiters: Math.round(paintLitersGross * 10) / 10,
+      cans14L,
+      cans5L,
+      cans25L,
+      glettKg: Math.round(glettKgGross),
+      glettBags,
+    };
+  }, [roomLength, roomWidth, roomHeight, openingArea, paintCoats, paintCoverage, glettThickness]);
+
+  // 10. TÉRKŐ & SZEGÉLYKŐ STATE & MEMO
+  const [pavingArea, setPavingArea] = useState<string>('45');
+  const [pavingPerimeter, setPavingPerimeter] = useState<string>('28');
+  const [pavingThickness, setPavingThickness] = useState<'6cm' | '8cm'>('6cm');
+  const [pavingPattern, setPavingPattern] = useState<'straight' | 'diagonal'>('straight');
+  const [beddingThickness, setBeddingThickness] = useState<string>('4');
+
+  const pavingCalc = useMemo(() => {
+    const area = safeNum(pavingArea);
+    const peri = safeNum(pavingPerimeter);
+    const bedTh = safeNum(beddingThickness) || 4;
+
+    if (area <= 0) return { isReady: false, grossArea: 0, pallets: 0, borderStones: 0, borderConcreteM3: 0, beddingM3: 0, jointSandKg: 0 };
+
+    const wastePct = pavingPattern === 'diagonal' ? 10 : 5;
+    const grossArea = area * (1 + wastePct / 100);
+    const pallets = Math.ceil(grossArea / 10);
+    const borderStones = Math.ceil(peri * 1.05);
+    const borderConcreteM3 = Math.round(peri * 0.05 * 1.10 * 100) / 100;
+    const beddingM3 = Math.round(area * (bedTh / 100) * 1.25 * 10) / 10;
+    const jointSandKg = Math.round(area * 3.5);
+
+    return {
+      isReady: true,
+      grossArea: Math.round(grossArea * 10) / 10,
+      pallets,
+      borderStones,
+      borderConcreteM3,
+      beddingM3,
+      jointSandKg,
+    };
+  }, [pavingArea, pavingPerimeter, pavingThickness, pavingPattern, beddingThickness]);
+
+  // 11. FÖLDMUNKA & TÖMÖRÍTÉS STATE & MEMO
+  const [earthType, setEarthType] = useState<'pit' | 'trench'>('pit');
+  const [earthLength, setEarthLength] = useState<string>('10.0');
+  const [earthWidth, setEarthWidth] = useState<string>('8.0');
+  const [earthDepth, setEarthDepth] = useState<string>('1.2');
+  const [soilType, setSoilType] = useState<'clay' | 'sand' | 'gravel'>('clay');
+  const [gravelBedThickness, setGravelBedThickness] = useState<string>('20');
+
+  const earthCalc = useMemo(() => {
+    const eL = safeNum(earthLength);
+    const eW = safeNum(earthWidth);
+    const eD = safeNum(earthDepth);
+    const gTh = safeNum(gravelBedThickness) || 20;
+
+    if (eL <= 0 || eW <= 0 || eD <= 0) return { isReady: false, bankM3: 0, looseM3: 0, truckLoads: 0, gravelM3: 0, gravelTonnes: 0 };
+
+    const bankM3 = eL * eW * eD;
+    const swell = soilType === 'clay' ? 1.30 : soilType === 'sand' ? 1.15 : 1.20;
+    const looseM3 = bankM3 * swell;
+    const truckLoads = Math.ceil(looseM3 / 10);
+
+    const gravelCompactedM3 = (eL * eW) * (gTh / 100);
+    const gravelLooseM3 = gravelCompactedM3 * 1.25;
+    const gravelTonnes = gravelLooseM3 * 1.8;
+
+    return {
+      isReady: true,
+      bankM3: Math.round(bankM3 * 10) / 10,
+      looseM3: Math.round(looseM3 * 10) / 10,
+      truckLoads,
+      gravelM3: Math.round(gravelLooseM3 * 10) / 10,
+      gravelTonnes: Math.round(gravelTonnes * 10) / 10,
+    };
+  }, [earthType, earthLength, earthWidth, earthDepth, soilType, gravelBedThickness]);
+
+  // 12. PADLÓFŰTÉS STATE & MEMO
+  const [ufArea, setUfArea] = useState<string>('35');
+  const [ufInsulation, setUfInsulation] = useState<'passive' | 'modern' | 'average' | 'old'>('modern');
+  const [ufSpacing, setUfSpacing] = useState<'10cm' | '15cm' | '20cm'>('15cm');
+  const [ufMaxCircuit, setUfMaxCircuit] = useState<string>('90');
+
+  const underfloorCalc = useMemo(() => {
+    const area = safeNum(ufArea);
+    const maxCirc = safeNum(ufMaxCircuit) || 90;
+
+    if (area <= 0) return { isReady: false, heatLossKw: 0, totalPipeM: 0, circuits: 0, avgCircuitM: 0, screedM3: 0 };
+
+    const wPerM2 = ufInsulation === 'passive' ? 35 : ufInsulation === 'modern' ? 55 : ufInsulation === 'average' ? 85 : 120;
+    const heatLossKw = Math.round(((area * wPerM2) / 1000) * 10) / 10;
+
+    const pipeMPerM2 = ufSpacing === '10cm' ? 10 : ufSpacing === '15cm' ? 6.7 : 5;
+    const totalPipeM = Math.round(area * pipeMPerM2 * 1.08);
+
+    const circuits = Math.ceil(totalPipeM / maxCirc);
+    const avgCircuitM = circuits > 0 ? Math.round(totalPipeM / circuits) : 0;
+    const screedM3 = Math.round(area * 0.065 * 10) / 10;
+
+    return {
+      isReady: true,
+      heatLossKw,
+      totalPipeM,
+      circuits,
+      avgCircuitM,
+      screedM3,
+    };
+  }, [ufArea, ufInsulation, ufSpacing, ufMaxCircuit]);
+
   const isCurrentCalcReady = useMemo(() => {
     switch (activeTab) {
       case 'concrete': return concreteCalc.isReady;
@@ -1425,9 +1879,14 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       case 'drywall': return drywallCalc.isReady;
       case 'roofing': return roofingCalc.isReady;
       case 'rafter': return rafterCalc.isReady;
+      case 'cable': return cableCalc.isReady;
+      case 'paint': return paintCalc.isReady;
+      case 'paving': return pavingCalc.isReady;
+      case 'earthwork': return earthCalc.isReady;
+      case 'underfloor': return underfloorCalc.isReady;
       default: return false;
     }
-  }, [activeTab, concreteCalc.isReady, masonryCalc.isReady, insulationCalc.isReady, tilingCalc.isReady, drywallCalc.isReady, roofingCalc.isReady, rafterCalc.isReady]);
+  }, [activeTab, concreteCalc.isReady, masonryCalc.isReady, insulationCalc.isReady, tilingCalc.isReady, drywallCalc.isReady, roofingCalc.isReady, rafterCalc.isReady, cableCalc.isReady, paintCalc.isReady, pavingCalc.isReady, earthCalc.isReady, underfloorCalc.isReady]);
 
   const costEstimate = useMemo(() => {
     let materialNet = 0;
@@ -1445,6 +1904,16 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       materialNet = roofingCalc.actualRoofArea * calcConfig.roofingTilePricePerM2;
     } else if (activeTab === 'rafter' && rafterCalc.isReady) {
       materialNet = rafterCalc.totalLumberVolumeM3 * 185000;
+    } else if (activeTab === 'cable' && cableCalc.isReady) {
+      materialNet = safeNum(cableLength) * 450 + (cableCalc.recommendedGauge * 300);
+    } else if (activeTab === 'paint' && paintCalc.isReady) {
+      materialNet = (paintCalc.paintLiters * 2200) + (paintCalc.glettBags * 4500);
+    } else if (activeTab === 'paving' && pavingCalc.isReady) {
+      materialNet = (pavingCalc.grossArea * 4500) + (pavingCalc.borderStones * 1800) + (pavingCalc.beddingM3 * 8500);
+    } else if (activeTab === 'earthwork' && earthCalc.isReady) {
+      materialNet = (earthCalc.bankM3 * 3500) + (earthCalc.gravelTonnes * 7500);
+    } else if (activeTab === 'underfloor' && underfloorCalc.isReady) {
+      materialNet = (underfloorCalc.totalPipeM * 480) + (underfloorCalc.screedM3 * 35000) + (underfloorCalc.circuits * 25000);
     }
 
     const laborNet = materialNet * (calcConfig.laborCostMultiplier - 1);
@@ -1459,8 +1928,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       vatAmount: Math.round(vatAmount),
       totalGross: Math.round(totalGross),
     };
-  }, [activeTab, concreteCalc, masonryCalc, insulationCalc, tilingCalc, drywallCalc, roofingCalc, rafterCalc, calcConfig]);
-
+  }, [activeTab, concreteCalc, masonryCalc, insulationCalc, tilingCalc, drywallCalc, roofingCalc, rafterCalc, cableCalc, paintCalc, pavingCalc, earthCalc, underfloorCalc, cableLength, calcConfig]);
 
   // --------------------------------------------------------------------------
   // SUMMARY TEXT GENERATOR & COPY ACTION
@@ -1542,6 +2010,36 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
         text += `- Szükséges szarufák száma (${rRoofLength}m tetőhossznál): ${rafterCalc.totalRaftersBothSides} db (mindkét oldal)\n`;
         text += `- Összes rendelendő szarufaanyag: ${rafterCalc.totalLumberMeters} fm (~${rafterCalc.totalLumberVolumeM3} m³ fűrészáru)\n`;
       }
+    } else if (activeTab === 'cable') {
+      text += `Kábel Keresztmetszet & Feszültségesés Kalkulátor\n`;
+      text += `- Rendszer: ${cablePhase === '1phase' ? '1-fázis (230V)' : '3-fázis (400V)'}\n`;
+      text += `- Teljesítmény: ${cablePower} kW | Kábelhossz: ${cableLength} m\n`;
+      text += `- Kiszámított Áramfelvétel: ${cableCalc.currentA} Amper\n`;
+      text += `- Ajánlott Vezeték Keresztmetszet: ${cableCalc.recommendedGauge} mm² (${cableMaterial === 'cu' ? 'Réz Cu' : 'Alumínium Al'})\n`;
+      text += `- Feszültségesés: ${cableCalc.deltaV} V (${cableCalc.deltaPercent}% - ${cableCalc.isOk ? 'MEGFELELT ≤ 2.5%' : 'FIGYELEM: Nagy feszültségesés!'})\n`;
+    } else if (activeTab === 'paint') {
+      text += `Festék & Glettanyag Kalkulátor\n`;
+      text += `- Szoba méretek: ${roomLength}m x ${roomWidth}m x ${roomHeight}m\n`;
+      text += `- Számított Nettó Falfelület: ${paintCalc.wallArea} m² | Teljes felület (plafonnal): ${paintCalc.totalArea} m²\n`;
+      text += `- Festékigény (${paintCoats} rétegben): ${paintCalc.paintLiters} liter (${paintCalc.cans14L}x 14L + ${paintCalc.cans5L}x 5L + ${paintCalc.cans25L}x 2.5L vödör)\n`;
+      text += `- Glettanyag igénylés (${glettThickness} mm vastagságban): ${paintCalc.glettKg} kg (${paintCalc.glettBags} zsák 25kg)\n`;
+    } else if (activeTab === 'paving') {
+      text += `Térkő, Szegélykő & Besöprőhomok Kalkulátor\n`;
+      text += `- Térkövezendő Felület: ${pavingArea} m² | Bruttó szükséglet: ${pavingCalc.grossArea} m² (~${pavingCalc.pallets} raklap)\n`;
+      text += `- Szegélykő igénylés: ${pavingCalc.borderStones} db (${pavingPerimeter} m hosszon)\n`;
+      text += `- Szegélyágyazati C12/15 Beton: ${pavingCalc.borderConcreteM3} m³\n`;
+      text += `- Ágyazati Zúzottkő: ${pavingCalc.beddingM3} m³ | Besöprő Quartzhomok: ${pavingCalc.jointSandKg} kg\n`;
+    } else if (activeTab === 'earthwork') {
+      text += `Földkitermelés & Kavicságyazat Tömörödési Kalkulátor\n`;
+      text += `- Gödör Térfogat (Tömör helyszíni): ${earthCalc.bankM3} m³\n`;
+      text += `- Kiemelt Laza Földtömeg: ${earthCalc.looseM3} m³ (~${earthCalc.truckLoads} teherautó fuvar)\n`;
+      text += `- Tömörített Zúzottkő Ágyazat: ${earthCalc.gravelTonnes} tonna (~${earthCalc.gravelM3} m³ laza kavics)\n`;
+    } else if (activeTab === 'underfloor') {
+      text += `Padlófűtés Csőigény & Hőigény Kalkulátor\n`;
+      text += `- Fűtött Alapterület: ${ufArea} m² | Becsült Hőveszteség: ${underfloorCalc.heatLossKw} kW\n`;
+      text += `- Szükséges PE-RT csőhossz: ${underfloorCalc.totalPipeM} m (${ufSpacing} csőtávolsággal)\n`;
+      text += `- Körök száma (max ${ufMaxCircuit}m/kör): ${underfloorCalc.circuits} kör (átlag ${underfloorCalc.avgCircuitM}m/kör)\n`;
+      text += `- Szükséges Esztrich Beton: ${underfloorCalc.screedM3} m³\n`;
     }
 
     text += `\nGenerálva az ÉpítőTudás Építőipari Számítási Moduljával (${new Date().toLocaleDateString('hu-HU')})`;
@@ -2078,7 +2576,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 <ArrowLeft size={16} /> Vissza a Számítási Tudásbázishoz
               </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-12 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
               {[
                 { id: 'concrete', label: 'Beton & Zsaluzat', icon: <Building size={16} /> },
                 { id: 'masonry', label: 'Falazás & Tégla', icon: <Home size={16} /> },
@@ -2087,6 +2585,11 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 { id: 'drywall', label: 'Gipszkarton', icon: <Maximize2 size={16} /> },
                 { id: 'roofing', label: 'Tető & Cserép', icon: <Home size={16} /> },
                 { id: 'rafter', label: 'Szarufahossz', icon: <Compass size={16} /> },
+                { id: 'cable', label: 'Kábel & Keresztmetszet', icon: <Zap size={16} /> },
+                { id: 'paint', label: 'Festék & Glett', icon: <Paintbrush size={16} /> },
+                { id: 'paving', label: 'Térkő & Szegély', icon: <Layers size={16} /> },
+                { id: 'earthwork', label: 'Földmunka & Kavics', icon: <Truck size={16} /> },
+                { id: 'underfloor', label: 'Padlófűtés & Hőigény', icon: <Flame size={16} /> },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -2601,6 +3104,378 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   </div>
                 )}
 
+                {/* 8. KÁBEL KERESZTMETSZET & FESZÜLTSÉGESÉS TAB */}
+                {activeTab === 'cable' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                          <Zap size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Kábel Keresztmetszet &amp; Feszültségesés</h2>
+                          <p className="text-xs text-gray-500">Méretezés teljesítmény, feszültség és távolság alapján</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Hálózati Rendszer</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => setCablePhase('1phase')}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                              cablePhase === '1phase'
+                                ? 'bg-primary text-white border-primary shadow-sm'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            1-Fázis (230V)
+                          </button>
+                          <button
+                            onClick={() => setCablePhase('3phase')}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                              cablePhase === '3phase'
+                                ? 'bg-primary text-white border-primary shadow-sm'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            3-Fázis (400V)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Vezető Anyaga</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => setCableMaterial('cu')}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                              cableMaterial === 'cu'
+                                ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            Réz (Cu)
+                          </button>
+                          <button
+                            onClick={() => setCableMaterial('al')}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                              cableMaterial === 'al'
+                                ? 'bg-gray-700 text-white border-gray-700 shadow-sm'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            Alumínium (Al)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <CalculatorInput
+                        label="Teljesítmény (kW)"
+                        step="0.5"
+                        value={cablePower}
+                        onChange={setCablePower}
+                        placeholder="pl. 3.5"
+                        helpText="A csatlakoztatni kívánt eszközök összteljesítménye"
+                      />
+                      <CalculatorInput
+                        label="Kábelhossz (m)"
+                        step="1"
+                        value={cableLength}
+                        onChange={setCableLength}
+                        placeholder="pl. 25"
+                        helpText="Az elosztó és a fogyasztó közötti távolság"
+                      />
+                      <CalculatorInput
+                        label="Teljesítménytényező (cos φ)"
+                        step="0.01"
+                        value={cableCosPhi}
+                        onChange={setCableCosPhi}
+                        placeholder="0.95"
+                        helpText="Motoroknál 0.85-0.95, rezisztívnél 1.0"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 9. FESTÉK & GLETT TAB */}
+                {activeTab === 'paint' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-bold">
+                          <Paintbrush size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Festék &amp; Glettanyag Számítás</h2>
+                          <p className="text-xs text-gray-500">Falfelület, festékliter és glettszükséglet</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <CalculatorInput
+                        label="Szoba Hossza (m)"
+                        step="0.1"
+                        value={roomLength}
+                        onChange={setRoomLength}
+                        placeholder="pl. 5.0"
+                      />
+                      <CalculatorInput
+                        label="Szoba Szélessége (m)"
+                        step="0.1"
+                        value={roomWidth}
+                        onChange={setRoomWidth}
+                        placeholder="pl. 4.0"
+                      />
+                      <CalculatorInput
+                        label="Belmagasság (m)"
+                        step="0.1"
+                        value={roomHeight}
+                        onChange={setRoomHeight}
+                        placeholder="pl. 2.7"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <CalculatorInput
+                        label="Nyílászárók Területe (m²)"
+                        step="0.5"
+                        value={openingArea}
+                        onChange={setOpeningArea}
+                        placeholder="pl. 4.5"
+                        helpText="Kivonandó ablakok és ajtók összfelülete"
+                      />
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Festék Rétegszám</label>
+                        <select
+                          value={paintCoats}
+                          onChange={(e) => setPaintCoats(parseInt(e.target.value) || 2)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value={1}>1 Réteg (Frissítő festés)</option>
+                          <option value={2}>2 Réteg (Szokásos fedés)</option>
+                          <option value={3}>3 Réteg (Erős színváltás)</option>
+                        </select>
+                      </div>
+                      <CalculatorInput
+                        label="Glettvastagság (mm)"
+                        step="0.5"
+                        value={glettThickness}
+                        onChange={setGlettThickness}
+                        placeholder="pl. 1.5"
+                        helpText="1.0 - 2.0 mm normál glettelésnél"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 10. TÉRKŐ & SZEGÉLYKŐ TAB */}
+                {activeTab === 'paving' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
+                          <Layers size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Térkő, Szegélykő &amp; Besöprőhomok</h2>
+                          <p className="text-xs text-gray-500">Térkő felület, szegély és ágyazat kiszámítása</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <CalculatorInput
+                        label="Térkövezendő Felület (m²)"
+                        step="1"
+                        value={pavingArea}
+                        onChange={setPavingArea}
+                        placeholder="pl. 45"
+                        helpText="Kocsibeálló, terasz vagy járda területe"
+                      />
+                      <CalculatorInput
+                        label="Szegélykő Hosszúság / Kerület (m)"
+                        step="1"
+                        value={pavingPerimeter}
+                        onChange={setPavingPerimeter}
+                        placeholder="pl. 28"
+                        helpText="Kerti szegélykövek összhossza"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Térkő Vastagság</label>
+                        <select
+                          value={pavingThickness}
+                          onChange={(e) => setPavingThickness(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="6cm">6 cm (Gyalogos / Személyautó)</option>
+                          <option value="8cm">8 cm (Nehéz jármű / Teherautó)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Fektetési Mintázat</label>
+                        <select
+                          value={pavingPattern}
+                          onChange={(e) => setPavingPattern(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="straight">Egyenes / Hálós (5% vágás)</option>
+                          <option value="diagonal">Átlós / Diagonál (10% vágás)</option>
+                        </select>
+                      </div>
+
+                      <CalculatorInput
+                        label="Homokágyazat Vastagság (cm)"
+                        step="1"
+                        value={beddingThickness}
+                        onChange={setBeddingThickness}
+                        placeholder="pl. 4"
+                        helpText="Fektető zúzottkő/homok ágyazat (3-5 cm)"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 11. FÖLDMUNKA & TÖMÖRÍTÉS TAB */}
+                {activeTab === 'earthwork' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold">
+                          <Truck size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Földkitermelés &amp; Tömörítés</h2>
+                          <p className="text-xs text-gray-500">Munkagödör, lazultság és kavicságyazat</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <CalculatorInput
+                        label="Gödör / Árok Hossza (m)"
+                        step="0.5"
+                        value={earthLength}
+                        onChange={setEarthLength}
+                        placeholder="pl. 10.0"
+                      />
+                      <CalculatorInput
+                        label="Gödör Szélessége (m)"
+                        step="0.5"
+                        value={earthWidth}
+                        onChange={setEarthWidth}
+                        placeholder="pl. 8.0"
+                      />
+                      <CalculatorInput
+                        label="Mélység (m)"
+                        step="0.1"
+                        value={earthDepth}
+                        onChange={setEarthDepth}
+                        placeholder="pl. 1.2"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Talaj Típusa (Lazultság)</label>
+                        <select
+                          value={soilType}
+                          onChange={(e) => setSoilType(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="clay">Agyag / Kötött talaj (1.30x lazultság)</option>
+                          <option value="sand">Homok / Szavanna (1.15x lazultság)</option>
+                          <option value="gravel">Kavicsos / Sóderes (1.20x lazultság)</option>
+                        </select>
+                      </div>
+
+                      <CalculatorInput
+                        label="Zúzottkő Ágyazat Vastagság (cm)"
+                        step="5"
+                        value={gravelBedThickness}
+                        onChange={setGravelBedThickness}
+                        placeholder="pl. 20"
+                        helpText="Teherhordó zúzottkő réteg a gödör aljára"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 12. PADLÓFŰTÉS TAB */}
+                {activeTab === 'underfloor' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center font-bold">
+                          <Flame size={20} />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">Padlófűtés Csőigény &amp; Hőigény</h2>
+                          <p className="text-xs text-gray-500">PE-RT csőhossz, körelosztás és fűtési kW</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <CalculatorInput
+                        label="Fűtött Alapterület (m²)"
+                        step="1"
+                        value={ufArea}
+                        onChange={setUfArea}
+                        placeholder="pl. 35"
+                        helpText="A padlófűtéssel ellátandó helyiség mérete"
+                      />
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Épület Hőszigeteltsége</label>
+                        <select
+                          value={ufInsulation}
+                          onChange={(e) => setUfInsulation(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="passive">Passzívház / Újszerű (35 W/m²)</option>
+                          <option value="modern">Korszerű Hőszigetelt (55 W/m²)</option>
+                          <option value="average">Átlagos / Részben szigetelt (85 W/m²)</option>
+                          <option value="old">Szigetelés nélküli régi (120 W/m²)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Csőtávolság (Fektetés)</label>
+                        <select
+                          value={ufSpacing}
+                          onChange={(e) => setUfSpacing(e.target.value as any)}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="10cm">10 cm (Fürdőszoba / Hideg falak)</option>
+                          <option value="15cm">15 cm (Standard Szoba / Nappali)</option>
+                          <option value="20cm">20 cm (Ritkított / Kiegészítő)</option>
+                        </select>
+                      </div>
+
+                      <CalculatorInput
+                        label="Max Körhossz (m)"
+                        step="5"
+                        value={ufMaxCircuit}
+                        onChange={setUfMaxCircuit}
+                        placeholder="pl. 90"
+                        helpText="Ajánlott maximum: 90 - 100 m/kör"
+                      />
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               {/* RIGHT COLUMN: REAL-TIME CALCULATION RESULTS (5 Cols) */}
@@ -2963,6 +3838,187 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         </div>
                       </div>
                     )}
+                  </div>
+                ))}
+
+                {/* 8. CABLE RESULTS */}
+                {activeTab === 'cable' && (!cableCalc.isReady ? (
+                  <div className="flex flex-col items-center justify-center text-center py-10 px-4 space-y-3 bg-white/5 border border-white/10 rounded-2xl">
+                    <Info size={32} className="text-accent opacity-80" />
+                    <h4 className="text-sm font-bold text-white">Add meg az adatokat a számításhoz</h4>
+                    <p className="text-xs text-gray-300 max-w-xs">
+                      Töltsd ki a teljesítmény és kábelhossz mezőket a vezeték méretezéséhez.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 text-xs">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400 font-medium">Ajánlott Keresztmetszet ({cableMaterial === 'cu' ? 'Réz Cu' : 'Alu Al'})</span>
+                        {cableCalc.isOk ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
+                            <CheckCircle2 size={12} /> MEGFELELT (≤ 2.5%)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full border border-red-500/40">
+                            <AlertCircle size={12} /> NAGY FESZÜLTSÉGESÉS
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-3xl font-black text-accent">{cableCalc.recommendedGauge} mm²</div>
+                      <p className="text-[11px] text-gray-300">Számított áramfelvétel: {cableCalc.currentA} Amper</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Feszültségesés (ΔU)</span>
+                        <div className="text-base font-bold text-white">{cableCalc.deltaV} V</div>
+                        <span className="text-[10px] text-gray-400">({cableCalc.deltaPercent}%)</span>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Hálózati Feszültség</span>
+                        <div className="text-base font-bold text-accent">{cablePhase === '1phase' ? '230 V (1F)' : '400 V (3F)'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* 9. PAINT RESULTS */}
+                {activeTab === 'paint' && (!paintCalc.isReady ? (
+                  <div className="flex flex-col items-center justify-center text-center py-10 px-4 space-y-3 bg-white/5 border border-white/10 rounded-2xl">
+                    <Info size={32} className="text-accent opacity-80" />
+                    <h4 className="text-sm font-bold text-white">Add meg az adatokat a számításhoz</h4>
+                    <p className="text-xs text-gray-300 max-w-xs">
+                      Töltsd ki a szoba méreteit a festék- és glettszüskélet kiszámításához.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 text-xs">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-1">
+                      <span className="text-xs text-gray-400 font-medium">Szükséges Festékmennyiség (10% Veszteséggel)</span>
+                      <div className="text-3xl font-black text-accent">{paintCalc.paintLiters} liter</div>
+                      <p className="text-[11px] text-gray-300">Összes festendő felület (plafonnal): {paintCalc.totalArea} m²</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Ajánlott Vödrök</span>
+                        <div className="text-sm font-bold text-white">
+                          {paintCalc.cans14L > 0 && `${paintCalc.cans14L}x 14L `}
+                          {paintCalc.cans5L > 0 && `${paintCalc.cans5L}x 5L `}
+                          {paintCalc.cans25L > 0 && `${paintCalc.cans25L}x 2.5L`}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Glettanyag (25kg zsák)</span>
+                        <div className="text-base font-bold text-accent">{paintCalc.glettBags} zsák</div>
+                        <span className="text-[10px] text-gray-400">({paintCalc.glettKg} kg glett)</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* 10. PAVING RESULTS */}
+                {activeTab === 'paving' && (!pavingCalc.isReady ? (
+                  <div className="flex flex-col items-center justify-center text-center py-10 px-4 space-y-3 bg-white/5 border border-white/10 rounded-2xl">
+                    <Info size={32} className="text-accent opacity-80" />
+                    <h4 className="text-sm font-bold text-white">Add meg az adatokat a számításhoz</h4>
+                    <p className="text-xs text-gray-300 max-w-xs">
+                      Töltsd ki a területet és kerületet a térkő- és szegélyigény kiszámításához.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 text-xs">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-1">
+                      <span className="text-xs text-gray-400 font-medium">Bruttó Térkő Felület (Vágással)</span>
+                      <div className="text-3xl font-black text-accent">{pavingCalc.grossArea} m²</div>
+                      <p className="text-[11px] text-gray-300">Raklapszám: ~{pavingCalc.pallets} raklap | Vágási veszteség: {pavingPattern === 'diagonal' ? '10%' : '5%'}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Kerti Szegélykő</span>
+                        <div className="text-base font-bold text-white">{pavingCalc.borderStones} db</div>
+                        <span className="text-[10px] text-gray-400">(100 cm elemek)</span>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Szegély C12/15 Beton</span>
+                        <div className="text-base font-bold text-accent">{pavingCalc.borderConcreteM3} m³</div>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Ágyazati Zúzottkő</span>
+                        <div className="text-base font-bold text-white">{pavingCalc.beddingM3} m³</div>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Fugázó Homok</span>
+                        <div className="text-base font-bold text-accent">{pavingCalc.jointSandKg} kg</div>
+                        <span className="text-[10px] text-gray-400">(Kvarchomok)</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* 11. EARTHWORK RESULTS */}
+                {activeTab === 'earthwork' && (!earthCalc.isReady ? (
+                  <div className="flex flex-col items-center justify-center text-center py-10 px-4 space-y-3 bg-white/5 border border-white/10 rounded-2xl">
+                    <Info size={32} className="text-accent opacity-80" />
+                    <h4 className="text-sm font-bold text-white">Add meg az adatokat a számításhoz</h4>
+                    <p className="text-xs text-gray-300 max-w-xs">
+                      Töltsd ki a gödör méreteit a földkitermelési és kavicsigény kiszámításához.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 text-xs">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-1">
+                      <span className="text-xs text-gray-400 font-medium">Kiemelt Laza Földtömeg (Lazultsággal)</span>
+                      <div className="text-3xl font-black text-accent">{earthCalc.looseM3} m³</div>
+                      <p className="text-[11px] text-gray-300">Tömör gödör térfogat: {earthCalc.bankM3} m³ | Lazultság: {soilType === 'clay' ? '1.30x' : '1.15x'}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Billencs Teherautó</span>
+                        <div className="text-base font-bold text-white">{earthCalc.truckLoads} fuvar</div>
+                        <span className="text-[10px] text-gray-400">(10 m³/fuvar)</span>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Zúzottkő Ágyazat</span>
+                        <div className="text-base font-bold text-accent">{earthCalc.gravelTonnes} tonna</div>
+                        <span className="text-[10px] text-gray-400">(~{earthCalc.gravelM3} m³)</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* 12. UNDERFLOOR RESULTS */}
+                {activeTab === 'underfloor' && (!underfloorCalc.isReady ? (
+                  <div className="flex flex-col items-center justify-center text-center py-10 px-4 space-y-3 bg-white/5 border border-white/10 rounded-2xl">
+                    <Info size={32} className="text-accent opacity-80" />
+                    <h4 className="text-sm font-bold text-white">Add meg az adatokat a számításhoz</h4>
+                    <p className="text-xs text-gray-300 max-w-xs">
+                      Töltsd ki az alapterületet a padlófűtés csőhossz és fűtési hőigény kiszámításához.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 text-xs">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-1">
+                      <span className="text-xs text-gray-400 font-medium">Szükséges PE-RT / Alu-PEX Csőhossz</span>
+                      <div className="text-3xl font-black text-accent">{underfloorCalc.totalPipeM} méter</div>
+                      <p className="text-[11px] text-gray-300">Becsült hőveszteség: {underfloorCalc.heatLossKw} kW | Fűtött terület: {ufArea} m²</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Körök Száma (Osztó)</span>
+                        <div className="text-base font-bold text-white">{underfloorCalc.circuits} kör</div>
+                        <span className="text-[10px] text-gray-400">(átlag {underfloorCalc.avgCircuitM}m/kör)</span>
+                      </div>
+                      <div className="bg-white/5 p-3 rounded-xl space-y-0.5 border border-white/5">
+                        <span className="text-gray-400">Esztrich Betonigény</span>
+                        <div className="text-base font-bold text-accent">{underfloorCalc.screedM3} m³</div>
+                        <span className="text-[10px] text-gray-400">(6.5 cm vastagságban)</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
 
