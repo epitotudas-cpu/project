@@ -25,6 +25,12 @@ import {
   Trash2,
   ExternalLink,
   X,
+  BookOpen,
+  Globe,
+  ShoppingBag,
+  Eye,
+  Star,
+  BookmarkCheck,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
@@ -33,6 +39,8 @@ import { deleteUser } from '../services/userService';
 import { getSavedItems, removeSavedItem, type SavedItem } from '../services/bookmarkService';
 import { glossaryJsonService, type GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import TermDetailModal from '../components/TermDetailModal';
+import { useBooks, type BookItem } from '../services/bookService';
+import BookCoverImage from '../components/BookCoverImage';
 
 interface ProfilePageProps {
   onNavigate?: (page: string, params?: { articleSlug?: string }) => void;
@@ -115,12 +123,14 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   }, []);
 
   // Mentéseim (Saved Items) State
+  const allBooks = useBooks();
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
-  const [savedFilter, setSavedFilter] = useState<'all' | 'article' | 'glossary'>('all');
+  const [savedFilter, setSavedFilter] = useState<'all' | 'article' | 'glossary' | 'book'>('all');
   const [savedViewMode, setSavedViewMode] = useState<'grid' | 'list'>('grid');
   const [savedSearchQuery, setSavedSearchQuery] = useState('');
   const [selectedSavedTerm, setSelectedSavedTerm] = useState<GlossaryTermFromJson | null>(null);
   const [savedTermModalOpen, setSavedTermModalOpen] = useState(false);
+  const [selectedSavedBook, setSelectedSavedBook] = useState<BookItem | null>(null);
 
   useEffect(() => {
     setSavedItems(getSavedItems(user?.id));
@@ -169,6 +179,36 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         if (onNavigate) {
           onNavigate('glossary');
         }
+      }
+    } else if (item.itemType === 'book') {
+      const foundBook = allBooks.find(
+        (b) => b.id === item.itemId || b.id === item.slug || b.title === item.title
+      );
+      if (foundBook) {
+        setSelectedSavedBook(foundBook);
+      } else {
+        const fallbackBook: BookItem = {
+          id: item.itemId,
+          title: item.title,
+          subtitle: item.subtitle || '',
+          author: item.subtitle || 'Szakmai Szerző',
+          publisher: 'Építőipari Kiadó',
+          year: 2026,
+          pages: 350,
+          isbn: '978-963-16-0000-0',
+          category: 'szerkezet',
+          categoryLabel: 'Szerkezetépítés',
+          coverImage: item.imageUrl || '',
+          coverImageUrl: item.imageUrl || '',
+          downloadUrl: '#',
+          format: 'Nyomtatott + PDF',
+          description: item.description || '',
+          tableOfContents: [],
+          sampleExcerpt: '',
+          rating: 5.0,
+          reviewsCount: 1,
+        };
+        setSelectedSavedBook(fallbackBook);
       }
     }
   };
@@ -661,6 +701,16 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   Összes mentés ({savedItems.length})
                 </button>
                 <button
+                  onClick={() => setSavedFilter('book')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                    savedFilter === 'book'
+                      ? 'bg-amber-500 text-black font-extrabold shadow-sm'
+                      : 'bg-[#142C4E] text-amber-300 border border-amber-500/30 hover:bg-[#1E3A64]'
+                  }`}
+                >
+                  📚 Könyvek ({savedItems.filter((i) => i.itemType === 'book').length})
+                </button>
+                <button
                   onClick={() => setSavedFilter('article')}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                     savedFilter === 'article'
@@ -716,134 +766,275 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 </h3>
                 <p className="text-xs text-gray-400 leading-relaxed">
                   {savedItems.length === 0
-                    ? 'Cikkek és fogalmak böngészése közben a mentés ikonra kattintva eltárolhatod a kedvenceidet a gyors eléréshez.'
+                    ? 'Szakkönyvek, cikkek és fogalmak böngészése közben a mentés ikonra kattintva eltárolhatod a kedvenceidet a gyors eléréshez.'
                     : 'Próbáld meg törölni a keresőt vagy válts másik szűrő fülre.'}
                 </p>
               </div>
               <button
-                onClick={() => onNavigate?.('category')}
-                className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+                onClick={() => onNavigate?.('books')}
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
               >
-                <Search size={14} /> Tudástár böngészése
+                <BookOpen size={14} /> Könyvtár böngészése
               </button>
             </div>
           ) : savedViewMode === 'grid' ? (
             /* CSEMPE (GRID) NÉZET */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredSavedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-[#0C213E]/90 border border-[#1E3A64] hover:border-accent/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition-all group"
-                >
-                  <div className="space-y-3">
-                    {/* Header Badges */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                          item.itemType === 'article'
-                            ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        }`}
-                      >
-                        {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
-                      </span>
-                      {item.subtitle && (
-                        <span className="text-[10px] text-gray-400 font-medium truncate max-w-[150px]">
-                          {item.subtitle}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredSavedItems.map((item) => {
+                if (item.itemType === 'book') {
+                  const matchingBook = allBooks.find((b) => b.id === item.itemId || b.id === item.slug);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleOpenSavedItem(item)}
+                      className="bg-[#0C213E]/90 border border-amber-500/30 hover:border-amber-400 rounded-3xl p-4 flex flex-col justify-between space-y-4 transition-all group cursor-pointer shadow-lg hover:shadow-amber-500/10 relative overflow-hidden"
+                    >
+                      <div className="space-y-3">
+                        {/* Cover Image Header & Badge */}
+                        <div className="relative aspect-[2/3] w-full max-h-60 rounded-2xl overflow-hidden shadow-md bg-black/40 flex items-center justify-center group-hover:scale-[1.02] transition-transform">
+                          <BookCoverImage
+                            book={matchingBook || {
+                              id: item.itemId,
+                              title: item.title,
+                              coverImage: item.imageUrl || '',
+                              coverImageUrl: item.imageUrl || '',
+                              categoryLabel: item.subtitle || 'Szakkönyv',
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-70 group-hover:opacity-50 transition-opacity" />
+                          <span className="absolute top-2 left-2 text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-500 text-black border border-amber-300 shadow-sm flex items-center gap-1">
+                            📚 Könyv / Kiadvány
+                          </span>
+                          <div className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/80 backdrop-blur-xs text-amber-300 text-[10px] font-extrabold rounded-lg flex items-center gap-1 border border-amber-500/30 shadow-md">
+                            <Eye size={12} className="text-amber-400" /> Részletes panel
+                          </div>
+                        </div>
+
+                        {/* Book Metadata */}
+                        <div>
+                          <span className="text-[11px] font-bold text-amber-400 block mb-1">
+                            {item.subtitle || 'Digitális Szakkönyv'}
+                          </span>
+                          <h4 className="text-base font-extrabold text-white group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+                            {item.title}
+                          </h4>
+                          {item.description && (
+                            <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed mt-1.5 font-normal">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions Footer */}
+                      <div className="pt-3 border-t border-[#1E3A64] flex items-center justify-between gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleOpenSavedItem(item)}
+                          className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        >
+                          <BookOpen size={14} />
+                          <span>Részletes panel</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleRemoveSaved(item)}
+                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                          title="Törlés a mentések közül"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleOpenSavedItem(item)}
+                    className="bg-[#0C213E]/90 border border-[#1E3A64] hover:border-accent/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition-all group cursor-pointer"
+                  >
+                    <div className="space-y-3">
+                      {/* Header Badges */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                            item.itemType === 'article'
+                              ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          }`}
+                        >
+                          {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
                         </span>
+                        {item.subtitle && (
+                          <span className="text-[10px] text-gray-400 font-medium truncate max-w-[150px]">
+                            {item.subtitle}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Title */}
+                      <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors line-clamp-2">
+                        {item.title}
+                      </h4>
+
+                      {/* Description Excerpt */}
+                      {item.description && (
+                        <p className="text-xs text-gray-300 line-clamp-3 leading-relaxed">
+                          {item.description}
+                        </p>
                       )}
                     </div>
 
-                    {/* Title */}
-                    <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors line-clamp-2">
-                      {item.title}
-                    </h4>
+                    {/* Footer Action buttons */}
+                    <div className="pt-3 border-t border-[#1E3A64] flex items-center justify-between gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleOpenSavedItem(item)}
+                        className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Megtekintés</span>
+                        <ExternalLink size={13} />
+                      </button>
 
-                    {/* Description Excerpt */}
-                    {item.description && (
-                      <p className="text-xs text-gray-300 line-clamp-3 leading-relaxed">
-                        {item.description}
-                      </p>
-                    )}
+                      <button
+                        onClick={() => handleRemoveSaved(item)}
+                        className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                        title="Törlés a mentések közül"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
-
-                  {/* Footer Action buttons */}
-                  <div className="pt-3 border-t border-[#1E3A64] flex items-center justify-between gap-2 text-xs">
-                    <button
-                      onClick={() => handleOpenSavedItem(item)}
-                      className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>Megtekintés</span>
-                      <ExternalLink size={13} />
-                    </button>
-
-                    <button
-                      onClick={() => handleRemoveSaved(item)}
-                      className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                      title="Törlés a mentések közül"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             /* LISTA (LIST) NÉZET */
             <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl divide-y divide-[#1E3A64] overflow-hidden">
-              {filteredSavedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors"
-                >
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                          item.itemType === 'article'
-                            ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        }`}
-                      >
-                        {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
-                      </span>
-                      {item.subtitle && (
-                        <span className="text-xs text-gray-400 font-medium">
-                          • {item.subtitle}
+              {filteredSavedItems.map((item) => {
+                if (item.itemType === 'book') {
+                  const matchingBook = allBooks.find((b) => b.id === item.itemId || b.id === item.slug);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleOpenSavedItem(item)}
+                      className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {/* Cover Image Thumbnail */}
+                        <div className="w-12 aspect-[2/3] rounded-xl overflow-hidden bg-black shrink-0 border border-amber-500/30 shadow-md">
+                          <BookCoverImage
+                            book={matchingBook || {
+                              id: item.itemId,
+                              title: item.title,
+                              coverImage: item.imageUrl || '',
+                              coverImageUrl: item.imageUrl || '',
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                              📚 Szakkönyv
+                            </span>
+                            {item.subtitle && (
+                              <span className="text-xs text-gray-400 font-medium">
+                                • {item.subtitle}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors">
+                            {item.title}
+                          </h4>
+
+                          {item.description && (
+                            <p className="text-xs text-gray-300 line-clamp-1 leading-relaxed">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleOpenSavedItem(item)}
+                          className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-extrabold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        >
+                          <BookOpen size={13} />
+                          <span>Részletes panel</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleRemoveSaved(item)}
+                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                          title="Törlés a mentések közül"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleOpenSavedItem(item)}
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors cursor-pointer group"
+                  >
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                            item.itemType === 'article'
+                              ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          }`}
+                        >
+                          {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
                         </span>
+                        {item.subtitle && (
+                          <span className="text-xs text-gray-400 font-medium">
+                            • {item.subtitle}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors">
+                        {item.title}
+                      </h4>
+
+                      {item.description && (
+                        <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">
+                          {item.description}
+                        </p>
                       )}
                     </div>
 
-                    <h4 className="text-base font-bold text-white hover:text-accent transition-colors">
-                      {item.title}
-                    </h4>
+                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleOpenSavedItem(item)}
+                        className="px-3.5 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Megnyitás</span>
+                        <ExternalLink size={13} />
+                      </button>
 
-                    {item.description && (
-                      <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">
-                        {item.description}
-                      </p>
-                    )}
+                      <button
+                        onClick={() => handleRemoveSaved(item)}
+                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                        title="Törlés a mentések közül"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => handleOpenSavedItem(item)}
-                      className="px-3.5 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>Megnyitás</span>
-                      <ExternalLink size={13} />
-                    </button>
-
-                    <button
-                      onClick={() => handleRemoveSaved(item)}
-                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                      title="Törlés a mentések közül"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1449,6 +1640,202 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         }}
         term={selectedSavedTerm}
       />
+
+      {/* Book Detail Modal for Saved Books */}
+      {selectedSavedBook && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white text-gray-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 overflow-hidden flex flex-col relative">
+            {/* Modal Header */}
+            <div className="relative bg-primary text-white p-6 md:p-8 space-y-3">
+              <button
+                onClick={() => setSelectedSavedBook(null)}
+                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-extrabold text-xs rounded-full">
+                  {selectedSavedBook.categoryLabel || 'Szakkönyv'}
+                </span>
+                {selectedSavedBook.badge && (
+                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-xs rounded-full">
+                    {selectedSavedBook.badge}
+                  </span>
+                )}
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-black leading-tight text-white pr-8">
+                {selectedSavedBook.title}
+              </h2>
+              {selectedSavedBook.subtitle && (
+                <p className="text-xs md:text-sm text-gray-300 font-medium">
+                  {selectedSavedBook.subtitle}
+                </p>
+              )}
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Cover Image & Metadata column */}
+                <div className="space-y-4">
+                  <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-lg bg-black relative border-2 border-gray-100">
+                    <BookCoverImage book={selectedSavedBook} className="w-full h-full object-cover" />
+                  </div>
+
+                  <div className="space-y-2 text-xs bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <div className="flex justify-between py-1 border-b border-gray-200">
+                      <span className="text-gray-500 font-semibold">Szerző:</span>
+                      <strong className="text-gray-900 font-bold text-right">{selectedSavedBook.author}</strong>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-200">
+                      <span className="text-gray-500 font-semibold">Kiadó:</span>
+                      <strong className="text-gray-900 font-bold text-right">{selectedSavedBook.publisher} ({selectedSavedBook.year})</strong>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-200">
+                      <span className="text-gray-500 font-semibold">ISBN:</span>
+                      <strong className="font-mono text-gray-900 text-right">{selectedSavedBook.isbn}</strong>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-200">
+                      <span className="text-gray-500 font-semibold">Oldalszám:</span>
+                      <strong className="text-gray-900 text-right">{selectedSavedBook.pages} oldal</strong>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-gray-500 font-semibold">Formátum:</span>
+                      <strong className="text-gray-900 text-right">{selectedSavedBook.format}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Details column */}
+                <div className="md:col-span-2 space-y-6">
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">
+                      Leírás &amp; Áttekintés
+                    </h4>
+                    <p className="text-sm text-gray-700 leading-relaxed font-normal">
+                      {selectedSavedBook.description}
+                    </p>
+                  </div>
+
+                  {/* Table of Contents */}
+                  {selectedSavedBook.tableOfContents && selectedSavedBook.tableOfContents.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">
+                        Tartalomjegyzék
+                      </h4>
+                      <ul className="space-y-1.5 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs text-gray-700">
+                        {selectedSavedBook.tableOfContents.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-amber-500 font-bold">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Digital Access & Download Actions */}
+                  {(selectedSavedBook.digitalFileUrl || selectedSavedBook.digitalPreviewUrl || selectedSavedBook.downloadUrl) && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl space-y-3">
+                      <h4 className="text-xs font-extrabold text-blue-900 uppercase tracking-wider flex items-center gap-2">
+                        <BookOpen size={14} className="text-blue-600" /> Digitális Hozzáférés &amp; Letöltés
+                      </h4>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {(selectedSavedBook.digitalFileUrl || selectedSavedBook.downloadUrl) && (
+                          <a
+                            href={selectedSavedBook.digitalFileUrl || selectedSavedBook.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-2 cursor-pointer"
+                          >
+                            <Download size={14} />
+                            <span>{selectedSavedBook.digitalLinkLabel || 'PDF Kiadvány Letöltése'}</span>
+                          </a>
+                        )}
+                        {selectedSavedBook.digitalPreviewUrl && (
+                          <a
+                            href={selectedSavedBook.digitalPreviewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-900 border border-gray-300 font-extrabold text-xs rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer"
+                          >
+                            <Eye size={14} className="text-blue-600" />
+                            <span>Előnézet Megtekintése</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Store Offers */}
+                  {selectedSavedBook.storeOffers && selectedSavedBook.storeOffers.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                        <ShoppingBag size={14} className="text-amber-500" /> Hol kapható / Vásárlási opciók
+                      </h4>
+                      <div className="space-y-2">
+                        {selectedSavedBook.storeOffers.map((offer) => (
+                          <div key={offer.id} className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-3 text-xs">
+                            <div className="space-y-0.5">
+                              <span className="font-bold text-gray-900 block">{offer.storeName}</span>
+                              <span className="text-[11px] text-gray-500 block">{offer.shippingInfo}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="font-black text-sm text-gray-900">
+                                {offer.price === 0 ? 'Ingyenes' : `${offer.price.toLocaleString('hu-HU')} ${offer.currency}`}
+                              </span>
+                              <a
+                                href={offer.productUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-lg text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>Megnyitás</span>
+                                <ExternalLink size={12} />
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  handleRemoveSaved({
+                    id: `book_${selectedSavedBook.id}`,
+                    itemId: selectedSavedBook.id,
+                    itemType: 'book',
+                    title: selectedSavedBook.title,
+                    savedAt: '',
+                  });
+                  setSelectedSavedBook(null);
+                }}
+                className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 size={14} />
+                <span>Törlés a mentésekből</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedSavedBook(null)}
+                className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                Bezárás
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
