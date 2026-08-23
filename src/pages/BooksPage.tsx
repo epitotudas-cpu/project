@@ -14,6 +14,10 @@ import {
   SlidersHorizontal,
   Bookmark,
   BookmarkCheck,
+  Globe,
+  ShoppingBag,
+  Tag,
+  ExternalLink,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useBooks, useBookCategories, type BookItem } from '../services/bookService';
@@ -671,12 +675,192 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
               </div>
 
               {/* Sample Excerpt */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Minta Részlet a Könyvből</h3>
-                <blockquote className="p-4 bg-amber-500/5 border-l-4 border-accent text-xs italic text-gray-700 rounded-r-2xl leading-relaxed">
-                  "{selectedBook.sampleExcerpt}"
-                </blockquote>
-              </div>
+              {selectedBook.sampleExcerpt && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Minta Részlet a Könyvből</h3>
+                  <blockquote className="p-4 bg-amber-500/5 border-l-4 border-accent text-xs italic text-gray-700 rounded-r-2xl leading-relaxed">
+                    "{selectedBook.sampleExcerpt}"
+                  </blockquote>
+                </div>
+              )}
+
+              {/* ════════════════ DIGITÁLIS ELÉRÉS BLOKK ════════════════ */}
+              {selectedBook.digitalAccess && selectedBook.digitalAccess.accessType !== 'none' && (
+                <div className="bg-gradient-to-br from-primary/5 via-blue-50/50 to-primary/10 border border-primary/20 rounded-3xl p-5 md:p-6 space-y-4 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-primary/10 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2.5 bg-primary text-white rounded-2xl shadow-sm">
+                        <Globe size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                          Digitális Elérés
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                          Töltsd le vagy olvasd online a kiadvány hivatalos digitális változatát.
+                        </p>
+                      </div>
+                    </div>
+
+                    {selectedBook.digitalAccess.copyrightStatus && (
+                      <span className="self-start sm:self-center px-3 py-1 bg-white border border-gray-200 text-gray-700 font-extrabold text-[11px] rounded-full shadow-2xs">
+                        {selectedBook.digitalAccess.copyrightStatus === 'own_upload' && 'Saját / Eredeti kiadás'}
+                        {selectedBook.digitalAccess.copyrightStatus === 'publisher_permission' && 'Kiadói engedéllyel'}
+                        {selectedBook.digitalAccess.copyrightStatus === 'public_external' && 'Nyilvános külső forrás'}
+                        {selectedBook.digitalAccess.copyrightStatus === 'preview_only' && 'Minta / Előnézet'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
+                    <div className="space-y-1 text-xs text-gray-700">
+                      {selectedBook.digitalAccess.accessNote && (
+                        <p className="font-semibold text-gray-800 flex items-center gap-1.5">
+                          <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                          <span>{selectedBook.digitalAccess.accessNote}</span>
+                        </p>
+                      )}
+                      <p className="text-gray-500 text-[11px]">
+                        Kiadvány típusa: <strong className="text-gray-800 uppercase">{selectedBook.digitalAccess.publicationType}</strong>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
+                      {selectedBook.digitalAccess.previewUrl && (
+                        <a
+                          href={selectedBook.digitalAccess.previewUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                        >
+                          <Eye size={14} /> Minta Megtekintése
+                        </a>
+                      )}
+
+                      {selectedBook.digitalAccess.digitalUrl && (
+                        <a
+                          href={selectedBook.digitalAccess.digitalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-5 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                        >
+                          <Download size={15} />
+                          <span>{selectedBook.digitalAccess.buttonLabel || 'Kiadvány Megnyitása'}</span>
+                          <ExternalLink size={13} className="opacity-80" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ════════════════ BESZERZÉSI LEHETŐSÉGEK BLOKK ════════════════ */}
+              {selectedBook.storeOffers && selectedBook.storeOffers.some((o) => o.isActive) && (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                    <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                      <ShoppingBag size={16} className="text-accent" />
+                      Beszerzési Lehetőségek &amp; Bolti Ajánlatok
+                    </h3>
+                    <span className="text-[11px] font-bold text-gray-500">
+                      {selectedBook.storeOffers.filter((o) => o.isActive).length} ajánlat
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {selectedBook.storeOffers
+                      .filter((o) => o.isActive)
+                      .sort((a, b) => (b.isFeaturedOffer ? 1 : 0) - (a.isFeaturedOffer ? 1 : 0))
+                      .map((offer) => (
+                        <div
+                          key={offer.id}
+                          className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                            offer.isFeaturedOffer
+                              ? 'bg-amber-500/5 border-amber-300 shadow-2xs'
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {/* Store details */}
+                          <div className="flex items-start gap-3.5 flex-1">
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center text-primary font-black text-sm">
+                              {offer.storeLogoUrl ? (
+                                <img src={offer.storeLogoUrl} alt={offer.storeName} className="w-full h-full object-cover" />
+                              ) : (
+                                <ShoppingBag size={18} className="text-gray-500" />
+                              )}
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-sm font-extrabold text-gray-900">{offer.storeName}</h4>
+                                
+                                {offer.isPartnerOffer && (
+                                  <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] rounded-full inline-flex items-center gap-1">
+                                    <Tag size={10} /> Partneri ajánlat
+                                  </span>
+                                )}
+
+                                {offer.isFeaturedOffer && (
+                                  <span className="px-2.5 py-0.5 bg-purple-100 text-purple-900 border border-purple-300 font-extrabold text-[10px] rounded-full inline-flex items-center gap-1">
+                                    <Star size={10} className="fill-purple-700" /> Kiemelt
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 text-xs text-gray-600 font-medium flex-wrap">
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-800 font-bold rounded-md text-[11px] uppercase">
+                                  {offer.format}
+                                </span>
+                                <span>•</span>
+                                <span className="text-emerald-700 font-bold">
+                                  {offer.availability === 'in_stock' && 'Raktáron'}
+                                  {offer.availability === 'instant_digital' && 'Azonnali letöltés'}
+                                  {offer.availability === 'preorder' && 'Előrendelhető'}
+                                  {offer.availability === 'limited_stock' && 'Korlátozott készlet'}
+                                  {offer.availability === 'out_of_stock' && 'Elfogyott'}
+                                </span>
+                                {offer.shippingInfo && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-gray-500">{offer.shippingInfo}</span>
+                                  </>
+                                )}
+                              </div>
+
+                              {offer.offerNote && (
+                                <p className="text-[11px] text-gray-500 italic">{offer.offerNote}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Price & Action */}
+                          <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-gray-100">
+                            <div className="text-left md:text-right">
+                              <div className="text-base font-black text-gray-900">
+                                {offer.price.toLocaleString('hu-HU')} {offer.currency || 'Ft'}
+                              </div>
+                              {offer.checkedAt && (
+                                <div className="text-[10px] text-gray-400 font-medium">
+                                  Ellenőrizve: {offer.checkedAt}
+                                </div>
+                              )}
+                            </div>
+
+                            <a
+                              href={offer.productUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <span>Megnézem a boltban</span>
+                              <ExternalLink size={13} />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer Actions */}

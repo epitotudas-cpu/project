@@ -1,6 +1,73 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+export type PublicationType =
+  | 'nyomtatott'
+  | 'pdf'
+  | 'ekonyv'
+  | 'prospektus'
+  | 'katalogus'
+  | 'tananyag'
+  | 'szabvany'
+  | 'egyeb';
+
+export type AccessType =
+  | 'none'
+  | 'free_download'
+  | 'free_online'
+  | 'requires_login'
+  | 'paid_digital'
+  | 'external_link';
+
+export type CopyrightStatus =
+  | 'own_upload'
+  | 'publisher_permission'
+  | 'public_external'
+  | 'preview_only';
+
+export interface BookDigitalAccess {
+  publicationType: PublicationType;
+  accessType: AccessType;
+  digitalUrl?: string;
+  buttonLabel?: string;
+  previewUrl?: string;
+  accessNote?: string;
+  copyrightStatus?: CopyrightStatus;
+  publisherUrl?: string;
+}
+
+export type OfferFormat =
+  | 'nyomtatott'
+  | 'pdf'
+  | 'epub'
+  | 'kindle'
+  | 'audiobook'
+  | 'egyeb';
+
+export type OfferAvailability =
+  | 'in_stock'
+  | 'preorder'
+  | 'limited_stock'
+  | 'out_of_stock'
+  | 'instant_digital';
+
+export interface BookStoreOffer {
+  id: string;
+  storeName: string;
+  storeLogoUrl?: string;
+  productUrl: string;
+  format: OfferFormat;
+  price: number;
+  currency: string;
+  availability: OfferAvailability;
+  shippingInfo?: string;
+  offerNote?: string;
+  isPartnerOffer: boolean;
+  isFeaturedOffer: boolean;
+  checkedAt?: string;
+  isActive: boolean;
+}
+
 export interface BookItem {
   id: string;
   title: string;
@@ -24,6 +91,10 @@ export interface BookItem {
   sampleExcerpt: string;
   rating: number;
   reviewsCount: number;
+
+  // Digital & Purchasing management
+  digitalAccess?: BookDigitalAccess;
+  storeOffers?: BookStoreOffer[];
 }
 
 export interface BookCategory {
@@ -61,7 +132,7 @@ export const DEFAULT_BOOKS: BookItem[] = [
     badge: 'Kiemelt Szakkönyv',
     badgeColor: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
     coverImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
+    downloadUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3',
     format: 'Nyomtatott + PDF',
     fileSizeMb: 18.5,
     description:
@@ -77,6 +148,65 @@ export const DEFAULT_BOOKS: BookItem[] = [
       'A vasbeton szerkezetek tartósságát alapvetően meghatározza a megfelelő betontakarás és a frissbeton utókezelésének minősége. A korai kiszáradás megelőzésére a betonozást követő első 7 napban folyamatos párásítás vagy felületi párazáró filmréteg felvitele kötelező.',
     rating: 4.9,
     reviewsCount: 142,
+    digitalAccess: {
+      publicationType: 'pdf',
+      accessType: 'free_download',
+      digitalUrl: 'https://muszakikonyvkiado.hu/vasbeton-tervezes-szakkonyv.pdf',
+      buttonLabel: 'PDF Letöltése',
+      previewUrl: 'https://muszakikonyvkiado.hu/minta-vasbeton.pdf',
+      accessNote: 'Ingyenesen letölthető a kiadó hivatalos oldaláról.',
+      copyrightStatus: 'publisher_permission',
+      publisherUrl: 'https://muszakikonyvkiado.hu',
+    },
+    storeOffers: [
+      {
+        id: 'offer-1-1',
+        storeName: 'Műszaki Könyvkiadó Hivatalos Bolt',
+        storeLogoUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80',
+        productUrl: 'https://muszakikonyvkiado.hu/konyvek/vasbeton-tervezes',
+        format: 'nyomtatott',
+        price: 8900,
+        currency: 'HUF',
+        availability: 'in_stock',
+        shippingInfo: '1-2 munkanap • Ingyenes szállítás 15.000 Ft felett',
+        offerNote: 'Eredeti nyomdai keménytáblás kiadás',
+        isPartnerOffer: true,
+        isFeaturedOffer: true,
+        checkedAt: '2026-08-23',
+        isActive: true,
+      },
+      {
+        id: 'offer-1-2',
+        storeName: 'Libri Könyváruház',
+        storeLogoUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=100&auto=format&fit=crop&q=80',
+        productUrl: 'https://www.libri.hu/konyv/monolitikus-vasbeton-szerkezetek.html',
+        format: 'nyomtatott',
+        price: 9490,
+        currency: 'HUF',
+        availability: 'in_stock',
+        shippingInfo: 'Futárszállítás 990 Ft',
+        isPartnerOffer: false,
+        isFeaturedOffer: false,
+        checkedAt: '2026-08-23',
+        isActive: true,
+      },
+      {
+        id: 'offer-1-3',
+        storeName: 'Bookline Digitális Könyvesbolt',
+        storeLogoUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=100&auto=format&fit=crop&q=80',
+        productUrl: 'https://bookline.hu/product/home.action?id=89123',
+        format: 'pdf',
+        price: 5490,
+        currency: 'HUF',
+        availability: 'instant_digital',
+        shippingInfo: 'Azonnali letöltés e-mailben',
+        offerNote: 'Vízjellel ellátott PDF változat',
+        isPartnerOffer: true,
+        isFeaturedOffer: false,
+        checkedAt: '2026-08-23',
+        isActive: true,
+      },
+    ],
   },
   {
     id: 'book-2',
@@ -108,6 +238,33 @@ export const DEFAULT_BOOKS: BookItem[] = [
       'A PIR keményhab szigetelések lambda értéke (0,022 W/mK) lényegesen kedvezőbb a hagyományos EPS lapokénál, így lényegesen vékonyabb rétegvastagsággal teljesíthető a 7/2006. TNM rendelet követelményértéke.',
     rating: 4.8,
     reviewsCount: 110,
+    digitalAccess: {
+      publicationType: 'ekonyv',
+      accessType: 'paid_digital',
+      digitalUrl: 'https://epitesugyikiado.hu/ekonyv/epitoanyagok-2025',
+      buttonLabel: 'E-könyv Megvásárlása',
+      previewUrl: 'https://epitesugyikiado.hu/minta/epitoanyagok-2025.pdf',
+      accessNote: 'Kiadói felületen vásárolható meg és érhető el.',
+      copyrightStatus: 'own_upload',
+      publisherUrl: 'https://epitesugyikiado.hu',
+    },
+    storeOffers: [
+      {
+        id: 'offer-2-1',
+        storeName: 'Építésügyi Tudományos Kiadó webáruház',
+        storeLogoUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80',
+        productUrl: 'https://epitesugyikiado.hu/konyvek/epitoanyagok-handbook',
+        format: 'pdf',
+        price: 6490,
+        currency: 'HUF',
+        availability: 'instant_digital',
+        shippingInfo: 'Azonnali letöltés vásárlás után',
+        isPartnerOffer: true,
+        isFeaturedOffer: true,
+        checkedAt: '2026-08-23',
+        isActive: true,
+      },
+    ],
   },
   {
     id: 'book-3',
@@ -139,6 +296,31 @@ export const DEFAULT_BOOKS: BookItem[] = [
       'A hőszivattyús rendszerek hatásfoka (COP) nagyban függ a választott hőlépcsőtől. Alacsony hőmérsékletű felületfűtésekkel (35/30°C) érhető el a legmagasabb szezonszintű jósági tényező (SCOP).',
     rating: 4.8,
     reviewsCount: 98,
+    digitalAccess: {
+      publicationType: 'tananyag',
+      accessType: 'requires_login',
+      digitalUrl: 'https://epitotudas.hu/tananyagok/epuletgepeszet-kne',
+      buttonLabel: 'Tananyag Megnyitása',
+      accessNote: 'Ingyenesen hozzáférhető regisztrált szakmai felhasználóink számára.',
+      copyrightStatus: 'own_upload',
+    },
+    storeOffers: [
+      {
+        id: 'offer-3-1',
+        storeName: 'Gépész Mesterkönyvesbolt',
+        storeLogoUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80',
+        productUrl: 'https://gepeszmester.hu/korszeru-epuletgepeszet',
+        format: 'nyomtatott',
+        price: 7990,
+        currency: 'HUF',
+        availability: 'in_stock',
+        shippingInfo: 'Raktáron, 24 órás futárszolgálat',
+        isPartnerOffer: true,
+        isFeaturedOffer: true,
+        checkedAt: '2026-08-23',
+        isActive: true,
+      },
+    ],
   },
   {
     id: 'book-4',
@@ -170,132 +352,20 @@ export const DEFAULT_BOOKS: BookItem[] = [
       '1,25 méternél mélyebb munkagödör vagy árok esetén a függőleges földfal dúcolása vagy a biztonságos rézsűhordás kialakítása jogszabályi kötelezettség.',
     rating: 4.7,
     reviewsCount: 65,
-  },
-  {
-    id: 'book-5',
-    title: 'Szárazépítészeti Technológia és Gipszkartonozási Útmutató',
-    subtitle: 'W112 válaszfalak, CD/UD álmennyezetek és tűzgátló szerkezetek építése',
-    author: 'Molnár Tibor szárazépítő mester',
-    publisher: 'Műszaki Kiadó',
-    year: 2025,
-    pages: 280,
-    isbn: '978-963-16-5540-1',
-    category: 'technologia',
-    categoryLabel: 'Technológia és kivitelezés',
-    difficulty: 'haladó',
-    badge: 'Gyakorlati Útmutató',
-    badgeColor: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'Nyomtatott + PDF',
-    fileSizeMb: 11.5,
-    description:
-      'A professzionális gipszkartonozás és válaszfalszerelés teljes technológiai leírása. Profilvázak méretezése (CW50/75/100), akusztikai szigetelőszalagok elhelyezése, ajtónyílások L-kivágása és Q1-Q4 felületi minőségi szintek elérése.',
-    tableOfContents: [
-      '1. Fejezet: UW és CW acélprofil vázszerkezetek rögzítési szabályai',
-      '2. Fejezet: Normál (RB), impregnált (RBI) és tűzgátló (RF) lapok beépítése',
-      '3. Fejezet: Hézagolási technológiák, üvegszálas és papír hézagerősítő szalagok',
-      '4. Fejezet: Áltmennyezeti függesztőelemek teherbírása és akusztikai csillapítás',
-    ],
-    sampleExcerpt:
-      'Az UW padlóprofil és a csatlakozó betonfelület közé helyezett szivacscsík elhagyása esetén a padló rezgései akadálytalanul átterjednek a válaszfalra, lerontva a léghanggátlást.',
-    rating: 4.9,
-    reviewsCount: 88,
-  },
-  {
-    id: 'book-6',
-    title: 'Eurocode Szabványok és Mérnöki Előírások Gyakorlata',
-    subtitle: 'MSZ EN 1990 - 1999 méretezési szabványcsalád alkalmazási kézikönyve',
-    author: 'Dr. Horváth Péter egyetemi docens',
-    publisher: 'Akadémiai Kiadó',
-    year: 2026,
-    pages: 490,
-    isbn: '978-963-05-9988-2',
-    category: 'szabvanyok',
-    categoryLabel: 'Szabványok és előírások',
-    difficulty: 'mester',
-    badge: 'Mérnöki Kézikönyv',
-    badgeColor: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'PDF E-könyv',
-    fileSizeMb: 21.0,
-    description:
-      'Az Eurocode 0 (A tervezés alapjai), Eurocode 1 (Tehek), Eurocode 2 (Betonszerkezetek) és Eurocode 6 (Falazott szerkezetek) hazai nemzeti mellékleteinek gyakorlati méretezési példái és szoftveres határellenőrzései.',
-    tableOfContents: [
-      '1. Fejezet: Teherkombinációk és parciális tényezők az MSZ EN 1990 szerint',
-      '2. Fejezet: Hó- és szélterhek méretezése magyarországi zónatérképek alapján',
-      '3. Fejezet: Vasbeton gerendák és lemezek teherbírási (ULS) és használhatósági (SLS) határellenőrzése',
-    ],
-    sampleExcerpt:
-      'A használhatósági határállapotok (SLS) vizsgálatánál a lehajlási és repedéstágassági határértékek betartása elengedhetetlen a szerkezet esztétikai és tartóssági követelményeinek teljesítéséhez.',
-    rating: 5.0,
-    reviewsCount: 74,
-  },
-  {
-    id: 'book-7',
-    title: 'Építőipari Szakmaalapok & Falazási Mesterfogások',
-    subtitle: 'Hagyományos és korszerű falazási technológiák kezdő és haladó szakembereknek',
-    author: 'Varga József mesteroktató',
-    publisher: 'Építész Céh Kiadó',
-    year: 2024,
-    pages: 210,
-    isbn: '978-963-12-3344-9',
-    category: 'szakmaalapok',
-    categoryLabel: 'Szakmaalapok',
-    difficulty: 'kezdő',
-    badge: 'Alapképzési Tananyag',
-    badgeColor: 'bg-teal-500/10 text-teal-600 border-teal-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1531834685032-c34bf0d84c77?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'PDF E-könyv',
-    fileSizeMb: 8.7,
-    description:
-      'Átfogó alapozó tankönyv építőipari tanulók és pályakezdő kőművesek számára. Kitűzés, szintezés zsinórállvánnyal, habarcskeverési arányok, téglakötések szabályai (feles kötés, sarokkötések) és habarcsterítés vékonyrétegű habarcsoknál.',
-    tableOfContents: [
-      '1. Fejezet: Építési helyszín kitűzése és optikai szintezés',
-      '2. Fejezet: Falazóhabarcsok keverése és kézi bedolgozása',
-      '3. Fejezet: Téglakötési szabályok és nyílásáthidalók elhelyezése',
-    ],
-    sampleExcerpt:
-      'A falazóelemek függőleges fugáinak eltolási távolsága (kötési hossza) legalább a tégla magasságának 0,4-szerese kell legyen, megakadályozva a függőleges repedések kialakulását.',
-    rating: 4.7,
-    reviewsCount: 52,
-  },
-  {
-    id: 'book-8',
-    title: 'Kőműves & Szárazépítő Mestervizsga Felkészítő Könyv',
-    subtitle: 'Elméleti és gyakorlati vizsgakövetelmények, műszaki rajzok és mintatételek',
-    author: 'Építési Vállalkozók Országos Szövetsége (ÉVOSZ)',
-    publisher: 'ÉVOSZ Szakmai Kiadó',
-    year: 2026,
-    pages: 380,
-    isbn: '978-963-88-2100-5',
-    category: 'vizsga',
-    categoryLabel: 'Vizsgafelkészítők',
-    difficulty: 'mester',
-    badge: 'Mestervizsga 2026',
-    badgeColor: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=800&auto=format&fit=crop',
-    downloadUrl: '#',
-    format: 'Nyomtatott + PDF',
-    fileSizeMb: 16.4,
-    description:
-      'Hivatalos felkészítő kiadvány az ÉVOSZ és a Kamara mestervizsga követelményrendszeréhez. Műszaki rajz olvasási feladatok, költségvetés-készítés és árazás, minőségellenőrzési protokollok, valamint kidolgozott szóbeli tételsorok.',
-    tableOfContents: [
-      '1. Fejezet: Műszaki dokumentáció és kiviteli rajzok komplex értelmezése',
-      '2. Fejezet: Építőipari normagyűjtemény és költségvetés kiírás',
-      '3. Fejezet: Építési hibák felderítése és szakértői véleményezés',
-      '4. Fejezet: Kidolgozott mestervizsga szóbeli tételsor',
-    ],
-    sampleExcerpt:
-      'A mestervizsga gyakorlati részében a jelöltnek nem csupán a szerkezetépítést kell hiba nélkül kiviteleznie, hanem az építési napló vezetését és az átadás-átvételi jegyzőkönyv kiállítását is be kell mutatnia.',
-    rating: 4.9,
-    reviewsCount: 165,
+    digitalAccess: {
+      publicationType: 'szabvany',
+      accessType: 'free_download',
+      digitalUrl: 'https://munkabiztonsag.gov.hu/utmutatok/ducolasi-szabalyzat-2026.pdf',
+      buttonLabel: 'Szabályzat Letöltése (PDF)',
+      accessNote: 'Nyilvános jogszabályi útmutató.',
+      copyrightStatus: 'public_external',
+      publisherUrl: 'https://munkabiztonsag.gov.hu',
+    },
+    storeOffers: [],
   },
 ];
 
-const STORAGE_KEY = 'epitotudas_books_v2';
+const STORAGE_KEY = 'epitotudas_books_v3';
 const CATEGORIES_STORAGE_KEY = 'epitotudas_book_categories_v2';
 
 const SUPABASE_BOOKS_ID = '00000000-0000-0000-0000-000000000012';
@@ -412,6 +482,15 @@ export function getBooks(): BookItem[] {
           author: b.author || 'ÉpítőTudás',
           description: b.description || '',
           isbn: b.isbn || '',
+          digitalAccess: b.digitalAccess || {
+            publicationType: 'pdf',
+            accessType: 'free_download',
+            digitalUrl: b.downloadUrl || '#',
+            buttonLabel: 'PDF Letöltése',
+            accessNote: 'Ingyenesen letölthető kiadvány',
+            copyrightStatus: 'publisher_permission',
+          },
+          storeOffers: Array.isArray(b.storeOffers) ? b.storeOffers : [],
         }));
         if (typeof window !== 'undefined') window.__GLOBAL_BOOKS_DATA__ = sanitized;
         return sanitized;
@@ -433,7 +512,6 @@ export function saveBooks(books: BookItem[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
     window.dispatchEvent(new Event('books-data-changed'));
 
-    // Cloud sync to Supabase categories system row
     void (async () => {
       try {
         await supabase.from('categories').upsert({
