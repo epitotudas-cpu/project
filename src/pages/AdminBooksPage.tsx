@@ -290,26 +290,35 @@ export default function AdminBooksPage() {
   };
 
   // ════════════════ AUTOMATIC PDF PAGE COUNT DETECTOR ════════════════
+  const [isDetectingPages, setIsDetectingPages] = useState(false);
+  const [autoDetectedPagesMsg, setAutoDetectedPagesMsg] = useState<string | null>(null);
+
   useEffect(() => {
     if (!showModal) return;
     const targetUrl = (
       previewUrl && previewUrl.trim() !== 'https://' ? previewUrl.trim() :
-      digitalUrl && digitalUrl.trim() !== 'https://' ? digitalUrl.trim() : ''
+      digitalUrl && digitalUrl.trim() !== 'https://' ? digitalUrl.trim() :
+      coverImage && coverImage.trim() !== 'https://' ? coverImage.trim() : ''
     );
 
     if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) return;
 
+    setIsDetectingPages(true);
     const timer = setTimeout(async () => {
       try {
         const count = await getPdfPageCount(targetUrl);
+        setIsDetectingPages(false);
         if (count && count > 0) {
           setPages(count);
+          setAutoDetectedPagesMsg(`PDF-ből kiolvasva: ${count} oldal`);
         }
-      } catch {}
-    }, 800);
+      } catch {
+        setIsDetectingPages(false);
+      }
+    }, 400);
 
     return () => clearTimeout(timer);
-  }, [previewUrl, digitalUrl, showModal]);
+  }, [previewUrl, digitalUrl, coverImage, showModal]);
 
   // ════════════════ BOOK MODAL OPEN & SAVE HANDLERS ════════════════
   const handleOpenAddModal = () => {
@@ -1107,11 +1116,28 @@ export default function AdminBooksPage() {
                   </div>
 
                   <div>
-                    <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Oldalszám</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block">
+                        Oldalszám
+                      </label>
+                      {isDetectingPages && (
+                        <span className="text-[11px] text-amber-400 flex items-center gap-1">
+                          <Loader2 size={11} className="animate-spin" /> Keresés...
+                        </span>
+                      )}
+                      {!isDetectingPages && autoDetectedPagesMsg && (
+                        <span className="text-[11px] text-emerald-400 font-extrabold flex items-center gap-1">
+                          <CheckCircle2 size={11} /> {autoDetectedPagesMsg}
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="number"
                       value={pages}
-                      onChange={(e) => setPages(Number(e.target.value))}
+                      onChange={(e) => {
+                        setPages(Number(e.target.value));
+                        setAutoDetectedPagesMsg(null);
+                      }}
                       style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
                       className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                     />

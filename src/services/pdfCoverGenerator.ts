@@ -139,7 +139,7 @@ async function fetchPdfArrayBuffer(normalizedUrl: string): Promise<ArrayBuffer |
 }
 
 /**
- * Extracts total page count of a PDF document using ArrayBuffer, pdfjsLib, or header scan.
+ * Extracts total page count of a PDF document using Cloudflare Metadata API, ArrayBuffer, pdfjsLib, or header scan.
  */
 export async function getPdfPageCount(urlStr: string): Promise<number | null> {
   const validation = isValidPdfUrl(urlStr);
@@ -147,8 +147,25 @@ export async function getPdfPageCount(urlStr: string): Promise<number | null> {
 
   const normalizedUrl = normalizePdfUrl(urlStr);
 
+  // Strategy 1: Ultra-fast Cloudflare PDF Metadata JSON (wsrv.nl) - Works even for CORS-restricted large PDFs
   try {
-    // 1. Try reading ArrayBuffer via direct fetch / proxy
+    const wsrvJsonUrl = `https://wsrv.nl/?url=${encodeURIComponent(normalizedUrl)}&output=json`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(wsrvJsonUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data.pages === 'number' && data.pages > 0) {
+        return data.pages;
+      }
+    }
+  } catch (err) {
+    console.warn('wsrv.nl metadata page count fetch failed, trying local fallback...', err);
+  }
+
+  // Strategy 2: Try reading ArrayBuffer via direct fetch / proxy
+  try {
     const arrayBuffer = await fetchPdfArrayBuffer(normalizedUrl);
 
     if (arrayBuffer && arrayBuffer.byteLength > 0) {
@@ -176,7 +193,7 @@ export async function getPdfPageCount(urlStr: string): Promise<number | null> {
       } catch {}
     }
 
-    // 2. Try pdfjs-dist direct URL load
+    // Strategy 3: Try pdfjs-dist direct URL load
     try {
       const loadingTask = pdfjsLib.getDocument({ url: normalizedUrl });
       const pdfDoc = await loadingTask.promise;
