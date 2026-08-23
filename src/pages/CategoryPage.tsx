@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { optimizeImageUrl } from '../utils/imageOptimizer';
 import {
   ChevronRight,
   Clock,
@@ -631,8 +632,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                       <div className="w-full aspect-[16/9] relative overflow-hidden bg-primary flex items-center justify-center">
                         {hasImage ? (
                           <img
-                            src={article.featured_image!}
+                            src={optimizeImageUrl(article.featured_image, 600)}
                             alt={article.title}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out opacity-90 group-hover:opacity-100"
                           />
                         ) : (

@@ -28,6 +28,9 @@ export default function Footer({ onNavigate }: FooterProps) {
               <img
                 src={logoUrl}
                 alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+                width={200}
+                height={40}
+                decoding="async"
                 className="h-10 max-h-11 max-w-[200px] w-auto object-contain shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/logo.png';

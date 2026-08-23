@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { optimizeImageUrl } from '../utils/imageOptimizer';
 import {
   Search,
   Home,
@@ -727,16 +728,20 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                             <>
                               {/* 1. Háttér kiegészítő elmosás */}
                               <img
-                                src={item.image_urls![0]}
+                                src={optimizeImageUrl(item.image_urls![0], 300)}
                                 alt=""
                                 aria-hidden="true"
+                                loading="lazy"
+                                decoding="async"
                                 className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-110 pointer-events-none select-none"
                               />
 
                               {/* 2. Fő kép */}
                               <img
-                                src={item.image_urls![0]}
+                                src={optimizeImageUrl(item.image_urls![0], 600)}
                                 alt={item.term}
+                                loading="lazy"
+                                decoding="async"
                                 className="relative z-10 w-full h-full object-cover object-[center_30%] group-hover:scale-105 transition-transform duration-500 ease-out"
                                 onError={() =>
                                   setImageLoadErrors((prev) => {

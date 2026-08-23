@@ -9,14 +9,11 @@ interface BookCoverImageProps {
   onClick?: () => void;
 }
 
+import { optimizeImageUrl } from '../utils/imageOptimizer';
+
 export default function BookCoverImage({ book, className = '', size = 'md', onClick }: BookCoverImageProps) {
   const [imageError, setImageError] = useState(false);
 
-  // Priority Rule:
-  // 1. Generated from preview PDF
-  // 2. Manual upload (base64)
-  // 3. External coverImageUrl / coverImage
-  // 4. Fallback generated cover
   let coverSrc = '';
   const da = book.digitalAccess;
 
@@ -32,6 +29,7 @@ export default function BookCoverImage({ book, className = '', size = 'md', onCl
     coverSrc = externalUrl.trim();
   }
 
+  const optimizedSrc = optimizeImageUrl(coverSrc, 600);
   const altText = book.coverImageAlt || `${book.title} borítója`;
   const hasValidImageSrc = coverSrc && coverSrc.trim() && coverSrc !== '#' && !imageError;
 
@@ -49,8 +47,9 @@ export default function BookCoverImage({ book, className = '', size = 'md', onCl
     >
       {hasValidImageSrc ? (
         <img
-          src={coverSrc}
+          src={optimizedSrc}
           alt={altText}
+          decoding="async"
           onError={() => setImageError(true)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />

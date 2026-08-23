@@ -16,6 +16,9 @@ export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
       <img
         src={logoUrl}
         alt={`${siteSettings.siteTitle || 'ÉpítőTudás'} logó`}
+        width={200}
+        height={44}
+        decoding="async"
         className={`${s.height} max-w-[220px] w-auto object-contain shrink-0`}
         onError={(e) => {
           (e.target as HTMLImageElement).src = '/logo.png';

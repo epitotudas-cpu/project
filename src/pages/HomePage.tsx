@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { optimizeImageUrl } from '../utils/imageOptimizer';
 import {
   Search,
   TrendingUp,
@@ -173,6 +174,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <img
             src="/hero-bg.jpg"
             alt="Építkezés"
+            loading="eager"
+            fetchPriority="high"
             className="h-full w-full object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-primary/80" />
@@ -303,8 +306,10 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     <div className="h-36 relative bg-gray-900 overflow-hidden flex items-center justify-center">
                       {category.image_url ? (
                         <img
-                          src={category.image_url}
+                          src={optimizeImageUrl(category.image_url, 600)}
                           alt={category.name}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-85"
                           style={{
                             objectFit: (category.image_fit as 'cover' | 'contain' | 'fill') || 'cover',

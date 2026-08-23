@@ -105,6 +105,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
           <img
             src={getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt)}
             alt={`${siteSettings.siteTitle} logó`}
+            width={200}
+            height={40}
+            decoding="async"
             className="h-8 md:h-10 max-h-10 max-w-[220px] w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/logo.png';
