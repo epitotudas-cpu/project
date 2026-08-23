@@ -16,7 +16,7 @@ import {
   BookmarkCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
-import { useBooks, BOOK_CATEGORIES, type BookItem } from '../services/bookService';
+import { useBooks, useBookCategories, type BookItem } from '../services/bookService';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -28,6 +28,7 @@ interface BooksPageProps {
 export default function BooksPage({ onNavigate }: BooksPageProps) {
   const { user } = useAuth();
   const allBooks = useBooks();
+  const categories = useBookCategories();
 
   // State
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -80,7 +81,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
   // Calculate book count per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allBooks.length };
-    BOOK_CATEGORIES.forEach((cat) => {
+    categories.forEach((cat) => {
       if (cat.id !== 'all') {
         const catLabelLower = (cat.label || '').toLowerCase();
         counts[cat.id] = allBooks.filter((b) => {
@@ -92,14 +93,14 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
       }
     });
     return counts;
-  }, [allBooks]);
+  }, [allBooks, categories]);
 
   // Filtered & Sorted books
   const filteredBooks = useMemo(() => {
     let result = allBooks.filter((b) => {
       if (!b) return false;
 
-      const targetCatObj = BOOK_CATEGORIES.find((c) => c.id === selectedCategory);
+      const targetCatObj = categories.find((c) => c.id === selectedCategory);
       const targetCatLabel = (targetCatObj?.label || '').toLowerCase();
       const bCatLabel = (b.categoryLabel || '').toLowerCase();
 
@@ -313,7 +314,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
               
               {selectedCategory !== 'all' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 text-primary-950 font-bold rounded-full">
-                  <span>{BOOK_CATEGORIES.find((c) => c.id === selectedCategory)?.label}</span>
+                  <span>{categories.find((c) => c.id === selectedCategory)?.label}</span>
                   <button onClick={() => setSelectedCategory('all')} className="hover:bg-primary/20 rounded-full p-0.5">
                     <X size={12} />
                   </button>
@@ -356,7 +357,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
               </div>
 
               <nav className="space-y-1.5">
-                {BOOK_CATEGORIES.map((cat) => {
+                {categories.map((cat) => {
                   const isActive = selectedCategory === cat.id;
                   const count = categoryCounts[cat.id] || 0;
 
@@ -553,7 +554,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
             <div className="space-y-2">
               <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Válassz kategóriát</div>
               <div className="space-y-1">
-                {BOOK_CATEGORIES.map((cat) => {
+                {categories.map((cat) => {
                   const isActive = selectedCategory === cat.id;
                   const count = categoryCounts[cat.id] || 0;
 

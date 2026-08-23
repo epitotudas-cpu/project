@@ -8,26 +8,43 @@ import {
   Star,
   RotateCcw,
   CheckCircle2,
+  FolderEdit,
+  ArrowUp,
+  ArrowDown,
+  Layers,
+  X,
 } from 'lucide-react';
 import {
   useBooks,
   saveBooks,
   DEFAULT_BOOKS,
+  useBookCategories,
+  saveBookCategories,
+  DEFAULT_BOOK_CATEGORIES,
   type BookItem,
+  type BookCategory,
 } from '../services/bookService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 export default function AdminBooksPage() {
   const books = useBooks();
+  const categories = useBookCategories();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('A könyvadatbázis módosításai sikeresen elmentve!');
 
-  // Modal State
+  // Book Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingBook, setEditingBook] = useState<BookItem | null>(null);
 
-  // Form State
+  // Category Editor Modal State
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editableCategories, setEditableCategories] = useState<BookCategory[]>([]);
+  const [newCatLabel, setNewCatLabel] = useState('');
+
+  // Book Form State
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -35,7 +52,7 @@ export default function AdminBooksPage() {
   const [year, setYear] = useState(2026);
   const [pages, setPages] = useState(300);
   const [isbn, setIsbn] = useState('');
-  const [category, setCategory] = useState<BookItem['category']>('szerkezet');
+  const [category, setCategory] = useState<string>('szerkezet');
   const [badge, setBadge] = useState('Új Szakkönyv');
   const [coverImage, setCoverImage] = useState('');
   const [description, setDescription] = useState('');
@@ -53,6 +70,87 @@ export default function AdminBooksPage() {
     return matchCat && matchQuery;
   });
 
+  // ════════════════ CATEGORY EDITOR HANDLERS ════════════════
+  const handleOpenCategoryModal = () => {
+    setEditableCategories([...categories]);
+    setNewCatLabel('');
+    setShowCategoryModal(true);
+  };
+
+  const handleMoveCategory = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index <= 1) return; // index 0 is 'all'
+    if (direction === 'down' && index >= editableCategories.length - 1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const next = [...editableCategories];
+    const temp = next[index];
+    next[index] = next[targetIndex];
+    next[targetIndex] = temp;
+    setEditableCategories(next);
+  };
+
+  const handleCategoryLabelChange = (id: string, newLabel: string) => {
+    setEditableCategories(
+      editableCategories.map((c) => (c.id === id ? { ...c, label: newLabel } : c))
+    );
+  };
+
+  const handleDeleteCategory = (catId: string) => {
+    if (catId === 'all') return;
+    const catObj = editableCategories.find((c) => c.id === catId);
+    const bookCount = books.filter((b) => b.category === catId).length;
+
+    if (bookCount > 0) {
+      if (
+        !window.confirm(
+          `A(z) "${catObj?.label}" kategóriában jelenleg ${bookCount} szakkönyv található. Biztosan törölni szeretnéd ezt a kategóriát?`
+        )
+      ) {
+        return;
+      }
+    } else {
+      if (!window.confirm(`Biztosan törölni szeretnéd a(z) "${catObj?.label}" kategóriát?`)) {
+        return;
+      }
+    }
+    setEditableCategories(editableCategories.filter((c) => c.id !== catId));
+  };
+
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    const label = newCatLabel.trim();
+    if (!label) return;
+
+    const slug =
+      label
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || `cat-${Date.now()}`;
+
+    if (editableCategories.some((c) => c.id === slug || c.label.toLowerCase() === label.toLowerCase())) {
+      alert('Ilyen néven vagy azonosítóval már létezik kategória!');
+      return;
+    }
+
+    setEditableCategories([...editableCategories, { id: slug, label }]);
+    setNewCatLabel('');
+  };
+
+  const handleSaveCategories = () => {
+    saveBookCategories(editableCategories);
+    setShowCategoryModal(false);
+    triggerSuccessNotify('A könyvkategóriák és a sorrend sikeresen elmentve!');
+  };
+
+  const handleResetDefaultCategories = () => {
+    if (window.confirm('Biztosan visszaállítod az alapértelmezett kategóriákat és azok sorrendjét?')) {
+      setEditableCategories([...DEFAULT_BOOK_CATEGORIES]);
+    }
+  };
+
+  // ════════════════ BOOK HANDLERS ════════════════
   const handleOpenAddModal = () => {
     setEditingBook(null);
     setTitle('');
@@ -62,7 +160,7 @@ export default function AdminBooksPage() {
     setYear(new Date().getFullYear());
     setPages(250);
     setIsbn('978-963-12-0000-0');
-    setCategory('szerkezet');
+    setCategory(categories.find((c) => c.id !== 'all')?.id || 'szerkezet');
     setBadge('Új Kiadvány');
     setCoverImage('https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop');
     setDescription('');
@@ -95,7 +193,7 @@ export default function AdminBooksPage() {
     if (window.confirm('Biztosan törölni szeretnéd ezt a szakkönyvet?')) {
       const updated = books.filter((b) => b.id !== id);
       saveBooks(updated);
-      triggerSuccessNotify();
+      triggerSuccessNotify('A szakkönyv törölve a könyvtárból!');
     }
   };
 
@@ -103,14 +201,8 @@ export default function AdminBooksPage() {
     e.preventDefault();
     if (!title.trim() || !author.trim()) return;
 
-    const catLabels: Record<BookItem['category'], string> = {
-      all: 'Összes témakör',
-      szerkezet: 'Szerkezetépítés & Alapozás',
-      gepeszet: 'Épületgépészet & Villanyszerelés',
-      munkavedelem: 'Munkavédelem & Szabályzatok',
-      statika: 'Építész Tervezés & Statika',
-      befejezo: 'Szárazépítészet & Befejező Munkák',
-    };
+    const matchedCat = categories.find((c) => c.id === category);
+    const categoryLabel = matchedCat ? matchedCat.label : 'Szerkezetépítés';
 
     const tocArray = tableOfContents
       .split('\n')
@@ -130,7 +222,7 @@ export default function AdminBooksPage() {
               pages,
               isbn: isbn.trim(),
               category,
-              categoryLabel: catLabels[category],
+              categoryLabel,
               badge: badge.trim() || 'Szakkönyv',
               coverImage: coverImage.trim() || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
               description: description.trim(),
@@ -152,7 +244,7 @@ export default function AdminBooksPage() {
         pages,
         isbn: isbn.trim(),
         category,
-        categoryLabel: catLabels[category],
+        categoryLabel,
         badge: badge.trim() || 'Új Kiadvány',
         badgeColor: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
         coverImage: coverImage.trim() || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
@@ -169,17 +261,18 @@ export default function AdminBooksPage() {
     }
 
     setShowModal(false);
-    triggerSuccessNotify();
+    triggerSuccessNotify('Könyv sikeresen elmentve!');
   };
 
   const handleResetDefaults = () => {
     if (window.confirm('Biztosan visszaállítod az alapszintű könyvkiadványokat a gyári adatokra?')) {
       saveBooks(DEFAULT_BOOKS);
-      triggerSuccessNotify();
+      triggerSuccessNotify('Alapértelmezett szakkönyvek visszaállítva!');
     }
   };
 
-  const triggerSuccessNotify = () => {
+  const triggerSuccessNotify = (msg?: string) => {
+    if (msg) setSuccessMessage(msg);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
@@ -200,11 +293,21 @@ export default function AdminBooksPage() {
             <BookOpen style={{ color: cardHighlight }} size={28} /> Szakmai Könyvek &amp; Szakirodalom Kezelő
           </h1>
           <p className="text-xs text-gray-400 mt-1">
-            Építőipari szakkönyvek, mérnöki útmutatók, tananyagok és kézikönyvek központi bevitele és szerkesztése.
+            Építőipari szakkönyvek, mérnöki útmutatók, tananyagok és kategóriák központi szerkesztése.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          {/* Category Editor Button */}
+          <button
+            type="button"
+            onClick={handleOpenCategoryModal}
+            style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+            className="px-4 py-2.5 border text-gray-300 font-bold text-xs rounded-xl hover:text-white transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <FolderEdit size={16} className="text-accent" /> Kategóriák Szerkesztése
+          </button>
+
           <button
             type="button"
             onClick={handleResetDefaults}
@@ -213,6 +316,7 @@ export default function AdminBooksPage() {
           >
             <RotateCcw size={14} /> Alapértelmezett
           </button>
+          
           <button
             type="button"
             onClick={handleOpenAddModal}
@@ -227,7 +331,7 @@ export default function AdminBooksPage() {
       {savedSuccess && (
         <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold">
           <CheckCircle2 size={20} />
-          A könyvadatbázis módosításai sikeresen elmentve és szinkronizálva a felhőbe!
+          {successMessage}
         </div>
       )}
 
@@ -245,15 +349,9 @@ export default function AdminBooksPage() {
           />
         </div>
 
+        {/* Dynamic Category Buttons */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-          {[
-            { id: 'all', label: 'Összes Témakör' },
-            { id: 'szerkezet', label: 'Szerkezetépítés' },
-            { id: 'gepeszet', label: 'Épületgépészet' },
-            { id: 'munkavedelem', label: 'Munkavédelem' },
-            { id: 'statika', label: 'Statika' },
-            { id: 'befejezo', label: 'Befejező Munkák' },
-          ].map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
@@ -345,7 +443,175 @@ export default function AdminBooksPage() {
         ))}
       </div>
 
-      {/* Add / Edit Book Modal */}
+      {/* ════════════════ CATEGORY EDITOR MODAL ════════════════ */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto admin-scroll">
+            
+            {/* Modal Header */}
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
+              <div>
+                <h3 style={{ color: textColor }} className="text-lg font-extrabold flex items-center gap-2.5">
+                  <FolderEdit size={20} style={{ color: cardHighlight }} />
+                  Szakmai Könyv Kategóriák Kezelője
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Hozz létre új kategóriákat, változtasd meg a nevüket, törölj vagy rendezd át a megjelenési sorrendet!
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(false)}
+                style={{ backgroundColor: inputBg, color: textColor }}
+                className="p-1.5 rounded-xl cursor-pointer hover:opacity-90"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Category Reordering & Editing List */}
+            <div className="space-y-3">
+              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between px-1">
+                <span>Kategória Neve &amp; Sorrend</span>
+                <span>Műveletek</span>
+              </div>
+
+              <div className="space-y-2">
+                {editableCategories.map((cat, idx) => {
+                  const isAll = cat.id === 'all';
+                  const bookCount = books.filter((b) => b.category === cat.id || b.categoryLabel.toLowerCase().includes(cat.label.toLowerCase())).length;
+
+                  return (
+                    <div
+                      key={cat.id}
+                      style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+                      className="flex items-center justify-between p-3 border rounded-2xl gap-3 transition-all"
+                    >
+                      {/* Reorder Arrow Buttons */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          disabled={isAll || idx <= 1}
+                          onClick={() => handleMoveCategory(idx, 'up')}
+                          className={`p-1.5 rounded-lg border transition-all ${
+                            isAll || idx <= 1
+                              ? 'opacity-20 cursor-not-allowed border-transparent'
+                              : 'hover:bg-accent/20 border-gray-700 text-gray-300 hover:text-white cursor-pointer'
+                          }`}
+                          title="Mozgatás felfelé"
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isAll || idx >= editableCategories.length - 1}
+                          onClick={() => handleMoveCategory(idx, 'down')}
+                          className={`p-1.5 rounded-lg border transition-all ${
+                            isAll || idx >= editableCategories.length - 1
+                              ? 'opacity-20 cursor-not-allowed border-transparent'
+                              : 'hover:bg-accent/20 border-gray-700 text-gray-300 hover:text-white cursor-pointer'
+                          }`}
+                          title="Mozgatás lefelé"
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                      </div>
+
+                      {/* Label Input & Info */}
+                      <div className="flex-1 flex items-center gap-3">
+                        {isAll ? (
+                          <span className="font-extrabold text-xs text-white px-2 py-1 bg-primary/40 rounded-lg">
+                            {cat.label} (Rendszer Kategória)
+                          </span>
+                        ) : (
+                          <input
+                            type="text"
+                            value={cat.label}
+                            onChange={(e) => handleCategoryLabelChange(cat.id, e.target.value)}
+                            style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                            className="w-full border rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-accent"
+                          />
+                        )}
+
+                        <span className="text-[10px] font-mono text-gray-500 whitespace-nowrap bg-black/40 px-2 py-0.5 rounded-md shrink-0">
+                          {cat.id === 'all' ? `${books.length} könyv` : `${bookCount} könyv`}
+                        </span>
+                      </div>
+
+                      {/* Delete Action */}
+                      {!isAll && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-colors cursor-pointer shrink-0"
+                          title="Kategória Törlése"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Add New Category Form */}
+            <form onSubmit={handleAddCategory} style={{ borderColor: cardBorder }} className="pt-4 border-t space-y-3">
+              <label className="text-xs font-bold text-gray-300 block">Új Kategória Hozzáadása</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="Pl.: Műemlékvédelem &amp; Felújítás"
+                  value={newCatLabel}
+                  onChange={(e) => setNewCatLabel(e.target.value)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="flex-1 border rounded-xl px-4 py-2 text-xs font-bold focus:outline-none focus:border-accent"
+                />
+                <button
+                  type="submit"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 font-extrabold text-xs rounded-xl shadow-md hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Plus size={15} /> Hozzáadás
+                </button>
+              </div>
+            </form>
+
+            {/* Modal Actions */}
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between pt-4 border-t">
+              <button
+                type="button"
+                onClick={handleResetDefaultCategories}
+                className="text-xs font-bold text-gray-400 hover:text-white underline cursor-pointer"
+              >
+                Gyári Kategóriák Visszaállítása
+              </button>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryModal(false)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
+                >
+                  Mégse
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveCategories}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90"
+                >
+                  Kategóriák &amp; Sorrend Mentése
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════ ADD / EDIT BOOK MODAL ════════════════ */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto admin-scroll">
@@ -416,15 +682,17 @@ export default function AdminBooksPage() {
                   <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Témakör / Kategória</label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as BookItem['category'])}
+                    onChange={(e) => setCategory(e.target.value)}
                     style={{ backgroundColor: inputBg, borderColor: cardBorder, color: getContrastTextColor(inputBg) }}
-                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
+                    className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors font-bold"
                   >
-                    <option value="szerkezet">Szerkezetépítés &amp; Alapozás</option>
-                    <option value="gepeszet">Épületgépészet &amp; Villanyszerelés</option>
-                    <option value="munkavedelem">Munkavédelem &amp; Szabályzatok</option>
-                    <option value="statika">Építész Tervezés &amp; Statika</option>
-                    <option value="befejezo">Szárazépítészet &amp; Befejező Munkák</option>
+                    {categories
+                      .filter((c) => c.id !== 'all')
+                      .map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.label}
+                        </option>
+                      ))}
                   </select>
                 </div>
 

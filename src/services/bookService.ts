@@ -26,7 +26,12 @@ export interface BookItem {
   reviewsCount: number;
 }
 
-export const BOOK_CATEGORIES = [
+export interface BookCategory {
+  id: string;
+  label: string;
+}
+
+export const DEFAULT_BOOK_CATEGORIES: BookCategory[] = [
   { id: 'all', label: 'Összes könyv' },
   { id: 'szerkezet', label: 'Szerkezetépítés' },
   { id: 'epitoanyagok', label: 'Építőanyagok' },
@@ -37,6 +42,8 @@ export const BOOK_CATEGORIES = [
   { id: 'szakmaalapok', label: 'Szakmaalapok' },
   { id: 'vizsga', label: 'Vizsgafelkészítők' },
 ];
+
+export const BOOK_CATEGORIES = DEFAULT_BOOK_CATEGORIES;
 
 export const DEFAULT_BOOKS: BookItem[] = [
   {
@@ -289,12 +296,103 @@ export const DEFAULT_BOOKS: BookItem[] = [
 ];
 
 const STORAGE_KEY = 'epitotudas_books_v2';
+const CATEGORIES_STORAGE_KEY = 'epitotudas_book_categories_v2';
+
 const SUPABASE_BOOKS_ID = '00000000-0000-0000-0000-000000000012';
+const SUPABASE_BOOKS_CATEGORIES_ID = '00000000-0000-0000-0000-000000000013';
 
 declare global {
   interface Window {
     __GLOBAL_BOOKS_DATA__?: BookItem[];
+    __GLOBAL_BOOK_CATEGORIES__?: BookCategory[];
   }
+}
+
+export function getBookCategories(): BookCategory[] {
+  try {
+    if (typeof window !== 'undefined' && window.__GLOBAL_BOOK_CATEGORIES__) {
+      return window.__GLOBAL_BOOK_CATEGORIES__;
+    }
+    const raw = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        if (typeof window !== 'undefined') window.__GLOBAL_BOOK_CATEGORIES__ = parsed;
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.error('Hiba a könyv kategóriák olvasásakor:', err);
+  }
+
+  if (typeof window !== 'undefined') window.__GLOBAL_BOOK_CATEGORIES__ = DEFAULT_BOOK_CATEGORIES;
+  return DEFAULT_BOOK_CATEGORIES;
+}
+
+export function saveBookCategories(categories: BookCategory[]): void {
+  try {
+    if (typeof window !== 'undefined') {
+      window.__GLOBAL_BOOK_CATEGORIES__ = categories;
+    }
+    localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+    window.dispatchEvent(new Event('book-categories-changed'));
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_BOOKS_CATEGORIES_ID,
+          name: '__SYSTEM_CONFIG_BOOK_CATEGORIES__',
+          slug: 'system-book-categories-config',
+          description: JSON.stringify(categories),
+          article_count: categories.length,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        console.warn('Supabase book categories cloud sync info:', err);
+      }
+    })();
+  } catch (err) {
+    console.error('Hiba a könyv kategóriák mentésekor:', err);
+  }
+}
+
+export function useBookCategories(): BookCategory[] {
+  const [categories, setCategories] = useState<BookCategory[]>(() => getBookCategories());
+
+  useEffect(() => {
+    function handleChange() {
+      setCategories(getBookCategories());
+    }
+    handleChange();
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('description')
+          .eq('id', SUPABASE_BOOKS_CATEGORIES_ID)
+          .maybeSingle();
+
+        if (!error && data?.description && data.description.startsWith('[')) {
+          const parsed = JSON.parse(data.description);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (typeof window !== 'undefined') {
+              window.__GLOBAL_BOOK_CATEGORIES__ = parsed;
+              localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(parsed));
+              window.dispatchEvent(new Event('book-categories-changed'));
+            }
+            setCategories(parsed);
+          }
+        }
+      } catch {}
+    })();
+
+    window.addEventListener('book-categories-changed', handleChange);
+    return () => window.removeEventListener('book-categories-changed', handleChange);
+  }, []);
+
+  return categories;
 }
 
 export function getBooks(): BookItem[] {
@@ -335,6 +433,7 @@ export function saveBooks(books: BookItem[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
     window.dispatchEvent(new Event('books-data-changed'));
 
+    // Cloud sync to Supabase categories system row
     void (async () => {
       try {
         await supabase.from('categories').upsert({
