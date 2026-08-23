@@ -306,8 +306,17 @@ export function getBooks(): BookItem[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        if (typeof window !== 'undefined') window.__GLOBAL_BOOKS_DATA__ = parsed;
-        return parsed;
+        const sanitized = parsed.map((b: any) => ({
+          ...b,
+          title: b.title || 'Szakmai Könyv',
+          category: b.category || 'szerkezet',
+          categoryLabel: b.categoryLabel || 'Szerkezetépítés',
+          author: b.author || 'ÉpítőTudás',
+          description: b.description || '',
+          isbn: b.isbn || '',
+        }));
+        if (typeof window !== 'undefined') window.__GLOBAL_BOOKS_DATA__ = sanitized;
+        return sanitized;
       }
     }
   } catch (err) {

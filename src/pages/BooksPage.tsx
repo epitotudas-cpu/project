@@ -82,9 +82,13 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
     const counts: Record<string, number> = { all: allBooks.length };
     BOOK_CATEGORIES.forEach((cat) => {
       if (cat.id !== 'all') {
-        counts[cat.id] = allBooks.filter(
-          (b) => b.category === cat.id || b.categoryLabel.toLowerCase().includes(cat.label.toLowerCase())
-        ).length;
+        const catLabelLower = (cat.label || '').toLowerCase();
+        counts[cat.id] = allBooks.filter((b) => {
+          if (!b) return false;
+          if (b.category === cat.id) return true;
+          const bLabel = (b.categoryLabel || '').toLowerCase();
+          return Boolean(bLabel && bLabel.includes(catLabelLower));
+        }).length;
       }
     });
     return counts;
@@ -93,33 +97,39 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
   // Filtered & Sorted books
   const filteredBooks = useMemo(() => {
     let result = allBooks.filter((b) => {
+      if (!b) return false;
+
+      const targetCatObj = BOOK_CATEGORIES.find((c) => c.id === selectedCategory);
+      const targetCatLabel = (targetCatObj?.label || '').toLowerCase();
+      const bCatLabel = (b.categoryLabel || '').toLowerCase();
+
       const matchCat =
         selectedCategory === 'all' ||
         b.category === selectedCategory ||
-        b.categoryLabel.toLowerCase().includes(
-          (BOOK_CATEGORIES.find((c) => c.id === selectedCategory)?.label || '').toLowerCase()
-        );
+        (targetCatLabel && bCatLabel.includes(targetCatLabel));
 
       const q = searchQuery.trim().toLowerCase();
-      const matchQuery =
-        !q ||
-        b.title.toLowerCase().includes(q) ||
-        b.author.toLowerCase().includes(q) ||
-        b.categoryLabel.toLowerCase().includes(q) ||
-        b.description.toLowerCase().includes(q) ||
-        b.isbn.toLowerCase().includes(q);
+      if (!q) return matchCat;
+
+      const titleMatch = (b.title || '').toLowerCase().includes(q);
+      const authorMatch = (b.author || '').toLowerCase().includes(q);
+      const categoryMatch = bCatLabel.includes(q);
+      const descMatch = (b.description || '').toLowerCase().includes(q);
+      const isbnMatch = (b.isbn || '').toLowerCase().includes(q);
+
+      const matchQuery = titleMatch || authorMatch || categoryMatch || descMatch || isbnMatch;
 
       return matchCat && matchQuery;
     });
 
     // Sorting
     if (sortBy === 'newest') {
-      result = [...result].sort((a, b) => b.year - a.year);
+      result = [...result].sort((a, b) => (b.year || 0) - (a.year || 0));
     } else if (sortBy === 'title_asc') {
-      result = [...result].sort((a, b) => a.title.localeCompare(b.title, 'hu'));
+      result = [...result].sort((a, b) => (a.title || '').localeCompare(b.title || '', 'hu'));
     } else {
       // recommended / highest rated
-      result = [...result].sort((a, b) => b.rating - a.rating);
+      result = [...result].sort((a, b) => (b.rating || 0) - (a.rating || 0));
     }
 
     return result;
