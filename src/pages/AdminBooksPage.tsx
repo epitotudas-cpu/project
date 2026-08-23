@@ -11,7 +11,6 @@ import {
   FolderEdit,
   ArrowUp,
   ArrowDown,
-  Layers,
   X,
 } from 'lucide-react';
 import {
