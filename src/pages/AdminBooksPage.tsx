@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BookOpen,
   Plus,
@@ -40,7 +40,7 @@ import {
   type BookStoreOffer,
 } from '../services/bookService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
-import { generateCoverFromPdfUrl } from '../services/pdfCoverGenerator';
+import { generateCoverFromPdfUrl, getPdfPageCount } from '../services/pdfCoverGenerator';
 
 export default function AdminBooksPage() {
   const books = useBooks();
@@ -268,7 +268,14 @@ export default function AdminBooksPage() {
       setCoverImageSource('generated_from_preview');
       setGeneratedCoverAt(res.generatedAt || new Date().toISOString());
       setGeneratedCoverSourceUrl(res.sourceUrl || targetUrl);
-      setCoverGenSuccessMsg('Borítókép automatikusan létrehozva a PDF első oldalából.');
+
+      // Automatically update pages if PDF page count was extracted
+      if (res.pageCount && res.pageCount > 0) {
+        setPages(res.pageCount);
+        setCoverGenSuccessMsg(`Borítókép és oldalszám (${res.pageCount} oldal) automatikusan beállítva a PDF alapján.`);
+      } else {
+        setCoverGenSuccessMsg('Borítókép automatikusan létrehozva a PDF első oldalából.');
+      }
     } else {
       setCoverGenErrorMsg(res.error || 'A meglévő borítókép változatlan maradt.');
     }
@@ -281,6 +288,28 @@ export default function AdminBooksPage() {
     setCoverGenSuccessMsg(null);
     setCoverGenErrorMsg(null);
   };
+
+  // ════════════════ AUTOMATIC PDF PAGE COUNT DETECTOR ════════════════
+  useEffect(() => {
+    if (!showModal) return;
+    const targetUrl = (
+      previewUrl && previewUrl.trim() !== 'https://' ? previewUrl.trim() :
+      digitalUrl && digitalUrl.trim() !== 'https://' ? digitalUrl.trim() : ''
+    );
+
+    if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const count = await getPdfPageCount(targetUrl);
+        if (count && count > 0) {
+          setPages(count);
+        }
+      } catch {}
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [previewUrl, digitalUrl, showModal]);
 
   // ════════════════ BOOK MODAL OPEN & SAVE HANDLERS ════════════════
   const handleOpenAddModal = () => {

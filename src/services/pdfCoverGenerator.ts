@@ -8,6 +8,7 @@ if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
 export interface PdfCoverResult {
   success: boolean;
   imageUrl?: string;
+  pageCount?: number;
   error?: string;
   generatedAt?: string;
   sourceUrl?: string;
@@ -138,6 +139,59 @@ async function fetchPdfArrayBuffer(normalizedUrl: string): Promise<ArrayBuffer |
 }
 
 /**
+ * Extracts total page count of a PDF document using ArrayBuffer, pdfjsLib, or header scan.
+ */
+export async function getPdfPageCount(urlStr: string): Promise<number | null> {
+  const validation = isValidPdfUrl(urlStr);
+  if (!validation.valid) return null;
+
+  const normalizedUrl = normalizePdfUrl(urlStr);
+
+  try {
+    // 1. Try reading ArrayBuffer via direct fetch / proxy
+    const arrayBuffer = await fetchPdfArrayBuffer(normalizedUrl);
+
+    if (arrayBuffer && arrayBuffer.byteLength > 0) {
+      try {
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+        const pdfDoc = await loadingTask.promise;
+        if (pdfDoc && pdfDoc.numPages > 0) {
+          return pdfDoc.numPages;
+        }
+      } catch (err) {
+        console.warn('pdfjsLib ArrayBuffer parse failed for page count:', err);
+      }
+
+      // Regex scan for /Type /Pages /Count N or /Count N in PDF catalog
+      try {
+        const textDecoder = new TextDecoder('latin1');
+        const pdfText = textDecoder.decode(arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, 500000)));
+        const countMatch = pdfText.match(/\/Type\s*\/Pages[^\/]*\/Count\s+(\d+)/i) || pdfText.match(/\/Count\s+(\d+)/i);
+        if (countMatch && countMatch[1]) {
+          const parsed = parseInt(countMatch[1], 10);
+          if (parsed > 0 && parsed < 10000) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+
+    // 2. Try pdfjs-dist direct URL load
+    try {
+      const loadingTask = pdfjsLib.getDocument({ url: normalizedUrl });
+      const pdfDoc = await loadingTask.promise;
+      if (pdfDoc && pdfDoc.numPages > 0) {
+        return pdfDoc.numPages;
+      }
+    } catch {}
+  } catch (err) {
+    console.warn('Error reading PDF page count:', err);
+  }
+
+  return null;
+}
+
+/**
  * Renders an Image URL (or wsrv PDF page 1 URL) onto a 2:3 ratio Canvas and returns DataURL.
  */
 async function tryRenderAsImage(urlStr: string): Promise<string | null> {
@@ -186,7 +240,7 @@ async function tryRenderAsImage(urlStr: string): Promise<string | null> {
 
 /**
  * Renders Page 1 of target PDF using High-Performance Cloudflare renderer (wsrv)
- * with fallback to local pdfjs-dist and direct Image rendering.
+ * with fallback to local pdfjs-dist and direct Image rendering. Also extracts total pageCount.
  */
 export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverResult> {
   // 1. URL validation
@@ -202,15 +256,20 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
   const normalizedUrl = normalizePdfUrl(cleanUrl);
 
   try {
+    // Attempt page count extraction in parallel
+    const pageCountPromise = getPdfPageCount(normalizedUrl);
+
     // 2. High-Performance Strategy 1: Cloudflare-powered PDF Page 1 renderer (wsrv.nl)
     // Renders Page 1 (page=0 in 0-indexed libvips) of target PDF into a 600x900 image with full CORS support
     const wsrvPdfPage1Url = `https://wsrv.nl/?url=${encodeURIComponent(normalizedUrl)}&page=0&w=600&h=900&fit=contain&output=jpg&q=88`;
     const cloudCover = await tryRenderAsImage(wsrvPdfPage1Url);
+    const pageCount = await pageCountPromise;
 
     if (cloudCover) {
       return {
         success: true,
         imageUrl: cloudCover,
+        pageCount: pageCount || undefined,
         generatedAt: new Date().toISOString(),
         sourceUrl: cleanUrl,
       };
@@ -287,6 +346,7 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
       return {
         success: true,
         imageUrl: dataUrl,
+        pageCount: pdfDoc.numPages || pageCount || undefined,
         generatedAt: new Date().toISOString(),
         sourceUrl: cleanUrl,
       };
@@ -298,6 +358,7 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
       return {
         success: true,
         imageUrl: directImageCover,
+        pageCount: pageCount || undefined,
         generatedAt: new Date().toISOString(),
         sourceUrl: cleanUrl,
       };
