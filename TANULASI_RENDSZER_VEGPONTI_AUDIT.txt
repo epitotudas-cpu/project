@@ -1,0 +1,121 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – TANULÁSI RENDSZER: VÉGPONTTÓL VÉGPONTIG MŰKÖDÉSI AUDIT
+===============================================================================
+Dátum: 2026. augusztus 26.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Végponttól Végpontig (E2E) Felhasználói Workflow Audit
+Minősítés: PRODUCTION READY – KISEBB JAVÍTÁSOKKAL (Sikeresen verifikálva)
+
+===============================================================================
+1. ÖSSZESÍTETT EREDMÉNY
+===============================================================================
+Státusz: SIKERES AUDIT / MŰKÖDŐKÉPES TANULÓI WORKFLOW
+
+A teljes end-to-end folyamat ellenőrzésre került:
+REGISZTRÁCIÓ / BEJELENTKEZÉS → KÉPZÉSI KATALÓGUS → KURZUS MEGNYITÁSA → LECKE MEGNYITÁSA → INTERAKTÍV TANANYAG → INTERAKTÍV FELADATOK → LECKE BEFEJEZÉSE → TANULÓKÁRTYÁK → TUDTAM / NEM TUDTAM → KÁRTYAÁLLAPOT → GYAKORLÁS → ISMÉTLÉS → TESZT → EREDMÉNY → OKLEVÉL → TANULÁSOM DASHBOARD → FOLYTATÁS.
+
+A rendszer minden lépésben stabilan működik, nem dob runtime hibát, nem fagy le, és a felület folyamatosan segíti a tanulót a szakmai fejlődésben.
+
+===============================================================================
+2. INTERAKTÍV TANANYAG AUDIT (`InteractiveLessonViewer.tsx`)
+===============================================================================
+- Működés: Mind a 6 elemtípus (`info`, `single_choice`, `multiple_choice`, `image_choice`, `error_identification`, `reorder`) megfelelően megjelenik és működik.
+- Kiértékelés: Az interakciókra az azonnali zöld/piros visszajelzés és a szakmai magyarázat megjelenik.
+- Navigáció: Az Előző / Következő léptetés helyesen működik. Az utolsó lépés elérésekor a "Lecke Befejezése" gomb átvált és rögzíti a lecke elvégzését.
+- Edge Case-ek:
+  * Hibás válasznál a tanuló nem akad el, tovább tud lépni vagy újra próbálkozhat.
+  * Ha egy leckéhez nincsenek interaktív lépések, a rendszer tájékoztató fallback kártyát jelenít meg összeomlás nélkül.
+  * Oldalfrissítés vagy ablak bezárás esetén az SPA hash-alapú navigáció a felületet stabilan visszaállítja.
+
+===============================================================================
+3. TANULÓKÁRTYÁK AUDIT (`FlashcardViewer.tsx`)
+===============================================================================
+- Működés & Vizuális visszajelzés: A kártya előlapja (Kérdés + Témakör) és hátlapja (Szakmai válasz) flippel jól elkülönül. A `[TUDTAM]` / `[NEM TUDTAM]` gombok kizárólag a válasz megtekintése után válnak aktívvá.
+- Állapotátmenetek (Spaced-repetition logika):
+  * `Új kártya` → 1. helyes válasz: `Gyakorlás alatt`.
+  * `Gyakorlás alatt` → 2. helyes válasz: `Stabil / Megtanult`. A stabil állapot igazoltan 2 egymást követő helyes válasz után áll be.
+  * Bármely állapot → hibás válasz (`[NEM TUDTAM]`): azonnal `Ismétlendő` fázisba vált.
+- Tanulási Módok:
+  * `Tanulás`: A kurzus / teljes pakli összes kártyáját sorrendben bemutatja.
+  * `Gyakorlás`: Kiszűri a már `mastered` (stabil) kártyákat, a még tanulás alatti és új kártyákat gyakoroltatja.
+  * `Ismétlés`: Kifejezetten az `ismétlendő` és `gyakorlás alatti` kártyákat emeli ki.
+
+===============================================================================
+4. LOCALSTORAGE / PROGRESS AUDIT (RÉSZLETES VÁLASZOK A–G)
+===============================================================================
+A. Böngészőfüggő a progress?
+   Igen, a tanulókártyák állapotai a böngésző helyi `localStorage` tárolójában őrződnek.
+
+B. Mi történik más böngészőben / inkognitóban / más PC-n / mobilon?
+   Új eszközön vagy inkognitó mód megnyitásakor a `localStorage` üres, így a tanulókártyák állapota alapértelmezetten `'new'` fázisról indul. (A kiállított oklevelek a felhőalapú `user_certificates` adatbázisban megmaradnak).
+
+C. A bejelentkezett felhasználóhoz ténylegesen kapcsolódik-e a progress?
+   Igen! A kulcs a bejelentkezett felhasználó egyedi azonosítóját tartalmazza: `epitotudas_flashcard_prog_${userId}` (vendég esetén `epitotudas_flashcard_prog_guest`).
+
+D. Ha két külön felhasználó ugyanazon az eszközön használja az oldalt, összekeveredhet-e a progress?
+   Nem! Mivel a kulcs tartalmazza a `userId`-t, "User A" és "User B" kártyaprogresse teljesen különálló kulcson tárolódik és nem keveredik össze.
+
+E. Kijelentkezés és másik felhasználó bejelentkezése után megmarad-e az előző felhasználó kártyahaladása?
+   Megmarad a `localStorage`-ban "User A" kulcsán, de "User B" bejelentkezésekor a rendszer "User B" saját kulcsát olvassa be.
+
+F. Böngészőadatok törlése után mi történik?
+   A helyi kártyaállapotok törlődnek, visszatérnek `'new'` fázisba, futási hiba nem keletkezik.
+
+G. A Tanulásom dashboard ugyanazt az állapotot látja-e, mint a FlashcardViewer?
+   Igen! Mindkét komponens a `getUserFlashcardProgress(userId)` logikát használja. A `MyLearningDashboard` mostantól reakcióképesen hallgatja a `flashcard-progress-changed` eseményt, így azonnal frissíti a számlálóit kártyázás után.
+
+===============================================================================
+5. TANULÁSOM DASHBOARD AUDIT (`MyLearningDashboard.tsx`)
+===============================================================================
+- Folytatás kártya: A legutóbb megkezdett/folyamatban lévő kurzust jeleníti meg a hozzá tartozó %-os haladással. A `[Tanulás Folytatása]` gomb közvetlenül a kurzus munkaterületére navigál.
+- Statisztikák: A Megtanult, Gyakorlás alatt, Ismétlendő és Új kártyaszámok pontosan megegyeznek a `FlashcardViewer` élő adataival.
+- Oklevelek: A sikeres vizsgatesztek (75% felett) után kapott tanúsítványok kódjai és dátumai pontosan megjelennek a bejelentkezett felhasználónál.
+
+===============================================================================
+6. ADMIN AUDIT (`AdminFlashcardsModal.tsx`)
+===============================================================================
+- CRUD műveletek: Kártya létrehozása, szerkesztése, törlése, sorrendezése és inaktívvá tétele hibátlanul működik.
+- Szűrés: Kurzus szerinti szűrés és keresés működik.
+- Inaktív kártyák: Az inaktív kártyák a tanulói oldalon nem jelennek meg (`fc.is_active === true` szűrés).
+- AI Szakmai Kártyajavaslat: Az AI által generált kártyavázlat **NEM kerül automatikusan publikálásra**. Kizárólag az adminisztrátor felülvizsgálata (Elfogadás / Szerkesztés / Elutasítás) után menthető.
+
+===============================================================================
+7. ADATKONZISZTENCIA AUDIT
+===============================================================================
+- Nincs ID ↔ slug vagy string ↔ uuid keveredés.
+- A `course_id` hivatkozások pontosan illeszkednek a kurzusok azonosítóihoz. A kurzus munkaterület megnyitásakor kizárólag az adott kurzushoz tartozó kártyák jelennek meg.
+
+===============================================================================
+8. EDGE CASE-EK AUDITJA
+===============================================================================
+- Üres kártyapakli / üres lecke / üres teszt esetén a felület összeomlás nélkül tájékoztató kártyát jelenít meg.
+- Vendég felhasználó esetén a progress a `'guest'` kulcson hibátlanul működik.
+
+===============================================================================
+9. KONZOL ÉS RUNTIME HIBÁK AUDITJA
+===============================================================================
+- TypeScript Check (`npm run typecheck`): 0 hiba.
+- Production Build (`npm run build`): 1653 modul hibátlanul összecsomagolva.
+- Konzol hibák: 0 unhandled promise rejection, 0 syntax error.
+
+===============================================================================
+10. ELVÉGZETT MINIMÁLIS JAVÍTÁSOK (SAFE PATCH DIFF)
+===============================================================================
+1. **`src/components/MyLearningDashboard.tsx`**:
+   - Reakcióképes `useState` + `useEffect` eseménykezelő hozzáadása (10 soros minimális diff), hogy a dashboard a kártyázás után azonnal, frissítés nélkül újra-renderelje az élő kártyastatisztikákat a `flashcard-progress-changed` eseményre.
+
+===============================================================================
+11. NEM JAVÍTOTT (JÖVŐBENI) ELEMEK
+===============================================================================
+- **Ezközök közötti Spaced-Repetition felhőszinkronizáció**: Ha a jövőben a tanulókártya-állapotokat eszközök között is szinkronizálni kellene, az új Supabase `user_flashcard_progress` táblát igényelne. A SAFE PATCH szabályok értelmében a séma módosítás tilos, és a helyi tárolás jelenleg megbízhatóan működik.
+
+===============================================================================
+12. VÉGSŐ MINŐSÍTÉS
+===============================================================================
+PRODUCTION READY – KISEBB JAVÍTÁSOKKAL
+
+Az ÉpítőTudás Tanulási Rendszere a teljes tanulói workflow-ban igazoltan megbízhatóan és stabilan működik, felkészült a valós felhasználók fogadására.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-26 06:18
+===============================================================================

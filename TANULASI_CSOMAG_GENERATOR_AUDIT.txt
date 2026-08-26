@@ -1,0 +1,133 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – TANULÁSI CSOMAG GENERÁTOR: MEGVALÓSÍTHATÓSÁGI AUDIT
+===============================================================================
+Dátum: 2026. augusztus 26.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Szakmai Tartalomfeldolgozó & Tanulási Csomag Generátor Architektúra Audit
+Megvalósíthatósági Döntés: MEGVALÓSÍTHATÓ A JELENLEGI RENDSZERREL
+
+===============================================================================
+1. MEGLÉVŐ RENDSZER ÁTTEKINTÉSE
+===============================================================================
+Az ÉpítőTudás v2 jelenleg három fő tudásforrással és egy stabil e-learning motorral rendelkezik:
+- Tudásforrás A: Cikkek (`articles` tábla & `articleService.ts` - cím, összefoglaló, teljes törzsszöveg, kategóriák, címkék).
+- Tudásforrás B: Szakmai Fogalomtár & Zsargon Szótár (`glossary_terms` tábla & `glossaryService.ts` - 319 kifejezés kezdő és részletes leírással, gyakorlati alkalmazásokkal és gyakori hibákkal).
+- Tudásforrás C: Szakkönyvtár & Jegyzetek (`bookService.ts`).
+- E-Learning Motor: `educationService.ts`, `InteractiveLessonViewer.tsx`, `FlashcardViewer.tsx`, `MyLearningDashboard.tsx`, `AdminCoursesPage.tsx`.
+
+Az audit megállapította, hogy a tudásanyag és a tanulási motor összekapcsolható egy köztes generáló és elbíráló modullal anélkül, hogy a meglévő sémákat vagy felületeket meg kellene változtatni.
+
+===============================================================================
+2. FELHASZNÁLHATÓ KOMPONENSEK
+===============================================================================
+- `InteractiveLessonViewer.tsx`: Generált interaktív lépések (6 típus: `info`, `single_choice`, `multiple_choice`, `image_choice`, `error_identification`, `reorder`) azonnali előnézetére az admin felületen.
+- `FlashcardViewer.tsx`: Generált kétoldalas tanulókártyák élő tesztelésére az admin bírálat során.
+- `AdminFlashcardsModal.tsx`: Meglévő kártyaszerkesztési és bírálati felület logikája.
+- `AdminCoursesPage.tsx`: Az adminisztrációs felület, amelyből a generáló gomb és modal meghívható.
+
+===============================================================================
+3. FELHASZNÁLHATÓ SERVICE-EK
+===============================================================================
+- `articleService.ts`: Forrásanyagként szolgáló publikált cikkek lekérése (`listArticles`, `getArticleBySlug`).
+- `glossaryService.ts`: Fogalomtári bejegyzések és zsargonok lekérése (`listGlossaryTerms`).
+- `educationService.ts`: Generált elemek elmentése és publikálása (`saveEducationData`, `saveFlashcard`, `saveInteractiveStepsForLesson`).
+
+===============================================================================
+4. MEGLÉVŐ ADATSTRUKTÚRÁK
+===============================================================================
+Az új funkció 100%-ban illeszkedik a meglévő `educationService.ts` adatmodellhez:
+- `InteractiveStep`: `id`, `lesson_id`, `sequence_order`, `type`, `title`, `description`, `options`, `correct_option_index`, `error_options`, `reorder_items`, `explanation`.
+- `Flashcard`: `id`, `question`, `answer`, `topic`, `course_id`, `sequence_order`, `is_active`.
+- `QuizQuestion`: `id`, `quiz_id`, `question`, `options_json`, `correct_option_index`.
+
+===============================================================================
+5. GENERÁLHATÓ TARTALOMTÍPUSOK
+===============================================================================
+A meglévő forrásanyag feldolgozásával az alábbi elemek állíthatók elő:
+1. `Interaktív Tananyaglépések`:
+   - `info`: Általános technológiai leírások képpel/ábrával.
+   - `single_choice`: Mérőszámokra, határértékekre és szabályokra vonatkozó kérdések.
+   - `multiple_choice`: Több tényezős feltételek és biztonsági előírások.
+   - `error_identification`: Forrásanyagban említett "Gyakori hibák" átültetése kivitelezési hiba-azonosító feladattá.
+   - `reorder`: "Lépésről lépésre" technológiai folyamatok átültetése sorrendbe rendező feladattá.
+2. `Tanulókártyák`:
+   - Aktív felidézésre épülő kérdések (pl. "Mekkora...", "Miért kell...", "Mi történik, ha...").
+3. `Tesztkérdések`:
+   - Minimum 75%-os vizsgatesztekhez 4 opciós kérdések helyes index megjelöléssel.
+
+===============================================================================
+6. ADMIN WORKFLOW (DRAFT → ELLENŐRZÉS → PUBLIKÁLÁS)
+===============================================================================
+A biztonságos adminisztrátori folyamat 5 lépése:
+1. `Forrás Kiválasztása`: Az admin kiválaszt egy cikk-et vagy fogalmi témát (pl. "Gipszkarton válaszfal építése").
+2. `Generálási Opciók Kijelölése`: ☑ Interaktív lépések, ☑ Tanulókártyák, ☑ Hibafelismerés, ☑ Sorrendezés, ☑ Teszt.
+3. `Tartalom Elemzése (Vázlat Készítés)`: A rendszer előállítja az elemek vázlatát (DRAFT állapot).
+4. `Admin Bírálat és Előnézet (Review)`: Az admin egy háromfüles felületen áttekintheti a javasolt elemeket. Minden elemnél elérhető gombok:
+   - [ ELFOGAD ] (Zöld pipa - jóváhagyva publikálásra)
+   - [ SZERKESZT ] (Azonnali módosítási lehetőség)
+   - [ ELUTASÍT ] (Vázlat törlése)
+   - [ ELŐNÉZET ] (Élő tesztelés a tanulói komponensekkel)
+5. `Csomag Publikálása`: Kizárólag a jóváhagyott (ACCEPTED) elemek mentődnek le az `educationService.ts` felhő/helyi struktúrájába, így azonnal megjelennek a tanulóknál.
+
+===============================================================================
+7. AI INTEGRÁCIÓ LEHETŐSÉGE ÉS KORLÁTAI
+===============================================================================
+- Szabályalapú és AI szövegelemzés: A forrásanyagból (cikk/fogalom) kinyeri a kulcsszavakat, számértékeket, sorrendi lépéseket és hibaleírásokat.
+- Szigorú Szakmai Szabály: Az AI NEM találhat ki olyan adatot, ami nem szerepel a forrásanyagban!
+- Bizonytalanság Kezelése: Ha a forrásanyagban nincs elég információ egy feladattípushoz, az AI nem generál hamis adatot, hanem megjelöli az adminnak:
+  `⚠ ELLENŐRZÉST IGÉNYEL: A forrásanyag alapján nem állapítható meg egyértelműen.`
+- Zéró Auto-Publikálás: Az AI által generált egyetlen elem sem kerülhet automatikusan élesbe admin jóváhagyás nélkül.
+
+===============================================================================
+8. ADATBÁZIS-KORLÁTOK ÉS SÉMA MEGFELELŐSÉG
+===============================================================================
+- Új Supabase Tábla Szükségessége: **NINCS**.
+- Supabase Séma Módosítás: **NINCS**.
+- RLS Házirend Módosítás: **NINCS**.
+- Megvalósítás módja: A generált és elfogadott elemek a meglévő `EducationData` szerkezetbe tárolódnak le (felhős `categories` JSON szinkronizációval és local storage-dzsal), ahonnan a meglévő `CoursesPage.tsx` közvetlenül beolvassa őket.
+
+===============================================================================
+9. SZÜKSÉGES FÁJLMÓDOSÍTÁSOK (MINIMÁLIS SAFE PATCH DIFF)
+===============================================================================
+A megvalósításhoz mindössze 2 új dedikált modul és 1 minimális admin felületi hook szükséges:
+1. `src/services/learningPackageGenerator.ts` (ÚJ SERVICE):
+   - Szövegelemző és generáló motor, amely a cikkekből/fogalmakból vázlatos `InteractiveStep[]`, `Flashcard[]` és `QuizQuestion[]` tömböket készít.
+2. `src/components/AdminPackageGeneratorModal.tsx` (ÚJ KOMPONENS):
+   - Forrásválasztó, bírálati munkaterület ([ELFOGAD], [SZERKESZT], [ELUTASÍT]) és élő előnézet modul.
+3. `src/pages/AdminCoursesPage.tsx` (MINIMÁLIS GOMB MODOSÍTÁS):
+   - Fejlécbe illesztett `[⚡ Tanulási Csomag Generátor]` gomb a modal megnyitására.
+
+===============================================================================
+10. SAFE PATCH KOMPATIBILITÁS
+===============================================================================
+- Router: [OK] 0 útvonal módosítás.
+- Séma: [OK] 0 séma módosítás.
+- RLS: [OK] 0 RLS módosítás.
+- Működő kód: [OK] Minden meglévő oktatási funkció sértetlenül és változatlanul működik tovább.
+
+===============================================================================
+11. MEGVALÓSÍTÁSI KOCKÁZATOK ÉS KEZELÉSÜK
+===============================================================================
+- Kockázat: Az AI pontatlan vagy túl hosszú kérdéseket javasol.
+  * Kezelése: A kötelező adminisztrátori bírálat (Review & Approve) kiszűri a pontatlan javaslatokat.
+- Kockázat: Duplikált kérdések keletkeznek a csomagban.
+  * Kezelése: A generáló motor beépített duplikáció-szűrővel vizsgálja a kérdések átfedését.
+
+===============================================================================
+12. JAVASOLT MINIMÁLIS MEGVALÓSÍTÁS
+===============================================================================
+1. Lépés: `learningPackageGenerator.ts` megírása (cikk/fogalom átalakítása vázlathoz).
+2. Lépés: `AdminPackageGeneratorModal.tsx` megírása (vázlat elbíráló felület [ELFOGAD]/[SZERKESZT]/[ELUTASÍT] gombokkal).
+3. Lépés: Gomb rögzítése az `AdminCoursesPage.tsx` fejlécében.
+4. Lépés: Típusellenőrzés (`npm run typecheck`) és tesztelés.
+
+===============================================================================
+13. DÖNTÉS
+===============================================================================
+MEGVALÓSÍTHATÓ A JELENLEGI RENDSZERREL
+
+Az ÉpítőTudás meglévő tudásanyaga és tanulási motorja 100%-ban alkalmas a Tanulási Csomag Generátor fogadására. A megvalósítás 0 Supabase séma-módosítással, 0 router-átírással, minimális (2 új fájl + 1 felületi hook) kódmódosítással biztonságosan kivitelezhető.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-26 06:30
+===============================================================================

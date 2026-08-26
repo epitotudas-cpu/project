@@ -10,6 +10,7 @@ import {
   PlayCircle,
   HelpCircle,
   RotateCcw,
+  Layers,
 } from 'lucide-react';
 import {
   useEducationData,
@@ -18,6 +19,7 @@ import {
 } from '../services/educationService';
 import type { Course, Lesson, QuizQuestion } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import AdminFlashcardsModal from '../components/AdminFlashcardsModal';
 
 interface AdminCoursesPageProps {
   initialSearchQuery?: string;
@@ -33,6 +35,7 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
     }
   }, [initialSearchQuery]);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [showFlashcardsModal, setShowFlashcardsModal] = useState(false);
 
   // Active Selected Course for Editing Lessons/Quiz
   const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
@@ -334,6 +337,14 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowFlashcardsModal(true)}
+            style={{ backgroundColor: headerBg, borderColor: cardBorder, color: textColor }}
+            className="px-4 py-2.5 border font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+          >
+            <Layers size={14} className="text-amber-400" /> Tanulókártyák Kezelése
+          </button>
           <button
             type="button"
             onClick={handleResetDefaults}
@@ -764,6 +775,12 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
           </div>
         </div>
       )}
+      {/* ADMIN FLASHCARDS MODAL */}
+      <AdminFlashcardsModal
+        isOpen={showFlashcardsModal}
+        onClose={() => setShowFlashcardsModal(false)}
+        courses={eduData.courses}
+      />
     </div>
   );
 }

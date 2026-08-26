@@ -17,16 +17,21 @@ import {
   Layers,
   ArrowRight,
   ShieldCheck,
-  Zap,
   HardHat,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SectionSubNav from '../components/SectionSubNav';
+import InteractiveLessonViewer from '../components/InteractiveLessonViewer';
+import FlashcardViewer from '../components/FlashcardViewer';
+import MyLearningDashboard from '../components/MyLearningDashboard';
+import AdminFlashcardsModal from '../components/AdminFlashcardsModal';
 import {
   listCourses,
   getCourseDetails,
   submitQuizAnswers,
   getUserCertificates,
+  getInteractiveStepsForLesson,
+  getAllFlashcards,
   DEFAULT_LEARNING_PATHS,
   type DetailedCourse,
   type QuizSubmissionResult,
@@ -43,7 +48,9 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<DetailedCourse | null>(null);
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<'lessons' | 'quiz' | 'certificates'>('lessons');
+  const [activeTab, setActiveTab] = useState<'lessons' | 'flashcards' | 'quiz'>('lessons');
+  const [topMainTab, setTopMainTab] = useState<'catalog' | 'my-learning' | 'flashcards'>('catalog');
+  const [showAdminCardsModal, setShowAdminCardsModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Search & Filter state
@@ -248,10 +255,72 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
       />
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        
-        {/* SEARCH & FILTERS CONTAINER */}
-        <section id="katalogus" className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Main Tab Navigation Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3 rounded-2xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl w-full sm:w-auto">
+            <button
+              onClick={() => setTopMainTab('catalog')}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                topMainTab === 'catalog'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <BookOpen size={14} /> Képzési Katalógus
+            </button>
+            <button
+              onClick={() => setTopMainTab('my-learning')}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                topMainTab === 'my-learning'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <GraduationCap size={14} /> Tanulásom Irányítópult
+            </button>
+            <button
+              onClick={() => setTopMainTab('flashcards')}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                topMainTab === 'flashcards'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers size={14} /> Tanulókártyák
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowAdminCardsModal(true)}
+            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <Layers size={14} className="text-amber-600" /> Admin Kártyakezelő
+          </button>
+        </div>
+
+        {/* TOP MAIN TAB CONTENT */}
+        {topMainTab === 'my-learning' && (
+          <MyLearningDashboard
+            courses={courses}
+            certificates={certificates}
+            userId={user?.id}
+            onContinueCourse={(cId) => handleOpenCourseModal(cId)}
+            onOpenFlashcards={() => setTopMainTab('flashcards')}
+          />
+        )}
+
+        {topMainTab === 'flashcards' && (
+          <FlashcardViewer
+            cards={getAllFlashcards()}
+            userId={user?.id || 'guest'}
+          />
+        )}
+
+        {topMainTab === 'catalog' && (
+          <>
+            {/* SEARCH & FILTERS CONTAINER */}
+            <section id="katalogus" className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-6">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
             {/* Search Input */}
             <div className="relative flex-1">
@@ -570,6 +639,8 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
             </button>
           </div>
         </section>
+          </>
+        )}
 
       </div>
 
@@ -598,7 +669,7 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
             </div>
 
             {/* Modal Navigation Tabs */}
-            <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+            <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 pb-3">
               <button
                 onClick={() => setActiveTab('lessons')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -608,6 +679,16 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
                 }`}
               >
                 <PlayCircle size={15} /> Leckék ({selectedCourse.lessons.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('flashcards')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'flashcards'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Layers size={15} /> Tanulókártyák ({selectedCourse.flashcards?.length || 0})
               </button>
               <button
                 onClick={() => setActiveTab('quiz')}
@@ -621,7 +702,7 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
               </button>
             </div>
 
-            {/* TAB 1: LESSONS */}
+            {/* TAB 1: LESSONS (WITH INTERACTIVE VIEWER) */}
             {activeTab === 'lessons' && (
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
@@ -641,14 +722,22 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
                 </div>
 
                 {selectedCourse.lessons[activeLessonIndex] ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4">
-                    <h3 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
-                      <PlayCircle className="text-accent" size={22} />
-                      {selectedCourse.lessons[activeLessonIndex].title}
-                    </h3>
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line font-medium">
-                      {selectedCourse.lessons[activeLessonIndex].content}
-                    </p>
+                  <div className="space-y-6">
+                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4">
+                      <h3 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                        <PlayCircle className="text-accent" size={22} />
+                        {selectedCourse.lessons[activeLessonIndex].title}
+                      </h3>
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line font-medium">
+                        {selectedCourse.lessons[activeLessonIndex].content}
+                      </p>
+                    </div>
+
+                    {/* Interactive Lesson Player */}
+                    <InteractiveLessonViewer
+                      lessonTitle={selectedCourse.lessons[activeLessonIndex].title}
+                      steps={getInteractiveStepsForLesson(selectedCourse.lessons[activeLessonIndex].id)}
+                    />
 
                     <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
                       <span className="text-xs text-gray-500 font-semibold">Gyakorlati e-learning tananyag</span>
@@ -661,10 +750,10 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
                         </button>
                       ) : (
                         <button
-                          onClick={() => setActiveTab('quiz')}
-                          className="px-4 py-2 bg-accent hover:bg-accent-hover text-primary font-black text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all"
+                          onClick={() => setActiveTab('flashcards')}
+                          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all"
                         >
-                          Vizsgateszt Kitöltése <Zap size={14} />
+                          Tanulókártyák Gyakorlása <Layers size={14} />
                         </button>
                       )}
                     </div>
@@ -673,6 +762,15 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
                   <div className="p-8 text-center text-gray-500 text-xs">Ehhez a kurzushoz még nem töltöttek fel leckét.</div>
                 )}
               </div>
+            )}
+
+            {/* TAB 2: FLASHCARDS FOR THIS COURSE */}
+            {activeTab === 'flashcards' && (
+              <FlashcardViewer
+                cards={selectedCourse.flashcards || []}
+                userId={user?.id || 'guest'}
+                courseTitle={selectedCourse.course.title}
+              />
             )}
 
             {/* TAB 2: QUIZ */}
@@ -804,6 +902,12 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
           </div>
         </div>
       )}
+      {/* ADMIN FLASHCARDS MODAL */}
+      <AdminFlashcardsModal
+        isOpen={showAdminCardsModal}
+        onClose={() => setShowAdminCardsModal(false)}
+        courses={courses}
+      />
 
     </div>
   );
