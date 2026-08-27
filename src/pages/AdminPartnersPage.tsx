@@ -86,8 +86,10 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       ]);
       setPartners(partnerData);
       setInvitations(inviteData);
-      if (partnerData.length > 0 && !invitePartnerId) {
-        setInvitePartnerId(partnerData[0].id);
+      if (partnerData.length > 0) {
+        if (!invitePartnerId || !partnerData.some((p) => p.id === invitePartnerId)) {
+          setInvitePartnerId(partnerData[0].id);
+        }
       }
     } finally {
       setLoading(false);

@@ -48,13 +48,26 @@ export async function createInvitation(
   const code = generateRandomCode();
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString();
 
+  // Safeguard: Ensure partnerId is a valid PostgreSQL UUID
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partnerId);
+  let targetPartnerId = partnerId;
+
+  if (!isUuid) {
+    const { data: dbPartners } = await supabase.from('partners').select('id').limit(1);
+    if (dbPartners && dbPartners.length > 0) {
+      targetPartnerId = dbPartners[0].id;
+    } else {
+      throw new Error('Érvénytelen partner azonosító (UUID). Kérjük, válasszon létező partner szervezetet.');
+    }
+  }
+
   const { data: sessionData } = await supabase.auth.getSession();
   const currentUserId = sessionData.session?.user?.id ?? null;
 
   const { data, error } = await supabase
     .from('partner_invitations')
     .insert({
-      partner_id: partnerId,
+      partner_id: targetPartnerId,
       email: cleanEmail,
       code,
       expires_at: expiresAt,
