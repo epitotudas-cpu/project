@@ -179,6 +179,11 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
   // Handle Invitation Creation
   function openCreateInviteModal() {
+    if (partners.length > 0) {
+      if (!invitePartnerId || !partners.some((p) => p.id === invitePartnerId)) {
+        setInvitePartnerId(partners[0].id);
+      }
+    }
     setContactName('');
     setInviteEmail('');
     setExpiresInDays(14);
