@@ -1,0 +1,221 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – PARTNER ONBOARDING ÉS ADMIN RBAC ÚJRAAUDIT ÉS ARCHITEKTÚRA TERV
+===============================================================================
+Dátum: 2026. augusztus 27.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Átfogó Üzleti, Partner Onboarding, E-mail Infrastruktúra és RBAC Audit
+Módosítási Státusz: 0 KÓD- ÉS SÉMAMÓDOSÍTÁS (SZIGORÚ ÚJRAAUDIT FÁZIS)
+
+===============================================================================
+1. JELENLEGI ÁLLAPOT – TÉNYEK
+===============================================================================
+
+1.1 Meghívó Rendszer (`partner_invitations`):
+- TÉNY: A `partner_invitations` táblában a `partner_id` jelenleg `UUID NOT NULL REFERENCES partners(id)`. Ezért az Adminisztrátor kizárólag olyan szervezetnek tud meghívót küldeni, amely előzetesen már be lett rögzítve a `partners` táblába.
+- TÉNY: Nem létezik lehetőség arra, hogy az Admin egy még nem regisztrált cégnek/iskolának küldjön meghívót, ahol a meghívott maga tölti ki a szervezet adatait.
+
+1.2 Partneri Jelentkezési Folyamat:
+- TÉNY: A jelenlegi kódcsomagban NINCSEEN publikus "Szeretnénk partnerként csatlakozni" jelentkezési űrlap és nincsen `partner_applications` tábla.
+- TÉNY: A partnerek rögzítése kizárólag kézzel, az `AdminPartnersPage.tsx` felületen történik az Adminisztrátor által.
+
+1.3 Kapcsolattartó Adatok Megjelenítése:
+- TÉNY: Az `AdminPartnersPage.tsx` jelenleg csak a `partners` tábla adatait (név, kategória, leírás, weboldal) jeleníti meg. A `partner_users` táblában lévő kapcsolódó felhasználókat (tulajdonos, munkatársak, e-mail címek) nem tölti be és nem jeleníti meg a kártyákon.
+
+1.4 E-mail Infrastruktúra:
+- TÉNY: A projektben jelenleg nincs beállítva automatikus e-mail küldő Edge Function vagy külső SMTP API (pl. Resend / SendGrid). A `partnerInvitationService.ts` a személyre szabott szöveget állítja elő, amit az Admin manuálisan másolhat ki.
+
+1.5 Platform Szerepkörök Kezelése (`AdminUsersPage.tsx`):
+- TÉNY: A `profiles.role` mező a Supabase-ben támogatja a szöveges értékeket (`user`, `editor`, `moderator`, `admin`). A `protect_profile_role_rls` SQL politika biztosítja, hogy kizárólag az `admin` módosíthassa a `profiles.role` oszlopot.
+- TÉNY: Az `AdminUsersPage.tsx` felületen jelenleg hiányzik a közvetlen szerepkör-módosító gördülőmenü (`user`, `editor`, `moderator`, `admin`).
+
+===============================================================================
+2. AZONOSÍTOTT PROBLÉMÁK
+===============================================================================
+
+1. **Bürokratikus Meghívási Sorrend:** Az Adminnak előbb fel kell vinnie a céget a `partners` táblába (név, kategória), és csak utána tudja meghívni a kapcsolattartót. Ez lassítja a partneri felvételt.
+2. **Hiányzó Publikus Jelentkezési Csatorna:** Az új cégek/iskolák nem tudnak közvetlenül jelentkezni a platformra, nincs `pending` státuszú elbírálási sor az Admin számára.
+3. **Hiányos Partner Adatlap:** Az Admin nem látja az `AdminPartnersPage.tsx` felületen, hogy kik a cég bejegyzett munkatársai (`owner` / `member`), és mi a kapcsolattartó e-mailje/neve.
+4. **Manuális E-mail Másolás:** Az Adminnak kézzel kell kimásolnia a meghívó sablont a saját levelezőjébe ahelyett, hogy egyetlen gombnyomással elmenne az e-mail.
+5. **Hiányzó Szerepkör Váltó Felület:** Az Admin nem tudja a felhasználók platformszintű szerepkörét (`user` ➔ `editor` ➔ `moderator` ➔ `admin`) közvetlenül a felületről módosítani.
+
+===============================================================================
+3. JAVASOLT CÉLÁLLAPOT
+===============================================================================
+
+1. **Rugalmas Meghívási Modell (Partner Létrehozása Nélkül):**
+   - Az Admin meghívót küldhet egy még nem létező cégnek/iskolának (megadva a cégnevet, kategóriát és a kapcsolattartó e-mailjét).
+   - A meghívott a regisztráció/belépés során kitölti a szervezetének adatait (weboldal, leírás), amelynek hatására automatikusan létrejön a `partners` és `partner_users` (`owner`) rekord.
+2. **Publikus Partneri Jelentkezési Folyamat:**
+   - Új `#partner-application` felület a weboldalon (cégnév, kapcsolattartó neve, e-mail, telefon, weboldal, típus).
+   - `partner_applications` tábla `pending` státusszal.
+   - Admin felületen `[ Elfogadás ]` gomb ➔ automatikusan generálja és kiküldi a meghívót.
+3. **Komplett Partner & Kapcsolattartó Adatlap:**
+   - Az `AdminPartnersPage.tsx` felületen a partner kártyákon megjelennek a `partner_users` + `profiles` kapcsolódó munkatársai (Név, E-mail, Szerepkör: `owner` / `member`, Regisztráció dátuma).
+4. **Automatizált E-mail Küldés:**
+   - `[ Meghívó létrehozása és küldése ]` gomb, amely Supabase Edge Function-ön / Resend API-n keresztül automatikusan kiküldi az e-mailt a generált linkkel és lejárati dátummal. A másolási lehetőség megmarad tartaléknak.
+5. **Teljeskörű RBAC Szerepkör Kezelő Felület:**
+   - Az `AdminUsersPage.tsx` felületen minden felhasználó mellett megjelenik a platformszintű szerepkör választó (`user`, `editor`, `moderator`, `admin`), szigorúan csak Adminisztrátorok számára.
+
+===============================================================================
+4. PARTNER ELŐZETES LÉTREHOZÁSA NÉLKÜLI MEGHÍVÁS MEGOLDÁSA
+===============================================================================
+
+- **TÉNY:** A `partner_invitations` táblában a `partner_id` mező jelenleg `NOT NULL`.
+- **FELTÉTELEZÉS:** A `partner_id` mezőt `NULLABLE`-lé kell tenni (`partner_id UUID NULL REFERENCES partners(id)`), és két új oszlopot kell felvenni: `organization_name TEXT` és `organization_category TEXT`.
+- **JAVASLAT (Onboarding Workflow):**
+  1. Az Admin rögzíti a meghívót: Cégnév: "BauMaster Kft.", Kategória: "ceg", E-mail: "info@baumaster.hu". Létrejön a `partner_invitations` rekord (`partner_id = NULL`).
+  2. A meghívott megnyitja a hivatkozást ➔ regisztrál vagy bejelentkezik.
+  3. A rendszer megjelenít egy rövid **Szervezeti Profil Kitöltőt** (pre-filled cégnévvel).
+  4. Megújított `accept_partner_invitation` RPC:
+     - Ha `partner_id IS NULL`: Létrehozza a `partners` rekordot (`name = organization_name`, `category = organization_category`).
+     - Összeköti a felhasználót az új partnerrel a `partner_users` táblában `member_role = 'owner'` ranggal.
+     - Frissíti a `partner_invitations` rekordot (`partner_id = new_partner_id`, `status = 'used'`).
+
+===============================================================================
+5. PARTNERI JELENTKEZÉSI FOLYAMAT
+===============================================================================
+
+- **TÉNY:** Jelenleg nincs adatstruktúra a jelentkezések tárolására.
+- **FELTÉTELEZÉS:** Létre kell hozni a `partner_applications` táblát.
+- **JAVASLAT:**
+  - `partner_applications` tábla szerkezete: `id` (uuid), `company_name` (text), `contact_name` (text), `email` (text), `phone` (text), `website_url` (text), `description` (text), `category` (text), `status` ('pending' | 'approved' | 'rejected'), `created_at` (timestamptz).
+  - Public RLS policy: Anonim és hitelesített felhasználók is beszúrhatnak (`INSERT TO anon, authenticated`).
+  - Admin felületen új lap: **`Jelentkezések (Pending)`**.
+  - `[ Jóváhagyás ]` gomb ➔ Létrehozza a meghívót a `partner_invitations` táblában, kiküldi az e-mailt, és frissíti a jelentkezést `status = 'approved'` állapotra.
+
+===============================================================================
+6. KAPCSOLATTARTÓ ADATOK KEZELÉSE
+===============================================================================
+
+- **TÉNY:** A `partner_users` kapcsolótábla összeköti a `partners.id`-t a `profiles.id`-val és tartalmazza a `member_role` mezőt. A `profiles` tábla tartalmazza a `full_name`-et és `email`-t.
+- **FELTÉTELEZÉS:** Nem kell redundáns adatot tárolni a `partners` táblában. A kapcsolattartó adatok hiánytalanul lekérdezhetők egy SQL JOIN segítségével.
+- **JAVASLAT:**
+  - Új lekérdezés a service-ben:
+    `supabase.from('partner_users').select('partner_id, member_role, created_at, profiles(id, full_name, email, avatar_url)')`
+  - Az `AdminPartnersPage.tsx` felületen a partner kártyán vagy egy kinyitható "Munkatársak" panelen megjelennek a szervezet bejegyzett tagjai:
+    * **Tulajdonos / Fő Kapcsolattartó (`owner`):** Név, E-mail, Csatlakozás dátuma.
+    * **Munkatársak (`member`):** Név, E-mail.
+
+===============================================================================
+7. AUTOMATIKUS E-MAIL KÜLDÉS
+===============================================================================
+
+- **TÉNY:** A projektben jelenleg nincs aktív e-mail küldő Edge Function vagy SMTP API integrálva.
+- **FELTÉTELEZÉS:** A Supabase éles projekt támogatja a Supabase Edge Function-öket és a külső HTTP API hívásokat (pl. Resend API).
+- **JAVASLAT (Production-Ready E-mail Architektúra):**
+  - **Edge Function:** Létrehozunk egy `send-invitation-email` Edge Function-t a Supabase-ben, amely a Resend API-t (`https://api.resend.com/emails`) használja.
+  - Az Admin felületen a `[ Meghívó Létrehozása és Küldése ]` gombra kattintva:
+    1. Létrejön a meghívó az adatbázisban.
+    2. A frontend meghívja a `supabase.functions.invoke('send-invitation-email', { body: { to, subject, html } })` funkciót.
+    3. Ha az e-mail küldés sikeres ➔ kiírja, hogy "Meghívó elküldve a(z) [email] címre!".
+    4. A másolható sablon opció megmarad biztonsági tartalékként.
+
+===============================================================================
+8. ADMIN / EDITOR / MODERATOR ROLE MANAGEMENT
+===============================================================================
+
+- **TÉNY:** A `profiles.role` oszlop és a `protect_profile_role_rls` SQL politika támogatja az `admin`, `editor`, `moderator`, `user` értékeket. Kizárólag `admin` role-al rendelkező felhasználó módosíthatja a `profiles.role` mezőt.
+- **FELTÉTELEZÉS:** Az `AdminUsersPage.tsx` felületről hiányzik a szerepkör-választó UI elem.
+- **JAVASLAT:**
+  - Az `AdminUsersPage.tsx` felületen minden felhasználó sora mellett megjelenik egy **Platform Szerepkör** gördülőmenü (`User`, `Editor`, `Moderator`, `Admin`).
+  - Módosításkor a frontend meghívja a `userService.updateProfileRole(userId, newRole)` függvényt.
+  - Szigorú Ellenőrzések:
+    * Frontend: A gördülőmenü kizárólag akkor aktív, ha a bejelentkezett admin maga rendelkezik `profile.role === 'admin'` státusszal.
+    * Adatbázis RLS: A `protect_profile_role_rls` SQL politika PostgreSQL szinten elutasítja (HTTP 403), ha egy `editor` vagy `moderator` megpróbálná módosítani a `profiles.role` mezőt.
+    * Publikus regisztráció: Szigorúan `role = 'user'`.
+    * `user_type` (`tanulo` / `szakember`): Szigorúan `user_metadata`, 0 hatással a `profiles.role`-ra.
+
+===============================================================================
+9. SUPABASE SÉMA VÁLTOZTATÁSI IGÉNY
+===============================================================================
+- **SÉMAMÓDOSÍTÁS SZÜKSÉGES: IGEN**
+- Szükséges módosítások:
+  1. `partner_invitations` tábla módosítása:
+     - `partner_id` mező módosítása `NULLABLE`-re (`UUID NULL REFERENCES partners(id)`).
+     - Új oszlopok: `organization_name TEXT`, `organization_category TEXT`.
+  2. Új `partner_applications` tábla létrehozása:
+     - `id` UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     - `company_name` TEXT NOT NULL,
+     - `contact_name` TEXT NOT NULL,
+     - `email` TEXT NOT NULL,
+     - `phone` TEXT,
+     - `website_url` TEXT,
+     - `description` TEXT,
+     - `category` TEXT NOT NULL,
+     - `status` TEXT NOT NULL DEFAULT 'pending',
+     - `created_at` TIMESTAMPTZ DEFAULT now().
+
+===============================================================================
+10. RLS VÁLTOZTATÁSI IGÉNY
+===============================================================================
+- **RLS MÓDOSÍTÁS SZÜKSÉGES: IGEN**
+- Szükséges politikák:
+  1. `partner_applications` RLS:
+     - Publikus beszúrás engedélyezése: `CREATE POLICY "Public insert applications" ON partner_applications FOR INSERT TO anon, authenticated WITH CHECK (true);`
+     - Olvasás/Szerkesztés csak Adminnak: `CREATE POLICY "Admin manage applications" ON partner_applications FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor')));`
+  2. `partner_invitations` RLS frissítés:
+     - Meglévő RLS politikák megtartása (kizárólag Admin/Editor kezelheti).
+
+===============================================================================
+11. RPC / EDGE FUNCTION VÁLTOZTATÁSI IGÉNY
+===============================================================================
+- **RPC MÓDOSÍTÁS SZÜKSÉGES: IGEN**
+- **EDGE FUNCTION SZÜKSÉGES: IGEN**
+- Szükséges elemek:
+  1. `accept_partner_invitation` RPC frissítése:
+     - Ha `inv.partner_id IS NULL`: Hozzon létre új `partners` rekordot az `inv.organization_name` és `inv.organization_category` alapján, és az új `partner_id`-t kapcsolja az `accept_partner_invitation` tranzakcióhoz `member_role = 'owner'` ranggal.
+  2. `send-invitation-email` Edge Function létrehozása:
+     - Automatikus e-mail küldés lebonyolítása Resend API-n keresztül.
+
+===============================================================================
+12. ÉRINTETT FÁJLOK
+===============================================================================
+1. `supabase/migrations/20260827_002_partner_onboarding_and_applications.sql` (ÚJ MIGÁCIÓS FÁJL)
+2. `supabase/functions/send-invitation-email/index.ts` (ÚJ EDGE FUNCTION)
+3. `src/services/partnerInvitationService.ts` (MÓDOSÍTANDÓ - Meghívó partner_id nélkül & E-mail küldés)
+4. `src/services/partnerApplicationService.ts` (ÚJ SERVICE - Jelentkezési API wrapper)
+5. `src/services/userService.ts` (MÓDOSÍTANDÓ - `updateProfileRole` támogatása)
+6. `src/pages/AdminPartnersPage.tsx` (MÓDOSÍTANDÓ - Partner nélküli meghívó modal, Jelentkezések fül, Kapcsolattartók kártya)
+7. `src/pages/AdminUsersPage.tsx` (MÓDOSÍTANDÓ - Platform role választó gördülőmenü)
+8. `src/pages/PartnerApplicationPage.tsx` (ÚJ PUBLIKUS OLDAL - Partneri jelentkezési űrlap)
+
+===============================================================================
+13. BIZTONSÁGI KOCKÁZATOK ÉS VÉDELMEK
+===============================================================================
+1. **Frontend Role Manipuláció:** Elhárítva. A `protect_profile_role_rls` SQL politika PostgreSQL szinten elutasít minden nem-admin kezdeményezésű `profiles.role` módosítást.
+2. **Spam Jelentkezések a Publikus Űrlapon:** Védhető egyszerű rate-limitinggel és eldobható e-mail szűrővel a `partner_applications` beszúrásakor.
+3. **Nevesített Meghívó E-mail Jogosulatlan Beváltása:** Az `accept_partner_invitation` RPC továbbra is szigorúan megköveteli az `LOWER(TRIM(inv.email)) = LOWER(TRIM(current_user_email))` egyezést.
+
+===============================================================================
+14. MIGRATION SZÜKSÉGESSÉGE
+===============================================================================
+- **MIGRÁCIÓ SZÜKSÉGES: IGEN** (`20260827_002_partner_onboarding_and_applications.sql`).
+
+===============================================================================
+15. MINIMÁLIS IMPLEMENTÁCIÓS TERV (JÓVÁHAGYÁS UTÁN)
+===============================================================================
+1. Adatbázis migrációs SQL megírása és alkalmazása a Supabase-ben (`partner_applications` tábla, `partner_invitations` módosítás, megújított RPC).
+2. `partnerApplicationService.ts` és frissített `partnerInvitationService.ts` elkészítése.
+3. `send-invitation-email` Supabase Edge Function elkészítése.
+4. Publikus `PartnerApplicationPage.tsx` jelentkezési oldal megírása és bekötése.
+5. `AdminPartnersPage.tsx` felület frissítése (Jelentkezések fül, Új meghívó partner nélkül, Munkatársak lista).
+6. `AdminUsersPage.tsx` felület frissítése (Platform Szerepkör választó).
+7. Típusellenőrzés (`npx tsc --noEmit`) és production build tesztelése.
+
+===============================================================================
+16. TESZTELÉSI TERV
+===============================================================================
+1. **Partner nélküli meghívó teszt:** Admin meghívót küld a "Próba Kft."-nek ➔ Meghívott belép ➔ Létrejön a cég és a `partner_users` (`owner`).
+2. **Publikus jelentkezés teszt:** Cég kitölti az űrlapot ➔ Admin felületen megjelenik `pending`ként ➔ Admin elfogadja ➔ Kiküldi a meghívót.
+3. **Kapcsolattartó megjelenítés teszt:** Admin Partners panelen látszanak a cég bejegyzett tagjai (`owner` / `member`).
+4. **RBAC Szerepkör váltás teszt:** Admin átállítja egy user role-ját `editor`-ra ➔ A user megkapja az admin hozzáférést. `editor` megpróbálja átállítani saját jogát ➔ RLS 403 Forbidden.
+
+===============================================================================
+DÖNTÉSI ELŐKÉSZÍTÉS ÉS MEGÁLLÁS
+===============================================================================
+Az audit és a technikai architektúra terv elkészült. Kód-, router- vagy Supabase séma-módosítás NEM történt.
+A fejlesztés kizárólag a terv áttekintése és külön jóváhagyása után indítható meg.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-27 21:13
+===============================================================================
