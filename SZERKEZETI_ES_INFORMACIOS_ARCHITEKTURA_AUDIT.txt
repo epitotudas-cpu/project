@@ -1,0 +1,385 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – TELJES SZERKEZETI ÉS INFORMÁCIÓS ARCHITEKTÚRA AUDIT
+===============================================================================
+Dátum: 2026. augusztus 26.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Szerkezeti, Információ-architektúrás, Routing és Adatmodell Audit
+Módosítási Státusz: 0 KÓD-, SÉMA- ÉS ROUTER MÓDOSÍTÁS (SZIGORÚ AUDIT)
+
+===============================================================================
+1. JELENLEGI ÁLLAPOT TÉRKÉP (SYSTEM MAP)
+===============================================================================
+
+1.1 Frontend Alkalmazás & Routing Motor:
+- Technológia: Vite + React + TypeScript + Tailwind CSS.
+- Navigáció: SPA Hash-alapú Útvonalválasztás (`window.location.hash`, `getInitialPage()`, `sessionStorage` tartalékkal). Nincs `react-router-dom`.
+- Főoldali és Fejléces Navigáció: `Header.tsx` vezérli a `navigationService.ts` felületét (`DEFAULT_NAV_ITEMS` + felhőalapú felülbírálás a Supabase `categories` táblájából).
+
+1.2 Fő Oldalak és Útvonal-kulcsok (28 PageKey az App.tsx-ben):
+- `#home`: `HomePage.tsx` (Kiemelt cikkek, kategóriák, kalkulátorok).
+- `#tudastar`: `KnowledgeHubPage.tsx` (Tudástár központi csomópont).
+- `#category`: `CategoryPage.tsx` (Kategória szerinti cikkböngésző).
+- `#article?slug={slug}`: `ArticlePage.tsx` (Egyedi cikk olvasó).
+- `#glossary`: `GlossaryPage.tsx` (319 kifejezéses fogalomtár és zsargon szótár).
+- `#calculations`: `CalculationsPage.tsx` (Gipszkarton, beton, burkolat kalkulátorok).
+- `#books`: `BooksPage.tsx` (Szakmai könyvek és jegyzetek).
+- `#tool`: `ToolPage.tsx` (Gép és szerszám katalógus).
+- `#software`: `SoftwarePage.tsx` (Építőipari szoftverek).
+- `#valaszto`: `ToolSelectorPage.tsx` (Eszközválasztó modul).
+- `#paths`: `PathsHubPage.tsx` (Építőipari szakmák központja).
+- `#about`: `AboutHubPage.tsx` (Küldetés és rólunk oldal).
+- `#partners`: `PartnersPage.tsx` (Gyártó és kivitelező partnerek).
+- `#courses`: `CoursesPage.tsx` (Kurzusok, interaktív leckék és tanulókártyák).
+- `#careers`: `CareersPage.tsx` (Állásajánlatok és karrier).
+- `#jogi`, `#impressum`, `#privacy`, `#terms`, `#cookies`: Jogi és tájékoztató oldalak.
+- `#login`, `#register`, `#profile`, `#verify-email`, `#forgot-password`, `#reset-password`: Hitelesítési oldalak.
+- `#admin`: `AdminLayout.tsx` (16 adminisztrációs almenüvel).
+
+1.3 Admin Felület Almenüi (16 nézet):
+`dashboard`, `articles`, `categories`, `glossary`, `trades`, `books`, `tools`, `jobs`, `courses`, `users`, `roles`, `partners`, `ads`, `audit`, `settings`, `moderation`.
+
+1.4 Supabase Adatmodell & Táblák:
+- `articles`: Cikkek és útmutatók (`id`, `title`, `slug`, `excerpt`, `content`, `category_id`, `author`, `difficulty`, `read_time`, `views`, `status`).
+- `categories`: Cikk kategóriák ÉS Rendszerbeállítások (`id`, `name`, `slug`, `icon_name`, `color`, `description`, `image_url`, `featured`, `sort_order`).
+- `glossary_terms`: Fogalmak és zsargonok (`id`, `term`, `slug`, `definition`, `letter`, `category`, `entry_type`, `detailed_description`, `practical_applications`, `common_mistakes`, `knowledge_graph_relations`).
+- `tools`: Gépek, szerszámok és szoftverek (`id`, `name`, `slug`, `type`, `brand`, `description`, `specs`, `price`, `professions`, `uses`).
+- `courses`, `lessons`, `quizzes`, `quiz_questions`, `user_certificates`: E-learning rendszer táblái.
+- `profiles`, `roles`, `permissions`, `role_permissions`: RBAC jogosultsági rendszer.
+- `partners`, `partner_users`, `contributors`, `ad_campaigns`: Üzleti partnerek és hirdetési bannerek.
+
+1.5 Rendszerkonfigurációk Tárolási Ténye (Empirikus Felfedezés):
+Mivel a Supabase adatbázisban nem jött létre külön tábla a navigáció, szakmák vagy rendszerbeállítások számára, az alkalmazás a `categories` tábla speciális rendszer-soraiba tárolja a JSON-ba szerializált beállításokat:
+- `00000000-0000-0000-0000-000000000001`: `__SYSTEM_CONFIG_SITE_SETTINGS__`
+- `00000000-0000-0000-0000-000000000002`: `__SYSTEM_CONFIG_HERO_SLIDES__`
+- `00000000-0000-0000-0000-000000000003`: `__SYSTEM_CONFIG_IMPRESSUM__`
+- `00000000-0000-0000-0000-000000000004`: `__SYSTEM_CONFIG_NAV_STRUCTURE__`
+- `00000000-0000-0000-0000-000000000007`: `__SYSTEM_CONFIG_TRADES__`
+- `00000000-0000-0000-0000-000000000010`: `__SYSTEM_CONFIG_EDUCATION_DATA__`
+
+===============================================================================
+2. FRONTEND INFORMÁCIÓS ARCHITEKTÚRA
+===============================================================================
+
+2.1 Legfelső Tartalmi Szint:
+Jelenleg a weboldal 4 különálló, párhuzamos főkategória-csoport köré épül a navigációs menüben:
+1. `Tudástár` (`#tudastar`) -> Cikkek, Fogalomtár, Számítások, Könyvek.
+2. `Eszközök` (`#tool`) -> Katalógus, Szoftverek, Eszközválasztó.
+3. `Pályák` (`#paths`) -> Építőipari szakmák, Tanulási útvonalak, Képzések, Karrier.
+4. `Rólunk` (`#about`) -> Küldetés, Partnereink, Impresszum.
+
+2.2 Eljutási Útvonalak:
+- Szakmákhoz: `Pályák` -> `Építőipari szakmák` (`#paths`) -> `PathsHubPage.tsx`. (A szakmák a `tradeDetailsData.ts`-ben és a JSON rendszer-sorban vannak, nincs közvetlen adatbázis FK kapcsolatuk a cikkek kategóriáival).
+- Témakörhöz / Kategóriához: `Tudástár` -> `Cikkek & Útmutatók` (`#category`) -> `CategoryPage.tsx`.
+- Cikkhez: Kategória vagy Tudástár oldalról rákattintva -> `#article?slug={slug}`.
+- Fogalomhoz: `Tudástár` -> `Fogalomtár & Szótár` (`#glossary`) -> `GlossaryPage.tsx`.
+- Számításhoz: `Tudástár` -> `Számítások & Kalkulátorok` (`#calculations`) -> `CalculationsPage.tsx`.
+
+2.3 Bizonytalan / Tisztázatlan Hierarchiai Pontok (TÉNYEK):
+1. `Szakmák` (Trades) ↔ `Kategóriák` (Categories): A Szakmák (pl. Gipszkartonozó, Burkoló) és a Cikk-kategóriák (pl. Szárazépítészet, Burkolástechnika) függetlenek. Egy gipszkartonozással kapcsolatos anyag megtalálható a `#paths` alatt ÉS a `#category` alatt is, eltérő elrendezésben.
+2. `Cikkek` ↔ `Útmutatók`: A menüben "Cikkek & Útmutatók" néven szerepel, de az adatbázisban kizárólag `articles` tábla létezik `difficulty` mezővel. Az "Útmutató" nem külön tartalomtípus.
+3. `Tanulási útvonalak` ↔ `Képzések`: A navigációban a "Tanulási útvonalak" a `#courses#utvonalak` címkére mutat, míg a "Képzések & kurzusok" a `#courses` oldalra. Mindkettő a `CoursesPage.tsx`-et tölti be.
+
+===============================================================================
+3. TARTALOMTÍPUSOK AUDITJA
+===============================================================================
+
+1. `Cikk / Útmutató` (Article / Guide):
+   - Cél: Szakmai háttértudás, gyakorlati leírások.
+   - Megjelenés: `#article?slug={slug}`, `#category`.
+   - Adatforrás: Supabase `articles` tábla.
+   - Átfedés: Az útmutatók és a cikkek egyazon `articles` táblában tárolódnak.
+
+2. `Fogalom & Zsargon` (Glossary Term & Slang):
+   - Cél: Szakszavak ("dilatáció") és műhelyszleng ("flex", "snitzer") magyarázata.
+   - Megjelenés: `#glossary`.
+   - Adatforrás: Supabase `glossary_terms` tábla (`entry_type`: `technical_concept` | `industry_term`).
+   - Átfedés: Tartalmaz `related_article_ids` mezőt, de bizonyos fogalmak (pl. Dilatáció) cikként és fogalomként is léteznek.
+
+3. `Számítás & Kalkulátor` (Calculations & Estimators):
+   - Cél: Anyagszükséglet becslése (gipszkarton, csavar, beton).
+   - Megjelenés: `#calculations`.
+   - Adatforrás: Hardkódolt React kalkulátor komponensek a `CalculationsPage.tsx`-ben.
+   - Átfedés: Funkcionális átfedés az Eszközválasztó modullal (`#valaszto`).
+
+4. `Gép & Szerszám` (Tool & Machinery):
+   - Cél: Gépek és szerszámok műszaki adatai, vásárlási útmutatók.
+   - Megjelenés: `#tool`.
+   - Adatforrás: Supabase `tools` tábla.
+
+5. `Szoftver` (Software):
+   - Cél: CAD, BIM és költségbecslő szoftverek felvétele.
+   - Megjelenés: `#software`.
+   - Adatforrás: Supabase `tools` tábla szűrt lekérdezése (`type = 'software'`).
+
+6. `Szakma` (Trade / Profession):
+   - Cél: Építőipari szakmák leírása, szükséges szerszámok, tanulási útvonal.
+   - Megjelenés: `#paths`.
+   - Adatforrás: `tradeDetailsData.ts` + `categories` tábla JSON rendszer-sora.
+
+7. `Kurzus & Lecke` (Course & Lesson):
+   - Cél: Strukturált e-learning képzések interaktív lépésekkel, tanulókártyákkal és kvízekkel.
+   - Megjelenés: `#courses`.
+   - Adatforrás: Supabase `courses`, `lessons`, `quizzes`, `quiz_questions` táblák + `categories` JSON rendszer-sora.
+
+8. `Szakmai Könyv / Jegyzet` (Book / Manual):
+   - Cél: Normagyűjtemények és szakmai kézikönyvek.
+   - Megjelenés: `#books`.
+   - Adatforrás: `bookService.ts` + `categories` JSON rendszer-sora.
+
+9. `Állásajánlat` (Job Posting):
+   - Cél: Építőipari álláshirdetések.
+   - Megjelenés: `#careers`.
+   - Adatforrás: Helyi/felhős `JobPosting` tömb a `careers` oldalon.
+
+===============================================================================
+4. NAVIGÁCIÓS AUDIT
+===============================================================================
+
+4.1 Fő Navigáció:
+- `Header.tsx` és `navigationService.ts` vezérli.
+- Menüpontok: `Főoldal`, `Tudástár` (dropdown), `Eszközök` (dropdown), `Pályák` (dropdown), `Rólunk` (dropdown).
+- Megállapítások:
+  - A dropdown menük 200 ms-os zárási késleltetéssel működnek.
+  - Mobilmenüben a sub-almenük kinyitásához külön harmonika-kattintás szükséges.
+  - A fejlécben nincs közvetlen szöveges keresőmező, a keresés ikonra kattintva hozható elő a felugró modal.
+
+4.2 Belső Navigáció és Kontextus-vesztési Pontok (TÉNYEK):
+1. `Fogalomtárból Cikkre navigálás`: Ha a felhasználó a `GlossaryPage`-en egy kapcsolódó cikkre kattint, átkerül a `#article?slug=...` oldalra. A cikk oldal morzsamenüje (breadcrumb) a `Főoldal > Tudástár > Kategória` útvonalat mutatja, így a felhasználó elveszíti azt a kontextust, hogy a Fogalomtárból érkezett.
+2. `Szakmából Eszközre navigálás`: Ha a felhasználó a `PathsHubPage`-en egy szakmánál lévő ajánlott szerszámra kattint, átkerül a `#tool` oldalra. A morzsamenü `Főoldal > Eszközök > Szerszám` állapotra vált, elveszítve a szakmai kontextust.
+
+===============================================================================
+5. FELHASZNÁLÓI ÚTVONALAK AUDITJA (A–F ÚTVONALAK)
+===============================================================================
+
+- Útvonal A: „Gipszkartonozással szeretnék foglalkozni.”
+  - Útvonal: `Pályák` -> `Építőipari szakmák` (`#paths`) -> `Szárazépítő / Gipszkartonozó`.
+  - Értékelés: ELFOGADÓ. (Megtalálja a szakma áttekintését, de a szakma kártyája nem egy integrált szakmai portálra visz, hanem különálló elemekre mutat).
+
+- Útvonal B: „Mi az a dilatáció?”
+  - Útvonal: `Tudástár` -> `Fogalomtár & Szótár` (`#glossary`) -> Keresőmezőbe "dilatáció" vagy 'D' betű.
+  - Értékelés: EGYSZERŰ. (A fogalomtár keresője azonnal megtalálja a definíciót, részletes leírást és gyakori hibákat).
+
+- Útvonal C: „Hogyan építsek gipszkarton válaszfalat?”
+  - Útvonal: `Tudástár` -> `Cikkek & Útmutatók` (`#category`) -> `Szárazépítészet` kategória -> "Gipszkarton válaszfal építése lépésről lépésre" cikk.
+  - Értékelés: ELFOGADÓ. (Megtalálja a cikket, de az Útmutatók nem külön szűrhetők, a cikkek között kell kikeresni).
+
+- Útvonal D: „Mennyi gipszkartonra van szükségem?”
+  - Útvonal: `Tudástár` -> `Számítások & Kalkulátorok` (`#calculations`) -> "Gipszkarton Anyagszükséglet Kalkulátor".
+  - Értékelés: EGYSZERŰ. (A kalkulátor közvetlenül elérhető a Tudástár menüből).
+
+- Útvonal E: „Asztalos vagyok, az engem érdeklő tudást akarom megtalálni.”
+  - Útvonal: `Pályák` -> `Építőipari szakmák` (`#paths`) -> `Asztalos`.
+  - Értékelés: NEHÉZKES. (A szakma lapja leírást ad, de nem szűri le automatikusan a kifejezetten asztalosoknak szóló cikkeket vagy kurzusokat, mert nincs DB kapcsolat a Szakmák és Cikkek között).
+
+- Útvonal F: „Egy konkrét építőipari fogalmat keresek.”
+  - Útvonal: Fejléc Kereső ikon vagy `Fogalomtár` (`#glossary`).
+  - Értékelés: EGYSZERŰ. (A szótári kereső azonnal szűr kifejezés, kulcsszó vagy betű szerint).
+
+===============================================================================
+6. ROUTING AUDIT
+===============================================================================
+
+6.1 Routing Architektúra (TÉNY):
+- Hash-alapú Single Page Application.
+- Útvonal feloldási elv: `App.tsx`-ben a `currentPage` állapot határozza meg a megjelenített komponenst.
+- Cikk feloldás: `#article?slug={articleSlug}` alapján.
+- Kategória feloldás: A `CategoryPage.tsx` belső állapotban őrzi az aktív kategóriát.
+
+6.2 Inkonzisztenciák & Megállapítások:
+- `Kategória állapota közvetlen URL megnyitáskor`: Ha a felhasználó közvetlenül megnyitja a `http://localhost:5173/#category` URL-t, a `CategoryPage` az első kategóriát választja ki alapértelmezetten, mert az aktív kategória azonosítója nem képezi részét az URL hash-nek!
+- `Blog = Trigger / Article = Resolver`:
+  - `KnowledgeHubPage.tsx` (`#tudastar`) működik központi belépési pontként (Trigger).
+  - A cikkre kattintás átirányít az `#article?slug=...` feloldóra (Resolver).
+  - Ez a működés elkülönül, de a kategória választás URL paraméterének hiánya miatt a kategória böngészés állapota frissítéskor elvész.
+
+===============================================================================
+7. SUPABASE ÉS FRONTEND KAPCSOLAT
+===============================================================================
+
+7.1 Lekérdezések Térképe:
+1. `<ArticlePage>` -> `supabase.from('articles').select('*, categories(name)').eq('slug', slug)` -> `articles` tábla.
+2. `<CategoryPage>` -> `getCategories()` & `listArticles()` -> `categories` & `articles` táblák.
+3. `<GlossaryPage>` -> `supabase.from('glossary_terms').select('*')` -> `glossary_terms` tábla.
+4. `<ToolPage>` -> `supabase.from('tools').select('*')` -> `tools` tábla.
+5. `<CoursesPage>` -> `educationService.ts` -> `courses`, `lessons`, `quizzes`, `quiz_questions` táblák + `categories` JSON szerkezet.
+
+7.2 Strukturális Eltérések (TÉNYEK):
+- `Rendszerbeállítások a categories táblában`: A Supabase `categories` táblája kettős szerepet tölt be: valós cikk-kategóriákat és JSON konfig objektumokat tárol hamis rendszer-sorokban (`00000000-...` azonosítókkal).
+- `Nem használt adatbázis mezők`: Az `articles` tábla `approved_by`, `approved_at`, `version` mezői léteznek az SQL sémában, de a frontend olvasási és megjelenítési logikája jelenleg nem használja őket.
+
+===============================================================================
+8. ADMIN FELÜLET AUDIT
+===============================================================================
+
+- `AdminLayout.tsx` vezérli a 16 almenüt.
+- Összhang a Frontend és Admin között:
+  * `AdminArticlesPage` ↔ `articles` tábla ↔ Frontend `<ArticlePage>` (ÖSSZHANGÓL)
+  * `AdminCategoriesPage` ↔ `categories` tábla ↔ Frontend `<CategoryPage>` (ÖSSZHANGÓL)
+  * `AdminGlossaryPage` ↔ `glossary_terms` tábla ↔ Frontend `<GlossaryPage>` (ÖSSZHANGÓL)
+  * `AdminTradesPage` ↔ JSON Rendszer-sor ↔ Frontend `<PathsHubPage>` (ÖSSZHANGÓL)
+  * `AdminCoursesPage` ↔ `courses` tábla & `educationService` ↔ Frontend `<CoursesPage>` (ÖSSZHANGÓL)
+
+===============================================================================
+9. TARTALMI HIERARCHIA PROBLÉMÁK
+===============================================================================
+
+1. `Szakma` vs. `Kategória`: Nincs szülő-gyermek adatbázis kapcsolat. A "Gipszkartonozó" szakma és a "Szárazépítészet" kategória különálló adatforrás.
+2. `Cikk` vs. `Útmutató`: Nincs külön `type` mező az adatbázisban; az útmutatók és cikkek egyazon `articles` táblában vannak.
+3. `Számítások` vs. `Eszközök`: A kalkulátorok statikus React kódban vannak, míg a szerszámok/gépek a Supabase `tools` táblában.
+4. `Kurzusok` vs. `Tudástár`: A kurzusok a `Pályák` alatt érhetők el, míg a cikkek a `Tudástár` alatt, annak ellenére,hogy ugyanazokat a szakmai témákat dolgozzák fel.
+
+===============================================================================
+10. DUPLIKÁCIÓ ÉS REDUNDANCIA AUDIT
+===============================================================================
+
+- Valódi probléma (Bizonyított): Rendszerbeállítások és navigáció JSON szerkezetének tárolása a Supabase `categories` táblájának hamis soraiban.
+- Valódi probléma (Bizonyított): Kategóriaváltáskor a `CategoryPage.tsx` a `KnowledgeHubPage.tsx`-től függetlenül újra lekéri az összes kategóriát és cikket a Supabase-ből, hálózati duplikációt okozva.
+- Lehetséges probléma: A `tools` vásárlási útmutatói és a `articles` szerszám-tesztjei közötti tartalmi átfedés.
+
+===============================================================================
+11. SEO ÉS URL STRUKTÚRA
+===============================================================================
+
+- URL Szerkezet: Hash-alapú URL-ek (`#article?slug=...`).
+- Dinamikus Meta Címkék: A `SocialShareButton.tsx` / `updateArticleMetaTags()` kezeli (dinamikusan frissíti a `document.title`, `<meta name="description">` és `og:title` értékeket cikk megnyitásakor).
+- Keresőoptimalizálási korlát: A keresőmotorok (Googlebot) a tiszta URL útvonalakat (`/cikkek/gipszkarton-szereles`) előnyben részesítik a hash paraméterekkel szemben.
+
+===============================================================================
+12. A JELENLEGI STRUKTÚRA ÉRTÉKELÉSE (A–F)
+===============================================================================
+
+A. Ami jól működik:
+- Fogalomtár keresője és 319 szakmai kifejezése.
+- Supabase lekérdezések a cikkek és kategóriák között.
+- Interaktív leckefeldolgozó és tanulókártya modul.
+- Adminisztrációs felület 16 almenüjének szinkronizáltsága.
+
+B. Ami logikailag problémás:
+- Szakmák (Trades) és Kategóriák (Categories) adatbázis-szintű függetlensége.
+- "Cikkek" és "Útmutatók" összemosása egyetlen `articles` táblába.
+
+C. Ami technikailag inkonzisztens:
+- Hash-alapú navigáció tiszta URL útvonalak helyett.
+- Rendszerbeállítások tárolása a Supabase `categories` táblájának hamis soraiban.
+
+D. Ami redundáns:
+- Duplikált Supabase adatlekérések a kategória oldal újratöltésekor.
+
+E. Ami hiányzik:
+- Adatbázis-szintű kapcsolat a Szakmák és a Kategóriák/Cikkek között.
+
+F. Ami csak feltételezés:
+- Hogy a hash-alapú navigáció miatt a felhasználók elhagynák az oldalt (tesztek alapján a betöltés azonnali).
+
+===============================================================================
+13. PROBLÉMA PRIORITÁSI LISTA
+===============================================================================
+
+🔴 KRITIKUS:
+1. Rendszerbeállítások JSON szerkezetének tárolása a Supabase `categories` tábla hamis soraiban (adatmodell inkonzisztencia).
+
+🟠 MAGAS:
+2. Szakmák (Trades) és Kategóriák (Categories) közötti adatbázis-szintű kapcsolat hiánya.
+3. Kategória-választási állapot elvesztése az URL hash közvetlen frissítésekor (`#category`).
+
+🟡 KÖZEPES:
+4. Navigációs kontextus-vesztés (pl. Fogalomtárból Cikkre váltáskor a breadcrumb visszaáll a Tudástárra).
+5. Cikkek és Útmutatók megkülönböztetésének hiánya a Supabase `articles` táblában.
+
+🟢 ALACSONY:
+6. Dropdown navigációs menü 200 ms-os zárási késleltetése.
+
+===============================================================================
+14. JELENLEGI STRUKTÚRA DIAGRAM (ASCII TREE)
+===============================================================================
+
+```
+ÉpítőTudás v2 (Single Page Application - Hash Routing)
+├── Főoldal (#home)
+│   ├── Hero Banner
+│   ├── Kiemelt Kategóriák & Cikkek
+│   ├── Gyors Kalkulátorok
+│   └── Statisztikák & Partnerek
+├── Tudástár (#tudastar)
+│   ├── Cikkek & Útmutatók (#category -> #article?slug=...)
+│   ├── Fogalomtár & Szótár (#glossary)
+│   ├── Számítások & Kalkulátorok (#calculations)
+│   └── Szakmai Könyvek (#books)
+├── Eszközök (#tool)
+│   ├── Gép & Szerszám Katalógus (#tool)
+│   ├── Szoftverek (#software)
+│   └── Eszközválasztó Modul (#valaszto)
+├── Pályák (#paths)
+│   ├── Építőipari szakmák (#paths)
+│   ├── Tanulási útvonalak (#courses#utvonalak)
+│   ├── Képzések & kurzusok (#courses)
+│   └── Karrier & állások (#careers)
+├── Rólunk (#about)
+│   ├── Küldetésünk & Rólunk (#about)
+│   ├── Partnereink (#partners)
+│   └── Impresszum & Kapcsolat (#impressum)
+└── Admin Felület (#admin)
+    ├── Dashboard, Moderáció, Cikkek, Kategóriák, Fogalomtár
+    ├── Szakmák, Könyvek, Eszközök, Állások, Kurzusok
+    └── Felhasználók, Szerepkörök, Partnerek, Hirdetések, Audit, Beállítások
+```
+
+===============================================================================
+15. JAVASOLT CÉLSTRUKTÚRA – CSAK JAVASLATKÉNT
+===============================================================================
+
+Lehetséges logikusabb információs architektúra (Szakma-központú modell):
+
+```
+ÉpítőTudás (Javasolt Célarchitektúra)
+├── Szakmai Központ (Szakma alapú belépés)
+│   ├── Gipszkartonozás (Szakma)
+│   │   ├── Cikkek & Útmutatók (Szárazépítészet kategória)
+│   │   ├── Fogalmak & Szakszavak (Kapcsolódó szótár)
+│   │   ├── Kalkulátorok & Számítások (Anyagbecslő)
+│   │   ├── Szerszámok & Gépek (Szárazépítési gépek)
+│   │   └── Képzések & Tanulókártyák (Interaktív kurzus)
+│   └── Szerkezetépítés / Betonozás / Burkolás ...
+```
+
+===============================================================================
+16. VÉGSŐ JELENTÉS – ÖSSZEFOGLALÓ TÁBLÁZATOK
+===============================================================================
+
+16.1 Probléma Összefoglaló Táblázat:
+
+| # | Probléma | Terület | Súlyosság | Bizonyíték | Javasolt irány |
+|---|---|---|---|---|---|
+| 1 | Rendszerbeállítások és konfigok tárolása a Supabase `categories` táblájának hamis soraiban | Adatmodell | 🔴 KRITIKUS | `navigationService.ts`, `tradeService.ts`, `siteSettingsService.ts` | Jövőbeni dedikált `system_settings` tábla |
+| 2 | Szakmák (Trades) és Cikk kategóriák közötti DB kapcsolat hiánya | Adatmodell | 🟠 MAGAS | `tradeService.ts` ↔ `categories` tábla | Szakma-Kategória összekapcsolási lehetőség |
+| 3 | Kategória állapotának elvesztése az URL hash frissítésekor | Routing | 🟠 MAGAS | `App.tsx` & `CategoryPage.tsx` | Kategória slug felvétele a hash paraméterek közé |
+| 4 | Kontextus-vesztés a Fogalomtárból Cikkre történő átlépéskor | Navigáció | 🟡 KÖZEPES | `ArticlePage.tsx` breadcrumb | Eredeti navigációs forrás megőrzése |
+| 5 | Cikkek és Útmutatók megkülönböztetésének hiánya az SQL sémában | Tartalommodell | 🟡 KÖZEPES | `articles` tábla definíció | Típus mező vagy szűrő bevezetése |
+| 6 | Navigációs dropdown menü zárási késleltetése | Navigáció | 🟢 ALACSONY | `Header.tsx` timeout logic | Késleltetési idő finomhangolása |
+
+16.2 Területi Állapot Összefoglaló Táblázat:
+
+| Terület | Állapot | Megjegyzés |
+|---|---|---|
+| Navigáció | 🟡 KÖZEPES | Működik, de kontextus-vesztési pontokat tartalmaz. |
+| Tartalommodell | 🟡 KÖZEPES | Stabil, de a Cikk/Útmutató és Szakma/Kategória nincsenek összekötve. |
+| Szakmák | 🟡 KÖZEPES | `tradeService.ts` kezeli JSON-ként, nincs külön Supabase táblája. |
+| Témakörök | 🟢 JÓ | A `categories` tábla stabilan szolgáltatja a kategóriákat. |
+| Fogalomtár | 🟢 KIVÁLÓ | 319 kifejezés kereshető, szűrhető és részletesen felépített. |
+| Cikkek | 🟢 JÓ | Supabase `articles` táblából gyorsan betöltődik. |
+| Útmutatók | 🟡 KÖZEPES | A cikkekkel egyazon táblában tárolódik. |
+| Számítások | 🟢 JÓ | A `CalculationsPage.tsx`-ben stabilan működik. |
+| Kalkulátorok | 🟢 JÓ | Interaktív anyagszükséglet becslők működnek. |
+| Keresés | 🟢 JÓ | Modal alapú és oldalszintű keresők működnek. |
+| Routing | 🟡 KÖZEPES | Hash-alapú SPA routing, frissítéskor kategória-állapot vesztéssel. |
+| Supabase kapcsolat | 🟡 KÖZEPES | Stabil, de a rendszerbeállítások a `categories` táblát terhelik. |
+| Admin | 🟢 KIVÁLÓ | 16 almenü teljes mértékben szinkronban van a frontenddel. |
+| SEO / URL | 🟡 KÖZEPES | Dinamikus meta címkék működnek, de hash URL-eket használ. |
+
+===============================================================================
+ABSZOLÚT STOP FELTÉTEL MEGFELELŐSÉG:
+Ennek az auditnak a keretében 0 kódmódosítás, 0 router-módosítás és 0 Supabase séma-módosítás történt. Minden feltárt pont kizárólag dokumentálásra került.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-26 17:26
+===============================================================================

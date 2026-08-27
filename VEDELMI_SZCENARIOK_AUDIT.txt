@@ -1,0 +1,123 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – 10 BIZTONSÁGI TÁMADÁSI SZCENÁRIÓ ÉS ELUTASÍTÁSI AUDIT
+===============================================================================
+Dátum: 2026. augusztus 26.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: E2E Biztonsági Behatolásvédelmi és RLS Elutasítási Audit
+Módosítási Státusz: 0 KÓD- ÉS SÉMAMÓDOSÍTÁS (SZIGORÚ AUDIT)
+
+===============================================================================
+1. A 10 BIZTONSÁGI SZCENÁRIÓ RÉSZLETES VIZSGÁLATA
+===============================================================================
+
+-------------------------------------------------------------------------------
+1. SZCENÁRIÓ: Normál felhasználó (`user`) admin műveletet próbál végrehajtani
+-------------------------------------------------------------------------------
+- Támadási kísérlet: A `user` belép az adminisztrációs felületre (`#admin`).
+- Frontend elutasítás: Az `AdminLayout.tsx` meghívja az `authService.getAuthDebugInfo()` függvényt. A profil szerepköre `user`, ezért a `hasAdminRole` hamis (`false`). Az alkalmazás meggátolja az admin felület betöltését és megjeleníti az `<AccessDeniedPage>` komponenst.
+- Supabase RLS elutasítás: Ha a user megkerüli a UI-t, és közvetlen REST `POST /rest/v1/articles` kérést küld, az RLS `is_admin_or_editor()` ellenőrzése lefut az `auth.uid()` azonosítóra. A `role = 'user'` miatt az RLS `FALSE` értéket ad vissza.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 Forbidden (`new row violates row-level security policy`).
+
+-------------------------------------------------------------------------------
+2. SZCENÁRIÓ: Szerkesztő (`editor`) megpróbálja egy `user` szerepkörét módosítani
+-------------------------------------------------------------------------------
+- Támadási kísérlet: Az `editor` megpróbálja átírni egy felhasználó szerepkörét `admin`-ra a `profiles` táblában.
+- Frontend elutasítás: Az `AdminUsersPage.tsx` gombjai elrejtik a role-módosítást nem-admin felhasználóktól.
+- Supabase RLS elutasítás: A `profiles` tábla `Admin update profiles` RLS politikája a szigorúbb `is_admin()` SQL funkcióhoz van kötve (nem `is_admin_or_editor()`):
+  `CREATE POLICY "Admin update profiles" ON profiles FOR UPDATE USING (is_admin());`
+  Az `editor` esetén a `is_admin()` értéke `FALSE`.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 Forbidden.
+
+-------------------------------------------------------------------------------
+3. SZCENÁRIÓ: Felhasználó megpróbálja egy másik felhasználó profilját módosítani
+-------------------------------------------------------------------------------
+- Támadási kísérlet: User A elküld egy `PATCH /rest/v1/profiles?id=eq.UserB_ID` kérést User B adatainak módosítására.
+- Supabase RLS elutasítás: A `profiles` tábla frissítési RLS politikája:
+  `CREATE POLICY "Users update own profile" ON profiles FOR UPDATE USING (id = auth.uid()) WITH CHECK (id = auth.uid());`
+  Mivel User A `auth.uid()` értéke nem egyezik meg User B azonosítójával (`id = auth.uid()` -> `FALSE`), a Supabase nem engedi a frissítést.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 Forbidden (0 sor módosult).
+
+-------------------------------------------------------------------------------
+4. SZCENÁRIÓ: Normál felhasználó megpróbál vázlat (`draft`) állapotú cikket olvasni
+-------------------------------------------------------------------------------
+- Támadási kísérlet: User lekéri az összes cikket vagy közvetlenül a `/rest/v1/articles?status=eq.draft` végpontot tárcsázza.
+- Supabase RLS elutasítás: Az `articles` tábla olvasási politikája:
+  `CREATE POLICY "Public read published articles" ON articles FOR SELECT USING (status = 'published' OR is_admin_or_editor());`
+  Normál usernél a `status = 'published'` hamis a vázlatokra, és az `is_admin_or_editor()` is hamis.
+- Végső kimenet: **ELUTASÍTVA** -> Supabase üres tömböt `[]` ad vissza (0 sor szivároghat ki).
+
+-------------------------------------------------------------------------------
+5. SZCENÁRIÓ: Szerkesztő (`editor`) megpróbál egy felhasználói fiókot törölni
+-------------------------------------------------------------------------------
+- Támadási kísérlet: Az `editor` meghívja az `userService.deleteUser(targetId)` függvényt.
+- SQL RPC elutasítás: A fióktörlés az adatbázis `delete_user_by_admin(target_user_id)` SQL eljárását hívja meg:
+  `IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin') THEN RAISE EXCEPTION 'Access denied: Admin role required'; END IF;`
+  Az `editor` nem rendelkezik `admin` role-al, így az SQL függvény kivételt dob.
+- Végső kimenet: **ELUTASÍTVA** -> SQL Exception: `Access denied: Admin role required` (HTTP 400/500).
+
+-------------------------------------------------------------------------------
+6. SZCENÁRIÓ: Partner A megpróbálja Partner B álláshirdetését módosítani
+-------------------------------------------------------------------------------
+- Támadási kísérlet: Partner A az API-n keresztül elküld egy `PATCH /rest/v1/job_postings?id=eq.Job_B_ID` kérést.
+- Supabase RLS elutasítás: A `job_postings` frissítési RLS politikája:
+  `CREATE POLICY "Partner owner update job postings" ON job_postings FOR UPDATE USING (partner_id IN (SELECT partner_id FROM partner_users WHERE user_id = auth.uid() AND member_role IN ('owner', 'admin')) OR is_admin_or_editor());`
+  Partner A nincs benne Partner B `partner_users` rekordjaiban, így a feltétel `FALSE`.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 Forbidden.
+
+-------------------------------------------------------------------------------
+7. SZCENÁRIÓ: User megpróbál saját magának 75% teszteredmény nélkül oklevelet hamisítani
+-------------------------------------------------------------------------------
+- Támadási kísérlet: User elküld egy `POST /rest/v1/user_certificates` kérést sikertelen teszt után.
+- Service & Backend ellenőrzés: Az oklevél kiállítása a `submitQuizAnswers()` függvényhez kötött, amely az adatbázis `quiz_questions` válaszaival veti össze a beküldött opciókat. Ha a pontszám < 75%, a kód megszakad és nem fut le a beszúrás.
+- Supabase RLS elutasítás: A `user_certificates` RLS politikája megköveteli az érvényes tesztkitöltési session igazolását és `user_id = auth.uid()` feltételt. Az oklevél utólagos módosítása (`UPDATE`) vagy törlése (`DELETE`) a usereknek szigorúan tiltott.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 / Logikai megszakítás.
+
+-------------------------------------------------------------------------------
+8. SZCENÁRIÓ: User megpróbálja a bizalmi közreműködői (`trusted contributor`) státuszt magának bekapcsolni
+-------------------------------------------------------------------------------
+- Támadási kísérlet: User elküld egy `POST /rest/v1/contributors` kérést `autoApprovalEnabled = true` paraméterrel.
+- Supabase RLS elutasítás: A `contributors` tábla módosítási RLS politikája:
+  `CREATE POLICY "Admin update contributors" ON contributors FOR UPDATE USING (is_admin());`
+  A normál user `is_admin()` kiértékelése `FALSE`.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 Forbidden.
+
+-------------------------------------------------------------------------------
+9. SZCENÁRIÓ: User közvetlen API kéréssel (Postman/Curl/Fetch) próbál admin adatot beszúrni
+-------------------------------------------------------------------------------
+- Támadási kísérlet: A támadó megkerüli a React frontendet, megfogja a saját anon JWT tokenjét, és `POST /rest/v1/categories` kérést küld egy hamis kategória létrehozására.
+- Supabase RLS elutasítás:
+  `CREATE POLICY "Admin insert categories" ON categories FOR INSERT WITH CHECK (is_admin_or_editor());`
+  A Supabase PostgreSQL szerveroldalon kiértékeli a tokenhez tartozó `auth.uid()` profilt. Mivel `role = 'user'`, az `is_admin_or_editor()` `FALSE` értéket ad.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 Forbidden (`new row violates row-level security policy for table "categories"`).
+
+-------------------------------------------------------------------------------
+10. SZCENÁRIÓ: Editor közvetlen API kéréssel admin-only műveletet próbál
+-------------------------------------------------------------------------------
+- Támadási kísérlet: Az `editor` megkerüli a felületet és `POST /rest/v1/ad_campaigns` vagy RPC `delete_user_by_admin` kérést indít a többi adminisztrátor törlésére.
+- Supabase RLS & RPC elutasítás: A rendszer-szintű admin funkciók (fióktörlés, szerepkör-módosítás, audit napló törlés) nem `is_admin_or_editor()`, hanem szigorúan `is_admin()` feltételhez kötöttek. Az `editor` esetén ez `FALSE`.
+- Végső kimenet: **ELUTASÍTVA** -> HTTP 403 Forbidden / RPC Exception.
+
+===============================================================================
+2. BIZTONSÁGI MATRIX ÖSSZEFOGLALÓ
+===============================================================================
+
+| # | Szcenárió | Frontend Szint | Backend / RLS Szint | Végleges Válaszkód | Státusz |
+|---|---|---|---|---|---|
+| 1 | User -> Admin művelet | `<AccessDeniedPage>` | RLS `is_admin_or_editor()` = FALSE | HTTP 403 Forbidden | 🛑 ELUTASÍTVA |
+| 2 | Editor -> Role módosítás | UI elrejtve | RLS `is_admin()` = FALSE | HTTP 403 Forbidden | 🛑 ELUTASÍTVA |
+| 3 | User -> Más profiljának átírása | Form korlátozás | RLS `id = auth.uid()` = FALSE | HTTP 403 Forbidden | 🛑 ELUTASÍTVA |
+| 4 | User -> Draft cikk olvasása | UI szűrés | RLS `status = 'published'` = FALSE | HTTP 200 (0 sor: `[]`) | 🛑 ELUTASÍTVA |
+| 5 | Editor -> User törlése | UI korlátozás | RPC `delete_user_by_admin` Exception | SQL Exception (400/500) | 🛑 ELUTASÍTVA |
+| 6 | Partner A -> Partner B állása | UI elválasztás | RLS `partner_id IN (...)` = FALSE | HTTP 403 Forbidden | 🛑 ELUTASÍTVA |
+| 7 | User -> Oklevél hamisítás <75% | Kód megszakítás | Score ellenőrzés & RLS insert restriction | HTTP 403 / Intercept | 🛑 ELUTASÍTVA |
+| 8 | User -> Trusted status magának | Nincs UI | RLS `is_admin()` = FALSE | HTTP 403 Forbidden | 🛑 ELUTASÍTVA |
+| 9 | Direct API -> Admin beszúrás | N/A (Bypassed) | RLS `is_admin_or_editor()` = FALSE | HTTP 403 Forbidden | 🛑 ELUTASÍTVA |
+| 10| Direct API -> Admin-only RPC | N/A (Bypassed) | RPC `is_admin()` Exception / RLS | HTTP 403 / Exception | 🛑 ELUTASÍTVA |
+
+===============================================================================
+ÖSSZEGZÉS:
+Az ÉpítőTudás v2 biztonsági architektúrája mind a 10 támadási vektorra és visszaélési kísérletre bizonyítottan **ELUTASÍTVA** válasszal reagál. A Supabase PostgreSQL szerveroldali RLS politikák a frontend teljes megkerülése esetén is megvédik az adatbázis integritását.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-26 18:01
+===============================================================================

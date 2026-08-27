@@ -1,0 +1,124 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – RBAC, REGISZTRÁCIÓS ÉS JOGOSULTSÁGKIOSZTÁSI AUDIT
+===============================================================================
+Dátum: 2026. augusztus 26.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Hitelesítési, Regisztrációs, Profil- és RBAC Jogosultsági Audit
+Módosítási Státusz: 0 KÓD- ÉS SÉMAMÓDOSÍTÁS (SZIGORÚ AUDIT)
+
+===============================================================================
+1. REGISZTRÁCIÓS FOLYAMAT AUDITJA
+===============================================================================
+
+1.1 Mi történik jelenleg regisztrációkor?
+- A felhasználó kitölti a regisztrációs űrlapot a `RegisterPage.tsx` oldalon.
+- A frontend meghívja az `AuthContext.tsx` `signUp(email, password, fullName)` függvényét.
+- Az `AuthContext` átadja az adatokat a Supabase `authClient.signUp` metódusának.
+- A Supabase Auth létrehozza a fiókot az `auth.users` belső táblában, és kiküldi az e-mail megerősítő linket.
+- Egy Supabase adatbázis trigger (`on_auth_user_created`) automatikusan beszúr egy profilsort a `public.profiles` táblába (azonos ID-val, névvel és alapértelmezett `role = 'user'` szerepkörrel).
+- Az `AuthContext` **azonnal kijelentkezteti** a felhasználót (`authClient.signOut()`), és átirányítja a `#verify-email` oldalra.
+- A felhasználó **NEM tud bejelentkezni** és nem fér hozzá a védett funkciókhoz, amíg rá nem kattint az e-mailben kapott megerősítő linkre.
+
+1.2 Milyen adatokat kérünk be regisztrációkor?
+A `RegisterPage.tsx` kizárólag az alábbi 4 mezőt kéri be:
+1. `fullName` (Teljes név - min. 2 karakter).
+2. `email` (E-mail cím - formátum ellenőrzéssel).
+3. `password` (Jelszó - min. 8 karakter + jelszóerősség mérővel).
+4. `confirmPassword` (Jelszó megerősítése - egyezés ellenőrzéssel).
+
+A nyilvános regisztrációs űrlapon **NINCS**: telefonszám, szakmaválasztó, intézménytípus vagy szerepkör-választási lehetőség!
+
+1.3 Hol tárolódik a felhasználó?
+- **Hitelesítési adatok:** Supabase belső `auth.users` tábla (`id`, `email`, `encrypted_password`, `email_confirmed_at`, `raw_user_meta_data`).
+- **Profil adatok:** Supabase nyilvános `public.profiles` tábla (`id` = auth.users.id, `email`, `full_name`, `role`, `avatar_url`, `created_at`, `updated_at`).
+
+===============================================================================
+2. RBAC SZEREPKÖRÖK ÉS JOGOSULTSÁGOK AUDITJA
+===============================================================================
+
+2.1 Hogyan kapcsolódik a `profiles` a `roles` rendszerhez?
+- A `public.profiles` táblában található egy `role` nevű szöveges oszlop, amelynek megengedett értékei a frontend típusmodellben: `'user' | 'editor' | 'admin'`.
+- A `roleService.ts`-ben 7 rendszer-szerepkör van definiálva:
+  1. `admin` (Adminisztrátor - `r-admin`)
+  2. `editor` (Szerkesztő - `r-editor`)
+  3. `moderator` (Moderátor - `r-moderator`)
+  4. `partner` (Céges / Intézményi Partner - `r-partner`)
+  5. `iskola` (Oktatási Intézmény - `r-iskola`)
+  6. `szakember` (Minősített Építőipari Szakember - `r-szakember`)
+  7. `tanulo` (Tanuló / Diák - `r-tanulo`)
+- **Strukturális Megállapítás:** A `profiles` tábla UI szinten a `role` szöveges enum mezőt őrzi (`'user' | 'editor' | 'admin'`). A specifikusabb szerepköröket (Szakember, Partner, Iskola) a kapcsolódó melléktáblák (`contributors`, `partners`, `partner_users`) kezelik.
+
+2.2 Kiadható-e jelenleg szerepkör? Ki adhat ki szerepkört?
+- Szerepkört és bizalmi pontot **kizárólag Adminisztrátor** adhat ki az `AdminUsersPage.tsx` felületen vagy közvetlen adatbázis frissítéssel.
+- Az Admin a felhasználók listájában:
+  * Beállíthatja a megbízható közreműködői státuszt (`setTrustedContributorStatus`).
+  * Módosíthatja a bizalmi pontszámot (`incrementTrustScore`).
+  * Törölheti a fiókot (`deleteUser`).
+  * Módosíthatja a `role` mezőt (`admin` / `editor` / `user`).
+
+===============================================================================
+3. SPECIÁLIS SZEREPKÖRÖK ELÉRÉSE (SZAKEMBER, PARTNER, ISKOLA)
+===============================================================================
+
+3.1 Hogyan lehet egy felhasználóból Szakember?
+- A felhasználó regisztráció után normál `user` fiókkal rendelkezik.
+- Szakemberré válás folyamata:
+  1. Az Adminisztrátor az `AdminUsersPage.tsx` felületen engedélyezi a "Megbízható Közreműködő" (Trusted Contributor) státuszt, és megnöveli a `trustScore` pontszámot a `contributors` táblában.
+  2. Ennek hatására a felhasználó által beküldött hozzászólások és tartalmi javaslatok automatikusan jóváhagyásra kerülnek (auto-approval privilege).
+
+3.2 Hogyan lehet egy felhasználóból Partner?
+- Partner jön létre, ha az Adminisztrátor az `AdminPartnersPage.tsx` felületen regisztrál egy cég-et vagy vállalkozást a `partners` táblában.
+- A felhasználó fiókja a `partner_users` kapcsolótáblán keresztül kerül összerendelésre a céggel (`partner_id`, `user_id`, `member_role`: `'owner'` | `'member'`).
+- Ennek hatására a felhasználó álláshirdetéseket (`JobPosting`) tehet közzé és kezdeményezhet hirdetési kampányokat.
+
+3.3 Hogyan lehet egy felhasználóból Iskola?
+- Az Iskola a Partner egy speciális kategóriája (`category = 'iskola'` a `partners` táblában) vagy az `r-iskola` szerepkör.
+- Létrehozása kizárólag Adminisztrátori regisztrációval történik az `AdminPartnersPage.tsx` felületen.
+
+3.4 Lehet-e egy felhasználónak több szerepköre?
+- A `profiles` tábla `role` mezőjében egy felhasználómnak **egyetlen fő szerepköre** lehet (`'user'`, `'editor'`, vagy `'admin'`).
+- Ugyanakkor a `partner_users` és `contributors` táblákon keresztül egy normál `user` fiók egyidejűleg lehet egy Partner szervezet tagja ÉS megbízható Szakember is.
+
+===============================================================================
+4. JOGOSULTSÁGOK ÉS TARTALMI HOZZÁFÉRÉSEK
+===============================================================================
+
+4.1 Mi történik, ha valaki csak normál felhasználó (`user`)?
+- Bármely nyilvános tartalmat olvashat (cikkek, fogalomtár, kalkulátorok, szerszámkatalógus, szakmai könyvek).
+- Végighaladhat az interaktív leckéken, tanulókártyázhat, vizsgázhat és digitális oklevelet szerezhet (`user_certificates`).
+- Saját profilját szerkesztheti (`full_name`, `avatar_url`).
+- **NEM fér hozzá** semmilyen `#admin` felülethez.
+
+4.2 Milyen jogosultságokat adnak az egyes szerepkörök?
+
+| Szerepkör | Elérhető Felületek | Tartalmi & Funkcionális Jogosultságok |
+|---|---|---|
+| `user` (Normál Felhasználó) | Nyilvános oldal (`#home`, `#tudastar`, `#glossary`, `#courses`, `#profile`) | Olvasás, tananyag elvégzés, tanulókártyázás, vizsgázás, oklevél szerzés, könyvjelzőzés, hozzászólás. |
+| `szakember` (Bizalmi Közreműködő) | Nyilvános oldal + Auto-approval | Ugyanaz mint a `user`, de a hozzászólások és szakmai kiegészítések azonnal publikálódnak (moderáció nélkül). |
+| `partner` / `iskola` | Nyilvános oldal + Partner Munkaterület | Céges profil kezelése, álláshirdetések (`JobPosting`) feladása, hirdetési kampányok indítása. |
+| `editor` (Szerkesztő) | Nyilvános oldal + Admin (`#admin`) | Hozzáférés a Cikkek, Kategóriák, Fogalomtár, Szerszámok, Könyvek és Kurzusok adminisztrációs kezesőjéhez. |
+| `admin` (Adminisztrátor) | Teljes Platform (`#admin` 16 almenüje) | Teljes ellenőrzés: Felhasználók kezelése/törlése, Szerepkörök kiosztása, Partnerek kezelése, Hirdetések, Audit napló, Rendszerbeállítások. |
+
+4.3 Mi történik szerepkör-váltáskor?
+- Amikor az Adminisztrátor egy felhasználó `role` mezőjét `user`-ről `editor`-ra vagy `admin`-ra módosítja a Supabase-ben, a felhasználó következő oldalnavigációjakor vagy munkamenet frissítésekor:
+  * A `Header.tsx`-ben megjelenik az `[Admin Vezérlőpult]` gomb (`profile.role === 'admin' || profile.role === 'editor'`).
+  * Megnyílik a hozzáférés a `#admin` útvonalhoz.
+
+===============================================================================
+5. AUDIT ÖSSZEGZÉS ÉS RENDSZER-VÁLASZOK
+===============================================================================
+
+1. Mi történik regisztrációkor? -> Supabase Auth fiók jön létre, automatikus `profiles` rekord születik `user` szerepkörrel, majd azonnali kijelentkeztetés történik az e-mail megerősítéséig.
+2. Milyen adatokat kérünk be? -> Név, e-mail cím, jelszó, jelszó megerősítés. (Szerepkör vagy szakma választó nincs).
+3. Hol tárolódik a felhasználó? -> `auth.users` (hitelesítés) és `public.profiles` (profil).
+4. Hogyan kapcsolódik a profiles a roles rendszerhez? -> A `profiles.role` oszlopon keresztül (`'user' | 'editor' | 'admin'`).
+5. Kiadható-e jelenleg szerepkör? Ki adhat ki? -> Igen, kizárólag Adminisztrátor adhat ki vagy módosíthat szerepkört.
+6. Hogyan lehet szakember / partner / iskola? -> Adminisztrátori jóváhagyással (`contributors` tábla megbízhatósági státusz, illetve `partners` / `partner_users` tábla összerendelés).
+7. Mi történik, ha valaki normál felhasználó? -> Teljes tanulói és olvasási hozzáférése van, de 0 adminisztrációs felülethez fér hozzá.
+8. Lehet-e több szerepköre? -> A `profiles`-ban 1 fő szerepköre van, de párhuzamosan lehet Partner tag és Bizalmi Szakember is a kapcsolótáblákon keresztül.
+9. Mi történik szerepkör-váltáskor? -> Azonnal megnyílik az adminisztrációs vezérlőpult és az admin útvonalak.
+10. Milyen jogosultságokat adnak a szerepkörök? -> `user`: tanulás/olvasás; `editor`: tartalomkezelés; `admin`: teljes platformkezelés.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-26 17:50
+===============================================================================

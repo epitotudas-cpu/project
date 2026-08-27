@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import * as authClient from '../lib/authClient';
 import * as userService from '../services/userService';
+import { acceptInvitation } from '../services/partnerInvitationService';
 import type { Profile } from '../lib/supabase';
 
 interface AuthContextType {
@@ -11,7 +12,7 @@ interface AuthContextType {
   loading: boolean;
   authEvent: AuthChangeEvent | null;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, fullName: string, userType?: 'tanulo' | 'szakember') => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ error?: string }>;
   updatePassword: (password: string) => Promise<{ error?: string }>;
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         if (session?.user) {
           loadProfile(session.user.id).finally(() => setLoading(false));
+          checkPendingInvitation();
         } else {
           setLoading(false);
         }
@@ -91,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           if (session?.user) {
             await loadProfile(session.user.id);
+            await checkPendingInvitation();
           } else {
             setProfile(null);
           }
@@ -102,6 +105,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  async function checkPendingInvitation() {
+    try {
+      const pendingCode = sessionStorage.getItem('pending_invite_code');
+      if (pendingCode) {
+        sessionStorage.removeItem('pending_invite_code');
+        await acceptInvitation(pendingCode);
+      }
+    } catch (err) {
+      console.warn('Pending invitation accept info:', err);
+    }
+  }
 
   async function loadProfile(userId: string) {
     try {
@@ -130,13 +145,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
     }
 
+    await checkPendingInvitation();
     return {};
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, userType: 'tanulo' | 'szakember' = 'tanulo') => {
     const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined;
     const { data, error } = await authClient.signUp(email, password, {
-      data: { full_name: fullName },
+      data: {
+        full_name: fullName,
+        user_type: userType,
+      },
       emailRedirectTo: redirectUrl,
     });
     if (error) {
@@ -147,7 +166,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error.message };
     }
 
-    // Always sign out immediately if session or user was returned, so the user CANNOT log in automatically without confirming email!
     if (data?.session || (data?.user && !data.user.email_confirmed_at)) {
       await authClient.signOut();
     }

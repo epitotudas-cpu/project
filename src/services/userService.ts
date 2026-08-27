@@ -59,3 +59,10 @@ export async function deleteUser(userId: string): Promise<boolean> {
   if (profileError) throw profileError;
   return true;
 }
+
+export async function getUserType(user: any): Promise<'tanulo' | 'szakember'> {
+  if (!user) return 'tanulo';
+  const metaType = user.user_metadata?.user_type;
+  if (metaType === 'szakember') return 'szakember';
+  return 'tanulo';
+}

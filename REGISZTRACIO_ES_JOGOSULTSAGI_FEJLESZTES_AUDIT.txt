@@ -1,0 +1,173 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – REGISZTRÁCIÓS ÉS JOGOSULTSÁGI RENDSZER FEJLESZTÉSI AUDIT
+===============================================================================
+Dátum: 2026. augusztus 27.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Regisztrációs Modell, Szerepkör-Szétválasztási és Meghívó Rendszer Audit
+Módosítási Státusz: 0 KÓD- ÉS SÉMAMÓDOSÍTÁS (SZIGORÚ ELSŐ FÁZIS AUDIT)
+
+===============================================================================
+1. JELENLEGI ÁLLAPOT ÉS HÁROMRÉTEGŰ ARCHITEKTÚRA ELEMZÉSE
+===============================================================================
+
+TÉNY: A jelenlegi ÉpítőTudás v2 regisztráció (`RegisterPage.tsx`) kizárólag Név, E-mail, Jelszó és Jelszó Megerősítés mezőket kér be. Nincs különbségtétel Tanuló és Szakember között, valamint nincs meghívókódos belépés a Partnerek és Iskolák számára.
+
+A tervezett fejlesztés a biztonsági és pedagógiai elvárásoknak megfelelően **három különálló rétegre** választja szét a jogosultságokat:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. RÉTEG: FELHASZNÁLÓI TÍPUS (Önazonosítás / Használati Típus)              │
+│    - Tanuló (🎓)  vs.  Szakember (👷)                                       │
+│    - Publikus regisztráción szabadon választható.                           │
+│    - NEM ad plusz adminisztrációs vagy szerkesztési jogosultságot.          │
+│    - Nem igényel szakmai igazolást vagy adminisztrátori jóváhagyást.        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                   │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. RÉTEG: PLATFORM SZINTŰ RENDSZERSZEREPKÖR (RBAC Védelmi Szint)           │
+│    - User | Editor | Moderator | Admin                                      │
+│    - KIZÁRÓLAG Adminisztrátor által osztható ki.                            │
+│    - Publikus regisztrációból SZIGORÚAN ELÉRHETETLEN.                      │
+│    - Megőri a meglévő áttörhetetlen Supabase RLS védelmet.                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                   │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. RÉTEG: SZERVEZETI KAPCSOLAT (Intézményi & Céges Hozzáférés)              │
+│    - Partner | Iskola                                                       │
+│    - KIZÁRÓLAG egyedi, egyszer használható MEGHÍVÓKÓDDAL regisztrálható.    │
+│    - Publikus regisztrációból nem választható szabadon.                     │
+│    - Automatikusan összekapcsolja a fiókot a `partner_users` táblával.      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+===============================================================================
+2. MI HASZNÁLHATÓ FEL VÁLTOZTATÁS NÉLKÜL (TÉNYEK)
+===============================================================================
+1. `RegisterPage.tsx` meglévő form validációja, jelszóerősség-mérője, dizájnja és e-mail megerősítési logikája.
+2. `AuthContext.tsx` Supabase Auth `signUp` és `signIn` munkamenet-kezelése.
+3. Supabase `public.profiles` tábla `role` mezője (`'user' | 'editor' | 'admin'`), amely sértetlenül megőrzi a platformszintű RBAC védelmet.
+4. Supabase `partners` és `partner_users` táblák és a rájuk vonatkozó RLS adatbázis-szintű biztonsági szabályok.
+5. `AdminPartnersPage.tsx` partner- és iskolakezelő felülete.
+
+===============================================================================
+3. MI HIÁNYZIK A KÍVÁNT MŰKÖDÉSHEZ (TÉNYEK & JAVASLATOK)
+===============================================================================
+1. **Regisztrációs Kártyaválasztó Modul (`RegisterPage.tsx`):**
+   - 0. Lépés: Két vizuális kártya (`🎓 TANULÓ` és `👷 SZAKEMBER`) + egy lehetőség: `[ Meghívókóddal regisztrálok mint Partner / Iskola ]`.
+2. **User Type Eltárolása:** A `user_type` (`'tanulo'` | `'szakember'`) eltárolása a felhasználó regisztrációjakor.
+3. **Meghívókód Bekérő Űrlap:** A meghívókód érvényesítése regisztráció előtt (Partner/Iskola típus, szervezet neve, e-mail egyezés, lejárati idő ellenőrzése).
+4. **Admin Meghívó Kezelő Modul (`AdminPartnersPage.tsx`):**
+   - `[ Új meghívó ]` gomb és modal: Partner/Iskola kiválasztása, kapcsolattartó név, e-mail cím, lejárati idő, egyedi meghívókód generálása (pl. `ET-PARTNER-8K92X`).
+5. **Meghívó E-mail Küldő Logic & Sablonok:** Személyre szabott e-mail sablon generálása és másolása/küldése Admin felületről.
+6. **Automatikus Szervezeti Összekapcsolás:** Sikeres meghívókódos regisztráció után a felhasználó automatikusan bekerül a `partner_users` táblába a megadott `partner_id`-val.
+
+===============================================================================
+4. MELY FÁJLOKAT KELL MÓDOSÍTANI (FÁJL ELEMZÉS)
+===============================================================================
+A megvalósítás összesen 4 meglévő fájl célzott módosítását és 1 új service modul létrehozását igényli:
+
+1. `src/pages/RegisterPage.tsx` (MÓDOSÍTANDÓ):
+   - Kétszintű kártyaválasztó (Tanuló / Szakember) + Meghívókódos opció beillesztése.
+2. `src/contexts/AuthContext.tsx` (MÓDOSÍTANDÓ):
+   - `signUp` metódus bővítése a `user_type` és az esetleges `invite_code` paraméterekkel (átadva Supabase `options.data` user metadata-nak).
+3. `src/pages/AdminPartnersPage.tsx` (MÓDOSÍTANDÓ):
+   - `[ Új meghívó ]` gomb, meghívókód generáló modal és meglévő meghívók listájának beillesztése.
+4. `src/services/partnerInvitationService.ts` (ÚJ SERVICE):
+   - Meghívó generáló, tároló, ellenőrző és elfogadó logikák (`createInvitation`, `validateInvitation`, `acceptInvitation`).
+5. `src/services/userService.ts` (MINIMÁLISAN MÓDOSÍTANDÓ):
+   - `user_type` olvasásának támogatása a felhasználói profilnál.
+
+===============================================================================
+5. MELY SUPABASE OBJEKTUMOKAT KELL MÓDOSÍTANI
+===============================================================================
+JAVASOLT SÉMAMÓDOSÍTÁS-MENTES MEGVALÓSÍTÁS (0 SQL TÁBLAMÓDOSÍTÁS):
+
+1. **Felhasználói Típus (`user_type`):**
+   - A `user_type` (`'tanulo'` | `'szakember'`) tárolható a Supabase Auth `raw_user_meta_data` JSON mezőjében (`data: { user_type: 'tanulo' }`).
+   - Így a `public.profiles` SQL tábla sémáját **NEM KELL módosítani**, és a meglévő `role` mező (`user` / `editor` / `admin`) sértetlenül megőrzi az RBAC védelmet!
+
+2. **Meghívók (`partner_invitations`):**
+   - A meghívók biztonságosan tárolhatók a Supabase `categories` tábla felhős JSON rendszer-sorában (`00000000-0000-0000-0000-000000000012`: `__SYSTEM_CONFIG_INVITATIONS__`) a meglévő rendszersoros architektúra mintájára.
+   - Így **0 új SQL tábla és 0 új RLS policy** szükséges az adatbázisban!
+
+===============================================================================
+6. PONTOSAN MILYEN MÓDOSÍTÁS SZÜKSÉGES
+===============================================================================
+
+6.1 Publikus Regisztráció (`RegisterPage.tsx`):
+- Kezdő nézet: `🎓 TANULÓ` és `👷 SZAKEMBER` nagy választókártyák.
+- Tanuló szöveg: *"Tanulni, fejlődni és szakmai információkat szerezni szeretnék."* -> `[ Tanulóként regisztrálok ]`.
+- Szakember szöveg: *"Szakmai információkat, gyakorlati tudást és útmutatókat szeretnék használni."* -> `[ Szakemberként regisztrálok ]`.
+- Kiválasztás után megnyílik a név, e-mail, jelszó mező.
+- Alsó link: *"Partner vagy iskola meghívással? [ Meghívókóddal regisztrálok ]"*.
+- Meghívókódos űrlap: Bekéri a kód-ot (pl. `ET-PARTNER-8K92X`), verifikálja, kiírja a szervezet nevét (pl. *"Leier Hungária Kft. - Partneri regisztráció"*), majd lefut a regisztráció.
+
+6.2 Admin Meghívó Kezelő (`AdminPartnersPage.tsx`):
+- Fejlécben: `[ Új meghívó ]` gomb.
+- Modal mezők:
+  * Típus: `Partner` vagy `Iskola`.
+  * Szervezet: Meglévő partnerek/iskolák gördülő listája.
+  * Kapcsolattartó neve.
+  * Kapcsolattartó e-mail címe.
+  * Lejárati idő (opcionális, pl. 7 nap, 30 nap vagy korlátlan).
+- Gomb: `[ Meghívó Létrehozása & E-mail Sablon ]`.
+- Eredmény: Egyedi, egyszer használható meghívókód generálása + személyre szabott e-mail sablon kimásolhatósága.
+
+6.3 Meghívó E-mail Sablon:
+```
+Tárgy: Meghívás az ÉpítőTudás partneri rendszerébe
+
+Tisztelt [Kapcsolattartó Neve]!
+
+Szeretnénk meghívni a [Szervezet Neve] szervezetet az ÉpítőTudás partneri rendszerébe.
+
+A regisztrációhoz szükséges meghívókód:
+[MEGHÍVÓKÓD]
+
+Kérjük, kattintson az alábbi hivatkozásra a regisztráció megkezdéséhez:
+http://localhost:5173/#register?code=[MEGHÍVÓKÓD]
+
+Üdvözlettel:
+ÉpítőTudás Csapat
+```
+
+===============================================================================
+7. ADATMODELL / SÉMA VÁLTOZTATÁSI IGÉNY
+===============================================================================
+- **KÖTELEZŐ SUPABASE SÉMA MÓDOSÍTÁS: 0 DB.**
+- A javasolt architektúra teljes mértékben kihasználja a Supabase Auth `user_metadata` mezőjét és a felhős JSON rendszersorokat.
+- A meglévő adatbázis RLS szabályok és RBAC szerepkörök **100%-ban változatlanok és sértetlenek maradnak**.
+
+===============================================================================
+8. MÓDOSÍTANDÓ FÁJLOK ÖSSZEGZŐ LISTÁJA (PATCH SZABÁLY EVALUATION)
+===============================================================================
+
+Érintett fájlok száma: 4 meglévő fájl + 1 új service modul:
+1. `src/pages/RegisterPage.tsx` (Regisztrációs UI & Kártyaválasztó) - *Kötelező*
+2. `src/contexts/AuthContext.tsx` (UserType & Metadata átadás) - *Kötelező*
+3. `src/pages/AdminPartnersPage.tsx` (Admin Meghívó Modal) - *Kötelező*
+4. `src/services/partnerInvitationService.ts` (Új meghívó logikai modul) - *Kötelező*
+5. `src/services/userService.ts` (UserType olvasás támogatása) - *Opcionális / Kényelmi*
+
+Mivel a módosítás 3+ fájlt érint, a szigorú PATCH szabály értelmében **a kódmódosítás megkezdése előtt meg kell várni a felhasználó kifejezett jóváhagyását.**
+
+===============================================================================
+9. SIKERKRITÉRIUMOK MEGFELELŐSÉGE
+===============================================================================
+[OK] Új felhasználó regisztrációkor választhat: Tanuló / Szakember.
+[OK] A választás nem ad adminisztrációs vagy szerkesztési jogosultságot.
+[OK] Szakemberhez nincs adminisztrátori ellenőrzés vagy bürokrácia.
+[OK] Partner/Iskola nem választható szabadon a publikus regisztrációban.
+[OK] Partner/Iskola kizárólag ellenőrzött meghívókóddal regisztrálhat.
+[OK] Admin képes Partner/Iskola meghívót létrehozni és e-mail sablont generálni.
+[OK] A meghívó konkrét szervezethez kötött, egyszer használható és biztonságos.
+[OK] Regisztráció után a `partner_users` kapcsolat automatikusan létrejön.
+[OK] A meglévő Supabase RLS és RBAC védelem nem gyengül.
+
+===============================================================================
+DÖNTÉS ÉS KÖVETKEZŐ LÉPÉS
+===============================================================================
+Az audit lezárult. Kód- vagy Supabase séma-módosítás NEM történt.
+A fejlesztés megvalósításához a 8. pontban részletezett fájlok célzott módosítása szükséges.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-27 17:30
+===============================================================================

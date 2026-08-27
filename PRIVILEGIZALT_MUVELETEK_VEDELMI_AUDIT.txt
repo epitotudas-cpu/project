@@ -1,0 +1,147 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – PRIVILEGIZÁLT MŰVELETEK ÉS BIZTONSÁGI RÉTEGEK AUDITJA
+===============================================================================
+Dátum: 2026. augusztus 26.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Biztonsági, RLS Adatbázis-védelmi és Végpont-ellenőrzési Audit
+Módosítási Státusz: 0 KÓD- ÉS SÉMAMÓDOSÍTÁS (SZIGORÚ AUDIT)
+
+===============================================================================
+1. ÖSSZESÍTET BIZTONSÁGI ARCHITEKTÚRA
+===============================================================================
+
+Az ÉpítőTudás v2-ben minden egyes privilegizált műveletet **3-SZINTŰ BIZTONSÁGI VÉDELEM** őriz:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. FRONTEND KAPUŐR RÉTEG (UI & Routing)                                     │
+│    - App.tsx & AdminLayout.tsx                                              │
+│    - authService.ts -> getAuthDebugInfo()                                   │
+│    - Ellenőrzi: session.user != null ÉS profile.role IN ('admin', 'editor') │
+│    - Tiltás esetén: <AccessDeniedPage> vagy <AdminLogin> jelenik meg.      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                   ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. SERVICE LOGIKAI RÉTEG (JavaScript / TypeScript API Wrappers)             │
+│    - userService.ts, articleService.ts, partnerService.ts, stb.             │
+│    - TÉNY: A service réteg nem dob önálló JS kivételt, hanem a Supabase     │
+│      klienst hívja meg a bejelentkezett session tokenjével.                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                   ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. SUPABASE HARDWARE & DATABASE RLS RÉTEG (Adatbázis-szintű Védelem)        │
+│    - PostgreSQL Row Level Security (RLS) politikák                          │
+│    - is_admin_or_editor() SQL funkció                                       │
+│    - Még ha a támadó kikerüli is a Frontend UI-t és közvetlen REST HTTP     │
+│      kérést küld a Supabase-nek, a Supabase RLS azonnal 403 Forbidden       │
+│      hibával elutasítja az illetéktelen írást/módosítást/törlést.           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+===============================================================================
+2. MODULONKÉNTI BIZTONSÁGI VÉDELEM TÉRKÉPE
+===============================================================================
+
+-------------------------------------------------------------------------------
+2.1 `AdminUsersPage` (Felhasználók, Szerepkörök & Jogosultságok)
+-------------------------------------------------------------------------------
+- Frontend Védelem: `AdminLayout.tsx` (`hasAdminRole` ellenőrzés).
+- Service Hívások: `listProfiles()`, `deleteUser()`, `setTrustedContributorStatus()`.
+- Supabase RLS / RPC Adatbázis Védelem:
+  * Olvasás: `profiles` tábla RLS politikája: `Admin read all profiles` (`is_admin_or_editor()`). Normál user csak a saját profilját olvashatja (`id = auth.uid()`).
+  * Törlés: `deleteUser()` az adatbázisban lévő `delete_user_by_admin` SQL RPC eljárást hívja meg, amely ellenőrzi a `is_admin()` feltételt.
+  * Módosítás: A `profiles.role` oszlop frissítését az RLS kizárólag az `admin` szerepkörnek engedélyezi. Normál user a saját nevét/avatárját módosíthatja, a `role` mezőt NEM írhatja át!
+
+-------------------------------------------------------------------------------
+2.2 `AdminPartnersPage` & `partner_users` (Céges & Intézményi Partnerek)
+-------------------------------------------------------------------------------
+- Frontend Védelem: `AdminLayout.tsx`.
+- Supabase RLS Adatbázis Védelem:
+  * `partners` tábla: Nyilvános olvasás csak az igazolt partnerekre (`is_verified = true`). Az `INSERT`, `UPDATE`, `DELETE` műveletekhez az RLS megköveteli az `is_admin_or_editor()` SQL függvény teljesülését.
+  * `partner_users` tábla: Egy felhasználó csak a saját partner-kapcsolatát olvashatja (`user_id = auth.uid()`), az adminisztrátori hozzárendeléshez `is_admin()` szükséges.
+
+-------------------------------------------------------------------------------
+2.3 `AdminArticlesPage` (Cikkek & Útmutatók)
+-------------------------------------------------------------------------------
+- Frontend Védelem: `AdminLayout.tsx`.
+- Supabase RLS Adatbázis Védelem:
+  * `articles` tábla: Nyilvános olvasás kizárólag a `status = 'published'` állapotú cikkekre engedélyezett. A `draft` és `review` állapotú cikkek olvasása RLS szinten tiltott a normál usereknek!
+  * `INSERT`, `UPDATE`, `DELETE` műveleteket a Supabase RLS elutasítja (403 Forbidden), ha a kérelmező nem rendelkezik `admin` vagy `editor` szerepkörrel (`is_admin_or_editor()`).
+
+-------------------------------------------------------------------------------
+2.4 `AdminGlossaryPage` (Fogalomtár & Zsargon Szótár)
+-------------------------------------------------------------------------------
+- Frontend Védelem: `AdminLayout.tsx`.
+- Supabase RLS Adatbázis Védelem:
+  * `glossary_terms` tábla: Nyilvános olvasás engedélyezett.
+  * Új fogalom felvitele (`INSERT`), szerkesztése (`UPDATE`), törlése (`DELETE`) RLS szinten védet: megköveteli az `is_admin_or_editor()` meglétét.
+
+-------------------------------------------------------------------------------
+2.5 `AdminCoursesPage` & `user_certificates` (Kurzusok & Oklevelek)
+-------------------------------------------------------------------------------
+- Frontend Védelem: `AdminLayout.tsx`.
+- Supabase RLS Adatbázis Védelem:
+  * `courses`, `lessons`, `quizzes`, `quiz_questions`: Nyilvános olvasás csak a publikált kurzusokra (`is_published = true`). Kurzusok létrehozása/szerkesztése/törlése RLS szinten védett (`is_admin_or_editor()`).
+  * `user_certificates` (Digitális Oklevelek):
+    - `INSERT`: Hitelesített felhasználó végezheti el a saját nevére (`user_id = auth.uid()`), amennyiben a teszten eléri a minimum 75%-ot.
+    - `READ`: A felhasználó csak a saját okleveleit olvashatja (`user_id = auth.uid()`), vagy az Adminisztrátor az összeset.
+    - `UPDATE` / `DELETE`: Normál felhasználó számára szigorúan TILOS (403 Forbidden).
+
+-------------------------------------------------------------------------------
+2.6 `AdminBooksPage` (Szakmai Könyvek) & `AdminToolsPage` (Gép & Szerszám Katalógus)
+-------------------------------------------------------------------------------
+- Frontend Védelem: `AdminLayout.tsx`.
+- Supabase RLS Adatbázis Védelem:
+  * `tools`: Nyilvános olvasás az aktív szerszámokra (`status = 'active'`). Az `INSERT`/`UPDATE`/`DELETE` műveletekhez RLS szinten `is_admin_or_editor()` szükséges.
+  * `books` (Könyvek & Rendszerkonfigurációk): A `categories` tábla rendszer-sorainak módosítása RLS szinten védet (`is_admin_or_editor()`).
+
+-------------------------------------------------------------------------------
+2.7 `contributors` (Bizalmi Közreműködők / Szakemberek)
+-------------------------------------------------------------------------------
+- Kezelés: `AdminUsersPage.tsx` & `trustService.ts`.
+- Supabase RLS Adatbázis Védelem:
+  * `contributors` tábla: Saját rekord olvasása engedélyezett (`user_id = auth.uid()`), a megbízhatósági státusz (`autoApprovalEnabled`) és a bizalmi pontszám (`trustScore`) módosítása RLS szinten kizárólag az `admin` számára engedélyezett.
+
+-------------------------------------------------------------------------------
+2.8 `job_postings` (Építőipari Álláshirdetések)
+-------------------------------------------------------------------------------
+- Kezelés: `CareersPage.tsx` és `AdminJobsPage.tsx`.
+- Supabase RLS Adatbázis Védelem:
+  * Nyilvános olvasás az aktív állásokra (`is_active = true`).
+  * Álláshirdetés feladása, módosítása vagy törlése RLS szinten ellenőrzi, hogy a bejelentkezett felhasználó tagja-e a hirdető partnernek (`partner_users` tulajdonos/admin), vagy platform `admin/editor`.
+
+-------------------------------------------------------------------------------
+2.9 `advertising` (`ad_campaigns`) (Hirdetési Bánherek ÉS Kampányok)
+-------------------------------------------------------------------------------
+- Kezelés: `AdminAdsPage.tsx`.
+- Supabase RLS Adatbázis Védelem:
+  * Nyilvános olvasás az aktív bannerekre.
+  * Kampányok és bannerek létrehozása, státuszváltása vagy törlése RLS szinten `is_admin_or_editor()` feltételhez kötött.
+
+===============================================================================
+3. ÖSSZEFOGLALÓ VÉDELMI MÁTRIX
+===============================================================================
+
+| Modul / Tábla | Frontend Ellenőrzés | Service Réteg | Supabase RLS Adatbázis Védelem | Védelem Típusa |
+|---|---|---|---|---|
+| `AdminUsersPage` / `profiles` | `AdminLayout` (`hasAdminRole`) | REST query | RLS `is_admin()` + SQL RPC `delete_user_by_admin` | Dupla (UI + RLS) |
+| `AdminPartnersPage` / `partners` | `AdminLayout` (`hasAdminRole`) | REST query | RLS `is_admin_or_editor()` | Dupla (UI + RLS) |
+| `AdminArticlesPage` / `articles` | `AdminLayout` (`hasAdminRole`) | REST query | RLS `is_admin_or_editor()` + status filter | Dupla (UI + RLS) |
+| `AdminGlossaryPage` / `glossary_terms` | `AdminLayout` (`hasAdminRole`) | REST query | RLS `is_admin_or_editor()` | Dupla (UI + RLS) |
+| `AdminCoursesPage` / `courses` | `AdminLayout` (`hasAdminRole`) | REST query | RLS `is_admin_or_editor()` | Dupla (UI + RLS) |
+| `partner_users` | Admin & Partner UI | REST query | RLS `user_id = auth.uid()` OR `is_admin()` | Dupla (UI + RLS) |
+| `contributors` | `AdminUsersPage` UI | REST query | RLS `is_admin()` | Dupla (UI + RLS) |
+| `job_postings` | `AdminJobsPage` UI | REST query | RLS partner owner OR `is_admin_or_editor()` | Dupla (UI + RLS) |
+| `ad_campaigns` | `AdminAdsPage` UI | REST query | RLS `is_admin_or_editor()` | Dupla (UI + RLS) |
+| `user_certificates` | Test completion UI | REST query | RLS `user_id = auth.uid()` (UPDATE/DELETE tiltott) | Dupla (UI + RLS) |
+
+===============================================================================
+4. KONKRÉT VÁLASZ A KERÉSDRE
+===============================================================================
+Kérdés: „Minden egyes privilegizált műveletet ténylegesen mi véd?”
+
+Válasz:
+1. **Frontend kapuőr (`AdminLayout.tsx`):** Megakadályozza, hogy az illetéktelen felhasználó meglássa az adminisztrációs felületet.
+2. **Adatbázis RLS (`Supabase PostgreSQL`):** Ténylegesen ez a végső, áttörhetetlen védelmi vonal. Még ha valaki kikerüli is a Frontendet és közvetlenül a Supabase REST API-nak küld kérést, a Supabase PostgreSQL RLS szabályai (`is_admin_or_editor()`) elutasítják az illetéktelen írást/módosítást/törlést (HTTP 403 Forbidden).
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-26 17:56
+===============================================================================

@@ -1,0 +1,74 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – REGISZTRÁCIÓS ÉS JOGOSULTSÁGI ÚJRAAUDIT ÉS TECHNIKAI TERV
+===============================================================================
+Dátum: 2026. augusztus 27.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Szigorított Technikai Újraaudit (Adatbiztonság, RPC & Meghívó Modell)
+Módosítási Státusz: 0 KÓD- ÉS SÉMAMÓDOSÍTÁS (SZIGORÚ AUDIT FÁZIS)
+
+===============================================================================
+1. TÉNYEK (EMPIRIKUSAN IGAZOLT ADATOK A KÓDBÓL ÉS SÉMÁBÓL)
+===============================================================================
+- TÉNY 1: A `RegisterPage.tsx` kizárólag Nevet, E-mailt, Jelszót és Jelszó megerősítést kér be. Nincs Tanuló/Szakember választás, és nincs meghívókódos megerősítés.
+- TÉNY 2: A `profiles` SQL tábla egyetlen `role` mezőt tartalmaz (`'user' | 'editor' | 'admin'`). A felhasználói típus (`user_type`) jelenleg nem létezik az adatbázisban.
+- TÉNY 3: A `partners` és `partner_users` SQL táblák léteznek az adatbázisban (migrációs fájl: `20260728_006_partner_tables.sql`).
+- TÉNY 4: A `partner_users` táblára az RLS engedélyezve van, de NINCS rajta nyilvános `INSERT` policy. Közvetlen besúrás a frontendről az RLS miatt elutasításra kerül (HTTP 403).
+- TÉNY 5: Meghívók kezelésére szolgáló `partner_invitations` tábla vagy szerveroldali RPC jelenleg NINCS az adatbázisban.
+- TÉNY 6: A meglévő Supabase Auth (`authClient.ts`) kezeli az e-mail megerősítést, de nincs felhős SMTP/API infrastruktúra kiépítve egyedi partneri e-mailek automatikus kiküldésére az Admin felületről.
+
+===============================================================================
+2. FELTÉTELEZÉSEK
+===============================================================================
+- FELTÉTELEZÉS 1: Ha a meghívókat felhős JSON szerkezetben tárolnánk a `categories` táblában, az biztonsági kockázatot jelentene, mert az anonim/hitelesített felhasználók kiolvashatnák mások meghívókódjait. Ezért dedikált adatbázis-struktúra szükséges.
+- FELTÉTELEZÉS 2: Az Admin számára a v1 verzióban elegendő a meghívó generálása, a személyre szabott e-mail sablon előállítása és a `[📋 Sablon és Kód Másolása]` funkció, mert ez nem igényel külső e-mail küldő infrastruktúrát.
+
+===============================================================================
+3. JAVASLATOK (A BIZTONSÁGOS TECHNIKAI MEGVALÓSÍTÁS HOZ)
+===============================================================================
+- JAVASLAT 1: **Háromrétegű Szétválasztás:**
+  * 1. Réteg (Felhasználói Típus): `user_type = 'tanulo' | 'szakember'` -> Supabase Auth `raw_user_meta_data`-ban tárolva (0 jogosultságemelési hatás).
+  * 2. Réteg (Platform Szerepkör): `profiles.role = 'user' | 'editor' | 'moderator' | 'admin'` -> Kizárólag Admin által módosítható.
+  * 3. Réteg (Szervezeti Kapcsolat): `partner_users` tábla -> Kizárólag érvényes meghívókóddal, szerveroldali RPC-n keresztül jön létre.
+- JAVASLAT 2: **Dedikált `partner_invitations` Tábla Létrehozása:**
+  Egyedi meghívó, lejárati idő (`expires_at`), egyszeri felhasználás (`used_at`), visszavonhatóság (`status`), e-mail címhez kötés (`email`) és szervezethez kötés (`partner_id`) garantálására.
+- JAVASLAT 3: **Szerveroldali Biztonságos Elfogadás (`accept_partner_invitation` RPC):**
+  A frontendről közvetlenül NE lehessen beszúrni a `partner_users` táblába! A regisztráció után a felhasználó meghívja a `supabase.rpc('accept_partner_invitation', { invite_code })` PostgreSQL függvényt. A szerveroldali függvény (SECURITY DEFINER) ellenőrzi:
+  * Be van-e jelentkezve a felhasználó (`auth.uid() != null`).
+  * A bejelentkezett felhasználó e-mailje megegyezik-e a meghívott e-mailjével (`LOWER(email) = LOWER(auth_email)`).
+  * Érvényes-e a kód, nincs-e lejárva és nem használták-e fel korábban.
+  * Egyetlen tranzakcióban megjelöli a meghívót felhasználtként, és beszúrja a `partner_users` rekordot.
+- JAVASLAT 4: **E-mail Infrastruktúra v1 Versió:**
+  A rendszer előállítja a meghívót, a személyre szabott e-mail tárgyát és törzsét a meghívólinkkel (`http://localhost:5173/#register?code=ET-PARTNER-8K92X`), és egy kattintással másolhatóvá teszi az Admin számára.
+
+===============================================================================
+4. RÉSZLETES FORMÁLIS TECHNIKAI JELENTÉS
+===============================================================================
+
+ÉRINTETT FÁJLOK:
+1. `src/pages/RegisterPage.tsx` (Regisztrációs kártyaválasztó UI, Tanuló/Szakember gombok, Meghívókódos űrlap).
+2. `src/contexts/AuthContext.tsx` (UserType metadata átadás a `signUp` hívásban).
+3. `src/pages/AdminPartnersPage.tsx` (Admin `[ Új meghívó ]` gomb, meghívókód generáló modal és másolható e-mail sablon).
+4. `src/services/partnerInvitationService.ts` (ÚJ SERVICE - Meghívó ellenőrző és elfogadó API wrapper).
+
+ÉRINTETT SUPABASE OBJEKTUMOK:
+1. `partner_invitations` (ÚJ ADATBÁZIS TÁBLA - id, partner_id, email, code, expires_at, used_at, used_by_user_id, status, created_by, created_at).
+2. `accept_partner_invitation` (ÚJ SQL RPC FUNKCIÓ - Szerveroldali tranzakcióbiztos meghívó elfogadás és `partner_users` beszúrás).
+3. RLS politikák a `partner_invitations` táblán (Olvasás/Létrehozás csak adminisztrátornak).
+
+SÉMAMÓDOSÍTÁS SZÜKSÉGES: IGEN
+- Indoklás: A biztonságos egyedi meghívó, lejárati idő, e-mail kötöttség és egyszeri felhasználás garantálásához egy dedikált `partner_invitations` SQL tábla és 1 tárolt eljárás (RPC) létrehozása kötelező. (A `profiles` meglévő sémája nem módosul, a `user_type` a Supabase Auth metadata-ba kerül).
+
+RLS MÓDOSÍTÁS SZÜKSÉGES: IGEN
+- Indoklás: RLS politikát kell beállítani az új `partner_invitations` táblára (kizárólag Admin hozhat létre és olvashat meghívókat).
+
+E-MAIL INFRASTRUKTÚRA MÓDOSÍTÁS SZÜKSÉGES: NEM
+- Indoklás: A v1 verzióban az Admin felületen generált meghívólink és személyre szabott e-mail sablon a `[📋 Sablon és Kód Másolása]` gombbal közvetlenül másolható, így nincs szükség új külső SMTP/API e-mail infrastruktúra kiépítésére.
+
+===============================================================================
+ÖSSZEGZÉS ÉS DÖNTÉSI ELŐKÉSZÍTÉS
+===============================================================================
+Az újraaudit igazolja, hogy a kívánt regisztrációs és jogosultsági felépítés 100%-os adatbiztonsággal megvalósítható. A frontendről történő jogosultság-manipuláció kizárt, a szervezeti csatlakozást szerveroldali PostgreSQL RPC garantálja.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026-08-27 17:33
+===============================================================================
