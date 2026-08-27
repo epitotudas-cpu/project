@@ -66,3 +66,20 @@ export async function getUserType(user: any): Promise<'tanulo' | 'szakember'> {
   if (metaType === 'szakember') return 'szakember';
   return 'tanulo';
 }
+
+export async function updateProfileRole(userId: string, newRole: string): Promise<boolean> {
+  const { error } = await supabase.rpc('update_user_platform_role', {
+    target_user_id: userId,
+    new_role: newRole,
+  });
+
+  if (error) {
+    // Fallback direct update if RPC fails
+    const { error: directErr } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', userId);
+    if (directErr) throw directErr;
+  }
+  return true;
+}

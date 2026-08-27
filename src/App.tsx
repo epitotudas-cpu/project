@@ -38,6 +38,7 @@ import ImpressumPage from './pages/ImpressumPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
+import PartnerApplicationPage from './pages/PartnerApplicationPage';
 import CookieBanner from './components/CookieBanner';
 import { GlossaryProvider } from './contexts/GlossaryContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -83,7 +84,8 @@ type PageKey =
   | 'privacy'
   | 'terms'
   | 'cookies'
-  | 'jogi';
+  | 'jogi'
+  | 'partner-application';
 
 const ALL_VALID_PAGES: PageKey[] = [
   'home',
@@ -113,6 +115,7 @@ const ALL_VALID_PAGES: PageKey[] = [
   'terms',
   'cookies',
   'jogi',
+  'partner-application',
 ];
 
 function getInitialPage(): PageKey {
@@ -309,6 +312,8 @@ function AppContent() {
       return <ForgotPasswordPage onNavigate={navigate} />;
     case 'reset-password':
       return <ResetPasswordPage onNavigate={navigate} />;
+    case 'partner-application':
+      return <PartnerApplicationPage />;
   }
 
   // Public routes with shared Header/Footer

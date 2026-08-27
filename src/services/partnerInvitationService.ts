@@ -2,7 +2,9 @@ import { supabase } from '../lib/supabase';
 
 export interface PartnerInvitation {
   id: string;
-  partner_id: string;
+  partner_id?: string | null;
+  organization_name?: string | null;
+  organization_category?: string | null;
   email: string;
   code: string;
   created_by?: string | null;
@@ -19,6 +21,7 @@ export interface InvitationInfoResult {
   code?: string;
   partner_name?: string;
   partner_category?: string;
+  requires_organization_details?: boolean;
   expires_at?: string;
   error?: string;
 }
@@ -30,6 +33,14 @@ export interface AcceptInvitationResult {
   message?: string;
 }
 
+export interface CreateInvitationPayload {
+  partnerId?: string | null;
+  organizationName?: string;
+  organizationCategory?: string;
+  email: string;
+  expiresInDays?: number;
+}
+
 function generateRandomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let rand = '';
@@ -39,26 +50,16 @@ function generateRandomCode(): string {
   return `ET-INV-${rand}`;
 }
 
-export async function createInvitation(
-  partnerId: string,
-  email: string,
-  expiresInDays: number = 14
-): Promise<PartnerInvitation> {
-  const cleanEmail = email.trim().toLowerCase();
+export async function createInvitation(payload: CreateInvitationPayload): Promise<PartnerInvitation> {
+  const cleanEmail = payload.email.trim().toLowerCase();
   const code = generateRandomCode();
+  const expiresInDays = payload.expiresInDays || 14;
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString();
 
-  // Safeguard: Ensure partnerId is a valid PostgreSQL UUID
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partnerId);
-  let targetPartnerId = partnerId;
-
-  if (!isUuid) {
-    const { data: dbPartners } = await supabase.from('partners').select('id').limit(1);
-    if (dbPartners && dbPartners.length > 0) {
-      targetPartnerId = dbPartners[0].id;
-    } else {
-      throw new Error('Érvénytelen partner azonosító (UUID). Kérjük, válasszon létező partner szervezetet.');
-    }
+  let partnerId = payload.partnerId || null;
+  if (partnerId) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partnerId);
+    if (!isUuid) partnerId = null;
   }
 
   const { data: sessionData } = await supabase.auth.getSession();
@@ -67,7 +68,9 @@ export async function createInvitation(
   const { data, error } = await supabase
     .from('partner_invitations')
     .insert({
-      partner_id: targetPartnerId,
+      partner_id: partnerId,
+      organization_name: payload.organizationName?.trim() || null,
+      organization_category: payload.organizationCategory || null,
       email: cleanEmail,
       code,
       expires_at: expiresAt,
@@ -82,6 +85,46 @@ export async function createInvitation(
   }
 
   return data as PartnerInvitation;
+}
+
+export async function sendInvitationEmail(
+  invitation: PartnerInvitation,
+  contactName?: string
+): Promise<{ success: boolean; requires_manual_fallback?: boolean; error?: string }> {
+  try {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://epitotudas.hu';
+    const inviteLink = `${baseUrl}/#register?code=${encodeURIComponent(invitation.code)}`;
+    const orgName = invitation.partner_name || invitation.organization_name || 'Szervezet';
+
+    const { data, error } = await supabase.functions.invoke('send-invitation-email', {
+      body: {
+        to: invitation.email,
+        contact_name: contactName || undefined,
+        organization_name: orgName,
+        invite_code: invitation.code,
+        invite_link: inviteLink,
+        expires_at: invitation.expires_at,
+      },
+    });
+
+    if (error) {
+      console.warn('Edge function invoke notice:', error);
+      return { success: false, requires_manual_fallback: true, error: error.message };
+    }
+
+    if (!data?.success) {
+      return {
+        success: false,
+        requires_manual_fallback: true,
+        error: data?.error || 'E-mail küldés sikertelen.',
+      };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Email trigger warning:', err);
+    return { success: false, requires_manual_fallback: true, error: err.message };
+  }
 }
 
 export async function getInvitationInfo(inviteCode: string): Promise<InvitationInfoResult> {
@@ -101,11 +144,15 @@ export async function getInvitationInfo(inviteCode: string): Promise<InvitationI
   return data as InvitationInfoResult;
 }
 
-export async function acceptInvitation(inviteCode: string): Promise<AcceptInvitationResult> {
+export async function acceptInvitation(
+  inviteCode: string,
+  orgPayload?: { name?: string; category?: string; description?: string; website_url?: string }
+): Promise<AcceptInvitationResult> {
   const cleanCode = inviteCode.trim().toUpperCase();
 
   const { data, error } = await supabase.rpc('accept_partner_invitation', {
     invite_code: cleanCode,
+    org_payload: orgPayload ? (orgPayload as any) : null,
   });
 
   if (error) {
@@ -134,7 +181,7 @@ export async function listInvitations(partnerId?: string): Promise<PartnerInvita
 
   return (data || []).map((row: any) => ({
     ...row,
-    partner_name: row.partners?.name || 'Ismeretlen szervezet',
+    partner_name: row.partners?.name || row.organization_name || 'Új Szervezet',
   }));
 }
 
@@ -155,7 +202,8 @@ export function generateEmailTemplate(
   partnerName: string,
   inviteCode: string,
   email: string,
-  expiresAtIso?: string
+  expiresAtIso?: string,
+  contactName?: string
 ): { subject: string; body: string; inviteLink: string } {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://epitotudas.hu';
   const inviteLink = `${baseUrl}/#register?code=${encodeURIComponent(inviteCode)}`;
@@ -164,12 +212,13 @@ export function generateEmailTemplate(
   if (expiresAtIso) {
     try {
       const d = new Date(expiresAtIso);
-      expiryFormatted = d.toLocaleDateString('hu-HU');
-    } catch {}
+      expiryFormatted = d.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch { }
   }
 
-  const subject = `Meghívó az ÉpítőTudás platformra (${partnerName})`;
-  const body = `Tisztelt Kapcsolattartó!
+  const greeting = contactName ? `Kedves ${contactName}!` : 'Tisztelt Kapcsolattartó!';
+  const subject = `Meghívás az ÉpítőTudás platformra (${partnerName})`;
+  const body = `${greeting}
 
 Szeretnénk meghívni a(z) ${partnerName} szervezetet az ÉpítőTudás platform partneri rendszerébe.
 

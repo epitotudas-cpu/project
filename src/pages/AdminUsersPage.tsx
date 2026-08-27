@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import type { Profile } from '../lib/supabase';
-import { listProfiles, deleteUser } from '../services/userService';
+import { listProfiles, deleteUser, updateProfileRole } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getUserTrustProfile,
@@ -462,31 +462,58 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                   const confirmDateStr = u.email_confirmed_at || u.confirmed_at;
                   const lastActiveIso = u.last_sign_in_at || u.updated_at || u.created_at;
 
-                  return (
-                    <tr key={u.id} id={`admin-user-${u.id}`} style={{ backgroundColor: inputBg }} className="hover:opacity-90 transition-colors">
-                      {/* User Info */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shrink-0">
-                            {(u.full_name || u.email || 'U').substring(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <span style={{ color: textColor }} className="font-bold block truncate max-w-[200px]">
-                              {u.full_name || 'Nincs név megadva'}
-                            </span>
-                            <span className="text-gray-400 font-mono text-[11px] block truncate max-w-[200px]">
-                              {u.email || 'Nincs e-mail'}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
+  async function handleRoleChange(userId: string, newRole: string) {
+    if (currentUser?.role !== 'admin') {
+      alert('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
+      return;
+    }
+    try {
+      await updateProfileRole(userId, newRole);
+      loadUsers();
+    } catch (err: any) {
+      alert(err.message || 'A szerepkör módosítása nem sikerült.');
+    }
+  }
 
-                      {/* Role Badge */}
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
-                          {badge.label}
-                        </span>
-                      </td>
+  return (
+    <tr key={u.id} id={`admin-user-${u.id}`} style={{ backgroundColor: inputBg }} className="hover:opacity-90 transition-colors">
+      {/* User Info */}
+      <td className="px-4 py-3.5">
+        <div className="flex items-center gap-3">
+          <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shrink-0">
+            {(u.full_name || u.email || 'U').substring(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <span style={{ color: textColor }} className="font-bold block truncate max-w-[200px]">
+              {u.full_name || 'Nincs név megadva'}
+            </span>
+            <span className="text-gray-400 font-mono text-[11px] block truncate max-w-[200px]">
+              {u.email || 'Nincs e-mail'}
+            </span>
+          </div>
+        </div>
+      </td>
+
+      {/* Role Badge / Interactive Dropdown */}
+      <td className="px-4 py-3.5 whitespace-nowrap">
+        {currentUser?.role === 'admin' && !isSelf ? (
+          <select
+            value={u.role}
+            onChange={(e) => handleRoleChange(u.id, e.target.value)}
+            style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+            className="border text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
+          >
+            <option value="user">Felhasználó (User)</option>
+            <option value="editor">Szerkesztő (Editor)</option>
+            <option value="moderator">Moderátor (Moderator)</option>
+            <option value="admin">Adminisztrátor (Admin)</option>
+          </select>
+        ) : (
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
+            {badge.label}
+          </span>
+        )}
+      </td>
 
                       {/* Email Confirmation Status */}
                       <td className="px-4 py-3.5 whitespace-nowrap">

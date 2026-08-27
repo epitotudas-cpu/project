@@ -12,6 +12,12 @@ import {
   Check,
   KeyRound,
   XCircle,
+  Users,
+  Inbox,
+  UserCheck,
+  UserX,
+  Send,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   listPartners,
@@ -25,25 +31,46 @@ import {
   createInvitation,
   listInvitations,
   revokeInvitation,
+  sendInvitationEmail,
   generateEmailTemplate,
   type PartnerInvitation,
 } from '../services/partnerInvitationService';
-import type { Partner } from '../lib/supabase';
+import {
+  listPartnerApplications,
+  updateApplicationStatus,
+  type PartnerApplication,
+} from '../services/partnerApplicationService';
+import { supabase, type Partner } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface AdminPartnersPageProps {
   initialSearchQuery?: string;
 }
 
+interface PartnerStaffMember {
+  partner_id: string;
+  member_role: 'owner' | 'member' | string;
+  created_at: string;
+  profiles: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+    avatar_url?: string | null;
+  } | null;
+}
+
 export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersPageProps = {}) {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
+  const [applications, setApplications] = useState<PartnerApplication[]>([]);
+  const [staffMap, setStaffMap] = useState<Record<string, PartnerStaffMember[]>>({});
+
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'partners' | 'invitations'>('partners');
+  const [activeTab, setActiveTab] = useState<'partners' | 'invitations' | 'applications'>('partners');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
-  // Partner Modal State
+  // Partner Modal State (Direct Create / Edit)
   const [showModal, setShowModal] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [name, setName] = useState('');
@@ -54,12 +81,16 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
   // Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [invitePartnerMode, setInvitePartnerMode] = useState<'uncreated' | 'existing'>('uncreated');
   const [invitePartnerId, setInvitePartnerId] = useState<string>('');
+  const [organizationName, setOrganizationName] = useState('');
+  const [organizationCategory, setOrganizationCategory] = useState<PartnerCategory>('ceg');
   const [contactName, setContactName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [expiresInDays, setExpiresInDays] = useState<number>(14);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [emailStatusNotice, setEmailStatusNotice] = useState<string | null>(null);
 
   // Generated Invitation Template State
   const [createdInviteCode, setCreatedInviteCode] = useState<string | null>(null);
@@ -80,16 +111,31 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   async function loadData() {
     try {
       setLoading(true);
-      const [partnerData, inviteData] = await Promise.all([
+      const [partnerData, inviteData, appData] = await Promise.all([
         listPartners(activeCategory === 'all' ? undefined : activeCategory),
         listInvitations(),
+        listPartnerApplications(),
       ]);
       setPartners(partnerData);
       setInvitations(inviteData);
-      if (partnerData.length > 0) {
-        if (!invitePartnerId || !partnerData.some((p) => p.id === invitePartnerId)) {
-          setInvitePartnerId(partnerData[0].id);
+      setApplications(appData);
+
+      if (partnerData.length > 0 && !invitePartnerId) {
+        setInvitePartnerId(partnerData[0].id);
+      }
+
+      // Fetch partner staff members (partner_users + profiles)
+      const { data: staffData } = await supabase
+        .from('partner_users')
+        .select('partner_id, member_role, created_at, profiles(id, full_name, email, avatar_url)');
+
+      if (staffData) {
+        const grouped: Record<string, PartnerStaffMember[]> = {};
+        for (const item of staffData as any[]) {
+          if (!grouped[item.partner_id]) grouped[item.partner_id] = [];
+          grouped[item.partner_id].push(item);
         }
+        setStaffMap(grouped);
       }
     } finally {
       setLoading(false);
@@ -103,22 +149,6 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       (p.description ?? '').toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
-
-  useEffect(() => {
-    if (searchQuery && filteredPartners.length > 0) {
-      const timer = setTimeout(() => {
-        const el = document.getElementById(`admin-partner-${filteredPartners[0].id}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-amber-400');
-          }, 2500);
-        }
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [searchQuery, filteredPartners]);
 
   function openCreateModal() {
     setEditingPartner(null);
@@ -179,48 +209,88 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     }
   }
 
-  // Handle Invitation Creation
-  function openCreateInviteModal() {
-    if (partners.length > 0) {
-      if (!invitePartnerId || !partners.some((p) => p.id === invitePartnerId)) {
-        setInvitePartnerId(partners[0].id);
-      }
-    }
+  // Handle Invitation Creation (Pre-creation or Existing)
+  function openCreateInviteModal(prefillOrgName?: string, prefillEmail?: string, prefillCat?: PartnerCategory) {
+    setInvitePartnerMode(prefillOrgName ? 'uncreated' : 'uncreated');
+    setOrganizationName(prefillOrgName || '');
+    setOrganizationCategory(prefillCat || 'ceg');
     setContactName('');
-    setInviteEmail('');
+    setInviteEmail(prefillEmail || '');
     setExpiresInDays(14);
     setInviteError(null);
+    setEmailStatusNotice(null);
     setCreatedInviteCode(null);
     setCreatedTemplate(null);
     setCopied(false);
+
+    if (partners.length > 0) {
+      setInvitePartnerId(partners[0].id);
+    }
     setShowInviteModal(true);
   }
 
   async function handleCreateInvitation(e: React.FormEvent) {
     e.preventDefault();
-    if (!invitePartnerId || !inviteEmail.trim()) {
-      setInviteError('Kérjük, válasszon szervezetet és adja meg a meghívott e-mail címét.');
+    if (!inviteEmail.trim()) {
+      setInviteError('Kérjük, adja meg a meghívott e-mail címét.');
+      return;
+    }
+
+    if (invitePartnerMode === 'uncreated' && !organizationName.trim()) {
+      setInviteError('Kérjük, adja meg a szervezet nevét.');
       return;
     }
 
     setInviteLoading(true);
     setInviteError(null);
+    setEmailStatusNotice(null);
 
     try {
+      const invPayload =
+        invitePartnerMode === 'uncreated'
+          ? {
+              organizationName: organizationName.trim(),
+              organizationCategory,
+              email: inviteEmail.trim(),
+              expiresInDays,
+            }
+          : {
+              partnerId: invitePartnerId,
+              email: inviteEmail.trim(),
+              expiresInDays,
+            };
+
       const selectedPartner = partners.find((p) => p.id === invitePartnerId);
-      const inv = await createInvitation(invitePartnerId, inviteEmail.trim(), expiresInDays);
+      const displayOrgName =
+        invitePartnerMode === 'uncreated' ? organizationName.trim() : selectedPartner?.name || 'Szervezet';
+
+      const inv = await createInvitation(invPayload);
+
+      // Generate Fallback Template
       const template = generateEmailTemplate(
-        selectedPartner?.name || 'Szervezet',
+        displayOrgName,
         inv.code,
         inv.email,
-        inv.expires_at
+        inv.expires_at,
+        contactName.trim() || undefined
       );
+
+      // Trigger Automated Email via Supabase Edge Function
+      const emailResult = await sendInvitationEmail(inv, contactName.trim() || undefined);
+
+      if (emailResult.success) {
+        setEmailStatusNotice('Az automatizált meghívó e-mail sikeresen kiküldésre került!');
+      } else {
+        setEmailStatusNotice(
+          'Az e-mail szerver jelenleg nincs konfigurálva (RESEND_API_KEY hiányzik). Kérjük, használja az alábbi másolható sablont!'
+        );
+      }
 
       setCreatedInviteCode(inv.code);
       setCreatedTemplate(template);
       await loadData();
-    } catch (err) {
-      setInviteError(err instanceof Error ? err.message : 'Hiba történt a meghívó létrehozásakor.');
+    } catch (err: any) {
+      setInviteError(err.message || 'Hiba történt a meghívó létrehozásakor.');
     } finally {
       setInviteLoading(false);
     }
@@ -233,6 +303,27 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'A visszavonás nem sikerült.');
+    }
+  }
+
+  // Approve / Reject Applications
+  async function handleApproveApplication(app: PartnerApplication) {
+    try {
+      await updateApplicationStatus(app.id, 'approved');
+      openCreateInviteModal(app.company_name, app.email, (app.category as PartnerCategory) || 'ceg');
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'A jelentkezés elfogadása nem sikerült.');
+    }
+  }
+
+  async function handleRejectApplication(id: string) {
+    if (!window.confirm('Biztosan elutasítod ezt a partneri jelentkezést?')) return;
+    try {
+      await updateApplicationStatus(id, 'rejected');
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'Az elutasítás nem sikerült.');
     }
   }
 
@@ -252,6 +343,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const textColor = getContrastTextColor(cardBg);
   const inputTextColor = getContrastTextColor(inputBg);
 
+  const pendingAppsCount = applications.filter((a) => a.status === 'pending').length;
+
   return (
     <div className="p-6 md:p-8 space-y-6" style={{ color: textColor }}>
       {/* Header */}
@@ -262,18 +355,18 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             Partner és Iskola Szervezetek Kezelője
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Gyártók, kereskedők, kivitelező cégek és oktatási intézmények, valamint biztonsági meghívók kezelése.
+            Gyártók, kereskedők, kivitelezők és oktatási intézmények, jelentkezések és biztonsági meghívók.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={openCreateInviteModal}
+            onClick={() => openCreateInviteModal()}
             style={{ backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight, color: cardHighlight }}
             className="flex items-center gap-2 border font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer hover:bg-amber-400/30 text-sm"
           >
             <Mail size={16} />
-            Új Meghívó Létrehozása
+            Új Partner Meghívása
           </button>
 
           <button
@@ -282,14 +375,14 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             className="flex items-center gap-2 font-bold px-4 py-2.5 rounded-xl transition-colors shadow-md cursor-pointer hover:opacity-90 text-sm"
           >
             <Plus size={16} />
-            Új Szervezet Hozzáadása
+            Szervezet Hozzáadása
           </button>
         </div>
       </div>
 
       {/* Tabs / Filter Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Main Tab (Szervezetek vs Meghívók) */}
+        {/* Main Tabs */}
         <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border" style={{ borderColor: cardBorder }}>
           <button
             onClick={() => setActiveTab('partners')}
@@ -310,6 +403,22 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             }`}
           >
             Meghívók ({invitations.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('applications')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'applications'
+                ? 'bg-amber-400 text-black shadow-md'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Inbox size={14} />
+            Jelentkezések
+            {pendingAppsCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-black rounded-full">
+                {pendingAppsCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -340,13 +449,13 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         )}
       </div>
 
-      {/* TAB 1: PARTNERS LIST */}
+      {/* TAB 1: PARTNERS LIST WITH STAFF MEMBERS */}
       {activeTab === 'partners' && (
         <>
           {loading ? (
             <div className="p-8 text-center text-gray-400">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent mb-2" style={{ borderColor: `${cardHighlight} transparent ${cardHighlight} ${cardHighlight}` }} />
-              <div>Szervezetek betöltése...</div>
+              <div>Szervezetek és munkatársak betöltése...</div>
             </div>
           ) : filteredPartners.length === 0 ? (
             <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-12 text-center border rounded-2xl text-gray-400 space-y-2">
@@ -355,70 +464,108 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
               <p className="text-xs">Hozzon létre új szervezeteket a fenti gomb segítségével.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredPartners.map((partner) => (
-                <div
-                  id={`admin-partner-${partner.id}`}
-                  key={partner.id}
-                  style={{ backgroundColor: cardBg, borderColor: cardBorder }}
-                  className="border rounded-2xl p-5 space-y-4 shadow-lg hover:border-amber-400/50 transition-all flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border">
-                            {getCategoryLabel(partner.category)}
-                          </span>
-                          {partner.is_verified && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
-                              <CheckCircle2 size={10} /> Verified
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredPartners.map((partner) => {
+                const staffList = staffMap[partner.id] || [];
+                const ownerMember = staffList.find((s) => s.member_role === 'owner');
+
+                return (
+                  <div
+                    id={`admin-partner-${partner.id}`}
+                    key={partner.id}
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+                    className="border rounded-2xl p-5 space-y-4 shadow-lg hover:border-amber-400/50 transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border">
+                              {getCategoryLabel(partner.category)}
                             </span>
-                          )}
+                            {partner.is_verified && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
+                                <CheckCircle2 size={10} /> Verified
+                              </span>
+                            )}
+                          </div>
+                          <h2 style={{ color: textColor }} className="text-lg font-bold leading-tight">{partner.name}</h2>
                         </div>
-                        <h2 style={{ color: textColor }} className="text-lg font-bold leading-tight">{partner.name}</h2>
+                      </div>
+
+                      <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                        {partner.description || 'Nincs megadva leírás.'}
+                      </p>
+
+                      {partner.website_url && (
+                        <a
+                          href={partner.website_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:underline font-medium"
+                        >
+                          <Globe size={13} />
+                          <span>{partner.website_url.replace(/^https?:\/\//, '')}</span>
+                          <ExternalLink size={11} />
+                        </a>
+                      )}
+
+                      {/* STAFF & CONTACT SECTION */}
+                      <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-gray-300 border-b pb-1.5" style={{ borderColor: cardBorder }}>
+                          <span className="flex items-center gap-1.5">
+                            <Users size={14} className="text-amber-400" /> Kapcsolattartók ({staffList.length})
+                          </span>
+                        </div>
+
+                        {staffList.length === 0 ? (
+                          <div className="text-[11px] text-gray-500 italic py-1">
+                            Még nincs bejegyzett munkatárs a szervezetnél.
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5 text-[11px]">
+                            {staffList.map((m, idx) => (
+                              <div key={idx} className="flex items-center justify-between gap-2">
+                                <div className="truncate">
+                                  <span className="font-semibold text-gray-200">{m.profiles?.full_name || 'Névtelen'}</span>
+                                  <span className="text-gray-400 block text-[10px] truncate">{m.profiles?.email || 'Nincs e-mail'}</span>
+                                </div>
+                                <span className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 ${
+                                  m.member_role === 'owner'
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                    : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                                }`}>
+                                  {m.member_role === 'owner' ? 'Tulajdonos' : 'Munkatárs'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <p className="text-xs text-gray-400 line-clamp-3 leading-relaxed">
-                      {partner.description || 'Nincs megadva leírás.'}
-                    </p>
-
-                    {partner.website_url && (
-                      <a
-                        href={partner.website_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:underline font-medium"
-                      >
-                        <Globe size={13} />
-                        <span>{partner.website_url.replace(/^https?:\/\//, '')}</span>
-                        <ExternalLink size={11} />
-                      </a>
-                    )}
-                  </div>
-
-                  <div style={{ borderColor: cardBorder }} className="pt-3 border-t flex items-center justify-between text-xs">
-                    <span className="text-gray-500">ID: {partner.id.substring(0, 8)}...</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openEditModal(partner)}
-                        className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors cursor-pointer"
-                        title="Szerkesztés"
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDeletePartner(partner.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer"
-                        title="Törlés"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                    <div style={{ borderColor: cardBorder }} className="pt-3 border-t flex items-center justify-between text-xs">
+                      <span className="text-gray-500">ID: {partner.id.substring(0, 8)}...</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openEditModal(partner)}
+                          className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors cursor-pointer"
+                          title="Szerkesztés"
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDeletePartner(partner.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer"
+                          title="Törlés"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>
@@ -503,7 +650,99 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         </div>
       )}
 
-      {/* CREATE / EDIT PARTNER MODAL */}
+      {/* TAB 3: APPLICATIONS LIST */}
+      {activeTab === 'applications' && (
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl overflow-hidden shadow-xl">
+          <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: cardBorder }}>
+            <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: textColor }}>
+              <Inbox size={18} style={{ color: cardHighlight }} />
+              Beérkezett Partneri és Iskolai Jelentkezések ({applications.length})
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead style={{ backgroundColor: inputBg, color: textColor, borderColor: cardBorder }} className="border-b uppercase font-bold text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-3.5">Szervezet Neve</th>
+                  <th className="p-3.5">Típus</th>
+                  <th className="p-3.5">Kapcsolattartó</th>
+                  <th className="p-3.5">Elérhetőség</th>
+                  <th className="p-3.5">Státusz</th>
+                  <th className="p-3.5 text-right">Akciók</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: cardBorder }}>
+                {applications.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-gray-400">
+                      Még nem érkezett publikus partneri jelentkezés.
+                    </td>
+                  </tr>
+                ) : (
+                  applications.map((app) => (
+                    <tr key={app.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-3.5 font-bold" style={{ color: textColor }}>
+                        {app.company_name}
+                        {app.website_url && (
+                          <a href={app.website_url} target="_blank" rel="noreferrer" className="block text-[10px] text-amber-400 hover:underline">
+                            {app.website_url.replace(/^https?:\/\//, '')}
+                          </a>
+                        )}
+                      </td>
+                      <td className="p-3.5">
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded">
+                          {getCategoryLabel(app.category)}
+                        </span>
+                      </td>
+                      <td className="p-3.5 font-medium text-gray-200">{app.contact_name}</td>
+                      <td className="p-3.5 text-gray-300">
+                        <div>{app.email}</div>
+                        {app.phone && <div className="text-[10px] text-gray-400">{app.phone}</div>}
+                      </td>
+                      <td className="p-3.5">
+                        {app.status === 'pending' ? (
+                          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">
+                            Pending
+                          </span>
+                        ) : app.status === 'approved' ? (
+                          <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded">
+                            Jóváhagyva
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 rounded">
+                            Elutasítva
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3.5 text-right space-x-2">
+                        {app.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleApproveApplication(app)}
+                              className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold border border-emerald-500/30 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <UserCheck size={13} /> Elfogadás & Meghívás
+                            </button>
+                            <button
+                              onClick={() => handleRejectApplication(app.id)}
+                              className="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold border border-red-500/30 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <UserX size={13} /> Elutasítás
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE / EDIT PARTNER DIRECT MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
@@ -603,35 +842,95 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         </div>
       )}
 
-      {/* CREATE INVITATION MODAL */}
+      {/* CREATE INVITATION MODAL (Pre-creation or Existing) */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
             <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
               <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
                 <Mail size={20} className="text-amber-400" />
-                Új Szervezeti Meghívó Generálása
+                Új Szervezeti Meghívó Generálása és Küldése
               </h2>
               <button onClick={() => setShowInviteModal(false)} className="text-gray-400 hover:text-white cursor-pointer">✕</button>
             </div>
 
             {!createdInviteCode ? (
               <form onSubmit={handleCreateInvitation} className="space-y-4 text-xs">
-                <div>
-                  <label className="font-semibold block mb-1">Cél Szervezet <span className="text-red-400">*</span></label>
-                  <select
-                    value={invitePartnerId}
-                    onChange={(e) => setInvitePartnerId(e.target.value)}
-                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                    className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                {/* Invite Mode Selector */}
+                <div className="flex items-center gap-2 p-1 bg-black/30 border rounded-xl" style={{ borderColor: cardBorder }}>
+                  <button
+                    type="button"
+                    onClick={() => setInvitePartnerMode('uncreated')}
+                    className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${
+                      invitePartnerMode === 'uncreated'
+                        ? 'bg-amber-400 text-black shadow'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
                   >
-                    {partners.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({getCategoryLabel(p.category)})
-                      </option>
-                    ))}
-                  </select>
+                    Még Nem Létező Szervezet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInvitePartnerMode('existing')}
+                    className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${
+                      invitePartnerMode === 'existing'
+                        ? 'bg-amber-400 text-black shadow'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Már Létező Partner
+                  </button>
                 </div>
+
+                {invitePartnerMode === 'uncreated' ? (
+                  <>
+                    <div>
+                      <label className="font-semibold block mb-1">Szervezet Neve <span className="text-red-400">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={organizationName}
+                        onChange={(e) => setOrganizationName(e.target.value)}
+                        placeholder="pl. BauMaster Kft."
+                        style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                        className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-semibold block mb-1">Szervezet Típusa</label>
+                      <select
+                        value={organizationCategory}
+                        onChange={(e) => setOrganizationCategory(e.target.value as PartnerCategory)}
+                        style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                        className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                      >
+                        <option value="ceg">Kivitelező Cég / Generálkivitelező</option>
+                        <option value="gyarto">Építőanyag-gyártó</option>
+                        <option value="kereskedo">Kereskedő / Tüzép</option>
+                        <option value="iskola">Oktatási Intézmény / Egyetem</option>
+                        <option value="oktato">Oktató Központ / Tréner</option>
+                        <option value="tamogato">Szakmai Támogató Szervezet</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="font-semibold block mb-1">Cél Szervezet <span className="text-red-400">*</span></label>
+                    <select
+                      value={invitePartnerId}
+                      onChange={(e) => setInvitePartnerId(e.target.value)}
+                      style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                      className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                    >
+                      {partners.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({getCategoryLabel(p.category)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="font-semibold block mb-1">Kapcsolattartó Neve</label>
@@ -639,7 +938,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                     type="text"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    placeholder="Kovács János"
+                    placeholder="pl. Muck Péter"
                     style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
                     className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
                   />
@@ -690,26 +989,34 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                     type="submit"
                     disabled={inviteLoading}
                     style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                    className="px-5 py-2 font-bold rounded-xl cursor-pointer hover:opacity-90 shadow-md disabled:opacity-50"
+                    className="px-5 py-2 font-bold rounded-xl cursor-pointer hover:opacity-90 shadow-md disabled:opacity-50 inline-flex items-center gap-2"
                   >
-                    {inviteLoading ? 'Generálás...' : 'Meghívó Létrehozása'}
+                    <Send size={15} />
+                    {inviteLoading ? 'Küldés...' : 'Meghívó Létrehozása és Küldése'}
                   </button>
                 </div>
               </form>
             ) : (
-              /* Success / Generated Template Display */
+              /* Success & Automated Email Output */
               <div className="space-y-4 text-xs">
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-1">
                   <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                    <CheckCircle2 size={16} /> Meghívókód Sikeresen Létrehozva!
+                    <CheckCircle2 size={16} /> Meghívó Sikeresen Létrehozva!
                   </div>
                   <div className="text-lg font-mono font-black text-amber-400 pt-1 tracking-wider">
                     {createdInviteCode}
                   </div>
                 </div>
 
+                {emailStatusNotice && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-medium flex items-start gap-2">
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                    <div>{emailStatusNotice}</div>
+                  </div>
+                )}
+
                 <div>
-                  <label className="font-semibold block mb-1 text-gray-300">Személyre Szabott E-mail Sablon:</label>
+                  <label className="font-semibold block mb-1 text-gray-300">Tartalék E-mail Sablon (Automatikus Lejárattal):</label>
                   <textarea
                     readOnly
                     rows={8}
