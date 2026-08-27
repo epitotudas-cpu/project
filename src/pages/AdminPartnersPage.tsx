@@ -467,7 +467,6 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredPartners.map((partner) => {
                 const staffList = staffMap[partner.id] || [];
-                const ownerMember = staffList.find((s) => s.member_role === 'owner');
 
                 return (
                   <div

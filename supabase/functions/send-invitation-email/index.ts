@@ -2,7 +2,13 @@
 // Serves automated email delivery for partner invitations via Resend API.
 // Secret key must be stored in Supabase secrets (RESEND_API_KEY).
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+// Global Deno type declaration for IDE compatibility
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+  serve?: (handler: (req: Request) => Promise<Response>) => void;
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +24,7 @@ interface EmailPayload {
   expires_at: string;
 }
 
-serve(async (req) => {
+const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -123,4 +129,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
-});
+};
+
+if (typeof Deno !== 'undefined' && typeof Deno.serve === 'function') {
+  Deno.serve(handler);
+}
+
+export default handler;
