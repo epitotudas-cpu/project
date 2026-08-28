@@ -130,7 +130,7 @@ export async function sendInvitationEmail(
       </div>
     `;
 
-    const { data, error } = await supabase.functions.invoke('send-invitation-email', {
+    let invokeRes = await supabase.functions.invoke('resend-email', {
       body: {
         to: invitation.email,
         subject,
@@ -138,9 +138,21 @@ export async function sendInvitationEmail(
       },
     });
 
+    if (invokeRes.error && invokeRes.error.message?.includes('Failed to send a request')) {
+      invokeRes = await supabase.functions.invoke('send-invitation-email', {
+        body: {
+          to: invitation.email,
+          subject,
+          html: htmlBody,
+        },
+      });
+    }
+
+    const { data, error } = invokeRes;
+
     if (error) {
       console.warn('Edge function invoke notice:', error);
-      const friendlyErr = error.message.includes('Failed to send a request')
+      const friendlyErr = error.message?.includes('Failed to send a request')
         ? 'Az Edge Function CORS előellenőrzése vagy elérése meghiúsult.'
         : error.message;
       return { success: false, requires_manual_fallback: true, error: friendlyErr };
