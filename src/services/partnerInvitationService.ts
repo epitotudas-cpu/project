@@ -140,21 +140,24 @@ export async function sendInvitationEmail(
 
     if (error) {
       console.warn('Edge function invoke notice:', error);
-      return { success: false, requires_manual_fallback: true, error: error.message };
+      return { success: false, requires_manual_fallback: true, error: error.message || String(error) };
     }
 
-    if (data?.error) {
-      return {
-        success: false,
-        requires_manual_fallback: true,
-        error: typeof data.error === 'string' ? data.error : JSON.stringify(data.error),
-      };
+    if (data) {
+      if (data.error || (data.statusCode && data.statusCode >= 400) || data.name === 'validation_error') {
+        const msg = data.message || data.error?.message || data.error || data.name || JSON.stringify(data);
+        return {
+          success: false,
+          requires_manual_fallback: true,
+          error: typeof msg === 'string' ? msg : JSON.stringify(msg),
+        };
+      }
     }
 
     return { success: true };
   } catch (err: any) {
     console.warn('Email trigger warning:', err);
-    return { success: false, requires_manual_fallback: true, error: err.message };
+    return { success: false, requires_manual_fallback: true, error: err.message || String(err) };
   }
 }
 
