@@ -106,7 +106,7 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         <AdminHeader
           userEmail={authInfo.userEmail}
-          role={authInfo.hasAdminRole ? 'admin' : 'user'}
+          role={authInfo.role || 'user'}
           onSignOut={handleSignOut}
           onNavigateView={handleNavigateView}
           onOpenSidebar={() => setSidebarOpen(true)}

@@ -25,6 +25,14 @@ export default function AdminHeader({
   const headerBg = `${adjustColorBrightness(adminBg, 2)}F0`;
   const borderColor = adjustColorBrightness(adminBg, 12);
 
+  const ROLE_LABELS: Record<string, string> = {
+    admin: 'Adminisztrátor',
+    editor: 'Szerkesztő',
+    moderator: 'Moderátor',
+    user: 'Felhasználó',
+  };
+  const displayRole = ROLE_LABELS[role.toLowerCase()] || role;
+
   return (
     <header
       style={{ backgroundColor: headerBg, borderColor }}
@@ -52,7 +60,7 @@ export default function AdminHeader({
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="text-right hidden sm:block">
             <p className="text-xs text-gray-400 truncate max-w-[180px]">{userEmail || '—'}</p>
-            <p className="text-xs text-emerald-400 font-medium capitalize">{role}</p>
+            <p className="text-xs text-emerald-400 font-medium">{displayRole}</p>
           </div>
           <button
             onClick={onSignOut}
