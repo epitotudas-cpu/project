@@ -48,15 +48,28 @@ export async function updateProfile(userId: string, payload: Partial<Pick<Profil
   return data;
 }
 
+import { logAuditAction } from './auditLogService';
+
 export async function deleteUser(userId: string): Promise<boolean> {
   const { error } = await supabase.rpc('delete_user_by_admin', { target_user_id: userId });
-  if (!error) return true;
-
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .delete()
-    .eq('id', userId);
-  if (profileError) throw profileError;
+  let success = false;
+  if (!error) {
+    success = true;
+  } else {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+    if (profileError) throw profileError;
+    success = true;
+  }
+  if (success) {
+    await logAuditAction(
+      'USER_DELETE',
+      'users',
+      `Felhasználó fiókja törölve (ID: ${userId})`
+    );
+  }
   return true;
 }
 
@@ -81,5 +94,12 @@ export async function updateProfileRole(userId: string, newRole: string): Promis
       .eq('id', userId);
     if (directErr) throw directErr;
   }
+
+  await logAuditAction(
+    'USER_ROLE_UPDATE',
+    'users',
+    `Felhasználó (ID: ${userId}) szerepköre módosítva: "${newRole}"`
+  );
+
   return true;
 }

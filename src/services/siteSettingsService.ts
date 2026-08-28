@@ -401,6 +401,8 @@ export function getSiteSettings(): SiteSettings {
   return DEFAULT_SITE_SETTINGS;
 }
 
+import { logAuditAction } from './auditLogService';
+
 export function saveSiteSettings(settings: SiteSettings): void {
   try {
     const updatedSettings: SiteSettings = {
@@ -419,6 +421,13 @@ export function saveSiteSettings(settings: SiteSettings): void {
     }
     applySiteSettings(updatedSettings);
     window.dispatchEvent(new Event('site-settings-changed'));
+
+    // Log to Audit System
+    void logAuditAction(
+      'SETTINGS_UPDATE',
+      'settings',
+      `Weboldal beállítások frissítve (Cím: "${updatedSettings.siteTitle || 'ÉpítőTudás'}")`
+    );
 
     // Cloud sync to Supabase table 'categories'
     void (async () => {

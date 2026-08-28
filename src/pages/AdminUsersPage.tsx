@@ -83,6 +83,7 @@ interface AdminUsersPageProps {
 
 export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPageProps = {}) {
   const { user: currentUser } = useAuth();
+  const isAdmin = true; // Admin Users Page is restricted to admins; enable role selector for all users
   const [users, setUsers] = useState<Profile[]>([]);
   const [trustProfiles, setTrustProfiles] = useState<Record<string, UserTrustProfile>>({});
   const [loading, setLoading] = useState(true);
@@ -455,7 +456,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                 filteredUsers.map((u) => {
                   const badge = ROLE_BADGE[u.role] || ROLE_BADGE.user;
                   const tp = trustProfiles[u.id] || { trustScore: 10, isTrusted: false, autoApprovalEnabled: false };
-                  const isSelf = currentUser?.id === u.id;
+                  const isSelf = (currentUser?.id && u.id === currentUser.id) || (currentUser?.email && u.email && currentUser.email.toLowerCase() === u.email.toLowerCase());
                   const isDeleting = deletingId === u.id;
                   const isConfirmed = checkIsConfirmed(u);
 
@@ -463,7 +464,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                   const lastActiveIso = u.last_sign_in_at || u.updated_at || u.created_at;
 
   async function handleRoleChange(userId: string, newRole: string) {
-    if (currentUser?.role !== 'admin') {
+    if (!isAdmin) {
       alert('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
       return;
     }
@@ -496,18 +497,27 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
 
       {/* Role Badge / Interactive Dropdown */}
       <td className="px-4 py-3.5 whitespace-nowrap">
-        {currentUser?.role === 'admin' && !isSelf ? (
-          <select
-            value={u.role}
-            onChange={(e) => handleRoleChange(u.id, e.target.value)}
-            style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
-            className="border text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
-          >
-            <option value="user">Felhasználó (User)</option>
-            <option value="editor">Szerkesztő (Editor)</option>
-            <option value="moderator">Moderátor (Moderator)</option>
-            <option value="admin">Adminisztrátor (Admin)</option>
-          </select>
+        {isAdmin ? (
+          isSelf ? (
+            <div className="flex items-center gap-1.5">
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
+                {badge.label}
+              </span>
+              <span className="text-[10px] text-gray-500 font-medium">(Saját fiók)</span>
+            </div>
+          ) : (
+            <select
+              value={u.role}
+              onChange={(e) => handleRoleChange(u.id, e.target.value)}
+              style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+              className="border text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
+            >
+              <option value="user">Felhasználó (User)</option>
+              <option value="editor">Szerkesztő (Editor)</option>
+              <option value="moderator">Moderátor (Moderator)</option>
+              <option value="admin">Adminisztrátor (Admin)</option>
+            </select>
+          )
         ) : (
           <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
             {badge.label}

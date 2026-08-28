@@ -7,6 +7,7 @@ import {
   type ContractType,
   type PackageTier,
 } from '../lib/supabase';
+import { logAuditAction } from './auditLogService';
 
 export interface AdPackageConfig {
   id: PackageTier;
@@ -250,6 +251,13 @@ export async function createAdCampaign(payload: CreateAdCampaignPayload): Promis
   const campaigns = getStoredCampaigns();
   campaigns.unshift(newCampaign);
   saveStoredCampaigns(campaigns);
+
+  void logAuditAction(
+    'AD_CAMPAIGN_CREATE',
+    'ads',
+    `Új hirdetési kampány hozva létre: "${newCampaign.title}" (Szponzor: ${newCampaign.sponsor_name})`
+  );
+
   return newCampaign;
 }
 
@@ -263,6 +271,13 @@ export async function updateAdCampaign(id: string, updates: Partial<ExtendedAdCa
       ...updates,
     };
     saveStoredCampaigns(campaigns);
+
+    void logAuditAction(
+      'AD_CAMPAIGN_UPDATE',
+      'ads',
+      `Hirdetési kampány frissítve: "${campaigns[index].title}" (ID: ${id})`
+    );
+
     return campaigns[index];
   }
 
@@ -278,9 +293,14 @@ export async function updatePaymentStatus(id: string, paymentStatus: PaymentStat
 }
 
 export async function deleteAdCampaign(id: string): Promise<void> {
-  const campaigns = getStoredCampaigns();
-  const filtered = campaigns.filter((c) => c.id !== id);
-  saveStoredCampaigns(filtered);
+  const campaigns = getStoredCampaigns().filter((c) => c.id !== id);
+  saveStoredCampaigns(campaigns);
+
+  void logAuditAction(
+    'AD_CAMPAIGN_DELETE',
+    'ads',
+    `Hirdetési kampány törölve (ID: ${id})`
+  );
 }
 
 export async function getAdvertisementSlots(): Promise<AdvertisementSlot[]> {

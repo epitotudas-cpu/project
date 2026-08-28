@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { logAuditAction } from './auditLogService';
 
 export interface PartnerInvitation {
   id: string;
@@ -83,6 +84,12 @@ export async function createInvitation(payload: CreateInvitationPayload): Promis
   if (error) {
     throw new Error(error.message || 'Hiba történt a meghívó létrehozásakor.');
   }
+
+  void logAuditAction(
+    'PARTNER_INVITE',
+    'partners',
+    `Partner meghívó kiküldve: ${cleanEmail} (Szervezet: ${payload.organizationName || payload.partnerId || 'Új partner'})`
+  );
 
   return data as PartnerInvitation;
 }

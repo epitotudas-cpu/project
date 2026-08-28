@@ -3,6 +3,7 @@ import { countGlossaryTerms } from './glossaryService';
 import { countTools } from './toolService';
 import { countCategories } from './categoryService';
 import { countUsers } from './userService';
+import { fetchAuditLogs, logAuditAction } from './auditLogService';
 
 export interface PlatformStats {
   totalArticles: number;
@@ -63,33 +64,6 @@ const DEFAULT_MODERATION_ITEMS: ModerationItem[] = [
   },
 ];
 
-const DEFAULT_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'audit-1',
-    actorEmail: 'admin@epitotudas.hu',
-    action: 'RBAC_ROLE_ASSIGN',
-    targetModule: 'users',
-    timestamp: new Date(Date.now() - 1800000).toISOString(),
-    details: 'Új szerkesztői jogosultság hozzárendelve',
-  },
-  {
-    id: 'audit-2',
-    actorEmail: 'admin@epitotudas.hu',
-    action: 'ARTICLE_PUBLISH',
-    targetModule: 'articles',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    details: 'Betonozás lépésről lépésre cikk publikálva',
-  },
-  {
-    id: 'audit-3',
-    actorEmail: 'admin@epitotudas.hu',
-    action: 'LEGAL_DOCS_UPDATE',
-    targetModule: 'legal',
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-    details: 'GDPR tájékoztató és ÁSZF v1.0 élesítve',
-  },
-];
-
 export async function getPlatformStats(): Promise<PlatformStats> {
   try {
     const [totalArticles, totalTerms, totalTools, totalCategories, totalUsers] = await Promise.all([
@@ -130,17 +104,30 @@ export async function getPendingModerationItems(): Promise<ModerationItem[]> {
 export async function approveModerationItem(id: string): Promise<void> {
   const index = DEFAULT_MODERATION_ITEMS.findIndex((item) => item.id === id);
   if (index !== -1) {
-    DEFAULT_MODERATION_ITEMS[index].status = 'approved';
+    const item = DEFAULT_MODERATION_ITEMS[index];
+    item.status = 'approved';
+    await logAuditAction(
+      'MODERATION_APPROVE',
+      'moderation',
+      `Tartalom jóváhagyva: "${item.title}" (${item.type})`
+    );
   }
 }
 
 export async function rejectModerationItem(id: string): Promise<void> {
   const index = DEFAULT_MODERATION_ITEMS.findIndex((item) => item.id === id);
   if (index !== -1) {
-    DEFAULT_MODERATION_ITEMS[index].status = 'rejected';
+    const item = DEFAULT_MODERATION_ITEMS[index];
+    item.status = 'rejected';
+    await logAuditAction(
+      'MODERATION_REJECT',
+      'moderation',
+      `Tartalom elutasítva: "${item.title}" (${item.type})`
+    );
   }
 }
 
 export async function getAuditLogs(): Promise<AuditLog[]> {
-  return DEFAULT_AUDIT_LOGS;
+  return fetchAuditLogs();
 }
+
