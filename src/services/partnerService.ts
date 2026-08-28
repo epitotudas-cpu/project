@@ -136,6 +136,40 @@ export async function listPartners(category?: string): Promise<Partner[]> {
     void err;
   }
 
+  // Automatikusan összefésüljük a partner_invitations táblában szereplő szervezeteket is
+  try {
+    const { data: invData } = await supabase
+      .from('partner_invitations')
+      .select('id, partner_id, organization_name, organization_category, created_at');
+
+    if (invData && invData.length > 0) {
+      const existingNames = new Set(list.map((p) => p.name.trim().toLowerCase()));
+
+      invData.forEach((inv) => {
+        if (inv.organization_name && inv.organization_name.trim()) {
+          const orgName = inv.organization_name.trim();
+          if (!existingNames.has(orgName.toLowerCase())) {
+            existingNames.add(orgName.toLowerCase());
+            const newP: Partner = {
+              id: inv.partner_id || `p-inv-${inv.id}`,
+              name: orgName,
+              slug: orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+              category: (inv.organization_category as any) || 'ceg',
+              description: `A platformra bejegyzett partner szervezet (${orgName}).`,
+              website_url: null,
+              logo_url: null,
+              is_verified: true,
+              created_at: inv.created_at || new Date().toISOString(),
+            };
+            list.push(newP);
+          }
+        }
+      });
+    }
+  } catch (err) {
+    void err;
+  }
+
   if (category && category !== 'all') {
     return list.filter((p) => p.category === category);
   }

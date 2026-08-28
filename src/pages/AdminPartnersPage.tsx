@@ -535,7 +535,31 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredPartners.map((partner) => {
-                const staffList = staffMap[partner.id] || [];
+                const directStaff = staffMap[partner.id] || [];
+                const matchedInvites = invitations.filter(
+                  (inv) =>
+                    inv.partner_id === partner.id ||
+                    (inv.organization_name && inv.organization_name.trim().toLowerCase() === partner.name.trim().toLowerCase())
+                );
+
+                const invStaff: PartnerStaffMember[] = matchedInvites.map((inv) => ({
+                  partner_id: partner.id,
+                  member_role: 'owner',
+                  created_at: inv.created_at,
+                  profiles: {
+                    id: inv.id,
+                    full_name: inv.email.split('@')[0],
+                    email: inv.email,
+                    avatar_url: null,
+                  },
+                }));
+
+                const staffList = [...directStaff];
+                invStaff.forEach((is) => {
+                  if (is.profiles?.email && !staffList.some((cs) => cs.profiles?.email?.toLowerCase() === is.profiles?.email?.toLowerCase())) {
+                    staffList.push(is);
+                  }
+                });
 
                 return (
                   <div
