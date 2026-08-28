@@ -2,12 +2,11 @@
 // Serves automated email delivery for partner invitations via Resend API.
 // Handles CORS OPTIONS preflights cleanly.
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-
 declare const Deno: {
   env: {
     get(key: string): string | undefined;
   };
+  serve?: (handler: (req: Request) => Promise<Response>) => void;
 };
 
 const corsHeaders = {
@@ -15,8 +14,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req: Request) => {
-  // Handle CORS preflight
+const handler = async (req: Request): Promise<Response> => {
+  // CORS preflight handling
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -59,4 +58,10 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
-});
+};
+
+if (typeof Deno !== 'undefined' && typeof Deno.serve === 'function') {
+  Deno.serve(handler);
+}
+
+export default handler;
