@@ -235,6 +235,37 @@ export async function revokeInvitation(invitationId: string): Promise<boolean> {
   return true;
 }
 
+export async function updateInvitation(
+  invitationId: string,
+  payload: { email?: string; organization_name?: string; organization_category?: string; expires_at?: string; status?: 'active' | 'revoked' }
+): Promise<PartnerInvitation> {
+  const { data, error } = await supabase
+    .from('partner_invitations')
+    .update(payload)
+    .eq('id', invitationId)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'A meghívó frissítése sikertelen.');
+  }
+
+  return data as PartnerInvitation;
+}
+
+export async function deleteInvitation(invitationId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('partner_invitations')
+    .delete()
+    .eq('id', invitationId);
+
+  if (error) {
+    throw new Error(error.message || 'A meghívó törlése sikertelen.');
+  }
+
+  return true;
+}
+
 export function generateEmailTemplate(
   partnerName: string,
   inviteCode: string,

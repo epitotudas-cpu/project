@@ -31,6 +31,8 @@ import {
   createInvitation,
   listInvitations,
   revokeInvitation,
+  updateInvitation,
+  deleteInvitation,
   sendInvitationEmail,
   generateEmailTemplate,
   type PartnerInvitation,
@@ -304,6 +306,72 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'A visszavonás nem sikerült.');
+    }
+  }
+
+  // Invitation Resend, Edit, Delete Handlers
+  const [showEditInviteModal, setShowEditInviteModal] = useState(false);
+  const [editingInvite, setEditingInvite] = useState<PartnerInvitation | null>(null);
+  const [editInviteEmail, setEditInviteEmail] = useState('');
+  const [editInviteOrgName, setEditInviteOrgName] = useState('');
+  const [editInviteOrgCategory, setEditInviteOrgCategory] = useState<PartnerCategory>('ceg');
+  const [editInviteExpiresDays, setEditInviteExpiresDays] = useState<number>(14);
+
+  async function handleResendInvitation(inv: PartnerInvitation) {
+    try {
+      const emailResult = await sendInvitationEmail(inv);
+      if (emailResult.success) {
+        alert(`A(z) ${inv.code} meghívó e-mail sikeresen újraküldve a(z) ${inv.email} címre!`);
+      } else {
+        const template = generateEmailTemplate(inv.partner_name || 'Szervezet', inv.code, inv.email, inv.expires_at);
+        setCreatedInviteCode(inv.code);
+        setCreatedTemplate(template);
+        setEmailStatusNotice(
+          `Az e-mail automatikus újraküldése sikertelen volt (${emailResult.error || 'e-mail szerver hiba'}). Másolja ki az alábbi sablont!`
+        );
+        setShowInviteModal(true);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Az újraküldés sikertelen.');
+    }
+  }
+
+  function openEditInviteModal(inv: PartnerInvitation) {
+    setEditingInvite(inv);
+    setEditInviteEmail(inv.email);
+    setEditInviteOrgName(inv.organization_name || inv.partner_name || '');
+    setEditInviteOrgCategory((inv.organization_category as PartnerCategory) || 'ceg');
+    setEditInviteExpiresDays(14);
+    setShowEditInviteModal(true);
+  }
+
+  async function handleSaveEditedInvitation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingInvite) return;
+
+    try {
+      const newExpiresAt = new Date(Date.now() + editInviteExpiresDays * 24 * 60 * 60 * 1000).toISOString();
+      await updateInvitation(editingInvite.id, {
+        email: editInviteEmail.trim().toLowerCase(),
+        organization_name: editInviteOrgName.trim(),
+        organization_category: editInviteOrgCategory,
+        expires_at: newExpiresAt,
+      });
+
+      setShowEditInviteModal(false);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'A meghívó szerkesztése nem sikerült.');
+    }
+  }
+
+  async function handleDeleteInvitation(id: string) {
+    if (!window.confirm('Biztosan törölni szeretnéd ezt a meghívót az adatbázisból?')) return;
+    try {
+      await deleteInvitation(id);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'A meghívó törlése nem sikerült.');
     }
   }
 
@@ -630,15 +698,42 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                         <td className="p-3.5 text-gray-400">
                           {new Date(inv.expires_at).toLocaleDateString('hu-HU')}
                         </td>
-                        <td className="p-3.5 text-right">
+                        <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap">
                           {inv.status === 'active' && !isExpired && (
-                            <button
-                              onClick={() => handleRevokeInvitation(inv.id)}
-                              className="text-red-400 hover:text-red-300 font-semibold inline-flex items-center gap-1 cursor-pointer"
-                            >
-                              <XCircle size={14} /> Visszavonás
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleResendInvitation(inv)}
+                                className="px-2 py-1 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                                title="Meghívó Újraküldése"
+                              >
+                                <Send size={12} /> Újraküldés
+                              </button>
+
+                              <button
+                                onClick={() => openEditInviteModal(inv)}
+                                className="px-2 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/30 font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                                title="Meghívó Szerkesztése"
+                              >
+                                <Edit2 size={12} /> Szerkesztés
+                              </button>
+
+                              <button
+                                onClick={() => handleRevokeInvitation(inv.id)}
+                                className="px-2 py-1 bg-gray-500/10 text-gray-400 hover:bg-gray-500/20 border border-gray-500/30 font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                                title="Visszavonás"
+                              >
+                                <XCircle size={12} /> Visszavonás
+                              </button>
+                            </>
                           )}
+
+                          <button
+                            onClick={() => handleDeleteInvitation(inv.id)}
+                            className="px-2 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                            title="Meghívó Törlése"
+                          >
+                            <Trash2 size={12} /> Törlés
+                          </button>
                         </td>
                       </tr>
                     );
@@ -1046,6 +1141,105 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* EDIT INVITATION MODAL */}
+      {showEditInviteModal && editingInvite && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
+              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                <Edit2 size={18} className="text-amber-400" />
+                Meghívó Adatainak Szerkesztése
+              </h2>
+              <button onClick={() => setShowEditInviteModal(false)} className="text-gray-400 hover:text-white cursor-pointer">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveEditedInvitation} className="space-y-4 text-xs">
+              <div>
+                <label className="font-semibold block mb-1">Meghívókód</label>
+                <input
+                  type="text"
+                  disabled
+                  value={editingInvite.code}
+                  className="w-full bg-black/40 border border-gray-700 text-amber-400 font-mono font-bold rounded-xl px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">Címzett E-mail Címe <span className="text-red-400">*</span></label>
+                <input
+                  type="email"
+                  required
+                  value={editInviteEmail}
+                  onChange={(e) => setEditInviteEmail(e.target.value)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">Szervezet Neve</label>
+                <input
+                  type="text"
+                  value={editInviteOrgName}
+                  onChange={(e) => setEditInviteOrgName(e.target.value)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">Szervezet Típusa</label>
+                <select
+                  value={editInviteOrgCategory}
+                  onChange={(e) => setEditInviteOrgCategory(e.target.value as PartnerCategory)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
+                >
+                  <option value="ceg">Kivitelező Cég</option>
+                  <option value="gyarto">Építőanyag-gyártó</option>
+                  <option value="kereskedo">Kereskedő / Tüzép</option>
+                  <option value="iskola">Oktatási Intézmény</option>
+                  <option value="oktato">Oktató Központ</option>
+                  <option value="tamogato">Támogató Szervezet</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">Meghosszabbítás (Napok Mától)</label>
+                <select
+                  value={editInviteExpiresDays}
+                  onChange={(e) => setEditInviteExpiresDays(Number(e.target.value))}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
+                >
+                  <option value={7}>+7 nap</option>
+                  <option value={14}>+14 nap</option>
+                  <option value={30}>+30 nap</option>
+                </select>
+              </div>
+
+              <div style={{ borderColor: cardBorder }} className="flex justify-end gap-3 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowEditInviteModal(false)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-semibold rounded-xl cursor-pointer hover:opacity-90"
+                >
+                  Mégse
+                </button>
+                <button
+                  type="submit"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 font-bold rounded-xl cursor-pointer hover:opacity-90 shadow-md"
+                >
+                  Változtatások Mentése
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
