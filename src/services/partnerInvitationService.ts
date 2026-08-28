@@ -140,7 +140,10 @@ export async function sendInvitationEmail(
 
     if (error) {
       console.warn('Edge function invoke notice:', error);
-      return { success: false, requires_manual_fallback: true, error: error.message || String(error) };
+      const friendlyErr = error.message.includes('Failed to send a request')
+        ? 'Az Edge Function CORS előellenőrzése vagy elérése meghiúsult.'
+        : error.message;
+      return { success: false, requires_manual_fallback: true, error: friendlyErr };
     }
 
     if (data) {
