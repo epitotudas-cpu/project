@@ -427,7 +427,7 @@ export interface Database {
           id: string;
           email: string | null;
           full_name: string | null;
-          role: 'user' | 'editor' | 'admin';
+          role: 'user' | 'partner' | 'editor' | 'moderator' | 'admin';
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
@@ -441,7 +441,7 @@ export interface Database {
           id: string;
           email?: string | null;
           full_name?: string | null;
-          role?: 'user' | 'editor' | 'admin';
+          role?: 'user' | 'partner' | 'editor' | 'moderator' | 'admin';
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -455,7 +455,7 @@ export interface Database {
           id?: string;
           email?: string | null;
           full_name?: string | null;
-          role?: 'user' | 'editor' | 'admin';
+          role?: 'user' | 'partner' | 'editor' | 'moderator' | 'admin';
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
