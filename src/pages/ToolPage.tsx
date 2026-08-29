@@ -277,10 +277,10 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-white">
-                Építőipari Eszköz- és Gépismereti Enciklopédia
+                Építőipari Eszköz- és Gépismeret
               </h1>
               <p className="text-gray-300 text-xs sm:text-sm max-w-3xl leading-relaxed">
-                Szakmai leírások, működési elv, felépítés, vásárlási útmutatók, kivitelezési hibák és ajánlott gyártók.
+                Szakmai leírások, működési elvek, felépítés, használati útmutatók, gyakori kivitelezési hibák és megbízható gyártók – az építőipari eszközök és gépek tudása egy helyen.
               </p>
             </div>
 
