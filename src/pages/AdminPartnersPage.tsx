@@ -251,16 +251,16 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       const invPayload =
         invitePartnerMode === 'uncreated'
           ? {
-              organizationName: organizationName.trim(),
-              organizationCategory,
-              email: inviteEmail.trim(),
-              expiresInDays,
-            }
+            organizationName: organizationName.trim(),
+            organizationCategory,
+            email: inviteEmail.trim(),
+            expiresInDays,
+          }
           : {
-              partnerId: invitePartnerId,
-              email: inviteEmail.trim(),
-              expiresInDays,
-            };
+            partnerId: invitePartnerId,
+            email: inviteEmail.trim(),
+            expiresInDays,
+          };
 
       const selectedPartner = partners.find((p) => p.id === invitePartnerId);
       const displayOrgName =
@@ -455,31 +455,28 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border" style={{ borderColor: cardBorder }}>
           <button
             onClick={() => setActiveTab('partners')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'partners'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'partners'
                 ? 'bg-amber-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             Szervezetek ({partners.length})
           </button>
           <button
             onClick={() => setActiveTab('invitations')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'invitations'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'invitations'
                 ? 'bg-amber-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             Meghívók ({invitations.length})
           </button>
           <button
             onClick={() => setActiveTab('applications')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'applications'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'applications'
                 ? 'bg-amber-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             <Inbox size={14} />
             Jelentkezések
@@ -535,31 +532,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredPartners.map((partner) => {
-                const directStaff = staffMap[partner.id] || [];
-                const matchedInvites = invitations.filter(
-                  (inv) =>
-                    inv.partner_id === partner.id ||
-                    (inv.organization_name && inv.organization_name.trim().toLowerCase() === partner.name.trim().toLowerCase())
-                );
-
-                const invStaff: PartnerStaffMember[] = matchedInvites.map((inv) => ({
-                  partner_id: partner.id,
-                  member_role: 'owner',
-                  created_at: inv.created_at,
-                  profiles: {
-                    id: inv.id,
-                    full_name: inv.email.split('@')[0],
-                    email: inv.email,
-                    avatar_url: null,
-                  },
-                }));
-
-                const staffList = [...directStaff];
-                invStaff.forEach((is) => {
-                  if (is.profiles?.email && !staffList.some((cs) => cs.profiles?.email?.toLowerCase() === is.profiles?.email?.toLowerCase())) {
-                    staffList.push(is);
-                  }
-                });
+                const staffList = staffMap[partner.id] || [];
 
                 return (
                   <div
@@ -622,11 +595,10 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                                   <span className="font-semibold text-gray-200">{m.profiles?.full_name || 'Névtelen'}</span>
                                   <span className="text-gray-400 block text-[10px] truncate">{m.profiles?.email || 'Nincs e-mail'}</span>
                                 </div>
-                                <span className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 ${
-                                  m.member_role === 'owner'
+                                <span className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 ${m.member_role === 'owner'
                                     ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                                     : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
-                                }`}>
+                                  }`}>
                                   {m.member_role === 'owner' ? 'Tulajdonos' : 'Munkatárs'}
                                 </span>
                               </div>
@@ -980,22 +952,20 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                   <button
                     type="button"
                     onClick={() => setInvitePartnerMode('uncreated')}
-                    className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${
-                      invitePartnerMode === 'uncreated'
+                    className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${invitePartnerMode === 'uncreated'
                         ? 'bg-amber-400 text-black shadow'
                         : 'text-gray-400 hover:text-white'
-                    }`}
+                      }`}
                   >
                     Még Nem Létező Szervezet
                   </button>
                   <button
                     type="button"
                     onClick={() => setInvitePartnerMode('existing')}
-                    className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${
-                      invitePartnerMode === 'existing'
+                    className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${invitePartnerMode === 'existing'
                         ? 'bg-amber-400 text-black shadow'
                         : 'text-gray-400 hover:text-white'
-                    }`}
+                      }`}
                   >
                     Már Létező Partner
                   </button>

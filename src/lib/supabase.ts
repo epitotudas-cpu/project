@@ -13,7 +13,7 @@ if (typeof window !== 'undefined') {
     if (fullUrl.includes('confirmed=true') || fullUrl.includes('type=signup') || fullUrl.includes('type=email_change')) {
       try {
         sessionStorage.setItem('email_confirmed_success', 'true');
-      } catch {}
+      } catch { }
 
       // Clear any stored tokens from localStorage so no active session remains
       try {
@@ -25,7 +25,7 @@ if (typeof window !== 'undefined') {
           }
         }
         keysToRemove.forEach((k) => localStorage.removeItem(k));
-      } catch {}
+      } catch { }
 
       // Clean hash URL before createClient parses access_token
       if (window.history && window.history.replaceState) {
@@ -204,18 +204,18 @@ export interface Database {
           jargon_subtype: 'brand_name' | 'german_origin' | 'workplace_slang' | 'synonym' | null;
           knowledge_graph_relations: Array<{
             relation_type:
-              | 'part_of'
-              | 'contains'
-              | 'made_from'
-              | 'required_for'
-              | 'prerequisite'
-              | 'next_learning_step'
-              | 'frequently_used_with'
-              | 'common_mistake_of'
-              | 'repaired_by'
-              | 'safety_hazard_of'
-              | 'standard_governed_by'
-              | 'related_trade';
+            | 'part_of'
+            | 'contains'
+            | 'made_from'
+            | 'required_for'
+            | 'prerequisite'
+            | 'next_learning_step'
+            | 'frequently_used_with'
+            | 'common_mistake_of'
+            | 'repaired_by'
+            | 'safety_hazard_of'
+            | 'standard_governed_by'
+            | 'related_trade';
             target_term_id?: string;
             target_term_name: string;
             note?: string;
@@ -252,18 +252,18 @@ export interface Database {
           jargon_subtype?: 'brand_name' | 'german_origin' | 'workplace_slang' | 'synonym' | null;
           knowledge_graph_relations?: Array<{
             relation_type:
-              | 'part_of'
-              | 'contains'
-              | 'made_from'
-              | 'required_for'
-              | 'prerequisite'
-              | 'next_learning_step'
-              | 'frequently_used_with'
-              | 'common_mistake_of'
-              | 'repaired_by'
-              | 'safety_hazard_of'
-              | 'standard_governed_by'
-              | 'related_trade';
+            | 'part_of'
+            | 'contains'
+            | 'made_from'
+            | 'required_for'
+            | 'prerequisite'
+            | 'next_learning_step'
+            | 'frequently_used_with'
+            | 'common_mistake_of'
+            | 'repaired_by'
+            | 'safety_hazard_of'
+            | 'standard_governed_by'
+            | 'related_trade';
             target_term_id?: string;
             target_term_name: string;
             note?: string;
@@ -300,18 +300,18 @@ export interface Database {
           jargon_subtype?: 'brand_name' | 'german_origin' | 'workplace_slang' | 'synonym' | null;
           knowledge_graph_relations?: Array<{
             relation_type:
-              | 'part_of'
-              | 'contains'
-              | 'made_from'
-              | 'required_for'
-              | 'prerequisite'
-              | 'next_learning_step'
-              | 'frequently_used_with'
-              | 'common_mistake_of'
-              | 'repaired_by'
-              | 'safety_hazard_of'
-              | 'standard_governed_by'
-              | 'related_trade';
+            | 'part_of'
+            | 'contains'
+            | 'made_from'
+            | 'required_for'
+            | 'prerequisite'
+            | 'next_learning_step'
+            | 'frequently_used_with'
+            | 'common_mistake_of'
+            | 'repaired_by'
+            | 'safety_hazard_of'
+            | 'standard_governed_by'
+            | 'related_trade';
             target_term_id?: string;
             target_term_name: string;
             note?: string;
@@ -427,7 +427,7 @@ export interface Database {
           id: string;
           email: string | null;
           full_name: string | null;
-          role: 'user' | 'partner' | 'editor' | 'moderator' | 'admin';
+          role: 'user' | 'editor' | 'admin';
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
@@ -441,7 +441,7 @@ export interface Database {
           id: string;
           email?: string | null;
           full_name?: string | null;
-          role?: 'user' | 'partner' | 'editor' | 'moderator' | 'admin';
+          role?: 'user' | 'editor' | 'admin';
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -455,7 +455,7 @@ export interface Database {
           id?: string;
           email?: string | null;
           full_name?: string | null;
-          role?: 'user' | 'partner' | 'editor' | 'moderator' | 'admin';
+          role?: 'user' | 'editor' | 'admin';
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;

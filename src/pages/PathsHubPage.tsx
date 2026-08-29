@@ -157,7 +157,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 Építőipari Szakmák Részletes Bemutatása
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Őszinte, valósághű és gyakorlatias szakmaismertető leendő tanulóknak és pályaválasztóknak.
+                Szakmaismertető leendő tanulóknak és pályaválasztóknak.
               </p>
             </div>
 
@@ -212,7 +212,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        
+
         {/* VIEW 1: TRADE PROFESSION SELECTION GRID */}
         {!selectedTradeId && (
           <div className="space-y-8">
@@ -222,7 +222,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                   <HardHat className="text-accent" size={22} /> Válassz egy Építőipari Szakmát!
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">
-                  Kattints a kártyákra a részletes és őszinte szakmai pályaismertető megnyitásához.
+                  Kattints a kártyákra a részletes szakmai pályaismertető megnyitásához.
                 </p>
               </div>
 
@@ -281,7 +281,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
         {/* VIEW 2: FULL UNNUMBERED TRADE PROFESSION ORIENTATION GUIDE */}
         {activeTrade && (
           <div className="space-y-8 animate-fade-in">
-            
+
             {/* Back Header */}
             <div className="flex items-center justify-between bg-white p-4 px-6 rounded-2xl border border-gray-200 shadow-sm">
               <button
@@ -332,7 +332,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
 
             {/* UNNUMBERED FEJEZET TARTALOM */}
             <div className="space-y-10">
-              
+
               {/* MI EZ A SZAKMA? */}
               <section id="sec-1" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-4">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4">

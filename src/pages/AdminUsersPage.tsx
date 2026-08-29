@@ -13,9 +13,8 @@ import {
   Eye,
   UserCheck,
   X,
-  Building2,
 } from 'lucide-react';
-import { supabase, type Profile } from '../lib/supabase';
+import type { Profile } from '../lib/supabase';
 import { listProfiles, deleteUser, updateProfileRole } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -26,15 +25,13 @@ import {
 } from '../services/trustService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
-const ROLE_BADGE: Record<string, { label: string; class: string }> = {
+const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
   admin: { label: 'Adminisztrátor', class: 'bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/30' },
   editor: { label: 'Szerkesztő', class: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
-  moderator: { label: 'Moderátor', class: 'bg-purple-500/10 text-purple-400 border-purple-500/30' },
-  partner: { label: 'Partner Kapcsolattartó', class: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
   user: { label: 'Felhasználó', class: 'bg-gray-500/10 text-gray-400 border-gray-500/30' },
 };
 
-type FilterTab = 'all' | 'confirmed' | 'pending' | 'staff' | 'partners' | 'trusted';
+type FilterTab = 'all' | 'confirmed' | 'pending' | 'staff' | 'trusted';
 
 function formatHungarianDate(isoString?: string | null): string {
   if (!isoString) return '—';
@@ -89,7 +86,6 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
   const isAdmin = true; // Admin Users Page is restricted to admins; enable role selector for all users
   const [users, setUsers] = useState<Profile[]>([]);
   const [trustProfiles, setTrustProfiles] = useState<Record<string, UserTrustProfile>>({});
-  const [partnerUserMap, setPartnerUserMap] = useState<Record<string, { partnerName?: string; memberRole?: string }>>({});
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -117,27 +113,6 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
         })
       );
       setTrustProfiles(trustMap);
-
-      try {
-        const { data: pUsers } = await supabase
-          .from('partner_users')
-          .select('user_id, member_role, partners(name)');
-        
-        if (pUsers) {
-          const pMap: Record<string, { partnerName?: string; memberRole?: string }> = {};
-          pUsers.forEach((pu: any) => {
-            if (pu.user_id) {
-              pMap[pu.user_id] = {
-                partnerName: pu.partners?.name || 'Szervezet',
-                memberRole: pu.member_role || 'member',
-              };
-            }
-          });
-          setPartnerUserMap(pMap);
-        }
-      } catch {
-        // silent fallback
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Hiba történt a felhasználók betöltésekor.');
     } finally {
@@ -199,23 +174,20 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
     });
 
     const trustedCount = Object.values(trustProfiles).filter((tp) => tp.autoApprovalEnabled).length;
-    const partnerCount = users.filter((u) => u.role === 'partner' || Boolean(partnerUserMap[u.id])).length;
 
-    return { total, confirmed, pending, trustedCount, partnerCount };
-  }, [users, trustProfiles, partnerUserMap]);
+    return { total, confirmed, pending, trustedCount };
+  }, [users, trustProfiles]);
 
   // Filtering Logic
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       // Search filter
       const q = search.trim().toLowerCase();
-      const pInfo = partnerUserMap[u.id];
       const matchesSearch =
         !q ||
         (u.email ?? '').toLowerCase().includes(q) ||
         (u.full_name ?? '').toLowerCase().includes(q) ||
         u.role.toLowerCase().includes(q) ||
-        (pInfo?.partnerName && pInfo.partnerName.toLowerCase().includes(q)) ||
         u.id.toLowerCase().includes(q);
 
       if (!matchesSearch) return false;
@@ -225,13 +197,12 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
 
       if (activeTab === 'confirmed') return isConfirmed;
       if (activeTab === 'pending') return !isConfirmed;
-      if (activeTab === 'staff') return u.role === 'admin' || u.role === 'editor' || u.role === 'moderator';
-      if (activeTab === 'partners') return u.role === 'partner' || Boolean(partnerUserMap[u.id]);
+      if (activeTab === 'staff') return u.role === 'admin' || u.role === 'editor';
       if (activeTab === 'trusted') return tp?.autoApprovalEnabled || tp?.isTrusted;
 
       return true;
     });
-  }, [users, search, activeTab, trustProfiles, partnerUserMap]);
+  }, [users, search, activeTab, trustProfiles]);
 
   useEffect(() => {
     if (search && filteredUsers.length > 0) {
@@ -363,9 +334,8 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                 ? { backgroundColor: cardHighlight, color: '#000000' }
                 : { color: textColor }
             }
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'all' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'all' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
+              }`}
           >
             Összes ({stats.total})
           </button>
@@ -377,9 +347,8 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                 ? { backgroundColor: '#10B981', color: '#000000' }
                 : { color: textColor }
             }
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'confirmed' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'confirmed' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
+              }`}
           >
             Megerősített ({stats.confirmed})
           </button>
@@ -391,9 +360,8 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                 ? { backgroundColor: '#F59E0B', color: '#000000' }
                 : { color: textColor }
             }
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'pending' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'pending' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
+              }`}
           >
             Megerősítésre Vár ({stats.pending})
           </button>
@@ -405,25 +373,10 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                 ? { backgroundColor: '#3B82F6', color: '#FFFFFF' }
                 : { color: textColor }
             }
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'staff' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'staff' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
+              }`}
           >
             Adminok &amp; Szerkesztők
-          </button>
-
-          <button
-            onClick={() => setActiveTab('partners')}
-            style={
-              activeTab === 'partners'
-                ? { backgroundColor: '#10B981', color: '#000000' }
-                : { color: textColor }
-            }
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'partners' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
-            }`}
-          >
-            Partnerek ({stats.partnerCount})
           </button>
 
           <button
@@ -433,9 +386,8 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                 ? { backgroundColor: '#A855F7', color: '#FFFFFF' }
                 : { color: textColor }
             }
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'trusted' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'trusted' ? 'font-extrabold shadow-sm' : 'hover:opacity-80'
+              }`}
           >
             Megbízhatóak ({stats.trustedCount})
           </button>
@@ -497,9 +449,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
 
               {!loading &&
                 filteredUsers.map((u) => {
-                  const partnerInfo = partnerUserMap[u.id];
-                  const effectiveRole = u.role === 'user' && partnerInfo ? 'partner' : u.role;
-                  const badge = ROLE_BADGE[effectiveRole] || ROLE_BADGE.user;
+                  const badge = ROLE_BADGE[u.role] || ROLE_BADGE.user;
                   const tp = trustProfiles[u.id] || { trustScore: 10, isTrusted: false, autoApprovalEnabled: false };
                   const isSelf = (currentUser?.id && u.id === currentUser.id) || (currentUser?.email && u.email && currentUser.email.toLowerCase() === u.email.toLowerCase());
                   const isDeleting = deletingId === u.id;
@@ -508,73 +458,67 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                   const confirmDateStr = u.email_confirmed_at || u.confirmed_at;
                   const lastActiveIso = u.last_sign_in_at || u.updated_at || u.created_at;
 
-  async function handleRoleChange(userId: string, newRole: string) {
-    if (!isAdmin) {
-      alert('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
-      return;
-    }
-    try {
-      await updateProfileRole(userId, newRole);
-      loadUsers();
-    } catch (err: any) {
-      alert(err.message || 'A szerepkör módosítása nem sikerült.');
-    }
-  }
+                  async function handleRoleChange(userId: string, newRole: string) {
+                    if (!isAdmin) {
+                      alert('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
+                      return;
+                    }
+                    try {
+                      await updateProfileRole(userId, newRole);
+                      loadUsers();
+                    } catch (err: any) {
+                      alert(err.message || 'A szerepkör módosítása nem sikerült.');
+                    }
+                  }
 
-  return (
-    <tr key={u.id} id={`admin-user-${u.id}`} style={{ backgroundColor: inputBg }} className="hover:opacity-90 transition-colors">
-      {/* User Info */}
-      <td className="px-4 py-3.5">
-        <div className="flex items-center gap-3">
-          <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shrink-0">
-            {(u.full_name || u.email || 'U').substring(0, 2).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <span style={{ color: textColor }} className="font-bold block truncate max-w-[200px]">
-              {u.full_name || 'Nincs név megadva'}
-            </span>
-            <span className="text-gray-400 font-mono text-[11px] block truncate max-w-[200px]">
-              {u.email || 'Nincs e-mail'}
-            </span>
-            {partnerInfo && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 mt-1">
-                <Building2 size={11} /> {partnerInfo.partnerName}
-              </span>
-            )}
-          </div>
-        </div>
-      </td>
+                  return (
+                    <tr key={u.id} id={`admin-user-${u.id}`} style={{ backgroundColor: inputBg }} className="hover:opacity-90 transition-colors">
+                      {/* User Info */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shrink-0">
+                            {(u.full_name || u.email || 'U').substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <span style={{ color: textColor }} className="font-bold block truncate max-w-[200px]">
+                              {u.full_name || 'Nincs név megadva'}
+                            </span>
+                            <span className="text-gray-400 font-mono text-[11px] block truncate max-w-[200px]">
+                              {u.email || 'Nincs e-mail'}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
 
-      {/* Role Badge / Interactive Dropdown */}
-      <td className="px-4 py-3.5 whitespace-nowrap">
-        {isAdmin ? (
-          isSelf ? (
-            <div className="flex items-center gap-1.5">
-              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
-                {badge.label}
-              </span>
-              <span className="text-[10px] text-gray-500 font-medium">(Saját fiók)</span>
-            </div>
-          ) : (
-            <select
-              value={effectiveRole}
-              onChange={(e) => handleRoleChange(u.id, e.target.value)}
-              style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
-              className="border text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
-            >
-              <option value="user">Felhasználó (User)</option>
-              <option value="partner">Partner Kapcsolattartó (Partner)</option>
-              <option value="editor">Szerkesztő (Editor)</option>
-              <option value="moderator">Moderátor (Moderator)</option>
-              <option value="admin">Adminisztrátor (Admin)</option>
-            </select>
-          )
-        ) : (
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
-            {badge.label}
-          </span>
-        )}
-      </td>
+                      {/* Role Badge / Interactive Dropdown */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        {isAdmin ? (
+                          isSelf ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
+                                {badge.label}
+                              </span>
+                              <span className="text-[10px] text-gray-500 font-medium">(Saját fiók)</span>
+                            </div>
+                          ) : (
+                            <select
+                              value={u.role}
+                              onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                              style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                              className="border text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
+                            >
+                              <option value="user">Felhasználó (User)</option>
+                              <option value="editor">Szerkesztő (Editor)</option>
+                              <option value="moderator">Moderátor (Moderator)</option>
+                              <option value="admin">Adminisztrátor (Admin)</option>
+                            </select>
+                          )
+                        ) : (
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badge.class}`}>
+                            {badge.label}
+                          </span>
+                        )}
+                      </td>
 
                       {/* Email Confirmation Status */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
@@ -621,11 +565,10 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                                 ? undefined
                                 : { backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }
                             }
-                            className={`inline-flex items-center gap-1 font-extrabold text-[11px] px-2 py-0.5 rounded-md border ${
-                              tp.trustScore >= 50
+                            className={`inline-flex items-center gap-1 font-extrabold text-[11px] px-2 py-0.5 rounded-md border ${tp.trustScore >= 50
                                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                                 : ''
-                            }`}
+                              }`}
                           >
                             <Award size={12} /> {tp.trustScore} pt
                           </span>
@@ -649,11 +592,10 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                               ? undefined
                               : { backgroundColor: cardBg, borderColor: cardBorder, color: textColor }
                           }
-                          className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                            tp.isTrusted || tp.autoApprovalEnabled
+                          className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${tp.isTrusted || tp.autoApprovalEnabled
                               ? 'bg-purple-500/15 text-purple-300 border-purple-500/30 hover:bg-purple-500/25'
                               : 'hover:opacity-80'
-                          }`}
+                            }`}
                         >
                           {tp.isTrusted ? '✓ Auto-Publikál' : '+ Megbízhatóvá tétel'}
                         </button>
@@ -677,11 +619,10 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                             onClick={() => handleDeleteUser(u)}
                             disabled={isSelf || isDeleting}
                             title={isSelf ? 'Saját magadat nem törölheted' : 'Felhasználói fiók törlése'}
-                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                              isSelf
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${isSelf
                                 ? 'opacity-30 cursor-not-allowed bg-gray-800 text-gray-600 border-gray-700'
                                 : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40'
-                            }`}
+                              }`}
                           >
                             <Trash2 size={14} />
                           </button>
