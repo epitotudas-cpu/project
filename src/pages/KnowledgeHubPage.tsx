@@ -32,7 +32,7 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
                 Építőipari Tudástár Központ
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                A szakmai cikkektől és bemutatóktól kezdve a szakszótáron át a méretezési kalkulátorokig és szakmai könyvekig – minden tudás egy helyen.
+                Gyakorlati útmutatók, szakmai cikkek, fogalmak, számítások, kalkulátorok és építőipari könyvek – minden fontos tudás egy helyen, érthetően és rendszerezve.
               </p>
             </div>
 
