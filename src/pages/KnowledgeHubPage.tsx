@@ -1,4 +1,4 @@
-import { BookOpen, Calculator, Library, ArrowRight, ChevronRight, FileText } from 'lucide-react';
+import { BookOpen, Calculator, Library, ArrowRight, ChevronRight, FileText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface KnowledgeHubPageProps {
@@ -32,17 +32,17 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
                 Építőipari Tudástár Központ
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Gyakorlati útmutatók, szakmai cikkek, fogalmak, számítások, kalkulátorok és építőipari könyvek – minden fontos tudás egy helyen, érthetően és rendszerezve.
+                Gyakorlati útmutatók, munkavédelem, szabványok, fogalmak, számítások és szakkönyvek – minden fontos tudás egy helyen, érthetően és rendszerezve.
               </p>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
               <button
-                onClick={() => onNavigate('glossary')}
+                onClick={() => onNavigate('safety')}
                 className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-black text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
               >
-                <BookOpen size={15} />
-                Fogalomtár Megnyitása
+                <ShieldAlert size={15} />
+                Munkavédelem Megnyitása
               </button>
             </div>
           </div>
@@ -54,12 +54,6 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
         ariaLabel="Tudástár navigáció"
         onNavigate={onNavigate}
         items={[
-          {
-            label: 'Cikkek',
-            page: 'category',
-            icon: <FileText size={14} className="text-accent" />,
-            active: activeSubTab === 'category',
-          },
           {
             label: 'Fogalomtár',
             page: 'glossary',
@@ -78,43 +72,76 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
             icon: <Library size={14} className="text-accent" />,
             active: activeSubTab === 'books',
           },
+          {
+            label: 'Munkavédelem',
+            page: 'safety',
+            icon: <ShieldAlert size={14} className="text-accent" />,
+            active: activeSubTab === 'safety',
+          },
+          {
+            label: 'Szabályok, szabványok',
+            page: 'standards',
+            icon: <ShieldCheck size={14} className="text-accent" />,
+            active: activeSubTab === 'standards',
+          },
         ]}
       />
 
       {/* Main Content Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         {/* Sections Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Cikkek & Útmutatók */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Card 1: Munkavédelem */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
-              <div className="p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl w-fit">
-                <FileText size={24} />
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl w-fit">
+                <ShieldAlert size={24} />
               </div>
-              <h3 className="text-xl font-extrabold text-gray-900">Szakmai Cikkek &amp; Útmutatók</h3>
+              <h3 className="text-xl font-extrabold text-gray-900">Munkavédelem</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Részletes műszaki elemzések, lépésről lépésre kivitelezési útmutatók, anyagválasztási és technológiai cikkek az építőipar minden területéről.
+                Strukturált munkavédelmi oktatási anyagok, egyéni védőeszközök, magasban végzett munka, gépbiztonság és esettanulmányok.
               </p>
             </div>
             <div className="pt-2">
               <button
-                onClick={() => onNavigate('category')}
+                onClick={() => onNavigate('safety')}
                 className="inline-flex items-center gap-2 text-xs font-extrabold text-primary hover:underline"
               >
-                Böngészés a Cikkek között <ArrowRight size={14} />
+                Munkavédelem Böngészése <ArrowRight size={14} />
               </button>
             </div>
           </div>
 
-          {/* Card 2: Fogalomtár & Zsargon Szótár */}
+          {/* Card 2: Szabályok, szabványok */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
-              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl w-fit">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl w-fit">
+                <ShieldCheck size={24} />
+              </div>
+              <h3 className="text-xl font-extrabold text-gray-900">Szabályok, szabványok</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                Építőipari szabványok (MSZ EN), jogszabályi előírások, szakmai összefoglalók és csatolt letölthető dokumentumok.
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                onClick={() => onNavigate('standards')}
+                className="inline-flex items-center gap-2 text-xs font-extrabold text-primary hover:underline"
+              >
+                Szabványtár Megnyitása <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: Fogalomtár & Zsargon Szótár */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl w-fit">
                 <BookOpen size={24} />
               </div>
-              <h3 className="text-xl font-extrabold text-gray-900">Fogalomtár &amp; Zsargon Szótár</h3>
+              <h3 className="text-xl font-extrabold text-gray-900">Fogalomtár &amp; Szótár</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Építőipari kifejezések, műszaki szakszavak és építkezési zsargon magyarázata beágyazott oktatóvideókkal, ábrákkal és többnyelvű szótárral.
+                Építőipari kifejezések, műszaki szakszavak és építkezési zsargon magyarázata ábrákkal és szótárral.
               </p>
             </div>
             <div className="pt-2">
@@ -127,15 +154,15 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
             </div>
           </div>
 
-          {/* Card 3: Számítások & Kalkulátorok */}
+          {/* Card 4: Számítások & Kalkulátorok */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl w-fit">
+              <div className="p-3 bg-teal-50 border border-teal-200 text-teal-800 rounded-xl w-fit">
                 <Calculator size={24} />
               </div>
               <h3 className="text-xl font-extrabold text-gray-900">Számítások &amp; Kalkulátorok</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Anyagszükséglet számítások, rétegrendi hőszigetelés becslések, betonacél súlyméretezés és vakolási mennyiség kalkulátorok.
+                Anyagszükséglet számítások, rétegrendi hőszigetelés becslések, betonacél súlyméretezés és kalkulátorok.
               </p>
             </div>
             <div className="pt-2">
@@ -148,7 +175,7 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
             </div>
           </div>
 
-          {/* Card 4: Szakmai Könyvek */}
+          {/* Card 5: Szakmai Könyvek */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="p-3 bg-purple-50 border border-purple-200 text-purple-700 rounded-xl w-fit">
@@ -156,7 +183,7 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
               </div>
               <h3 className="text-xl font-extrabold text-gray-900">Szakmai Könyvek &amp; Kiadványok</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Digitalizált építőipari tankönyvek, szabványismertetők, szakkönyvek és letölthető oktatási segédletek gyűjteménye.
+                Digitalizált építőipari tankönyvek, szabványismertetők, szakkönyvek és letölthető oktatási segédletek.
               </p>
             </div>
             <div className="pt-2">

@@ -29,6 +29,8 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-glossary', label: 'Fogalomtár & Szótár', page: 'glossary', parentId: 'nav-tudastar', isActive: true, displayOrder: 1 },
   { id: 'sub-calc', label: 'Számítások & Kalkulátorok', page: 'calculations', parentId: 'nav-tudastar', isActive: true, displayOrder: 2 },
   { id: 'sub-books', label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tudastar', isActive: true, displayOrder: 3 },
+  { id: 'sub-safety', label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', isActive: true, displayOrder: 4 },
+  { id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 },
 
   // Eszközök Submenu
   { id: 'sub-tools-cat', label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
@@ -84,6 +86,14 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     );
   }
 
+  // Ensure Tudástár safety & standards submenus exist
+  if (!cleanItems.some((i) => i.id === 'sub-safety')) {
+    cleanItems.push({ id: 'sub-safety', label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', isActive: true, displayOrder: 4 });
+  }
+  if (!cleanItems.some((i) => i.id === 'sub-standards')) {
+    cleanItems.push({ id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 });
+  }
+
   const itemMap: Record<string, { label: string; page: string }> = {
     'sub-professions': { label: 'Építőipari szakmák', page: 'paths' },
     'sub-paths': { label: 'Tanulási útvonalak', page: 'courses#utvonalak' },
@@ -92,6 +102,8 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     'sub-news': { label: 'Hírek', page: 'category?type=hirek' },
     'sub-novelties': { label: 'Újdonságok', page: 'category?type=ujdonsagok' },
     'sub-guides': { label: 'Útmutatók', page: 'category?type=utmutatok' },
+    'sub-safety': { label: 'Munkavédelem', page: 'safety' },
+    'sub-standards': { label: 'Szabályok, szabványok', page: 'standards' },
   };
 
   let changed = cleanItems.length !== items.length;

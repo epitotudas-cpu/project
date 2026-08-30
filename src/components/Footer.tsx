@@ -40,6 +40,8 @@ export default function Footer({ onNavigate }: FooterProps) {
       icon: BookOpen,
       links: [
         { label: 'Főoldal & Áttekintés', page: 'home' },
+        { label: 'Munkavédelem Tudásbázis', page: 'safety' },
+        { label: 'Szabályok, Szabványok', page: 'standards' },
         { label: 'Szakmai Cikkek & Kategóriák', page: 'category' },
         { label: 'Építőipari Fogalomtár', page: 'glossary' },
         { label: 'Eszköz Enciklopédia', page: 'tool' },

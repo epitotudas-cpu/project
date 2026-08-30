@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, FolderTree, BookOpen, Library, Wrench, Settings, Home, Users, CheckSquare, Shield, Building2, Megaphone, Activity, X, Briefcase, GraduationCap, Compass } from 'lucide-react';
+import { LayoutDashboard, FileText, FolderTree, BookOpen, Library, Wrench, Settings, Home, Users, CheckSquare, Shield, Building2, Megaphone, Activity, X, Briefcase, GraduationCap, Compass, ShieldAlert } from 'lucide-react';
 import { useSiteSettings, adjustColorBrightness, getDynamicImageUrl } from '../services/siteSettingsService';
 
 export type AdminView =
@@ -6,6 +6,7 @@ export type AdminView =
   | 'articles'
   | 'categories'
   | 'glossary'
+  | 'knowledge-hub'
   | 'trades'
   | 'books'
   | 'tools'
@@ -52,6 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'articles', label: 'Cikkek', icon: FileText },
       { id: 'categories', label: 'Kategóriák', icon: FolderTree },
       { id: 'glossary', label: 'Fogalmak', icon: BookOpen },
+      { id: 'knowledge-hub', label: 'Oktatási Tudásbázis', icon: ShieldAlert },
       { id: 'trades', label: 'Szakmák & Karrierutak', icon: Compass },
       { id: 'books', label: 'Szakmai Könyvek', icon: Library },
       { id: 'tools', label: 'Eszközök & Gépek', icon: Wrench },
