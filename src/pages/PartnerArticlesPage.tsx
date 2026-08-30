@@ -556,7 +556,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                     <label className="font-bold text-gray-700 block mb-1">Cikk Címe *</label>
                     <input
                       type="text"
-                      value={formData.title}
+                      value={formData.title || ''}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="pl. Új környezetbarát szigetelőanyagok a hazai piacon"
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold"
@@ -568,7 +568,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                     <div>
                       <label className="font-bold text-gray-700 block mb-1">Kategória *</label>
                       <select
-                        value={formData.category_id}
+                        value={formData.category_id || ''}
                         onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
                       >
