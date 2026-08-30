@@ -293,7 +293,6 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // SMTP Configuration & Diagnostic State
-  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [copiedSmtpField, setCopiedSmtpField] = useState<string | null>(null);
   const [smtpTestEmail, setSmtpTestEmail] = useState('info@epitotudas.hu');
   const [smtpTestLoading, setSmtpTestLoading] = useState(false);
@@ -1120,8 +1119,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   <label className="text-xs font-bold text-gray-400 block mb-2">Weboldal Szlogenje (Tagline)</label>
                   <input
                     type="text"
-                    value={settings.siteTagline}
-                    onChange={(e) => setSettings({ ...settings, siteTagline: e.target.value })}
+                    value={settings.tagline}
+                    onChange={(e) => setSettings({ ...settings, tagline: e.target.value })}
                     style={fieldStyle}
                     className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
                     placeholder="Magyarország Építőipari Tudásbázisa"
