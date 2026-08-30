@@ -34,9 +34,10 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 },
 
   // Tanulás Submenu
-  { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
-  { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
-  { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
+  { id: 'sub-learning-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
+  { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
+  { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
+  { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 4 },
 
   // Eszközök Submenu
   { id: 'sub-tools-cat', label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
@@ -45,8 +46,8 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-selector', label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', isActive: true, displayOrder: 4 },
 
   // Pályák Submenu
-  { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
-  { id: 'sub-paths', label: 'Tanulási útvonalak', page: 'courses#utvonalak', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
+  { id: 'sub-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
+  { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths#szakmak', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
   { id: 'sub-courses', label: 'Képzések & kurzusok', page: 'courses', parentId: 'nav-paths', isActive: true, displayOrder: 3 },
   { id: 'sub-careers', label: 'Karrier & állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 ];
@@ -77,10 +78,13 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
   if (!hasNavLearning) {
     cleanItems.push(
       { id: 'nav-learning', label: 'Tanulás', page: 'learning', parentId: null, isActive: true, displayOrder: 4 },
-      { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
-      { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
-      { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 3 }
+      { id: 'sub-learning-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
+      { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
+      { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
+      { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 4 }
     );
+  } else if (!cleanItems.some((i) => i.id === 'sub-learning-paths')) {
+    cleanItems.push({ id: 'sub-learning-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-learning', isActive: true, displayOrder: 1 });
   }
 
   // Ensure 'Cikkek' main menu exists

@@ -145,32 +145,32 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
               Főoldal
             </button>
             <ChevronRight size={13} />
-            <span className="text-gray-200 font-medium">Pályák Központ</span>
+            <span className="text-gray-200 font-medium">Tanulási Útvonalak &amp; Karrierlépcsők</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <HardHat size={13} /> Építőipari Pályaorientáció &amp; Szakmaismertető
+                <HardHat size={13} /> Tanulási Útvonalak &amp; Szakmai Karrierlépcsők
               </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Építőipari Szakmák Részletes Bemutatása
+                Tanulási Útvonalak &amp; Szakmai Karrierlépcsők
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Szakmaismertető leendő tanulóknak és pályaválasztóknak.
+                Fedezd fel az építőipari szakmák szintenkénti fejlődési útvonalait: a kezdő alapismeretektől, a mesterfokozat megszerzésén át, az önálló szakmai vállalkozás vezetéséig.
               </p>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
               <button
-                onClick={() => onNavigate('courses')}
-                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
+                onClick={() => onNavigate('learning')}
+                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
               >
-                <GraduationCap size={16} /> Kurzusok megtekintése
+                <BookOpen size={16} /> Tananyagok &amp; Tesztek
               </button>
               <button
                 onClick={() => onNavigate('careers')}
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 flex items-center gap-2"
+                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 flex items-center gap-2 cursor-pointer"
               >
                 <Briefcase size={16} /> Állásajánlatok
               </button>
@@ -181,23 +181,35 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
 
       {/* Sub-navigation */}
       <SectionSubNav
-        ariaLabel="Pályák navigáció"
+        ariaLabel="Tanulási Útvonalak & Karrierlépcsők navigáció"
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Építőipari szakmák',
+            label: 'Tanulási útvonalak & Karrierlépcsők',
             page: 'paths',
-            icon: <HardHat size={14} className="text-accent" />,
-            active: !selectedTradeId,
+            icon: <Layers size={14} className="text-accent" />,
+            active: true,
           },
           {
-            label: 'Tanulási útvonalak',
-            page: 'courses#utvonalak',
-            icon: <Layers size={14} className="text-accent" />,
+            label: 'Tananyagok',
+            page: 'learning?tab=courses',
+            icon: <BookOpen size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Képzések & kurzusok',
+            label: 'Tesztek',
+            page: 'learning?tab=quizzes',
+            icon: <Zap size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Tanulókártyák',
+            page: 'learning?tab=flashcards',
+            icon: <Award size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Képzések',
             page: 'courses',
             icon: <GraduationCap size={14} className="text-accent" />,
             active: false,

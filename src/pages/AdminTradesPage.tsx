@@ -8,6 +8,8 @@ import {
   Eye,
   EyeOff,
   Hammer,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import {
   useTrades,
@@ -86,6 +88,20 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
     triggerSuccessNotify();
   };
 
+  const handleOpenCreateModal = () => {
+    setEditingTrade(null);
+    setName('');
+    setTagline('');
+    setCategoryLabel('Építőipari Szakma');
+    setOverview('');
+    setTasksText('');
+    setProsText('');
+    setConsText('');
+    setWorkplacesText('');
+    setCareerPathText('');
+    setShowModal(true);
+  };
+
   const handleOpenEditModal = (trade: TradeItem) => {
     setEditingTrade(trade);
     setName(trade.name);
@@ -100,9 +116,16 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
     setShowModal(true);
   };
 
+  const handleDeleteTrade = (id: string, tradeName: string) => {
+    if (window.confirm(`Biztosan törölni szeretnéd a(z) "${tradeName}" szakmai karrierútvonalat?`)) {
+      const updated = trades.filter((t) => t.id !== id);
+      saveTradeItems(updated);
+      triggerSuccessNotify();
+    }
+  };
+
   const handleSaveTrade = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingTrade) return;
 
     const parseLines = (text: string) =>
       text
@@ -110,24 +133,47 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
-    const updated: TradeItem[] = trades.map((t) => {
-      if (t.id !== editingTrade.id) return t;
-      return {
-        ...t,
-        name: name.trim(),
-        tagline: tagline.trim(),
-        categoryLabel: categoryLabel.trim(),
-        overview: overview.trim(),
+    let updated: TradeItem[];
+    if (editingTrade) {
+      updated = trades.map((t) => {
+        if (t.id !== editingTrade.id) return t;
+        return {
+          ...t,
+          name: name.trim(),
+          tagline: tagline.trim(),
+          categoryLabel: categoryLabel.trim(),
+          overview: overview.trim(),
+          whatDoesDo: {
+            ...t.whatDoesDo,
+            tasks: parseLines(tasksText),
+          },
+          pros: parseLines(prosText),
+          cons: parseLines(consText),
+          workplaces: parseLines(workplacesText),
+          careerPath: parseLines(careerPathText),
+        };
+      });
+    } else {
+      const newTrade: TradeItem = {
+        id: `trade-${Date.now()}`,
+        name: name.trim() || 'Új Szakmai Útvonal',
+        tagline: tagline.trim() || 'Szakmai leírás',
+        categoryLabel: categoryLabel.trim() || 'Szakma',
+        overview: overview.trim() || '',
         whatDoesDo: {
-          ...t.whatDoesDo,
+          title: 'Mit csinál egy szakember?',
           tasks: parseLines(tasksText),
+          tools: [],
         },
         pros: parseLines(prosText),
         cons: parseLines(consText),
         workplaces: parseLines(workplacesText),
         careerPath: parseLines(careerPathText),
+        isActive: true,
+        displayOrder: trades.length + 1,
       };
-    });
+      updated = [newTrade, ...trades];
+    }
 
     saveTradeItems(updated);
     setShowModal(false);
@@ -152,21 +198,31 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
       <div style={{ borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
         <div>
           <h1 style={{ color: textColor }} className="text-2xl font-black flex items-center gap-2.5">
-            <Briefcase style={{ color: cardHighlight }} size={28} /> Építőipari Szakmák Áttekintése &amp; Szerkesztése
+            <Briefcase style={{ color: cardHighlight }} size={28} /> Tanulási Útvonalak &amp; Szakmai Karrierlépcsők
           </h1>
           <p className="text-xs text-gray-400 mt-1">
-            Testreszabhatod a szakmai karrierutak leírásait, feladatait, előnyeit és elhelyezkedési lehetőségeit.
+            Hozz létre, szerkessz vagy törölj szakmai karrierutakat, feladatokat, előnyöket és fejlődési lépcsőket.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleResetDefaults}
-          style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-          className="px-4 py-2.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shrink-0"
-        >
-          <RotateCcw size={14} /> Alapértelmezett Visszaállítása
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            style={{ backgroundColor: cardHighlight, color: '#000' }}
+            className="px-4 py-2.5 font-black text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-md"
+          >
+            <Plus size={16} /> Új Szakmai Karrierút
+          </button>
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+            className="px-4 py-2.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <RotateCcw size={14} /> Alapértelmezett Visszaállítása
+          </button>
+        </div>
       </div>
 
       {savedSuccess && (
@@ -231,27 +287,37 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
               <span className="text-[11px] text-gray-500 font-mono">
                 {trade.whatDoesDo?.tasks?.length || 0} db feladat
               </span>
-              <button
-                type="button"
-                onClick={() => handleOpenEditModal(trade)}
-                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                className="px-3.5 py-1.5 border text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer hover:opacity-90"
-              >
-                <Edit3 size={13} /> Szerkesztés
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditModal(trade)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-3 py-1.5 border text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer hover:opacity-90"
+                >
+                  <Edit3 size={13} /> Szerkesztés
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTrade(trade.id, trade.name)}
+                  className="px-2.5 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 text-xs font-bold rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Szakmai Karrierút Törlése"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Edit Modal */}
-      {showModal && editingTrade && (
+      {/* Edit/Create Modal */}
+      {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto admin-scroll text-xs">
             <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
               <h3 style={{ color: textColor }} className="text-base font-extrabold flex items-center gap-2">
                 <Briefcase size={18} style={{ color: cardHighlight }} />
-                Szakmai Útmutató Szerkesztése ({editingTrade.name})
+                {editingTrade ? `Szakmai Útmutató Szerkesztése (${editingTrade.name})` : 'Új Szakmai Karrierút Létrehozása'}
               </h3>
               <button
                 type="button"

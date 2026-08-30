@@ -59,7 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'glossary', label: 'Fogalmak', icon: BookOpen },
       { id: 'knowledge-hub', label: 'Oktatási Tudásbázis', icon: ShieldAlert },
       { id: 'materials', label: 'Építőipari Anyagok', icon: Layers },
-      { id: 'trades', label: 'Szakmák & Karrierutak', icon: Compass },
+      { id: 'trades', label: 'Tanulási Útvonalak & Karrierlépcsők', icon: Compass },
       { id: 'books', label: 'Szakmai Könyvek', icon: Library },
       { id: 'tools', label: 'Eszközök & Gépek', icon: Wrench },
       { id: 'jobs', label: 'Állásajánlatok', icon: Briefcase },
