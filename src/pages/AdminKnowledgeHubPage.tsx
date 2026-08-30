@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   ShieldAlert,
   ShieldCheck,
-  Plus,
   Search,
   Edit2,
   Trash2,
@@ -10,16 +9,10 @@ import {
   CheckCircle,
   Clock,
   FileText,
-  Upload,
   X,
-  Sparkles,
-  Award,
   BookOpen,
   GraduationCap,
   HardHat,
-  Tag,
-  AlertCircle,
-  Copy,
 } from 'lucide-react';
 import {
   getKnowledgeItemsLocal,
@@ -302,9 +295,10 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
           />
         </div>
 
-        {/* Section Filter */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-bold w-full md:w-auto">
+        {/* Section & Status Filters */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Section Filter */}
+          <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-bold">
             <button
               onClick={() => setSectionFilter('all')}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
@@ -328,6 +322,34 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
               }`}
             >
               Szabályok, szabványok
+            </button>
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-bold">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                statusFilter === 'all' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600'
+              }`}
+            >
+              Összes státusz
+            </button>
+            <button
+              onClick={() => setStatusFilter('published')}
+              className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                statusFilter === 'published' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-600'
+              }`}
+            >
+              Publikált
+            </button>
+            <button
+              onClick={() => setStatusFilter('draft')}
+              className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                statusFilter === 'draft' ? 'bg-amber-600 text-white shadow-xs' : 'text-gray-600'
+              }`}
+            >
+              Piszkozat
             </button>
           </div>
         </div>

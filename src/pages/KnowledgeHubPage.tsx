@@ -1,4 +1,4 @@
-import { BookOpen, Calculator, Library, ArrowRight, ChevronRight, FileText, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { BookOpen, Calculator, Library, ArrowRight, ChevronRight, ShieldAlert, ShieldCheck } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface KnowledgeHubPageProps {
