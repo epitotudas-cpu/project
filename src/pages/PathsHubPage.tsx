@@ -181,35 +181,23 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
 
       {/* Sub-navigation */}
       <SectionSubNav
-        ariaLabel="Tanulási Útvonalak & Karrierlépcsők navigáció"
+        ariaLabel="Pályák navigáció"
         onNavigate={onNavigate}
         items={[
           {
             label: 'Tanulási útvonalak & Karrierlépcsők',
             page: 'paths',
             icon: <Layers size={14} className="text-accent" />,
-            active: true,
+            active: !selectedTradeId,
           },
           {
-            label: 'Tananyagok',
-            page: 'learning?tab=courses',
-            icon: <BookOpen size={14} className="text-accent" />,
+            label: 'Építőipari szakmák',
+            page: 'paths#szakmak',
+            icon: <HardHat size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Tesztek',
-            page: 'learning?tab=quizzes',
-            icon: <Zap size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Tanulókártyák',
-            page: 'learning?tab=flashcards',
-            icon: <Award size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Képzések',
+            label: 'Képzések & kurzusok',
             page: 'courses',
             icon: <GraduationCap size={14} className="text-accent" />,
             active: false,

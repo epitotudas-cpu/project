@@ -240,15 +240,15 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Építőipari szakmák',
+            label: 'Tanulási útvonalak & karrierlépcsők',
             page: 'paths',
-            icon: <HardHat size={14} className="text-accent" />,
+            icon: <Layers size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Tanulási útvonalak',
-            page: 'courses#utvonalak',
-            icon: <Layers size={14} className="text-accent" />,
+            label: 'Építőipari szakmák',
+            page: 'paths#szakmak',
+            icon: <HardHat size={14} className="text-accent" />,
             active: false,
           },
           {

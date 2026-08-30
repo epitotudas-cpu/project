@@ -34,10 +34,9 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 },
 
   // Tanulás Submenu
-  { id: 'sub-learning-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
-  { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
-  { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
-  { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 4 },
+  { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
+  { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
+  { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
 
   // Eszközök Submenu
   { id: 'sub-tools-cat', label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
@@ -70,7 +69,8 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
       item.id !== 'sub-mission' &&
       item.id !== 'sub-partners' &&
       item.id !== 'sub-impressum' &&
-      item.id !== 'sub-articles'
+      item.id !== 'sub-articles' &&
+      item.id !== 'sub-learning-paths'
   );
 
   // Ensure 'Tanulás' main menu exists
@@ -78,13 +78,10 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
   if (!hasNavLearning) {
     cleanItems.push(
       { id: 'nav-learning', label: 'Tanulás', page: 'learning', parentId: null, isActive: true, displayOrder: 4 },
-      { id: 'sub-learning-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
-      { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
-      { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
-      { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 4 }
+      { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
+      { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
+      { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 3 }
     );
-  } else if (!cleanItems.some((i) => i.id === 'sub-learning-paths')) {
-    cleanItems.push({ id: 'sub-learning-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-learning', isActive: true, displayOrder: 1 });
   }
 
   // Ensure 'Cikkek' main menu exists
