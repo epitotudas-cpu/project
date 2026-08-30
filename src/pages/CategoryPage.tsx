@@ -173,6 +173,8 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
         }
       } else if (catParam) {
         setSelectedCategories(catParam.split(',').filter(Boolean));
+      } else {
+        setSelectedCategories([]);
       }
 
       if (qParam) {
@@ -350,6 +352,21 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       ? 'lg:grid-cols-4'
       : 'lg:grid-cols-3';
 
+  const activeSubtype = useMemo(() => {
+    if (selectedCategories.length === 0) return 'all';
+    if (selectedCategories.length === 1 && categories.length > 0) {
+      const cat = categories.find((c) => c.id === selectedCategories[0]);
+      if (cat) {
+        const s = cat.slug.toLowerCase();
+        const n = cat.name.toLowerCase();
+        if (s.includes('hirek') || n.includes('hírek') || n.includes('hirek')) return 'hirek';
+        if (s.includes('ujdonsagok') || n.includes('újdonságok') || n.includes('ujdonsagok')) return 'ujdonsagok';
+        if (s.includes('utmutatok') || n.includes('útmutatók') || n.includes('utmutatok')) return 'utmutatok';
+      }
+    }
+    return 'all';
+  }, [categories, selectedCategories]);
+
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
       {/* Hero Header */}
@@ -389,34 +406,34 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
         </div>
       </div>
 
-      {/* Sub-navigation */}
+      {/* Sub-navigation Ribbon Bar for Cikkek */}
       <SectionSubNav
-        ariaLabel="Tudástár navigáció"
+        ariaLabel="Cikkek almenü navigáció"
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Cikkek',
+            label: 'Összes Cikk',
             page: 'category',
             icon: <FileText size={14} className="text-accent" />,
-            active: true,
+            active: activeSubtype === 'all',
           },
           {
-            label: 'Fogalomtár',
-            page: 'glossary',
+            label: 'Hírek',
+            page: 'category?type=hirek',
+            icon: <Sparkles size={14} className="text-accent" />,
+            active: activeSubtype === 'hirek',
+          },
+          {
+            label: 'Újdonságok',
+            page: 'category?type=ujdonsagok',
+            icon: <Calendar size={14} className="text-accent" />,
+            active: activeSubtype === 'ujdonsagok',
+          },
+          {
+            label: 'Útmutatók',
+            page: 'category?type=utmutatok',
             icon: <BookOpen size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Számítások',
-            page: 'calculations',
-            icon: <Calculator size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Szakmai könyvek',
-            page: 'books',
-            icon: <Library size={14} className="text-accent" />,
-            active: false,
+            active: activeSubtype === 'utmutatok',
           },
         ]}
       />
