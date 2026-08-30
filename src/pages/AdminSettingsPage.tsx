@@ -26,6 +26,7 @@ import {
   EyeOff,
   Edit3,
   ChevronRight,
+  ChevronDown,
   Calculator,
   Shield,
   Target,
@@ -1033,50 +1034,89 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* DETAIL VIEW MODE: Section Header & Back Navigation */}
       {activeTab !== 'overview' && (
-        <div className="space-y-6 animate-fadeIn min-w-0">
-          {/* Section Header Bar */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-5 rounded-3xl border shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0 overflow-hidden">
-            <div className="flex items-center gap-4 min-w-0">
+        <div className="space-y-6 animate-fadeIn min-w-0 w-full">
+          {/* Section Header Bar - 3 Stacked Levels (Egymás alatt) */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="sticky top-0 z-30 p-5 md:p-6 rounded-3xl border shadow-xl space-y-4 min-w-0 w-full backdrop-blur-md">
+            {/* LEVEL 1: Back button (Left) & Quick Action buttons (Right) */}
+            <div className="flex items-center justify-between gap-4 w-full">
               <button
                 onClick={() => setActiveTab('overview')}
                 style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                className="px-3.5 py-2.5 border rounded-2xl text-xs font-extrabold hover:border-accent transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm"
+                className="px-4 py-2 border rounded-2xl text-xs font-extrabold hover:border-accent transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm whitespace-nowrap"
               >
                 <ArrowLeft size={16} /> Vissza a Beállításokhoz
               </button>
 
-              <div className="space-y-0.5 min-w-0">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span>Beállítások</span>
-                  <ChevronRight size={12} className="text-gray-500" />
-                  <span style={{ color: cardHighlight }} className="font-extrabold truncate">
-                    {currentCardDef?.title}
-                  </span>
-                </div>
-                <h1 style={{ color: textColor }} className="text-xl md:text-2xl font-black flex items-center gap-2 truncate">
-                  {currentCardDef?.title}
-                </h1>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  onClick={handleResetDefaults}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-3.5 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm whitespace-nowrap"
+                >
+                  <RotateCcw size={14} /> Visszaállítás
+                </button>
+                <button
+                  onClick={handleSave}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90 whitespace-nowrap"
+                >
+                  <Save size={16} /> Mentés
+                </button>
               </div>
             </div>
 
-            {/* Quick Switcher Tabs Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 admin-scroll flex-nowrap whitespace-nowrap min-w-0 max-w-full">
-              {SETTINGS_CARDS.map((c) => (
-                <button
-                  key={c.key}
-                  onClick={() => setActiveTab(c.key)}
-                  style={{
-                    backgroundColor: activeTab === c.key ? cardHighlight : inputBg,
-                    color: activeTab === c.key ? '#000000' : textColor,
-                    borderColor: cardBorder,
-                  }}
-                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    activeTab === c.key ? 'shadow-md scale-105' : 'hover:opacity-80'
-                  }`}
-                >
-                  {c.title}
-                </button>
-              ))}
+            {/* LEVEL 2: Module Title & Breadcrumbs - Fully Standalone on its own Row */}
+            <div className="space-y-1 w-full pt-1 pb-1">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span>Admin panel</span>
+                <ChevronRight size={12} className="text-gray-500 shrink-0" />
+                <span>Beállítások</span>
+                <ChevronRight size={12} className="text-gray-500 shrink-0" />
+                <span style={{ color: cardHighlight }} className="font-extrabold">
+                  {currentCardDef?.title}
+                </span>
+              </div>
+              <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-black tracking-tight leading-snug">
+                {currentCardDef?.title}
+              </h1>
+              {currentCardDef?.description && (
+                <p className="text-xs text-gray-400 max-w-3xl leading-relaxed">
+                  {currentCardDef.description}
+                </p>
+              )}
+            </div>
+
+            {/* LEVEL 3: Category Switcher Dropdown Menu */}
+            <div className="border-t border-white/10 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label htmlFor="settings-category-select" className="text-xs font-extrabold text-gray-400 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  <Compass size={14} style={{ color: cardHighlight }} /> Modul váltása:
+                </label>
+                <div className="relative flex-1 sm:w-80">
+                  <select
+                    id="settings-category-select"
+                    value={activeTab}
+                    onChange={(e) => setActiveTab(e.target.value as SettingsCategoryKey)}
+                    style={{
+                      backgroundColor: inputBg,
+                      borderColor: cardHighlight,
+                      color: textColor,
+                    }}
+                    className="w-full appearance-none px-4 py-2.5 pr-10 border-2 rounded-xl text-xs font-extrabold cursor-pointer focus:outline-none shadow-md transition-all hover:opacity-90"
+                  >
+                    {SETTINGS_CARDS.map((c) => (
+                      <option key={c.key} value={c.key} style={{ backgroundColor: cardBg, color: textColor }}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <span className="text-[11px] text-gray-400 font-semibold hidden md:inline-block">
+                Modul 12/<strong>{SETTINGS_CARDS.findIndex((c) => c.key === activeTab) + 1}</strong>: <span style={{ color: cardHighlight }} className="font-extrabold">{currentCardDef?.title}</span>
+              </span>
             </div>
           </div>
 
@@ -1137,8 +1177,6 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               </div>
             </div>
           )}
-        </div>
-      )}
 
       {/* TAB 1: BRANDING & DESIGN */}
       {activeTab === 'design' && (
@@ -4119,6 +4157,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               </div>
             </div>
           </div>
+        </div>
+      )}
         </div>
       )}
 
