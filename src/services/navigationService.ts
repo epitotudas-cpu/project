@@ -18,7 +18,6 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'nav-tudastar', label: 'Tudástár', page: 'tudastar', parentId: null, isActive: true, displayOrder: 2 },
   { id: 'nav-tool', label: 'Eszközök', page: 'tool', parentId: null, isActive: true, displayOrder: 3 },
   { id: 'nav-paths', label: 'Pályák', page: 'paths', parentId: null, isActive: true, displayOrder: 4 },
-  { id: 'nav-about', label: 'Rólunk', page: 'about', parentId: null, isActive: true, displayOrder: 5 },
 
   // Tudástár Submenu
   { id: 'sub-articles', label: 'Cikkek & Útmutatók', page: 'category', parentId: 'nav-tudastar', isActive: true, displayOrder: 1 },
@@ -36,11 +35,6 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-paths', label: 'Tanulási útvonalak', page: 'courses#utvonalak', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
   { id: 'sub-courses', label: 'Képzések & kurzusok', page: 'courses', parentId: 'nav-paths', isActive: true, displayOrder: 3 },
   { id: 'sub-careers', label: 'Karrier & állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
-
-  // Rólunk Submenu
-  { id: 'sub-mission', label: 'Küldetésünk & Rólunk', page: 'about', parentId: 'nav-about', isActive: true, displayOrder: 1 },
-  { id: 'sub-partners', label: 'Partnereink', page: 'partners', parentId: 'nav-about', isActive: true, displayOrder: 2 },
-  { id: 'sub-impressum', label: 'Impresszum & Kapcsolat', page: 'impressum', parentId: 'nav-about', isActive: true, displayOrder: 3 },
 ];
 
 const STORAGE_KEY = 'epitotudas_nav_items_v1';
@@ -53,14 +47,25 @@ declare global {
 }
 
 function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
+  // Purge any legacy 'Rólunk' (nav-about) items from main menu navigation
+  const cleanItems = items.filter(
+    (item) =>
+      item.id !== 'nav-about' &&
+      item.parentId !== 'nav-about' &&
+      item.id !== 'sub-mission' &&
+      item.id !== 'sub-partners' &&
+      item.id !== 'sub-impressum'
+  );
+
   const itemMap: Record<string, { label: string; page: string }> = {
     'sub-professions': { label: 'Építőipari szakmák', page: 'paths' },
     'sub-paths': { label: 'Tanulási útvonalak', page: 'courses#utvonalak' },
     'sub-courses': { label: 'Képzések & kurzusok', page: 'courses' },
     'sub-careers': { label: 'Karrier & állások', page: 'careers' },
   };
-  let changed = false;
-  const updated = items.map((item) => {
+
+  let changed = cleanItems.length !== items.length;
+  const updated = cleanItems.map((item) => {
     const target = itemMap[item.id];
     if (target && (item.label !== target.label || item.page !== target.page)) {
       changed = true;
@@ -68,6 +73,7 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     }
     return item;
   });
+
   if (changed) {
     try {
       if (typeof window !== 'undefined') {

@@ -89,7 +89,6 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     if (itemPage === 'tudastar' && ['category', 'article', 'glossary', 'calculations', 'books'].includes(currentPage)) return true;
     if (itemPage === 'tool' && ['software', 'valaszto'].includes(currentPage)) return true;
     if (itemPage === 'paths' && ['courses', 'careers'].includes(currentPage)) return true;
-    if (itemPage === 'about' && ['partners', 'impressum', 'privacy', 'terms', 'cookies', 'jogi'].includes(currentPage)) return true;
     if (subItems?.some((sub) => sub.page === currentPage)) return true;
     return false;
   };
