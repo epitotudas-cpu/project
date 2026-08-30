@@ -314,6 +314,21 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     return filteredArticles.slice(0, visibleCount);
   }, [filteredArticles, visibleCount]);
 
+  const activeSubtype = useMemo(() => {
+    if (selectedCategories.length === 0) return 'all';
+    if (selectedCategories.length === 1 && categories.length > 0) {
+      const cat = categories.find((c) => c.id === selectedCategories[0]);
+      if (cat) {
+        const s = cat.slug.toLowerCase();
+        const n = cat.name.toLowerCase();
+        if (s.includes('hirek') || n.includes('hírek') || n.includes('hirek')) return 'hirek';
+        if (s.includes('ujdonsagok') || n.includes('újdonságok') || n.includes('ujdonsagok')) return 'ujdonsagok';
+        if (s.includes('utmutatok') || n.includes('útmutatók') || n.includes('utmutatok')) return 'utmutatok';
+      }
+    }
+    return 'all';
+  }, [categories, selectedCategories]);
+
   if (loading) {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center">
@@ -349,21 +364,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       : articleSettings.desktopGridColumns === 4
       ? 'lg:grid-cols-4'
       : 'lg:grid-cols-3';
-
-  const activeSubtype = useMemo(() => {
-    if (selectedCategories.length === 0) return 'all';
-    if (selectedCategories.length === 1 && categories.length > 0) {
-      const cat = categories.find((c) => c.id === selectedCategories[0]);
-      if (cat) {
-        const s = cat.slug.toLowerCase();
-        const n = cat.name.toLowerCase();
-        if (s.includes('hirek') || n.includes('hírek') || n.includes('hirek')) return 'hirek';
-        if (s.includes('ujdonsagok') || n.includes('újdonságok') || n.includes('ujdonsagok')) return 'ujdonsagok';
-        if (s.includes('utmutatok') || n.includes('útmutatók') || n.includes('utmutatok')) return 'utmutatok';
-      }
-    }
-    return 'all';
-  }, [categories, selectedCategories]);
 
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
