@@ -51,7 +51,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-careers', label: 'Karrier & Állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 ];
 
-const STORAGE_KEY = 'epitotudas_nav_items_v2';
+const STORAGE_KEY = 'epitotudas_nav_items_v5';
 const SUPABASE_NAV_ID = '00000000-0000-0000-0000-000000000004';
 
 declare global {
@@ -157,10 +157,8 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
         window.__GLOBAL_NAV_ITEMS__ = updated;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       }
-      // Save normalized back to cloud
-      saveNavItems(updated);
     } catch (err) {
-      console.warn('Hiba a navigációs elemek mentésekor:', err);
+      console.warn('Hiba a navigációs elemek frissítésekor:', err);
     }
   }
   return updated;
@@ -289,10 +287,37 @@ export function getStructuredNav(allItems: MenuItem[], includeInactive = false):
     .filter((i) => !i.parentId)
     .sort((a, b) => a.displayOrder - b.displayOrder);
 
+  const customSubOrder: Record<string, Record<string, number>> = {
+    'nav-paths': {
+      'sub-professions': 1,
+      'sub-paths': 2,
+      'sub-courses': 3,
+      'sub-careers': 4,
+    },
+    'nav-learning': {
+      'sub-learning-courses': 1,
+      'sub-learning-quizzes': 2,
+      'sub-learning-flashcards': 3,
+    },
+    'nav-articles': {
+      'sub-news': 1,
+      'sub-novelties': 2,
+      'sub-guides': 3,
+    },
+  };
+
   return mainItems.map((main) => {
     const subItems = filtered
       .filter((i) => i.parentId === main.id)
-      .sort((a, b) => a.displayOrder - b.displayOrder);
+      .sort((a, b) => {
+        const orderConfig = customSubOrder[main.id];
+        if (orderConfig) {
+          const orderA = orderConfig[a.id] ?? a.displayOrder;
+          const orderB = orderConfig[b.id] ?? b.displayOrder;
+          return orderA - orderB;
+        }
+        return a.displayOrder - b.displayOrder;
+      });
 
     return {
       id: main.id,
