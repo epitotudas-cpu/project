@@ -209,11 +209,11 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       const invokeRes = await supabase.functions.invoke('send-invitation-email', {
         body: {
           to: smtpTestEmail,
-          subject: 'ÉpítőTudás - Turbo-SMTP Teszt Üzenet',
+          subject: 'ÉpítőTudás - Resend Teszt Üzenet',
           html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff; color: #111;">
-            <h2 style="color: #d97706; margin-top: 0;">✓ Turbo-SMTP Teszt Sikeres!</h2>
+            <h2 style="color: #d97706; margin-top: 0;">✓ Resend Teszt Sikeres!</h2>
             <p>Ez egy igazoló teszt e-mail az ÉpítőTudás platformról.</p>
-            <p><strong>SMTP Szerver:</strong> pro.eu.turbo-smtp.com</p>
+            <p><strong>SMTP Szerver:</strong> smtp.resend.com</p>
             <p><strong>Feladó:</strong> ÉpítőTudás &lt;support@epitotudas.hu&gt;</p>
             <p><strong>Címzett:</strong> ${smtpTestEmail}</p>
             <p><strong>Dátum:</strong> ${new Date().toLocaleString('hu-HU')}</p>
@@ -233,8 +233,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
       } else {
         setSmtpTestResult({
           success: true,
-          message: 'A teszt e-mail sikeresen kiküldésre került a Turbo-SMTP szerveren keresztül!',
-          provider: invokeRes.data?.provider || 'Turbo-SMTP',
+          message: 'A teszt e-mail sikeresen kiküldésre került a Resend API / SMTP szerveren keresztül!',
+          provider: invokeRes.data?.provider || 'Resend',
         });
       }
     } catch (err: any) {
@@ -814,7 +814,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           { id: 'about', label: 'ℹ️ Rólunk Oldal', icon: Info },
           { id: 'ads', label: '📢 Reklámok & Ajánlatok', icon: Megaphone },
           { id: 'icons_sharing', label: '🌐 Webhely ikonok & Megosztás', icon: Share2 },
-          { id: 'smtp', label: '📧 E-mail & SMTP (Turbo-SMTP)', icon: Mail },
+          { id: 'smtp', label: '📧 E-mail & SMTP (Resend)', icon: Mail },
           { id: 'system', label: '⚙️ Rendszer & Biztonság', icon: ShieldAlert },
         ].map((tab) => {
           const IconComp = tab.icon;
@@ -3526,7 +3526,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
         </div>
       )}
 
-      {/* TAB: E-MAIL & SMTP SETTINGS (TURBO-SMTP) */}
+      {/* TAB: E-MAIL & SMTP SETTINGS (RESEND) */}
       {activeTab === 'smtp' && (
         <div className="space-y-8 max-w-5xl">
           {/* Header Banner */}
@@ -3534,22 +3534,22 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <h2 style={{ color: textColor }} className="text-xl font-bold flex items-center gap-2">
-                  <Mail size={22} style={{ color: cardHighlight }} /> E-mail Szolgáltató &amp; SMTP Beállítások
+                  <Mail size={22} style={{ color: cardHighlight }} /> E-mail Szolgáltató &amp; SMTP Beállítások (Resend)
                 </h2>
                 <p className="text-xs text-gray-400">
-                  Az ÉpítőTudás platform hivatalos e-mail küldő szolgáltatójának (Turbo-SMTP) beállításai és domén hitelesítési rekordjai (SPF, DKIM, DMARC).
+                  Az ÉpítőTudás platform hivatalos e-mail küldő szolgáltatójának (Resend) beállításai, Supabase Edge Function státusza és DNS domén hitelesítési rekordjai (SPF, DKIM, DMARC).
                 </p>
               </div>
               <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-2 text-xs font-extrabold text-emerald-400">
-                <ShieldCheck size={16} /> Turbo-SMTP Aktív (pro.eu.turbo-smtp.com)
+                <ShieldCheck size={16} /> Resend API &amp; SMTP Aktív (smtp.resend.com)
               </div>
             </div>
           </div>
 
-          {/* SZEKCIÓ 1: SMTP PARAMÉTEREK (TURBO-SMTP) */}
+          {/* SZEKCIÓ 1: SMTP PARAMÉTEREK (RESEND) */}
           <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
             <h3 style={{ color: cardHighlight, borderColor: cardBorder }} className="text-base font-extrabold border-b pb-3 flex items-center gap-2">
-              <Building size={18} /> 1. Turbo-SMTP Kapcsolati Adatok
+              <Building size={18} /> 1. Resend Kapcsolati Adatok (SMTP &amp; API)
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -3557,10 +3557,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
                 <label className="text-xs font-bold text-gray-400 block">SMTP Server Host</label>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-sm font-bold text-amber-400">pro.eu.turbo-smtp.com</span>
+                  <span className="font-mono text-sm font-bold text-amber-400">smtp.resend.com</span>
                   <button
                     type="button"
-                    onClick={() => handleCopySmtp('pro.eu.turbo-smtp.com', 'server')}
+                    onClick={() => handleCopySmtp('smtp.resend.com', 'server')}
                     className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
                     {copiedSmtpField === 'server' ? <Check size={14} /> : <Copy size={14} />}
@@ -3577,16 +3577,16 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 </div>
               </div>
 
-              {/* SMTP Username / Consumer Key */}
+              {/* SMTP Username */}
               <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
-                <label className="text-xs font-bold text-gray-400 block">SMTP Username / Consumer Key</label>
+                <label className="text-xs font-bold text-gray-400 block">SMTP Username</label>
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-xs font-bold text-white bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 select-all">
-                    cba95ca4cc0647d29610
+                    resend
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleCopySmtp('cba95ca4cc0647d29610', 'key')}
+                    onClick={() => handleCopySmtp('resend', 'key')}
                     className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
                     {copiedSmtpField === 'key' ? <Check size={14} /> : <Copy size={14} />}
@@ -3595,40 +3595,22 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 </div>
               </div>
 
-              {/* SMTP Password / Consumer Secret */}
+              {/* SMTP Password / API Key */}
               <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl space-y-2">
-                <label className="text-xs font-bold text-gray-400 block">SMTP Password / Consumer Secret</label>
+                <label className="text-xs font-bold text-gray-400 block">SMTP Password / RESEND_API_KEY</label>
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-xs font-bold text-white bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 select-all">
-                    {showSmtpPassword ? 'kQcx4YoP39TlLCuGpmjS' : '••••••••••••••••••••'}
+                    RESEND_API_KEY (re_...)
                   </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowSmtpPassword(!showSmtpPassword)}
-                      className="p-1.5 bg-gray-700/50 hover:bg-gray-700 text-gray-300 rounded-xl transition-all cursor-pointer"
-                      title={showSmtpPassword ? 'Elrejtés' : 'Megjelenítés'}
-                    >
-                      {showSmtpPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCopySmtp('kQcx4YoP39TlLCuGpmjS', 'secret')}
-                      className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      {copiedSmtpField === 'secret' ? <Check size={14} /> : <Copy size={14} />}
-                      {copiedSmtpField === 'secret' ? 'Másolva!' : 'Másolás'}
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Consumer Secret bizalmassági figyelmeztetés */}
+            {/* Biztonsági megjegyzés */}
             <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-200 flex items-start gap-2.5">
               <AlertTriangle size={16} className="shrink-0 text-amber-400 mt-0.5" />
               <div>
-                <strong>Biztonsági megjegyzés:</strong> A Consumer Secret jelszó bizalmas adat. Amennyiben az kulcs elvész, a Turbo-SMTP felületén új kulcspárt kell generálnia.
+                <strong>Fontos:</strong> A <code className="bg-black/40 px-1 py-0.5 rounded text-amber-300 font-mono">RESEND_API_KEY</code> kulcsot a Supabase Dashboard-on a <strong>Settings ➔ Edge Functions ➔ Secrets</strong> menüpontban kell beállítani!
               </div>
             </div>
 
@@ -3640,14 +3622,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   <span className="text-xs font-bold text-emerald-400 block">SSL Portok (Ajánlott)</span>
                   <div className="flex gap-2">
                     <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-xs font-bold rounded-lg">465</span>
-                    <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-xs font-bold rounded-lg">25025</span>
                   </div>
                 </div>
                 <div className="p-3 bg-black/30 border border-white/10 rounded-xl space-y-1">
-                  <span className="text-xs font-bold text-amber-400 block">Nem-SSL / TLS Portok</span>
+                  <span className="text-xs font-bold text-amber-400 block">TLS / Standard Portok</span>
                   <div className="flex gap-2">
                     <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono text-xs font-bold rounded-lg">587</span>
-                    <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono text-xs font-bold rounded-lg">2525</span>
                     <span className="px-2.5 py-1 bg-gray-700/50 text-gray-300 border border-gray-600 font-mono text-xs font-bold rounded-lg">25</span>
                   </div>
                 </div>
@@ -3657,10 +3637,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             {/* Teszt e-mail küldő felület */}
             <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4">
               <h4 className="text-sm font-bold flex items-center gap-2 text-amber-400">
-                <Send size={16} /> Turbo-SMTP Integrációs Teszt E-mail Küldése
+                <Send size={16} /> Resend Integrációs Teszt E-mail Küldése
               </h4>
               <p className="text-xs text-gray-400">
-                Tesztelje le a Supabase Edge Function és Turbo-SMTP kapcsolatot egy valós e-mail kiküldésével.
+                Tesztelje le a Supabase Edge Function és Resend API kapcsolatot egy valós teszt e-mail kiküldésével.
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <input
@@ -3703,7 +3683,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
             <div className="border-b pb-3 flex flex-wrap items-center justify-between gap-3">
               <h3 style={{ color: cardHighlight }} className="text-base font-extrabold flex items-center gap-2">
-                <Globe size={18} /> 2. Domén Hitelesítés &amp; DNS Rekordok (SPF, DKIM, DMARC)
+                <Globe size={18} /> 2. Resend Domén Hitelesítés &amp; DNS Rekordok (SPF, DKIM, DMARC)
               </h3>
               <span className="text-xs bg-amber-500/10 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full font-bold">
                 Kötelező a kézbesíthetőséghez
@@ -3711,7 +3691,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             </div>
 
             <p className="text-xs text-gray-300 leading-relaxed">
-              Ahhoz, hogy a Turbo-SMTP szolgáltatón keresztül kiküldött e-mailek ne kerüljenek Spam / Levélszemét mappába, adja hozzá az alábbi TXT rekordokat a doménje DNS beállításaihoz.
+              Ahhoz, hogy a Resend szolgáltatón keresztül kiküldött e-mailek megbízhatóan célba érjenek, ellenőrizze a domén hitelesítést a <a href="https://resend.com/domains" target="_blank" rel="noreferrer" className="text-amber-400 underline font-bold">Resend Domains felületén</a>.
             </p>
 
             {/* 1. SPF Rekord Card */}
@@ -3728,15 +3708,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
                   <span className="font-extrabold text-amber-300 block">⚡ Ha már LÉTEZIK SPF rekord a DNS beállításokban:</span>
                   <p className="text-amber-200/90 leading-relaxed">
-                    Szúrja be az <code className="bg-black/50 px-1.5 py-0.5 rounded text-amber-300 font-mono">include:spf.turbo-smtp.com</code> szegmenst közvetlenül a <code className="bg-black/50 px-1.5 py-0.5 rounded text-amber-300 font-mono">v=spf1</code> tag után (szóközzel elválasztva).
+                    Szúrja be az <code className="bg-black/50 px-1.5 py-0.5 rounded text-amber-300 font-mono">include:amazonses.com</code> szegmenst közvetlenül a <code className="bg-black/50 px-1.5 py-0.5 rounded text-amber-300 font-mono">v=spf1</code> tag után (szóközzel elválasztva).
                   </p>
                   <div className="flex items-center justify-between gap-2 pt-1">
                     <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-amber-500/40 text-amber-300 font-mono text-xs font-bold select-all">
-                      include:spf.turbo-smtp.com
+                      include:amazonses.com
                     </code>
                     <button
                       type="button"
-                      onClick={() => handleCopySmtp('include:spf.turbo-smtp.com', 'spf_existing')}
+                      onClick={() => handleCopySmtp('include:amazonses.com', 'spf_existing')}
                       className="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                     >
                       {copiedSmtpField === 'spf_existing' ? <Check size={14} /> : <Copy size={14} />}
@@ -3757,11 +3737,11 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                       <span className="text-[11px] text-gray-400 block font-bold">Rekord Értéke (TXT Value):</span>
                       <div className="flex items-center justify-between gap-2 mt-1">
                         <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/10 text-emerald-300 font-mono text-xs font-bold select-all flex-1">
-                          v=spf1 a mx include:spf.turbo-smtp.com ?all
+                          v=spf1 include:amazonses.com ~all
                         </code>
                         <button
                           type="button"
-                          onClick={() => handleCopySmtp('v=spf1 a mx include:spf.turbo-smtp.com ?all', 'spf_new')}
+                          onClick={() => handleCopySmtp('v=spf1 include:amazonses.com ~all', 'spf_new')}
                           className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                         >
                           {copiedSmtpField === 'spf_new' ? <Check size={14} /> : <Copy size={14} />}
@@ -3778,52 +3758,16 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                  <ShieldCheck size={16} /> 2. DKIM Rekord (DomainKeys Identified Mail)
+                  <ShieldCheck size={16} /> 2. DKIM &amp; MX Rekordok (Resend Dashboard)
                 </h4>
-                <span className="px-2.5 py-0.5 bg-black/40 text-gray-300 border border-white/10 font-mono text-[11px] rounded-lg">TXT Rekord</span>
+                <span className="px-2.5 py-0.5 bg-black/40 text-gray-300 border border-white/10 font-mono text-[11px] rounded-lg">CNAME / MX</span>
               </div>
 
               <div className="space-y-3 text-xs">
-                {/* Host / Domain */}
-                <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-1">
-                  <span className="text-[11px] text-gray-400 block font-bold">DKIM Domain / Host Név:</span>
-                  <div className="flex items-center justify-between gap-2">
-                    <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/10 text-amber-300 font-mono text-xs font-bold select-all">
-                      turbo-smtp._domainkey
-                    </code>
-                    <button
-                      type="button"
-                      onClick={() => handleCopySmtp('turbo-smtp._domainkey', 'dkim_domain')}
-                      className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-                    >
-                      {copiedSmtpField === 'dkim_domain' ? <Check size={14} /> : <Copy size={14} />}
-                      {copiedSmtpField === 'dkim_domain' ? 'Másolva!' : 'Másolás'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* DKIM Value */}
-                <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-1">
-                  <span className="text-[11px] text-gray-400 block font-bold">DKIM Érték (Public Key):</span>
-                  <div className="space-y-2">
-                    <textarea
-                      readOnly
-                      rows={3}
-                      value="k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDT3MWLni6so1q9eQggRYBCLHFjohZkCnYHH8gZNDBm6zRrodRVpWpJQW7x3cWWiuBhS1X0IfBB80l5tqFa+yc+mVgnk8tkUzOHFbPQPp4fi7egTpMtsQW/ZMrxw73SItNvPr72qvJTYZNPxarMx+ULjEWybcfEdXHPY8jslGcpCwIDAQAB"
-                      style={{ backgroundColor: adjustColorBrightness(inputBg, -6), borderColor: cardBorder, color: '#34d399' }}
-                      className="w-full border rounded-xl p-2.5 font-mono text-[11px] leading-relaxed focus:outline-none select-all resize-none"
-                    />
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => handleCopySmtp('k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDT3MWLni6so1q9eQggRYBCLHFjohZkCnYHH8gZNDBm6zRrodRVpWpJQW7x3cWWiuBhS1X0IfBB80l5tqFa+yc+mVgnk8tkUzOHFbPQPp4fi7egTpMtsQW/ZMrxw73SItNvPr72qvJTYZNPxarMx+ULjEWybcfEdXHPY8jslGcpCwIDAQAB', 'dkim_value')}
-                        className="px-3.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                      >
-                        {copiedSmtpField === 'dkim_value' ? <Check size={14} /> : <Copy size={14} />}
-                        {copiedSmtpField === 'dkim_value' ? 'Másolva!' : 'DKIM Érték Másolása'}
-                      </button>
-                    </div>
-                  </div>
+                <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-2">
+                  <p className="text-gray-300 leading-relaxed">
+                    A Resend esetében a pontos DKIM CNAME és MX rekordokat a <a href="https://resend.com/domains" target="_blank" rel="noreferrer" className="text-amber-400 font-bold underline">https://resend.com/domains</a> felületen a saját doménje hozzáadása után generálja le a rendszer.
+                  </p>
                 </div>
               </div>
             </div>
@@ -3832,15 +3776,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                  <ShieldAlert size={16} /> 3. DMARC Rekord (Domain-based Message Authentication)
+                  <ShieldAlert size={16} /> 3. DMARC Rekord
                 </h4>
                 <span className="px-2.5 py-0.5 bg-black/40 text-gray-300 border border-white/10 font-mono text-[11px] rounded-lg">TXT Rekord</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                {/* Host */}
                 <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-1">
-                  <span className="text-[11px] text-gray-400 block font-bold">DMARC Domain / Host Név:</span>
+                  <span className="text-[11px] text-gray-400 block font-bold">DMARC Host Név:</span>
                   <div className="flex items-center justify-between gap-2">
                     <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/10 text-amber-300 font-mono text-xs font-bold select-all">
                       _dmarc
@@ -3856,9 +3799,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   </div>
                 </div>
 
-                {/* Value */}
                 <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-1">
-                  <span className="text-[11px] text-gray-400 block font-bold">DMARC Érték (Policy):</span>
+                  <span className="text-[11px] text-gray-400 block font-bold">DMARC Érték:</span>
                   <div className="flex items-center justify-between gap-2">
                     <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/10 text-emerald-300 font-mono text-xs font-bold select-all">
                       v=DMARC1; p=none;

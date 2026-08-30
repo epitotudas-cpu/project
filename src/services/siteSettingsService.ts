@@ -97,26 +97,26 @@ export interface SmtpSettings {
 }
 
 export const DEFAULT_SMTP_SETTINGS: SmtpSettings = {
-  provider: 'Turbo-SMTP',
-  server: 'pro.eu.turbo-smtp.com',
+  provider: 'Resend',
+  server: 'smtp.resend.com',
   authEnabled: true,
-  username: 'cba95ca4cc0647d29610',
-  password: 'kQcx4YoP39TlLCuGpmjS',
+  username: 'resend',
+  password: 'RESEND_API_KEY (re_...)',
   ports: {
-    ssl: ['465', '25025'],
-    nonSsl: ['25', '587', '2525'],
+    ssl: ['465'],
+    nonSsl: ['587', '25'],
   },
   senderEmail: 'support@epitotudas.hu',
   senderName: 'ÉpítőTudás',
   dnsRecords: {
     spf: {
       domain: '@ (vagy feladó domén)',
-      value: 'v=spf1 a mx include:spf.turbo-smtp.com ?all',
-      existingInstruction: 'Ha már létezik SPF rekord, szúrja be az include:spf.turbo-smtp.com elemet közvetlenül a v=spf1 szegmens után.',
+      value: 'v=spf1 include:amazonses.com ~all',
+      existingInstruction: 'Ha már létezik SPF rekord, szúrja be az include:amazonses.com elemet közvetlenül a v=spf1 szegmens után.',
     },
     dkim: {
-      domain: 'turbo-smtp._domainkey',
-      value: 'k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDT3MWLni6so1q9eQggRYBCLHFjohZkCnYHH8gZNDBm6zRrodRVpWpJQW7x3cWWiuBhS1X0IfBB80l5tqFa+yc+mVgnk8tkUzOHFbPQPp4fi7egTpMtsQW/ZMrxw73SItNvPr72qvJTYZNPxarMx+ULjEWybcfEdXHPY8jslGcpCwIDAQAB',
+      domain: 'resend._domainkey',
+      value: 'A Resend Dashboard-on (https://resend.com/domains) generált egyedi DKIM / MX rekordok',
     },
     dmarc: {
       domain: '_dmarc',
