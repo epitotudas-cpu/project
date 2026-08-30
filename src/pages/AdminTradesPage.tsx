@@ -195,7 +195,12 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
         entrepreneurship: {
           possible: true,
           services: ['Szakmai kivitelezés', 'Karbantartás'],
-          initialInvestment: 'Közepes eszközigény',
+          clients: ['Magánmegrendelők', 'Cégek'],
+          prosAndCons: 'Jó piaci kereslet, felelősségteljes vállalkozói munka',
+        },
+        summaryChecklist: {
+          goodFitIf: ['Szeretsz alkotni', 'Jó a kézügyességed'],
+          considerOtherIf: ['Nem szereted a fizikai munkát'],
         },
         isActive: true,
         displayOrder: trades.length + 1,
