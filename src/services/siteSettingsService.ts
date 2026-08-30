@@ -62,7 +62,68 @@ export interface SiteSettings {
   maintenanceMessage: string;
   allowRegistration: boolean;
   requireAuthForDetailedGlossary: boolean;
+
+  // E-mail & SMTP Configuration
+  smtpSettings?: SmtpSettings;
 }
+
+export interface SmtpSettings {
+  provider: string;
+  server: string;
+  authEnabled: boolean;
+  username: string; // Consumer Key
+  password: string; // Consumer Secret
+  ports: {
+    ssl: string[];
+    nonSsl: string[];
+  };
+  senderEmail: string;
+  senderName: string;
+  dnsRecords: {
+    spf: {
+      domain: string;
+      value: string;
+      existingInstruction: string;
+    };
+    dkim: {
+      domain: string;
+      value: string;
+    };
+    dmarc: {
+      domain: string;
+      value: string;
+    };
+  };
+}
+
+export const DEFAULT_SMTP_SETTINGS: SmtpSettings = {
+  provider: 'Turbo-SMTP',
+  server: 'pro.eu.turbo-smtp.com',
+  authEnabled: true,
+  username: 'cba95ca4cc0647d29610',
+  password: 'kQcx4YoP39TlLCuGpmjS',
+  ports: {
+    ssl: ['465', '25025'],
+    nonSsl: ['25', '587', '2525'],
+  },
+  senderEmail: 'support@epitotudas.hu',
+  senderName: 'ÉpítőTudás',
+  dnsRecords: {
+    spf: {
+      domain: '@ (vagy feladó domén)',
+      value: 'v=spf1 a mx include:spf.turbo-smtp.com ?all',
+      existingInstruction: 'Ha már létezik SPF rekord, szúrja be az include:spf.turbo-smtp.com elemet közvetlenül a v=spf1 szegmens után.',
+    },
+    dkim: {
+      domain: 'turbo-smtp._domainkey',
+      value: 'k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDT3MWLni6so1q9eQggRYBCLHFjohZkCnYHH8gZNDBm6zRrodRVpWpJQW7x3cWWiuBhS1X0IfBB80l5tqFa+yc+mVgnk8tkUzOHFbPQPp4fi7egTpMtsQW/ZMrxw73SItNvPr72qvJTYZNPxarMx+ULjEWybcfEdXHPY8jslGcpCwIDAQAB',
+    },
+    dmarc: {
+      domain: '_dmarc',
+      value: 'v=DMARC1; p=none;',
+    },
+  },
+};
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteTitle: 'ÉpítőTudás',
@@ -118,6 +179,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   maintenanceMessage: 'Az oldal jelenleg karbantartás alatt áll. Kérjük, látogass vissza később!',
   allowRegistration: true,
   requireAuthForDetailedGlossary: true,
+
+  smtpSettings: DEFAULT_SMTP_SETTINGS,
 };
 
 const STORAGE_KEY = 'epitotudas_site_settings_v1';

@@ -137,7 +137,7 @@ export async function sendInvitationEmail(
       </div>
     `;
 
-    let invokeRes = await supabase.functions.invoke('resend-email', {
+    let invokeRes = await supabase.functions.invoke('send-invitation-email', {
       body: {
         to: invitation.email,
         subject,
@@ -146,7 +146,7 @@ export async function sendInvitationEmail(
     });
 
     if (invokeRes.error && invokeRes.error.message?.includes('Failed to send a request')) {
-      invokeRes = await supabase.functions.invoke('send-invitation-email', {
+      invokeRes = await supabase.functions.invoke('resend-email', {
         body: {
           to: invitation.email,
           subject,

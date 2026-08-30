@@ -283,7 +283,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       if (emailResult.success) {
         setEmailStatusNotice('Az automatizált meghívó e-mail sikeresen kiküldésre került!');
       } else {
-        const errDetail = emailResult.error ? `: ${emailResult.error}` : ' (RESEND_API_KEY hiányzik)';
+        const errDetail = emailResult.error ? `: ${emailResult.error}` : ' (Turbo-SMTP / Edge Function beállítás hiányzik)';
         setEmailStatusNotice(
           `Az automatikus e-mail küldés sikertelen volt${errDetail}. Használja az alábbi másolható sablont!`
         );
