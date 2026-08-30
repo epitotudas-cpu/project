@@ -47,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'ÉpítőTudás <support@epitotudas.hu>',
+        from: 'ÉpítőTudás <info@epitotudas.hu>',
         to: Array.isArray(to) ? to : [to],
         subject,
         html,

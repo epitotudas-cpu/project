@@ -106,7 +106,7 @@ export const DEFAULT_SMTP_SETTINGS: SmtpSettings = {
     ssl: ['465'],
     nonSsl: ['587', '25'],
   },
-  senderEmail: 'support@epitotudas.hu',
+  senderEmail: 'info@epitotudas.hu',
   senderName: 'ÉpítőTudás',
   dnsRecords: {
     spf: {

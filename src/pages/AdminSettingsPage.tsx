@@ -191,7 +191,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   // SMTP Configuration & Diagnostic State
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [copiedSmtpField, setCopiedSmtpField] = useState<string | null>(null);
-  const [smtpTestEmail, setSmtpTestEmail] = useState('support@epitotudas.hu');
+  const [smtpTestEmail, setSmtpTestEmail] = useState('info@epitotudas.hu');
   const [smtpTestLoading, setSmtpTestLoading] = useState(false);
   const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; provider?: string } | null>(null);
 
@@ -214,7 +214,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             <h2 style="color: #d97706; margin-top: 0;">✓ Resend Teszt Sikeres!</h2>
             <p>Ez egy igazoló teszt e-mail az ÉpítőTudás platformról.</p>
             <p><strong>SMTP Szerver:</strong> smtp.resend.com</p>
-            <p><strong>Feladó:</strong> ÉpítőTudás &lt;support@epitotudas.hu&gt;</p>
+            <p><strong>Feladó:</strong> ÉpítőTudás &lt;info@epitotudas.hu&gt;</p>
             <p><strong>Címzett:</strong> ${smtpTestEmail}</p>
             <p><strong>Dátum:</strong> ${new Date().toLocaleString('hu-HU')}</p>
           </div>`,
