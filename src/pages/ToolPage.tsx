@@ -812,37 +812,70 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
               </div>
             )}
 
-            {/* Premium Live Search Bar */}
-            <div id="eszkoz-kereso" className="relative max-w-3xl">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                aria-label="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
-                placeholder="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                  }
-                  if (e.key === 'Escape') {
-                    setSearchQuery('');
-                    (e.target as HTMLInputElement).blur();
-                  }
-                }}
-                className="w-full bg-white border border-gray-200/90 focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-2xl pl-11 pr-11 py-4 text-gray-900 placeholder-gray-400 focus:outline-none text-sm font-medium shadow-sm transition-all"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-                  title="Keresés törlése"
-                  aria-label="Keresés törlése"
-                >
-                  <X size={16} />
-                </button>
-              )}
+            {/* Dedicated Search & Filter Hub Card Block */}
+            <div id="eszkoz-kereso-block" className="bg-white border border-gray-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3.5">
+                <div className="space-y-1">
+                  <span className="text-xs font-black bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1.5">
+                    <Search size={13} /> Okos Kereső &amp; Szűrők
+                  </span>
+                  <h3 className="text-lg font-black text-gray-900">Keresés az Eszköz &amp; Gép Enciklopédiában</h3>
+                  <p className="text-xs text-gray-500">
+                    Ékezetfüggetlen gépelés, szerszámnevek, márkák, szakmák és szinonimák valós idejű szűrése.
+                  </p>
+                </div>
+
+                <div className="text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 px-3.5 py-1.5 rounded-2xl shrink-0 self-start sm:self-auto">
+                  Elérhető eszközök: <strong className="text-primary font-black">{tools.length} db</strong>
+                </div>
+              </div>
+
+              {/* Wide Input Box */}
+              <div className="relative">
+                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                <input
+                  type="text"
+                  aria-label="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
+                  placeholder="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                    if (e.key === 'Escape') {
+                      setSearchQuery('');
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  className="w-full bg-gray-50/80 border-2 border-gray-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 rounded-2xl pl-12 pr-12 py-4 text-gray-900 placeholder-gray-400 focus:outline-none text-base font-semibold shadow-inner transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-200/80 rounded-full transition-colors cursor-pointer"
+                    title="Keresés törlése"
+                    aria-label="Keresés törlése"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Search Tag Chips */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span className="font-bold text-gray-400 text-[11px] uppercase tracking-wider mr-1">Gyakori keresések:</span>
+                {['Kalapács', 'Fúrókalapács', 'Bosch', 'Kőműves', 'Lézeres szintező', 'Sarokcsiszoló'].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSearchQuery(tag)}
+                    className="px-3 py-1 bg-gray-100 hover:bg-primary/10 hover:text-primary border border-gray-200 text-gray-700 rounded-xl font-medium transition-all text-xs cursor-pointer shadow-2xs"
+                  >
+                    🔍 {tag}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 6 Category Overview Cards Grid (When no specific category selected) */}
