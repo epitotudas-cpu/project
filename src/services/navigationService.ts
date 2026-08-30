@@ -15,15 +15,20 @@ export interface MenuItem {
 export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   // Main Menu Items
   { id: 'nav-home', label: 'Főoldal', page: 'home', parentId: null, isActive: true, displayOrder: 1 },
-  { id: 'nav-tudastar', label: 'Tudástár', page: 'tudastar', parentId: null, isActive: true, displayOrder: 2 },
-  { id: 'nav-tool', label: 'Eszközök', page: 'tool', parentId: null, isActive: true, displayOrder: 3 },
-  { id: 'nav-paths', label: 'Pályák', page: 'paths', parentId: null, isActive: true, displayOrder: 4 },
+  { id: 'nav-articles', label: 'Cikkek', page: 'category', parentId: null, isActive: true, displayOrder: 2 },
+  { id: 'nav-tudastar', label: 'Tudástár', page: 'tudastar', parentId: null, isActive: true, displayOrder: 3 },
+  { id: 'nav-tool', label: 'Eszközök', page: 'tool', parentId: null, isActive: true, displayOrder: 4 },
+  { id: 'nav-paths', label: 'Pályák', page: 'paths', parentId: null, isActive: true, displayOrder: 5 },
+
+  // Cikkek Submenu
+  { id: 'sub-news', label: 'Hírek', page: 'category?type=hirek', parentId: 'nav-articles', isActive: true, displayOrder: 1 },
+  { id: 'sub-novelties', label: 'Újdonságok', page: 'category?type=ujdonsagok', parentId: 'nav-articles', isActive: true, displayOrder: 2 },
+  { id: 'sub-guides', label: 'Útmutatók', page: 'category?type=utmutatok', parentId: 'nav-articles', isActive: true, displayOrder: 3 },
 
   // Tudástár Submenu
-  { id: 'sub-articles', label: 'Cikkek & Útmutatók', page: 'category', parentId: 'nav-tudastar', isActive: true, displayOrder: 1 },
-  { id: 'sub-glossary', label: 'Fogalomtár & Szótár', page: 'glossary', parentId: 'nav-tudastar', isActive: true, displayOrder: 2 },
-  { id: 'sub-calc', label: 'Számítások & Kalkulátorok', page: 'calculations', parentId: 'nav-tudastar', isActive: true, displayOrder: 3 },
-  { id: 'sub-books', label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tudastar', isActive: true, displayOrder: 4 },
+  { id: 'sub-glossary', label: 'Fogalomtár & Szótár', page: 'glossary', parentId: 'nav-tudastar', isActive: true, displayOrder: 1 },
+  { id: 'sub-calc', label: 'Számítások & Kalkulátorok', page: 'calculations', parentId: 'nav-tudastar', isActive: true, displayOrder: 2 },
+  { id: 'sub-books', label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tudastar', isActive: true, displayOrder: 3 },
 
   // Eszközök Submenu
   { id: 'sub-tools-cat', label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
@@ -47,21 +52,46 @@ declare global {
 }
 
 function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
-  // Purge any legacy 'Rólunk' (nav-about) items from main menu navigation
-  const cleanItems = items.filter(
+  // Purge any legacy 'Rólunk' (nav-about) & old 'sub-articles' under tudastar
+  let cleanItems = items.filter(
     (item) =>
       item.id !== 'nav-about' &&
       item.parentId !== 'nav-about' &&
       item.id !== 'sub-mission' &&
       item.id !== 'sub-partners' &&
-      item.id !== 'sub-impressum'
+      item.id !== 'sub-impressum' &&
+      item.id !== 'sub-articles'
   );
+
+  // Ensure 'Cikkek' main menu exists
+  const hasNavArticles = cleanItems.some((i) => i.id === 'nav-articles');
+  if (!hasNavArticles) {
+    cleanItems.push(
+      { id: 'nav-articles', label: 'Cikkek', page: 'category', parentId: null, isActive: true, displayOrder: 2 },
+      { id: 'sub-news', label: 'Hírek', page: 'category?type=hirek', parentId: 'nav-articles', isActive: true, displayOrder: 1 },
+      { id: 'sub-novelties', label: 'Újdonságok', page: 'category?type=ujdonsagok', parentId: 'nav-articles', isActive: true, displayOrder: 2 },
+      { id: 'sub-guides', label: 'Útmutatók', page: 'category?type=utmutatok', parentId: 'nav-articles', isActive: true, displayOrder: 3 }
+    );
+  }
+
+  // Ensure Cikkek submenus exist
+  const hasSubNews = cleanItems.some((i) => i.id === 'sub-news');
+  if (!hasSubNews) {
+    cleanItems.push(
+      { id: 'sub-news', label: 'Hírek', page: 'category?type=hirek', parentId: 'nav-articles', isActive: true, displayOrder: 1 },
+      { id: 'sub-novelties', label: 'Újdonságok', page: 'category?type=ujdonsagok', parentId: 'nav-articles', isActive: true, displayOrder: 2 },
+      { id: 'sub-guides', label: 'Útmutatók', page: 'category?type=utmutatok', parentId: 'nav-articles', isActive: true, displayOrder: 3 }
+    );
+  }
 
   const itemMap: Record<string, { label: string; page: string }> = {
     'sub-professions': { label: 'Építőipari szakmák', page: 'paths' },
     'sub-paths': { label: 'Tanulási útvonalak', page: 'courses#utvonalak' },
     'sub-courses': { label: 'Képzések & kurzusok', page: 'courses' },
     'sub-careers': { label: 'Karrier & állások', page: 'careers' },
+    'sub-news': { label: 'Hírek', page: 'category?type=hirek' },
+    'sub-novelties': { label: 'Újdonságok', page: 'category?type=ujdonsagok' },
+    'sub-guides': { label: 'Útmutatók', page: 'category?type=utmutatok' },
   };
 
   let changed = cleanItems.length !== items.length;

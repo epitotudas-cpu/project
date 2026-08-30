@@ -85,11 +85,13 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const isAdmin = profile?.role === 'admin' || profile?.role === 'editor';
 
   const isNavItemActive = (itemPage: string, subItems?: Array<{ page: string }>) => {
-    if (currentPage === itemPage) return true;
-    if (itemPage === 'tudastar' && ['category', 'article', 'glossary', 'calculations', 'books'].includes(currentPage)) return true;
-    if (itemPage === 'tool' && ['software', 'valaszto'].includes(currentPage)) return true;
-    if (itemPage === 'paths' && ['courses', 'careers'].includes(currentPage)) return true;
-    if (subItems?.some((sub) => sub.page === currentPage)) return true;
+    const mainItemPage = itemPage.split('?')[0].split('#')[0];
+    if (currentPage === mainItemPage) return true;
+    if (mainItemPage === 'category' && (currentPage === 'category' || currentPage === 'article')) return true;
+    if (mainItemPage === 'tudastar' && ['glossary', 'calculations', 'books'].includes(currentPage)) return true;
+    if (mainItemPage === 'tool' && ['software', 'valaszto'].includes(currentPage)) return true;
+    if (mainItemPage === 'paths' && ['courses', 'careers'].includes(currentPage)) return true;
+    if (subItems?.some((sub) => sub.page.split('?')[0].split('#')[0] === currentPage)) return true;
     return false;
   };
 

@@ -145,22 +145,43 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     try {
       const hash = window.location.hash || '';
       const queryPart = hash.includes('?') ? hash.split('?')[1] : '';
-      if (!queryPart) return;
+      let typeParam = '';
+      let catParam = '';
+      let qParam = '';
 
-      const params = new URLSearchParams(queryPart);
-      const catParam = params.get('cat');
-      const qParam = params.get('q');
+      if (queryPart) {
+        const params = new URLSearchParams(queryPart);
+        typeParam = params.get('type') || '';
+        catParam = params.get('cat') || '';
+        qParam = params.get('q') || '';
+      } else if (hash.startsWith('#')) {
+        const fragment = hash.replace('#', '');
+        if (['hirek', 'ujdonsagok', 'utmutatok'].includes(fragment)) {
+          typeParam = fragment;
+        }
+      }
 
-      if (catParam) {
+      if (typeParam && categories.length > 0) {
+        const matchingCat = categories.find(
+          (c) =>
+            c.slug.toLowerCase() === typeParam.toLowerCase() ||
+            c.name.toLowerCase() === typeParam.toLowerCase() ||
+            c.name.toLowerCase().includes(typeParam.toLowerCase())
+        );
+        if (matchingCat) {
+          setSelectedCategories([matchingCat.id]);
+        }
+      } else if (catParam) {
         setSelectedCategories(catParam.split(',').filter(Boolean));
       }
+
       if (qParam) {
         setSearchQuery(qParam);
       }
     } catch {
       // ignore parsing errors
     }
-  }, []);
+  }, [categories]);
 
   useEffect(() => {
     async function loadData() {
@@ -176,7 +197,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
         setCategories(categoriesData);
         setArticles(publishedOnly);
         setAdSlots(slots);
-        syncFromHash();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Hiba történt az adatok betöltésekor');
       } finally {
@@ -184,7 +204,15 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       }
     }
     loadData();
-  }, [syncFromHash]);
+  }, []);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      syncFromHash();
+    }
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, [categories, syncFromHash]);
 
   // Update URL hash when filters change
   const updateUrlParams = useCallback((cats: string[], q: string) => {
@@ -440,8 +468,50 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           </div>
         )}
 
-        {/* SEARCH AND COMPACT FILTER BAR */}
+        {/* QUICK SUBCATEGORY TABS & SEARCH BAR */}
         <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
+          {/* Main Category Subnav Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-gray-100">
+            {[
+              { id: 'all', label: 'Összes Cikk', slug: null, icon: Layers },
+              { id: 'hirek', label: 'Hírek', slug: 'hirek', icon: FileText },
+              { id: 'ujdonsagok', label: 'Újdonságok', slug: 'ujdonsagok', icon: Sparkles },
+              { id: 'utmutatok', label: 'Útmutatók', slug: 'utmutatok', icon: BookOpen },
+            ].map((tab) => {
+              const matchingCat = tab.slug ? categories.find((c) => c.slug === tab.slug) : null;
+              const isSelected =
+                tab.id === 'all'
+                  ? selectedCategories.length === 0
+                  : matchingCat
+                  ? selectedCategories.includes(matchingCat.id)
+                  : false;
+              const IconComp = tab.icon;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (tab.id === 'all') {
+                      setSelectedCategories([]);
+                      updateUrlParams([], searchQuery);
+                    } else if (matchingCat) {
+                      setSelectedCategories([matchingCat.id]);
+                      updateUrlParams([matchingCat.id], searchQuery);
+                    }
+                  }}
+                  className={`px-4 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary text-white shadow-md'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  <IconComp size={14} className={isSelected ? 'text-accent' : 'text-gray-500'} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="flex flex-col md:flex-row items-center gap-4">
             
             {/* Live Search Input */}
