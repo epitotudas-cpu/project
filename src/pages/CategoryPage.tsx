@@ -89,7 +89,8 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters State (Multi-select)
+  // Filters State
+  const [selectedArticleType, setSelectedArticleType] = useState<'hirek' | 'ujdonsagok' | 'utmutatok'>('utmutatok');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -159,17 +160,13 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
         }
       }
 
-      if (typeParam && categories.length > 0) {
-        const matchingCat = categories.find(
-          (c) =>
-            c.slug.toLowerCase() === typeParam.toLowerCase() ||
-            c.name.toLowerCase() === typeParam.toLowerCase() ||
-            c.name.toLowerCase().includes(typeParam.toLowerCase())
-        );
-        if (matchingCat) {
-          setSelectedCategories([matchingCat.id]);
-        }
-      } else if (catParam) {
+      if (['hirek', 'ujdonsagok', 'utmutatok'].includes(typeParam)) {
+        setSelectedArticleType(typeParam as 'hirek' | 'ujdonsagok' | 'utmutatok');
+      } else {
+        setSelectedArticleType('utmutatok');
+      }
+
+      if (catParam) {
         setSelectedCategories(catParam.split(',').filter(Boolean));
       } else {
         setSelectedCategories([]);
@@ -181,7 +178,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     } catch {
       // ignore parsing errors
     }
-  }, [categories]);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -207,17 +204,16 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   }, []);
 
   useEffect(() => {
-    if (categories.length > 0) {
-      syncFromHash();
-    }
+    syncFromHash();
     window.addEventListener('hashchange', syncFromHash);
     return () => window.removeEventListener('hashchange', syncFromHash);
-  }, [categories, syncFromHash]);
+  }, [syncFromHash]);
 
   // Update URL hash when filters change
-  const updateUrlParams = useCallback((cats: string[], q: string) => {
+  const updateUrlParams = useCallback((type: string, cats: string[], q: string) => {
     try {
       const params = new URLSearchParams();
+      if (type) params.set('type', type);
       if (cats.length > 0) params.set('cat', cats.join(','));
       if (q.trim()) params.set('q', q.trim());
 
@@ -235,7 +231,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const handleCategoryToggle = (catId: string) => {
     setSelectedCategories((prev) => {
       const next = prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId];
-      updateUrlParams(next, searchQuery);
+      updateUrlParams(selectedArticleType, next, searchQuery);
       return next;
     });
   };
@@ -243,7 +239,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const handleClearAllFilters = () => {
     setSelectedCategories([]);
     setSearchQuery('');
-    updateUrlParams([], '');
+    updateUrlParams(selectedArticleType, [], '');
   };
 
   // Close modals on Escape key
@@ -280,14 +276,24 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   // Filtered & Sorted Articles
   const filteredArticles = useMemo(() => {
     let list = articles.filter((article) => {
-      const matchCat = selectedCategories.length === 0 || (article.category_id && selectedCategories.includes(article.category_id));
+      // 1. Article Type Filter (hirek | ujdonsagok | utmutatok)
+      const aType = article.article_type || 'utmutatok';
+      const matchType = aType === selectedArticleType;
+
+      // 2. Category Filter
+      const matchCat =
+        selectedCategories.length === 0 ||
+        (article.category_id && selectedCategories.includes(article.category_id));
+
+      // 3. Search Query Filter
       const q = searchQuery.toLowerCase().trim();
       const matchQuery =
         !q ||
         article.title.toLowerCase().includes(q) ||
-        (article.excerpt && article.excerpt.toLowerCase().includes(q));
+        (article.excerpt && article.excerpt.toLowerCase().includes(q)) ||
+        (article.tags && article.tags.some((t: string) => t.toLowerCase().includes(q)));
 
-      return matchCat && matchQuery;
+      return matchType && matchCat && matchQuery;
     });
 
     // Apply Sorting Mode
@@ -308,26 +314,11 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     }
 
     return list;
-  }, [articles, selectedCategories, searchQuery, articleSettings.defaultSortMode]);
+  }, [articles, selectedArticleType, selectedCategories, searchQuery, articleSettings.defaultSortMode]);
 
   const paginatedArticles = useMemo(() => {
     return filteredArticles.slice(0, visibleCount);
   }, [filteredArticles, visibleCount]);
-
-  const activeSubtype = useMemo(() => {
-    if (selectedCategories.length === 0) return 'all';
-    if (selectedCategories.length === 1 && categories.length > 0) {
-      const cat = categories.find((c) => c.id === selectedCategories[0]);
-      if (cat) {
-        const s = cat.slug.toLowerCase();
-        const n = cat.name.toLowerCase();
-        if (s.includes('hirek') || n.includes('hírek') || n.includes('hirek')) return 'hirek';
-        if (s.includes('ujdonsagok') || n.includes('újdonságok') || n.includes('ujdonsagok')) return 'ujdonsagok';
-        if (s.includes('utmutatok') || n.includes('útmutatók') || n.includes('utmutatok')) return 'utmutatok';
-      }
-    }
-    return 'all';
-  }, [categories, selectedCategories]);
 
   if (loading) {
     return (
@@ -410,28 +401,22 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Összes Cikk',
-            page: 'category',
-            icon: <FileText size={14} className="text-accent" />,
-            active: activeSubtype === 'all',
-          },
-          {
             label: 'Hírek',
             page: 'category?type=hirek',
             icon: <Sparkles size={14} className="text-accent" />,
-            active: activeSubtype === 'hirek',
+            active: selectedArticleType === 'hirek',
           },
           {
             label: 'Újdonságok',
             page: 'category?type=ujdonsagok',
             icon: <Calendar size={14} className="text-accent" />,
-            active: activeSubtype === 'ujdonsagok',
+            active: selectedArticleType === 'ujdonsagok',
           },
           {
             label: 'Útmutatók',
             page: 'category?type=utmutatok',
             icon: <BookOpen size={14} className="text-accent" />,
-            active: activeSubtype === 'utmutatok',
+            active: selectedArticleType === 'utmutatok',
           },
         ]}
       />
@@ -488,31 +473,19 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           {/* Main Category Subnav Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-gray-100">
             {[
-              { id: 'all', label: 'Összes Cikk', slug: null, icon: Layers },
-              { id: 'hirek', label: 'Hírek', slug: 'hirek', icon: FileText },
-              { id: 'ujdonsagok', label: 'Újdonságok', slug: 'ujdonsagok', icon: Sparkles },
-              { id: 'utmutatok', label: 'Útmutatók', slug: 'utmutatok', icon: BookOpen },
+              { id: 'hirek', label: 'Hírek', type: 'hirek', icon: Sparkles },
+              { id: 'ujdonsagok', label: 'Újdonságok', type: 'ujdonsagok', icon: Calendar },
+              { id: 'utmutatok', label: 'Útmutatók', type: 'utmutatok', icon: BookOpen },
             ].map((tab) => {
-              const matchingCat = tab.slug ? categories.find((c) => c.slug === tab.slug) : null;
-              const isSelected =
-                tab.id === 'all'
-                  ? selectedCategories.length === 0
-                  : matchingCat
-                  ? selectedCategories.includes(matchingCat.id)
-                  : false;
+              const isSelected = selectedArticleType === tab.type;
               const IconComp = tab.icon;
 
               return (
                 <button
                   key={tab.id}
                   onClick={() => {
-                    if (tab.id === 'all') {
-                      setSelectedCategories([]);
-                      updateUrlParams([], searchQuery);
-                    } else if (matchingCat) {
-                      setSelectedCategories([matchingCat.id]);
-                      updateUrlParams([matchingCat.id], searchQuery);
-                    }
+                    setSelectedArticleType(tab.type as any);
+                    updateUrlParams(tab.type, selectedCategories, searchQuery);
                   }}
                   className={`px-4 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
                     isSelected
@@ -538,7 +511,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  updateUrlParams(selectedCategories, e.target.value);
+                  updateUrlParams(selectedArticleType, selectedCategories, e.target.value);
                 }}
                 className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
               />
@@ -546,7 +519,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 <button
                   onClick={() => {
                     setSearchQuery('');
-                    updateUrlParams(selectedCategories, '');
+                    updateUrlParams(selectedArticleType, selectedCategories, '');
                   }}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                 >
