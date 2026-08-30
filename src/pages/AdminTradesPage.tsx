@@ -161,9 +161,11 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
         categoryLabel: categoryLabel.trim() || 'Szakma',
         overview: overview.trim() || '',
         whatDoesDo: {
-          title: 'Mit csinál egy szakember?',
           tasks: parseLines(tasksText),
-          tools: [],
+          buildings: [],
+          workflows: [],
+          soloWork: 'Önálló munkavégzés lehetséges',
+          teamWork: 'Csapatmunkában is végezhető',
         },
         pros: parseLines(prosText),
         cons: parseLines(consText),
