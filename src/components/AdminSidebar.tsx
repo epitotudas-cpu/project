@@ -119,7 +119,7 @@ export default function AdminSidebar({
 
       <aside
         style={{ backgroundColor: sidebarBg, borderColor }}
-        className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen lg:h-screen w-64 border-r flex flex-col flex-shrink-0 transition-all duration-200 lg:translate-x-0 ${
+        className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen lg:h-screen w-72 lg:w-72 border-r flex flex-col flex-shrink-0 transition-all duration-200 lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

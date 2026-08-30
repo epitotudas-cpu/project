@@ -111,7 +111,9 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
           onNavigateView={handleNavigateView}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
-        <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto admin-scroll">{children(view, authInfo.userEmail, handleNavigateView, activeSearchQuery)}</main>
+        <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto admin-scroll p-4 md:p-8">
+          {children(view, authInfo.userEmail, handleNavigateView, activeSearchQuery)}
+        </main>
       </div>
     </div>
   );

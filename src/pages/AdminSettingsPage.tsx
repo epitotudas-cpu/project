@@ -880,17 +880,17 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* OVERVIEW VIEW MODE: 12-Card Settings Hub Grid */}
       {activeTab === 'overview' && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Breadcrumb & Header */}
-          <div className="space-y-3">
+        <div className="space-y-8 animate-fadeIn w-full min-w-0">
+          {/* Admin Page Header Block */}
+          <div className="admin-page-header space-y-3 border-b border-white/10 pb-6 w-full min-w-0">
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <span className="font-semibold text-gray-400">Admin panel</span>
               <ChevronRight size={13} />
               <span className="text-gray-200 font-bold">Beállítások</span>
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+              <div className="space-y-1 min-w-0">
                 <span
                   style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
                   className="inline-flex items-center gap-1.5 px-3 py-1 border font-extrabold text-[11px] rounded-full uppercase tracking-wider"
@@ -905,7 +905,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
                 <button
                   onClick={handleResetDefaults}
                   style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
@@ -924,9 +924,9 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             </div>
           </div>
 
-          {/* Search Bar & Quick Access Chips */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-5 rounded-3xl border shadow-xl space-y-4">
-            <div className="relative">
+          {/* Settings Navigation: Search Bar & Category Navigation Chips */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="settings-navigation p-5 rounded-3xl border shadow-xl space-y-4 w-full min-w-0">
+            <div className="relative w-full">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
@@ -970,7 +970,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             </div>
           </div>
 
-          {/* 12-Card Grid Layout */}
+          {/* Admin Page Content */}
+          <section className="admin-page-content w-full min-w-0">
           {filteredCards.length === 0 ? (
             <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-12 text-center rounded-3xl border space-y-3 shadow-xl">
               <AlertCircle size={32} className="mx-auto text-gray-500" />
@@ -1026,6 +1027,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
               })}
             </div>
           )}
+          </section>
         </div>
       )}
 
