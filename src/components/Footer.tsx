@@ -1,15 +1,11 @@
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
-import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 import { FooterAdBanner } from './ModernAdBanner';
 import {
-  Building2,
   ShieldCheck,
   Mail,
   ChevronRight,
   Target,
   BookOpen,
-  Globe,
-  FileText,
   Lock,
 } from 'lucide-react';
 
@@ -19,8 +15,6 @@ interface FooterProps {
 
 export default function Footer({ onNavigate }: FooterProps) {
   const siteSettings = useSiteSettings();
-  const rawNavItems = useNavigationItems();
-  const structuredNav = getStructuredNav(rawNavItems, false);
   const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
   const handleNavigate = (pageWithHash: string) => {
