@@ -1,4 +1,3 @@
-import { supabase } from '../lib/supabase';
 import type {
   LearningCourse,
   Quiz,
@@ -294,7 +293,7 @@ export async function saveCourse(payload: Partial<LearningCourse>): Promise<Lear
       content: payload.content || '',
       category_id: payload.category_id || 'cat-1',
       category_name: payload.category_name || 'Építési technológiák',
-      subcategory_name: payload.subcategory_name || null,
+      subcategory_name: payload.subcategory_name || undefined,
       topic: payload.topic || 'Általános',
       difficulty: payload.difficulty || 'beginner',
       audience: payload.audience || 'everyone',

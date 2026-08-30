@@ -6,15 +6,11 @@ import {
   CheckCircle2,
   Bookmark,
   FileText,
-  Video,
   Zap,
   ArrowLeft,
-  Share2,
   BookmarkCheck,
-  Building,
   Check,
   AlertCircle,
-  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import type { LearningCourse, CourseProgress, KeyTermItem } from '../lib/supabase';
@@ -54,7 +50,7 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
       }
     } catch (e) {
       console.warn('Hiba a tananyag betöltésekor:', e);
-    } fontally {
+    } finally {
       setLoading(false);
     }
   }, [slug, userId]);

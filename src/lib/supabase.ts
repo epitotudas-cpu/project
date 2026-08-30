@@ -1130,8 +1130,8 @@ export interface ContractTemplate {
 }
 export type Course = Database['public']['Tables']['courses']['Row'];
 export type Lesson = Database['public']['Tables']['lessons']['Row'];
-export type Quiz = Database['public']['Tables']['quizzes']['Row'];
-export type QuizQuestion = Database['public']['Tables']['quiz_questions']['Row'];
+export type DbQuiz = Database['public']['Tables']['quizzes']['Row'];
+export type DbQuizQuestion = Database['public']['Tables']['quiz_questions']['Row'];
 export type UserCertificate = Database['public']['Tables']['user_certificates']['Row'];
 
 export interface Comment {

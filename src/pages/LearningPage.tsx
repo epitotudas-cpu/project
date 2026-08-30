@@ -5,24 +5,14 @@ import {
   HelpCircle,
   Bookmark,
   Search,
-  Filter,
   Clock,
-  Award,
   ChevronRight,
-  Sparkles,
-  Layers,
   Plus,
   Trash2,
-  RotateCw,
   CheckCircle2,
   XCircle,
-  Eye,
   Zap,
-  Tag,
-  Share2,
-  Check,
   Flame,
-  Volume2,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useAuth } from '../contexts/AuthContext';
@@ -54,13 +44,11 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
   const [courses, setCourses] = useState<LearningCourse[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // ── FILTER STATES ──
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
-  const [selectedAudience, setSelectedAudience] = useState('all');
 
   // ── FLASHCARD PRACTICE MODE STATE ──
   const [practiceMode, setPracticeMode] = useState(false);
@@ -97,7 +85,6 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
 
   const loadAllData = useCallback(async () => {
     try {
-      setLoading(true);
       const [catsData, coursesData, quizzesData] = await Promise.all([
         getCategories(),
         listCourses({ status: 'published' }),
@@ -109,8 +96,6 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
       setFlashcards(getFlashcardsLocal(userId));
     } catch (e) {
       console.warn('Hiba az oktatási adatok betöltésekor:', e);
-    } finally {
-      setLoading(false);
     }
   }, [userId]);
 

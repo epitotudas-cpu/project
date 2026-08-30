@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Pencil, Eye, CheckCircle2, XCircle, Plus, BookOpen, HelpCircle, AlertCircle, Send, FileText } from 'lucide-react';
+import { Pencil, XCircle, Plus, BookOpen, HelpCircle, AlertCircle, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import type { LearningCourse, Quiz, LearningStatus } from '../lib/supabase';
 import {
@@ -25,13 +25,12 @@ const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
 
 export default function PartnerLearningPage() {
   const { profile } = useAuth();
-  const currentPartnerId = profile?.partner_id || 'p-1';
+  const currentPartnerId = (profile as any)?.partner_id || 'p-1';
   const currentPartnerName = profile?.full_name || 'Partner Kft.';
 
   const [activeTab, setActiveTab] = useState<'courses' | 'quizzes'>('courses');
   const [courses, setCourses] = useState<LearningCourse[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Modals
   const [courseModalOpen, setCourseModalOpen] = useState(false);
@@ -42,7 +41,6 @@ export default function PartnerLearningPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setLoading(true);
       const [cData, qData] = await Promise.all([
         listCourses({ partnerId: currentPartnerId }),
         listQuizzes({ partnerId: currentPartnerId }),

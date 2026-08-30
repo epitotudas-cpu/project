@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  HelpCircle,
-  Clock,
   CheckCircle2,
   XCircle,
   RotateCw,
@@ -12,10 +10,9 @@ import {
   Zap,
   AlertCircle,
   ChevronRight,
-  Bookmark,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import type { Quiz, QuizAttempt, QuizQuestion } from '../lib/supabase';
+import type { Quiz, QuizAttempt } from '../lib/supabase';
 import { getQuizBySlug, saveQuizAttempt } from '../services/learningService';
 
 interface QuizPlayerPageProps {
