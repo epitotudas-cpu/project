@@ -125,8 +125,6 @@ const CATEGORIES_CONFIG = [
   },
 ];
 
-const ALL_PROFESSIONS = ['Ács', 'Zsaluzó ács', 'Tetőfedő', 'Kőműves', 'Burkoló', 'Villanyszerelő', 'Épületgépész', 'Lakatos', 'Gipszkartonozó'];
-
 export default function ToolPage({ onNavigate }: ToolPageProps) {
   const { user } = useAuth();
   const [tools, setTools] = useState<Tool[]>([]);
@@ -304,17 +302,6 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
     if (!selectedCategory) return null;
     return CATEGORIES_CONFIG.find((c) => c.id === selectedCategory) || null;
   }, [selectedCategory]);
-
-  const availableSubtypes = useMemo(() => {
-    if (activeCategoryConfig) {
-      return activeCategoryConfig.subtypes;
-    }
-    const set = new Set<string>();
-    tools.forEach((t) => {
-      if (t.subtype) set.add(t.subtype);
-    });
-    return Array.from(set);
-  }, [activeCategoryConfig, tools]);
 
   // Wizard result recommendation
   const wizardResultTool = useMemo(() => {
