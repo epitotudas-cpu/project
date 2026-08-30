@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Pencil, Eye, CheckCircle2, XCircle, Plus, BookOpen, HelpCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Pencil, CheckCircle2, XCircle, Plus, BookOpen, HelpCircle, AlertCircle } from 'lucide-react';
 import type { LearningCourse, Quiz, LearningStatus } from '../lib/supabase';
 import {
   listCourses,
@@ -11,6 +11,7 @@ import {
 } from '../services/learningService';
 import EditCourseModal from '../components/EditCourseModal';
 import EditQuizModal from '../components/EditQuizModal';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
   draft: { label: 'Piszkozat', class: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
@@ -23,10 +24,23 @@ const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
 };
 
 export default function AdminLearningPage() {
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+
   const [activeTab, setActiveTab] = useState<'courses' | 'quizzes'>('courses');
   const [courses, setCourses] = useState<LearningCourse[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -45,7 +59,6 @@ export default function AdminLearningPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setLoading(true);
       const [cData, qData] = await Promise.all([
         listCourses({ status: statusFilter, search }),
         listQuizzes({ status: statusFilter, search }),
@@ -54,8 +67,6 @@ export default function AdminLearningPage() {
       setQuizzes(qData);
     } catch (e) {
       console.warn('Hiba az admin oktatási adatok betöltésekor:', e);
-    } finally {
-      setLoading(false);
     }
   }, [statusFilter, search]);
 
@@ -102,13 +113,13 @@ export default function AdminLearningPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div style={{ color: textColor }} className="space-y-6 p-6">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-6 rounded-3xl border shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <BookOpen className="text-accent" size={24} /> Tanulási &amp; Oktatási Rendszer Kezelése
+          <h1 style={{ color: textColor }} className="text-2xl font-black tracking-tight flex items-center gap-2">
+            <BookOpen style={{ color: cardHighlight }} size={24} /> Tanulási &amp; Oktatási Rendszer Kezelése
           </h1>
           <p className="text-gray-400 text-xs font-medium mt-1">
             Központi tananyagok, tesztek és partneri beküldések jóváhagyási munkafolyamata.
@@ -121,7 +132,8 @@ export default function AdminLearningPage() {
               setEditingCourse(null);
               setCourseModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-amber-400 transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-5 py-2.5 font-extrabold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shadow-lg"
           >
             <Plus size={15} /> Új Tananyag
           </button>
@@ -130,7 +142,8 @@ export default function AdminLearningPage() {
               setEditingQuiz(null);
               setQuizModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-700 border border-primary-600 transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+            className="px-4 py-2.5 border font-extrabold text-xs rounded-xl hover:border-accent transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
           >
             <Plus size={15} /> Új Teszt
           </button>
@@ -138,25 +151,27 @@ export default function AdminLearningPage() {
       </div>
 
       {/* Tabs & Filters Bar */}
-      <div className="bg-[#1e293b] rounded-2xl p-4 border border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="rounded-2xl p-4 border shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('courses')}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'courses'
-                ? 'bg-accent text-black shadow-md'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
+            style={{
+              backgroundColor: activeTab === 'courses' ? cardHighlight : inputBg,
+              color: activeTab === 'courses' ? '#000000' : textColor,
+              borderColor: cardBorder,
+            }}
+            className="px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer border shadow-sm"
           >
             <BookOpen size={14} /> Tananyagok ({courses.length})
           </button>
           <button
             onClick={() => setActiveTab('quizzes')}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'quizzes'
-                ? 'bg-accent text-black shadow-md'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
+            style={{
+              backgroundColor: activeTab === 'quizzes' ? cardHighlight : inputBg,
+              color: activeTab === 'quizzes' ? '#000000' : textColor,
+              borderColor: cardBorder,
+            }}
+            className="px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer border shadow-sm"
           >
             <HelpCircle size={14} /> Tesztek ({quizzes.length})
           </button>
@@ -170,30 +185,32 @@ export default function AdminLearningPage() {
               placeholder="Keresés..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
+              style={fieldStyle}
+              className="w-full border rounded-xl pl-9 pr-3 py-1.5 text-xs font-medium focus:outline-none focus:border-accent"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-200 focus:outline-none focus:border-accent cursor-pointer"
+            style={fieldStyle}
+            className="border rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-accent cursor-pointer"
           >
-            <option value="all">Minden státusz</option>
-            <option value="published">Közzétéve</option>
-            <option value="pending">Jóváhagyásra vár</option>
-            <option value="draft">Piszkozat</option>
-            <option value="rejected">Elutasítva</option>
+            <option value="all" style={{ backgroundColor: cardBg, color: textColor }}>Minden státusz</option>
+            <option value="published" style={{ backgroundColor: cardBg, color: textColor }}>Közzétéve</option>
+            <option value="pending" style={{ backgroundColor: cardBg, color: textColor }}>Jóváhagyásra vár</option>
+            <option value="draft" style={{ backgroundColor: cardBg, color: textColor }}>Piszkozat</option>
+            <option value="rejected" style={{ backgroundColor: cardBg, color: textColor }}>Elutasítva</option>
           </select>
         </div>
       </div>
 
       {/* COURSES TABLE */}
       {activeTab === 'courses' && (
-        <div className="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="rounded-2xl border overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-gray-300">
-              <thead className="bg-gray-900/60 text-gray-400 uppercase tracking-wider font-extrabold border-b border-gray-800">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-white/10 text-gray-400 uppercase tracking-wider font-extrabold">
                 <tr>
                   <th className="py-3 px-4">Tananyag Címe</th>
                   <th className="py-3 px-4">Kategória</th>

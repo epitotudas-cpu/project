@@ -28,12 +28,27 @@ import {
 } from '../services/materialsService';
 import { listPartners } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface AdminMaterialsPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMaterialsPageProps) {
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+
   const [items, setItems] = useState<MaterialItem[]>(() => getMaterialsLocal());
   const [categories, setCategories] = useState<MaterialCategory[]>(() => getMaterialCategoriesLocal());
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -331,17 +346,17 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
   });
 
   return (
-    <div className="space-y-6">
+    <div style={{ color: textColor }} className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl border shadow-xl">
         <div>
-          <span className="text-xs font-bold text-accent bg-accent/10 px-3 py-1 rounded-full uppercase tracking-wider">
+          <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border">
             Építőipari Anyagkatalógus Kezelő
           </span>
-          <h1 className="text-2xl font-black text-gray-900 mt-1">
+          <h1 style={{ color: textColor }} className="text-2xl font-black mt-2">
             Építőanyagok &amp; Gyártói Katalógus Kezelése
           </h1>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             Partnerek által feltöltött anyagok jóváhagyása, publikálása, kategóriák és műszaki adatok adminisztrációja.
           </p>
         </div>
@@ -349,7 +364,8 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleOpenCreateModal}
-            className="px-4 py-2.5 bg-primary hover:bg-primary-800 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus size={15} /> + Új Építőanyag Felvitele
           </button>
@@ -357,7 +373,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Search */}
         <div className="relative flex-1 w-full">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -366,34 +382,37 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
             placeholder="Keresés anyagnév, márka, partner vagy cikkszám alapján..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
+            style={fieldStyle}
+            className="w-full border rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
           />
         </div>
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {/* Status Tabs */}
-          <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-bold">
+          <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center p-1 rounded-xl text-xs font-bold border">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'all' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600'
-              }`}
+              style={{
+                backgroundColor: statusFilter === 'all' ? cardHighlight : 'transparent',
+                color: statusFilter === 'all' ? '#000000' : textColor,
+              }}
+              className="px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Összes
             </button>
             <button
               onClick={() => setStatusFilter('pending_approval')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
-                statusFilter === 'pending_approval' ? 'bg-amber-600 text-white shadow-xs' : 'text-amber-800'
+                statusFilter === 'pending_approval' ? 'bg-amber-500/30 text-amber-300 font-extrabold' : 'text-amber-400'
               }`}
             >
-              Jóváhagyásra vár {pendingCount > 0 && <span className="bg-amber-800 text-white px-1.5 py-0.2 rounded-full text-[10px]">{pendingCount}</span>}
+              Jóváhagyásra vár {pendingCount > 0 && <span className="bg-amber-500 text-black font-black px-1.5 py-0.2 rounded-full text-[10px]">{pendingCount}</span>}
             </button>
             <button
               onClick={() => setStatusFilter('published')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'published' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-600'
+                statusFilter === 'published' ? 'bg-emerald-500/30 text-emerald-300 font-extrabold' : 'text-emerald-400'
               }`}
             >
               Publikált
@@ -401,7 +420,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
             <button
               onClick={() => setStatusFilter('rejected')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'rejected' ? 'bg-red-600 text-white shadow-xs' : 'text-gray-600'
+                statusFilter === 'rejected' ? 'bg-red-500/30 text-red-300 font-extrabold' : 'text-red-400'
               }`}
             >
               Elutasított
@@ -413,11 +432,12 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
             <select
               value={partnerFilter}
               onChange={(e) => setPartnerFilter(e.target.value)}
-              className="bg-gray-50 border border-gray-200 text-xs font-bold px-3 py-2 rounded-xl focus:outline-none cursor-pointer"
+              style={fieldStyle}
+              className="border text-xs font-bold px-3 py-2 rounded-xl focus:outline-none cursor-pointer"
             >
               <option value="all">Összes partner</option>
               {partners.map((p) => (
-                <option key={p.id} value={p.id}>
+                <option key={p.id} value={p.id} style={{ backgroundColor: cardBg, color: textColor }}>
                   {p.name}
                 </option>
               ))}
@@ -429,11 +449,12 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-gray-50 border border-gray-200 text-xs font-bold px-3 py-2 rounded-xl focus:outline-none cursor-pointer"
+              style={fieldStyle}
+              className="border text-xs font-bold px-3 py-2 rounded-xl focus:outline-none cursor-pointer"
             >
               <option value="all">Összes kategória</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={c.id} style={{ backgroundColor: cardBg, color: textColor }}>
                   {c.name}
                 </option>
               ))}
@@ -443,11 +464,11 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       </div>
 
       {/* Content Table */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="rounded-3xl border shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold uppercase tracking-wider">
+              <tr className="border-b border-white/10 text-gray-400 font-bold uppercase tracking-wider">
                 <th className="py-3.5 px-4">Anyag Neve &amp; Márka</th>
                 <th className="py-3.5 px-4">Kategória</th>
                 <th className="py-3.5 px-4">Partner (Forgalmazó)</th>
@@ -456,9 +477,9 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                 <th className="py-3.5 px-4 text-right">Műveletek</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-white/5">
               {filteredItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                <tr key={item.id} className="hover:bg-white/5 transition-colors">
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-3 max-w-sm">
                       <img
@@ -572,24 +593,24 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
 
       {/* ── CREATE / EDIT MODAL ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
             {/* Header */}
-            <div className="bg-primary text-white p-6 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-primary-700">
-              <h2 className="text-lg font-black flex items-center gap-2">
-                <Layers size={18} className="text-accent" />
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-6 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b">
+              <h2 style={{ color: textColor }} className="text-lg font-black flex items-center gap-2">
+                <Layers size={18} style={{ color: cardHighlight }} />
                 {editingItem ? 'Építőanyag Szerkesztése' : 'Új Építőanyag Felvitele'}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-white/70 hover:text-white rounded-full transition-colors cursor-pointer"
+                className="p-1.5 text-gray-400 hover:text-white rounded-full transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Subnav Tabs */}
-            <div className="flex border-b border-gray-200 bg-gray-50 px-6 pt-3 gap-2 overflow-x-auto scrollbar-none">
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex border-b px-6 pt-3 gap-2 overflow-x-auto">
               {[
                 { id: 'basic', label: 'Alapadatok' },
                 { id: 'content', label: 'Leírás & Alkalmazás' },
@@ -600,9 +621,12 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id as any)}
-                  className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
-                    activeTab === t.id ? 'border-accent text-primary bg-white rounded-t-lg' : 'border-transparent text-gray-500 hover:text-gray-800'
-                  }`}
+                  style={{
+                    backgroundColor: activeTab === t.id ? cardBg : 'transparent',
+                    color: activeTab === t.id ? cardHighlight : textColor,
+                    borderColor: activeTab === t.id ? cardHighlight : 'transparent',
+                  }}
+                  className="px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 rounded-t-lg"
                 >
                   {t.label}
                 </button>
@@ -615,26 +639,28 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               {activeTab === 'basic' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Anyag Neve *</label>
+                    <label className="font-bold text-gray-300 block mb-1">Anyag Neve *</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="pl. LeierPLAN 30 Csiszolt Kerámia Falazóelem"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-bold"
                       required
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Gyártó / Márka *</label>
+                      <label className="font-bold text-gray-300 block mb-1">Gyártó / Márka *</label>
                       <input
                         type="text"
                         value={formData.brand}
                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                         placeholder="pl. Leier, Austrotherm, Cemex"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                         required
                       />
                     </div>
@@ -1002,17 +1028,19 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               )}
 
               {/* Submit Buttons */}
-              <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl cursor-pointer"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md cursor-pointer"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90"
                 >
                   Mentés &amp; Publikálás
                 </button>

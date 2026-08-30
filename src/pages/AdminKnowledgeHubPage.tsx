@@ -20,12 +20,27 @@ import {
   type EducationalContentItem,
   type EducationalDocument,
 } from '../services/knowledgeHubService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface AdminKnowledgeHubPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: AdminKnowledgeHubPageProps) {
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+
   const [items, setItems] = useState<EducationalContentItem[]>(() => getKnowledgeItemsLocal());
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [sectionFilter, setSectionFilter] = useState<'all' | 'safety' | 'standards'>('all');
@@ -250,17 +265,17 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
   });
 
   return (
-    <div className="space-y-6">
+    <div style={{ color: textColor }} className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl border shadow-xl">
         <div>
-          <span className="text-xs font-bold text-accent bg-accent/10 px-3 py-1 rounded-full uppercase tracking-wider">
+          <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border">
             Oktatási Tudásbázis Kezelő
           </span>
-          <h1 className="text-2xl font-black text-gray-900 mt-1">
+          <h1 style={{ color: textColor }} className="text-2xl font-black mt-2">
             Munkavédelem &amp; Szabályok, Szabványok Kezelése
           </h1>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             Oktatási tartalmak, témakörök, szabványismertetők és csatolt dokumentumok dinamikus adminisztrációja.
           </p>
         </div>
@@ -268,13 +283,15 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => handleOpenCreateModal('safety')}
-            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+            className="px-4 py-2.5 border font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer hover:border-accent"
           >
-            <ShieldAlert size={15} /> + Új Munkavédelmi Tartalom
+            <ShieldAlert size={15} className="text-amber-400" /> + Új Munkavédelmi Tartalom
           </button>
           <button
             onClick={() => handleOpenCreateModal('standards')}
-            className="px-4 py-2.5 bg-primary hover:bg-primary-800 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+            style={{ backgroundColor: cardHighlight, color: '#000000' }}
+            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <ShieldCheck size={15} /> + Új Szabvány / Szabály
           </button>
@@ -282,7 +299,7 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Search */}
         <div className="relative flex-1 w-full">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -291,54 +308,63 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
             placeholder="Keresés cím, témakör vagy szabványszám alapján..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
+            style={fieldStyle}
+            className="w-full border rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
           />
         </div>
 
         {/* Section & Status Filters */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {/* Section Filter */}
-          <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-bold">
+          <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center p-1 rounded-xl text-xs font-bold border">
             <button
               onClick={() => setSectionFilter('all')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                sectionFilter === 'all' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600'
-              }`}
+              style={{
+                backgroundColor: sectionFilter === 'all' ? cardHighlight : 'transparent',
+                color: sectionFilter === 'all' ? '#000000' : textColor,
+              }}
+              className="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Összes modul
             </button>
             <button
               onClick={() => setSectionFilter('safety')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                sectionFilter === 'safety' ? 'bg-amber-600 text-white shadow-xs' : 'text-gray-600'
-              }`}
+              style={{
+                backgroundColor: sectionFilter === 'safety' ? `${cardHighlight}40` : 'transparent',
+                color: sectionFilter === 'safety' ? cardHighlight : textColor,
+              }}
+              className="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Munkavédelem
             </button>
             <button
               onClick={() => setSectionFilter('standards')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                sectionFilter === 'standards' ? 'bg-primary text-white shadow-xs' : 'text-gray-600'
-              }`}
+              style={{
+                backgroundColor: sectionFilter === 'standards' ? `${cardHighlight}40` : 'transparent',
+                color: sectionFilter === 'standards' ? cardHighlight : textColor,
+              }}
+              className="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Szabályok, szabványok
             </button>
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-bold">
+          <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex items-center p-1 rounded-xl text-xs font-bold border">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'all' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600'
-              }`}
+              style={{
+                backgroundColor: statusFilter === 'all' ? cardHighlight : 'transparent',
+                color: statusFilter === 'all' ? '#000000' : textColor,
+              }}
+              className="px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Összes státusz
             </button>
             <button
               onClick={() => setStatusFilter('published')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'published' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-600'
+                statusFilter === 'published' ? 'bg-emerald-500/30 text-emerald-300 font-extrabold' : 'text-emerald-400'
               }`}
             >
               Publikált
@@ -346,7 +372,7 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
             <button
               onClick={() => setStatusFilter('draft')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'draft' ? 'bg-amber-600 text-white shadow-xs' : 'text-gray-600'
+                statusFilter === 'draft' ? 'bg-amber-500/30 text-amber-300 font-extrabold' : 'text-amber-400'
               }`}
             >
               Piszkozat
@@ -355,12 +381,12 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
         </div>
       </div>
 
-      {/* Content Table */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Table Container */}
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="rounded-3xl border shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold uppercase tracking-wider">
+              <tr className="border-b border-white/10 text-gray-400 font-bold uppercase tracking-wider">
                 <th className="py-3.5 px-4">Modul / Típus</th>
                 <th className="py-3.5 px-4">Cím &amp; Témakör</th>
                 <th className="py-3.5 px-4">Célközönség</th>
@@ -369,9 +395,9 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                 <th className="py-3.5 px-4 text-right">Műveletek</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-white/5">
               {filteredItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                <tr key={item.id} className="hover:bg-white/5 transition-colors">
                   <td className="py-3.5 px-4">
                     {item.hub_type === 'safety' ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 font-bold rounded-lg text-[11px]">
@@ -465,24 +491,24 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
 
       {/* ── CREATE / EDIT MODAL ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
             {/* Header */}
-            <div className="bg-primary text-white p-6 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-primary-700">
-              <h2 className="text-lg font-black flex items-center gap-2">
-                {formData.hub_type === 'safety' ? <ShieldAlert size={18} className="text-accent" /> : <ShieldCheck size={18} className="text-accent" />}
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-6 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b">
+              <h2 style={{ color: textColor }} className="text-lg font-black flex items-center gap-2">
+                {formData.hub_type === 'safety' ? <ShieldAlert size={18} style={{ color: cardHighlight }} /> : <ShieldCheck size={18} style={{ color: cardHighlight }} />}
                 {editingItem ? 'Oktatási Tartalom Szerkesztése' : 'Új Oktatási Tartalom / Szabvány Felvitele'}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-white/70 hover:text-white rounded-full transition-colors cursor-pointer"
+                className="p-1.5 text-gray-400 hover:text-white rounded-full transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Modal Subnav Tabs */}
-            <div className="flex border-b border-gray-200 bg-gray-50 px-6 pt-3 gap-2">
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="flex border-b px-6 pt-3 gap-2">
               {[
                 { id: 'basic', label: 'Alapadatok' },
                 { id: 'content', label: 'Tartalom & Leírás' },
@@ -492,14 +518,18 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id as any)}
-                  className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                    activeTab === t.id ? 'border-accent text-primary bg-white rounded-t-lg' : 'border-transparent text-gray-500 hover:text-gray-800'
-                  }`}
+                  style={{
+                    backgroundColor: activeTab === t.id ? cardBg : 'transparent',
+                    color: activeTab === t.id ? cardHighlight : textColor,
+                    borderColor: activeTab === t.id ? cardHighlight : 'transparent',
+                  }}
+                  className="px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 rounded-t-lg"
                 >
                   {t.label}
                 </button>
               ))}
             </div>
+
 
             {/* Form Form */}
             <form onSubmit={handleSaveForm} className="p-6 space-y-5 text-xs">
