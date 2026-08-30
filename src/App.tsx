@@ -318,6 +318,7 @@ function AppContent() {
             if (view === 'moderation') return <AdminModerationPage />;
             if (view === 'articles') return <AdminArticlesPage initialSearchQuery={searchQuery} />;
             if (view === 'learning') return <AdminLearningPage />;
+            if (view === 'partner-learning') return <PartnerLearningPage />;
             if (view === 'categories') return <AdminCategoriesPage initialSearchQuery={searchQuery} />;
             if (view === 'glossary') return <AdminGlossaryPage initialSearchQuery={searchQuery} />;
             if (view === 'trades') return <AdminTradesPage initialSearchQuery={searchQuery} />;

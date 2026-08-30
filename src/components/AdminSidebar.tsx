@@ -6,6 +6,7 @@ export type AdminView =
   | 'articles'
   | 'categories'
   | 'learning'
+  | 'partner-learning'
   | 'glossary'
   | 'knowledge-hub'
   | 'materials'
