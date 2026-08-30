@@ -34,8 +34,9 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
 
   // Eszközök Submenu
   { id: 'sub-tools-cat', label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
-  { id: 'sub-software', label: 'Szoftverek', page: 'software', parentId: 'nav-tool', isActive: true, displayOrder: 2 },
-  { id: 'sub-selector', label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', isActive: true, displayOrder: 3 },
+  { id: 'sub-materials', label: 'Anyagok', page: 'materials', parentId: 'nav-tool', isActive: true, displayOrder: 2 },
+  { id: 'sub-software', label: 'Szoftverek', page: 'software', parentId: 'nav-tool', isActive: true, displayOrder: 3 },
+  { id: 'sub-selector', label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', isActive: true, displayOrder: 4 },
 
   // Pályák Submenu
   { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
@@ -94,6 +95,11 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     cleanItems.push({ id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 });
   }
 
+  // Ensure Eszközök Anyagok submenu exists
+  if (!cleanItems.some((i) => i.id === 'sub-materials')) {
+    cleanItems.push({ id: 'sub-materials', label: 'Anyagok', page: 'materials', parentId: 'nav-tool', isActive: true, displayOrder: 2 });
+  }
+
   const itemMap: Record<string, { label: string; page: string }> = {
     'sub-professions': { label: 'Építőipari szakmák', page: 'paths' },
     'sub-paths': { label: 'Tanulási útvonalak', page: 'courses#utvonalak' },
@@ -104,6 +110,7 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     'sub-guides': { label: 'Útmutatók', page: 'category?type=utmutatok' },
     'sub-safety': { label: 'Munkavédelem', page: 'safety' },
     'sub-standards': { label: 'Szabályok, szabványok', page: 'standards' },
+    'sub-materials': { label: 'Anyagok', page: 'materials' },
   };
 
   let changed = cleanItems.length !== items.length;

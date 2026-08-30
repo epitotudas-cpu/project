@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop } from 'lucide-react';
+import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop, Layers } from 'lucide-react';
 import { MOCK_TOOLS, type Tool } from '../services/toolService';
 import SectionSubNav from '../components/SectionSubNav';
 
@@ -92,6 +92,12 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
             label: 'Katalógus',
             page: 'tool',
             icon: <Wrench size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Anyagok',
+            page: 'materials',
+            icon: <Layers size={14} className="text-accent" />,
             active: false,
           },
           {

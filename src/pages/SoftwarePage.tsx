@@ -1,4 +1,4 @@
-import { ChevronRight, Clock, Laptop, ArrowRight, CheckCircle2, Wrench, Sparkles } from 'lucide-react';
+import { ChevronRight, Clock, Laptop, ArrowRight, CheckCircle2, Wrench, Sparkles, Layers } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface SoftwarePageProps {
@@ -52,6 +52,12 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
             label: 'Katalógus',
             page: 'tool',
             icon: <Wrench size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Anyagok',
+            page: 'materials',
+            icon: <Layers size={14} className="text-accent" />,
             active: false,
           },
           {

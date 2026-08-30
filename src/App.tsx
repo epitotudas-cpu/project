@@ -28,8 +28,10 @@ import AdminAdsPage from './pages/AdminAdsPage';
 import AdminAuditPage from './pages/AdminAuditPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import AdminKnowledgeHubPage from './pages/AdminKnowledgeHubPage';
+import AdminMaterialsPage from './pages/AdminMaterialsPage';
 import SafetyPage from './pages/SafetyPage';
 import StandardsPage from './pages/StandardsPage';
+import MaterialsPage from './pages/MaterialsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import EmailVerificationPage from './pages/EmailVerificationPage';
@@ -71,6 +73,7 @@ type PageKey =
   | 'safety'
   | 'standards'
   | 'tool'
+  | 'materials'
   | 'software'
   | 'valaszto'
   | 'paths'
@@ -103,6 +106,7 @@ const ALL_VALID_PAGES: PageKey[] = [
   'safety',
   'standards',
   'tool',
+  'materials',
   'software',
   'valaszto',
   'paths',
@@ -304,6 +308,7 @@ function AppContent() {
             if (view === 'partners') return <AdminPartnersPage initialSearchQuery={searchQuery} />;
             if (view === 'ads') return <AdminAdsPage onNavigate={navigate} />;
             if (view === 'knowledge-hub') return <AdminKnowledgeHubPage initialSearchQuery={searchQuery} />;
+            if (view === 'materials') return <AdminMaterialsPage initialSearchQuery={searchQuery} />;
             if (view === 'audit') return <AdminAuditPage />;
             if (view === 'settings') return <AdminSettingsPage onNavigate={navigate} />;
             return <div className="p-8 text-gray-500 text-sm">A(z) "{view}" nézet hamarosan elérhető.</div>;
@@ -332,6 +337,7 @@ function AppContent() {
       case 'books': return <BooksPage onNavigate={navigate} />;
       case 'safety': return <SafetyPage onNavigate={navigate} />;
       case 'standards': return <StandardsPage onNavigate={navigate} />;
+      case 'materials': return <MaterialsPage onNavigate={navigate} />;
       case 'category': return <CategoryPage onNavigate={navigate} />;
       case 'article': return <ArticlePage articleSlug={selectedArticleSlug} onNavigate={navigate} />;
       case 'glossary': return <GlossaryPage onNavigate={navigate} />;

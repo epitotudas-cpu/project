@@ -329,6 +329,12 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
             active: activeViewTab === 'catalog' && !selectedTool,
           },
           {
+            label: 'Anyagok',
+            page: 'materials',
+            icon: <Layers size={14} className="text-accent" />,
+            active: false,
+          },
+          {
             label: 'Szoftverek',
             page: 'software',
             icon: <Laptop size={14} className="text-accent" />,

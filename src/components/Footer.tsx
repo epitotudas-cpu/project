@@ -45,6 +45,7 @@ export default function Footer({ onNavigate }: FooterProps) {
         { label: 'Szakmai Cikkek & Kategóriák', page: 'category' },
         { label: 'Építőipari Fogalomtár', page: 'glossary' },
         { label: 'Eszköz Enciklopédia', page: 'tool' },
+        { label: 'Építőipari Anyagkatalógus', page: 'materials' },
         { label: 'Szoftverkatalógus', page: 'software' },
         { label: 'Kalkulátorok & Számítások', page: 'calculations' },
         { label: 'Szakmai Könyvek', page: 'books' },
