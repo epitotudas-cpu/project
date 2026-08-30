@@ -49,6 +49,7 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [selectedAudience, setSelectedAudience] = useState('all');
 
   // ── FLASHCARD PRACTICE MODE STATE ──
   const [practiceMode, setPracticeMode] = useState(false);
@@ -332,6 +333,31 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
               </select>
             </div>
           </div>
+
+          {activeTab === 'courses' && (
+            <div className="flex items-center gap-2 pt-2 border-t border-gray-100 overflow-x-auto scrollbar-none">
+              <span className="text-xs font-bold text-gray-500 shrink-0">Célközönség:</span>
+              {[
+                { id: 'all', label: 'Mindenkinek' },
+                { id: 'students', label: 'Tanulóknak' },
+                { id: 'beginners', label: 'Kezdőknek' },
+                { id: 'specialists', label: 'Szakembereknek' },
+                { id: 'instructors', label: 'Oktatóknak' },
+              ].map((aud) => (
+                <button
+                  key={aud.id}
+                  onClick={() => setSelectedAudience(aud.id)}
+                  className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition-all shrink-0 cursor-pointer ${
+                    selectedAudience === aud.id
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {aud.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ==================================================================== */}

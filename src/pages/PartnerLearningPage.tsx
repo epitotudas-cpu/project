@@ -49,8 +49,6 @@ export default function PartnerLearningPage() {
       setQuizzes(qData);
     } catch (e) {
       console.warn('Hiba a partner oktatási adatok betöltésekor:', e);
-    } finally {
-      setLoading(false);
     }
   }, [currentPartnerId]);
 
