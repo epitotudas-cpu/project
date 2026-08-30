@@ -24,6 +24,15 @@ export function matchToolSearch(tool: Tool, query: string): boolean {
   // Search terms split by whitespace for multi-word search
   const terms = normQuery.split(/\s+/).filter(Boolean);
 
+  // Extended properties if present
+  const extendedTool = tool as Tool & {
+    short_description?: string;
+    manufacturer?: string;
+    manufacturers?: string[];
+    tags?: string[];
+    synonyms?: string[];
+  };
+
   // Collect all searchable text fields from tool object
   const searchableParts: string[] = [
     tool.name || '',
@@ -31,19 +40,11 @@ export function matchToolSearch(tool: Tool, query: string): boolean {
     tool.type || '',
     tool.subtype || '',
     tool.brand || '',
-    tool.manufacturer || '',
+    extendedTool.manufacturer || '',
     ...(tool.professions || []),
     ...(tool.keywords || []),
     ...(tool.uses || []),
   ];
-
-  // Extended properties if present
-  const extendedTool = tool as Tool & {
-    short_description?: string;
-    manufacturers?: string[];
-    tags?: string[];
-    synonyms?: string[];
-  };
 
   if (extendedTool.short_description) searchableParts.push(extendedTool.short_description);
   if (extendedTool.manufacturers) searchableParts.push(...extendedTool.manufacturers);
