@@ -477,12 +477,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Cikkek',
-            page: 'category',
-            icon: <FileText size={14} className="text-accent" />,
-            active: false,
-          },
-          {
             label: 'Fogalomtár',
             page: 'glossary',
             icon: <BookOpen size={14} className="text-accent" />,

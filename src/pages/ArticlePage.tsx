@@ -301,12 +301,6 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Cikkek',
-            page: 'category',
-            icon: <FileText size={14} className="text-accent" />,
-            active: true,
-          },
-          {
             label: 'Fogalomtár',
             page: 'glossary',
             icon: <BookOpen size={14} className="text-accent" />,
