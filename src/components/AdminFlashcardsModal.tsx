@@ -15,6 +15,7 @@ import {
   saveFlashcard,
   deleteFlashcard,
 } from '../services/educationService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface AdminFlashcardsModalProps {
   isOpen: boolean;
@@ -29,6 +30,20 @@ export default function AdminFlashcardsModal({
   courses,
   initialCourseId,
 }: AdminFlashcardsModalProps) {
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+
   const [selectedCourseId, setSelectedCourseId] = useState<string>(initialCourseId || 'all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -119,16 +134,16 @@ export default function AdminFlashcardsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-slate-900 text-white p-6 border-b border-slate-800 flex items-center justify-between">
+        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-6 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500 text-slate-950 rounded-xl font-bold">
+            <div style={{ backgroundColor: cardHighlight, color: '#000000' }} className="p-2.5 rounded-xl font-bold">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xl font-black">Tanulókártyák Kezelése (Admin)</h3>
+              <h3 style={{ color: textColor }} className="text-xl font-black">Tanulókártyák Kezelése (Admin)</h3>
               <p className="text-xs text-gray-400">
                 Szakmai kétoldalas tanulókártyák felvitele, módosítása és publikálása
               </p>
@@ -136,24 +151,25 @@ export default function AdminFlashcardsModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+            className="p-2 text-gray-400 hover:text-white rounded-xl transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Toolbar & Filter */}
-        <div className="p-4 bg-slate-50 border-b border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border-b flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* Course Filter */}
             <select
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="px-3 py-2 bg-white border border-gray-300 text-xs font-bold rounded-xl text-slate-800 focus:ring-2 focus:ring-amber-500"
+              style={fieldStyle}
+              className="px-3 py-2 border text-xs font-bold rounded-xl cursor-pointer"
             >
-              <option value="all">Minden tananyag kártyái</option>
+              <option value="all" style={{ backgroundColor: cardBg, color: textColor }}>Minden tananyag kártyái</option>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={c.id} style={{ backgroundColor: cardBg, color: textColor }}>
                   {c.title}
                 </option>
               ))}
@@ -167,7 +183,8 @@ export default function AdminFlashcardsModal({
                 placeholder="Keresés kártyák között..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500"
+                style={fieldStyle}
+                className="w-full pl-9 pr-3 py-2 border rounded-xl text-xs"
               />
             </div>
           </div>
@@ -175,13 +192,15 @@ export default function AdminFlashcardsModal({
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               onClick={handleGenerateAiDraft}
-              className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="px-3.5 py-2 border font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer hover:border-accent"
             >
-              <Sparkles className="w-4 h-4 text-purple-600" /> AI Kártyajavaslat
+              <Sparkles className="w-4 h-4 text-purple-400" /> AI Kártyajavaslat
             </button>
             <button
               onClick={handleOpenAdd}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="px-4 py-2 font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer hover:opacity-90"
             >
               <Plus className="w-4 h-4" /> Új Kártya Hozzáadása
             </button>
@@ -194,26 +213,27 @@ export default function AdminFlashcardsModal({
             filteredCards.map((card) => (
               <div
                 key={card.id}
-                className="p-4 bg-white border border-gray-200 rounded-2xl hover:border-amber-400 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
+                style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+                className="p-4 border rounded-2xl transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] rounded-md uppercase">
+                    <span style={{ backgroundColor: cardHighlight, color: '#000000' }} className="px-2 py-0.5 font-bold text-[10px] rounded-md uppercase">
                       {card.topic}
                     </span>
-                    <span className="text-xs font-mono text-slate-400">
+                    <span className="text-xs font-mono text-gray-400">
                       Sorrend: {card.sequence_order}
                     </span>
                     {!card.is_active && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded">
+                      <span className="px-2 py-0.5 bg-gray-700/50 text-gray-400 border border-gray-600 text-[10px] font-bold rounded">
                         Inaktív
                       </span>
                     )}
                   </div>
-                  <h4 className="font-bold text-slate-900 text-sm md:text-base">
+                  <h4 style={{ color: textColor }} className="font-bold text-sm md:text-base">
                     ❓ {card.question}
                   </h4>
-                  <p className="text-slate-600 text-xs md:text-sm line-clamp-2">
+                  <p className="text-gray-400 text-xs md:text-sm line-clamp-2">
                     💡 {card.answer}
                   </p>
                 </div>
@@ -221,14 +241,15 @@ export default function AdminFlashcardsModal({
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => handleOpenEdit(card)}
-                    className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all border border-gray-200"
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                    className="p-2 hover:border-accent rounded-xl transition-all border cursor-pointer"
                     title="Szerkesztés"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(card.id)}
-                    className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-rose-200"
+                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-xl transition-all border border-red-900/40 cursor-pointer"
                     title="Törlés"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -237,10 +258,10 @@ export default function AdminFlashcardsModal({
               </div>
             ))
           ) : (
-            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-gray-200">
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-8 text-center rounded-2xl border">
               <Layers className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-700">Nincsenek tanulókártyák ebben a nézetben.</p>
-              <p className="text-xs text-gray-500">Kattints az "Új Kártya Hozzáadása" gombra a létrehozáshoz!</p>
+              <p style={{ color: textColor }} className="text-sm font-bold">Nincsenek tanulókártyák ebben a nézetben.</p>
+              <p className="text-xs text-gray-400">Kattints az "Új Kártya Hozzáadása" gombra a létrehozáshoz!</p>
             </div>
           )}
         </div>
@@ -248,81 +269,86 @@ export default function AdminFlashcardsModal({
 
       {/* Edit / Add Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h4 className="font-black text-slate-900 text-lg">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h4 style={{ color: textColor }} className="font-black text-lg">
                 {editingCard ? 'Tanulókártya Szerkesztése' : 'Új Tanulókártya Létrehozása'}
               </h4>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg"
+                className="p-1.5 text-gray-400 hover:text-white rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {aiDraftNotice && (
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-900 text-xs font-semibold">
+              <div className="p-3 bg-purple-900/30 border border-purple-500/40 rounded-xl text-purple-200 text-xs font-semibold">
                 {aiDraftNotice}
               </div>
             )}
 
             <form onSubmit={handleSave} className="space-y-4 text-xs font-semibold">
               <div>
-                <label className="block text-slate-700 mb-1">Kérdés (Előlap) *</label>
+                <label style={{ color: textColor }} className="block mb-1">Kérdés (Előlap) *</label>
                 <textarea
                   required
                   rows={3}
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Pl.: Milyen mélyre kell behajtani a gipszkarton csavart?"
-                  className="w-full p-3 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 font-medium"
+                  style={fieldStyle}
+                  className="w-full p-3 border rounded-xl text-xs font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 mb-1">Szakmailag Helyes Válasz (Hátlap) *</label>
+                <label style={{ color: textColor }} className="block mb-1">Szakmailag Helyes Válasz (Hátlap) *</label>
                 <textarea
                   required
                   rows={4}
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   placeholder="Pl.: A csavar fejének a kartonpapír felületét 0.5-1.0 mm-re kell besüllyesztenie..."
-                  className="w-full p-3 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 font-medium"
+                  style={fieldStyle}
+                  className="w-full p-3 border rounded-xl text-xs font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 mb-1">Témakör</label>
+                  <label style={{ color: textColor }} className="block mb-1">Témakör</label>
                   <input
                     type="text"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500"
+                    style={fieldStyle}
+                    className="w-full p-2.5 border rounded-xl text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 mb-1">Sorrend</label>
+                  <label style={{ color: textColor }} className="block mb-1">Sorrend</label>
                   <input
                     type="number"
                     value={sequenceOrder}
                     onChange={(e) => setSequenceOrder(Number(e.target.value))}
-                    className="w-full p-2.5 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500"
+                    style={fieldStyle}
+                    className="w-full p-2.5 border rounded-xl text-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 mb-1">Kapcsolódó Tananyag</label>
+                <label style={{ color: textColor }} className="block mb-1">Kapcsolódó Tananyag</label>
                 <select
                   value={courseId}
                   onChange={(e) => setCourseId(e.target.value)}
-                  className="w-full p-2.5 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 font-medium"
+                  style={fieldStyle}
+                  className="w-full p-2.5 border rounded-xl text-xs font-medium cursor-pointer"
                 >
                   {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} style={{ backgroundColor: cardBg, color: textColor }}>
                       {c.title}
                     </option>
                   ))}
@@ -335,24 +361,26 @@ export default function AdminFlashcardsModal({
                   id="isActiveCheck"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="w-4 h-4 text-amber-600 rounded"
+                  className="w-4 h-4 accent-amber-400 cursor-pointer rounded"
                 />
-                <label htmlFor="isActiveCheck" className="text-slate-800 cursor-pointer">
+                <label htmlFor="isActiveCheck" style={{ color: textColor }} className="cursor-pointer">
                   Aktív állapot (látható a tanulóknak)
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border text-xs font-bold rounded-xl transition-all cursor-pointer hover:opacity-90"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-sm"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold text-xs rounded-xl transition-all shadow-md cursor-pointer hover:opacity-90"
                 >
                   Mentés &amp; Publikálás
                 </button>

@@ -6,19 +6,14 @@ import {
   ChevronRight,
   BookOpen,
   FileText,
-  Clock,
   Download,
-  ExternalLink,
   Users,
   GraduationCap,
   HardHat,
   Filter,
   X,
-  ArrowLeft,
-  CheckCircle,
   HelpCircle,
   Tag,
-  List,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import {

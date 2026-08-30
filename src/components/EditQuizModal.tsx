@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, HelpCircle, CheckCircle2 } from 'lucide-react';
-import type { Quiz, QuizQuestion, CourseDifficulty, LearningStatus, QuestionType } from '../lib/supabase';
+import { X, Plus, Trash2, HelpCircle } from 'lucide-react';
+import type { Quiz, QuizQuestion, CourseDifficulty, LearningStatus } from '../lib/supabase';
 import { saveQuiz } from '../services/learningService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface EditQuizModalProps {
   quiz?: Quiz | null;
@@ -20,6 +21,20 @@ export default function EditQuizModal({
   partnerId,
   partnerName,
 }: EditQuizModalProps) {
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('cat-1');
@@ -88,6 +103,26 @@ export default function EditQuizModal({
     setQuestions(questions.map((q) => (q.id === id ? { ...q, [field]: val } : q)));
   };
 
+  const handleOptionChange = (qId: string, optIdx: number, val: string) => {
+    setQuestions(
+      questions.map((q) => {
+        if (q.id !== qId) return q;
+        const updatedOpts = [...(q.options || [])];
+        updatedOpts[optIdx] = val;
+        return { ...q, options: updatedOpts };
+      })
+    );
+  };
+
+  const handleCorrectOptionSelect = (qId: string, optIdx: number) => {
+    setQuestions(
+      questions.map((q) => {
+        if (q.id !== qId) return q;
+        return { ...q, correct_options: [optIdx] };
+      })
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
@@ -125,80 +160,85 @@ export default function EditQuizModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-          <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
-            <HelpCircle size={20} className="text-accent" />
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 style={{ color: textColor }} className="text-xl font-black flex items-center gap-2">
+            <HelpCircle size={20} style={{ color: cardHighlight }} />
             {quiz ? 'Teszt Szerkesztése' : 'Új Teszt Létrehozása'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold p-1">
+          <button onClick={onClose} className="text-gray-400 hover:text-white font-bold p-1 cursor-pointer">
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1">Teszt Neve *</label>
+              <label style={{ color: textColor }} className="block text-xs font-bold mb-1">Teszt Neve *</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-accent font-medium"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-sm font-bold"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1">Leírás *</label>
+              <label style={{ color: textColor }} className="block text-xs font-bold mb-1">Leírás *</label>
               <textarea
                 required
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-accent font-medium"
+                style={fieldStyle}
+                className="w-full border rounded-xl p-3 text-xs font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nehézségi Szint</label>
+              <label style={{ color: textColor }} className="block text-xs font-bold mb-1">Nehézségi Szint</label>
               <select
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value as CourseDifficulty)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-900 focus:outline-none focus:border-accent"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-bold cursor-pointer"
               >
-                <option value="beginner">Kezdő</option>
-                <option value="intermediate">Középhaladó</option>
-                <option value="advanced">Haladó</option>
-                <option value="professional">Szakmai / Mester</option>
+                <option value="beginner" style={{ backgroundColor: cardBg, color: textColor }}>Kezdő</option>
+                <option value="intermediate" style={{ backgroundColor: cardBg, color: textColor }}>Középhaladó</option>
+                <option value="advanced" style={{ backgroundColor: cardBg, color: textColor }}>Haladó</option>
+                <option value="professional" style={{ backgroundColor: cardBg, color: textColor }}>Szakmai / Mester</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Sikerességi Küszöb (%)</label>
+              <label style={{ color: textColor }} className="block text-xs font-bold mb-1">Sikerességi Küszöb (%)</label>
               <input
                 type="number"
                 min={50}
                 max={100}
                 value={passingScore}
                 onChange={(e) => setPassingScore(Number(e.target.value))}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-900 font-bold"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-bold"
               />
             </div>
           </div>
 
           {/* QUESTIONS SECTION */}
-          <div className="space-y-4 pt-4 border-t border-gray-100">
+          <div className="space-y-4 pt-4 border-t border-white/10">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                <HelpCircle size={16} className="text-accent" /> Tesztkérdések ({questions.length})
+              <h4 style={{ color: textColor }} className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                <HelpCircle size={16} style={{ color: cardHighlight }} /> Tesztkérdések ({questions.length})
               </h4>
               <button
                 type="button"
                 onClick={handleAddQuestion}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-3.5 py-1.5 border font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer hover:border-accent"
               >
                 <Plus size={14} /> Kérdés Hozzáadása
               </button>
@@ -206,13 +246,13 @@ export default function EditQuizModal({
 
             <div className="space-y-4">
               {questions.map((q, qIdx) => (
-                <div key={q.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+                <div key={q.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-4 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-primary">{qIdx + 1}. Kérdés</span>
+                    <span style={{ color: cardHighlight }} className="text-xs font-extrabold">{qIdx + 1}. Kérdés</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveQuestion(q.id)}
-                      className="text-red-500 hover:text-red-700 p-1"
+                      className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -223,11 +263,40 @@ export default function EditQuizModal({
                     placeholder="Kérdés megfogalmazása..."
                     value={q.question}
                     onChange={(e) => handleQuestionChange(q.id, 'question', e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 font-bold"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs font-bold"
                   />
 
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <label style={{ color: textColor }} className="block text-[11px] font-bold mb-1">
+                      Válaszlehetőségek (Jelöld be a helyes választ!):
+                    </label>
+                    {(q.options || ['Válasz A', 'Válasz B', 'Válasz C', 'Válasz D']).map((opt, optIdx) => {
+                      const isCorrect = (q.correct_options || []).includes(optIdx);
+                      return (
+                        <div key={optIdx} className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name={`correct-${q.id}`}
+                            checked={isCorrect}
+                            onChange={() => handleCorrectOptionSelect(q.id, optIdx)}
+                            className="cursor-pointer accent-amber-400"
+                          />
+                          <input
+                            type="text"
+                            placeholder={`Válasz ${optIdx + 1}...`}
+                            value={opt}
+                            onChange={(e) => handleOptionChange(q.id, optIdx, e.target.value)}
+                            style={fieldStyle}
+                            className="w-full border rounded-xl px-3 py-1.5 text-xs font-medium"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-600 mb-1">
+                    <label style={{ color: textColor }} className="block text-[11px] font-bold mb-1">
                       Oktatási Magyarázat (Hibás válasz esetén megjelenik a tanulónak):
                     </label>
                     <textarea
@@ -235,7 +304,8 @@ export default function EditQuizModal({
                       placeholder="Magyarázat a helyes válaszról..."
                       value={q.explanation}
                       onChange={(e) => handleQuestionChange(q.id, 'explanation', e.target.value)}
-                      className="w-full bg-white border border-gray-300 rounded-xl p-2 text-xs text-gray-900 font-medium"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl p-2 text-xs font-medium"
                     />
                   </div>
                 </div>
@@ -243,18 +313,20 @@ export default function EditQuizModal({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="px-5 py-2.5 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
             >
               Mégse
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-700 shadow-md"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90 disabled:opacity-50"
             >
               {saving ? 'Mentés...' : 'Teszt Mentése'}
             </button>

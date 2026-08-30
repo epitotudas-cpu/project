@@ -220,10 +220,10 @@ export default function AdminLearningPage() {
                   <th className="py-3 px-4 text-right">Műveletek</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800 font-medium">
+              <tbody className="divide-y divide-white/5 font-medium">
                 {courses.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500 font-bold">
+                    <td colSpan={6} className="py-8 text-center text-gray-400 font-bold">
                       Nincs megjeleníthető tananyag.
                     </td>
                   </tr>
@@ -232,14 +232,14 @@ export default function AdminLearningPage() {
                     const badge = STATUS_BADGE[course.status] || STATUS_BADGE.published;
 
                     return (
-                      <tr key={course.id} className="hover:bg-gray-800/50 transition-colors">
+                      <tr key={course.id} className="hover:bg-white/5 transition-colors">
                         <td className="py-3 px-4 font-bold text-white max-w-xs truncate">
                           {course.title}
                         </td>
                         <td className="py-3 px-4 text-gray-400">{course.category_name}</td>
                         <td className="py-3 px-4 text-gray-400">
                           {course.partner_name ? (
-                            <span className="text-accent font-bold">Partner: {course.partner_name}</span>
+                            <span className="text-amber-400 font-bold">Partner: {course.partner_name}</span>
                           ) : (
                             course.author
                           )}
@@ -301,10 +301,10 @@ export default function AdminLearningPage() {
 
       {/* QUIZZES TABLE */}
       {activeTab === 'quizzes' && (
-        <div className="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="rounded-2xl border overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-gray-300">
-              <thead className="bg-gray-900/60 text-gray-400 uppercase tracking-wider font-extrabold border-b border-gray-800">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-white/10 text-gray-400 uppercase tracking-wider font-extrabold">
                 <tr>
                   <th className="py-3 px-4">Teszt Neve</th>
                   <th className="py-3 px-4">Kategória</th>
@@ -314,10 +314,10 @@ export default function AdminLearningPage() {
                   <th className="py-3 px-4 text-right">Műveletek</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800 font-medium">
+              <tbody className="divide-y divide-white/5 font-medium">
                 {quizzes.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500 font-bold">
+                    <td colSpan={6} className="py-8 text-center text-gray-400 font-bold">
                       Nincs megjeleníthető teszt.
                     </td>
                   </tr>
@@ -326,7 +326,7 @@ export default function AdminLearningPage() {
                     const badge = STATUS_BADGE[quiz.status] || STATUS_BADGE.published;
 
                     return (
-                      <tr key={quiz.id} className="hover:bg-gray-800/50 transition-colors">
+                      <tr key={quiz.id} className="hover:bg-white/5 transition-colors">
                         <td className="py-3 px-4 font-bold text-white max-w-xs truncate">
                           {quiz.title}
                         </td>
@@ -404,13 +404,13 @@ export default function AdminLearningPage() {
 
       {/* REJECTION REASON MODAL */}
       {rejectModalItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
               <AlertCircle size={20} className="text-red-500" /> Tartalom Elutasítása Indoklással
             </h3>
             <p className="text-xs text-gray-400">
-              Indokold meg, miért kell a kért javításokat elvégeznie a partnernek a(z) <strong>„{rejectModalItem.title}”</strong> tartalmon!
+              Indokold meg, miért kell a kért javításokat elvégeznie a partnernek a(z) <strong className="text-white">„{rejectModalItem.title}”</strong> tartalmon!
             </p>
             <textarea
               rows={3}
@@ -418,18 +418,20 @@ export default function AdminLearningPage() {
               placeholder="pl. Kérjük bővítsd a munkavédelmi fejezetet és pontosítsd az ábrák forrását..."
               value={rejectionNoteInput}
               onChange={(e) => setRejectionNoteInput(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
+              style={fieldStyle}
+              className="w-full border rounded-xl p-3 text-xs focus:outline-none focus:border-red-500"
             />
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setRejectModalItem(null)}
-                className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white"
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-4 py-2 text-xs font-bold border rounded-xl hover:opacity-90 cursor-pointer"
               >
                 Mégse
               </button>
               <button
                 onClick={handleConfirmReject}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow-md"
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer"
               >
                 Elutasítás Beküldése
               </button>

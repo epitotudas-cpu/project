@@ -12,10 +12,8 @@ import {
   Filter,
   X,
   BookOpen,
-  Compass,
   Briefcase,
   Layers,
-  ArrowRight,
   ShieldCheck,
   HardHat,
 } from 'lucide-react';

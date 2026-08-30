@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, BookOpen, Layers, Sparkles } from 'lucide-react';
 import type { LearningCourse, LearningChapter, KeyTermItem, CourseDifficulty, TargetAudience, LearningStatus } from '../lib/supabase';
 import { saveCourse } from '../services/learningService';
+import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface EditCourseModalProps {
   course?: LearningCourse | null;
@@ -20,6 +21,20 @@ export default function EditCourseModal({
   partnerId,
   partnerName,
 }: EditCourseModalProps) {
+  const siteSettings = useSiteSettings();
+  const cardBg = siteSettings.adminCardBgColor || '#111111';
+  const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
+  const cardBorder = adjustColorBrightness(cardBg, 12);
+  const inputBg = adjustColorBrightness(cardBg, -4);
+  const textColor = getContrastTextColor(cardBg);
+  const inputTextColor = getContrastTextColor(inputBg);
+
+  const fieldStyle: React.CSSProperties = {
+    backgroundColor: inputBg,
+    borderColor: cardBorder,
+    color: inputTextColor,
+  };
+
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
@@ -163,116 +178,124 @@ export default function EditCourseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-          <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
-            <BookOpen size={20} className="text-accent" />
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 style={{ color: textColor }} className="text-xl font-black flex items-center gap-2">
+            <BookOpen size={20} style={{ color: cardHighlight }} />
             {course ? 'Tananyag Szerkesztése' : 'Új Tananyag Létrehozása'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold p-1">
+          <button onClick={onClose} className="text-gray-400 hover:text-white font-bold p-1 cursor-pointer">
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1">Tananyag Címe *</label>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Tananyag Címe *</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-accent font-medium"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-sm font-bold"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1">Rövid Összefoglaló (Excerpt) *</label>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Rövid Összefoglaló (Excerpt) *</label>
               <textarea
                 required
                 rows={2}
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-accent font-medium"
+                style={fieldStyle}
+                className="w-full border rounded-xl p-3 text-xs font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nehézségi Szint</label>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Nehézségi Szint</label>
               <select
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value as CourseDifficulty)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-900 focus:outline-none focus:border-accent"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-bold cursor-pointer"
               >
-                <option value="beginner">Kezdő</option>
-                <option value="intermediate">Középhaladó</option>
-                <option value="advanced">Haladó</option>
-                <option value="professional">Szakmai / Mester</option>
+                <option value="beginner" style={{ backgroundColor: cardBg, color: textColor }}>Kezdő</option>
+                <option value="intermediate" style={{ backgroundColor: cardBg, color: textColor }}>Középhaladó</option>
+                <option value="advanced" style={{ backgroundColor: cardBg, color: textColor }}>Haladó</option>
+                <option value="professional" style={{ backgroundColor: cardBg, color: textColor }}>Szakmai / Mester</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Célközönség</label>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Célközönség</label>
               <select
                 value={audience}
                 onChange={(e) => setAudience(e.target.value as TargetAudience)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-900 focus:outline-none focus:border-accent"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-bold cursor-pointer"
               >
-                <option value="everyone">Mindenkinek</option>
-                <option value="students">Tanulóknak</option>
-                <option value="beginners">Kezdőknek</option>
-                <option value="specialists">Szakembereknek</option>
-                <option value="instructors">Oktatóknak</option>
+                <option value="everyone" style={{ backgroundColor: cardBg, color: textColor }}>Mindenkinek</option>
+                <option value="students" style={{ backgroundColor: cardBg, color: textColor }}>Tanulóknak</option>
+                <option value="beginners" style={{ backgroundColor: cardBg, color: textColor }}>Kezdőknek</option>
+                <option value="specialists" style={{ backgroundColor: cardBg, color: textColor }}>Szakembereknek</option>
+                <option value="instructors" style={{ backgroundColor: cardBg, color: textColor }}>Oktatóknak</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Becsült Tanulási Idő (perc)</label>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Becsült Tanulási Idő (perc)</label>
               <input
                 type="number"
                 min={5}
                 max={300}
                 value={estimatedTime}
                 onChange={(e) => setEstimatedTime(Number(e.target.value))}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-900 font-bold"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-bold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Kiemelt Kép URL</label>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Kiemelt Kép URL</label>
               <input
                 type="url"
                 value={featuredImage}
                 onChange={(e) => setFeaturedImage(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-900 font-medium"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-medium"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1">Címkék (vesszővel elválasztva)</label>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Címkék (vesszővel elválasztva)</label>
               <input
                 type="text"
                 value={tagsStr}
                 onChange={(e) => setTagsStr(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-900 font-medium"
+                style={fieldStyle}
+                className="w-full border rounded-xl px-4 py-2.5 text-xs font-medium"
               />
             </div>
 
           </div>
 
           {/* FEJEZETEK SECTION */}
-          <div className="space-y-4 pt-4 border-t border-gray-100">
+          <div className="space-y-4 pt-4 border-t border-white/10">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                <Layers size={16} className="text-accent" /> Tananyag Fejezetek ({chapters.length})
+              <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <Layers size={16} style={{ color: cardHighlight }} /> Tananyag Fejezetek ({chapters.length})
               </h4>
               <button
                 type="button"
                 onClick={handleAddChapter}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-3.5 py-1.5 border font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer hover:border-accent"
               >
                 <Plus size={14} /> Fejezet Hozzáadása
               </button>
@@ -280,13 +303,13 @@ export default function EditCourseModal({
 
             <div className="space-y-4">
               {chapters.map((chap, idx) => (
-                <div key={chap.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+                <div key={chap.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-4 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-primary">{idx + 1}. Fejezet</span>
+                    <span className="text-xs font-extrabold text-amber-400">{idx + 1}. Fejezet</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveChapter(chap.id)}
-                      className="text-red-500 hover:text-red-700 p-1"
+                      className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -297,15 +320,24 @@ export default function EditCourseModal({
                     placeholder="Fejezet címe..."
                     value={chap.title}
                     onChange={(e) => handleChapterChange(chap.id, 'title', e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 font-bold"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs font-bold"
                   />
-
                   <textarea
-                    rows={4}
-                    placeholder="Fejezet részletes szöveges tartalma (Markdown támogatott)..."
+                    rows={2}
+                    placeholder="Fejezet rövid összefoglalása..."
+                    value={chap.summary}
+                    onChange={(e) => handleChapterChange(chap.id, 'summary', e.target.value)}
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
+                  />
+                  <textarea
+                    rows={5}
+                    placeholder="Fejezet részletes szakmai tartalma..."
                     value={chap.content}
                     onChange={(e) => handleChapterChange(chap.id, 'content', e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-900 font-medium"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-2 text-xs font-mono"
                   />
                 </div>
               ))}
@@ -313,15 +345,16 @@ export default function EditCourseModal({
           </div>
 
           {/* FONTOS FOGALMAK SECTION */}
-          <div className="space-y-4 pt-4 border-t border-gray-100">
+          <div className="space-y-4 pt-4 border-t border-white/10">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                <Sparkles size={16} className="text-accent" /> Fontos Fogalmak ({keyTerms.length})
+              <h4 style={{ color: textColor }} className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                <Sparkles size={16} style={{ color: cardHighlight }} /> Fontos Fogalmak ({keyTerms.length})
               </h4>
               <button
                 type="button"
                 onClick={handleAddKeyTerm}
-                className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-3.5 py-1.5 border font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer hover:border-accent"
               >
                 <Plus size={14} /> Fogalom Hozzáadása
               </button>
@@ -329,19 +362,20 @@ export default function EditCourseModal({
 
             <div className="space-y-3">
               {keyTerms.map((kt) => (
-                <div key={kt.id} className="bg-amber-50/50 border border-amber-200 rounded-2xl p-4 space-y-2">
+                <div key={kt.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-4 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <input
                       type="text"
                       placeholder="Fogalom címe (pl. UW Profil)..."
                       value={kt.term}
                       onChange={(e) => handleKeyTermChange(kt.id, 'term', e.target.value)}
-                      className="w-full bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs text-gray-900 font-bold"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-1.5 text-xs font-bold"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemoveKeyTerm(kt.id)}
-                      className="text-red-500 hover:text-red-700 p-1"
+                      className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -352,25 +386,28 @@ export default function EditCourseModal({
                     placeholder="Definíció / Magyarázat..."
                     value={kt.definition}
                     onChange={(e) => handleKeyTermChange(kt.id, 'definition', e.target.value)}
-                    className="w-full bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs text-gray-900 font-medium"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3 py-1.5 text-xs font-medium"
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200"
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="px-5 py-2.5 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
             >
               Mégse
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-700 shadow-md"
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90 disabled:opacity-50"
             >
               {saving ? 'Mentés...' : 'Tananyag Mentése'}
             </button>
