@@ -3,7 +3,6 @@ import {
   Library,
   ChevronRight,
   Search,
-  FileText,
   BookOpen,
   Calculator,
   Download,

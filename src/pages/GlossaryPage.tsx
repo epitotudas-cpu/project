@@ -15,7 +15,6 @@ import {
   ChevronUp,
   LayoutList,
   LayoutGrid,
-  FileText,
   Calculator,
   Library,
   X,
