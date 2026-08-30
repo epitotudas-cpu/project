@@ -17,12 +17,15 @@ import {
   Compass,
   ArrowRight,
   RotateCcw,
+  X,
+  SearchX,
+  Laptop,
 } from 'lucide-react';
 import { getActiveTools } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
+import { filterTools } from '../services/toolFilterService';
 import type { Tool, AdCampaign } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
-import { Laptop } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
 
@@ -201,22 +204,101 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
     getAdsForTool(selectedTool?.id, selectedTool?.type || selectedCategory || undefined).then(setPartnerAds);
   }, [selectedTool, selectedCategory]);
 
-  const filteredTools = useMemo(() => {
-    return tools.filter((tool) => {
-      const matchCategory = !selectedCategory || tool.type === selectedCategory;
-      const matchSubtype = !selectedSubtype || tool.subtype === selectedSubtype;
-      const matchProf =
-        !selectedProfession || (tool.professions && tool.professions.includes(selectedProfession));
-      const q = searchQuery.toLowerCase().trim();
-      const matchQuery =
-        !q ||
-        tool.name.toLowerCase().includes(q) ||
-        (tool.description && tool.description.toLowerCase().includes(q)) ||
-        (tool.brand && tool.brand.toLowerCase().includes(q));
+  // 1. Initial State from URL search params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('search');
+    const cat = params.get('category');
+    const sub = params.get('type');
+    const prof = params.get('profession');
 
-      return matchCategory && matchSubtype && matchProf && matchQuery;
+    if (q !== null) setSearchQuery(q);
+    if (cat !== null) setSelectedCategory(cat);
+    if (sub !== null) setSelectedSubtype(sub);
+    if (prof !== null) setSelectedProfession(prof);
+  }, []);
+
+  // 2. Sync state to URL with debounce for search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+
+      if (searchQuery.trim()) {
+        params.set('search', searchQuery.trim());
+      } else {
+        params.delete('search');
+      }
+
+      if (selectedCategory) {
+        params.set('category', selectedCategory);
+      } else {
+        params.delete('category');
+      }
+
+      if (selectedSubtype) {
+        params.set('type', selectedSubtype);
+      } else {
+        params.delete('type');
+      }
+
+      if (selectedProfession) {
+        params.set('profession', selectedProfession);
+      } else {
+        params.delete('profession');
+      }
+
+      const newRelativePathQuery =
+        window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+
+      window.history.replaceState(null, '', newRelativePathQuery);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedCategory, selectedSubtype, selectedProfession]);
+
+  // 3. Popstate event listener for browser Back/Forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setSearchQuery(params.get('search') || '');
+      setSelectedCategory(params.get('category') || null);
+      setSelectedSubtype(params.get('type') || null);
+      setSelectedProfession(params.get('profession') || null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Filter tools with accent-insensitive multi-field search
+  const filteredTools = useMemo(() => {
+    return filterTools(tools, {
+      category: selectedCategory,
+      subtype: selectedSubtype,
+      profession: selectedProfession,
+      search: searchQuery,
     });
   }, [tools, selectedCategory, selectedSubtype, selectedProfession, searchQuery]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() || selectedCategory || selectedSubtype || selectedProfession
+  );
+
+  const resetAllFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory(null);
+    setSelectedSubtype(null);
+    setSelectedProfession(null);
+  };
+
+  const handleCategoryCardClick = (catId: string) => {
+    setSelectedCategory(catId);
+    setSelectedSubtype(null);
+    const catalogElement = document.getElementById('eszkozkatalogus');
+    if (catalogElement) {
+      catalogElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const activeCategoryConfig = useMemo(() => {
     if (!selectedCategory) return null;
@@ -730,16 +812,37 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
               </div>
             )}
 
-            {/* Live Search */}
-            <div className="relative max-w-2xl">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            {/* Premium Live Search Bar */}
+            <div id="eszkoz-kereso" className="relative max-w-3xl">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Keress szerszámot, gépet, szakmát vagy márkát..."
+                aria-label="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
+                placeholder="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-2xl pl-11 pr-4 py-3.5 text-gray-900 placeholder-gray-400 focus:outline-none text-sm font-medium shadow-xs"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                  if (e.key === 'Escape') {
+                    setSearchQuery('');
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                className="w-full bg-white border border-gray-200/90 focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-2xl pl-11 pr-11 py-4 text-gray-900 placeholder-gray-400 focus:outline-none text-sm font-medium shadow-sm transition-all"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                  title="Keresés törlése"
+                  aria-label="Keresés törlése"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
 
             {/* 6 Category Overview Cards Grid (When no specific category selected) */}
@@ -750,12 +853,15 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                   {CATEGORIES_CONFIG.map((cat) => {
                     const IconComp = cat.icon;
                     const catToolsCount = tools.filter((t) => t.type === cat.id).length;
+                    const isSelected = selectedCategory === cat.id;
 
                     return (
                       <div
                         key={cat.id}
-                        onClick={() => setSelectedCategory(cat.id)}
-                        className={`group bg-gradient-to-br ${cat.color} border rounded-3xl p-6 transition-all cursor-pointer flex flex-col justify-between space-y-4 hover:scale-[1.02] shadow-sm hover:shadow-md`}
+                        onClick={() => handleCategoryCardClick(cat.id)}
+                        className={`group bg-gradient-to-br ${cat.color} border rounded-3xl p-6 transition-all cursor-pointer flex flex-col justify-between space-y-4 hover:scale-[1.02] shadow-sm hover:shadow-md ${
+                          isSelected ? 'ring-2 ring-accent border-accent scale-[1.02]' : ''
+                        }`}
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
@@ -774,12 +880,83 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                         </div>
 
                         <div className={`pt-3 border-t border-gray-200/80 text-xs font-bold ${cat.arrowColor} flex items-center justify-between`}>
-                          <span>Böngészés & Típusok</span>
+                          <span>Böngészés &amp; Típusok</span>
                           <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Active Filters Summary Badges */}
+            {hasActiveFilters && (
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 space-y-2.5 animate-fadeIn">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-extrabold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <Filter size={14} className="text-amber-600" /> Aktív szűrés ({filteredTools.length} találat):
+                  </span>
+                  <button
+                    onClick={resetAllFilters}
+                    className="text-xs text-amber-900 font-extrabold hover:text-amber-950 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw size={12} /> Összes szűrő törlése
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedCategory && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-amber-300 text-amber-950 text-xs font-bold rounded-xl shadow-2xs">
+                      <span>Kategória: <strong>{selectedCategory}</strong></span>
+                      <button
+                        onClick={() => setSelectedCategory(null)}
+                        className="hover:text-red-600 transition-colors cursor-pointer"
+                        title="Eltávolítás"
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
+                  )}
+
+                  {selectedSubtype && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-amber-300 text-amber-950 text-xs font-bold rounded-xl shadow-2xs">
+                      <span>Típus: <strong>{selectedSubtype}</strong></span>
+                      <button
+                        onClick={() => setSelectedSubtype(null)}
+                        className="hover:text-red-600 transition-colors cursor-pointer"
+                        title="Eltávolítás"
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
+                  )}
+
+                  {selectedProfession && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-amber-300 text-amber-950 text-xs font-bold rounded-xl shadow-2xs">
+                      <span>Szakma: <strong>{selectedProfession}</strong></span>
+                      <button
+                        onClick={() => setSelectedProfession(null)}
+                        className="hover:text-red-600 transition-colors cursor-pointer"
+                        title="Eltávolítás"
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
+                  )}
+
+                  {searchQuery.trim() && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-amber-300 text-amber-950 text-xs font-bold rounded-xl shadow-2xs">
+                      <span>Keresés: <strong>„{searchQuery.trim()}”</strong></span>
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="hover:text-red-600 transition-colors cursor-pointer"
+                        title="Eltávolítás"
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -894,19 +1071,43 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
               ))}
             </div>
 
-            {/* Tools Grid Catalog */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-extrabold text-gray-900">
-                  {activeCategoryConfig ? activeCategoryConfig.name : 'Szakmai Eszközök & Gépek'} ({filteredTools.length})
+            {/* Tools Grid Catalog Header */}
+            <div id="eszkozkatalogus" className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 flex items-center gap-2">
+                  {searchQuery.trim()
+                    ? `Találatok erre: „${searchQuery.trim()}”`
+                    : hasActiveFilters
+                    ? 'Szűrt eszközök'
+                    : activeCategoryConfig
+                    ? activeCategoryConfig.name
+                    : 'Szakmai Eszközök & Gépek'}
+                  <span className="text-xs font-bold text-gray-500 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full">
+                    {filteredTools.length} db
+                  </span>
                 </h2>
               </div>
 
               {filteredTools.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3 shadow-xs">
-                  <Wrench size={40} className="mx-auto text-gray-400" />
-                  <h3 className="text-base font-bold text-gray-900">Nem található eszköz</h3>
-                  <p className="text-xs text-gray-500">Próbáld meg módosítani a szűrőket vagy a keresőszót.</p>
+                <div className="bg-white border border-gray-200 rounded-3xl p-10 sm:p-14 text-center max-w-lg mx-auto space-y-5 shadow-xs">
+                  <div className="w-16 h-16 bg-amber-100 border border-amber-200 rounded-2xl flex items-center justify-center mx-auto text-amber-800 shadow-sm">
+                    <SearchX size={32} />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-black text-gray-900">Nincs találat</h3>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      Nem találtunk eszközt a megadott keresési és szűrési feltételekkel.
+                    </p>
+                    <p className="text-[11px] text-gray-400">
+                      Próbálj más kulcsszót, kategóriát vagy szakmát.
+                    </p>
+                  </div>
+                  <button
+                    onClick={resetAllFilters}
+                    className="px-6 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-800 transition-all flex items-center gap-2 mx-auto cursor-pointer shadow-sm"
+                  >
+                    <RotateCcw size={14} /> Szűrők törlése
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -937,7 +1138,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                       </div>
 
                       <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-primary font-bold">
-                        <span>Szakmai Adatlap & Részei ➔</span>
+                        <span>Szakmai Adatlap &amp; Részei ➔</span>
                       </div>
                     </div>
                   ))}
