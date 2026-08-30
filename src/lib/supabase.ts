@@ -882,6 +882,134 @@ export type PartnerUser = Database['public']['Tables']['partner_users']['Row'];
 export type Contributor = Database['public']['Tables']['contributors']['Row'];
 export type AdCampaign = Database['public']['Tables']['ad_campaigns']['Row'];
 
+// ── LEARNING SYSTEM TYPES ──
+export type CourseDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'professional';
+export type TargetAudience = 'students' | 'beginners' | 'specialists' | 'instructors' | 'everyone';
+export type LearningStatus = 'draft' | 'pending' | 'review' | 'approved' | 'published' | 'rejected' | 'archived';
+
+export interface KeyTermItem {
+  id: string;
+  term: string;
+  definition: string;
+  explanation?: string;
+  example?: string;
+}
+
+export interface LearningChapter {
+  id: string;
+  title: string;
+  content: string; // Markdown text with headings, images, alerts
+  summary?: string;
+  image_url?: string;
+  estimated_minutes?: number;
+  key_terms?: KeyTermItem[];
+}
+
+export interface LearningCourse {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content?: string; // High-level introduction / summary
+  category_id: string;
+  category_name?: string;
+  subcategory_name?: string;
+  topic?: string;
+  difficulty: CourseDifficulty;
+  audience: TargetAudience;
+  estimated_time_minutes: number;
+  featured_image: string;
+  documents?: Array<{ id: string; title: string; file_url: string; doc_type?: string; file_size?: string }>;
+  video_url?: string | null;
+  keywords?: string[];
+  tags?: string[];
+  chapters: LearningChapter[];
+  key_terms?: KeyTermItem[];
+  related_article_ids?: string[];
+  related_material_ids?: string[];
+  related_glossary_ids?: string[];
+  related_quiz_ids?: string[];
+  status: LearningStatus;
+  partner_id?: string | null;
+  partner_name?: string | null;
+  author: string;
+  rejection_note?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type QuestionType = 'single' | 'multiple' | 'boolean';
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  question_type: QuestionType;
+  options: string[];
+  correct_options: number[]; // Array of 0-based indices
+  explanation: string; // Detailed educational breakdown for wrong answers
+  points: number;
+  image_url?: string;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  category_id: string;
+  category_name?: string;
+  course_id?: string | null;
+  course_title?: string | null;
+  difficulty: CourseDifficulty;
+  passing_score_percent: number;
+  time_limit_minutes?: number | null;
+  questions: QuizQuestion[];
+  status: LearningStatus;
+  partner_id?: string | null;
+  partner_name?: string | null;
+  rejection_note?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuizAttempt {
+  id: string;
+  user_id: string;
+  quiz_id: string;
+  score: number;
+  max_score: number;
+  percentage: number;
+  passed: boolean;
+  user_answers: Record<string, number[]>;
+  completed_at: string;
+}
+
+export interface Flashcard {
+  id: string;
+  user_id: string; // Strictly personal scoping
+  term: string; // Front of card
+  definition: string; // Back of card
+  explanation?: string;
+  example?: string;
+  category?: string;
+  tags?: string[];
+  course_id?: string | null;
+  difficulty?: CourseDifficulty;
+  master_level: number; // 0 to 5 for spaced repetition / practice
+  last_reviewed_at?: string | null;
+  created_at: string;
+}
+
+export interface CourseProgress {
+  id: string;
+  user_id: string;
+  course_id: string;
+  completed_chapter_ids: string[];
+  progress_percent: number;
+  status: 'not_started' | 'in_progress' | 'completed';
+  last_accessed_at: string;
+}
+
 export interface ContactPerson {
   name: string;
   email: string;

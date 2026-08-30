@@ -67,6 +67,9 @@ type PageKey =
   | 'tudastar'
   | 'category'
   | 'article'
+  | 'learning'
+  | 'course-detail'
+  | 'quiz-player'
   | 'glossary'
   | 'calculations'
   | 'books'
@@ -100,6 +103,9 @@ const ALL_VALID_PAGES: PageKey[] = [
   'tudastar',
   'category',
   'article',
+  'learning',
+  'course-detail',
+  'quiz-player',
   'glossary',
   'calculations',
   'books',
@@ -173,6 +179,8 @@ function AppContent() {
   const { user, loading, authEvent } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageKey>(getInitialPage);
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(getInitialArticleSlug);
+  const [selectedCourseSlug, setSelectedCourseSlug] = useState<string>('gipszkartonozas-es-szarazepitesi-alapismeretek');
+  const [selectedQuizId, setSelectedQuizId] = useState<string>('quiz-1');
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
 
   useEffect(() => {
@@ -213,7 +221,7 @@ function AppContent() {
     };
   }, []);
 
-  const navigate = (page: string, params?: { articleSlug?: string }) => {
+  const navigate = (page: string, params?: { articleSlug?: string; slug?: string; quizId?: string }) => {
     const rawTarget = page.replace(/^#\/?/, '');
     const mainPage = rawTarget.split('?')[0].split('#')[0];
     const targetAnchor = rawTarget.includes('#') ? '#' + rawTarget.split('#')[1].split('?')[0] : '';
@@ -226,6 +234,14 @@ function AppContent() {
       } catch (err) {
         void err;
       }
+    }
+
+    if (params?.slug) {
+      setSelectedCourseSlug(params.slug);
+    }
+
+    if (params?.quizId) {
+      setSelectedQuizId(params.quizId);
     }
 
     setCurrentPage(validPage);
@@ -296,6 +312,7 @@ function AppContent() {
             if (view === 'dashboard') return <AdminDashboard userEmail={userEmail} onNavigateView={onNavigateView} />;
             if (view === 'moderation') return <AdminModerationPage />;
             if (view === 'articles') return <AdminArticlesPage initialSearchQuery={searchQuery} />;
+            if (view === 'learning') return <AdminLearningPage />;
             if (view === 'categories') return <AdminCategoriesPage initialSearchQuery={searchQuery} />;
             if (view === 'glossary') return <AdminGlossaryPage initialSearchQuery={searchQuery} />;
             if (view === 'trades') return <AdminTradesPage initialSearchQuery={searchQuery} />;
@@ -332,6 +349,9 @@ function AppContent() {
   // Public routes with shared Header/Footer
   const renderPage = () => {
     switch (currentPage) {
+      case 'learning': return <LearningPage onNavigate={navigate} />;
+      case 'course-detail': return <CourseDetailPage slug={selectedCourseSlug} onNavigate={navigate} />;
+      case 'quiz-player': return <QuizPlayerPage quizId={selectedQuizId} onNavigate={navigate} />;
       case 'tudastar': return <KnowledgeHubPage onNavigate={navigate} />;
       case 'calculations': return <CalculationsPage onNavigate={navigate} />;
       case 'books': return <BooksPage onNavigate={navigate} />;

@@ -17,8 +17,9 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'nav-home', label: 'Főoldal', page: 'home', parentId: null, isActive: true, displayOrder: 1 },
   { id: 'nav-articles', label: 'Cikkek', page: 'category', parentId: null, isActive: true, displayOrder: 2 },
   { id: 'nav-tudastar', label: 'Tudástár', page: 'tudastar', parentId: null, isActive: true, displayOrder: 3 },
-  { id: 'nav-tool', label: 'Eszközök', page: 'tool', parentId: null, isActive: true, displayOrder: 4 },
-  { id: 'nav-paths', label: 'Pályák', page: 'paths', parentId: null, isActive: true, displayOrder: 5 },
+  { id: 'nav-learning', label: 'Tanulás', page: 'learning', parentId: null, isActive: true, displayOrder: 4 },
+  { id: 'nav-tool', label: 'Eszközök', page: 'tool', parentId: null, isActive: true, displayOrder: 5 },
+  { id: 'nav-paths', label: 'Pályák', page: 'paths', parentId: null, isActive: true, displayOrder: 6 },
 
   // Cikkek Submenu
   { id: 'sub-news', label: 'Hírek', page: 'category?type=hirek', parentId: 'nav-articles', isActive: true, displayOrder: 1 },
@@ -31,6 +32,11 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-books', label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tudastar', isActive: true, displayOrder: 3 },
   { id: 'sub-safety', label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', isActive: true, displayOrder: 4 },
   { id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 },
+
+  // Tanulás Submenu
+  { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
+  { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
+  { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
 
   // Eszközök Submenu
   { id: 'sub-tools-cat', label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
@@ -45,7 +51,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-careers', label: 'Karrier & állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 ];
 
-const STORAGE_KEY = 'epitotudas_nav_items_v1';
+const STORAGE_KEY = 'epitotudas_nav_items_v2';
 const SUPABASE_NAV_ID = '00000000-0000-0000-0000-000000000004';
 
 declare global {
@@ -65,6 +71,17 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
       item.id !== 'sub-impressum' &&
       item.id !== 'sub-articles'
   );
+
+  // Ensure 'Tanulás' main menu exists
+  const hasNavLearning = cleanItems.some((i) => i.id === 'nav-learning');
+  if (!hasNavLearning) {
+    cleanItems.push(
+      { id: 'nav-learning', label: 'Tanulás', page: 'learning', parentId: null, isActive: true, displayOrder: 4 },
+      { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
+      { id: 'sub-learning-quizzes', label: 'Tesztek', page: 'learning?tab=quizzes', parentId: 'nav-learning', isActive: true, displayOrder: 2 },
+      { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 3 }
+    );
+  }
 
   // Ensure 'Cikkek' main menu exists
   const hasNavArticles = cleanItems.some((i) => i.id === 'nav-articles');

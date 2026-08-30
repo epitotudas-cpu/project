@@ -87,6 +87,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const isNavItemActive = (itemPage: string, subItems?: Array<{ page: string }>) => {
     const mainItemPage = itemPage.split('?')[0].split('#')[0];
     if (currentPage === mainItemPage) return true;
+    if (mainItemPage === 'learning' && (currentPage === 'learning' || currentPage === 'course-detail' || currentPage === 'quiz-player')) return true;
     if (mainItemPage === 'category' && (currentPage === 'category' || currentPage === 'article')) return true;
     if (mainItemPage === 'tudastar' && ['glossary', 'calculations', 'books'].includes(currentPage)) return true;
     if (mainItemPage === 'tool' && ['software', 'valaszto'].includes(currentPage)) return true;

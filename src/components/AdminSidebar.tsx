@@ -5,6 +5,7 @@ export type AdminView =
   | 'dashboard'
   | 'articles'
   | 'categories'
+  | 'learning'
   | 'glossary'
   | 'knowledge-hub'
   | 'materials'
@@ -52,6 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'TARTALOM',
     items: [
       { id: 'articles', label: 'Cikkek', icon: FileText },
+      { id: 'learning', label: 'Tanulási Rendszer', icon: GraduationCap },
       { id: 'categories', label: 'Kategóriák', icon: FolderTree },
       { id: 'glossary', label: 'Fogalmak', icon: BookOpen },
       { id: 'knowledge-hub', label: 'Oktatási Tudásbázis', icon: ShieldAlert },
