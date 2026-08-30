@@ -140,33 +140,33 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <button
               onClick={() => onNavigate('home')}
-              className="hover:text-white transition-colors flex items-center gap-1"
+              className="hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
             >
               Főoldal
             </button>
             <ChevronRight size={13} />
-            <span className="text-gray-200 font-medium">Tanulási Útvonalak &amp; Karrierlépcsők</span>
+            <span className="text-gray-200 font-medium">Építőipari szakmák</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <HardHat size={13} /> Tanulási Útvonalak &amp; Szakmai Karrierlépcsők
+                <HardHat size={13} /> Építőipari Szakmaismertető &amp; Pályaorientáció
               </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Tanulási Útvonalak &amp; Szakmai Karrierlépcsők
+                Építőipari Szakmák
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Fedezd fel az építőipari szakmák szintenkénti fejlődési útvonalait: a kezdő alapismeretektől, a mesterfokozat megszerzésén át, az önálló szakmai vállalkozás vezetéséig.
+                Ismerd meg az építőipari szakmák feladatait, munkakörülményeit, elvárásait és a hozzájuk kapcsolódó fejlődési lehetőségeket.
               </p>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
               <button
-                onClick={() => onNavigate('learning')}
+                onClick={() => onNavigate('learning-paths')}
                 className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
               >
-                <BookOpen size={16} /> Tananyagok &amp; Tesztek
+                <Layers size={16} /> Tanulási Útvonalak &amp; Karrierlépcsők
               </button>
               <button
                 onClick={() => onNavigate('careers')}
@@ -185,25 +185,25 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Tanulási útvonalak & Karrierlépcsők',
+            label: 'Építőipari szakmák',
             page: 'paths',
-            icon: <Layers size={14} className="text-accent" />,
+            icon: <HardHat size={14} className="text-accent" />,
             active: !selectedTradeId,
           },
           {
-            label: 'Építőipari szakmák',
-            page: 'paths#szakmak',
-            icon: <HardHat size={14} className="text-accent" />,
+            label: 'Tanulási Útvonalak & Karrierlépcsők',
+            page: 'learning-paths',
+            icon: <Layers size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Képzések & kurzusok',
+            label: 'Képzések & Kurzusok',
             page: 'courses',
             icon: <GraduationCap size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Karrier & állások',
+            label: 'Karrier & Állások',
             page: 'careers',
             icon: <Briefcase size={14} className="text-accent" />,
             active: false,

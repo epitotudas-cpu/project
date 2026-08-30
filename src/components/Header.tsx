@@ -91,7 +91,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     if (mainItemPage === 'category' && (currentPage === 'category' || currentPage === 'article')) return true;
     if (mainItemPage === 'tudastar' && ['glossary', 'calculations', 'books'].includes(currentPage)) return true;
     if (mainItemPage === 'tool' && ['software', 'valaszto'].includes(currentPage)) return true;
-    if (mainItemPage === 'paths' && ['courses', 'careers'].includes(currentPage)) return true;
+    if (mainItemPage === 'paths' && ['courses', 'careers', 'learning-paths'].includes(currentPage)) return true;
     if (subItems?.some((sub) => sub.page.split('?')[0].split('#')[0] === currentPage)) return true;
     return false;
   };

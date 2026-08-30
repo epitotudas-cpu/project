@@ -45,10 +45,10 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-selector', label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', isActive: true, displayOrder: 4 },
 
   // Pályák Submenu
-  { id: 'sub-paths', label: 'Tanulási útvonalak & karrierlépcsők', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
-  { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths#szakmak', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
-  { id: 'sub-courses', label: 'Képzések & kurzusok', page: 'courses', parentId: 'nav-paths', isActive: true, displayOrder: 3 },
-  { id: 'sub-careers', label: 'Karrier & állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
+  { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
+  { id: 'sub-paths', label: 'Tanulási Útvonalak & Karrierlépcsők', page: 'learning-paths', parentId: 'nav-paths', isActive: true, displayOrder: 2 },
+  { id: 'sub-courses', label: 'Képzések & Kurzusok', page: 'courses', parentId: 'nav-paths', isActive: true, displayOrder: 3 },
+  { id: 'sub-careers', label: 'Karrier & Állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 ];
 
 const STORAGE_KEY = 'epitotudas_nav_items_v2';
@@ -120,9 +120,9 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
 
   const itemMap: Record<string, { label: string; page: string }> = {
     'sub-professions': { label: 'Építőipari szakmák', page: 'paths' },
-    'sub-paths': { label: 'Tanulási útvonalak', page: 'courses#utvonalak' },
-    'sub-courses': { label: 'Képzések & kurzusok', page: 'courses' },
-    'sub-careers': { label: 'Karrier & állások', page: 'careers' },
+    'sub-paths': { label: 'Tanulási Útvonalak & Karrierlépcsők', page: 'learning-paths' },
+    'sub-courses': { label: 'Képzések & Kurzusok', page: 'courses' },
+    'sub-careers': { label: 'Karrier & Állások', page: 'careers' },
     'sub-news': { label: 'Hírek', page: 'category?type=hirek' },
     'sub-novelties': { label: 'Újdonságok', page: 'category?type=ujdonsagok' },
     'sub-guides': { label: 'Útmutatók', page: 'category?type=utmutatok' },

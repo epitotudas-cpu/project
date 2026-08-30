@@ -240,25 +240,25 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Tanulási útvonalak & karrierlépcsők',
-            page: 'paths',
-            icon: <Layers size={14} className="text-accent" />,
-            active: false,
-          },
-          {
             label: 'Építőipari szakmák',
-            page: 'paths#szakmak',
+            page: 'paths',
             icon: <HardHat size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Képzések & kurzusok',
+            label: 'Tanulási Útvonalak & Karrierlépcsők',
+            page: 'learning-paths',
+            icon: <Layers size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Képzések & Kurzusok',
             page: 'courses',
             icon: <GraduationCap size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Karrier & állások',
+            label: 'Karrier & Állások',
             page: 'careers',
             icon: <Briefcase size={14} className="text-accent" />,
             active: true,

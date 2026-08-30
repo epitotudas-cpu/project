@@ -32,10 +32,8 @@ import {
   getUserCertificates,
   getInteractiveStepsForLesson,
   getAllFlashcards,
-  DEFAULT_LEARNING_PATHS,
   type DetailedCourse,
   type QuizSubmissionResult,
-  type LearningPath,
 } from '../services/educationService';
 import type { Course, UserCertificate } from '../lib/supabase';
 
@@ -228,25 +226,25 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Tanulási útvonalak & karrierlépcsők',
-            page: 'paths',
-            icon: <Layers size={14} className="text-accent" />,
-            active: false,
-          },
-          {
             label: 'Építőipari szakmák',
-            page: 'paths#szakmak',
+            page: 'paths',
             icon: <HardHat size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Képzések & kurzusok',
+            label: 'Tanulási Útvonalak & Karrierlépcsők',
+            page: 'learning-paths',
+            icon: <Layers size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Képzések & Kurzusok',
             page: 'courses',
             icon: <GraduationCap size={14} className="text-accent" />,
             active: true,
           },
           {
-            label: 'Karrier & állások',
+            label: 'Karrier & Állások',
             page: 'careers',
             icon: <Briefcase size={14} className="text-accent" />,
             active: false,
@@ -558,62 +556,6 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
               })}
             </div>
           )}
-        </section>
-
-        {/* LEARNING PATHS SECTION */}
-        <section id="utvonalak" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-accent uppercase tracking-wider">Strukturált fejlődés</span>
-            <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2">
-              <Compass className="text-primary" size={24} />
-              Tanulási Útvonalak &amp; Szakmai Karrierlépcsők
-            </h2>
-            <p className="text-xs text-gray-500">
-              Kapcsold össze a szakmákat, képzéseket és a következő karrierlépést a sikeres előrelépésért.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {DEFAULT_LEARNING_PATHS.map((path: LearningPath) => (
-              <div
-                key={path.id}
-                className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 flex flex-col justify-between hover:border-gray-300 transition-colors"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${path.badgeColor}`}>
-                      {path.tradeName}
-                    </span>
-                    <span className="text-xs font-semibold text-gray-500">{path.level}</span>
-                  </div>
-
-                  <h3 className="text-base font-extrabold text-gray-900">{path.title}</h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">{path.description}</p>
-                </div>
-
-                <div className="pt-3 border-t border-gray-200 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500 font-medium">Következő karrierlépés:</span>
-                    <span className="font-extrabold text-primary flex items-center gap-1">
-                      {path.nextCareerStep} <ArrowRight size={13} />
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      if (path.courseIds.length > 0) {
-                        handleOpenCourseModal(path.courseIds[0]);
-                      }
-                    }}
-                    className="w-full py-2 bg-white border border-gray-300 hover:border-primary text-gray-800 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs"
-                  >
-                    <span>Útvonal elkezdése</span>
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
         </section>
 
         {/* SECONDARY USER CERTIFICATES BANNER */}

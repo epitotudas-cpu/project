@@ -35,6 +35,7 @@ import MaterialsPage from './pages/MaterialsPage';
 import LearningPage from './pages/LearningPage';
 import CourseDetailPage from './pages/CourseDetailPage';
 import QuizPlayerPage from './pages/QuizPlayerPage';
+import LearningPathsPage from './pages/LearningPathsPage';
 import AdminLearningPage from './pages/AdminLearningPage';
 import PartnerLearningPage from './pages/PartnerLearningPage';
 import LoginPage from './pages/LoginPage';
@@ -75,6 +76,7 @@ type PageKey =
   | 'learning'
   | 'course-detail'
   | 'quiz-player'
+  | 'learning-paths'
   | 'glossary'
   | 'calculations'
   | 'books'
@@ -111,6 +113,7 @@ const ALL_VALID_PAGES: PageKey[] = [
   'learning',
   'course-detail',
   'quiz-player',
+  'learning-paths',
   'glossary',
   'calculations',
   'books',
@@ -358,6 +361,7 @@ function AppContent() {
       case 'learning': return <LearningPage onNavigate={navigate} />;
       case 'course-detail': return <CourseDetailPage slug={selectedCourseSlug} onNavigate={navigate} />;
       case 'quiz-player': return <QuizPlayerPage quizId={selectedQuizId} onNavigate={navigate} />;
+      case 'learning-paths': return <LearningPathsPage onNavigate={navigate} />;
       case 'tudastar': return <KnowledgeHubPage onNavigate={navigate} />;
       case 'calculations': return <CalculationsPage onNavigate={navigate} />;
       case 'books': return <BooksPage onNavigate={navigate} />;
