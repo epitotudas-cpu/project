@@ -10,7 +10,6 @@ import {
   X,
   LayoutGrid,
   List,
-  CheckCircle,
   HelpCircle,
   Tag,
   ExternalLink,
@@ -578,6 +577,22 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
                           <Download size={13} /> Letöltés (PDF)
                         </a>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Keywords Tags */}
+              {activeItem.keywords && activeItem.keywords.length > 0 && (
+                <div className="space-y-2 border-t border-gray-100 pt-4">
+                  <h5 className="font-extrabold text-xs text-gray-700 flex items-center gap-1.5">
+                    <Tag size={13} className="text-accent" /> Keresési Kulcsszavak:
+                  </h5>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeItem.keywords.map((kw) => (
+                      <span key={kw} className="px-2.5 py-1 bg-gray-100 text-gray-700 text-[11px] font-semibold rounded-lg">
+                        #{kw}
+                      </span>
                     ))}
                   </div>
                 </div>
