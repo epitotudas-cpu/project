@@ -26,8 +26,6 @@ import {
   Filter,
   ExternalLink,
   FileText,
-  Calculator,
-  Library,
   X,
   ChevronDown,
   Sparkles,
