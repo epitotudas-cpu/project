@@ -118,11 +118,11 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     cleanItems.push({ id: 'sub-materials', label: 'Anyagok', page: 'materials', parentId: 'nav-tool', isActive: true, displayOrder: 2 });
   }
 
-  const itemMap: Record<string, { label: string; page: string }> = {
-    'sub-professions': { label: 'Építőipari szakmák', page: 'paths' },
-    'sub-paths': { label: 'Tanulási Útvonalak & Karrierlépcsők', page: 'learning-paths' },
-    'sub-courses': { label: 'Képzések & Kurzusok', page: 'courses' },
-    'sub-careers': { label: 'Karrier & Állások', page: 'careers' },
+  const itemMap: Record<string, { label: string; page: string; displayOrder?: number }> = {
+    'sub-professions': { label: 'Építőipari szakmák', page: 'paths', displayOrder: 1 },
+    'sub-paths': { label: 'Tanulási Útvonalak & Karrierlépcsők', page: 'learning-paths', displayOrder: 2 },
+    'sub-courses': { label: 'Képzések & Kurzusok', page: 'courses', displayOrder: 3 },
+    'sub-careers': { label: 'Karrier & Állások', page: 'careers', displayOrder: 4 },
     'sub-news': { label: 'Hírek', page: 'category?type=hirek' },
     'sub-novelties': { label: 'Újdonságok', page: 'category?type=ujdonsagok' },
     'sub-guides': { label: 'Útmutatók', page: 'category?type=utmutatok' },
@@ -134,9 +134,19 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
   let changed = cleanItems.length !== items.length;
   const updated = cleanItems.map((item) => {
     const target = itemMap[item.id];
-    if (target && (item.label !== target.label || item.page !== target.page)) {
-      changed = true;
-      return { ...item, label: target.label, page: target.page };
+    if (target) {
+      const needsLabel = item.label !== target.label;
+      const needsPage = item.page !== target.page;
+      const needsOrder = target.displayOrder !== undefined && item.displayOrder !== target.displayOrder;
+      if (needsLabel || needsPage || needsOrder) {
+        changed = true;
+        return {
+          ...item,
+          label: target.label,
+          page: target.page,
+          displayOrder: target.displayOrder !== undefined ? target.displayOrder : item.displayOrder,
+        };
+      }
     }
     return item;
   });
