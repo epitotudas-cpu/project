@@ -37,6 +37,10 @@ import {
   Copy,
   Send,
   Check,
+  ArrowLeft,
+  Search,
+  X,
+  Settings,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
@@ -135,7 +139,108 @@ const PRESET_ADMIN_CARD_HIGHLIGHTS = [
   { name: 'Korall Piros', color: '#EF4444' },
   { name: 'Szakmai Narancs', color: '#F97316' },
   { name: 'Neon Pink', color: '#EC4899' },
-  { name: 'Csalán Türkiz', color: '#06B6D4' },
+];
+
+export type SettingsCategoryKey =
+  | 'overview'
+  | 'general'
+  | 'design'
+  | 'hero'
+  | 'navigation'
+  | 'impressum'
+  | 'about'
+  | 'legal'
+  | 'calculators'
+  | 'ads'
+  | 'icons_sharing'
+  | 'smtp'
+  | 'system';
+
+export interface SettingsCardDef {
+  key: SettingsCategoryKey;
+  title: string;
+  description: string;
+  icon: any;
+  isHighlighted?: boolean;
+}
+
+export const SETTINGS_CARDS: SettingsCardDef[] = [
+  {
+    key: 'general',
+    title: 'Alapértelmezett',
+    description: 'A webhely alapvető adatai, általános konfiguráció és globális működés.',
+    icon: Globe,
+  },
+  {
+    key: 'design',
+    title: 'Arculat & Színek',
+    description: 'Logó, márkaszínek, betűtípusok és az oldal vizuális megjelenése.',
+    icon: Palette,
+    isHighlighted: true,
+  },
+  {
+    key: 'hero',
+    title: 'Főoldali Hero Képek',
+    description: 'A főoldali kiemelt képek, képváltás, időzítés és megjelenési opciók kezelése.',
+    icon: ImageIcon,
+    isHighlighted: true,
+  },
+  {
+    key: 'navigation',
+    title: 'Navigáció & Menü',
+    description: 'Főmenük, almenük, menüpontok, sorrend, aktív állapotok és megjelenő feliratok kezelése.',
+    icon: Compass,
+    isHighlighted: true,
+  },
+  {
+    key: 'impressum',
+    title: 'Impresszum & Kapcsolat',
+    description: 'Cégadatok, kapcsolati információk, impresszum és megjelenő elérhetőségek.',
+    icon: Building,
+  },
+  {
+    key: 'about',
+    title: 'Rólunk Oldal',
+    description: 'A küldetés, bemutatkozó szövegek, csapat- vagy céges információk kezelése.',
+    icon: FileText,
+  },
+  {
+    key: 'legal',
+    title: 'Jogi Szövegek',
+    description: 'Adatkezelés, ÁSZF, cookie tájékoztató és egyéb jogi oldalak tartalma.',
+    icon: ShieldCheck,
+  },
+  {
+    key: 'calculators',
+    title: 'Kalkulátor Árak',
+    description: 'A kalkulátorok árazása, csomagok, jogosultságok és kapcsolódó beállítások.',
+    icon: Calculator,
+  },
+  {
+    key: 'ads',
+    title: 'Reklámok & Ajánlatok',
+    description: 'Hirdetési helyek, bannerek, partneri ajánlatok, kampányok és megjelenési szabályok.',
+    icon: Megaphone,
+    isHighlighted: true,
+  },
+  {
+    key: 'icons_sharing',
+    title: 'Webhely ikonok & Megosztás',
+    description: 'Favicon, közösségi megosztási képek, Open Graph és böngészőikonok.',
+    icon: Share2,
+  },
+  {
+    key: 'smtp',
+    title: 'E-mail & SMTP (Resend)',
+    description: 'Feladó adatok, e-mail sablonok, értesítések és küldési konfiguráció.',
+    icon: Mail,
+  },
+  {
+    key: 'system',
+    title: 'Rendszer & Biztonság',
+    description: 'Karbantartási mód, rendszeradatok, biztonsági beállítások és audit információk.',
+    icon: ShieldAlert,
+  },
 ];
 
 export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
@@ -183,9 +288,8 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   });
   const navItems = useNavigationItems();
 
-  const [activeTab, setActiveTab] = useState<
-    'design' | 'hero' | 'impressum' | 'navigation' | 'calculators' | 'legal' | 'about' | 'ads' | 'system' | 'icons_sharing' | 'smtp'
-  >('design');
+  const [activeTab, setActiveTab] = useState<SettingsCategoryKey>('overview');
+  const [searchQuery, setSearchQuery] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // SMTP Configuration & Diagnostic State
@@ -763,81 +867,294 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     color: inputTextColor,
   };
 
+  const filteredCards = SETTINGS_CARDS.filter((card) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return card.title.toLowerCase().includes(q) || card.description.toLowerCase().includes(q);
+  });
+
+  const currentCardDef = SETTINGS_CARDS.find((c) => c.key === activeTab);
+
   return (
-    <div style={{ color: textColor }} className="min-h-screen p-4 md:p-8 space-y-8">
-      {/* Top Header Bar */}
-      <div style={{ borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-4 border-b pb-6">
-        <div>
-          <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
-            <Palette style={{ color: cardHighlight }} size={32} />
-            Rendszer- és Design Beállítások
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Weboldal arculat, hero képek, impresszum adatok, logó, navigációs menüpontok és reklámok központi testreszabása.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleResetDefaults}
-            style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-            className="px-4 py-2.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <RotateCcw size={14} /> Alapértelmezett
-          </button>
-          <button
-            onClick={handleSave}
-            style={{ backgroundColor: cardHighlight, color: '#000000' }}
-            className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
-          >
-            <Save size={16} /> Mentés &amp; Alkalmazás
-          </button>
-        </div>
-      </div>
-
+    <div style={{ color: textColor }} className="min-h-screen p-4 md:p-8 space-y-8 pb-24">
       {savedSuccess && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold">
+        <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold shadow-lg">
           <CheckCircle2 size={20} />
-          A beállítások, hero képek és impresszum adatok sikeresen elmentve és alkalmazva a teljes weboldalon!
+          A beállítások sikeresen elmentve és alkalmazva a teljes weboldalon!
         </div>
       )}
 
-      {/* Tabs Navigation */}
-      <div style={{ borderColor: cardBorder }} className="flex items-center gap-2 border-b overflow-x-auto pb-2">
-        {[
-          { id: 'design', label: '🎨 Arculat & Színek', icon: Palette },
-          { id: 'hero', label: '🖼️ Főoldali Hero Képek', icon: ImageIcon },
-          { id: 'impressum', label: '🏢 Impresszum & Kapcsolat', icon: Building },
-          { id: 'navigation', label: '🧭 Navigáció & Menü', icon: Compass },
-          { id: 'calculators', label: '🧮 Kalkulátor Árak', icon: Calculator },
-          { id: 'legal', label: '📜 Jogi Szövegek', icon: Shield },
-          { id: 'about', label: 'ℹ️ Rólunk Oldal', icon: Info },
-          { id: 'ads', label: '📢 Reklámok & Ajánlatok', icon: Megaphone },
-          { id: 'icons_sharing', label: '🌐 Webhely ikonok & Megosztás', icon: Share2 },
-          { id: 'smtp', label: '📧 E-mail & SMTP (Resend)', icon: Mail },
-          { id: 'system', label: '⚙️ Rendszer & Biztonság', icon: ShieldAlert },
-        ].map((tab) => {
-          const IconComp = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              style={
-                isActive
-                  ? { backgroundColor: cardHighlight, color: '#000000' }
-                  : { backgroundColor: cardBg, borderColor: cardBorder, color: textColor }
-              }
-              className={`px-5 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer border ${
-                isActive ? 'shadow-lg scale-105' : 'hover:opacity-90'
-              }`}
-            >
-              <IconComp size={16} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* OVERVIEW VIEW MODE: 12-Card Settings Hub Grid */}
+      {activeTab === 'overview' && (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Breadcrumb & Header */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span className="font-semibold text-gray-400">Admin panel</span>
+              <ChevronRight size={13} />
+              <span className="text-gray-200 font-bold">Beállítások</span>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span
+                  style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 border font-extrabold text-[11px] rounded-full uppercase tracking-wider"
+                >
+                  <Settings size={13} /> RENDSZER- ÉS OLDALBEÁLLÍTÁSOK
+                </span>
+                <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-black tracking-tight">
+                  Beállítások
+                </h1>
+                <p className="text-xs md:text-sm text-gray-400 max-w-3xl leading-relaxed">
+                  Kezeld egy helyen az ÉpítőTudás megjelenését, tartalmi elemeit, navigációját és technikai működését.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={handleResetDefaults}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <RotateCcw size={14} /> Alapértelmezés visszaállítása
+                </button>
+                <button
+                  onClick={handleSave}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+                >
+                  <Save size={16} /> Mentés &amp; Alkalmazás
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Search Bar & Quick Access Chips */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-5 rounded-3xl border shadow-xl space-y-4">
+            <div className="relative">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Keresés a beállítások között (pl. arculat, hero, navigáció, SMTP)..."
+                style={fieldStyle}
+                className="w-full border rounded-2xl pl-11 pr-10 py-3 text-xs md:text-sm font-semibold focus:outline-none focus:border-accent transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            {/* Quick Access Shortcuts (Max 4) */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+                <Compass size={13} style={{ color: cardHighlight }} /> Gyors elérés:
+              </span>
+              {[
+                { key: 'design', label: '🎨 Arculat & Színek' },
+                { key: 'hero', label: '🖼️ Főoldali Hero Képek' },
+                { key: 'navigation', label: '🧭 Navigáció & Menü' },
+                { key: 'ads', label: '📢 Reklámok & Ajánlatok' },
+              ].map((chip) => (
+                <button
+                  key={chip.key}
+                  onClick={() => setActiveTab(chip.key as typeof activeTab)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-3.5 py-1.5 rounded-xl border text-xs font-bold hover:border-accent hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <span>{chip.label}</span>
+                  <ChevronRight size={12} className="opacity-60" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 12-Card Grid Layout */}
+          {filteredCards.length === 0 ? (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-12 text-center rounded-3xl border space-y-3 shadow-xl">
+              <AlertCircle size={32} className="mx-auto text-gray-500" />
+              <h3 style={{ color: textColor }} className="text-base font-bold">Nincs a keresési feltételnek megfelelő beállítási modul</h3>
+              <p className="text-xs text-gray-400">Próbálj meg más keresőszót megadni, vagy töröld a keresőt.</p>
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ backgroundColor: cardHighlight, color: '#000' }}
+                className="px-4 py-2 text-xs font-extrabold rounded-xl hover:opacity-90 transition-all cursor-pointer"
+              >
+                Kereső törlése
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
+              {filteredCards.map((card) => {
+                const IconComp = card.icon;
+                const isHighlighted = card.isHighlighted;
+                return (
+                  <div
+                    key={card.key}
+                    onClick={() => setActiveTab(card.key)}
+                    style={{
+                      backgroundColor: isHighlighted ? `${cardHighlight}0D` : cardBg,
+                      borderColor: isHighlighted ? cardHighlight : cardBorder,
+                      color: textColor,
+                    }}
+                    className={`group relative p-6 rounded-3xl border flex flex-col justify-between h-full space-y-5 hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 cursor-pointer overflow-hidden ${
+                      isHighlighted ? 'ring-1 ring-accent/40' : ''
+                    }`}
+                  >
+                    {isHighlighted && (
+                      <div
+                        style={{ backgroundColor: cardHighlight, color: '#000' }}
+                        className="absolute top-3.5 right-3.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm"
+                      >
+                        Gyakran használt
+                      </div>
+                    )}
+
+                    <div className="space-y-3.5">
+                      <div
+                        style={{ backgroundColor: `${cardHighlight}20`, color: cardHighlight }}
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center border border-accent/20 group-hover:scale-110 transition-transform duration-200 shrink-0"
+                      >
+                        <IconComp size={24} />
+                      </div>
+
+                      <div>
+                        <h2 style={{ color: textColor }} className="text-base font-extrabold leading-snug group-hover:text-accent transition-colors">
+                          {card.title}
+                        </h2>
+                        <p className="text-xs text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
+                          {card.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-bold text-gray-400 group-hover:text-white transition-colors">
+                      <span className="group-hover:translate-x-0.5 transition-transform">Megnyitás</span>
+                      <ChevronRight size={16} style={{ color: cardHighlight }} className="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* DETAIL VIEW MODE: Section Header & Back Navigation */}
+      {activeTab !== 'overview' && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Section Header Bar */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-5 rounded-3xl border shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setActiveTab('overview')}
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-3.5 py-2.5 border rounded-2xl text-xs font-extrabold hover:border-accent transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm"
+              >
+                <ArrowLeft size={16} /> Vissza a Beállításokhoz
+              </button>
+
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>Beállítások</span>
+                  <ChevronRight size={12} className="text-gray-500" />
+                  <span style={{ color: cardHighlight }} className="font-extrabold">
+                    {currentCardDef?.title}
+                  </span>
+                </div>
+                <h1 style={{ color: textColor }} className="text-xl md:text-2xl font-black flex items-center gap-2">
+                  {currentCardDef?.title}
+                </h1>
+              </div>
+            </div>
+
+            {/* Quick Switcher Tabs Bar */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 admin-scroll">
+              {SETTINGS_CARDS.map((c) => (
+                <button
+                  key={c.key}
+                  onClick={() => setActiveTab(c.key)}
+                  style={{
+                    backgroundColor: activeTab === c.key ? cardHighlight : inputBg,
+                    color: activeTab === c.key ? '#000000' : textColor,
+                    borderColor: cardBorder,
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    activeTab === c.key ? 'shadow-md scale-105' : 'hover:opacity-80'
+                  }`}
+                >
+                  {c.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* TAB: GENERAL SITE DEFAULTS */}
+          {activeTab === 'general' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl max-w-4xl">
+              <h2 style={{ color: textColor, borderColor: cardBorder }} className="text-lg font-bold border-b pb-3 flex items-center gap-2">
+                <Globe size={20} style={{ color: cardHighlight }} /> Webhely Alapértelmezett Konfiguráció
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-bold text-gray-400 block mb-2">Weboldal Címe (Site Title)</label>
+                  <input
+                    type="text"
+                    value={settings.siteTitle}
+                    onChange={(e) => setSettings({ ...settings, siteTitle: e.target.value })}
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
+                    placeholder="ÉpítőTudás"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-400 block mb-2">Weboldal Szlogenje (Tagline)</label>
+                  <input
+                    type="text"
+                    value={settings.siteTagline}
+                    onChange={(e) => setSettings({ ...settings, siteTagline: e.target.value })}
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
+                    placeholder="Magyarország Építőipari Tudásbázisa"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-400 block mb-2">Globális Kapcsolati E-mail</label>
+                  <input
+                    type="email"
+                    value={impressumData.email}
+                    onChange={(e) => setImpressumData({ ...impressumData, email: e.target.value })}
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none"
+                    placeholder="info@epitotudas.hu"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-400 block mb-2">Alapértelmezett Nyelv</label>
+                  <input
+                    type="text"
+                    value="hu-HU (Magyar)"
+                    disabled
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-4 py-3 text-sm opacity-60 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* TAB 1: BRANDING & DESIGN */}
       {activeTab === 'design' && (
@@ -3817,6 +4134,42 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Global Action Bar (Mentés & Alkalmazás) for detail settings views */}
+      {activeTab !== 'overview' && (
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="fixed bottom-4 left-4 right-4 md:left-72 md:right-8 z-40 p-4 rounded-2xl border shadow-2xl flex flex-wrap items-center justify-between gap-4 backdrop-blur-md bg-opacity-95">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
+            <span className="text-xs font-bold text-gray-300">
+              Szerkesztési mód: <strong style={{ color: cardHighlight }}>{currentCardDef?.title}</strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 ml-auto">
+            <button
+              onClick={() => setActiveTab('overview')}
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+            >
+              <ArrowLeft size={14} /> Vissza a csempékhez
+            </button>
+            <button
+              onClick={handleResetDefaults}
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+            >
+              <RotateCcw size={14} /> Elvetés
+            </button>
+            <button
+              onClick={handleSave}
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="px-6 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+            >
+              <Save size={16} /> Mentés &amp; Alkalmazás
+            </button>
           </div>
         </div>
       )}
