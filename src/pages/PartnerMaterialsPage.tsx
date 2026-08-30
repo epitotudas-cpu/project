@@ -10,7 +10,6 @@ import {
   FileText,
   X,
   Building2,
-  Award,
   AlertTriangle,
   Send,
   Save,

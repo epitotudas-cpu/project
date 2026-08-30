@@ -21,7 +21,6 @@ import {
   getMaterialsLocal,
   saveMaterialsLocal,
   getMaterialCategoriesLocal,
-  saveMaterialCategoriesLocal,
   type MaterialItem,
   type MaterialCategory,
   type MaterialSpec,
@@ -420,6 +419,22 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               {partners.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Category Select */}
+          {categories.length > 0 && (
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-gray-50 border border-gray-200 text-xs font-bold px-3 py-2 rounded-xl focus:outline-none cursor-pointer"
+            >
+              <option value="all">Összes kategória</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -922,6 +937,66 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                       placeholder="Google keresési leírás..."
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
                     />
+                  </div>
+
+                  {/* Keywords */}
+                  <div>
+                    <label className="font-bold text-gray-700 block mb-1">Kulcsszavak</label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {formData.keywords?.map((kw) => (
+                        <span key={kw} className="bg-primary/10 text-primary-950 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                          #{kw}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                keywords: formData.keywords?.filter((k) => k !== kw),
+                              })
+                            }
+                            className="hover:text-red-600"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Új kulcsszó hozzáadása..."
+                        value={keywordInput}
+                        onChange={(e) => setKeywordInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (keywordInput.trim() && !formData.keywords?.includes(keywordInput.trim())) {
+                              setFormData({
+                                ...formData,
+                                keywords: [...(formData.keywords || []), keywordInput.trim()],
+                              });
+                              setKeywordInput('');
+                            }
+                          }
+                        }}
+                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (keywordInput.trim() && !formData.keywords?.includes(keywordInput.trim())) {
+                            setFormData({
+                              ...formData,
+                              keywords: [...(formData.keywords || []), keywordInput.trim()],
+                            });
+                            setKeywordInput('');
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl cursor-pointer"
+                      >
+                        Hozzáadás
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
