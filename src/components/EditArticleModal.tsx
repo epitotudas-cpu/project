@@ -88,22 +88,34 @@ interface FormState {
   title: string;
   slug: string;
   excerpt: string;
+  article_type: 'hirek' | 'ujdonsagok' | 'utmutatok';
   category_id: string;
+  subcategory_name: string;
   status: Article['status'];
   author: string;
+  partner_id: string;
+  partner_name: string;
   read_time: number;
   featured_image: string;
+  featured: boolean;
+  tags: string[];
 }
 
 const EMPTY_FORM: FormState = {
   title: '',
   slug: '',
   excerpt: '',
+  article_type: 'utmutatok',
   category_id: '',
+  subcategory_name: '',
   status: 'draft',
   author: 'ÉpítőTudás Szerkesztőség',
+  partner_id: '',
+  partner_name: '',
   read_time: 5,
   featured_image: '',
+  featured: false,
+  tags: [],
 };
 
 const DEFAULT_SEO: GuideSEOData = {
@@ -118,11 +130,17 @@ function formFromArticle(article: Article): FormState {
     title: article.title,
     slug: article.slug,
     excerpt: article.excerpt ?? '',
+    article_type: (article.article_type as any) || 'utmutatok',
     category_id: article.category_id ?? '',
+    subcategory_name: article.subcategory_name ?? '',
     status: article.status || 'draft',
     author: article.author ?? 'ÉpítőTudás Szerkesztőség',
+    partner_id: article.partner_id ?? '',
+    partner_name: article.partner_name ?? '',
     read_time: article.read_time || 5,
     featured_image: article.featured_image ?? '',
+    featured: article.featured ?? false,
+    tags: article.tags ?? [],
   };
 }
 
@@ -869,9 +887,15 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
         slug: form.slug.trim(),
         excerpt: form.excerpt.trim() || null,
         content: serializedContent,
+        article_type: form.article_type,
         category_id: form.category_id || null,
+        subcategory_name: form.subcategory_name.trim() || null,
+        tags: form.tags,
         status: form.status,
         author: form.author.trim() || null,
+        partner_id: form.partner_id || null,
+        partner_name: form.partner_name || null,
+        featured: form.featured,
         read_time: calculatedReadTime,
         featured_image: form.featured_image.trim() || null,
       };
@@ -1107,7 +1131,21 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div>
+                    <label style={labelStyle} className={labelClass}>Cikk Típusa *</label>
+                    <select
+                      style={fieldStyle}
+                      className={fieldClass}
+                      value={form.article_type}
+                      onChange={(e) => updateForm('article_type', e.target.value as any)}
+                    >
+                      <option value="utmutatok">Útmutató</option>
+                      <option value="hirek">Hír</option>
+                      <option value="ujdonsagok">Újdonság</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label style={labelStyle} className={labelClass}>Borítókép URL</label>
                     <input

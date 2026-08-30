@@ -397,13 +397,88 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           </div>
         </div>
 
-        {/* Content Body */}
+        {/* Content Body with Table of Contents & Attachments */}
         <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm space-y-6">
+          {/* Table of Contents (Tartalomjegyzék) */}
+          {(() => {
+            const { blocks } = parseBlocksFromContent(article.content || '');
+            const headings = blocks.filter((b) => b.type === 'heading' && b.content);
+            if (headings.length < 2) return null;
+            return (
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-2 mb-6">
+                <span className="font-extrabold text-xs text-primary uppercase tracking-wider flex items-center gap-1.5">
+                  <BookOpen size={14} className="text-accent" /> Tartalomjegyzék
+                </span>
+                <ul className="space-y-1.5 pl-2 text-xs font-semibold text-gray-700">
+                  {headings.map((h, i) => (
+                    <li key={h.id || i} className={h.level === 'h3' ? 'pl-4 text-gray-600 font-normal' : ''}>
+                      <a href={`#heading-${i}`} className="hover:text-primary hover:underline flex items-center gap-1.5">
+                        <span className="text-accent text-[10px]">●</span> {h.content}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
+
           <h2 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
             <BookOpen size={20} className="text-accent" /> Részletes Leírás &amp; Útmutató
           </h2>
           
           <ArticleContentRenderer content={article.content || ''} />
+
+          {/* Downloadable PDF Documents */}
+          {article.documents && article.documents.length > 0 && (
+            <div className="border-t border-gray-100 pt-6 space-y-3">
+              <h3 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                <FileText size={16} className="text-primary" /> Letölthető Műszaki Dokumentumok &amp; Útmutatók
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {article.documents.map((doc) => (
+                  <a
+                    key={doc.id}
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-3.5 bg-gray-50 hover:bg-accent/10 border border-gray-200 rounded-xl flex items-center justify-between transition-colors group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileText size={18} className="text-red-500 shrink-0" />
+                      <div>
+                        <div className="font-bold text-xs text-gray-900 group-hover:text-primary">{doc.title}</div>
+                        <div className="text-[10px] text-gray-500">{doc.file_size || 'PDF Dokumentum'}</div>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-primary group-hover:underline">Letöltés</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Partner Attribution Card */}
+          {article.partner_name && (
+            <div className="border-t border-gray-100 pt-6">
+              <div className="bg-primary/5 border border-primary/15 rounded-2xl p-5 flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-primary px-2 py-0.5 rounded">
+                    Hivatalos Építőipari Partner
+                  </span>
+                  <h4 className="font-extrabold text-gray-900 text-sm mt-1">{article.partner_name}</h4>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Ez a szakmai tartalom a {article.partner_name} hivatalos közreműködésével készült.
+                  </p>
+                </div>
+                <button
+                  onClick={() => onNavigate('partners')}
+                  className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shrink-0 cursor-pointer"
+                >
+                  Partner Profilja
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Article Tags */}
