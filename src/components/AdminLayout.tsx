@@ -103,7 +103,7 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
         mobileOpen={sidebarOpen}
         onCloseMobile={() => setSidebarOpen(false)}
       />
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
         <AdminHeader
           userEmail={authInfo.userEmail}
           role={authInfo.role || 'user'}
@@ -111,7 +111,7 @@ export default function AdminLayout({ onNavigate, children }: AdminLayoutProps) 
           onNavigateView={handleNavigateView}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
-        <main className="flex-1 overflow-auto admin-scroll">{children(view, authInfo.userEmail, handleNavigateView, activeSearchQuery)}</main>
+        <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto admin-scroll">{children(view, authInfo.userEmail, handleNavigateView, activeSearchQuery)}</main>
       </div>
     </div>
   );

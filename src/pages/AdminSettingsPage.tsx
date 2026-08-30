@@ -161,7 +161,6 @@ export interface SettingsCardDef {
   title: string;
   description: string;
   icon: any;
-  isHighlighted?: boolean;
 }
 
 export const SETTINGS_CARDS: SettingsCardDef[] = [
@@ -176,21 +175,18 @@ export const SETTINGS_CARDS: SettingsCardDef[] = [
     title: 'Arculat & Színek',
     description: 'Logó, márkaszínek, betűtípusok és az oldal vizuális megjelenése.',
     icon: Palette,
-    isHighlighted: true,
   },
   {
     key: 'hero',
     title: 'Főoldali Hero Képek',
     description: 'A főoldali kiemelt képek, képváltás, időzítés és megjelenési opciók kezelése.',
     icon: ImageIcon,
-    isHighlighted: true,
   },
   {
     key: 'navigation',
     title: 'Navigáció & Menü',
     description: 'Főmenük, almenük, menüpontok, sorrend, aktív állapotok és megjelenő feliratok kezelése.',
     icon: Compass,
-    isHighlighted: true,
   },
   {
     key: 'impressum',
@@ -221,7 +217,6 @@ export const SETTINGS_CARDS: SettingsCardDef[] = [
     title: 'Reklámok & Ajánlatok',
     description: 'Hirdetési helyek, bannerek, partneri ajánlatok, kampányok és megjelenési szabályok.',
     icon: Megaphone,
-    isHighlighted: true,
   },
   {
     key: 'icons_sharing',
@@ -993,29 +988,17 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
               {filteredCards.map((card) => {
                 const IconComp = card.icon;
-                const isHighlighted = card.isHighlighted;
                 return (
                   <div
                     key={card.key}
                     onClick={() => setActiveTab(card.key)}
                     style={{
-                      backgroundColor: isHighlighted ? `${cardHighlight}0D` : cardBg,
-                      borderColor: isHighlighted ? cardHighlight : cardBorder,
+                      backgroundColor: cardBg,
+                      borderColor: cardBorder,
                       color: textColor,
                     }}
-                    className={`group relative p-6 rounded-3xl border flex flex-col justify-between h-full space-y-5 hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 cursor-pointer overflow-hidden ${
-                      isHighlighted ? 'ring-1 ring-accent/40' : ''
-                    }`}
+                    className="group relative p-6 rounded-3xl border flex flex-col justify-between h-full space-y-5 hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 cursor-pointer overflow-hidden"
                   >
-                    {isHighlighted && (
-                      <div
-                        style={{ backgroundColor: cardHighlight, color: '#000' }}
-                        className="absolute top-3.5 right-3.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm"
-                      >
-                        Gyakran használt
-                      </div>
-                    )}
-
                     <div className="space-y-3.5">
                       <div
                         style={{ backgroundColor: `${cardHighlight}20`, color: cardHighlight }}
@@ -1048,10 +1031,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
       {/* DETAIL VIEW MODE: Section Header & Back Navigation */}
       {activeTab !== 'overview' && (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="space-y-6 animate-fadeIn min-w-0">
           {/* Section Header Bar */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-5 rounded-3xl border shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-5 rounded-3xl border shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0 overflow-hidden">
+            <div className="flex items-center gap-4 min-w-0">
               <button
                 onClick={() => setActiveTab('overview')}
                 style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
@@ -1060,22 +1043,22 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 <ArrowLeft size={16} /> Vissza a Beállításokhoz
               </button>
 
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 min-w-0">
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span>Beállítások</span>
                   <ChevronRight size={12} className="text-gray-500" />
-                  <span style={{ color: cardHighlight }} className="font-extrabold">
+                  <span style={{ color: cardHighlight }} className="font-extrabold truncate">
                     {currentCardDef?.title}
                   </span>
                 </div>
-                <h1 style={{ color: textColor }} className="text-xl md:text-2xl font-black flex items-center gap-2">
+                <h1 style={{ color: textColor }} className="text-xl md:text-2xl font-black flex items-center gap-2 truncate">
                   {currentCardDef?.title}
                 </h1>
               </div>
             </div>
 
             {/* Quick Switcher Tabs Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 admin-scroll">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 admin-scroll flex-nowrap whitespace-nowrap min-w-0 max-w-full">
               {SETTINGS_CARDS.map((c) => (
                 <button
                   key={c.key}
