@@ -286,14 +286,14 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
             style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
             className="px-4 py-2.5 border font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer hover:border-accent"
           >
-            <ShieldAlert size={15} className="text-amber-400" /> + Új Munkavédelmi Tartalom
+            <ShieldAlert size={15} className="text-amber-400" /> Új Munkavédelmi Tartalom
           </button>
           <button
             onClick={() => handleOpenCreateModal('standards')}
             style={{ backgroundColor: cardHighlight, color: '#000000' }}
             className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <ShieldCheck size={15} /> + Új Szabvány / Szabály
+            <ShieldCheck size={15} /> Új Szabvány / Szabály
           </button>
         </div>
       </div>
@@ -400,22 +400,22 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                 <tr key={item.id} className="hover:bg-white/5 transition-colors">
                   <td className="py-3.5 px-4">
                     {item.hub_type === 'safety' ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 font-bold rounded-lg text-[11px]">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold rounded-lg text-[11px]">
                         <ShieldAlert size={12} /> Munkavédelem
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold rounded-lg text-[11px]">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold rounded-lg text-[11px]">
                         <ShieldCheck size={12} /> Szabvány
                       </span>
                     )}
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="space-y-0.5 max-w-md">
-                      <span className="font-bold text-gray-900 block truncate">{item.title}</span>
-                      <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                      <span style={{ color: textColor }} className="font-bold block truncate">{item.title}</span>
+                      <div className="flex items-center gap-2 text-[11px] text-gray-400">
                         <span className="font-medium">{item.topic}</span>
                         {item.standard_code && (
-                          <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">
+                          <span style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="font-mono border px-1.5 py-0.5 rounded text-amber-300">
                             {item.standard_code}
                           </span>
                         )}
@@ -424,15 +424,15 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                   </td>
                   <td className="py-3.5 px-4">
                     {item.target_audience === 'students' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded text-[10px]">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold rounded text-[10px]">
                         <GraduationCap size={11} /> Tanuló
                       </span>
                     ) : item.target_audience === 'professionals' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 font-bold rounded text-[10px]">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700/50 text-slate-200 border border-slate-600 font-bold rounded text-[10px]">
                         <HardHat size={11} /> Szakember
                       </span>
                     ) : (
-                      <span className="text-gray-500 text-[11px]">Mindenki</span>
+                      <span className="text-gray-400 text-[11px]">Mindenki</span>
                     )}
                   </td>
                   <td className="py-3.5 px-4">
@@ -538,89 +538,96 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Modul Típusa</label>
+                      <label className="font-bold text-gray-300 block mb-1">Modul Típusa</label>
                       <select
                         value={formData.hub_type}
                         onChange={(e) => setFormData({ ...formData, hub_type: e.target.value as any })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
-                        <option value="safety">Munkavédelem</option>
-                        <option value="standards">Szabályok, szabványok</option>
+                        <option value="safety" style={{ backgroundColor: cardBg, color: textColor }}>Munkavédelem</option>
+                        <option value="standards" style={{ backgroundColor: cardBg, color: textColor }}>Szabályok, szabványok</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Státusz</label>
+                      <label className="font-bold text-gray-300 block mb-1">Státusz</label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
-                        <option value="published">Publikált</option>
-                        <option value="draft">Piszkozat</option>
-                        <option value="archived">Archivált</option>
+                        <option value="published" style={{ backgroundColor: cardBg, color: textColor }}>Publikált</option>
+                        <option value="draft" style={{ backgroundColor: cardBg, color: textColor }}>Piszkozat</option>
+                        <option value="archived" style={{ backgroundColor: cardBg, color: textColor }}>Archivált</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Cím / Megnevezés *</label>
+                    <label className="font-bold text-gray-300 block mb-1">Cím / Megnevezés *</label>
                     <input
                       type="text"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="pl. Magasban végzett munka és állványozási biztonság"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-bold"
                       required
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Témakör *</label>
+                      <label className="font-bold text-gray-300 block mb-1">Témakör *</label>
                       <input
                         type="text"
                         value={formData.topic}
                         onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
                         placeholder="pl. Egyéni védőeszközök"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Szabványszám / Jogszabály hivatkozás</label>
+                      <label className="font-bold text-gray-300 block mb-1">Szabványszám / Jogszabály hivatkozás</label>
                       <input
                         type="text"
                         value={formData.standard_code || ''}
                         onChange={(e) => setFormData({ ...formData, standard_code: e.target.value })}
                         placeholder="pl. MSZ EN 361:2002"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-mono"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Célközönség</label>
+                      <label className="font-bold text-gray-300 block mb-1">Célközönség</label>
                       <select
                         value={formData.target_audience}
                         onChange={(e) => setFormData({ ...formData, target_audience: e.target.value as any })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
-                        <option value="all">Mindenki (Tanuló &amp; Szakember)</option>
-                        <option value="students">Kifejezetten tanulók részére</option>
-                        <option value="professionals">Tapasztalt szakembereknek</option>
+                        <option value="all" style={{ backgroundColor: cardBg, color: textColor }}>Mindenki (Tanuló &amp; Szakember)</option>
+                        <option value="students" style={{ backgroundColor: cardBg, color: textColor }}>Kifejezetten tanulók részére</option>
+                        <option value="professionals" style={{ backgroundColor: cardBg, color: textColor }}>Tapasztalt szakembereknek</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Szerző / Forrás</label>
+                      <label className="font-bold text-gray-300 block mb-1">Szerző / Forrás</label>
                       <input
                         type="text"
                         value={formData.author}
                         onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                       />
                     </div>
                   </div>
@@ -631,43 +638,46 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
               {activeTab === 'content' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Rövid Összefoglaló *</label>
+                    <label className="font-bold text-gray-300 block mb-1">Rövid Összefoglaló *</label>
                     <textarea
                       rows={3}
                       value={formData.summary}
                       onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                       placeholder="Néhány mondatos áttekintés a kártyás nézethez..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Részletes Oktatási Tartalom (Markdown / HTML)</label>
+                    <label className="font-bold text-gray-300 block mb-1">Részletes Oktatási Tartalom (Markdown / HTML)</label>
                     <textarea
                       rows={8}
                       value={formData.content}
                       onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                       placeholder="Teljes leírás, alcímekkel és részletes magyarázattal..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-red-700 block mb-1 flex items-center gap-1">
+                    <label className="font-bold text-amber-400 block mb-1 flex items-center gap-1">
                       <ShieldAlert size={14} /> Fontos Munkavédelmi Figyelmeztetés (Kiemelt kártya)
                     </label>
                     <textarea
                       rows={2}
                       value={formData.important_notes || ''}
                       onChange={(e) => setFormData({ ...formData, important_notes: e.target.value })}
-                      placeholder="Piros kiemelt figyelmeztetés..."
-                      className="w-full bg-red-50/50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-900 font-medium"
+                      placeholder="Kiemelt figyelmeztetés..."
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-blue-700 block mb-1 flex items-center gap-1">
+                    <label className="font-bold text-blue-400 block mb-1 flex items-center gap-1">
                       <BookOpen size={14} /> Gyakorlati Példa / Esettanulmány (Kék kártya)
                     </label>
                     <textarea
@@ -675,7 +685,8 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       value={formData.practical_examples || ''}
                       onChange={(e) => setFormData({ ...formData, practical_examples: e.target.value })}
                       placeholder="Gyakorlati szemléltető példa vagy esettanulmány..."
-                      className="w-full bg-blue-50/50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-blue-900 font-medium"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
                 </div>
@@ -686,46 +697,48 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Kiemelt Kép URL</label>
+                      <label className="font-bold text-gray-300 block mb-1">Kiemelt Kép URL</label>
                       <input
                         type="text"
                         value={formData.image_url || ''}
                         onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                         placeholder="https://..."
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Beágyazott Videó URL</label>
+                      <label className="font-bold text-gray-300 block mb-1">Beágyazott Videó URL</label>
                       <input
                         type="text"
                         value={formData.video_url || ''}
                         onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
                         placeholder="https://www.youtube.com/..."
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs"
                       />
                     </div>
                   </div>
 
                   {/* Attached Documents Section */}
-                  <div className="border-t border-gray-200 pt-4 space-y-3">
-                    <h4 className="font-extrabold text-gray-900 flex items-center gap-1.5">
-                      <FileText size={15} className="text-accent" /> Csatolt PDF Dokumentumok Kezelése
+                  <div className="border-t border-white/10 pt-4 space-y-3">
+                    <h4 className="font-extrabold text-white flex items-center gap-1.5">
+                      <FileText size={15} style={{ color: cardHighlight }} /> Csatolt PDF Dokumentumok Kezelése
                     </h4>
 
                     {formData.documents && formData.documents.length > 0 && (
                       <div className="space-y-2">
                         {formData.documents.map((d) => (
-                          <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+                          <div key={d.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-xl p-3 flex items-center justify-between">
                             <div>
-                              <span className="font-bold text-gray-900 block">{d.name}</span>
-                              <span className="text-[11px] font-mono text-gray-500">{d.file_url}</span>
+                              <span className="font-bold text-white block">{d.name}</span>
+                              <span className="text-[11px] font-mono text-gray-400">{d.file_url}</span>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveDocument(d.id)}
-                              className="text-red-600 hover:text-red-800 p-1"
+                              className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -734,30 +747,33 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       </div>
                     )}
 
-                    <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-200 space-y-2">
-                      <span className="font-bold text-gray-700 block text-[11px]">Új Dokumentum Csatolása</span>
+                    <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3.5 rounded-2xl border space-y-2">
+                      <span className="font-bold text-gray-300 block text-[11px]">Új Dokumentum Csatolása</span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input
                           type="text"
                           placeholder="Dokumentum neve (pl. Állványozási_Csekklista.pdf)"
                           value={docNameInput}
                           onChange={(e) => setDocNameInput(e.target.value)}
-                          className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                          style={fieldStyle}
+                          className="border rounded-xl px-3 py-1.5 text-xs"
                         />
                         <input
                           type="text"
                           placeholder="Fájl URL (pl. /docs/allvanyozas.pdf)"
                           value={docUrlInput}
                           onChange={(e) => setDocUrlInput(e.target.value)}
-                          className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-mono"
+                          style={fieldStyle}
+                          className="border rounded-xl px-3 py-1.5 text-xs font-mono"
                         />
                       </div>
                       <button
                         type="button"
                         onClick={handleAddDocument}
-                        className="px-3 py-1.5 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary-800 cursor-pointer"
+                        style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                        className="px-3.5 py-1.5 font-extrabold text-xs rounded-xl hover:opacity-90 cursor-pointer shadow-sm"
                       >
-                        + Csatolás
+                        Csatolás
                       </button>
                     </div>
                   </div>
@@ -768,35 +784,37 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
               {activeTab === 'seo' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">SEO Cím (Title)</label>
+                    <label className="font-bold text-gray-300 block mb-1">SEO Cím (Title)</label>
                     <input
                       type="text"
                       value={formData.seo_title || ''}
                       onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
                       placeholder="pl. Munkavédelem és Egyéni Védőeszközök | ÉpítőTudás"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">SEO Leírás (Meta Description)</label>
+                    <label className="font-bold text-gray-300 block mb-1">SEO Leírás (Meta Description)</label>
                     <textarea
                       rows={3}
                       value={formData.seo_description || ''}
                       onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
                       placeholder="Google keresőben megjelenő leírás..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
 
                   {/* Keywords */}
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Kulcsszavak</label>
+                    <label className="font-bold text-gray-300 block mb-1">Kulcsszavak</label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {formData.keywords?.map((kw) => (
-                        <span key={kw} className="bg-primary/10 text-primary-950 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                        <span key={kw} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="px-2.5 py-1 border font-bold text-accent rounded-lg text-[11px] flex items-center gap-1.5">
                           #{kw}
-                          <button type="button" onClick={() => handleRemoveKeyword(kw)} className="hover:text-red-600">
+                          <button type="button" onClick={() => handleRemoveKeyword(kw)} className="hover:text-red-400">
                             <X size={12} />
                           </button>
                         </span>
@@ -814,12 +832,14 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                             handleAddKeyword();
                           }
                         }}
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1"
+                        style={fieldStyle}
+                        className="border rounded-xl px-3 py-1.5 text-xs flex-1 font-medium"
                       />
                       <button
                         type="button"
                         onClick={handleAddKeyword}
-                        className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl"
+                        style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                        className="px-3.5 py-1.5 border font-bold text-xs rounded-xl cursor-pointer hover:border-accent"
                       >
                         Hozzáadás
                       </button>
@@ -829,17 +849,19 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
               )}
 
               {/* Submit Buttons */}
-              <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl cursor-pointer"
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md cursor-pointer"
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90"
                 >
                   Mentés &amp; Publikálás
                 </button>
@@ -851,30 +873,31 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
 
       {/* ── LIVE PREVIEW MODAL ── */}
       {previewItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <span className="font-extrabold text-xs text-primary flex items-center gap-1.5">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="rounded-3xl border max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <span className="font-extrabold text-xs flex items-center gap-1.5" style={{ color: cardHighlight }}>
                 <Eye size={15} /> Élő Előnézet (Admin Preview)
               </span>
               <button
                 onClick={() => setPreviewItem(null)}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded-full"
+                className="p-1 text-gray-400 hover:text-white rounded-full"
               >
                 <X size={18} />
               </button>
             </div>
             <div className="space-y-3 text-xs">
-              <h2 className="text-xl font-bold text-gray-900">{previewItem.title}</h2>
-              <p className="text-gray-600 leading-relaxed font-medium bg-amber-50 p-3 rounded-xl border border-amber-200">
+              <h2 style={{ color: textColor }} className="text-xl font-bold">{previewItem.title}</h2>
+              <p style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }} className="leading-relaxed font-medium p-3 rounded-xl border shadow-xs">
                 {previewItem.summary}
               </p>
-              <div className="prose text-xs whitespace-pre-line text-gray-800">{previewItem.content}</div>
+              <div style={{ color: textColor }} className="prose prose-invert text-xs whitespace-pre-line">{previewItem.content}</div>
             </div>
-            <div className="pt-4 border-t border-gray-200 flex justify-end">
+            <div className="pt-4 border-t border-white/10 flex justify-end">
               <button
                 onClick={() => setPreviewItem(null)}
-                className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl"
+                style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                className="px-4 py-2 font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
               >
                 Bezárás
               </button>
