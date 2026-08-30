@@ -16,24 +16,21 @@ import {
   Sparkles,
   Calendar,
   BookOpen,
-  Tag,
-  Download,
   Eye,
 } from 'lucide-react';
 import {
   getArticlesLocal,
   saveArticlesLocal,
-  type Article,
 } from '../services/articleService';
 import { listCategories } from '../services/categoryService';
-import type { Partner, Category } from '../lib/supabase';
+import type { Partner, Category, Article } from '../lib/supabase';
 
 interface PartnerArticlesPageProps {
   currentPartner: Partner;
   onNavigate?: (page: string, params?: { articleSlug?: string }) => void;
 }
 
-export default function PartnerArticlesPage({ currentPartner, onNavigate }: PartnerArticlesPageProps) {
+export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNavigate }: PartnerArticlesPageProps) {
   const [allItems, setAllItems] = useState<Article[]>(() => getArticlesLocal());
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,7 +88,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate }: Part
       !q ||
       item.title.toLowerCase().includes(q) ||
       (item.excerpt && item.excerpt.toLowerCase().includes(q)) ||
-      (item.tags && item.tags.some((t) => t.toLowerCase().includes(q)));
+      (item.tags && item.tags.some((t: string) => t.toLowerCase().includes(q)));
 
     return matchStatus && matchType && matchQuery;
   });
@@ -232,7 +229,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate }: Part
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
-      tags: formData.tags?.filter((t) => t !== tagToRemove),
+      tags: formData.tags?.filter((t: string) => t !== tagToRemove),
     });
   };
 
@@ -256,7 +253,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate }: Part
   const handleRemoveDocument = (docId: string) => {
     setFormData({
       ...formData,
-      documents: formData.documents?.filter((d) => d.id !== docId),
+      documents: formData.documents?.filter((d: { id: string }) => d.id !== docId),
     });
   };
 
@@ -397,7 +394,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate }: Part
                   <td className="py-3 px-4">
                     {item.tags && item.tags.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {item.tags.slice(0, 3).map((t) => (
+                        {item.tags.slice(0, 3).map((t: string) => (
                           <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-md">
                             #{t}
                           </span>
@@ -631,7 +628,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate }: Part
                   <div className="space-y-2">
                     <label className="font-bold text-gray-700 block">Címkék (Tags)</label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      {formData.tags?.map((t) => (
+                      {formData.tags?.map((t: string) => (
                         <span key={t} className="bg-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                           #{t}
                           <button type="button" onClick={() => handleRemoveTag(t)} className="hover:text-red-600 cursor-pointer">
@@ -671,7 +668,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate }: Part
                     </h5>
                     {formData.documents && formData.documents.length > 0 && (
                       <div className="space-y-1.5">
-                        {formData.documents.map((d) => (
+                        {formData.documents.map((d: { id: string; title: string }) => (
                           <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-xl p-2.5 flex items-center justify-between">
                             <span className="font-bold text-gray-900">{d.title}</span>
                             <button type="button" onClick={() => handleRemoveDocument(d.id)} className="text-red-600 p-1 cursor-pointer">
