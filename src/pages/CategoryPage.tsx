@@ -588,7 +588,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                   <button
                     onClick={() => {
                       setSearchQuery('');
-                      updateUrlParams(selectedCategories, '');
+                      updateUrlParams(selectedArticleType, selectedCategories, '');
                     }}
                     className="hover:bg-amber-200 rounded-full p-0.5"
                   >
@@ -845,7 +845,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               <button
                 onClick={() => {
                   setSelectedCategories([]);
-                  updateUrlParams([], searchQuery);
+                  updateUrlParams(selectedArticleType, [], searchQuery);
                 }}
                 className={`w-full p-3 rounded-2xl border text-left font-bold text-xs transition-all flex items-center justify-between ${
                   selectedCategories.length === 0
@@ -900,7 +900,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               <button
                 onClick={() => {
                   setSelectedCategories([]);
-                  updateUrlParams([], searchQuery);
+                  updateUrlParams(selectedArticleType, [], searchQuery);
                 }}
                 className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-gray-900 underline decoration-dotted"
               >
