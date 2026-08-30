@@ -367,7 +367,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
             style={{ backgroundColor: cardHighlight, color: '#000000' }}
             className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <Plus size={15} /> + Új Építőanyag Felvitele
+            <Plus size={15} /> Új Építőanyag Felvitele
           </button>
         </div>
       </div>
@@ -485,12 +485,12 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                       <img
                         src={item.main_image_url}
                         alt={item.name}
-                        className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0"
+                        className="w-10 h-10 rounded-xl object-cover border border-white/10 shrink-0"
                       />
                       <div className="space-y-0.5 truncate">
-                        <span className="font-bold text-gray-900 block truncate">{item.name}</span>
-                        <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                          <span className="font-extrabold text-amber-700 flex items-center gap-0.5">
+                        <span style={{ color: textColor }} className="font-bold block truncate">{item.name}</span>
+                        <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                          <span className="font-extrabold text-amber-400 flex items-center gap-0.5">
                             <Award size={11} /> {item.brand}
                           </span>
                           {item.sku && <span className="font-mono text-gray-400">SKU: {item.sku}</span>}
@@ -499,13 +499,13 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2.5 py-1 bg-gray-100 text-gray-800 font-bold rounded-md text-[11px]">
+                    <span style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }} className="px-2.5 py-1 border font-bold rounded-md text-[11px] inline-block shadow-sm">
                       {item.category_name}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
-                    <span className="inline-flex items-center gap-1 font-bold text-gray-800 text-[11px]">
-                      <Building2 size={12} className="text-accent" /> {item.partner_name}
+                    <span style={{ color: textColor }} className="inline-flex items-center gap-1 font-bold text-[11px]">
+                      <Building2 size={12} style={{ color: cardHighlight }} /> {item.partner_name}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
@@ -666,17 +666,18 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Forgalmazó Partner</label>
+                      <label className="font-bold text-gray-300 block mb-1">Forgalmazó Partner</label>
                       <select
                         value={formData.partner_id}
                         onChange={(e) => {
                           const p = partners.find((part) => part.id === e.target.value);
                           setFormData({ ...formData, partner_id: e.target.value, partner_name: p?.name || '' });
                         }}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
                         {partners.map((p) => (
-                          <option key={p.id} value={p.id}>
+                          <option key={p.id} value={p.id} style={{ backgroundColor: cardBg, color: textColor }}>
                             {p.name}
                           </option>
                         ))}
@@ -686,17 +687,18 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Kategória *</label>
+                      <label className="font-bold text-gray-300 block mb-1">Kategória *</label>
                       <select
                         value={formData.category_id}
                         onChange={(e) => {
                           const cat = categories.find((c) => c.id === e.target.value);
                           setFormData({ ...formData, category_id: e.target.value, category_name: cat?.name || '' });
                         }}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
                         {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
+                          <option key={c.id} value={c.id} style={{ backgroundColor: cardBg, color: textColor }}>
                             {c.name}
                           </option>
                         ))}
@@ -704,46 +706,49 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Alkategória</label>
+                      <label className="font-bold text-gray-300 block mb-1">Alkategória</label>
                       <input
                         type="text"
                         value={formData.subcategory_name || ''}
                         onChange={(e) => setFormData({ ...formData, subcategory_name: e.target.value })}
                         placeholder="pl. Kerámia Falazóelemek"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Cikkszám / SKU</label>
+                      <label className="font-bold text-gray-300 block mb-1">Cikkszám / SKU</label>
                       <input
                         type="text"
                         value={formData.sku || ''}
                         onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                         placeholder="LEIER-PL30-001"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Státusz</label>
+                      <label className="font-bold text-gray-300 block mb-1">Státusz</label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
-                        <option value="published">Publikált</option>
-                        <option value="pending_approval">Jóváhagyásra vár</option>
-                        <option value="draft">Piszkozat</option>
-                        <option value="rejected">Elutasítva</option>
-                        <option value="archived">Archivált</option>
+                        <option value="published" style={{ backgroundColor: cardBg, color: textColor }}>Publikált</option>
+                        <option value="pending_approval" style={{ backgroundColor: cardBg, color: textColor }}>Jóváhagyásra vár</option>
+                        <option value="draft" style={{ backgroundColor: cardBg, color: textColor }}>Piszkozat</option>
+                        <option value="rejected" style={{ backgroundColor: cardBg, color: textColor }}>Elutasított</option>
+                        <option value="archived" style={{ backgroundColor: cardBg, color: textColor }}>Archivált</option>
                       </select>
                     </div>
 
                     <div className="flex items-center pt-5">
-                      <label className="flex items-center gap-2 font-bold text-gray-700 cursor-pointer">
+                      <label className="flex items-center gap-2 font-bold text-gray-300 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData.featured || false}
@@ -761,36 +766,39 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               {activeTab === 'content' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Rövid Leírás *</label>
+                    <label className="font-bold text-gray-300 block mb-1">Rövid Leírás *</label>
                     <textarea
                       rows={3}
                       value={formData.short_description}
                       onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
                       placeholder="Néhány mondatos összefoglaló a kártyás megjelenítéshez..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Részletes Termékleírás (Markdown / HTML)</label>
+                    <label className="font-bold text-gray-300 block mb-1">Részletes Termékleírás (Markdown / HTML)</label>
                     <textarea
                       rows={8}
                       value={formData.full_description}
                       onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
                       placeholder="A termék teljes bemutatása, előnyei, kivitelezési tanácsok..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Alkalmazási Terület</label>
+                    <label className="font-bold text-gray-300 block mb-1">Alkalmazási Terület</label>
                     <textarea
                       rows={2}
                       value={formData.application_area || ''}
                       onChange={(e) => setFormData({ ...formData, application_area: e.target.value })}
                       placeholder="pl. Külső teherhordó falak és pillérek építésére..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
                 </div>
@@ -799,22 +807,22 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               {/* TAB 3: TECHNICAL SPECS */}
               {activeTab === 'specs' && (
                 <div className="space-y-4">
-                  <h4 className="font-extrabold text-gray-900 flex items-center gap-1.5">
-                    <Wrench size={15} className="text-accent" /> Műszaki Paraméterek Megadása
+                  <h4 className="font-extrabold text-white flex items-center gap-1.5">
+                    <Wrench size={15} style={{ color: cardHighlight }} /> Műszaki Paraméterek Megadása
                   </h4>
 
                   {formData.technical_specs && formData.technical_specs.length > 0 && (
                     <div className="space-y-2">
                       {formData.technical_specs.map((spec, idx) => (
-                        <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+                        <div key={idx} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-xl p-3 flex items-center justify-between shadow-xs">
                           <div>
-                            <span className="font-bold text-gray-700">{spec.label}:</span>{' '}
-                            <span className="font-extrabold text-gray-900">{spec.value} {spec.unit || ''}</span>
+                            <span className="font-bold text-gray-300">{spec.label}:</span>{' '}
+                            <span className="font-extrabold text-white">{spec.value} {spec.unit || ''}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveSpec(idx)}
-                            className="text-red-600 hover:text-red-800 p-1 cursor-pointer"
+                            className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -823,35 +831,39 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                     </div>
                   )}
 
-                  <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-200 space-y-2">
-                    <span className="font-bold text-gray-700 block text-[11px]">Új Műszaki Paraméter Hozzáadása</span>
+                  <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3.5 rounded-2xl border space-y-2">
+                    <span className="font-bold text-gray-300 block text-[11px]">Új Műszaki Paraméter Hozzáadása</span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input
                         type="text"
                         placeholder="Megnevezés (pl. Hővezetési tényező λ)"
                         value={specLabelInput}
                         onChange={(e) => setSpecLabelInput(e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                        style={fieldStyle}
+                        className="border rounded-xl px-3 py-1.5 text-xs"
                       />
                       <input
                         type="text"
                         placeholder="Érték (pl. 0.031)"
                         value={specValueInput}
                         onChange={(e) => setSpecValueInput(e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold"
+                        style={fieldStyle}
+                        className="border rounded-xl px-3 py-1.5 text-xs font-bold"
                       />
                       <input
                         type="text"
                         placeholder="Mértékegység (pl. W/mK)"
                         value={specUnitInput}
                         onChange={(e) => setSpecUnitInput(e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                        style={fieldStyle}
+                        className="border rounded-xl px-3 py-1.5 text-xs"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleAddSpec}
-                      className="px-3 py-1.5 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary-800 cursor-pointer"
+                      style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                      className="px-3.5 py-1.5 font-extrabold text-xs rounded-xl hover:opacity-90 cursor-pointer shadow-sm"
                     >
                       + Specifikáció Hozzáadása
                     </button>
@@ -863,35 +875,36 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               {activeTab === 'media' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Fő Kép URL *</label>
+                    <label className="font-bold text-gray-300 block mb-1">Fő Kép URL *</label>
                     <input
                       type="text"
                       value={formData.main_image_url}
                       onChange={(e) => setFormData({ ...formData, main_image_url: e.target.value })}
                       placeholder="https://..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs"
                       required
                     />
                   </div>
 
                   {/* Attached Documents Section */}
-                  <div className="border-t border-gray-200 pt-4 space-y-3">
-                    <h4 className="font-extrabold text-gray-900 flex items-center gap-1.5">
-                      <FileText size={15} className="text-accent" /> Csatolt PDF Dokumentumok
+                  <div className="border-t border-white/10 pt-4 space-y-3">
+                    <h4 className="font-extrabold text-white flex items-center gap-1.5">
+                      <FileText size={15} style={{ color: cardHighlight }} /> Csatolt PDF Dokumentumok
                     </h4>
 
                     {formData.documents && formData.documents.length > 0 && (
                       <div className="space-y-2">
                         {formData.documents.map((d) => (
-                          <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+                          <div key={d.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-xl p-3 flex items-center justify-between">
                             <div>
-                              <span className="font-bold text-gray-900 block">{d.title}</span>
-                              <span className="text-[11px] font-mono text-gray-500">{d.file_url}</span>
+                              <span className="font-bold text-white block">{d.title}</span>
+                              <span className="text-[11px] font-mono text-gray-400">{d.file_url}</span>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveDocument(d.id)}
-                              className="text-red-600 hover:text-red-800 p-1 cursor-pointer"
+                              className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -900,40 +913,44 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                       </div>
                     )}
 
-                    <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-200 space-y-2">
-                      <span className="font-bold text-gray-700 block text-[11px]">Új PDF Dokumentum Csatolása</span>
+                    <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3.5 rounded-2xl border space-y-2">
+                      <span className="font-bold text-gray-300 block text-[11px]">Új PDF Dokumentum Csatolása</span>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <input
                           type="text"
                           placeholder="Dokumentum címe (pl. Műszaki_Adatlap.pdf)"
                           value={docTitleInput}
                           onChange={(e) => setDocTitleInput(e.target.value)}
-                          className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                          style={fieldStyle}
+                          className="border rounded-xl px-3 py-1.5 text-xs"
                         />
                         <input
                           type="text"
                           placeholder="Fájl URL (pl. /docs/leierplan.pdf)"
                           value={docUrlInput}
                           onChange={(e) => setDocUrlInput(e.target.value)}
-                          className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-mono"
+                          style={fieldStyle}
+                          className="border rounded-xl px-3 py-1.5 text-xs font-mono"
                         />
                         <select
                           value={docTypeInput}
                           onChange={(e) => setDocTypeInput(e.target.value as any)}
-                          className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-medium"
+                          style={fieldStyle}
+                          className="border rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer"
                         >
-                          <option value="muszaki_adatlap">Műszaki Adatlap</option>
-                          <option value="teljesitmenynyilatkozat">Teljesítménynyilatkozat</option>
-                          <option value="biztonsagi_adatlap">Biztonsági Adatlap</option>
-                          <option value="utmutato">Alkalmazástechnikai Útmutató</option>
+                          <option value="muszaki_adatlap" style={{ backgroundColor: cardBg, color: textColor }}>Műszaki Adatlap</option>
+                          <option value="teljesitmenynyilatkozat" style={{ backgroundColor: cardBg, color: textColor }}>Teljesítménynyilatkozat</option>
+                          <option value="biztonsagi_adatlap" style={{ backgroundColor: cardBg, color: textColor }}>Biztonsági Adatlap</option>
+                          <option value="utmutato" style={{ backgroundColor: cardBg, color: textColor }}>Alkalmazástechnikai Útmutató</option>
                         </select>
                       </div>
                       <button
                         type="button"
                         onClick={handleAddDocument}
-                        className="px-3 py-1.5 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary-800 cursor-pointer"
+                        style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                        className="px-3.5 py-1.5 font-extrabold text-xs rounded-xl hover:opacity-90 cursor-pointer shadow-sm"
                       >
-                        + Dokumentum Csatolása
+                        Dokumentum Csatolása
                       </button>
                     </div>
                   </div>
@@ -944,34 +961,35 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               {activeTab === 'seo' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">SEO Title</label>
+                    <label className="font-bold text-gray-300 block mb-1">SEO Title</label>
                     <input
                       type="text"
                       value={formData.seo_title || ''}
                       onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
-                      placeholder="LeierPLAN 30 Csiszolt Kerámia Falazóelem | ÉpítőTudás"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                      placeholder="Keresőoptimalizált cím..."
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">SEO Meta Description</label>
+                    <label className="font-bold text-gray-300 block mb-1">SEO Meta Description</label>
                     <textarea
                       rows={3}
                       value={formData.seo_description || ''}
                       onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
-                      placeholder="Google keresési leírás..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                      placeholder="Google keresési találatokban megjelenő leírás..."
+                      style={fieldStyle}
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
 
-                  {/* Keywords */}
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Kulcsszavak</label>
+                    <label className="font-bold text-gray-300 block mb-1">Kulcsszavak</label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {formData.keywords?.map((kw) => (
-                        <span key={kw} className="bg-primary/10 text-primary-950 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                          #{kw}
+                        <span key={kw} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="px-2.5 py-1 border font-bold text-accent rounded-lg text-[11px] flex items-center gap-1.5">
+                          {kw}
                           <button
                             type="button"
                             onClick={() =>
@@ -980,7 +998,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                                 keywords: formData.keywords?.filter((k) => k !== kw),
                               })
                             }
-                            className="hover:text-red-600"
+                            className="hover:text-red-400"
                           >
                             <X size={12} />
                           </button>
@@ -1005,7 +1023,8 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                             }
                           }
                         }}
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1"
+                        style={fieldStyle}
+                        className="border rounded-xl px-3 py-1.5 text-xs flex-1 font-medium"
                       />
                       <button
                         type="button"
@@ -1018,7 +1037,8 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                             setKeywordInput('');
                           }
                         }}
-                        className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl cursor-pointer"
+                        style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                        className="px-3 py-1.5 border font-bold text-xs rounded-xl cursor-pointer hover:border-accent"
                       >
                         Hozzáadás
                       </button>
