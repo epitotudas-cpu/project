@@ -1181,8 +1181,75 @@ export interface JobApplication {
   created_at: string;
 }
 
+export interface Advertiser {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  contactRole?: string;
+  category: 'gyarto' | 'kereskedo' | 'ceg' | 'iskola' | 'szolgaltato';
+  websiteUrl?: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
+export interface AdPlacement {
+  id: string;
+  placementKey: 'top_banner' | 'home_in_feed' | 'article_top' | 'article_in_feed' | 'sidebar' | 'category_banner' | 'mobile_sticky';
+  name: string;
+  description: string;
+  desktopDimensions: string;
+  mobileDimensions: string;
+  maxFileSizeKb: number;
+  allowedFormats: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
+export interface AdPayment {
+  id: string;
+  paymentNumber: string;
+  campaignId: string;
+  campaignTitle: string;
+  advertiserName: string;
+  contractId?: string;
+  amountHuf: number;
+  currency: 'HUF';
+  dueDate: string;
+  paidDate?: string | null;
+  status: 'unpaid' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled';
+  paymentMethod?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
+export interface AdNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'expiring_campaign' | 'expiring_contract' | 'overdue_payment' | 'pending_creative';
+  severity: 'info' | 'warning' | 'error' | 'success';
+  targetModule: 'campaigns' | 'contracts' | 'payments' | 'creatives';
+  targetId?: string;
+  isRead: boolean;
+  createdAt: string;
+}
 
-
+export interface AdMetric {
+  id: string;
+  campaignId: string;
+  campaignTitle: string;
+  advertiserName: string;
+  placementKey: string;
+  creativeId?: string;
+  date: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+}

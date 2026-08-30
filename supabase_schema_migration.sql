@@ -68,10 +68,78 @@ CREATE TABLE IF NOT EXISTS public.ad_creatives (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Enable Row Level Security (RLS) policies for public access
+-- 4. Create 'advertisers' table
+CREATE TABLE IF NOT EXISTS public.advertisers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    logo_url TEXT,
+    contact_name TEXT NOT NULL,
+    contact_email TEXT NOT NULL,
+    contact_phone TEXT,
+    contact_role TEXT,
+    category TEXT DEFAULT 'ceg',
+    website_url TEXT,
+    notes TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. Create 'ad_placements' table
+CREATE TABLE IF NOT EXISTS public.ad_placements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    placement_key TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT,
+    desktop_dimensions TEXT,
+    mobile_dimensions TEXT,
+    max_file_size_kb INT DEFAULT 5000,
+    allowed_formats TEXT[] DEFAULT ARRAY['PNG','WebP','SVG','GIF'],
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Create 'ad_payments' table
+CREATE TABLE IF NOT EXISTS public.ad_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    payment_number TEXT NOT NULL UNIQUE,
+    campaign_id UUID REFERENCES public.ad_campaigns(id) ON DELETE CASCADE,
+    campaign_title TEXT NOT NULL,
+    advertiser_name TEXT NOT NULL,
+    contract_id TEXT,
+    amount_huf NUMERIC DEFAULT 0,
+    currency TEXT DEFAULT 'HUF',
+    due_date TIMESTAMPTZ DEFAULT NOW(),
+    paid_date TIMESTAMPTZ,
+    status TEXT DEFAULT 'unpaid',
+    payment_method TEXT,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Create 'ad_notifications' table
+CREATE TABLE IF NOT EXISTS public.ad_notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    type TEXT NOT NULL,
+    severity TEXT DEFAULT 'info',
+    target_module TEXT NOT NULL,
+    target_id TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. Enable Row Level Security (RLS) policies
 ALTER TABLE public.partners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ad_campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ad_creatives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.advertisers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_placements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_notifications ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public read partners" ON public.partners FOR SELECT USING (true);
 CREATE POLICY "Allow public insert/update partners" ON public.partners FOR ALL USING (true);
@@ -81,3 +149,15 @@ CREATE POLICY "Allow public insert/update ad_campaigns" ON public.ad_campaigns F
 
 CREATE POLICY "Allow public read ad_creatives" ON public.ad_creatives FOR SELECT USING (true);
 CREATE POLICY "Allow public insert/update ad_creatives" ON public.ad_creatives FOR ALL USING (true);
+
+CREATE POLICY "Allow public read advertisers" ON public.advertisers FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update advertisers" ON public.advertisers FOR ALL USING (true);
+
+CREATE POLICY "Allow public read ad_placements" ON public.ad_placements FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update ad_placements" ON public.ad_placements FOR ALL USING (true);
+
+CREATE POLICY "Allow public read ad_payments" ON public.ad_payments FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update ad_payments" ON public.ad_payments FOR ALL USING (true);
+
+CREATE POLICY "Allow public read ad_notifications" ON public.ad_notifications FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update ad_notifications" ON public.ad_notifications FOR ALL USING (true);

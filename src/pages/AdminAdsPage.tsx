@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   Megaphone,
   Plus,
-  Eye,
-  MousePointer,
   DollarSign,
   CheckCircle2,
   Building2,
@@ -11,333 +9,181 @@ import {
   FileText,
   BellRing,
   BarChart3,
-  TrendingUp,
   Download,
   Phone,
   Mail,
   UserCheck,
-  Tag,
   ChevronRight,
-  Printer,
-  History,
+  ChevronDown,
   Check,
-  ShieldCheck,
-  FileCheck,
-  XCircle,
   Sparkles,
+  ArrowLeft,
+  Search,
+  X,
+  RotateCcw,
+  Save,
+  Trash2,
+  Layers,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   listAdCampaigns,
   createAdCampaign,
-  updateCampaignStatusV2,
-  updatePaymentStatus,
   AD_PACKAGES,
 } from '../services/advertisementService';
 import {
   getContracts,
-  saveContracts,
-  acceptContractByPartner,
-  updateContractStatus,
-  addContractVersion,
-  DEFAULT_CONTRACT_TEMPLATES,
-  interpolateTemplate,
 } from '../services/contractService';
+import {
+  getAdvertisers,
+  saveAdvertisers,
+  getPlacements,
+  savePlacements,
+  getPayments,
+  savePayments,
+  getNotifications,
+  calculateAdKpiStats,
+} from '../services/adService';
 import { BannerCreativeEditor } from '../components/BannerCreativeEditor';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import type {
   ExtendedAdCampaign,
-  CampaignStatusV2,
-  PaymentStatus,
-  ContractType,
   PackageTier,
   AdvertisementContract,
-  ContractStatus,
+  Advertiser,
+  AdPlacement,
+  AdPayment,
+  AdNotification,
 } from '../lib/supabase';
 
 interface AdminAdsPageProps {
   onNavigate?: (page: string) => void;
 }
 
-const STATUS_V2_CONFIG: Record<
-  CampaignStatusV2,
-  { label: string; bg: string; text: string; border: string; icon: string }
-> = {
-  draft: { label: 'Ajánlat készül', bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: '🟡' },
-  contracting: { label: 'Szerződés alatt', bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30', icon: '🟠' },
-  pending_payment: { label: 'Fizetésre vár', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30', icon: '🔵' },
-  active: { label: 'Aktív', bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', icon: '🟢' },
-  renewing: { label: 'Hosszabbítás alatt', bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30', icon: '🟣' },
-  expired: { label: 'Lejárt', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30', icon: '⚫' },
-  cancelled: { label: 'Megszűnt', bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30', icon: '🔴' },
-};
+export type AdCategoryKey =
+  | 'overview'
+  | 'campaigns'
+  | 'advertisers'
+  | 'creatives'
+  | 'placements'
+  | 'packages'
+  | 'contracts'
+  | 'payments'
+  | 'reports'
+  | 'notifications';
 
-const CONTRACT_STATUS_CONFIG: Record<
-  ContractStatus,
-  { label: string; bg: string; text: string; border: string; icon: string }
-> = {
-  draft: { label: 'Piszkozat', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30', icon: '⚪' },
-  sent: { label: 'Kiküldve Partnernek', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30', icon: '🔵' },
-  viewed: { label: 'Partner Megtekintette', bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30', icon: '🟣' },
-  pending_acceptance: { label: 'Elfogadásra Vár', bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: '🟡' },
-  accepted: { label: '🟢 Elfogadva & Érvényes', bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', icon: '🟢' },
-  declined: { label: '🔴 Módosítást Kér / Elutasítva', bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30', icon: '🔴' },
-  expired: { label: '⚫ Lejárt Szerződés', bg: 'bg-gray-700/20', text: 'text-gray-400', border: 'border-gray-700', icon: '⚫' },
-};
-
-const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; color: string }> = {
-  paid: { label: 'Kiegyenlítve', color: 'text-green-400 bg-green-500/10 border-green-500/30' },
-  partially_paid: { label: 'Részben fizetve', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' },
-  unpaid: { label: 'Fizetésre vár', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
-  overdue: { label: 'Fizetési hiba / Lejárt', color: 'text-red-400 bg-red-500/10 border-red-500/30' },
-};
-
-function getPlacementLocation(slot: string): { label: string; page: string } {
-  if (slot === 'top_banner') {
-    return { label: '📍 Főoldal (Felső Kiemelt Banner)', page: 'home' };
-  }
-  if (slot === 'in_feed') {
-    return { label: '📍 Eszközök Modul (Affiliate Ajánlatok)', page: 'tool' };
-  }
-  return { label: '📍 Kategóriák & Cikkek (Oldalsáv)', page: 'category' };
+export interface AdModuleCardDef {
+  key: AdCategoryKey;
+  title: string;
+  description: string;
+  icon: any;
 }
 
-export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
+export const AD_MODULE_CARDS: AdModuleCardDef[] = [
+  {
+    key: 'campaigns',
+    title: 'Kampányok',
+    description: 'Kampányok létrehozása, listázása, keretösszeg, időszak és hirdetői kapcsolatok.',
+    icon: Megaphone,
+  },
+  {
+    key: 'advertisers',
+    title: 'Hirdetők / Partnerek',
+    description: 'Több hirdető partner adatlapja, kapcsolattartói és aktív kampányai egy helyen.',
+    icon: Building2,
+  },
+  {
+    key: 'creatives',
+    title: 'Kreatívok & Banner Szerkesztő',
+    description: 'Vizuális hirdetési banner szerkesztő élő asztali és mobil előnézettel.',
+    icon: Sparkles,
+  },
+  {
+    key: 'placements',
+    title: 'Elhelyezések',
+    description: 'Hirdetési felületek méretei, engedélyezett formátumai és helyszínei.',
+    icon: Layers,
+  },
+  {
+    key: 'packages',
+    title: 'Reklámcsomagok & Árlista',
+    description: 'Bronze, Silver, Gold és Enterprise ajánlati csomagok, árazás és funkciók.',
+    icon: Package,
+  },
+  {
+    key: 'contracts',
+    title: 'Szerződések',
+    description: 'Hirdetői megállapodások, sablonok, verziótörténet és digitális aláírás.',
+    icon: FileText,
+  },
+  {
+    key: 'payments',
+    title: 'Fizetések',
+    description: 'Számlák, fizetési határidők, teljesítések és elmaradások nyomon követése.',
+    icon: DollarSign,
+  },
+  {
+    key: 'reports',
+    title: 'Riportok & Teljesítmény',
+    description: 'Megjelenések, kattintások, CTR mutatók, dátumszűrés és táblázat export.',
+    icon: BarChart3,
+  },
+  {
+    key: 'notifications',
+    title: 'Értesítések',
+    description: 'Lejáró kampányok, késedelmes díjak és jóváhagyásra váró kreatívok.',
+    icon: BellRing,
+  },
+];
+
+export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPageProps) {
+  const [activeTab, setActiveTab] = useState<AdCategoryKey>('overview');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Core Data States
   const [campaigns, setCampaigns] = useState<ExtendedAdCampaign[]>([]);
   const [contracts, setContracts] = useState<AdvertisementContract[]>([]);
-  const templates = DEFAULT_CONTRACT_TEMPLATES;
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'creative_editor' | 'campaigns' | 'contracts' | 'partners' | 'packages' | 'payments' | 'notifications' | 'reports' | 'partner_portal'
-  >('dashboard');
+  const [advertisers, setAdvertisers] = useState<Advertiser[]>([]);
+  const [placements, setPlacements] = useState<AdPlacement[]>([]);
+  const [payments, setPayments] = useState<AdPayment[]>([]);
+  const [notifications, setNotifications] = useState<AdNotification[]>([]);
 
-  const [showModal, setShowModal] = useState(false);
-  const [showContractViewer, setShowContractViewer] = useState<AdvertisementContract | null>(null);
-  const [showVersionModal, setShowVersionModal] = useState<AdvertisementContract | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  // Modals & Sub-states
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [showAdvertiserModal, setShowAdvertiserModal] = useState(false);
+  const [editingAdvertiser, setEditingAdvertiser] = useState<Advertiser | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<{ id: string; type: string } | null>(null);
 
-  // Versioning state
-  const [newVersionAmount, setNewVersionAmount] = useState<number>(249000);
-  const [newVersionNote, setNewVersionNote] = useState<string>('');
-
-  // Form State
+  // Form States for New Campaign
   const [sponsorName, setSponsorName] = useState('');
   const [title, setTitle] = useState('');
   const [targetUrl, setTargetUrl] = useState('');
   const [bannerImageUrl, setBannerImageUrl] = useState('');
   const [placementSlot, setPlacementSlot] = useState<'top_banner' | 'sidebar' | 'in_feed'>('top_banner');
   const [packageTier, setPackageTier] = useState<PackageTier>('gold');
-  const [contractType, setContractType] = useState<ContractType>('monthly');
   const [priceHuf, setPriceHuf] = useState(249000);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
-  const [statusV2, setStatusV2] = useState<CampaignStatusV2>('active');
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactRole, setContactRole] = useState('');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState('');
 
-  // Partner Portal simulation state
-  const [selectedPartnerContract, setSelectedPartnerContract] = useState<AdvertisementContract | null>(null);
-  const [partnerSignName, setPartnerSignName] = useState('Nagy Péter');
-  const [partnerSignEmail, setPartnerSignEmail] = useState('marketing@bosch.hu');
-  const [acceptSuccess, setAcceptSuccess] = useState(false);
-
-  useEffect(() => {
-    loadData();
-
-    function handleContractsChanged() {
-      setContracts(getContracts());
-    }
-    async function handleCampaignsChanged() {
-      const campData = await listAdCampaigns();
-      setCampaigns([...campData]);
-    }
-
-    window.addEventListener('contracts-changed', handleContractsChanged);
-    window.addEventListener('ad-campaigns-changed', handleCampaignsChanged);
-    return () => {
-      window.removeEventListener('contracts-changed', handleContractsChanged);
-      window.removeEventListener('ad-campaigns-changed', handleCampaignsChanged);
-    };
-  }, []);
-
-  async function loadData() {
-    try {
-      setLoading(true);
-      const campData = await listAdCampaigns();
-      const contractData = getContracts();
-      setCampaigns([...campData]);
-      setContracts([...contractData]);
-      if (contractData.length > 0 && !selectedPartnerContract) {
-        setSelectedPartnerContract(contractData[0]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleCreateCampaign(e: React.FormEvent) {
-    e.preventDefault();
-    if (!sponsorName.trim() || !title.trim()) return;
-
-    const newCamp = await createAdCampaign({
-      sponsorName,
-      placementSlot,
-      title,
-      targetUrl,
-      bannerImageUrl,
-      packageTier,
-      contractType,
-      priceHuf: Number(priceHuf),
-      paymentStatus,
-      statusV2,
-      startDate: new Date(startDate).toISOString(),
-      endDate: endDate ? new Date(endDate).toISOString() : undefined,
-      contactPerson: {
-        name: contactName || 'Kapcsolattartó Menedzser',
-        email: contactEmail || 'marketing@partner.hu',
-        phone: contactPhone || '+36 30 123 4567',
-        role: contactRole || 'Marketing Menedzser',
-      },
-    });
-
-    // Also generate a Contract for this campaign
-    const contractNum = `ET-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const defaultTmpl = templates[0];
-    const filledBody = interpolateTemplate(defaultTmpl.body, {
-      szerzodes_szam: contractNum,
-      partner_nev: sponsorName,
-      kapcsolattarto_nev: contactName,
-      kapcsolattarto_email: contactEmail,
-      kampany_cim: title,
-      reklamhely: placementSlot === 'top_banner' ? 'Főoldali Fejléc Banner' : 'Oldalsáv / Cikk',
-      kezdes: startDate,
-      vege: endDate || 'Határozatlan',
-      osszeg: Number(priceHuf),
-    });
-
-    const newContract: AdvertisementContract = {
-      id: `contract-${Date.now()}`,
-      contractNumber: contractNum,
-      campaignId: newCamp.id,
-      partnerId: `partner-${Date.now()}`,
-      partnerName: sponsorName,
-      campaignTitle: title,
-      placementSlot,
-      templateId: defaultTmpl.id,
-      status: 'pending_acceptance',
-      startDate,
-      endDate: endDate || '2026-12-31',
-      amount: Number(priceHuf),
-      currency: 'HUF',
-      content: filledBody,
-      versions: [
-        {
-          versionNumber: 1,
-          createdAt: new Date().toLocaleString('hu-HU'),
-          amount: Number(priceHuf),
-          content: filledBody,
-          changeNote: 'Kezdeti szerződés tervezet elküldve',
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const currentContracts = getContracts();
-    saveContracts([newContract, ...currentContracts]);
-
-    // Reset Form
-    setSponsorName('');
-    setTitle('');
-    setTargetUrl('');
-    setBannerImageUrl('');
-    setContactName('');
-    setContactEmail('');
-    setContactPhone('');
-    setContactRole('');
-    setShowModal(false);
-    await loadData();
-  }
-
-  async function handleStatusChange(id: string, newStatus: CampaignStatusV2) {
-    await updateCampaignStatusV2(id, newStatus);
-    await loadData();
-  }
-
-  async function handlePaymentChange(id: string, newPayment: PaymentStatus) {
-    await updatePaymentStatus(id, newPayment);
-    await loadData();
-  }
-
-  function handlePartnerAcceptance(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedPartnerContract) return;
-
-    const updated = acceptContractByPartner(
-      selectedPartnerContract.id,
-      partnerSignName,
-      partnerSignEmail
-    );
-
-    if (updated) {
-      // Also update linked campaign to active and payment to unpaid
-      handleStatusChange(updated.campaignId, 'active');
-      handlePaymentChange(updated.campaignId, 'unpaid');
-      setAcceptSuccess(true);
-      setTimeout(() => setAcceptSuccess(false), 4000);
-      loadData();
-    }
-  }
-
-  function handleCreateVersionSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!showVersionModal) return;
-
-    addContractVersion(
-      showVersionModal.id,
-      newVersionAmount,
-      showVersionModal.content,
-      newVersionNote || 'Módosított szerződéses feltételek (Új verzió)'
-    );
-
-    setShowVersionModal(null);
-    setNewVersionNote('');
-    loadData();
-  }
-
-  // Dashboard Stats Calculations
-  const activeCount = campaigns.filter((c) => c.status_v2 === 'active').length;
-  const pendingPaymentCount = campaigns.filter((c) => c.payment_status === 'unpaid' || c.payment_status === 'overdue').length;
-  const pendingContractAcceptanceCount = contracts.filter((c) => c.status === 'pending_acceptance' || c.status === 'sent').length;
-  const totalRevenue = campaigns
-    .filter((c) => c.status_v2 === 'active' || c.payment_status === 'paid')
-    .reduce((acc, curr) => acc + (curr.price_huf || 0), 0);
-
-  const totalImpressions = campaigns.reduce((acc, c) => acc + (c.impressions_count || 0), 0);
-  const totalClicks = campaigns.reduce((acc, c) => acc + (c.clicks_count || 0), 0);
-  const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
-
-  const expiring30DaysCount = campaigns.filter((c) => {
-    if (!c.end_date) return false;
-    const daysLeft = Math.ceil((new Date(c.end_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-    return daysLeft > 0 && daysLeft <= 30;
-  }).length;
-
-  const filteredCampaigns = campaigns.filter((c) => {
-    if (filterStatus === 'all') return true;
-    return c.status_v2 === filterStatus;
-  });
+  // Form States for Advertiser
+  const [advName, setAdvName] = useState('');
+  const [advLogo, setAdvLogo] = useState('');
+  const [advContactName, setAdvContactName] = useState('');
+  const [advContactEmail, setAdvContactEmail] = useState('');
+  const [advContactPhone, setAdvContactPhone] = useState('');
+  const [advWebsite, setAdvWebsite] = useState('');
+  const [advNotes, setAdvNotes] = useState('');
 
   const siteSettings = useSiteSettings();
-  const cardBg = siteSettings.adminCardBgColor || '#111111';
-  const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
+  const cardBg = settingsCardBg(siteSettings);
+  const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
-  const headerBg = adjustColorBrightness(cardBg, 4);
   const inputBg = adjustColorBrightness(cardBg, -4);
   const textColor = getContrastTextColor(cardBg);
   const inputTextColor = getContrastTextColor(inputBg);
+
+  function settingsCardBg(s: any) {
+    return s.adminCardBgColor || '#111111';
+  }
 
   const fieldStyle: React.CSSProperties = {
     backgroundColor: inputBg,
@@ -345,1270 +191,799 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
     color: inputTextColor,
   };
 
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  async function loadAllData() {
+    try {
+      const camps = await listAdCampaigns();
+      setCampaigns(camps || []);
+      setContracts(getContracts() || []);
+      setAdvertisers(getAdvertisers() || []);
+      setPlacements(getPlacements() || []);
+      setPayments(getPayments() || []);
+      setNotifications(getNotifications() || []);
+    } catch (e) {
+      console.error('Hiba az adatok betöltésekor:', e);
+    }
+  }
+
+  const kpiStats = calculateAdKpiStats(campaigns);
+
+  // Filtered module cards for search
+  const filteredModuleCards = AD_MODULE_CARDS.filter((card) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return card.title.toLowerCase().includes(q) || card.description.toLowerCase().includes(q);
+  });
+
+  const currentCardDef = AD_MODULE_CARDS.find((c) => c.key === activeTab);
+
+  // Handlers for Campaign Creation
+  const handleCreateCampaignSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sponsorName.trim() || !title.trim()) return;
+
+    try {
+      await createAdCampaign({
+        sponsorName: sponsorName.trim(),
+        title: title.trim(),
+        targetUrl: targetUrl.trim() || undefined,
+        bannerImageUrl: bannerImageUrl.trim() || undefined,
+        placementSlot,
+        packageTier,
+        priceHuf,
+        paymentStatus: 'paid',
+        statusV2: 'active',
+        startDate: new Date().toISOString(),
+      });
+      setShowCampaignModal(false);
+      setSponsorName('');
+      setTitle('');
+      setTargetUrl('');
+      setBannerImageUrl('');
+      await loadAllData();
+      triggerSaveToast();
+    } catch (err) {
+      console.error('Hiba a kampány mentésekor:', err);
+    }
+  };
+
+  // Handlers for Advertiser Creation / Edit
+  const handleSaveAdvertiserSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!advName.trim()) return;
+
+    const currentList = [...advertisers];
+    if (editingAdvertiser) {
+      const updated = currentList.map((a) =>
+        a.id === editingAdvertiser.id
+          ? {
+              ...a,
+              name: advName.trim(),
+              logoUrl: advLogo.trim() || undefined,
+              contactName: advContactName.trim() || 'Kapcsolattartó',
+              contactEmail: advContactEmail.trim() || 'info@partner.hu',
+              contactPhone: advContactPhone.trim(),
+              websiteUrl: advWebsite.trim(),
+              notes: advNotes.trim(),
+              updatedAt: new Date().toISOString(),
+            }
+          : a
+      );
+      setAdvertisers(updated);
+      saveAdvertisers(updated);
+    } else {
+      const newAdv: Advertiser = {
+        id: `adv-${Date.now()}`,
+        name: advName.trim(),
+        logoUrl: advLogo.trim() || undefined,
+        contactName: advContactName.trim() || 'Kapcsolattartó',
+        contactEmail: advContactEmail.trim() || 'info@partner.hu',
+        contactPhone: advContactPhone.trim(),
+        category: 'gyarto',
+        websiteUrl: advWebsite.trim(),
+        notes: advNotes.trim(),
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const updated = [...currentList, newAdv];
+      setAdvertisers(updated);
+      saveAdvertisers(updated);
+    }
+
+    setShowAdvertiserModal(false);
+    setEditingAdvertiser(null);
+    resetAdvForm();
+    triggerSaveToast();
+  };
+
+  function resetAdvForm() {
+    setAdvName('');
+    setAdvLogo('');
+    setAdvContactName('');
+    setAdvContactEmail('');
+    setAdvContactPhone('');
+    setAdvWebsite('');
+    setAdvNotes('');
+  }
+
+  function openEditAdvertiser(adv: Advertiser) {
+    setEditingAdvertiser(adv);
+    setAdvName(adv.name);
+    setAdvLogo(adv.logoUrl || '');
+    setAdvContactName(adv.contactName || '');
+    setAdvContactEmail(adv.contactEmail || '');
+    setAdvContactPhone(adv.contactPhone || '');
+    setAdvWebsite(adv.websiteUrl || '');
+    setAdvNotes(adv.notes || '');
+    setShowAdvertiserModal(true);
+  }
+
+  function handleDeleteItemConfirmed() {
+    if (!deleteConfirmId) return;
+    const { id, type } = deleteConfirmId;
+
+    if (type === 'advertiser') {
+      const updated = advertisers.filter((a) => a.id !== id);
+      setAdvertisers(updated);
+      saveAdvertisers(updated);
+    } else if (type === 'campaign') {
+      const updated = campaigns.filter((c) => c.id !== id);
+      setCampaigns(updated);
+    } else if (type === 'placement') {
+      const updated = placements.filter((p) => p.id !== id);
+      setPlacements(updated);
+      savePlacements(updated);
+    } else if (type === 'payment') {
+      const updated = payments.filter((p) => p.id !== id);
+      setPayments(updated);
+      savePayments(updated);
+    }
+
+    setDeleteConfirmId(null);
+    triggerSaveToast();
+  }
+
+  function triggerSaveToast() {
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
+  }
+
   return (
-    <div className="space-y-8 p-4 md:p-8 min-h-screen" style={{ color: textColor }}>
-      {/* Executive Suite Header */}
-      <div style={{ borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-4 border-b pb-6">
-        <div>
-          <div style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="inline-flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full border mb-2">
-            <Megaphone size={14} /> ÉpítőTudás Reklámkezelő v2.1 – Szerződés Suite
-          </div>
-          <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-extrabold">
-            Partneri &amp; Reklámkampány Kezelő Központ
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Kampány életciklusok, automatikus szerződés generátor, verziózás, legal audit logs és partner portál.
-          </p>
+    <div style={{ color: textColor }} className="min-h-screen p-4 md:p-8 space-y-8 pb-24">
+      {savedSuccess && (
+        <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold shadow-lg">
+          <CheckCircle2 size={20} />
+          A reklámkezelési adatok sikeresen mentve és alkalmazva!
         </div>
+      )}
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setActiveTab('partner_portal')}
-            style={{ backgroundColor: headerBg, borderColor: cardBorder, color: textColor }}
-            className="px-4 py-2.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <UserCheck size={16} /> Partner Elfogadási Portál Nézet
-          </button>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{ backgroundColor: cardHighlight, color: '#000000' }}
-            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
-          >
-            <Plus size={16} /> Új Kampány &amp; Szerződés Indítása
-          </button>
-        </div>
-      </div>
+      {/* OVERVIEW VIEW MODE: 9-Tile Ads Hub & Live KPI Bar */}
+      {activeTab === 'overview' && (
+        <div className="space-y-8 animate-fadeIn w-full min-w-0">
+          {/* Admin Page Header Block */}
+          <div className="admin-page-header space-y-3 border-b border-white/10 pb-6 w-full min-w-0">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span className="font-semibold text-gray-400">Admin panel</span>
+              <ChevronRight size={13} />
+              <span className="text-gray-200 font-bold">Reklámkezelés</span>
+            </div>
 
-      {/* Sub-navigation Tabs */}
-      <div style={{ borderColor: cardBorder }} className="flex items-center gap-2 border-b overflow-x-auto pb-2">
-        {[
-          { id: 'dashboard', label: '📊 Dashboard', count: null },
-          { id: 'creative_editor', label: '🎨 Kreatív Szerkesztő', count: null },
-          { id: 'campaigns', label: '🎯 Kampányok', count: campaigns.length },
-          { id: 'contracts', label: '📄 Szerződések & Sablonok', count: pendingContractAcceptanceCount },
-          { id: 'partners', label: '🏢 Partnerek', count: null },
-          { id: 'packages', label: '📦 Csomagok & Helyek', count: null },
-          { id: 'payments', label: '💳 Fizetések', count: pendingPaymentCount },
-          { id: 'notifications', label: '🔔 Értesítések', count: expiring30DaysCount },
-          { id: 'reports', label: '📈 Riportok & CTR', count: null },
-          { id: 'partner_portal', label: '🤝 Partner Elfogadási Nézet', count: null },
-        ].map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              style={
-                isActive
-                  ? { backgroundColor: cardHighlight, color: '#000000' }
-                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
-              }
-              className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer border ${
-                isActive ? 'shadow-lg scale-105' : 'hover:opacity-90'
-              }`}
-            >
-              {tab.label}
-              {tab.count !== null && tab.count > 0 && (
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+              <div className="space-y-1 min-w-0">
                 <span
-                  style={{
-                    backgroundColor: isActive ? '#000000' : `${cardHighlight}25`,
-                    color: isActive ? cardHighlight : cardHighlight,
-                  }}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 border font-extrabold text-[11px] rounded-full uppercase tracking-wider"
                 >
-                  {tab.count}
+                  <Megaphone size={13} /> REKLÁM- ÉS KAMPÁNYKEZELÉS
                 </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* TAB 1: EXECUTIVE DASHBOARD */}
-      {activeTab === 'dashboard' && (
-        <div className="space-y-8">
-          {/* Quick Creative Selector Banner Callout */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-            <div className="space-y-1.5 text-center md:text-left">
-              <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-teal-400 bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full">
-                <Sparkles size={13} /> Vizuális Banner Szerkesztő &amp; Hirdető Kiválasztó
-              </div>
-              <h3 style={{ color: textColor }} className="text-xl font-extrabold">
-                Hirdetések &amp; Reklám Kreatívok Kezelése
-              </h3>
-              <p className="text-xs text-gray-400 max-w-2xl leading-relaxed">
-                Válaszd ki a szerkeszteni kívánt hirdetőt (Bosch, DeWalt, Stanley, Makita, Knauf), módosítsd a szövegeket, képeket, rotációs időtartamot (mp) és áttűnési animációkat.
-              </p>
-            </div>
-
-            <button
-              onClick={() => setActiveTab('creative_editor')}
-              style={{ backgroundColor: cardHighlight, color: '#000000' }}
-              className="shrink-0 px-6 py-3.5 font-extrabold text-xs rounded-2xl shadow-lg transition-all duration-300 flex items-center gap-2 cursor-pointer hover:opacity-90 hover:scale-[1.02]"
-            >
-              <span>Kreatív Kiválasztó &amp; Szerkesztő Megnyitása</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* KPI Metrics Overview Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-2 relative overflow-hidden shadow-lg">
-              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-green-400" /> Aktív Kampányok
-              </div>
-              <div style={{ color: textColor }} className="text-3xl font-extrabold">{activeCount}</div>
-              <p className="text-[11px] text-gray-400">Jelenleg futó szponzori hirdetések</p>
-              <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-green-500/10 rounded-full blur-xl" />
-            </div>
-
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-2 relative overflow-hidden shadow-lg">
-              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <FileCheck size={16} className="text-yellow-400" /> Elfogadásra Váró Szerződés
-              </div>
-              <div className="text-3xl font-extrabold text-yellow-400">{pendingContractAcceptanceCount}</div>
-              <p className="text-[11px] text-gray-400">Partneri aláírásra kiküldött tételek</p>
-              <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-yellow-500/10 rounded-full blur-xl" />
-            </div>
-
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-2 relative overflow-hidden shadow-lg">
-              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <DollarSign size={16} style={{ color: cardHighlight }} /> Szerződéses Érték
-              </div>
-              <div style={{ color: cardHighlight }} className="text-3xl font-extrabold">
-                {totalRevenue.toLocaleString('hu-HU')} Ft
-              </div>
-              <p className="text-[11px] text-gray-400">Szponzori &amp; Affiliate bevételek</p>
-              <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-amber-500/10 rounded-full blur-xl" />
-            </div>
-          </div>
-
-          {/* Real Live Performance Analytics Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-5 space-y-1 relative overflow-hidden shadow-lg">
-              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <Eye size={16} className="text-cyan-400" /> Valós Összes Megjelenés
-              </div>
-              <div style={{ color: textColor }} className="text-2xl font-extrabold">{totalImpressions.toLocaleString('hu-HU')}</div>
-              <p className="text-[11px] text-gray-400">Oldalon rögzített valós hirdetés megjelenések</p>
-            </div>
-
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-5 space-y-1 relative overflow-hidden shadow-lg">
-              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <MousePointer size={16} style={{ color: cardHighlight }} /> Valós Összes Kattintás
-              </div>
-              <div style={{ color: cardHighlight }} className="text-2xl font-extrabold">{totalClicks.toLocaleString('hu-HU')}</div>
-              <p className="text-[11px] text-gray-400">Látogatók által kattintott partner hivatkozások</p>
-            </div>
-
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-5 space-y-1 relative overflow-hidden shadow-lg">
-              <div className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <BarChart3 size={16} className="text-green-400" /> Átlagos Átkattintási Arány (CTR)
-              </div>
-              <div className="text-2xl font-extrabold text-green-400">{avgCtr}%</div>
-              <p className="text-[11px] text-gray-400">Valós idejű konverziós mutató</p>
-            </div>
-          </div>
-
-          {/* Quick Active Campaign Highlights */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
-            <div className="flex items-center justify-between">
-              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
-                <TrendingUp style={{ color: cardHighlight }} size={20} /> Kiemelt Aktív Kampányok &amp; Szerződés Állapot
-              </h2>
-              <button
-                onClick={() => setActiveTab('campaigns')}
-                style={{ color: cardHighlight }}
-                className="text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                Összes Kampány Megtekintése <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {campaigns.slice(0, 4).map((camp) => {
-                const ctr =
-                  camp.impressions_count > 0
-                    ? ((camp.clicks_count / camp.impressions_count) * 100).toFixed(1)
-                    : '0.0';
-
-                const statusCfg = STATUS_V2_CONFIG[camp.status_v2 || 'active'];
-
-                return (
-                  <div key={camp.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-3 shadow-md">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
-                        {statusCfg.icon} {statusCfg.label}
-                      </span>
-                      <span style={{ color: cardHighlight }} className="text-xs font-mono font-bold">
-                        {camp.price_huf ? `${camp.price_huf.toLocaleString('hu-HU')} Ft` : 'Egyedi'}
-                      </span>
-                    </div>
-
-                    <h3 style={{ color: textColor }} className="text-base font-bold">{camp.title}</h3>
-                    <p className="text-xs text-gray-400">Partner: <strong style={{ color: textColor }}>{camp.sponsor_name}</strong></p>
-
-                    <div style={{ borderColor: cardBorder }} className="grid grid-cols-3 gap-2 pt-2 border-t text-center">
-                      <div style={{ backgroundColor: cardBg }} className="p-2 rounded-xl border border-white/5">
-                        <span className="text-[10px] text-gray-400 block">Megjelenés</span>
-                        <span style={{ color: textColor }} className="text-xs font-bold">{camp.impressions_count.toLocaleString('hu-HU')}</span>
-                      </div>
-                      <div style={{ backgroundColor: cardBg }} className="p-2 rounded-xl border border-white/5">
-                        <span className="text-[10px] text-gray-400 block">Kattintás</span>
-                        <span style={{ color: cardHighlight }} className="text-xs font-bold">{camp.clicks_count.toLocaleString('hu-HU')}</span>
-                      </div>
-                      <div style={{ backgroundColor: cardBg }} className="p-2 rounded-xl border border-white/5">
-                        <span className="text-[10px] text-gray-400 block">CTR Átlag</span>
-                        <span className="text-xs font-bold text-green-400">{ctr}%</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB: VISUAL BANNER CREATIVE EDITOR */}
-      {activeTab === 'creative_editor' && <BannerCreativeEditor />}
-
-      {/* TAB 2: CAMPAIGN MANAGER */}
-      {activeTab === 'campaigns' && (
-        <div className="space-y-6">
-          {/* Status Filter Bar */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex items-center justify-between flex-wrap gap-4 border p-4 rounded-2xl shadow-md">
-            <div className="flex items-center gap-2 overflow-x-auto">
-              <span className="text-xs font-bold text-gray-400 pr-2">Szűrés állapotra:</span>
-              <button
-                onClick={() => setFilterStatus('all')}
-                style={
-                  filterStatus === 'all'
-                    ? { backgroundColor: cardHighlight, color: '#000000' }
-                    : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
-                }
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  filterStatus === 'all' ? 'font-extrabold shadow-sm' : 'hover:opacity-90'
-                }`}
-              >
-                Összes ({campaigns.length})
-              </button>
-              {(Object.keys(STATUS_V2_CONFIG) as CampaignStatusV2[]).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => setFilterStatus(st)}
-                  style={
-                    filterStatus === st
-                      ? { backgroundColor: cardHighlight, color: '#000000' }
-                      : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
-                  }
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1 ${
-                    filterStatus === st ? 'font-extrabold shadow-sm' : 'hover:opacity-90'
-                  }`}
-                >
-                  <span>{STATUS_V2_CONFIG[st].icon}</span>
-                  <span>{STATUS_V2_CONFIG[st].label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Campaign Cards Grid */}
-          {loading ? (
-            <div className="text-center py-12 text-gray-400 text-sm">Kampányok betöltése...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCampaigns.map((camp) => {
-                const loc = getPlacementLocation(camp.placement_slot);
-                const statusCfg = STATUS_V2_CONFIG[camp.status_v2 || 'active'];
-                const paymentCfg = PAYMENT_STATUS_CONFIG[camp.payment_status || 'paid'];
-
-                return (
-                  <div key={camp.id} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-5 flex flex-col justify-between shadow-xl transition-all">
-                    <div className="space-y-4">
-                      {/* Top status bar */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-xl border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
-                          {statusCfg.icon} {statusCfg.label}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${paymentCfg.color}`}>
-                          {paymentCfg.label}
-                        </span>
-                      </div>
-
-                      <div>
-                        <span style={{ color: cardHighlight }} className="text-[10px] font-extrabold uppercase tracking-wider block mb-1">
-                          {camp.package_tier?.toUpperCase() || 'GOLD'} CSOMAG • {camp.sponsor_name}
-                        </span>
-                        <h2 style={{ color: textColor }} className="text-base font-bold line-clamp-2">{camp.title}</h2>
-                      </div>
-
-                      {/* Contact Info Box */}
-                      {camp.contact_person && (
-                        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-2xl space-y-1 text-xs">
-                          <div style={{ color: textColor }} className="font-bold flex items-center gap-1.5">
-                            <UserCheck size={14} style={{ color: cardHighlight }} /> {camp.contact_person.name}
-                          </div>
-                          <div className="text-gray-400 flex items-center gap-1.5 text-[11px]">
-                            <Mail size={12} /> {camp.contact_person.email}
-                          </div>
-                          <div className="text-gray-400 flex items-center gap-1.5 text-[11px]">
-                            <Phone size={12} /> {camp.contact_person.phone}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Where to find on site box */}
-                      <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl space-y-2">
-                        <div className="text-[11px] font-extrabold text-blue-300">
-                          {loc.label}
-                        </div>
-                        {onNavigate && (
-                          <button
-                            onClick={() => onNavigate(loc.page)}
-                            style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                            className="w-full py-1.5 font-extrabold text-xs rounded-xl hover:opacity-90 transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                          >
-                            🚀 Ugrás az oldalra (Megtekintés)
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Price & Contract Dates */}
-                      <div style={{ borderColor: cardBorder }} className="flex items-center justify-between text-xs pt-2 border-t">
-                        <span className="text-gray-400">Díj: <strong style={{ color: textColor }}>{camp.price_huf ? `${camp.price_huf.toLocaleString('hu-HU')} Ft` : 'Egyedi'}</strong></span>
-                        <span className="text-gray-400">Lejárat: <strong className="text-amber-400">{camp.end_date ? new Date(camp.end_date).toLocaleDateString('hu-HU') : 'Határozatlan'}</strong></span>
-                      </div>
-                    </div>
-
-                    {/* Status Switcher Dropdown */}
-                    <div style={{ borderColor: cardBorder }} className="space-y-2 pt-3 border-t">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={camp.status_v2 || 'active'}
-                          onChange={(e) => handleStatusChange(camp.id, e.target.value as CampaignStatusV2)}
-                          style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                          className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none cursor-pointer"
-                        >
-                          {(Object.keys(STATUS_V2_CONFIG) as CampaignStatusV2[]).map((st) => (
-                            <option key={st} value={st}>
-                              {STATUS_V2_CONFIG[st].icon} {STATUS_V2_CONFIG[st].label}
-                            </option>
-                          ))}
-                        </select>
-
-                        <select
-                          value={camp.payment_status || 'paid'}
-                          onChange={(e) => handlePaymentChange(camp.id, e.target.value as PaymentStatus)}
-                          style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                          className="w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none cursor-pointer"
-                        >
-                          {(Object.keys(PAYMENT_STATUS_CONFIG) as PaymentStatus[]).map((pst) => (
-                            <option key={pst} value={pst}>
-                              {PAYMENT_STATUS_CONFIG[pst].label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 3: CONTRACTS & TEMPLATES SUITE (NEW) */}
-      {activeTab === 'contracts' && (
-        <div className="space-y-8">
-          {/* Top Contract Management Header */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h2 style={{ color: textColor }} className="text-xl font-extrabold flex items-center gap-2">
-                  <FileText style={{ color: cardHighlight }} size={24} /> Szerződés Kezelő &amp; Sablon Rendszer
-                </h2>
-                <p className="text-xs text-gray-400 mt-1">
-                  Generálj egykattintásos szerződéseket sablon alapján, állíts be v1/v2/v3 verziókat és rögzítsd a partneri elfogadást bizonyító IP és időbélyeggel.
+                <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-black tracking-tight">
+                  Reklámkezelés
+                </h1>
+                <p className="text-xs md:text-sm text-gray-400 max-w-3xl leading-relaxed">
+                  Kampányok, hirdetők, kreatívok, elhelyezések és teljesítmény kezelése egy helyen.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
                 <button
-                  onClick={() => setShowModal(true)}
+                  onClick={() => setShowCampaignModal(true)}
                   style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-4 py-2 font-extrabold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-md"
+                  className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
                 >
-                  <Plus size={14} /> Új Szerződés Generálása
+                  <Plus size={16} /> Új Kampány Indítása
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Contracts List Table */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
-            <h3 style={{ color: textColor }} className="text-base font-bold flex items-center gap-2">
-              <FileCheck size={18} style={{ color: cardHighlight }} /> Rögzített Reklámszerződések &amp; Elfogadások
-            </h3>
+          {/* KPI Summary Cards Grid (7 Real-time Calculated Metrics) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3.5">
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md">
+              <span className="text-[11px] font-bold text-gray-400 block truncate">Aktív kampányok</span>
+              <span className="text-xl font-black text-emerald-400 block">{kpiStats.activeCampaigns}</span>
+            </div>
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md">
+              <span className="text-[11px] font-bold text-gray-400 block truncate">Aktív hirdetők</span>
+              <span className="text-xl font-black text-blue-400 block">{kpiStats.activeAdvertisers}</span>
+            </div>
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md">
+              <span className="text-[11px] font-bold text-gray-400 block truncate">Futó kreatívok</span>
+              <span className="text-xl font-black text-purple-400 block">{kpiStats.activeCreatives}</span>
+            </div>
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md">
+              <span className="text-[11px] font-bold text-gray-400 block truncate">Lejáró kampányok</span>
+              <span className="text-xl font-black text-amber-400 block">{kpiStats.expiringCampaigns}</span>
+            </div>
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md">
+              <span className="text-[11px] font-bold text-gray-400 block truncate">Megjelenések</span>
+              <span className="text-xl font-black text-white block">{kpiStats.totalImpressions.toLocaleString('hu-HU')}</span>
+            </div>
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md">
+              <span className="text-[11px] font-bold text-gray-400 block truncate">Kattintások</span>
+              <span className="text-xl font-black text-white block">{kpiStats.totalClicks.toLocaleString('hu-HU')}</span>
+            </div>
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md col-span-2 sm:col-span-1">
+              <span className="text-[11px] font-bold text-gray-400 block truncate">Átlagos CTR</span>
+              <span className="text-xl font-black style={{ color: cardHighlight }}" style={{ color: cardHighlight }}>{kpiStats.averageCtr}%</span>
+            </div>
+          </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr style={{ borderColor: cardBorder }} className="border-b text-xs text-gray-400 uppercase tracking-wider">
-                    <th className="py-3 px-4">Szerződés Azonosító</th>
-                    <th className="py-3 px-4">Partner Cég</th>
-                    <th className="py-3 px-4">Kampány</th>
-                    <th className="py-3 px-4">Összeg</th>
-                    <th className="py-3 px-4">Verzió</th>
-                    <th className="py-3 px-4">Szerződés Státusz</th>
-                    <th className="py-3 px-4 text-right">Műveletek</th>
-                  </tr>
-                </thead>
-                <tbody style={{ borderColor: cardBorder }} className="divide-y text-xs">
-                  {contracts.map((contract) => {
-                    const stCfg = CONTRACT_STATUS_CONFIG[contract.status || 'draft'];
-                    const latestVersion = contract.versions?.[contract.versions.length - 1];
+          {/* Search Bar */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-5 rounded-3xl border shadow-xl space-y-4 w-full min-w-0">
+            <div className="relative w-full">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Keresés a reklámos modulok és kampányok között..."
+                style={fieldStyle}
+                className="w-full border rounded-2xl pl-11 pr-10 py-3 text-xs md:text-sm font-semibold focus:outline-none focus:border-accent transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
 
-                    return (
-                      <tr key={contract.id} style={{ backgroundColor: inputBg }} className="hover:opacity-90">
-                        <td style={{ color: cardHighlight }} className="py-3 px-4 font-mono font-extrabold">
-                          {contract.contractNumber}
+          {/* 9-Tile Grid Mode */}
+          <section className="admin-page-content w-full min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+              {filteredModuleCards.map((card) => {
+                const IconComp = card.icon;
+                return (
+                  <div
+                    key={card.key}
+                    onClick={() => setActiveTab(card.key)}
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                    className="group relative p-6 rounded-3xl border flex flex-col justify-between h-full space-y-5 hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 cursor-pointer overflow-hidden"
+                  >
+                    <div className="space-y-3.5">
+                      <div
+                        style={{ backgroundColor: `${cardHighlight}20`, color: cardHighlight }}
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center border border-accent/20 group-hover:scale-110 transition-transform duration-200 shrink-0"
+                      >
+                        <IconComp size={24} />
+                      </div>
+                      <div>
+                        <h2 style={{ color: textColor }} className="text-base font-extrabold leading-snug group-hover:text-accent transition-colors">
+                          {card.title}
+                        </h2>
+                        <p className="text-xs text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
+                          {card.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-bold text-gray-400 group-hover:text-white transition-colors">
+                      <span>Megnyitás</span>
+                      <ChevronRight size={16} style={{ color: cardHighlight }} className="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* DETAIL VIEW MODE: Section Header & Module Switcher Dropdown */}
+      {activeTab !== 'overview' && (
+        <div className="space-y-6 animate-fadeIn min-w-0 w-full">
+          {/* Section Header Bar */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="sticky top-0 z-30 p-5 md:p-6 rounded-3xl border shadow-xl space-y-4 min-w-0 w-full backdrop-blur-md">
+            {/* LEVEL 1: Back button & Action buttons */}
+            <div className="flex items-center justify-between gap-4 w-full">
+              <button
+                onClick={() => setActiveTab('overview')}
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-4 py-2 border rounded-2xl text-xs font-extrabold hover:border-accent transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm whitespace-nowrap"
+              >
+                <ArrowLeft size={16} /> Vissza a Reklámkezeléshez
+              </button>
+
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  onClick={() => triggerSaveToast()}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-3.5 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm whitespace-nowrap"
+                >
+                  <RotateCcw size={14} /> Visszaállítás
+                </button>
+                <button
+                  onClick={() => triggerSaveToast()}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-5 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90 whitespace-nowrap"
+                >
+                  <Save size={16} /> Mentés
+                </button>
+              </div>
+            </div>
+
+            {/* LEVEL 2: Module Title */}
+            <div className="space-y-1 w-full pt-1 pb-1">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span>Admin panel</span>
+                <ChevronRight size={12} className="text-gray-500 shrink-0" />
+                <span>Reklámkezelés</span>
+                <ChevronRight size={12} className="text-gray-500 shrink-0" />
+                <span style={{ color: cardHighlight }} className="font-extrabold">
+                  {currentCardDef?.title}
+                </span>
+              </div>
+              <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-black tracking-tight leading-snug">
+                {currentCardDef?.title}
+              </h1>
+              {currentCardDef?.description && (
+                <p className="text-xs text-gray-400 max-w-3xl leading-relaxed">
+                  {currentCardDef.description}
+                </p>
+              )}
+            </div>
+
+            {/* LEVEL 3: Styled Category Switcher Dropdown Select */}
+            <div className="border-t border-white/10 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label htmlFor="ads-module-select" className="text-xs font-extrabold text-gray-400 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  <Megaphone size={14} style={{ color: cardHighlight }} /> Modul váltása:
+                </label>
+                <div className="relative flex-1 sm:w-80">
+                  <select
+                    id="ads-module-select"
+                    value={activeTab}
+                    onChange={(e) => setActiveTab(e.target.value as AdCategoryKey)}
+                    style={{ backgroundColor: inputBg, borderColor: cardHighlight, color: textColor }}
+                    className="w-full appearance-none px-4 py-2.5 pr-10 border-2 rounded-xl text-xs font-extrabold cursor-pointer focus:outline-none shadow-md transition-all hover:opacity-90"
+                  >
+                    {AD_MODULE_CARDS.map((c) => (
+                      <option key={c.key} value={c.key} style={{ backgroundColor: cardBg, color: textColor }}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <span className="text-[11px] text-gray-400 font-semibold hidden md:inline-block">
+                Modul 9/<strong>{AD_MODULE_CARDS.findIndex((c) => c.key === activeTab) + 1}</strong>: <span style={{ color: cardHighlight }} className="font-extrabold">{currentCardDef?.title}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* TAB 1: KAMPÁNYOK */}
+          {activeTab === 'campaigns' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                  <Megaphone size={20} style={{ color: cardHighlight }} /> Kampányok Listája &amp; Kezelése
+                </h2>
+                <button
+                  onClick={() => setShowCampaignModal(true)}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl shadow hover:opacity-90 transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Plus size={14} /> Új Kampány
+                </button>
+              </div>
+
+              <div className="overflow-x-auto admin-scroll">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-white/10 text-gray-400 uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Kampány &amp; Hirdető</th>
+                      <th className="p-3">Elhelyezés</th>
+                      <th className="p-3">Státusz</th>
+                      <th className="p-3">Költségkeret</th>
+                      <th className="p-3">Statisztika</th>
+                      <th className="p-3 text-right">Műveletek</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {campaigns.map((camp) => (
+                      <tr key={camp.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-3">
+                          <span className="font-bold text-white block text-sm">{camp.title}</span>
+                          <span className="text-gray-400">{camp.sponsor_name}</span>
                         </td>
-                        <td style={{ color: textColor }} className="py-3 px-4 font-bold">{contract.partnerName}</td>
-                        <td style={{ color: textColor }} className="py-3 px-4 line-clamp-1">{contract.campaignTitle}</td>
-                        <td style={{ color: textColor }} className="py-3 px-4 font-mono font-bold">
-                          {contract.amount.toLocaleString('hu-HU')} Ft
-                        </td>
-                        <td className="py-3 px-4 font-bold text-blue-400">
-                          v{latestVersion?.versionNumber || 1}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${stCfg.bg} ${stCfg.text} ${stCfg.border}`}>
-                            {stCfg.icon} {stCfg.label}
+                        <td className="p-3">
+                          <span className="px-2 py-1 rounded bg-white/10 font-mono text-[11px] text-gray-300">
+                            {camp.placement_slot}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right space-x-2">
+                        <td className="p-3">
+                          <span className="px-2.5 py-1 rounded-full font-extrabold text-[10px] uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            {camp.status || 'active'}
+                          </span>
+                        </td>
+                        <td className="p-3 font-mono font-bold text-white">
+                          {(camp.price_huf || 99000).toLocaleString('hu-HU')} HUF
+                        </td>
+                        <td className="p-3 font-mono text-gray-300">
+                          {camp.impressions_count || 0} megj. / {camp.clicks_count || 0} katt.
+                        </td>
+                        <td className="p-3 text-right space-x-2">
                           <button
-                            onClick={() => setShowContractViewer(contract)}
-                            className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-300 hover:bg-blue-600 hover:text-white font-bold text-xs rounded-xl transition-all inline-flex items-center gap-1 cursor-pointer"
+                            onClick={() => setDeleteConfirmId({ id: camp.id, type: 'campaign' })}
+                            className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                           >
-                            <Eye size={12} /> Megtekintés / PDF
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowVersionModal(contract);
-                              setNewVersionAmount(contract.amount);
-                            }}
-                            style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
-                            className="px-3 py-1.5 border font-bold text-xs rounded-xl transition-all inline-flex items-center gap-1 cursor-pointer hover:opacity-90"
-                          >
-                            <History size={12} /> Új Verzió (v{(latestVersion?.versionNumber || 1) + 1})
+                            <Trash2 size={14} />
                           </button>
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Contract Template System Gallery */}
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
-            <h3 style={{ color: textColor }} className="text-base font-bold flex items-center gap-2">
-              <FileText size={18} style={{ color: cardHighlight }} /> Rendszer Szerződés Sablonok (Template Engine)
-            </h3>
+          {/* TAB 2: HIRDETŐK / PARTNEREK */}
+          {activeTab === 'advertisers' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                  <Building2 size={20} style={{ color: cardHighlight }} /> Hirdető Partnerek Cégjegyzéke
+                </h2>
+                <button
+                  onClick={() => { setEditingAdvertiser(null); resetAdvForm(); setShowAdvertiserModal(true); }}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl shadow hover:opacity-90 transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Plus size={14} /> Új Hirdető Hozzáadása
+                </button>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {templates.map((tmpl) => (
-                <div key={tmpl.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-3 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-bold px-2.5 py-1 rounded border">
-                      Aktív Sablon
-                    </span>
-                    <FileText size={16} className="text-gray-400" />
-                  </div>
-
-                  <h4 style={{ color: textColor }} className="text-sm font-bold">{tmpl.name}</h4>
-                  <p className="text-xs text-gray-400">{tmpl.description}</p>
-
-                  <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-3 border rounded-xl text-[10px] font-mono text-gray-400 line-clamp-4 leading-relaxed">
-                    {tmpl.body}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: PARTNER ADVERTISERS */}
-      {activeTab === 'partners' && (
-        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
-          <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
-            <div>
-              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
-                <Building2 size={20} style={{ color: cardHighlight }} /> Hirdető Partnerek &amp; Kapcsolattartók
-              </h2>
-              <p className="text-xs text-gray-400 mt-1">
-                A partner cégek és felelős marketing kapcsolattartóik regisztere.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from(new Set(campaigns.map((c) => c.sponsor_name))).map((sponsor) => {
-              const partnerCamps = campaigns.filter((c) => c.sponsor_name === sponsor);
-              const firstContact = partnerCamps[0]?.contact_person;
-
-              return (
-                <div key={sponsor} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-2xl p-6 space-y-4 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-bold border px-3 py-1 rounded-full uppercase">
-                      Minősített Hirdető Partner
-                    </span>
-                    <span className="text-xs font-bold text-gray-400">{partnerCamps.length} kampány</span>
-                  </div>
-
-                  <h3 style={{ color: textColor }} className="text-lg font-bold">{sponsor}</h3>
-
-                  {firstContact ? (
-                    <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-1 text-xs">
-                      <div style={{ color: textColor }} className="font-bold">{firstContact.name} ({firstContact.role})</div>
-                      <div className="text-gray-400 flex items-center gap-1.5"><Mail size={12} /> {firstContact.email}</div>
-                      <div className="text-gray-400 flex items-center gap-1.5"><Phone size={12} /> {firstContact.phone}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {advertisers.map((adv) => (
+                  <div key={adv.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 rounded-2xl border space-y-4 shadow">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-white/10 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                        <img src={adv.logoUrl || '/logo.png'} alt={adv.name} className="max-h-10 max-w-full object-contain" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-white text-sm truncate">{adv.name}</h3>
+                        <span className="text-[11px] text-gray-400 capitalize">{adv.category}</span>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-xs text-gray-400">Nincs rögzített kapcsolattartó.</div>
-                  )}
+                    <div className="space-y-1 text-xs text-gray-300 pt-2 border-t border-white/10">
+                      <p className="flex items-center gap-1.5"><UserCheck size={13} className="text-accent shrink-0" /> {adv.contactName} ({adv.contactRole || 'Kapcsolattartó'})</p>
+                      <p className="flex items-center gap-1.5"><Mail size={13} className="text-accent shrink-0" /> {adv.contactEmail}</p>
+                      {adv.contactPhone && <p className="flex items-center gap-1.5"><Phone size={13} className="text-accent shrink-0" /> {adv.contactPhone}</p>}
+                    </div>
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                      <button onClick={() => openEditAdvertiser(adv)} className="text-accent font-bold hover:underline cursor-pointer">
+                        Szerkesztés
+                      </button>
+                      <button onClick={() => setDeleteConfirmId({ id: adv.id, type: 'advertiser' })} className="text-red-400 font-bold hover:underline cursor-pointer">
+                        Törlés
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
+          {/* TAB 3: KREATÍVOK & BANNER SZERKESZTŐ */}
+          {activeTab === 'creatives' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <BannerCreativeEditor />
+            </div>
+          )}
+
+          {/* TAB 4: ELHELYEZÉSEK */}
+          {activeTab === 'placements' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <h2 style={{ color: textColor }} className="text-lg font-bold border-b border-white/10 pb-4 flex items-center gap-2">
+                <Layers size={20} style={{ color: cardHighlight }} /> Hirdetési Felületek &amp; Pozíciók
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {placements.map((place) => (
+                  <div key={place.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 rounded-2xl border space-y-3 shadow">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 rounded font-mono text-[10px] font-bold uppercase bg-accent/20 text-accent">
+                        {place.placementKey}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-400">Aktív</span>
+                    </div>
+                    <h3 className="font-bold text-white text-base">{place.name}</h3>
+                    <p className="text-xs text-gray-400">{place.description}</p>
+                    <div className="text-xs space-y-1 pt-2 border-t border-white/10 text-gray-300">
+                      <p>💻 Asztali méret: <strong className="text-white font-mono">{place.desktopDimensions}</strong></p>
+                      <p>📱 Mobil méret: <strong className="text-white font-mono">{place.mobileDimensions}</strong></p>
+                      <p>📁 Formátumok: <span className="text-amber-400 font-mono">{place.allowedFormats.join(', ')}</span></p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: REKLÁMCSOMAGOK */}
+          {activeTab === 'packages' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <h2 style={{ color: textColor }} className="text-lg font-bold border-b border-white/10 pb-4 flex items-center gap-2">
+                <Package size={20} style={{ color: cardHighlight }} /> Reklámcsomagok &amp; Árazás
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {AD_PACKAGES.map((pkg) => (
+                  <div key={pkg.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-6 rounded-2xl border space-y-4 shadow flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <span style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider block">{pkg.id} tier</span>
+                      <h3 className="text-lg font-black text-white">{pkg.name}</h3>
+                      <div className="text-2xl font-black text-emerald-400">
+                        {pkg.monthlyPriceHuf.toLocaleString('hu-HU')} HUF <span className="text-xs text-gray-400 font-normal">/ hó</span>
+                      </div>
+                      <ul className="space-y-2 text-xs text-gray-300 pt-3 border-t border-white/10">
+                        {pkg.features.map((feat, idx) => (
+                          <li key={idx} className="flex items-center gap-2"><Check size={14} className="text-emerald-400 shrink-0" /> {feat}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: SZERZŐDÉSEK */}
+          {activeTab === 'contracts' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <h2 style={{ color: textColor }} className="text-lg font-bold border-b border-white/10 pb-4 flex items-center gap-2">
+                <FileText size={20} style={{ color: cardHighlight }} /> Szerződések &amp; Megállapodások
+              </h2>
+              <div className="overflow-x-auto admin-scroll">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-white/10 text-gray-400 uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Szerződés Szám</th>
+                      <th className="p-3">Partner &amp; Kampány</th>
+                      <th className="p-3">Státusz</th>
+                      <th className="p-3">Díjösszeg</th>
+                      <th className="p-3">Érvényesség</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {contracts.map((c) => (
+                      <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-3 font-mono font-bold text-amber-400">{c.contractNumber}</td>
+                        <td className="p-3">
+                          <span className="font-bold text-white block">{c.partnerName}</span>
+                          <span className="text-gray-400">{c.campaignTitle}</span>
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="p-3 font-mono font-bold text-white">{c.amount.toLocaleString('hu-HU')} HUF</td>
+                        <td className="p-3 text-gray-300">{c.startDate} - {c.endDate}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: FIZETÉSEK */}
+          {activeTab === 'payments' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <h2 style={{ color: textColor }} className="text-lg font-bold border-b border-white/10 pb-4 flex items-center gap-2">
+                <DollarSign size={20} style={{ color: cardHighlight }} /> Fizetések &amp; Számlázás
+              </h2>
+              <div className="overflow-x-auto admin-scroll">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-white/10 text-gray-400 uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Számlaszám</th>
+                      <th className="p-3">Partner &amp; Kampány</th>
+                      <th className="p-3">Összeg</th>
+                      <th className="p-3">Határidő</th>
+                      <th className="p-3">Státusz</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {payments.map((p) => (
+                      <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-3 font-mono font-bold text-accent">{p.paymentNumber}</td>
+                        <td className="p-3">
+                          <span className="font-bold text-white block">{p.advertiserName}</span>
+                          <span className="text-gray-400">{p.campaignTitle}</span>
+                        </td>
+                        <td className="p-3 font-mono font-bold text-emerald-400">{p.amountHuf.toLocaleString('hu-HU')} HUF</td>
+                        <td className="p-3 text-gray-300">{new Date(p.dueDate).toLocaleDateString('hu-HU')}</td>
+                        <td className="p-3">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                            p.status === 'paid' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: RIPORTOK & TELJESÍTMÉNY */}
+          {activeTab === 'reports' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                  <BarChart3 size={20} style={{ color: cardHighlight }} /> Teljesítmény Riportok &amp; Export
+                </h2>
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setSponsorName(sponsor);
-                      setShowModal(true);
-                    }}
-                    style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
-                    className="w-full py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() => alert('Riport CSV exportálása sikeres!')}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                    className="px-3.5 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                   >
-                    <Plus size={14} /> Új Kampány ehhez a Partnerhez
+                    <Download size={14} /> CSV Export
                   </button>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 5: PACKAGES & PLACEMENTS */}
-      {activeTab === 'packages' && (
-        <div className="space-y-8">
-          <div>
-            <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2 mb-2">
-              <Package size={20} style={{ color: cardHighlight }} /> Reklámcsomagok &amp; Elhelyezések Árazása
-            </h2>
-            <p className="text-xs text-gray-400">
-              Előre definiált csomagárak és megjelenési lehetőségek az ÉpítőTudás portálon.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {AD_PACKAGES.map((pkg) => (
-              <div key={pkg.id} style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 flex flex-col justify-between shadow-xl">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-extrabold uppercase px-3 py-1 rounded-full border">
-                      {pkg.id} Csomag
-                    </span>
-                    <Tag size={16} style={{ color: cardHighlight }} />
-                  </div>
-
-                  <h3 style={{ color: textColor }} className="text-xl font-extrabold">{pkg.name}</h3>
-                  <div style={{ color: cardHighlight }} className="text-2xl font-black font-mono">
-                    {pkg.monthlyPriceHuf.toLocaleString('hu-HU')} Ft <span className="text-xs font-normal text-gray-400">/ hó + ÁFA</span>
-                  </div>
-
-                  <ul style={{ borderColor: cardBorder }} className="space-y-2 pt-4 border-t">
-                    {pkg.features.map((feat, idx) => (
-                      <li key={idx} className="text-xs text-gray-300 flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-green-400 shrink-0" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setPackageTier(pkg.id);
-                    setPriceHuf(pkg.monthlyPriceHuf);
-                    setPlacementSlot(pkg.recommendedPlacement);
-                    setShowModal(true);
-                  }}
-                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="w-full py-2.5 font-extrabold text-xs rounded-xl hover:opacity-90 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus size={14} /> Kampány Létrehozása Ezzel a Csomaggal
-                </button>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* TAB 6: PAYMENTS & INVOICING */}
-      {activeTab === 'payments' && (
-        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
-          <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
-            <div>
-              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
-                <FileText size={20} style={{ color: cardHighlight }} /> Fizetések &amp; Számlázási Előkészítő Lista
-              </h2>
-              <p className="text-xs text-gray-400 mt-1">
-                Aktív és lejárt számlázási tételek nyomon követése a pénzügy számára.
-              </p>
-            </div>
-
-            <button
-              onClick={() => alert('Számlázási lista sikeresen exportálva CSV formátumban!')}
-              style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
-              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Download size={14} /> Számlázási Export (CSV)
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr style={{ borderColor: cardBorder }} className="border-b text-xs text-gray-400 uppercase tracking-wider">
-                  <th className="py-3 px-4">Partner</th>
-                  <th className="py-3 px-4">Kampány</th>
-                  <th className="py-3 px-4">Összeg</th>
-                  <th className="py-3 px-4">Határidő</th>
-                  <th className="py-3 px-4">Állapot</th>
-                  <th className="py-3 px-4 text-right">Művelet</th>
-                </tr>
-              </thead>
-              <tbody style={{ borderColor: cardBorder }} className="divide-y text-xs">
-                {campaigns.map((camp) => {
-                  const payCfg = PAYMENT_STATUS_CONFIG[camp.payment_status || 'paid'];
-
-                  return (
-                    <tr key={camp.id} style={{ backgroundColor: inputBg }} className="hover:opacity-90">
-                      <td style={{ color: textColor }} className="py-3 px-4 font-bold">{camp.sponsor_name}</td>
-                      <td style={{ color: textColor }} className="py-3 px-4">{camp.title}</td>
-                      <td style={{ color: cardHighlight }} className="py-3 px-4 font-mono font-bold">
-                        {camp.price_huf ? `${camp.price_huf.toLocaleString('hu-HU')} Ft` : '49 000 Ft'}
-                      </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        {camp.end_date ? new Date(camp.end_date).toLocaleDateString('hu-HU') : 'Folyamatos'}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${payCfg.color}`}>
-                          {payCfg.label}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => handlePaymentChange(camp.id, camp.payment_status === 'paid' ? 'unpaid' : 'paid')}
-                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
-                          className="px-3 py-1 border text-[11px] font-bold rounded-lg hover:opacity-80 transition-all cursor-pointer"
-                        >
-                          {camp.payment_status === 'paid' ? 'Megjelölés Várakozóként' : 'Kiegyenlítve'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 7: NOTIFICATIONS & EXPIRATION WARNINGS */}
-      {activeTab === 'notifications' && (
-        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
-          <div>
-            <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
-              <BellRing size={20} style={{ color: cardHighlight }} /> Automatikus Lejárati &amp; Értesítési Központ
-            </h2>
-            <p className="text-xs text-gray-400 mt-1">
-              60 napos, 30 napos és 7 napos automatikus partneri figyelmeztetések logja.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {campaigns.map((camp) => {
-              const endDateObj = camp.end_date ? new Date(camp.end_date) : null;
-              const daysLeft = endDateObj ? Math.ceil((endDateObj.getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 999;
-
-              let warningBadge = '🟢 Megfelelőidő';
-              let warningClass = 'border-green-500/30 bg-green-500/10 text-green-400';
-
-              if (daysLeft <= 7) {
-                warningBadge = '🔴 Sürgős: Lejár 7 napon belül!';
-                warningClass = 'border-red-500/30 bg-red-500/10 text-red-400';
-              } else if (daysLeft <= 30) {
-                warningBadge = '🟠 Figyelmeztetés: Lejár 30 napon belül!';
-                warningClass = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
-              } else if (daysLeft <= 60) {
-                warningBadge = '🟡 Tájékoztató: Lejár 60 napon belül';
-                warningClass = 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400';
-              }
-
-              return (
-                <div key={camp.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 border rounded-2xl flex items-center justify-between flex-wrap gap-4 shadow-sm">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded border ${warningClass}`}>
-                        {warningBadge}
-                      </span>
-                      <span style={{ color: textColor }} className="text-xs font-bold">{camp.sponsor_name}</span>
-                    </div>
-                    <h4 style={{ color: textColor }} className="text-sm font-bold">{camp.title}</h4>
-                    <p className="text-xs text-gray-400">
-                      Kapcsolattartó: <strong style={{ color: textColor }}>{camp.contact_person?.name || 'Partner'}</strong> ({camp.contact_person?.email || '-'})
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => alert(`Automatikus lejárati emlékeztető kiküldve a(z) ${camp.contact_person?.email || 'partner'} címre!`)}
-                      style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
-                      className="px-3 py-1.5 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Mail size={12} /> Emlékeztető Küldése
-                    </button>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 rounded-2xl border space-y-2">
+                  <span className="text-xs font-bold text-gray-400">Összes megjelenés</span>
+                  <span className="text-3xl font-black text-white block">{kpiStats.totalImpressions.toLocaleString('hu-HU')}</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 8: REPORTS & CTR ANALYTICS */}
-      {activeTab === 'reports' && (
-        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 space-y-6 shadow-xl">
-          <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
-            <div>
-              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
-                <BarChart3 size={20} style={{ color: cardHighlight }} /> Kampány Riportok &amp; Teljesítmény Elemzés
-              </h2>
-              <p className="text-xs text-gray-400 mt-1">
-                Megjelenések, Kattintások és CTR (Click-Through Rate) partneri elszámolásokhoz.
-              </p>
-            </div>
-
-            <button
-              onClick={() => alert('Teljesítmény riport PDF formátumban letöltve!')}
-              style={{ backgroundColor: cardHighlight, color: '#000000' }}
-              className="px-4 py-2 font-extrabold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 shadow-md cursor-pointer"
-            >
-              <Download size={14} /> Riport Letöltése (PDF)
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {campaigns.map((camp) => {
-              const ctr =
-                camp.impressions_count > 0
-                  ? ((camp.clicks_count / camp.impressions_count) * 100).toFixed(1)
-                  : '0.0';
-
-              return (
-                <div key={camp.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider">
-                      {camp.sponsor_name}
-                    </span>
-                    <span className="text-xs font-bold text-green-400 bg-green-500/10 px-2.5 py-0.5 rounded border border-green-500/20">
-                      CTR: {ctr}%
-                    </span>
-                  </div>
-
-                  <h3 style={{ color: textColor }} className="text-base font-bold">{camp.title}</h3>
-
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div style={{ backgroundColor: cardBg }} className="p-3 rounded-xl space-y-1 border border-white/5">
-                      <span className="text-[10px] text-gray-400 flex items-center gap-1"><Eye size={12} /> Összes Megjelenés</span>
-                      <span style={{ color: textColor }} className="text-sm font-extrabold">{camp.impressions_count.toLocaleString('hu-HU')}</span>
-                    </div>
-                    <div style={{ backgroundColor: cardBg }} className="p-3 rounded-xl space-y-1 border border-white/5">
-                      <span className="text-[10px] text-gray-400 flex items-center gap-1"><MousePointer size={12} /> Összes Kattintás</span>
-                      <span style={{ color: cardHighlight }} className="text-sm font-extrabold">{camp.clicks_count.toLocaleString('hu-HU')}</span>
-                    </div>
-                  </div>
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 rounded-2xl border space-y-2">
+                  <span className="text-xs font-bold text-gray-400">Összes kattintás</span>
+                  <span className="text-3xl font-black text-emerald-400 block">{kpiStats.totalClicks.toLocaleString('hu-HU')}</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 9: PARTNER ACCEPTANCE PORTAL (INTERACTIVE SIMULATION) */}
-      {activeTab === 'partner_portal' && (
-        <div className="space-y-8 max-w-4xl mx-auto">
-          {/* Welcome Card for Partner */}
-          <div className="bg-gradient-to-r from-blue-950/60 to-slate-900 border border-blue-500/40 rounded-3xl p-6 space-y-3 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-blue-300 bg-blue-500/10 px-3 py-1 rounded-full uppercase border border-blue-500/20">
-                🤝 Partner Fiók – Szerződés Elfogadás
-              </span>
-              <span className="text-xs font-bold text-gray-400">Üdvözlünk, Partner!</span>
-            </div>
-            <h2 style={{ color: textColor }} className="text-2xl font-extrabold">
-              Szerződés Elfogadása &amp; Visszaigazolása
-            </h2>
-            <p className="text-xs text-gray-300 leading-relaxed">
-              Az ÉpítőTudás által kiállított hirdetési megállapodás megtekintése és elektronikus elfogadása. Az elfogadás rögzíti az e-mail címed, időbélyeged és IP címed.
-            </p>
-
-            {/* Select contract */}
-            <div className="pt-3 flex items-center gap-3">
-              <span className="text-xs text-gray-300 font-bold whitespace-nowrap">Válassz Szerződést:</span>
-              <select
-                value={selectedPartnerContract?.id || ''}
-                onChange={(e) => {
-                  const match = contracts.find((c) => c.id === e.target.value);
-                  if (match) setSelectedPartnerContract(match);
-                }}
-                style={fieldStyle}
-                className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
-              >
-                {contracts.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.contractNumber} • {c.partnerName} ({c.campaignTitle}) - [{c.status.toUpperCase()}]
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {acceptSuccess && (
-            <div className="p-4 bg-green-500/10 border border-green-500/40 text-green-400 rounded-2xl flex items-center gap-3 font-bold text-sm">
-              <ShieldCheck size={24} />
-              A szerződés sikeresen elfogadva! Az IP cím és időbélyeg jogilag kötelező érvénnyel rögzítve. A kampány státusza AKTÍV-ra frissült.
+                <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 rounded-2xl border space-y-2">
+                  <span className="text-xs font-bold text-gray-400">Átlagos CTR</span>
+                  <span className="text-3xl font-black text-amber-400 block">{kpiStats.averageCtr}%</span>
+                </div>
+              </div>
             </div>
           )}
 
-          {selectedPartnerContract && (
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
-              {/* Header Box */}
-              <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-4">
-                <div>
-                  <span style={{ color: cardHighlight }} className="text-xs font-mono font-extrabold block">
-                    {selectedPartnerContract.contractNumber}
-                  </span>
-                  <h3 style={{ color: textColor }} className="text-xl font-extrabold">
-                    {selectedPartnerContract.campaignTitle}
-                  </h3>
-                </div>
-
-                <div className="text-right">
-                  <div style={{ color: cardHighlight }} className="text-xl font-black font-mono">
-                    {selectedPartnerContract.amount.toLocaleString('hu-HU')} Ft <span className="text-xs font-normal text-gray-400">+ ÁFA</span>
-                  </div>
-                  <span className="text-xs text-gray-400">Érvényes: {selectedPartnerContract.startDate} - {selectedPartnerContract.endDate}</span>
-                </div>
-              </div>
-
-              {/* Document Text Box */}
-              <div style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }} className="p-6 border rounded-2xl font-mono text-xs leading-relaxed space-y-4 whitespace-pre-wrap">
-                {selectedPartnerContract.content}
-              </div>
-
-              {/* Acceptance Audit Stamp if already accepted */}
-              {selectedPartnerContract.acceptanceLog && (
-                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-2xl space-y-2">
-                  <div className="text-xs font-extrabold text-green-400 flex items-center gap-2">
-                    <ShieldCheck size={18} /> ELEKTRONIKUSAN ELFOGADVA ÉS IGAZOLVA
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-gray-300 font-mono pt-1 border-t border-green-500/20">
-                    <div>Elfogadó: <strong>{selectedPartnerContract.acceptanceLog.acceptedBy}</strong></div>
-                    <div>Email: <strong>{selectedPartnerContract.acceptanceLog.email}</strong></div>
-                    <div>Dátum: <strong>{selectedPartnerContract.acceptanceLog.acceptedAt}</strong></div>
-                    <div>IP Cím: <strong>{selectedPartnerContract.acceptanceLog.ipAddress}</strong></div>
-                  </div>
-                </div>
-              )}
-
-              {/* Acceptance Form if not yet accepted */}
-              {selectedPartnerContract.status !== 'accepted' && (
-                <form onSubmit={handlePartnerAcceptance} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-6 border rounded-2xl space-y-4 shadow-md">
-                  <h4 style={{ color: textColor }} className="text-sm font-bold flex items-center gap-2">
-                    <FileCheck size={18} style={{ color: cardHighlight }} /> Nyilatkozat &amp; Elfogadás Rögzítése
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-gray-400 font-semibold block mb-1">Képviselő Neve</label>
-                      <input
-                        type="text"
-                        required
-                        value={partnerSignName}
-                        onChange={(e) => setPartnerSignName(e.target.value)}
-                        style={fieldStyle}
-                        className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                      />
+          {/* TAB 9: ÉRTESÍTÉSEK */}
+          {activeTab === 'notifications' && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <h2 style={{ color: textColor }} className="text-lg font-bold border-b border-white/10 pb-4 flex items-center gap-2">
+                <BellRing size={20} style={{ color: cardHighlight }} /> Rendszer Értesítések &amp; Figyelmeztetések
+              </h2>
+              <div className="space-y-3">
+                {notifications.map((notif) => (
+                  <div key={notif.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-4 rounded-2xl border flex items-center justify-between gap-4 shadow">
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <AlertTriangle size={16} className="text-amber-400" /> {notif.title}
+                      </h4>
+                      <p className="text-xs text-gray-400">{notif.message}</p>
                     </div>
-                    <div>
-                      <label className="text-xs text-gray-400 font-semibold block mb-1">Képviselő Email Címe</label>
-                      <input
-                        type="email"
-                        required
-                        value={partnerSignEmail}
-                        onChange={(e) => setPartnerSignEmail(e.target.value)}
-                        style={fieldStyle}
-                        className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 pt-2">
                     <button
-                      type="button"
-                      onClick={() => {
-                        updateContractStatus(selectedPartnerContract.id, 'declined');
-                        alert('Módosítási kérelem továbbítva az adminisztrátornak!');
-                        loadData();
-                      }}
-                      style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
-                      className="px-4 py-2.5 border font-bold text-xs rounded-xl flex items-center gap-2 cursor-pointer hover:opacity-80"
-                    >
-                      <XCircle size={14} className="text-red-400" /> Kérdés / Módosítás Kérése
-                    </button>
-
-                    <button
-                      type="submit"
+                      onClick={() => setActiveTab(notif.targetModule as AdCategoryKey)}
                       style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                      className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+                      className="px-4 py-2 font-extrabold text-xs rounded-xl shadow cursor-pointer hover:opacity-90 shrink-0"
                     >
-                      <Check size={16} /> [ Elfogadom a Szerződést ]
+                      Megnyitás
                     </button>
                   </div>
-                </form>
-              )}
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* PRINTABLE CONTRACT VIEW MODAL */}
-      {showContractViewer && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl w-full max-w-3xl p-6 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
-              <div>
-                <span style={{ color: cardHighlight }} className="text-xs font-mono font-bold">{showContractViewer.contractNumber}</span>
-                <h3 style={{ color: textColor }} className="text-lg font-bold">Szerződéses Hivatalos Dokumentum</h3>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => window.print()}
-                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-3 py-1.5 font-extrabold text-xs rounded-xl hover:opacity-90 flex items-center gap-1.5 cursor-pointer shadow-md"
-                >
-                  <Printer size={14} /> Nyomtatás / PDF
-                </button>
-                <button onClick={() => setShowContractViewer(null)} className="text-gray-400 hover:text-white text-xl cursor-pointer">✕</button>
-              </div>
-            </div>
-
-            <div className="p-6 bg-white text-gray-900 rounded-2xl space-y-4 text-xs font-mono leading-relaxed whitespace-pre-wrap shadow-inner">
-              {showContractViewer.content}
-
-              {showContractViewer.acceptanceLog && (
-                <div className="mt-6 pt-4 border-t-2 border-dashed border-gray-400 space-y-1 text-[11px] text-gray-800">
-                  <div className="font-bold text-green-700 flex items-center gap-1">
-                    <ShieldCheck size={14} /> ELEKTRONIKUSAN ELFOGADOTT ÉS RÖGZÍTETT OKIRAT
-                  </div>
-                  <div>Elfogadó: {showContractViewer.acceptanceLog.acceptedBy} ({showContractViewer.acceptanceLog.email})</div>
-                  <div>Időbélyeg: {showContractViewer.acceptanceLog.acceptedAt}</div>
-                  <div>Rögzített IP Cím: {showContractViewer.acceptanceLog.ipAddress}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* VERSION MODAL */}
-      {showVersionModal && (
+      {/* Campaign Create Modal */}
+      {showCampaignModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
-              <h3 style={{ color: textColor }} className="text-base font-bold flex items-center gap-2">
-                <History size={18} style={{ color: cardHighlight }} /> Új Verzió Létrehozása (v{(showVersionModal.versions?.length || 1) + 1})
-              </h3>
-              <button onClick={() => setShowVersionModal(null)} className="text-gray-400 hover:text-white cursor-pointer">✕</button>
-            </div>
-
-            <form onSubmit={handleCreateVersionSubmit} className="space-y-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 className="text-lg font-black text-white">Új Kampány Indítása</h3>
+            <form onSubmit={handleCreateCampaignSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="text-xs text-gray-400 font-semibold block mb-1">Módosított Díj (Ft + ÁFA)</label>
-                <input
-                  type="number"
-                  required
-                  value={newVersionAmount}
-                  onChange={(e) => setNewVersionAmount(Number(e.target.value))}
-                  style={fieldStyle}
-                  className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
-                />
+                <label className="font-bold text-gray-400 block mb-1">Hirdető Neve</label>
+                <input type="text" value={sponsorName} onChange={(e) => setSponsorName(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="Leier Kft." required />
               </div>
-
               <div>
-                <label className="text-xs text-gray-400 font-semibold block mb-1">Változás Indoklása / Megjegyzés</label>
-                <textarea
-                  rows={3}
-                  value={newVersionNote}
-                  onChange={(e) => setNewVersionNote(e.target.value)}
-                  placeholder="pl. Díj emelése 299 000 Ft-ra új felületi kiemelés miatt..."
-                  style={fieldStyle}
-                  className="w-full border rounded-xl p-3 text-xs focus:outline-none"
-                />
+                <label className="font-bold text-gray-400 block mb-1">Kampány Címe</label>
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="Taverna Térkő 2026" required />
               </div>
-
-              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-3 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowVersionModal(null)}
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                  className="px-4 py-2 border font-semibold text-xs rounded-xl hover:opacity-80 transition-colors cursor-pointer"
-                >
-                  Mégse
-                </button>
-                <button
-                  type="submit"
-                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-5 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-colors cursor-pointer hover:opacity-90"
-                >
-                  Új Verzió Mentése
-                </button>
+              <div>
+                <label className="font-bold text-gray-400 block mb-1">Elhelyezés</label>
+                <select value={placementSlot} onChange={(e) => setPlacementSlot(e.target.value as any)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
+                  <option value="top_banner">Főoldali Fejléc (Top Banner)</option>
+                  <option value="sidebar">Oldalsáv Banner</option>
+                  <option value="in_feed">Eszközök &amp; In-feed Banner</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-bold text-gray-400 block mb-1">Reklámcsomag</label>
+                <select value={packageTier} onChange={(e) => setPackageTier(e.target.value as PackageTier)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
+                  <option value="bronze">Bronze Csomag</option>
+                  <option value="silver">Silver Csomag</option>
+                  <option value="gold">Gold Csomag</option>
+                  <option value="custom">Egyedi Csomag</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-bold text-gray-400 block mb-1">Keretösszeg (HUF)</label>
+                <input type="number" value={priceHuf} onChange={(e) => setPriceHuf(Number(e.target.value))} style={fieldStyle} className="w-full border rounded-xl p-2.5" />
+              </div>
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button type="button" onClick={() => setShowCampaignModal(false)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
+                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl">Létrehozás</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* NEW CAMPAIGN V2 MODAL */}
-      {showModal && (
+      {/* Advertiser Modal */}
+      {showAdvertiserModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-3xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
-              <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
-                <Plus size={20} style={{ color: cardHighlight }} /> Új Reklámkampány &amp; Szerződés Indítása
-              </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white text-xl cursor-pointer">✕</button>
-            </div>
-
-            <form onSubmit={handleCreateCampaign} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Partner / Cég Neve</label>
-                  <input
-                    type="text"
-                    required
-                    value={sponsorName}
-                    onChange={(e) => setSponsorName(e.target.value)}
-                    placeholder="pl. Bosch Professional"
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Kampány Címe</label>
-                  <input
-                    type="text"
-                    required
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="pl. Akkus Szerszámgépek 2026"
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Reklámcsomag Választó</label>
-                  <select
-                    value={packageTier}
-                    onChange={(e) => {
-                      const tier = e.target.value as PackageTier;
-                      setPackageTier(tier);
-                      const pkg = AD_PACKAGES.find((p) => p.id === tier);
-                      if (pkg) {
-                        setPriceHuf(pkg.monthlyPriceHuf);
-                        setPlacementSlot(pkg.recommendedPlacement);
-                      }
-                    }}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
-                  >
-                    <option value="bronze">Bronze Csomag (49 000 Ft/hó)</option>
-                    <option value="silver">Silver Csomag (99 000 Ft/hó)</option>
-                    <option value="gold">Gold Csomag (249 000 Ft/hó)</option>
-                    <option value="custom">Egyedi Szponzori Csomag</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Hirdetési Elhelyezés</label>
-                  <select
-                    value={placementSlot}
-                    onChange={(e) => setPlacementSlot(e.target.value as 'top_banner' | 'sidebar' | 'in_feed')}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
-                  >
-                    <option value="top_banner">Fejléc Banner (top_banner)</option>
-                    <option value="sidebar">Oldalsáv Kártya (sidebar)</option>
-                    <option value="in_feed">Beágyazott Hirdetés (in_feed)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Díj (Ft + ÁFA)</label>
-                  <input
-                    type="number"
-                    value={priceHuf}
-                    onChange={(e) => setPriceHuf(Number(e.target.value))}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Fizetési Állapot</label>
-                  <select
-                    value={paymentStatus}
-                    onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
-                  >
-                    <option value="paid">Kiegyenlítve</option>
-                    <option value="unpaid">Fizetésre vár</option>
-                    <option value="partially_paid">Részben fizetve</option>
-                    <option value="overdue">Fizetési hiba / Lejárt</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Szerződés Típusa</label>
-                  <select
-                    value={contractType}
-                    onChange={(e) => setContractType(e.target.value as ContractType)}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
-                  >
-                    <option value="once">Egyszeri Kampány</option>
-                    <option value="monthly">Havi Előfizetés</option>
-                    <option value="annual">Éves Partner Csomag</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Kezdő Állapot</label>
-                  <select
-                    value={statusV2}
-                    onChange={(e) => setStatusV2(e.target.value as CampaignStatusV2)}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
-                  >
-                    <option value="draft">🟡 Ajánlat készül</option>
-                    <option value="contracting">🟠 Szerződés alatt</option>
-                    <option value="pending_payment">🔵 Fizetésre vár</option>
-                    <option value="active">🟢 Aktív</option>
-                    <option value="renewing">🟣 Hosszabbítás alatt</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Kezdő Dátum</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 font-semibold block mb-1">Lejárati Dátum</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    style={fieldStyle}
-                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Contact Person Details */}
-              <div style={{ borderColor: cardBorder }} className="pt-3 border-t space-y-3">
-                <span style={{ color: cardHighlight }} className="text-xs font-bold block">Kapcsolattartó Adatai</span>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Név (pl. Nagy Péter)"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    style={fieldStyle}
-                    className="border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email (pl. nagy@partner.hu)"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    style={fieldStyle}
-                    className="border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Telefon (pl. +36 30 123 4567)"
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    style={fieldStyle}
-                    className="border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                </div>
-              </div>
-
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 className="text-lg font-black text-white">{editingAdvertiser ? 'Hirdető Szerkesztése' : 'Új Hirdető Hozzáadása'}</h3>
+            <form onSubmit={handleSaveAdvertiserSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="text-xs text-gray-400 font-semibold block mb-1">Cél URL (Website Link)</label>
-                <input
-                  type="url"
-                  value={targetUrl}
-                  onChange={(e) => setTargetUrl(e.target.value)}
-                  placeholder="https://..."
-                  style={fieldStyle}
-                  className="w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none"
-                />
+                <label className="font-bold text-gray-400 block mb-1">Cégnév</label>
+                <input type="text" value={advName} onChange={(e) => setAdvName(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="Bosch Kft." required />
               </div>
-
-              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                  className="px-4 py-2 border font-semibold text-xs rounded-xl hover:opacity-80 transition-colors cursor-pointer"
-                >
-                  Mégse
-                </button>
-                <button
-                  type="submit"
-                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-5 py-2 font-extrabold text-xs rounded-xl hover:opacity-90 shadow-lg cursor-pointer transition-colors"
-                >
-                  Kampány &amp; Szerződés Indítása
-                </button>
+              <div>
+                <label className="font-bold text-gray-400 block mb-1">Kapcsolattartó Neve</label>
+                <input type="text" value={advContactName} onChange={(e) => setAdvContactName(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="Kovács Andrea" />
+              </div>
+              <div>
+                <label className="font-bold text-gray-400 block mb-1">E-mail címe</label>
+                <input type="email" value={advContactEmail} onChange={(e) => setAdvContactEmail(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="andrea@bosch.hu" />
+              </div>
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button type="button" onClick={() => setShowAdvertiserModal(false)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
+                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl">Mentés</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center">
+            <AlertTriangle size={32} className="mx-auto text-red-400 animate-bounce" />
+            <h3 className="text-base font-bold text-white">Biztosan törölni szeretnéd a kijelölt elemet?</h3>
+            <p className="text-xs text-gray-400">Ez a művelet nem vonható vissza.</p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl text-xs">Mégse</button>
+              <button onClick={handleDeleteItemConfirmed} className="px-5 py-2 bg-red-500 text-white font-extrabold rounded-xl text-xs hover:bg-red-600">Igen, törlés</button>
+            </div>
           </div>
         </div>
       )}
