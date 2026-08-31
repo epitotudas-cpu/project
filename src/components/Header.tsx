@@ -81,18 +81,75 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     onNavigate('home');
   };
 
+  const [locationHash, setLocationHash] = useState<string>(() => (typeof window !== 'undefined' ? window.location.hash : ''));
+
+  useEffect(() => {
+    const handleHashSync = () => {
+      setLocationHash(window.location.hash || '');
+    };
+    window.addEventListener('hashchange', handleHashSync);
+    window.addEventListener('popstate', handleHashSync);
+    return () => {
+      window.removeEventListener('hashchange', handleHashSync);
+      window.removeEventListener('popstate', handleHashSync);
+    };
+  }, []);
+
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Fiók';
   const isAdmin = profile?.role === 'admin' || profile?.role === 'editor';
+
+  const isSubItemActive = (subPage: string, currentPage: string, hash: string): boolean => {
+    const [subBase, subQueryStr] = subPage.split('?');
+    const subBasePage = subBase.split('#')[0];
+
+    let pageMatches = currentPage === subBasePage;
+    if (!pageMatches) {
+      if (subBasePage === 'learning' && (currentPage === 'course-detail' || currentPage === 'quiz-player')) {
+        if (currentPage === 'course-detail' && subQueryStr?.includes('tab=courses')) return true;
+        if (currentPage === 'quiz-player' && subQueryStr?.includes('tab=quizzes')) return true;
+      }
+      return false;
+    }
+
+    if (subQueryStr) {
+      const subParams = new URLSearchParams(subQueryStr);
+      const hashQueryPart = hash.includes('?') ? hash.split('?')[1] : '';
+      const searchParams = new URLSearchParams(
+        hashQueryPart || (typeof window !== 'undefined' ? window.location.search : '')
+      );
+
+      if (subBasePage === 'category') {
+        const targetType = subParams.get('type');
+        const currentType = searchParams.get('type') || 'hirek';
+        return targetType === currentType;
+      }
+
+      if (subBasePage === 'learning') {
+        const targetTab = subParams.get('tab');
+        const currentTab = searchParams.get('tab') || 'courses';
+        return targetTab === currentTab;
+      }
+
+      for (const [key, val] of subParams.entries()) {
+        if (searchParams.get(key) !== val) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return true;
+  };
 
   const isNavItemActive = (itemPage: string, subItems?: Array<{ page: string }>) => {
     const mainItemPage = itemPage.split('?')[0].split('#')[0];
     if (currentPage === mainItemPage) return true;
     if (mainItemPage === 'learning' && (currentPage === 'learning' || currentPage === 'course-detail' || currentPage === 'quiz-player')) return true;
     if (mainItemPage === 'category' && (currentPage === 'category' || currentPage === 'article')) return true;
-    if (mainItemPage === 'tudastar' && ['glossary', 'calculations', 'books'].includes(currentPage)) return true;
-    if (mainItemPage === 'tool' && ['software', 'valaszto'].includes(currentPage)) return true;
+    if (mainItemPage === 'tudastar' && ['glossary', 'calculations', 'books', 'safety', 'standards'].includes(currentPage)) return true;
+    if (mainItemPage === 'tool' && ['software', 'valaszto', 'materials'].includes(currentPage)) return true;
     if (mainItemPage === 'paths' && ['courses', 'careers', 'learning-paths'].includes(currentPage)) return true;
-    if (subItems?.some((sub) => sub.page.split('?')[0].split('#')[0] === currentPage)) return true;
+    if (subItems?.some((sub) => isSubItemActive(sub.page, currentPage, locationHash))) return true;
     return false;
   };
 
@@ -179,7 +236,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
                       <div className="w-56 bg-[#111] border border-[#222] rounded-xl shadow-2xl overflow-hidden py-1">
                         {item.subItems.map((sub) => {
-                          const isSubActive = currentPage === sub.page;
+                          const isSubActive = isSubItemActive(sub.page, currentPage, locationHash);
                           return (
                             <button
                               key={sub.label}
@@ -448,7 +505,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
                       {/* Subnav items */}
                       {item.subItems!.map((sub) => {
-                        const isSubActive = currentPage === sub.page;
+                        const isSubActive = isSubItemActive(sub.page, currentPage, locationHash);
                         return (
                           <button
                             key={sub.label}
