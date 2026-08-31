@@ -6,7 +6,6 @@ import {
   FileText,
   Download,
   Building2,
-  Filter,
   X,
   LayoutGrid,
   List,
@@ -179,14 +178,30 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
               )}
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+            {/* View Mode Toggle & Dropdown Select Filters */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0 self-end lg:self-auto w-full lg:w-auto">
+              {/* Category Select Dropdown */}
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold px-3 py-3 rounded-2xl focus:outline-none cursor-pointer hover:border-primary transition-colors flex-1 lg:flex-initial"
+                aria-label="Kategória kiválasztása"
+              >
+                <option value="all">Minden kategória (Összes)</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+
               {/* Brand Select */}
               {availableBrands.length > 0 && (
                 <select
                   value={selectedBrand}
                   onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold px-3 py-3 rounded-2xl focus:outline-none cursor-pointer"
+                  className="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold px-3 py-3 rounded-2xl focus:outline-none cursor-pointer hover:border-primary transition-colors flex-1 lg:flex-initial"
+                  aria-label="Márka kiválasztása"
                 >
                   <option value="all">Minden márka / gyártó</option>
                   {availableBrands.map((b) => (
@@ -202,7 +217,8 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
                 <select
                   value={selectedPartner}
                   onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold px-3 py-3 rounded-2xl focus:outline-none cursor-pointer"
+                  className="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold px-3 py-3 rounded-2xl focus:outline-none cursor-pointer hover:border-primary transition-colors flex-1 lg:flex-initial"
+                  aria-label="Forgalmazó partner kiválasztása"
                 >
                   <option value="all">Minden forgalmazó partner</option>
                   {partners.map((p) => (
@@ -234,36 +250,6 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Category Tabs Filter */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-t border-gray-100 pt-4">
-            <span className="text-xs font-bold text-gray-500 shrink-0 mr-1 flex items-center gap-1">
-              <Filter size={13} /> Kategóriák:
-            </span>
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
-                selectedCategory === 'all'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Összes anyagkategória
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
-                  selectedCategory === cat.id
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
           </div>
         </div>
 

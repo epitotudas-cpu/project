@@ -817,37 +817,80 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                 </div>
               </div>
 
-              {/* Wide Input Box */}
-              <div className="relative">
-                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
-                <input
-                  type="text"
-                  aria-label="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
-                  placeholder="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                    }
-                    if (e.key === 'Escape') {
-                      setSearchQuery('');
-                      (e.target as HTMLInputElement).blur();
-                    }
-                  }}
-                  className="w-full bg-gray-50/80 border-2 border-gray-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 rounded-2xl pl-12 pr-12 py-4 text-gray-900 placeholder-gray-400 focus:outline-none text-base font-semibold shadow-inner transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-200/80 rounded-full transition-colors cursor-pointer"
-                    title="Keresés törlése"
-                    aria-label="Keresés törlése"
+              {/* Search Input Box & Dropdown Select Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                <div className="relative md:col-span-6 lg:col-span-7">
+                  <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                  <input
+                    type="text"
+                    aria-label="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
+                    placeholder="Keress szerszámot, gépet, típust, szakmát vagy márkát…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                      }
+                      if (e.key === 'Escape') {
+                        setSearchQuery('');
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
+                    className="w-full bg-gray-50/80 border-2 border-gray-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 rounded-2xl pl-12 pr-12 py-3.5 text-gray-900 placeholder-gray-400 focus:outline-none text-sm sm:text-base font-semibold shadow-inner transition-all"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-200/80 rounded-full transition-colors cursor-pointer"
+                      title="Keresés törlése"
+                      aria-label="Keresés törlése"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Category Dropdown Menu */}
+                <div className="md:col-span-6 lg:col-span-5 flex items-center gap-2">
+                  <select
+                    value={selectedCategory || 'all'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedCategory(val === 'all' ? null : val);
+                      setSelectedSubtype(null);
+                    }}
+                    className="w-full bg-gray-50 border-2 border-gray-200 focus:border-primary focus:bg-white text-gray-800 text-xs font-bold px-3.5 py-3.5 rounded-2xl focus:outline-none cursor-pointer transition-all"
+                    aria-label="Kategória kiválasztása"
                   >
-                    <X size={18} />
-                  </button>
-                )}
+                    <option value="all">Minden kategória (Összes)</option>
+                    {CATEGORIES_CONFIG.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Subtype Dropdown Menu when category selected */}
+                  {activeCategoryConfig && activeCategoryConfig.subtypes.length > 0 && (
+                    <select
+                      value={selectedSubtype || 'all'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedSubtype(val === 'all' ? null : val);
+                      }}
+                      className="w-full bg-gray-50 border-2 border-gray-200 focus:border-primary focus:bg-white text-gray-800 text-xs font-bold px-3.5 py-3.5 rounded-2xl focus:outline-none cursor-pointer transition-all"
+                      aria-label="Típus kiválasztása"
+                    >
+                      <option value="all">Minden al-típus</option>
+                      {activeCategoryConfig.subtypes.map((sub) => (
+                        <option key={sub} value={sub}>
+                          {sub}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
               {/* Quick Search Tag Chips */}
