@@ -17,6 +17,8 @@ import {
   ShoppingBag,
   Tag,
   ExternalLink,
+  ShieldAlert,
+  FileCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useBooks, useBookCategories, type BookItem } from '../services/bookService';
@@ -278,6 +280,18 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
             page: 'books',
             icon: <Library size={14} className="text-accent" />,
             active: true,
+          },
+          {
+            label: 'Munkavédelem',
+            page: 'safety',
+            icon: <ShieldAlert size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szabályok, szabványok',
+            page: 'standards',
+            icon: <FileCheck size={14} className="text-accent" />,
+            active: false,
           },
         ]}
       />

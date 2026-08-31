@@ -14,6 +14,9 @@ import {
   X,
   HelpCircle,
   Tag,
+  Calculator,
+  Library,
+  FileCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import {
@@ -129,10 +132,10 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
         onNavigate={onNavigate}
         items={[
           { label: 'Fogalomtár', page: 'glossary', icon: <BookOpen size={14} className="text-accent" />, active: false },
-          { label: 'Számítások', page: 'calculations', icon: <FileText size={14} className="text-accent" />, active: false },
-          { label: 'Szakmai könyvek', page: 'books', icon: <BookOpen size={14} className="text-accent" />, active: false },
+          { label: 'Számítások', page: 'calculations', icon: <Calculator size={14} className="text-accent" />, active: false },
+          { label: 'Szakmai könyvek', page: 'books', icon: <Library size={14} className="text-accent" />, active: false },
           { label: 'Munkavédelem', page: 'safety', icon: <ShieldAlert size={14} className="text-accent" />, active: true },
-          { label: 'Szabályok, szabványok', page: 'standards', icon: <ShieldCheck size={14} className="text-accent" />, active: false },
+          { label: 'Szabályok, szabványok', page: 'standards', icon: <FileCheck size={14} className="text-accent" />, active: false },
         ]}
       />
 

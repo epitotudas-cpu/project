@@ -29,6 +29,8 @@ import {
   Paintbrush,
   Truck,
   Flame,
+  ShieldAlert,
+  FileCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { CalculatorInput, safeNum, parseNumberValue } from '../components/CalculatorInput';
@@ -2171,6 +2173,18 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
             label: 'Szakmai könyvek',
             page: 'books',
             icon: <Library size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Munkavédelem',
+            page: 'safety',
+            icon: <ShieldAlert size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szabályok, szabványok',
+            page: 'standards',
+            icon: <FileCheck size={14} className="text-accent" />,
             active: false,
           },
         ]}

@@ -17,6 +17,8 @@ import {
   LayoutGrid,
   Calculator,
   Library,
+  ShieldAlert,
+  FileCheck,
   X,
   Bookmark,
   BookmarkCheck,
@@ -491,6 +493,18 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             label: 'Szakmai könyvek',
             page: 'books',
             icon: <Library size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Munkavédelem',
+            page: 'safety',
+            icon: <ShieldAlert size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szabályok, szabványok',
+            page: 'standards',
+            icon: <FileCheck size={14} className="text-accent" />,
             active: false,
           },
         ]}
