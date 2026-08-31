@@ -49,7 +49,7 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Katalógus',
+            label: 'Gép & Szerszám Katalógus',
             page: 'tool',
             icon: <Wrench size={14} className="text-accent" />,
             active: false,

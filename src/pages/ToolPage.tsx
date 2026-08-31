@@ -392,7 +392,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Katalógus',
+            label: 'Gép & Szerszám Katalógus',
             page: 'tool',
             icon: <Wrench size={14} className="text-accent" />,
             active: activeViewTab === 'catalog' && !selectedTool,
