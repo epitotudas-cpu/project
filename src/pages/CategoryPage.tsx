@@ -468,38 +468,8 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           </div>
         )}
 
-        {/* QUICK SUBCATEGORY TABS & SEARCH BAR */}
+        {/* SEARCH BAR & FILTERS */}
         <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
-          {/* Main Category Subnav Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-gray-100">
-            {[
-              { id: 'hirek', label: 'Hírek', type: 'hirek', icon: Sparkles },
-              { id: 'ujdonsagok', label: 'Újdonságok', type: 'ujdonsagok', icon: Calendar },
-              { id: 'utmutatok', label: 'Útmutatók', type: 'utmutatok', icon: BookOpen },
-            ].map((tab) => {
-              const isSelected = selectedArticleType === tab.type;
-              const IconComp = tab.icon;
-
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setSelectedArticleType(tab.type as any);
-                    updateUrlParams(tab.type, selectedCategories, searchQuery);
-                  }}
-                  className={`px-4 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-                    isSelected
-                      ? 'bg-primary text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  <IconComp size={14} className={isSelected ? 'text-accent' : 'text-gray-500'} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
           <div className="flex flex-col md:flex-row items-center gap-4">
             
             {/* Live Search Input */}
