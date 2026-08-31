@@ -183,7 +183,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     if (currentPage === mainItemPage) return true;
     if (mainItemPage === 'learning' && (currentPage === 'learning' || currentPage === 'course-detail' || currentPage === 'quiz-player')) return true;
     if (mainItemPage === 'category' && (currentPage === 'category' || currentPage === 'article')) return true;
-    if (mainItemPage === 'tudastar' && ['glossary', 'calculations', 'books', 'safety', 'standards'].includes(currentPage)) return true;
+    if (['tudastar', 'glossary'].includes(mainItemPage) && ['glossary', 'calculations', 'books', 'safety', 'standards'].includes(currentPage)) return true;
     if (mainItemPage === 'tool' && ['software', 'valaszto', 'materials'].includes(currentPage)) return true;
     if (mainItemPage === 'paths' && ['courses', 'careers', 'learning-paths'].includes(currentPage)) return true;
     if (subItems?.some((sub) => isSubItemActive(sub.page, currentPage, location))) return true;

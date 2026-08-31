@@ -2158,19 +2158,19 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Fogalomtár',
+            label: 'Fogalomtár & Szótár',
             page: 'glossary',
             icon: <BookOpen size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Számítások',
+            label: 'Számítások & Kalkulátorok',
             page: 'calculations',
             icon: <Calculator size={14} className="text-accent" />,
             active: true,
           },
           {
-            label: 'Szakmai könyvek',
+            label: 'Szakmai Könyvek',
             page: 'books',
             icon: <Library size={14} className="text-accent" />,
             active: false,

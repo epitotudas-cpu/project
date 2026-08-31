@@ -55,19 +55,19 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Fogalomtár',
+            label: 'Fogalomtár & Szótár',
             page: 'glossary',
             icon: <BookOpen size={14} className="text-accent" />,
             active: activeSubTab === 'glossary',
           },
           {
-            label: 'Számítások',
+            label: 'Számítások & Kalkulátorok',
             page: 'calculations',
             icon: <Calculator size={14} className="text-accent" />,
             active: activeSubTab === 'calculations',
           },
           {
-            label: 'Szakmai könyvek',
+            label: 'Szakmai Könyvek',
             page: 'books',
             icon: <Library size={14} className="text-accent" />,
             active: activeSubTab === 'books',
