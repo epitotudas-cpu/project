@@ -9,10 +9,37 @@ interface HeaderProps {
   currentPage: string;
 }
 
+function useLocation() {
+  const [location, setLocation] = useState(() => ({
+    pathname: typeof window !== 'undefined' ? window.location.pathname : '',
+    search: typeof window !== 'undefined' ? window.location.search : '',
+    hash: typeof window !== 'undefined' ? window.location.hash : '',
+  }));
+
+  useEffect(() => {
+    const handleSync = () => {
+      setLocation({
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hash: window.location.hash,
+      });
+    };
+    window.addEventListener('popstate', handleSync);
+    window.addEventListener('hashchange', handleSync);
+    return () => {
+      window.removeEventListener('popstate', handleSync);
+      window.removeEventListener('hashchange', handleSync);
+    };
+  }, []);
+
+  return location;
+}
+
 export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const rawNavItems = useNavigationItems();
   const navStructure = getStructuredNav(rawNavItems, false);
+  const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -81,64 +108,74 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     onNavigate('home');
   };
 
-  const [locationHash, setLocationHash] = useState<string>(() => (typeof window !== 'undefined' ? window.location.hash : ''));
-
-  useEffect(() => {
-    const handleHashSync = () => {
-      setLocationHash(window.location.hash || '');
-    };
-    window.addEventListener('hashchange', handleHashSync);
-    window.addEventListener('popstate', handleHashSync);
-    return () => {
-      window.removeEventListener('hashchange', handleHashSync);
-      window.removeEventListener('popstate', handleHashSync);
-    };
-  }, []);
-
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Fiók';
   const isAdmin = profile?.role === 'admin' || profile?.role === 'editor';
 
-  const isSubItemActive = (subPage: string, currentPage: string, hash: string): boolean => {
+  const isSubItemActive = (subPage: string, pageState: string, loc: { pathname: string; search: string; hash: string }): boolean => {
+    const { pathname, search, hash } = loc;
+    const fullSearch = search || (hash.includes('?') ? '?' + hash.split('?')[1] : '');
+    const queryParams = new URLSearchParams(fullSearch);
+
+    const articleType = queryParams.get('type') || queryParams.get('tab');
+    const learningTab = queryParams.get('tab');
+
+    const cleanHash = hash.replace(/^#\/?/, '').split('?')[0];
+    const cleanPathname = pathname.replace(/^\//, '');
+
     const [subBase, subQueryStr] = subPage.split('?');
     const subBasePage = subBase.split('#')[0];
+    const subParams = new URLSearchParams(subQueryStr || '');
 
-    let pageMatches = currentPage === subBasePage;
-    if (!pageMatches) {
-      if (subBasePage === 'learning' && (currentPage === 'course-detail' || currentPage === 'quiz-player')) {
-        if (currentPage === 'course-detail' && subQueryStr?.includes('tab=courses')) return true;
-        if (currentPage === 'quiz-player' && subQueryStr?.includes('tab=quizzes')) return true;
-      }
-      return false;
+    // 1. Cikkek / Category Subitems
+    if (subBasePage === 'category' || subBasePage === 'cikkek') {
+      const isCategoryPage =
+        pageState === 'category' ||
+        cleanPathname === 'category' ||
+        cleanPathname === 'cikkek' ||
+        cleanHash === 'category' ||
+        cleanHash === 'cikkek';
+
+      if (!isCategoryPage) return false;
+
+      const targetType = subParams.get('type') || subParams.get('tab') || 'hirek';
+      const activeType = articleType || (cleanHash === 'ujdonsagok' || cleanHash === 'utmutatok' ? cleanHash : 'hirek');
+
+      return targetType === activeType;
     }
 
-    if (subQueryStr) {
-      const subParams = new URLSearchParams(subQueryStr);
-      const hashQueryPart = hash.includes('?') ? hash.split('?')[1] : '';
-      const searchParams = new URLSearchParams(
-        hashQueryPart || (typeof window !== 'undefined' ? window.location.search : '')
-      );
+    // 2. Tanulás / Learning Subitems
+    if (subBasePage === 'learning' || subBasePage === 'tanulas') {
+      const isLearningPage =
+        pageState === 'learning' ||
+        pageState === 'course-detail' ||
+        pageState === 'quiz-player' ||
+        cleanPathname === 'learning' ||
+        cleanPathname === 'tanulas' ||
+        cleanHash === 'learning' ||
+        cleanHash === 'tanulas';
 
-      if (subBasePage === 'category') {
-        const targetType = subParams.get('type');
-        const currentType = searchParams.get('type') || 'hirek';
-        return targetType === currentType;
+      if (!isLearningPage) return false;
+
+      if (pageState === 'course-detail') {
+        return subParams.get('tab') === 'courses';
+      }
+      if (pageState === 'quiz-player') {
+        return subParams.get('tab') === 'quizzes';
       }
 
-      if (subBasePage === 'learning') {
-        const targetTab = subParams.get('tab');
-        const currentTab = searchParams.get('tab') || 'courses';
-        return targetTab === currentTab;
-      }
+      const targetTab = subParams.get('tab') || 'courses';
+      const activeTab = learningTab || 'courses';
 
-      for (const [key, val] of subParams.entries()) {
-        if (searchParams.get(key) !== val) {
-          return false;
-        }
-      }
-      return true;
+      return targetTab === activeTab;
     }
 
-    return true;
+    // 3. Standalone Pages (Tudástár: glossary, calculations, books, safety, standards; Eszközök: tool, materials, software, valaszto; Pályák: paths, learning-paths, courses, careers)
+    const isPageMatch =
+      pageState === subBasePage ||
+      cleanPathname === subBasePage ||
+      cleanHash === subBasePage;
+
+    return isPageMatch;
   };
 
   const isNavItemActive = (itemPage: string, subItems?: Array<{ page: string }>) => {
@@ -149,7 +186,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     if (mainItemPage === 'tudastar' && ['glossary', 'calculations', 'books', 'safety', 'standards'].includes(currentPage)) return true;
     if (mainItemPage === 'tool' && ['software', 'valaszto', 'materials'].includes(currentPage)) return true;
     if (mainItemPage === 'paths' && ['courses', 'careers', 'learning-paths'].includes(currentPage)) return true;
-    if (subItems?.some((sub) => isSubItemActive(sub.page, currentPage, locationHash))) return true;
+    if (subItems?.some((sub) => isSubItemActive(sub.page, currentPage, location))) return true;
     return false;
   };
 
@@ -236,7 +273,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
                       <div className="w-56 bg-[#111] border border-[#222] rounded-xl shadow-2xl overflow-hidden py-1">
                         {item.subItems.map((sub) => {
-                          const isSubActive = isSubItemActive(sub.page, currentPage, locationHash);
+                          const isSubActive = isSubItemActive(sub.page, currentPage, location);
                           return (
                             <button
                               key={sub.label}
@@ -505,7 +542,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
                       {/* Subnav items */}
                       {item.subItems!.map((sub) => {
-                        const isSubActive = isSubItemActive(sub.page, currentPage, locationHash);
+                        const isSubActive = isSubItemActive(sub.page, currentPage, location);
                         return (
                           <button
                             key={sub.label}
