@@ -15,7 +15,7 @@ export interface MenuItem {
 export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   // Main Menu Items
   { id: 'nav-home', label: 'Főoldal', page: 'home', parentId: null, isActive: true, displayOrder: 1 },
-  { id: 'nav-articles', label: 'Cikkek', page: 'category', parentId: null, isActive: true, displayOrder: 2 },
+  { id: 'nav-articles', label: 'Cikkek', page: 'category?type=hirek', parentId: null, isActive: true, displayOrder: 2 },
   { id: 'nav-tudastar', label: 'Tudástár', page: 'tudastar', parentId: null, isActive: true, displayOrder: 3 },
   { id: 'nav-learning', label: 'Tanulás', page: 'learning', parentId: null, isActive: true, displayOrder: 4 },
   { id: 'nav-tool', label: 'Eszközök', page: 'tool', parentId: null, isActive: true, displayOrder: 5 },
@@ -88,7 +88,7 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
   const hasNavArticles = cleanItems.some((i) => i.id === 'nav-articles');
   if (!hasNavArticles) {
     cleanItems.push(
-      { id: 'nav-articles', label: 'Cikkek', page: 'category', parentId: null, isActive: true, displayOrder: 2 },
+      { id: 'nav-articles', label: 'Cikkek', page: 'category?type=hirek', parentId: null, isActive: true, displayOrder: 2 },
       { id: 'sub-news', label: 'Hírek', page: 'category?type=hirek', parentId: 'nav-articles', isActive: true, displayOrder: 1 },
       { id: 'sub-novelties', label: 'Újdonságok', page: 'category?type=ujdonsagok', parentId: 'nav-articles', isActive: true, displayOrder: 2 },
       { id: 'sub-guides', label: 'Útmutatók', page: 'category?type=utmutatok', parentId: 'nav-articles', isActive: true, displayOrder: 3 }
@@ -119,6 +119,7 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
   }
 
   const itemMap: Record<string, { label: string; page: string; displayOrder?: number }> = {
+    'nav-articles': { label: 'Cikkek', page: 'category?type=hirek', displayOrder: 2 },
     'sub-professions': { label: 'Építőipari szakmák', page: 'paths', displayOrder: 1 },
     'sub-paths': { label: 'Tanulási Útvonalak & Karrierlépcsők', page: 'learning-paths', displayOrder: 2 },
     'sub-courses': { label: 'Képzések & Kurzusok', page: 'courses', displayOrder: 3 },

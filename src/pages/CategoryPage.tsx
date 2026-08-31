@@ -90,7 +90,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Filters State
-  const [selectedArticleType, setSelectedArticleType] = useState<'hirek' | 'ujdonsagok' | 'utmutatok'>('utmutatok');
+  const [selectedArticleType, setSelectedArticleType] = useState<'hirek' | 'ujdonsagok' | 'utmutatok'>('hirek');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -163,7 +163,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       if (['hirek', 'ujdonsagok', 'utmutatok'].includes(typeParam)) {
         setSelectedArticleType(typeParam as 'hirek' | 'ujdonsagok' | 'utmutatok');
       } else {
-        setSelectedArticleType('utmutatok');
+        setSelectedArticleType('hirek');
       }
 
       if (catParam) {
@@ -174,6 +174,8 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
       if (qParam) {
         setSearchQuery(qParam);
+      } else {
+        setSearchQuery('');
       }
     } catch {
       // ignore parsing errors
