@@ -943,12 +943,16 @@ export type QuestionType = 'single' | 'multiple' | 'boolean';
 export interface QuizQuestion {
   id: string;
   question: string;
-  question_type: QuestionType;
-  options: string[];
-  correct_options: number[]; // Array of 0-based indices
-  explanation: string; // Detailed educational breakdown for wrong answers
-  points: number;
+  question_type?: QuestionType;
+  options?: string[];
+  correct_options?: number[]; // Array of 0-based indices
+  explanation?: string; // Detailed educational breakdown for wrong answers
+  points?: number;
   image_url?: string;
+  quiz_id?: string;
+  options_json?: string[];
+  correct_option_index?: number;
+  created_at?: string;
 }
 
 export interface Quiz {

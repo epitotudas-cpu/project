@@ -16,6 +16,14 @@ import {
   Calculator,
   Library,
   FileCheck,
+  ExternalLink,
+  CheckCircle2,
+  AlertTriangle,
+  Ban,
+  ShieldCheck,
+  Info,
+  Calendar,
+  Layers
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import {
@@ -23,19 +31,29 @@ import {
   fetchKnowledgeItemsFromCloud,
   type EducationalContentItem,
 } from '../services/knowledgeHubService';
+import { OFFICIAL_SAFETY_CARDS, type SafetyCardItem } from '../data/safetyCardsData';
 
 interface SafetyPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function SafetyPage({ onNavigate }: SafetyPageProps) {
+  const [activeTab, setActiveTab] = useState<'cards' | 'articles'>('cards');
   const [items, setItems] = useState<EducationalContentItem[]>(() =>
     getKnowledgeItemsLocal().filter((i) => i.hub_type === 'safety' && i.status === 'published')
   );
+  
+  // Filtering for Articles
   const [selectedTopic, setSelectedTopic] = useState<string>('all');
   const [selectedAudience, setSelectedAudience] = useState<'all' | 'students' | 'professionals'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeItem, setActiveItem] = useState<EducationalContentItem | null>(null);
+
+  // Filtering for Official Safety Cards
+  const [selectedCardCategory, setSelectedCardCategory] = useState<string>('all');
+  const [selectedCardAudience, setSelectedCardAudience] = useState<string>('all');
+  const [cardSearchQuery, setCardSearchQuery] = useState('');
+  const [activeCard, setActiveCard] = useState<SafetyCardItem | null>(null);
 
   useEffect(() => {
     function loadData() {
@@ -54,7 +72,38 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
     return () => window.removeEventListener('knowledge-hub-updated', loadData);
   }, []);
 
-  // Unique topics list
+  // Unique card categories list
+  const availableCardCategories = useMemo(() => {
+    const categories = new Set<string>();
+    OFFICIAL_SAFETY_CARDS.forEach((card) => {
+      if (card.type) categories.add(card.type);
+    });
+    return Array.from(categories);
+  }, []);
+
+  // Filtered Cards list
+  const filteredCards = useMemo(() => {
+    return OFFICIAL_SAFETY_CARDS.filter((card) => {
+      const matchesCategory = selectedCardCategory === 'all' || card.type === selectedCardCategory;
+      const matchesAudience =
+        selectedCardAudience === 'all' ||
+        (selectedCardAudience === 'munkavállaló' && card.target_audience.includes('munkavállaló')) ||
+        (selectedCardAudience === 'szakember' && card.target_audience.includes('szakember'));
+
+      const q = cardSearchQuery.toLowerCase().trim();
+      const matchesQuery =
+        !q ||
+        card.title.toLowerCase().includes(q) ||
+        card.summary.toLowerCase().includes(q) ||
+        card.danger.toLowerCase().includes(q) ||
+        card.required_action.toLowerCase().includes(q) ||
+        card.legal_sources.some((src) => src.name.toLowerCase().includes(q) || src.section.toLowerCase().includes(q));
+
+      return matchesCategory && matchesAudience && matchesQuery;
+    });
+  }, [selectedCardCategory, selectedCardAudience, cardSearchQuery]);
+
+  // Unique topics list for Articles
   const availableTopics = useMemo(() => {
     const topics = new Set<string>();
     items.forEach((i) => {
@@ -63,7 +112,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
     return Array.from(topics);
   }, [items]);
 
-  // Filtered items list
+  // Filtered items list for Articles
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const matchesTopic = selectedTopic === 'all' || item.topic === selectedTopic;
@@ -106,19 +155,19 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs rounded-full">
-                <ShieldAlert size={14} /> Munkavédelmi Oktatási Tudásbázis
+                <ShieldAlert size={14} /> Hivatalos Jogszabályalapú Tudásbázis
               </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Építőipari Munkavédelem &amp; Balesetmegelőzés
+                Építőipari Munkavédelem &amp; Kártyatár
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Strukturált szakmai tudásbázis tanulóknak és szakembereknek egyaránt. Egyéni védőeszközök, magasban végzett munka, gépbiztonság és munkaterületi előírások.
+                Strukturált, szakmailag pontos és hatályos magyar jogszabályokon (NJT) alapuló hivatalos munkavédelmi kártyák és oktatási útmutatók.
               </p>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-xs bg-white/10 border border-white/20 text-white font-bold px-4 py-2.5 rounded-xl backdrop-blur-sm">
-                Publikált tananyagok: <strong className="text-accent">{items.length}</strong>
+              <span className="text-xs bg-white/10 border border-white/20 text-white font-bold px-4 py-2.5 rounded-xl backdrop-blur-sm flex items-center gap-2">
+                <ShieldCheck size={16} className="text-accent" /> Hivatalos Kártyák: <strong className="text-accent">{OFFICIAL_SAFETY_CARDS.length} db</strong>
               </span>
             </div>
           </div>
@@ -139,169 +188,546 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Search & Audience Selector Filter Bar */}
-        <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-5">
-          <div className="flex flex-col lg:flex-row items-center gap-4">
-            {/* Live Search */}
-            <div className="relative flex-1 w-full">
-              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Keresés munkavédelmi témák, védőeszközök, előírások között..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                >
-                  <X size={16} />
-                </button>
+        
+        {/* Main View Mode Selector Tabs */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-2 rounded-3xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab('cards')}
+              className={`flex-1 sm:flex-initial px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeTab === 'cards'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <ShieldAlert size={18} className={activeTab === 'cards' ? 'text-accent' : 'text-amber-600'} />
+              <span>Hivatalos Munkavédelmi Kártyák ({OFFICIAL_SAFETY_CARDS.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('articles')}
+              className={`flex-1 sm:flex-initial px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeTab === 'articles'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <BookOpen size={18} className={activeTab === 'articles' ? 'text-accent' : 'text-blue-600'} />
+              <span>Tananyagok &amp; Útmutatók ({items.length})</span>
+            </button>
+          </div>
+
+          <div className="text-xs text-gray-500 font-medium px-4 hidden lg:block">
+            {activeTab === 'cards' ? 'Hatályos magyar jogszabályokon (NJT) alapuló kártyák' : 'Oktatási anyagok és szakmai útmutatók'}
+          </div>
+        </div>
+
+        {/* ── TAB 1: OFFICIAL SAFETY CARDS ── */}
+        {activeTab === 'cards' && (
+          <div className="space-y-6">
+            {/* Filter & Search Bar for Cards */}
+            <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-5">
+              <div className="flex flex-col lg:flex-row items-center gap-4">
+                {/* Search */}
+                <div className="relative flex-1 w-full">
+                  <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Keresés a 32 hivatalos kártya között (pl. korlát, sisak, gödör, Mvt. 54. §, FI-relé)..."
+                    value={cardSearchQuery}
+                    onChange={(e) => setCardSearchQuery(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
+                  />
+                  {cardSearchQuery && (
+                    <button
+                      onClick={() => setCardSearchQuery('')}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Target Audience Selector */}
+                <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto shrink-0">
+                  {[
+                    { id: 'all', label: 'Összes célcsoport', icon: Users },
+                    { id: 'munkavállaló', label: 'Munkavállaló', icon: GraduationCap },
+                    { id: 'szakember', label: 'Szakember', icon: HardHat },
+                  ].map((tab) => {
+                    const IconComp = tab.icon;
+                    const active = selectedCardAudience === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setSelectedCardAudience(tab.id)}
+                        className={`flex-1 lg:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          active ? 'bg-primary text-white shadow-sm' : 'text-gray-700 hover:text-gray-900'
+                        }`}
+                      >
+                        <IconComp size={14} className={active ? 'text-accent' : 'text-gray-500'} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Card Category Pills */}
+              {availableCardCategories.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-t border-gray-100 pt-4">
+                  <span className="text-xs font-bold text-gray-500 shrink-0 mr-1 flex items-center gap-1">
+                    <Filter size={13} /> Kategória:
+                  </span>
+                  <button
+                    onClick={() => setSelectedCardCategory('all')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+                      selectedCardCategory === 'all'
+                        ? 'bg-primary text-white shadow-xs'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Összes ({OFFICIAL_SAFETY_CARDS.length})
+                  </button>
+                  {availableCardCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCardCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+                        selectedCardCategory === cat
+                          ? 'bg-primary text-white shadow-xs'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {cat.split(' ')[0]} {cat.substring(cat.indexOf(' ') + 1)}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Target Audience Tabs */}
-            <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto shrink-0">
-              {[
-                { id: 'all', label: 'Összes célközönség', icon: Users },
-                { id: 'students', label: 'Tanulók részére', icon: GraduationCap },
-                { id: 'professionals', label: 'Szakembereknek', icon: HardHat },
-              ].map((tab) => {
-                const IconComp = tab.icon;
-                const active = selectedAudience === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setSelectedAudience(tab.id as any)}
-                    className={`flex-1 lg:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      active ? 'bg-primary text-white shadow-sm' : 'text-gray-700 hover:text-gray-900'
-                    }`}
+            {/* Official Cards Grid */}
+            {filteredCards.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCards.map((card) => (
+                  <div
+                    key={card.id}
+                    onClick={() => setActiveCard(card)}
+                    className="bg-white rounded-3xl border border-gray-200 hover:border-accent p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer space-y-4 group relative overflow-hidden"
                   >
-                    <IconComp size={14} className={active ? 'text-accent' : 'text-gray-500'} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                    {/* Top Accent Line */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-primary to-accent" />
 
-          {/* Topic Pills Filter */}
-          {availableTopics.length > 0 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-t border-gray-100 pt-4">
-              <span className="text-xs font-bold text-gray-500 shrink-0 mr-1 flex items-center gap-1">
-                <Filter size={13} /> Témakörök:
-              </span>
-              <button
-                onClick={() => setSelectedTopic('all')}
-                className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
-                  selectedTopic === 'all'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Összes témakör
-              </button>
-              {availableTopics.map((topic) => (
-                <button
-                  key={topic}
-                  onClick={() => setSelectedTopic(topic)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
-                    selectedTopic === topic
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {topic}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                    <div className="space-y-3 pt-1">
+                      {/* Category Badge & Audience */}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-extrabold rounded-lg">
+                          <Layers size={12} className="text-amber-700" /> {card.type}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {card.target_audience.map((aud) => (
+                            <span
+                              key={aud}
+                              className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-md"
+                            >
+                              {aud}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
 
-        {/* Content Cards Grid */}
-        {filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setActiveItem(item)}
-                className="bg-white rounded-3xl border border-gray-200 hover:border-accent p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer space-y-4 group"
-              >
-                <div className="space-y-3">
-                  {/* Badges */}
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold rounded-lg">
-                      <ShieldAlert size={12} /> {item.topic}
-                    </span>
-                    {item.target_audience === 'students' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md border border-blue-200">
-                        <GraduationCap size={11} /> Tanuló
+                      {/* Card Title */}
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                        {card.title}
+                      </h3>
+
+                      {/* Short Summary */}
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                        {card.summary}
+                      </p>
+
+                      {/* Danger Highlight Pill */}
+                      <div className="bg-red-50/70 border border-red-100 rounded-xl p-2.5 text-[11px] text-red-900 flex items-start gap-2 line-clamp-2 font-medium">
+                        <AlertTriangle size={13} className="text-red-600 shrink-0 mt-0.5" />
+                        <span>{card.danger}</span>
+                      </div>
+                    </div>
+
+                    {/* Legal Source Footer */}
+                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 text-gray-500 font-mono text-[11px]">
+                        <FileCheck size={13} className="text-emerald-600" />
+                        <span className="truncate max-w-[170px]" title={card.legal_sources[0]?.name}>
+                          {card.legal_sources[0]?.name.split(' ')[0]} {card.legal_sources[0]?.section}
+                        </span>
+                      </div>
+
+                      <span className="text-primary font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs shrink-0">
+                        Kártya megnyitása <ChevronRight size={14} />
                       </span>
-                    ) : item.target_audience === 'professionals' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 text-[10px] font-extrabold rounded-md border border-slate-300">
-                        <HardHat size={11} /> Szakember
-                      </span>
-                    ) : null}
+                    </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              /* Empty State */
+              <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-4 max-w-lg mx-auto shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto">
+                  <HelpCircle size={32} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Nincs találat a megadott szűrésre</h3>
+                <p className="text-xs text-gray-600">
+                  Próbálja meg eltávolítani a keresési kifejezést vagy válasszon másik kategóriát.
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedCardCategory('all');
+                    setSelectedCardAudience('all');
+                    setCardSearchQuery('');
+                  }}
+                  className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-800 transition-colors"
+                >
+                  Szűrők alaphelyzetbe állítása
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-                    {item.title}
-                  </h3>
-
-                  <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                    {item.summary}
-                  </p>
+        {/* ── TAB 2: ARTICLES & GUIDES ── */}
+        {activeTab === 'articles' && (
+          <div className="space-y-6">
+            {/* Search & Audience Selector Filter Bar */}
+            <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-5">
+              <div className="flex flex-col lg:flex-row items-center gap-4">
+                {/* Live Search */}
+                <div className="relative flex-1 w-full">
+                  <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Keresés munkavédelmi témák, védőeszközök, előírások között..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-accent font-medium"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
                 </div>
 
-                {/* Footer Metadata & CTA */}
-                <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3 text-gray-500 font-medium">
-                    {item.documents && item.documents.length > 0 && (
-                      <span className="flex items-center gap-1 text-primary font-bold">
-                        <FileText size={13} /> {item.documents.length} PDF
-                      </span>
-                    )}
-                    {item.standard_code && (
-                      <span className="font-mono text-[11px] bg-gray-100 px-2 py-0.5 rounded text-gray-700">
-                        {item.standard_code.split('/')[0]}
-                      </span>
-                    )}
-                  </div>
-
-                  <span className="text-primary font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
-                    Részletek <ChevronRight size={14} />
-                  </span>
+                {/* Target Audience Tabs */}
+                <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto shrink-0">
+                  {[
+                    { id: 'all', label: 'Összes célközönség', icon: Users },
+                    { id: 'students', label: 'Tanulók részére', icon: GraduationCap },
+                    { id: 'professionals', label: 'Szakembereknek', icon: HardHat },
+                  ].map((tab) => {
+                    const IconComp = tab.icon;
+                    const active = selectedAudience === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setSelectedAudience(tab.id as any)}
+                        className={`flex-1 lg:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          active ? 'bg-primary text-white shadow-sm' : 'text-gray-700 hover:text-gray-900'
+                        }`}
+                      >
+                        <IconComp size={14} className={active ? 'text-accent' : 'text-gray-500'} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-4 max-w-lg mx-auto shadow-sm">
-            <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto">
-              <HelpCircle size={32} />
+
+              {/* Topic Pills Filter */}
+              {availableTopics.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-t border-gray-100 pt-4">
+                  <span className="text-xs font-bold text-gray-500 shrink-0 mr-1 flex items-center gap-1">
+                    <Filter size={13} /> Témakörök:
+                  </span>
+                  <button
+                    onClick={() => setSelectedTopic('all')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+                      selectedTopic === 'all'
+                        ? 'bg-primary text-white shadow-xs'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Összes témakör
+                  </button>
+                  {availableTopics.map((topic) => (
+                    <button
+                      key={topic}
+                      onClick={() => setSelectedTopic(topic)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+                        selectedTopic === topic
+                          ? 'bg-primary text-white shadow-xs'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Ehhez a szűréshez jelenleg még nincs elérhető oktatási anyag</h3>
-            <p className="text-xs text-gray-600">
-              Próbálja meg eltávolítani a keresési kifejezést vagy állítsa vissza a témakör szűrőt.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedTopic('all');
-                setSelectedAudience('all');
-                setSearchQuery('');
-              }}
-              className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-800 transition-colors"
-            >
-              Szűrők alaphelyzetbe állítása
-            </button>
+
+            {/* Content Articles Grid */}
+            {filteredItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredItems.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => setActiveItem(item)}
+                    className="bg-white rounded-3xl border border-gray-200 hover:border-accent p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer space-y-4 group"
+                  >
+                    <div className="space-y-3">
+                      {/* Badges */}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold rounded-lg">
+                          <ShieldAlert size={12} /> {item.topic}
+                        </span>
+                        {item.target_audience === 'students' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md border border-blue-200">
+                            <GraduationCap size={11} /> Tanuló
+                          </span>
+                        ) : item.target_audience === 'professionals' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 text-[10px] font-extrabold rounded-md border border-slate-300">
+                            <HardHat size={11} /> Szakember
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                        {item.title}
+                      </h3>
+
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                        {item.summary}
+                      </p>
+                    </div>
+
+                    {/* Footer Metadata & CTA */}
+                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-3 text-gray-500 font-medium">
+                        {item.documents && item.documents.length > 0 && (
+                          <span className="flex items-center gap-1 text-primary font-bold">
+                            <FileText size={13} /> {item.documents.length} PDF
+                          </span>
+                        )}
+                        {item.standard_code && (
+                          <span className="font-mono text-[11px] bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                            {item.standard_code.split('/')[0]}
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-primary font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
+                        Részletek <ChevronRight size={14} />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Empty State */
+              <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-4 max-w-lg mx-auto shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto">
+                  <HelpCircle size={32} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Ehhez a szűréshez jelenleg még nincs elérhető oktatási anyag</h3>
+                <p className="text-xs text-gray-600">
+                  Próbálja meg eltávolítani a keresési kifejezést vagy állítsa vissza a témakör szűrőt.
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedTopic('all');
+                    setSelectedAudience('all');
+                    setSearchQuery('');
+                  }}
+                  className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-800 transition-colors"
+                >
+                  Szűrők alaphelyzetbe állítása
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* ── DETAILED ARTICLE MODAL / DRAWER WITH TABLE OF CONTENTS ── */}
+      {/* ── OFFICIAL SAFETY CARD MODAL ── */}
+      {activeCard && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl relative flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="bg-primary text-white p-6 sm:p-8 rounded-t-3xl sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-primary-700 shadow-sm">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="px-3 py-1 bg-amber-400 text-black font-extrabold rounded-lg uppercase tracking-wider text-[11px]">
+                    {activeCard.type}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-white/10 text-gray-200 font-medium rounded-md">
+                    Hatályos magyar forrás
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  {activeCard.title}
+                </h2>
+              </div>
+              <button
+                onClick={() => setActiveCard(null)}
+                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer shrink-0"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 sm:p-8 space-y-6">
+              
+              {/* Rövid Lényeg */}
+              <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-5 text-xs sm:text-sm text-amber-950 font-medium leading-relaxed flex items-start gap-3">
+                <ShieldAlert size={22} className="text-amber-700 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-extrabold text-amber-900 mb-1 text-xs uppercase tracking-wider">RÖVID LÉNYEG</h4>
+                  <p>{activeCard.summary}</p>
+                </div>
+              </div>
+
+              {/* Veszély & Kockázat Box */}
+              <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-r-2xl space-y-2">
+                <div className="flex items-center gap-2 text-red-900 font-extrabold text-xs uppercase tracking-wider">
+                  <AlertTriangle size={18} className="text-red-600" /> VESZÉLY ÉS KOCKÁZAT
+                </div>
+                <p className="text-xs sm:text-sm text-red-950 leading-relaxed font-medium">
+                  {activeCard.danger}
+                </p>
+              </div>
+
+              {/* Mit kell tenni? Box */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-xs uppercase tracking-wider">
+                  <CheckCircle2 size={18} className="text-emerald-700" /> MIT KELL TENNI? (GYAKORLATI TEENDŐK)
+                </div>
+                <p className="text-xs sm:text-sm text-emerald-950 leading-relaxed font-medium">
+                  {activeCard.required_action}
+                </p>
+              </div>
+
+              {/* Mit nem szabad? Box */}
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 space-y-2">
+                <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wider">
+                  <Ban size={18} className="text-rose-700" /> MIT NEM SZABAD? (TILTAKOZÁSOK &amp; TILTÁSOK)
+                </div>
+                <p className="text-xs sm:text-sm text-rose-950 leading-relaxed font-medium">
+                  {activeCard.prohibited_action}
+                </p>
+              </div>
+
+              {/* Miért fontos? Box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-2">
+                <div className="flex items-center gap-2 text-blue-900 font-extrabold text-xs uppercase tracking-wider">
+                  <Info size={18} className="text-blue-700" /> MIÉRT FONTOS? (SZAKMAI INDOKLÁS)
+                </div>
+                <p className="text-xs sm:text-sm text-blue-950 leading-relaxed">
+                  {activeCard.why_it_matters}
+                </p>
+              </div>
+
+              {/* Mikor alkalmazandó? */}
+              {activeCard.when_applicable && (
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs space-y-1">
+                  <span className="font-extrabold text-gray-900 block uppercase text-[10px] tracking-wider text-gray-500">
+                    MIKOR ALKALMAZANDÓ?
+                  </span>
+                  <p className="text-gray-800 font-medium">{activeCard.when_applicable}</p>
+                </div>
+              )}
+
+              {/* Gyakorlati / Oktatási példa */}
+              {activeCard.practical_example && (
+                <div className="bg-amber-50/50 border border-amber-200/80 rounded-2xl p-4 text-xs space-y-1">
+                  <span className="font-extrabold text-amber-900 block uppercase text-[10px] tracking-wider">
+                    GYAKORLATI / OKTATÁSI PÉLDA
+                  </span>
+                  <p className="text-amber-950 italic">{activeCard.practical_example}</p>
+                </div>
+              )}
+
+              {/* Jogszabályi / Hivatalos Források */}
+              <div className="border-t border-gray-200 pt-5 space-y-3">
+                <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <FileCheck size={16} className="text-emerald-600" /> Hivatalos Jogszabályi Forrás (NJT)
+                </h4>
+                <div className="space-y-2">
+                  {activeCard.legal_sources.map((src, i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                    >
+                      <div className="space-y-1">
+                        <span className="text-xs font-extrabold text-gray-900 block">{src.name}</span>
+                        <span className="text-xs font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-700 inline-block">
+                          {src.section}
+                        </span>
+                      </div>
+                      <a
+                        href={src.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 bg-primary hover:bg-primary-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
+                      >
+                        <ExternalLink size={13} /> NJT Forrás Megnyitása
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Forrás Ellenőrzési Adatok */}
+              <div className="bg-slate-100 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 text-[11px] text-slate-700">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-emerald-600" />
+                  <span>Státusz: <strong className="text-emerald-700 uppercase font-bold">{activeCard.legal_sources[0]?.status || 'hatályos'}</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar size={15} className="text-slate-500" />
+                  <span>Ellenőrizve: <strong>{activeCard.source_checked_at}</strong></span>
+                </div>
+                <div>
+                  <span>Bizalmi szint: <strong className="text-primary uppercase font-bold">{activeCard.confidence}</strong></span>
+                </div>
+              </div>
+
+              {/* Legal Disclaimer Note */}
+              <p className="text-[10px] text-gray-400 italic text-center border-t border-gray-100 pt-4 leading-normal">
+                Jogi nyilatkozat: A munkavédelmi kártya tájékoztató jellegű, és nem helyettesíti a munkáltatói kockázatértékelést, a munkavédelmi oktatást, a munkavédelmi szakember véleményét vagy az orvosi alkalmassági vizsgálatot.
+              </p>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 border-t border-gray-200 p-4 px-6 sm:px-8 rounded-b-3xl flex items-center justify-between">
+              <button
+                onClick={() => setActiveCard(null)}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                Bezárás
+              </button>
+              <span className="text-[11px] text-gray-400">ÉpítőTudás Munkavédelmi Kártyatár</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ARTICLE DETAIL MODAL ── */}
       {activeItem && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl border border-gray-200 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">

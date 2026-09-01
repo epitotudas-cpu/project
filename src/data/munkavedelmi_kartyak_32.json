@@ -1,0 +1,813 @@
+[
+  {
+    "title": "Védelmi intézkedések prioritási sorrendje",
+    "type": "C) MUNKAVÉDELMI SZABÁLY",
+    "summary": "A munkavédelmi megelőzés során elsődleges a veszély forrásnál történő megszüntetése és a kollektív műszaki védelem alkalmazása; az egyéni védőeszköz (EVE) csak végső megoldásként szolgál.",
+    "danger": "Megfelelő műszaki/kollektív védelem hiányában az egyéni védőeszközökre hagyatkozás magas kockázatot jelent, mivel az EVE a veszélyforrást nem szünteti meg, csak korlátozott védelmet nyújt a munkavállaló számára.",
+    "required_action": "Első lépésként a veszélyt a forrásánál kell megszüntetni vagy csökkenteni (pl. pormentesítés, zajcsillapítás). Ha ez nem lehetséges, kollektív védelmet kell kiépíteni (pl. korlát, elszívó berendezés). Az egyéni védőeszközt csak a kollektív védelem kiegészítéseként vagy annak kiváltására alkalmas műszaki megoldás hiányában szabad előírni.",
+    "prohibited_action": "Tilos az egyéni védőeszköz használatát elsődleges vagy egyetlen védelmi intézkedésként alkalmazni olyan esetekben, ahol a veszély műszaki vagy szerkezeti kollektív védelemmel megszüntethető.",
+    "why_it_matters": "A kollektív védelem folyamatosan és egyidejűleg védi az adott munkaterületen tartózkodó valamennyi munkavállalót, függetlenül az egyéni magatartásuktól vagy az emberi mulasztástól.",
+    "when_applicable": "Minden építési munkahelyen, a munkatechnológia megtervezésekor és a kockázatértékelés elvégzése során.",
+    "practical_example": "Oktatási példa: Egy betonvágási feladatnál első lépésként nedves vágástechnológiát (műszaki védelem) alkalmaznak a kvarcpor képződésének megakadályozására. A fennmaradó finom por ellen kap a dolgozó FFP3 maszkot (EVE).",
+    "legal_sources": [
+      {
+        "name": "1993. évi XCIII. törvény a munkavédelemről (Mvt.)",
+        "section": "54. § (1)-(2) bek.",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1993-93-00-00",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Biztonsági és Egészségvédelmi Terv (BET) készítése",
+    "type": "D) MUNKAVÉDELMI KÖTELEZETTSÉG",
+    "summary": "Az építési munkahelyeken a kivitelezési munkák megkezdése előtt Biztonsági és Egészségvédelmi Tervet (BET) kell készíteni a kockázatok azonosítására és a megelőzés összehangolására.",
+    "danger": "Hiányzó vagy elavult BET esetén a felvonuló alvállalkozók és munkavállalók nem ismerik a kivitelezési helyszín egyedi kockázatait és a közös veszélyforrásokat.",
+    "required_action": "A megrendelőnek vagy a tervezőnek a tervezési szakaszban, illetve a fővállalkozónak a kivitelezés megkezdése előtt el kell készítenie és folyamatosan naprakészen kell tartania a BET-et. A tervben rögzíteni kell a munkaterület egyedi veszélyeit és a védelmi intézkedéseket.",
+    "prohibited_action": "Tilos az építési munkaterületen kivitelezési tevékenységet végezni érvényes és a tényleges munkakörülményeknek megfelelő Biztonsági és Egészségvédelmi Terv nélkül.",
+    "why_it_matters": "A BET összehangolja a különböző szakterületek biztonsági intézkedéseit és tisztázza a felelősségi köreit a kivitelezés teljes időtartama alatt.",
+    "when_applicable": "Minden olyan építési munkahelyen, ahol a kivitelezés során a jogszabályban meghatározott veszélyes munkák fordulnak elő vagy több munkáltató munkavállalói vannak jelen.",
+    "practical_example": "Oktatási példa: Egy többemeletes lakóház építésénél a BET határozza meg a daruzási zónák elkerítését és az épületgépészek, valamint a szerkezetépítők egyidejű munkájának biztonsági rendjét.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "3. § (1)-(3) bek.",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Munkavédelmi koordináció több kivitelező esetén",
+    "type": "D) MUNKAVÉDELMI KÖTELEZETTSÉG",
+    "summary": "Ha az építési munkaterületen egyidejűleg vagy egymást követően több munkáltató tevékenykedik, a megrendelő/kivitelező köteles biztonsági és egészségvédelmi koordinátort kijelölni.",
+    "danger": "Koordináció hiányában a különböző alvállalkozók párhuzamos munkavégzése közvetlen veszélyt jelent egymásra (pl. felette végzett bontási munka alatt szerelési tevékenység folytatása).",
+    "required_action": "Biztosítani kell a biztonsági és egészségvédelmi koordinátor jelenlétét mind a tervezési, mind a kivitelezési szakaszban. A kivitelezők kötelesek együttműködni a koordinátorral és követni a BET előírásait.",
+    "prohibited_action": "Tilos a munkavégzés megszervezése és folytatása a kivitelezők közötti egyeztetés és a munkavédelmi koordináció elhagyásával.",
+    "why_it_matters": "A koordináció kiküszöböli a párhuzamos munkavégzésből adódó ütközéseket és megelőzi a munkahelyi baleseteket.",
+    "when_applicable": "Minden építési munkahelyen, ahol egynél több munkáltató végez kivitelezési tevékenységet.",
+    "practical_example": "Oktatási példa: A kivitelezési koordinátor előírja, hogy az állvány bontása alatt az alatta lévő járdát le kell zárni, és ott gépészeti csőszerelők nem dolgozhatnak.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. § (1)-(2) bek.",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      },
+      {
+        "name": "1993. évi XCIII. törvény (Mvt.)",
+        "section": "40. § (2) bek.",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1993-93-00-00",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Ipari védősisak használata leeső tárgyak ellen",
+    "type": "B) EGYÉNI VÉDŐESZKÖZ",
+    "summary": "Az építési munkaterületen a kockázatértékelés alapján meghatározott zónákban ipari védősisak használata szükséges a leeső tárgyak és tárgyütközések elleni védelem érdekében.",
+    "danger": "Magasból leeső szerszámok, építőanyag-darabok vagy belógó szerkezeti elemek súlyos, életveszélyes koponyasérülést okozhatnak.",
+    "required_action": "Viseljen az MSZ EN 397 szabványnak megfelelő, sértetlen ipari védősisakot az előírt munkaterületen. A sisak belső kosarát állítsa be pontosan a fejméretre, és sérülés vagy ütés esetén azonnal cserélje ki.",
+    "prohibited_action": "Tilos repedt, deformálódott, leárt kihordási idejű vagy átalakított védősisakot használni, illetve a sisak és a fej közé sapkát/tárgyat tenni, ami rontja a belső kosár energiaelnyelő képességét.",
+    "why_it_matters": "A jóváhagyott védősisak elnyeli a tárgyak becsapódási energiáját és megvédi a koponyát a közvetlen fizikai behatástól.",
+    "when_applicable": "Olyan munkaterületen és munkakörökben, ahol fennáll a tárgyak leesésének, elmozdulásának vagy az állványzatba/szerkezetbe történő fejütközésnek a kockázata.",
+    "practical_example": "Oktatási példa: Az állványról kiejtett 0,5 kg-os zsalukapocs 10 méter magasból leesve halálos sérülést okozhatna védősisak nélkül; a szabványos sisak az ütést elnyelve megelőzi a súlyos koponyasérülést.",
+    "legal_sources": [
+      {
+        "name": "65/1999. (XII. 22.) EüM rendelet",
+        "section": "3. § & 1. melléklet 1. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-65-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Szem- és arcvédelem repülő részecskék és por esetén",
+    "type": "B) EGYÉNI VÉDŐESZKÖZ",
+    "summary": "Megfelelő védőszemüveget vagy arcvédőt kell használni minden olyan munkaműveletnél, ahol kirepülő részecskék, szilánkok, por vagy kémiai fröccsenés kockázata áll fenn.",
+    "danger": "Sarokcsiszolás, vésés, betonfúrás vagy vegyi anyagok keverése során a szembe kerülő szilánkok vagy maró anyagok maradandó látáskárosodást vagy vakságot okozhatnak.",
+    "required_action": "Válasszon a mechanikai és vegyi kockázat típusának megfelelő (pl. MSZ EN 166 szerinti) védőszemüveget vagy arcvédőt. Ellenőrizze a lencsék karcmentességét és a szoros illeszkedést.",
+    "prohibited_action": "Tilos csiszolási, vágási, vésési vagy hegesztési munkát végezni megfelelő védőszemüveg vagy arcvédő maszk nélkül.",
+    "why_it_matters": "A szem rendkívül sérülékeny szerv; a nagy sebességgel kirepülő apró szilánkok azonnali és helyrehozhatatlan sérülést okoznak.",
+    "when_applicable": "Vésés, csiszolás, vágás, bontás, szórás, vakolás és kémiai anyagokkal történő munkavégzés során.",
+    "practical_example": "Oktatási példa: Sarokcsiszolóval történő betonvágáskor kipattant korundszilánkot a zárt védőszemüveg felfogja, megakadályozva a szaruhártya átfúródását.",
+    "legal_sources": [
+      {
+        "name": "65/1999. (XII. 22.) EüM rendelet",
+        "section": "4. § & 1. melléklet 2. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-65-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Hallásvédelmi eszközök alkalmazása zajos munkakörnyezetben",
+    "type": "Q) ZAJ / REZGÉS",
+    "summary": "A munkáltató köteles hallásvédő eszközt (füldugó, fülvédő) biztosítani, a munkavállaló pedig köteles azt viselni, ha a zajexpozíció meghaladja a határértékeket.",
+    "danger": "A tartós vagy rendkívül hangos (impulzív) zajártalom visszafordíthatatlan halláskárosodáshoz és nagyfokú halláscsökkenéshez vezet.",
+    "required_action": "Ha a napi zajexpozíció eléri a 80 dB(A) alsó beavatkozási értéket, a munkáltató köteles hallásvédőt biztosítani. A 85 dB(A) felső beavatkozási érték felett a hallásvédő eszköz viselése kötelező.",
+    "prohibited_action": "Tilos a hallásvédő eszközt eltávolítani a zajzónában tartózkodás ideje alatt, vagy a hallásvédőt beszennyezett kézzel a fülcsatornába helyezni.",
+    "why_it_matters": "A zaj okozta halláskárosodás folyamatosan és fájdalommentesen alakul ki, de orvosilag nem gyógyítható.",
+    "when_applicable": "Bontás, kompresszorok, bontókalapácsok, körfűrészek és nehézgépek közelében végzett munka során.",
+    "practical_example": "Oktatási példa: A bontókalapáccsal dolgozó munkás fültokot visel, amely a 105 dB-es zajszintet az egészségügyi határérték alá csökkenti, megelőzve az idegi alapon kialakuló hallásvesztést.",
+    "legal_sources": [
+      {
+        "name": "66/2005. (XII. 22.) EüM rendelet",
+        "section": "3. §, 4. §, 6. §",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2005-66-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Építőipari védőlábbeli kiválasztása és viselése",
+    "type": "B) EGYÉNI VÉDŐESZKÖZ",
+    "summary": "A szükséges védőlábbeli védelmi jellemzőit (orrmerevítő, átszúrás elleni talpvédelem, csúszásmentesség) a kockázatértékelés alapján kell meghatározni.",
+    "danger": "Kiálló szögekre lépés, nehéz tárgyak rázuhanása vagy elcsúszás miatti lábfejsérülések, zúzódások és csonttörések.",
+    "required_action": "Használjon a munkakörülményeknek és kockázatoknak megfelelő védőlábbelit (pl. átszúrásgátló talppal és acél/kompozit orrmerevítővel ellátott bakancsot). Rendszeresen ellenőrizze a talp és a felsőrész épségét.",
+    "prohibited_action": "Tilos építési munkaterületen utcai cipőben, nyitott szandálban vagy sérült talpú lábbeliben munkát végezni.",
+    "why_it_matters": "Az építési munkaterületen gyakoriak a kiálló szögek, törmelékek és nehéz szerkezeti elemek, amelyek megfelelő védelmet igényelnek.",
+    "when_applicable": "Valamennyi építési munkaterületen, szerkezetépítési, bontási és zsaluzási feladatok során.",
+    "practical_example": "Oktatási példa: Zsaluanyag bontásakor a dolgozó egy kiálló 100-as szögre lép; a védőbakancs acél talplemeze megakadályozza a szög talpba fúródását.",
+    "legal_sources": [
+      {
+        "name": "65/1999. (XII. 22.) EüM rendelet",
+        "section": "3. § & 1. melléklet 7. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-65-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Mechanikai és vegyi védőkesztyűk használata",
+    "type": "B) EGYÉNI VÉDŐESZKÖZ",
+    "summary": "A kézvédelemre használt védőkesztyű típusát a fennálló mechanikai (vágás, szúrás, dörzsölés) és kémiai (cement, maró anyagok) kockázatok alapján kell kiválasztani.",
+    "danger": "Éles lemezek, betonavas kézi mozgatása vagy agresszív kémiai anyagok (mész, cement, oldószerek) bőrsérülést, vágásokat és égési sérüléseket okoznak.",
+    "required_action": "Viseljen a művelethez illeszkedő védőkesztyűt: mechanikai igénybevételre kopás- és vágásálló kesztyűt, vegyi anyagok keverésénél folyadékzáró vegyi védőkesztyűt.",
+    "prohibited_action": "Tilos védőkesztyűt viselni olyan forgó gépalkatrészek (pl. oszlopos fúró, forgó tengelyek) közelében, ahol a kesztyű beakadásának és berántásának veszélye áll fenn.",
+    "why_it_matters": "A kézsérülések jelentik a leggyakoribb építőipari baleseteket; a helyes kesztyűválasztás megvédi a bőrt és az ízületeket.",
+    "when_applicable": "Materialmozgatás, vasbetonszerelés, falazás, vakolás és vegyi anyagok használata során.",
+    "practical_example": "Oktatási példa: Betonhabarcs keverésénél és terítésénél vízzáró nitril védőkesztyű megakadályozza a lúgos cement okozta súlyos ekcémát és kémiai égést.",
+    "legal_sources": [
+      {
+        "name": "65/1999. (XII. 22.) EüM rendelet",
+        "section": "3. § & 1. melléklet 6. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-65-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Légzésvédelem szálló por és kvarcpor expozíció esetén",
+    "type": "R) POR / VEGYI KOCKÁZAT",
+    "summary": "A tüdőkárosító porok (különösen a belélegezhető kristályos szilícium-dioxid / kvarcpor) elleni védekezésnél a port először műszaki úton (nedvesítés, elszívás) kell csökkenteni, majd megfelelő FFP2/FFP3 légzésvédőt kell alkalmazni.",
+    "danger": "A belélegzett kvarcpor és finom szálló por szilikózist, tüdőfertőzést és daganatos megbetegedéseket okozhat.",
+    "required_action": "Alkalmazzon nedves vágást vagy helyi porelszívást. Ha a porkoncentráció így sem csökkenthető az expozíciós határérték alá, viseljen pontosan az arcra illeszkedő FFP2 vagy FFP3 részecskeszűrő félmaszkot.",
+    "prohibited_action": "Tilos az egyszerű textil porvédő maszkokat vagy papírmaszkokat rákkeltő porok (kvarcpor, azbeszt) elleni védelemre használni.",
+    "why_it_matters": "A finom porrészecskék a tüdő léghólyagocskáiba jutva végleges szöveti hegesedést és tüdőfunkció-romlást idéznek elő.",
+    "when_applicable": "Betonvágás, csiszolás, vésés, száraz habarcskeverés és bontási feladatok végzésekor.",
+    "practical_example": "Oktatási példa: Horonyvágás közben porelszívóval felszerelt gépet használnak, a gépkezelő pedig FFP3 szűrőosztályú maszkot visel a finom szilícium-dioxid por elnyelésére.",
+    "legal_sources": [
+      {
+        "name": "5/2020. (II. 6.) ITM rendelet",
+        "section": "4. § & mellékletek",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2020-5-20-4N",
+        "status": "hatályos"
+      },
+      {
+        "name": "65/1999. (XII. 22.) EüM rendelet",
+        "section": "3. §",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-65-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Kollektív leesés elleni védelem korlátrendszerekkel",
+    "type": "J) MAGASBAN VÉGZETT MUNKA",
+    "summary": "A magasban végzett munkáknál a lezuhanási veszélyt elsősorban kollektív védelemmel, azaz megfelelő szilárdságú védőkorláttal, lábléccel és elkerítéssel kell elhárítani.",
+    "danger": "Megfelelő széli védelem hiányában a magasból történő lezuhanás a legsúlyosabb, gyakran halálos kimenetelű építőipari balesetek fő oka.",
+    "required_action": "A 2 métert meghaladó leesési magasságnál (vagy veszélyes helyeknél kisebb magasságnál is) 3 soros védőkorlátot kell kiépíteni: korlátléccel (min. 1,0 m magasságban), középkorláttal és lábléccel (min. 15 cm magasságban).",
+    "prohibited_action": "Tilos az épületkörüli széli korlátot, láblécet engedély nélkül eltávolítani, vagy ideiglenes elkerítésként vékony jelzőszalagot alkalmazni védőkorlát helyett.",
+    "why_it_matters": "A szilárd védőkorlát mindenféle egyéni intézkedés nélkül fizikailag megakadályozza a munkavállaló lezuhanását a födém- vagy állványszélekről.",
+    "when_applicable": "Minden olyan födémszélen, állványszinten, nyílásnál és tetőfelületen, ahol leesési veszély áll fenn.",
+    "practical_example": "Oktatási példa: A monolit beton födém szélén szabványos acélvédőkorlátot építenek ki lábléccel; ez megelőzi a szerszámok legurulását és a dolgozók lezuhanását.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 2. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Egyéni zuhanásgátló rendszerek használata",
+    "type": "J) MAGASBAN VÉGZETT MUNKA",
+    "summary": "Ha a kollektív védelem kiépítése nem lehetséges vagy a munka rövid időtartama miatt nem indokolt, egyéni zuhanásgátló rendszert (teljes testheveder, energiaelnyelő, rögzített kikötési pont) kell alkalmazni.",
+    "danger": "Megfelelő kikötési pont hiányában vagy helytelen hevederhasználat esetén a lezuhanó dolgozó szabadon esik vagy az ütközési energia miatt súlyos sérülést szenved.",
+    "required_action": "Viseljen az MSZ EN 361 szabványnak megfelelő teljes testhevederzetet. A zuhanásgátlót (energiaelnyelővel) csak minősített, megfelelő teherbírású (min. 12 kN) kikötési ponthoz csatlakoztassa a fejmagasság felett.",
+    "prohibited_action": "Tilos derékövet zuhanásgátlásra használni, vagy a kikötőkötelet bizonytalan szerkezeti elemhez (pl. műanyag csőhöz, nem rögzített korláthoz) rögzíteni.",
+    "why_it_matters": "A zuhanásgátló rendszer a lezuhanást időben megállítja és az emberi testre ható rántási erőt az egészségügyileg elviselhető szintre csökkenti.",
+    "when_applicable": "Magasban végzett munkánál, ha kollektív védelem nem alakítható ki, vagy annak szerelése közben.",
+    "practical_example": "Oktatási példa: Acélszerkezet szerelésekor a szerelő kettős kikötőkötelet és energiaelnyelőt használ, rögzítve az épület főtartójához, így áthelyezéskor is végig biztosítva van.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 2.4. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      },
+      {
+        "name": "65/1999. (XII. 22.) EüM rendelet",
+        "section": "3. §",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-65-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Építési állványzatok átvétele és használata",
+    "type": "L) ÁLLVÁNYOZÁS",
+    "summary": "Az építési állványt csak szakképzett személy állíthatja össze, és használatba vétel előtt a munkavédelmi felelősnek írásban ellenőriznie és átvennie kell azt.",
+    "danger": "A hiányosan rögzített, meglazult vagy túlterheletlen állvány összeomolhat, megcsúszhat vagy dőlést szenvedhet.",
+    "required_action": "Minden állványszintet teljes pallózással, korláttal és lábléccel kell ellátni. Az állvány használatbavétele előtt ellenőrizni kell az kikötéseket, a függőlegességet és a teherbírást, valamint el kell helyezni az átadási adattáblát.",
+    "prohibited_action": "Tilos nem átvett, hiányos, vagy \"HASZNÁLATA TILOS\" táblával megjelölt állványra felmenni, vagy az állvány szerkezeti elemeit engedély nélkül kibontani.",
+    "why_it_matters": "Az állványzat átvizsgálása biztosítja, hogy a munkavállalók stabil, megbízható és teherbíró szerkezeten végezzék munkájukat.",
+    "when_applicable": "Minden épített cső-, keretes vagy gurulóállvány felállítása, módosítása és napi használata során.",
+    "practical_example": "Oktatási példa: A homlokzati állványt a felelős műszaki vezető átvizsgálja, leellenőrzi az épülethez való kikötési pontokat, majd elhelyezi a zöld \"ÁTVÉVE – HASZNÁLHATÓ\" kártyát.",
+    "legal_sources": [
+      {
+        "name": "10/2016. (IV. 5.) NGM rendelet",
+        "section": "2. melléklet 4.2. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2016-10-20-2E",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Hordozható létrák biztonságos támasztása és használata",
+    "type": "C) MUNKAVÉDELMI SZABÁLY",
+    "summary": "A létrák elsősorban szintleküzdésre és rövid idejű, kis fizikai erőkifejtést igénylő munkákra használhatók, szilárd alátámasztás és elcsúszás elleni rögzítés mellett.",
+    "danger": "A létra megcsúszása, elbillenése vagy a létráról történő kinyúlás miatti egyensúlyvesztés súlyos lezuhanási balesetet okoz.",
+    "required_action": "A támasztólétrát kb. 65-75 fokos dőlésszögben, csúszásmentes aljzatra kell állítani, és felső végét rögzíteni kell. Munkavégzés közben a létrán állva a test súlypontja maradjon a létraszárak között.",
+    "prohibited_action": "Tilos sérült, repedt fokú létrát használni, létrát meghosszabbítani, létráról nehéz tárgyat emelni, vagy a támasztólétra legfelső 3 fokára fellépni.",
+    "why_it_matters": "A létrás balesetek a leggyakoribb építőipari lezuhanási okok közé tartoznak, amely elkerülhető a szabályos felállítás és rögzítés betartásával.",
+    "when_applicable": "Minden olyan esetben, amikor hordozható támasztó- vagy állólétrát használnak a munkaterületen.",
+    "practical_example": "Oktatási példa: Villanyszerelési munkánál a dolgozó a hordozható alumíniumlétrát felül kiköti a szerkezethez és csúszásgátló talpakkal látja el az alsó szárakat.",
+    "legal_sources": [
+      {
+        "name": "10/2016. (IV. 5.) NGM rendelet",
+        "section": "2. melléklet 4.1. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2016-10-20-2E",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Zsaluzási és nehéz elem szerelési munkák dúcolása",
+    "type": "K) ZSALUZÁS",
+    "summary": "A zsaluzati rendszereket és nehéz szerkezeti elemeket a statikai tervnek megfelelően kell méretezni, dúcolni és megtámasztani a betonozási teher elviselésére.",
+    "danger": "A zsaluzat alulméretezése vagy a támaszok korai kibontása a zsaluzat beomlásához és a beton alatti dolgozók eltemetéséhez vezet.",
+    "required_action": "Szerelje fel a zsaluzatot a technológiai leírás szerint. A zsaluzat teherbírását és a dúcok függőlegességét a betonozás előtt ellenőrizni kell. A zsalubontást csak az előírt betonszilárdság elérése után szabad megkezdeni.",
+    "prohibited_action": "Tilos a zsalutámaszokat, dúcokat a felelős vezető engedélye nélkül kibontani vagy módosítani, illetve a zsaluzatot a megengedettnél nagyobb frissbeton-terhelésnek kitenni.",
+    "why_it_matters": "A frissbeton rendkívül nagy hidrosztatikai és súlyterhet jelent, amit csak hibátlan zsalurendszer képes megtartani.",
+    "when_applicable": "Monolit vasbeton szerkezetek zsaluzása, dúcolása és betonozása során.",
+    "practical_example": "Oktatási példa: A födémzsaluzat alatt a zsaludúcokat átlós feszítőkkel merevítik ki, és a műszaki vezető írásos engedélye után kezdik meg a beton szivattyúzását.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 10. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Bontási munkák szerkezeti állékonysága és technológiája",
+    "type": "N) BONTÁS",
+    "summary": "Építmények bontását csak jóváhagyott bontási terv és a szerkezeti állékonyság folyamatos ellenőrzése mellett, fentről lefelé haladva szabad végezni.",
+    "danger": "Az ellenőrizetlenül végzett bontás az épületszerkezet előre nem látható összeomlását, az alatta tartózkodók súlyos vagy halálos eltemetését okozhatja.",
+    "required_action": "A bontási munkát bontási terv alapján, kijelölt felelős irányító jelenlétében kell végezni. A veszélyes zónát kerítse el és lássa el figyelmeztető táblákkal. Biztosítsa a szomszédos szerkezetállékonyságot.",
+    "prohibited_action": "Tilos a bontást az épület alsó tartószerkezeteinek kibontásával kezdeni (\"aláásásos bontás\"), vagy a veszélyzónában tartózkodni bontási tevékenység közben.",
+    "why_it_matters": "A bontási műveletek során a szerkezetek eredeti statikai egyensúlya felborul, ami szigorú sorrendiséget igényel.",
+    "when_applicable": "Minden épület-, fal-, födém- vagy szerkezetbontási feladat végzésekor.",
+    "practical_example": "Oktatási példa: Téglaválaszfal bontásakor a dolgozó nem alulról üti ki a téglákat, hanem felülről lefelé haladva, soronként bontja el a falat.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 9. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Árkok és munkagödrök falának dúcolása / rézsűzése",
+    "type": "M) FÖLDMUNKA",
+    "summary": "A 1,25 méternél mélyebb munkagödrök és árkok függőleges falait megfelelő dúcolással kell ellátni vagy a talaj típusának megfelelő rézsűszöggel kell kialakítani.",
+    "danger": "A földfal hirtelen beomlása több tonna földtömeget zúdíthat a munkagödörben dolgozókra, ami pillanatok alatt fulladást okoz.",
+    "required_action": "Készítsen dúc szerkezetet vagy biztonságos rézsűt 1,25 m mélység felett. A munkagödörbe történő le- és feljutáshoz rögzített létrát kell biztosítani.",
+    "prohibited_action": "Tilos dúcolatlan, függőleges falú, 1,25 méternél mélyebb munkagödörbe bemenni vagy ott munkát végezni.",
+    "why_it_matters": "A talaj szerkezete (különösen esőzés vagy szivárgás után) figyelmeztetés nélkül, másodpercek alatt beomolhat.",
+    "when_applicable": "Minden építőipari földkitermelési, árokásási és alapozási feladatnál.",
+    "practical_example": "Oktatási példa: 2 méter mély közműárok kiemelésekor előre gyártott dúcpanelt helyeznek a mederbe a csőszerelők védelme érdekében.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 7. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Tehergépkocsik és gépek védőtávolsága munkagödör szélétől",
+    "type": "M) FÖLDMUNKA",
+    "summary": "Munkagépeket, teherautókat és kitermelt földanyagot csak a munkagödör szélétől számított biztonsági védőtávolságon kívül szabad elhelyezni és üzemeltetni.",
+    "danger": "A nehézgépek által kibocsátott dinamikus teher és rezgés a munkagödör peremének leszakadását és a munkagép beborulását okozhatja.",
+    "required_action": "A kitermelt földet és a gépeket a munkagödör peremétől legalább 0,5-1,0 méter védőtávolságban (dúcolás és rézsű függvényében) kell tartani, és ütközőbakot kell alkalmazni.",
+    "prohibited_action": "Tilos a kitermelt földanyagot közvetlenül az árok peremére halmozni, vagy teherautóval a nem dúcóolt árok szélére tolatni.",
+    "why_it_matters": "A peremi pluszterhelés drasztikusan növeli a földfal leszakadásának és a gépek felborulásának kockázatát.",
+    "when_applicable": "Gépi földmunka, árokásás és tehergépkocsi rakodás során.",
+    "practical_example": "Oktatási példa: A földszállító tehergépkocsi tolatási útvonalát ütközőgerendával határolják le a munkagödör peremétől 1,5 méterre.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 7.3. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Teherkötözés és emelési műveletek biztonsága",
+    "type": "O) EMELÉS / ANYAGMOZGATÁS",
+    "summary": "Daruval vagy emelőgéppel történő emelést csak szakképzett teherkötöző irányíthat, és szigorúan tilos a függő teher alatt tartózkodni.",
+    "danger": "A teher megcsúszása, a kötözőeszköz szakadása vagy a rossz egyensúlyozás miatt a magasból lezuhanó teher halálos sérülést okoz.",
+    "required_action": "Kötözésre csak szakképzett, vizsgázott teherkötöző jogosult. Az emelés előtt ellenőrizze a teher súlypontját, alkalmazzon irányító kötelet és használjon egységes karjelzéseket.",
+    "prohibited_action": "Tilos a függő teher alatt tartózkodni vagy áthaladni, illetve a terhet személyek feje felett elmozgatni.",
+    "why_it_matters": "Az emelt terhek több száz kilogrammos vagy több tonnás tömege miatt a legkisebb hiba is megelőzhetetlen tragédiához vezet.",
+    "when_applicable": "Minden darus emelésnél, autódarus és toronydarus műveletnél.",
+    "practical_example": "Oktatási példa: Zsaluanyagok daruzásánál a vizsgázott teherkötöző lezárja a daruzási zónát és kétvezető kötelet használ a teher elfordulásának megakadályozására.",
+    "legal_sources": [
+      {
+        "name": "47/1999. (VIII. 4.) GM rendelet (Emelőgép Biztonsági Szabályzat)",
+        "section": "I. fejezet 5. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-47-20-1E",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Teherfelvevő és kötözőeszközök felülvizsgálata",
+    "type": "O) EMELÉS / ANYAGMOZGATÁS",
+    "summary": "A teherkötöző selyemhevedereket, láncokat és sodronyköteleket minden használat előtt szemrevételezéssel, és időszakosan szakértővel felül kell vizsgálni.",
+    "danger": "Sérült, megvágott heveder vagy kifáradt láncszem használata során a teher emelés közben váratlanul leszakad.",
+    "required_action": "Ellenőrizze az emelőeszközök adattábláját, teherbírását és épségét. Vágott hevedert, deformálódott láncszemet vagy szálszakadt sodronykötelet azonnal ki kell selejtezni.",
+    "prohibited_action": "Tilos adattábla nélküli, sérült, csomózott vagy házilag javított kötözőeszközt emelésre használni.",
+    "why_it_matters": "A teherfelvevő eszközök a kritikus láncszemek az emelőgép és a teher között.",
+    "when_applicable": "Minden teherkötözés és emelési művelet előkészítésekor.",
+    "practical_example": "Oktatási példa: A teherkötöző a textilhevederen vágást észlelet, ezért azt nem használja fel, hanem selejtezési megjelöléssel átadja a raktárosnak.",
+    "legal_sources": [
+      {
+        "name": "47/1999. (VIII. 4.) GM rendelet (Emelőgép Biztonsági Szabályzat)",
+        "section": "II. fejezet 3. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1999-47-20-1E",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Kézi anyagmozgatás súlyhatárai és ergonómiája",
+    "type": "O) EMELÉS / ANYAGMOZGATÁS",
+    "summary": "A kézi anyagmozgatás során a gerinc és a mozgásszerv védelme érdekében be kell tartani az egészségügyi súlyhatárokat és a helyes emelési technikát.",
+    "danger": "Helytelen derékhajlítással végzett nehézemelés gerincsérvet, izomhúzódást és tartós mozgásszervi károsodást okoz.",
+    "required_action": "Nehéz tárgyat egyenes háttal, hajlított térddel, a teherhez közel állva emeljen fel. 50 kg feletti terhet kézzel emelni tilos; használjon molnárkocsit, darut vagy segítséget.",
+    "prohibited_action": "Tilos megengedett súlyhatárt meghaladó terhet egyedül emelni, vagy emelés közben a törzset elcsavarni.",
+    "why_it_matters": "A helyes ergonómia megvédi a gerinccsigolyákat a túlterheléstől és a tartós egészségromlástól.",
+    "when_applicable": "Minden kézi rakodási, csempe-, tégla- és zsákmozgatási feladatnál.",
+    "practical_example": "Oktatási példa: A 25 kg-os csemperagasztó zsákot a dolgozó hajlított térddel, egyenes háttal emeli meg, így a terhelés a combizomra hárul a gerinc helyett.",
+    "legal_sources": [
+      {
+        "name": "25/1998. (XII. 27.) RM rendelet",
+        "section": "2. § & 4. §",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1998-25-20-24",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Építőipari gépek munkavédelmi üzembe helyezése",
+    "type": "I) GÉP- ÉS ESZKÖZBIZTONSÁG",
+    "summary": "A veszélyes építőipari gépeket (pl. daruk, kotrók, betonkeverők) csak munkavédelmi üzembe helyezési eljárás és típusvizsgálat után szabad üzemeltetni.",
+    "danger": "Nem ellenőrzött, hibás biztonsági berendezésű munkagépek felborulása, meghibásodása súlyos munkahelyi katasztrófát okozhat.",
+    "required_action": "Győződjön meg róla, hogy a munkagép rendelkezik érvényes munkavédelmi üzembe helyezési jegyzőkönyvvel és időszakos biztonsági felülvizsgálattal. A gépet csak szakképzett kezelő működtetheti.",
+    "prohibited_action": "Tilos kikapcsolt vagy kiiktatott biztonsági reteszelésű, érvényes felülvizsgálat nélküli géppel munkát végezni.",
+    "why_it_matters": "A gépbiztonság garantálja, hogy a munkaeszköz feleljen meg a minimális biztonsági követelményeknek.",
+    "when_applicable": "Veszélyes építőipari gépek munkaterületre szállítása és üzemeltetése során.",
+    "practical_example": "Oktatási példa: A felvonuló mobil daru üzemeltetése előtt ellenőrzik az érvényes időszakos fővizsgálati jegyzőkönyvet és a kezelő gépkezelői jogosítványát.",
+    "legal_sources": [
+      {
+        "name": "1993. évi XCIII. törvény (Mvt.)",
+        "section": "23. § (1) bek. & 42. §",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1993-93-00-00",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Kézi szerszámok és gépi kéziszerszámok biztonsága",
+    "type": "I) GÉP- ÉS ESZKÖZBIZTONSÁG",
+    "summary": "A gépi kéziszerszámokat (flex, körfűrész, fúró) csak gyári védőburkolattal és hibátlan elektromos vezetékkel szabad használni.",
+    "danger": "Hiányzó védőburkolat vagy elnyírt kábel esetén a kirepülő törött tárcsa vagy az áramütés azonnali súlyos sérülést okoz.",
+    "required_action": "Minden munkakezdés előtt ellenőrizze a gépi kéziszerszám burkolatát, kapcsolóját és hálózati csatlakozóját. Tárcsacserénél a gépet áramtalanítani kell.",
+    "prohibited_action": "Tilos a sarokcsiszoló vagy körfűrész gyári védőburkolatát leszerelni, illetve törött, repedt csiszolótárcsát használni.",
+    "why_it_matters": "A védőburkolat megakadályozza a kéz véletlen hozzáérését és szerszámtöréskor felfogja a szilánkokat.",
+    "when_applicable": "Sarokcsiszolók, kézi körfűrészek, fúró- és vésőkalapácsok használata során.",
+    "practical_example": "Oktatási példa: A sarokcsiszolón meglazult védőburkolatot a dolgozó meghúzza, mielőtt a fém profilokat vágni kezdené.",
+    "legal_sources": [
+      {
+        "name": "10/2016. (IV. 5.) NGM rendelet",
+        "section": "2. melléklet 1. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2016-10-20-2E",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Ideiglenes építési villamos hálózatok és áram-védőkapcsolók",
+    "type": "P) VILLAMOS BIZTONSÁG",
+    "summary": "Az építési felvonulási villamos hálózaton minden csatlakozóaljzatot 30 mA érzékenységű áram-védőkapcsolóval (FI-relé / ÁVK) kell védeni.",
+    "danger": "Nedves építési környezetben a sérült kábelből származó áramütés halálos áramütéses balesetet okozhat.",
+    "required_action": "Kizárólag gumi- és mechanikailag védett felvonulási elosztószekrényt használni, amely 30 mA-es ÁVK-val van ellátva. A kábeleket emelve vagy elfedve kell vezetni.",
+    "prohibited_action": "Tilos háztartási hosszabbítót építkezésen használni, vagy a villamos elosztóból a FI-relét kiiktatni.",
+    "why_it_matters": "Az áram-védőkapcsoló a másodperc törtrésze alatt lekapcsolja a feszültséget testzárlat vagy emberi érintés esetén.",
+    "when_applicable": "Minden építési felvonulási területen és ideiglenes áramellátás kiépítésénél.",
+    "practical_example": "Oktatási példa: A sérült szigetelésű hosszabbító elvágásakor a felvonulási szekrényben lévő FI-relé azonnal leold, megmentve a dolgozó életét.",
+    "legal_sources": [
+      {
+        "name": "40/2017. (XII. 4.) NGM rendelet",
+        "section": "1. melléklet & MSZ HD 60364-7-704",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2017-40-20-2E",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Védőtávolságok föld feletti villamos szabadvezetékeknél",
+    "type": "P) VILLAMOS BIZTONSÁG",
+    "summary": "Nagyfeszültségű és kisfeszültségű szabadvezetékek közelében végzett gépi munkánál szigorúan be kell tartani a jogszabályi védőtávolságokat.",
+    "danger": "Daru gémjének vagy betonpumpának a vezetékhez való megközelítése elektromos íváthúzást és halálos áramütést okoz.",
+    "required_action": "Határozza meg a vezeték feszültségét és a vonatkozó védőtávolságot (kisfeszültségnél min. 1 m, nagyfeszültségnél 3-5 m felett). Jelölje ki a munkagép mozgáshatárait.",
+    "prohibited_action": "Tilos munkagéppel a villamos szabadvezeték védőövezetén belül munkát végezni az áramszolgáltató írásos engedélye és feszültségmentesítés nélkül.",
+    "why_it_matters": "Nagyfeszültségnél a villamos ív közvetlen fizikai érintkezés nélkül is átcsaphat a fém gépszerkezetre.",
+    "when_applicable": "Darus emelés, betonpumpálás, kotrás és magasépítés során szabadvezeték közelében.",
+    "practical_example": "Oktatási példa: A betonpumpa kezelője magasságkorlátozó határolókapcsolót állít be, így a pumpagém nem tud 5 méternél közelebb kerülni a 20 kV-os vezetékhez.",
+    "legal_sources": [
+      {
+        "name": "25/2013. (V. 31.) NGM rendelet",
+        "section": "4. § & melléklet",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2013-25-20-2E",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Kéz-kar rezgés expozíció korlátozása (HAV)",
+    "type": "Q) ZAJ / REZGÉS",
+    "summary": "A gépi kéziszerszámok (bontókalapács, csiszoló) okozta rezgésexpozíciót rezgéscsillapított gépekkel és a napi munkaidő korlátozásával kell csökkenteni.",
+    "danger": "A tartós kéz-kar rezgés expozíció érkárosodást, \"fehér ujj\" szindrómát és ízületi eldeformálódást okoz.",
+    "required_action": "Használjon modern, alacsony rezgésszintű kéziszerszámokat és rezgéscsillapító munkavédelmi kesztyűt. Tartson rendszeres pihenőidőt a rezgőgéppel végzett munka során.",
+    "prohibited_action": "Tilos a napi megengedett rezgexpozíciós időtartamot túllépni vagy folyamatos, szünet nélküli gépi bontást végezni.",
+    "why_it_matters": "A rezgés okozta érelváltozás és idegkárosodás irreverzibilis szakmai megbetegedés.",
+    "when_applicable": "Bontókalapács, felületcsiszoló, döngölő és láncfűrész használatánál.",
+    "practical_example": "Oktatási példa: A bontókalapácsos munkaidőt két dolgozó között váltásban osztják meg, így egyikük sem lépi túl a napi expozíciós határértéket.",
+    "legal_sources": [
+      {
+        "name": "22/2005. (XII. 21.) EüM rendelet",
+        "section": "3. § & 4. §",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2005-22-20-3A",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Veszélyes keverékek és kémiai anyagok tárolása",
+    "type": "R) POR / VEGYI KOCKÁZAT",
+    "summary": "Az építőipari vegyi anyagokat (oldószerek, ragasztók, gyanták) eredeti csomagolásban, érvényes Biztonsági Adatlap jelenlétében, szellőztetett raktárban kell tárolni.",
+    "danger": "A nem megfelelően tárolt vegyi anyagok mérgezést, kémiai égést, tüzet vagy robbanást okozhatnak.",
+    "required_action": "Biztosítsa a vegyi anyagok Biztonsági Adatlapját a munkaterületen. Az anyagokat jól szellőző, elkerített raktárban tárolja, és használja az előírt EVE-t.",
+    "prohibited_action": "Tilos vegyi anyagot vagy oldószert jelöletlen műanyag flakonba, üdítős üvegbe átfejteni, vagy nyílt láng közelében tárolni.",
+    "why_it_matters": "A szakszerűtlen tárolás és átfejtés végzetes tévedésekhez és súlyos vegyi balesetekhez vezethet.",
+    "when_applicable": "Minden építőipari vegyi anyag (alapozók, festékek, gyanták, szigetelők) kezelésekor.",
+    "practical_example": "Oktatási példa: Az epoxigyanta alapozót az eredeti, veszélyjelekkel ellátott kannában tárolják a zárható szellőző raktárkonténerben.",
+    "legal_sources": [
+      {
+        "name": "5/2020. (II. 6.) ITM rendelet",
+        "section": "5. §",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2020-5-20-4N",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Alkalomszerű tűzveszélyes tevékenység engedélyezése",
+    "type": "S) TŰZ- ÉS ROBBANÁSVÉDELEM",
+    "summary": "A nyílt lánggal vagy szikraképződéssel járó munkákat (hegesztés, vágás, csiszolás) csak előzetesen kiállított írásos Tűzvédelmi Engedély alapján szabad végezni.",
+    "danger": "Kirepülő szikrák vagy forró fémolvadék miatt a közelben lévő éghető anyagok meggyulladhatnak és építménytüzet okozhatnak.",
+    "required_action": "Kérjen írásos Tűzvédelmi Engedélyt a munkavégzés előtt. Takarítsa el az éghető anyagokat 10 méteres körzetben, készítsen elő tűzoltó készüléket és biztosítson utóellenőrzést.",
+    "prohibited_action": "Tilos alkalomszerű tűzveszélyes munkát végezni érvényes írásos engedély és tűzoltó készülék hiányában.",
+    "why_it_matters": "A csiszolásból származó szikrák órákkal a munka befejezése után is képesek lappangó tüzet okozni.",
+    "when_applicable": "Sarokcsiszolás, lángvágás, hegesztés és bitumenes lemez fektetése során.",
+    "practical_example": "Oktatási példa: Acélgerenda vágása előtt kiállítják a tűzvédelmi engedélyt, kihelyeznek egy 6 kg-os ABC porral oltót, és a munka után 2 órán át figyelik a helyszínt.",
+    "legal_sources": [
+      {
+        "name": "54/2014. (XII. 5.) BM rendelet (OTSZ)",
+        "section": "21. fejezet",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2014-54-20-1M",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Építési törmelék és anyagok mélybe ürítésének szabályai",
+    "type": "H) MUNKATERÜLETI ELLENŐRZÉS",
+    "summary": "Az építési törmeléket és anyagokat a magasból csak zárt törmelékcsúszdán keresztül szabad leüríteni, vagy lezárt, elkerített területre szabad ledobni.",
+    "danger": "Szabadon ledobott téglák, betonrepedések eltalálhatják az alul elhaladó dolgozókat vagy járókelőket.",
+    "required_action": "Szereljen fel zárt műanyag törmelékcsúszdát a törmelékkonténerig. Az ürítési zónát alul kerítse el és lássa el \"LEESŐ TÁRGYAK – BELÉPNI TILOS!\" táblával.",
+    "prohibited_action": "Tilos építési hulladékot, szerszámot vagy faanyagot ellenőrizetlenül kidobni az ablakon vagy az állványzatról.",
+    "why_it_matters": "A magasból lezuhanó tárgyak mozgási energiája halálos kimenetelű ütést mérését eredményezi.",
+    "when_applicable": "Bontási és építési munkák során többemeletes építményeknél.",
+    "practical_example": "Oktatási példa: A 3. emeleti tetőcsere törmelékét zárt csúszdán vezetik a földszinti zárt konténerbe, miközben a konténer 5 méteres körzetét szalaggal lekerítik.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 13. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Munkaterület rendje és elcsúszás-, botlásveszély elhárítása",
+    "type": "H) MUNKATERÜLETI ELLENŐRZÉS",
+    "summary": "A munkaterületet és a közlekedési utakat folyamatosan tisztán, botlás- és elcsúszásmentesen kell tartani a balesetek megelőzése érdekében.",
+    "danger": "Szanaszét heverő kábelek, deszkák, kiálló szögek és olajfoltok miatti elcsúszás és botlás súlyos töréseket és sérüléseket okoz.",
+    "required_action": "Tartsa tisztán a közlekedési utakat. A kiálló szögeket azonnal hajlítsa le vagy húzza ki a kibontott faanyagból. A kábeleket vezesse a föld felett.",
+    "prohibited_action": "Tilos az építési közlekedőutakat, lépcsőházakat és menekülési útvonalakat anyagtárolásra használni vagy eltorlaszolni.",
+    "why_it_matters": "Az elcsúszás és botlás a leggyakoribb munkahelyi baleseti ok az építőiparban.",
+    "when_applicable": "Folyamatosan, valamennyi építési munkaterületen.",
+    "practical_example": "Oktatási példa: A munkaidő végén a zsaluzó brigád összegyűjti a fahulladékot és kihúzza a kiálló szögeket a pallókból.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 12. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Munkabalesetek azonnali bejelentése és kivizsgálása",
+    "type": "T) ELSŐSEGÉLY / BALESET",
+    "summary": "Minden munkabalesetet a sérültnek vagy a személyzetnek azonnal jelentenie kell a közvetlen felelős vezetőnek, és a helyszínt a kivizsgálásig meg kell őrizni.",
+    "danger": "A be nem jelentett vagy nem kivizsgált balesetek megakadályozzák a veszélyforrás elhárítását, ami újabb balesethez vezet.",
+    "required_action": "Baleset esetén azonnal lássa el a sérültet, értesítse az elsősegélynyújtót és a munkahelyi vezetőt. Súlyos balesetnél a helyszínt a kivizsgálásig eredeti állapotban kell tartani.",
+    "prohibited_action": "Tilos a munkabalesetet elhallgatni, vagy a baleseti helyszínt a munkavédelmi kivizsgálás előtt megváltoztatni (kivéve életmentés esetén).",
+    "why_it_matters": "A törvényes kivizsgálás tárja fel a kiváltó okokat és biztosítja a szükséges megelőző intézkedések meghozatalát.",
+    "when_applicable": "Minden építőipari sérülés, rosszullét vagy baleset bekövetkezésekor.",
+    "practical_example": "Oktatási példa: Lábfejsérüléskor a munkaterületi vezető azonnal jegyzőkönyvet vesz fel, lefényképezi a helyszínt és bejelenti az esetet a munkavédelmi megbízottnak.",
+    "legal_sources": [
+      {
+        "name": "1993. évi XCIII. törvény (Mvt.)",
+        "section": "64. § (1)-(4) bek.",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1993-93-00-00",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Munkavédelmi oktatás felvétele és nyilvántartása",
+    "type": "D) MUNKAVÉDELMI KÖTELEZETTSÉG",
+    "summary": "Minden munkavállaló csak igazolt, dokumentált munkavédelmi oktatás elvégzése után kezdheti meg a munkavégzést az építési területen.",
+    "danger": "Oktatásban nem részesült dolgozó nem ismeri a munkaterület veszélyeit, az EVE használatát és az elvárható biztonságos magatartást.",
+    "required_action": "A munkáltatónak munkába álláskor, új technológia vagy munkaeszköz bevezetésekor munkavédelmi oktatást kell tartania. Az oktatást oktatási naplóban írásban kell rögzíteni.",
+    "prohibited_action": "Tilos a munkavállalót munkavédelmi oktatás és annak dokumentálása nélkül önálló munkavégzésre beosztani.",
+    "why_it_matters": "Az oktatás garantálja, hogy a dolgozó felkészült a rá váró feladatok biztonságos végrehajtására.",
+    "when_applicable": "Munkába álláskor, munkahely megváltozásakor, valamint időszakosan minden munkavállalónál.",
+    "practical_example": "Oktatási példa: Az új építkezésre felvonuló kőművesek a helyszíni munkavédelmi oktatáson átveszik a BET kivonatát és aláírják az oktatási naplót.",
+    "legal_sources": [
+      {
+        "name": "1993. évi XCIII. törvény (Mvt.)",
+        "section": "55. § (1) bek.",
+        "url": "https://njt.jog.gov.hu/jogszabaly/1993-93-00-00",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "szakember"
+    ],
+    "confidence": "magas"
+  },
+  {
+    "title": "Elsősegélynyújtási feltételek biztosítása az építési munkaterületen",
+    "type": "T) ELSŐSEGÉLY / BALESET",
+    "summary": "Az építési munkaterületen felkészített elsősegélynyújtót, kijelölt elsősegélynyújtó felszerelést és a mentőhívás feltételeit kell biztosítani.",
+    "danger": "Elsősegély hiányában a vérzéses vagy áramütéses sérülések perceken belül életveszélyes állapotot idézhetnek elő.",
+    "required_action": "Biztosítson MSZ EN szerinti elsősegélyládat jól látható, jelölt helyen. Minden műszakban jelen kell lennie legalább egy kiképzett elsősegélynyújtónak.",
+    "prohibited_action": "Tilos a leárt vagy hiányos tartalmú elsősegélydobozt a munkaterületen tartani, vagy a mentőhívó hirdetményt eltávolítani.",
+    "why_it_matters": "A szakszerű elsősegélynyújtás az első kritikus percekben életet menthet.",
+    "when_applicable": "Minden építési munkahelyen a munkavégzés teljes időtartama alatt.",
+    "practical_example": "Oktatási példa: A felvonulási konténer falán elhelyezett I. sz. elsősegélydoboz mellett kifüggesztették a kiképzett elsősegélynyújtó és a mentők telefonszámát.",
+    "legal_sources": [
+      {
+        "name": "4/2002. (II. 20.) SZCSM–EüM együttes rendelet",
+        "section": "4. melléklet I. rész 14. pont",
+        "url": "https://njt.jog.gov.hu/jogszabaly/2002-4-20-37",
+        "status": "hatályos"
+      }
+    ],
+    "source_checked_at": "2026-09-01",
+    "target_audience": [
+      "munkavállaló",
+      "szakember"
+    ],
+    "confidence": "magas"
+  }
+]

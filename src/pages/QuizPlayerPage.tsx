@@ -202,7 +202,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
 
                 {/* Options List */}
                 <div className="space-y-3">
-                  {currentQuestion.options.map((opt, optIdx) => {
+                  {(currentQuestion.options || currentQuestion.options_json || []).map((opt, optIdx) => {
                     const isSelected = (selectedAnswers[currentQuestion.id] || []).includes(optIdx);
 
                     return (
@@ -361,7 +361,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
 
                         {/* Options breakdown */}
                         <div className="space-y-2">
-                          {q.options.map((opt, oIdx) => {
+                          {(q.options || q.options_json || []).map((opt, oIdx) => {
                             const wasChosen = userSelected.includes(oIdx);
                             const isRight = correct.includes(oIdx);
 
