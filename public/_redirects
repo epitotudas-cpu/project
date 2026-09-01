@@ -1,0 +1,3 @@
+# Prevent SPA fallback from returning index.html (text/html) for missing JS/CSS asset chunks
+/assets/*  /assets/:splat  404!
+/*         /index.html     200
