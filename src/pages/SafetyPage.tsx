@@ -249,7 +249,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                 </div>
 
                 {/* Target Audience Selector */}
-                <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto shrink-0">
+                <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto overflow-x-auto scrollbar-none shrink-0">
                   {[
                     { id: 'all', label: 'Összes célcsoport', icon: Users },
                     { id: 'munkavállaló', label: 'Munkavállaló', icon: GraduationCap },
@@ -261,12 +261,12 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                       <button
                         key={tab.id}
                         onClick={() => setSelectedCardAudience(tab.id)}
-                        className={`flex-1 lg:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        className={`flex-1 min-w-fit px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
                           active ? 'bg-primary text-white shadow-sm' : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         <IconComp size={14} className={active ? 'text-accent' : 'text-gray-500'} />
-                        <span>{tab.label}</span>
+                        <span className="truncate">{tab.label}</span>
                       </button>
                     );
                   })}
@@ -354,16 +354,16 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                     </div>
 
                     {/* Legal Source Footer */}
-                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5 text-gray-500 font-mono text-[11px]">
-                        <FileCheck size={13} className="text-emerald-600" />
-                        <span className="truncate max-w-[170px]" title={card.legal_sources[0]?.name}>
+                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-gray-500 font-mono text-[11px] min-w-0 flex-1">
+                        <FileCheck size={13} className="text-emerald-600 shrink-0" />
+                        <span className="truncate block font-medium" title={card.legal_sources[0]?.name}>
                           {card.legal_sources[0]?.name.split(' ')[0]} {card.legal_sources[0]?.section}
                         </span>
                       </div>
 
-                      <span className="text-primary font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs shrink-0">
-                        Kártya megnyitása <ChevronRight size={14} />
+                      <span className="text-primary font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs shrink-0 whitespace-nowrap">
+                        <span>Megnyitás</span> <ChevronRight size={14} />
                       </span>
                     </div>
                   </div>
@@ -421,7 +421,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                 </div>
 
                 {/* Target Audience Tabs */}
-                <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto shrink-0">
+                <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto overflow-x-auto scrollbar-none shrink-0">
                   {[
                     { id: 'all', label: 'Összes célközönség', icon: Users },
                     { id: 'students', label: 'Tanulók részére', icon: GraduationCap },
@@ -433,12 +433,12 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                       <button
                         key={tab.id}
                         onClick={() => setSelectedAudience(tab.id as any)}
-                        className={`flex-1 lg:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        className={`flex-1 min-w-fit px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
                           active ? 'bg-primary text-white shadow-sm' : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         <IconComp size={14} className={active ? 'text-accent' : 'text-gray-500'} />
-                        <span>{tab.label}</span>
+                        <span className="truncate">{tab.label}</span>
                       </button>
                     );
                   })}
@@ -514,21 +514,21 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                     </div>
 
                     {/* Footer Metadata & CTA */}
-                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-3 text-gray-500 font-medium">
+                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-3 text-gray-500 font-medium min-w-0 flex-1">
                         {item.documents && item.documents.length > 0 && (
-                          <span className="flex items-center gap-1 text-primary font-bold">
+                          <span className="flex items-center gap-1 text-primary font-bold shrink-0">
                             <FileText size={13} /> {item.documents.length} PDF
                           </span>
                         )}
                         {item.standard_code && (
-                          <span className="font-mono text-[11px] bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                          <span className="font-mono text-[11px] bg-gray-100 px-2 py-0.5 rounded text-gray-700 truncate" title={item.standard_code}>
                             {item.standard_code.split('/')[0]}
                           </span>
                         )}
                       </div>
 
-                      <span className="text-primary font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
+                      <span className="text-primary font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs shrink-0 whitespace-nowrap">
                         Részletek <ChevronRight size={14} />
                       </span>
                     </div>
