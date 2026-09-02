@@ -23,7 +23,9 @@ import {
   ShieldCheck,
   Info,
   Calendar,
-  Layers
+  Layers,
+  SlidersHorizontal,
+  ChevronDown
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import {
@@ -49,11 +51,16 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeItem, setActiveItem] = useState<EducationalContentItem | null>(null);
 
-  // Filtering for Official Safety Cards
-  const [selectedCardCategory, setSelectedCardCategory] = useState<string>('all');
-  const [selectedCardAudience, setSelectedCardAudience] = useState<string>('all');
+  // Filtering for Official Safety Cards (Multi-selection & Modal Panel)
+  const [selectedCardCategories, setSelectedCardCategories] = useState<string[]>([]);
+  const [selectedCardAudiences, setSelectedCardAudiences] = useState<string[]>([]);
   const [cardSearchQuery, setCardSearchQuery] = useState('');
   const [activeCard, setActiveCard] = useState<SafetyCardItem | null>(null);
+
+  // Filter Modal Panel State
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [modalCategories, setModalCategories] = useState<string[]>([]);
+  const [modalAudiences, setModalAudiences] = useState<string[]>([]);
 
   useEffect(() => {
     function loadData() {
@@ -72,23 +79,45 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
     return () => window.removeEventListener('knowledge-hub-updated', loadData);
   }, []);
 
+  // Close filter modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFilterModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Unique card categories list
   const availableCardCategories = useMemo(() => {
     const categories = new Set<string>();
     OFFICIAL_SAFETY_CARDS.forEach((card) => {
       if (card.type) categories.add(card.type);
     });
-    return Array.from(categories);
+    return Array.from(categories).sort((a, b) => a.localeCompare(b, 'hu'));
+  }, []);
+
+  // Card category counts map
+  const cardCategoryCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    OFFICIAL_SAFETY_CARDS.forEach((card) => {
+      if (card.type) {
+        map.set(card.type, (map.get(card.type) ?? 0) + 1);
+      }
+    });
+    return map;
   }, []);
 
   // Filtered Cards list
   const filteredCards = useMemo(() => {
     return OFFICIAL_SAFETY_CARDS.filter((card) => {
-      const matchesCategory = selectedCardCategory === 'all' || card.type === selectedCardCategory;
+      const matchesCategory =
+        selectedCardCategories.length === 0 || selectedCardCategories.includes(card.type);
       const matchesAudience =
-        selectedCardAudience === 'all' ||
-        (selectedCardAudience === 'munkavállaló' && card.target_audience.includes('munkavállaló')) ||
-        (selectedCardAudience === 'szakember' && card.target_audience.includes('szakember'));
+        selectedCardAudiences.length === 0 ||
+        selectedCardAudiences.some((aud) => card.target_audience.includes(aud as any));
 
       const q = cardSearchQuery.toLowerCase().trim();
       const matchesQuery =
@@ -97,11 +126,13 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
         card.summary.toLowerCase().includes(q) ||
         card.danger.toLowerCase().includes(q) ||
         card.required_action.toLowerCase().includes(q) ||
-        card.legal_sources.some((src) => src.name.toLowerCase().includes(q) || src.section.toLowerCase().includes(q));
+        card.legal_sources.some(
+          (src) => src.name.toLowerCase().includes(q) || src.section.toLowerCase().includes(q)
+        );
 
       return matchesCategory && matchesAudience && matchesQuery;
     });
-  }, [selectedCardCategory, selectedCardAudience, cardSearchQuery]);
+  }, [selectedCardCategories, selectedCardAudiences, cardSearchQuery]);
 
   // Unique topics list for Articles
   const availableTopics = useMemo(() => {
@@ -131,6 +162,35 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
       return matchesTopic && matchesAudience && matchesQuery;
     });
   }, [items, selectedTopic, selectedAudience, searchQuery]);
+
+  // Modal Panel Handlers
+  const handleOpenFilterModal = () => {
+    setModalCategories([...selectedCardCategories]);
+    setModalAudiences([...selectedCardAudiences]);
+    setIsFilterModalOpen(true);
+  };
+
+  const handleApplyFilterModal = () => {
+    setSelectedCardCategories([...modalCategories]);
+    setSelectedCardAudiences([...modalAudiences]);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleClearAllFilters = () => {
+    setSelectedCardCategories([]);
+    setSelectedCardAudiences([]);
+    setCardSearchQuery('');
+    setModalCategories([]);
+    setModalAudiences([]);
+  };
+
+  const handleRemoveCategoryChip = (cat: string) => {
+    setSelectedCardCategories((prev) => prev.filter((c) => c !== cat));
+  };
+
+  const handleRemoveAudienceChip = (aud: string) => {
+    setSelectedCardAudiences((prev) => prev.filter((a) => a !== aud));
+  };
 
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20 selection:bg-accent selection:text-black">
@@ -225,10 +285,12 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
         {/* ── TAB 1: OFFICIAL SAFETY CARDS ── */}
         {activeTab === 'cards' && (
           <div className="space-y-6">
-            {/* Filter & Search Bar for Cards */}
-            <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-5">
-              <div className="flex flex-col lg:flex-row items-center gap-4">
-                {/* Search */}
+            
+            {/* SEARCH AND FILTER BAR WITH MODAL TRIGGER */}
+            <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                
+                {/* Live Search */}
                 <div className="relative flex-1 w-full">
                   <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
@@ -248,62 +310,106 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                   )}
                 </div>
 
-                {/* Target Audience Selector */}
-                <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto overflow-x-auto scrollbar-none shrink-0">
-                  {[
-                    { id: 'all', label: 'Összes célcsoport', icon: Users },
-                    { id: 'munkavállaló', label: 'Tanuló', icon: GraduationCap },
-                    { id: 'szakember', label: 'Szakember', icon: HardHat },
-                  ].map((tab) => {
-                    const IconComp = tab.icon;
-                    const active = selectedCardAudience === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setSelectedCardAudience(tab.id)}
-                        className={`flex-1 min-w-fit px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
-                          active ? 'bg-primary text-white shadow-sm' : 'text-gray-700 hover:text-gray-900'
-                        }`}
-                      >
-                        <IconComp size={14} className={active ? 'text-accent' : 'text-gray-500'} />
-                        <span className="truncate">{tab.label}</span>
-                      </button>
-                    );
-                  })}
+                {/* Filter Action Button (opens Filter Panel) */}
+                <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                  <button
+                    onClick={handleOpenFilterModal}
+                    className={`w-full md:w-auto px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-between gap-2.5 border shadow-xs cursor-pointer ${
+                      selectedCardCategories.length > 0 || selectedCardAudiences.length > 0
+                        ? 'bg-primary text-white border-primary-700 shadow-md'
+                        : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <SlidersHorizontal size={16} className={selectedCardCategories.length > 0 || selectedCardAudiences.length > 0 ? 'text-accent' : 'text-gray-600'} />
+                      <span>
+                        {selectedCardCategories.length > 0 || selectedCardAudiences.length > 0
+                          ? `Szűrők (${selectedCardCategories.length + selectedCardAudiences.length})`
+                          : 'Kategóriák és Szűrők'}
+                      </span>
+                    </div>
+                    <ChevronDown size={15} />
+                  </button>
                 </div>
               </div>
 
-              {/* Card Category Pills */}
-              {availableCardCategories.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-t border-gray-100 pt-4">
-                  <span className="text-xs font-bold text-gray-500 shrink-0 mr-1 flex items-center gap-1">
-                    <Filter size={13} /> Kategória:
+              {/* Active Removable Filter Chips Bar */}
+              {(selectedCardCategories.length > 0 || selectedCardAudiences.length > 0 || cardSearchQuery.trim()) && (
+                <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-gray-100">
+                  <span className="text-xs font-bold text-gray-500 mr-1 flex items-center gap-1">
+                    <Filter size={13} /> Aktív szűrők:
                   </span>
-                  <button
-                    onClick={() => setSelectedCardCategory('all')}
-                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
-                      selectedCardCategory === 'all'
-                        ? 'bg-primary text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Összes ({OFFICIAL_SAFETY_CARDS.length})
-                  </button>
-                  {availableCardCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCardCategory(cat)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
-                        selectedCardCategory === cat
-                          ? 'bg-primary text-white shadow-xs'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+
+                  {/* Audience Chips */}
+                  {selectedCardAudiences.map((aud) => (
+                    <span
+                      key={aud}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-900 font-bold text-xs rounded-full shadow-2xs"
                     >
-                      {cat.split(' ')[0]} {cat.substring(cat.indexOf(' ') + 1)}
-                    </button>
+                      <span>Célcsoport: {aud === 'munkavállaló' ? 'Tanuló' : 'Szakember'}</span>
+                      <button
+                        onClick={() => handleRemoveAudienceChip(aud)}
+                        className="hover:bg-amber-200/60 rounded-full p-0.5"
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
                   ))}
+
+                  {/* Category Chips */}
+                  {selectedCardCategories.map((catName) => (
+                    <span
+                      key={catName}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 text-primary-950 font-bold text-xs rounded-full shadow-2xs"
+                    >
+                      <span>{catName}</span>
+                      <button
+                        onClick={() => handleRemoveCategoryChip(catName)}
+                        className="hover:bg-primary/20 rounded-full p-0.5"
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
+                  ))}
+
+                  {/* Search Query Chip */}
+                  {cardSearchQuery.trim() && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-900 font-bold text-xs rounded-full shadow-2xs">
+                      <span>{`Keresés: „${cardSearchQuery}”`}</span>
+                      <button
+                        onClick={() => setCardSearchQuery('')}
+                        className="hover:bg-blue-200/60 rounded-full p-0.5"
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
+                  )}
+
+                  {/* Clear All Button */}
+                  <button
+                    onClick={handleClearAllFilters}
+                    className="text-xs font-bold text-accent hover:underline ml-2 cursor-pointer"
+                  >
+                    Összes szűrő törlése
+                  </button>
                 </div>
               )}
+            </div>
+
+            {/* Cards Header & Count */}
+            <div className="flex items-center justify-between pb-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-gray-900">
+                  {selectedCardCategories.length > 0 || selectedCardAudiences.length > 0
+                    ? 'Szűrt Munkavédelmi Kártyák'
+                    : cardSearchQuery
+                    ? 'Keresési Találatok'
+                    : 'Összes Munkavédelmi Kártya'}
+                </h2>
+                <span className="text-xs text-gray-500 font-bold bg-gray-200/60 px-2.5 py-0.5 rounded-full">
+                  {filteredCards.length} db
+                </span>
+              </div>
             </div>
 
             {/* Official Cards Grid */}
@@ -330,7 +436,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                               key={aud}
                               className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-md"
                             >
-                              {aud}
+                              {aud === 'munkavállaló' ? 'Tanuló' : 'Szakember'}
                             </span>
                           ))}
                         </div>
@@ -380,11 +486,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                   Próbálja meg eltávolítani a keresési kifejezést vagy válasszon másik kategóriát.
                 </p>
                 <button
-                  onClick={() => {
-                    setSelectedCardCategory('all');
-                    setSelectedCardAudience('all');
-                    setCardSearchQuery('');
-                  }}
+                  onClick={handleClearAllFilters}
                   className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-800 transition-colors"
                 >
                   Szűrők alaphelyzetbe állítása
@@ -560,6 +662,160 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
           </div>
         )}
       </div>
+
+      {/* ── CATEGORY & FILTER MODAL PANEL ── */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-gray-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col p-6 sm:p-8 space-y-6">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div>
+                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <SlidersHorizontal size={20} className="text-primary" />
+                  Munkavédelmi Szűrők &amp; Kategóriák
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Válassza ki a megjeleníteni kívánt kategóriákat és célcsoportokat
+                </p>
+              </div>
+              <button
+                onClick={() => setIsFilterModalOpen(false)}
+                className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="space-y-6 overflow-y-auto max-h-[60vh] pr-1">
+              
+              {/* Section 1: Célcsoport szűrő (Checkboxes) */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users size={14} className="text-primary" /> Célcsoport Kijelölése
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: 'munkavállaló', label: 'Tanulók részére', icon: GraduationCap },
+                    { id: 'szakember', label: 'Szakembereknek', icon: HardHat },
+                  ].map((aud) => {
+                    const IconComp = aud.icon;
+                    const isChecked = modalAudiences.includes(aud.id);
+                    return (
+                      <label
+                        key={aud.id}
+                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
+                          isChecked
+                            ? 'bg-amber-500/10 border-amber-500 text-amber-950 shadow-2xs'
+                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            setModalAudiences((prev) =>
+                              prev.includes(aud.id)
+                                ? prev.filter((a) => a !== aud.id)
+                                : [...prev, aud.id]
+                            );
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <IconComp size={16} className={isChecked ? 'text-amber-700' : 'text-gray-400'} />
+                        <span>{aud.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Section 2: Kategóriák szűrő (Checkboxes with counts) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers size={14} className="text-primary" /> Kártya Kategóriák
+                  </h4>
+                  <div className="flex items-center gap-3 text-xs">
+                    <button
+                      onClick={() => setModalCategories([...availableCardCategories])}
+                      className="text-primary font-bold hover:underline cursor-pointer"
+                    >
+                      Összes kijelölése
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      onClick={() => setModalCategories([])}
+                      className="text-gray-500 hover:text-gray-800 cursor-pointer"
+                    >
+                      Törlés
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {availableCardCategories.map((catName) => {
+                    const count = cardCategoryCounts.get(catName) || 0;
+                    const isChecked = modalCategories.includes(catName);
+                    return (
+                      <label
+                        key={catName}
+                        className={`p-3 rounded-2xl border text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                          isChecked
+                            ? 'bg-primary/10 border-primary text-primary-950 shadow-2xs'
+                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              setModalCategories((prev) =>
+                                prev.includes(catName)
+                                  ? prev.filter((c) => c !== catName)
+                                  : [...prev, catName]
+                              );
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary shrink-0"
+                          />
+                          <span className="truncate">{catName}</span>
+                        </div>
+                        <span className="text-[10px] font-semibold text-gray-500 bg-white px-2 py-0.5 rounded-full border border-gray-200 shrink-0">
+                          {count} kártya
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  setModalCategories([]);
+                  setModalAudiences([]);
+                }}
+                className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-gray-900 underline decoration-dotted cursor-pointer"
+              >
+                Kijelölések törlése
+              </button>
+
+              <button
+                onClick={handleApplyFilterModal}
+                className="px-6 py-3 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-2"
+              >
+                <CheckCircle2 size={16} className="text-accent" />
+                Kártyák megjelenítése
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ── OFFICIAL SAFETY CARD MODAL ── */}
       {activeCard && (
