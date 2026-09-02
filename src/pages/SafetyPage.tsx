@@ -252,7 +252,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                 <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100 p-1 rounded-2xl w-full lg:w-auto overflow-x-auto scrollbar-none shrink-0">
                   {[
                     { id: 'all', label: 'Összes célcsoport', icon: Users },
-                    { id: 'munkavállaló', label: 'Munkavállaló', icon: GraduationCap },
+                    { id: 'munkavállaló', label: 'Tanuló', icon: GraduationCap },
                     { id: 'szakember', label: 'Szakember', icon: HardHat },
                   ].map((tab) => {
                     const IconComp = tab.icon;
