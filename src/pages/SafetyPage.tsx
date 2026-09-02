@@ -158,10 +158,10 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                 <ShieldAlert size={14} /> Hivatalos Jogszabályalapú Tudásbázis
               </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Építőipari Munkavédelem &amp; Kártyatár
+                Építőipari Munkavédelmi Tudástár
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                Strukturált, szakmailag pontos és hatályos magyar jogszabályokon (NJT) alapuló hivatalos munkavédelmi kártyák és oktatási útmutatók.
+                Hatályos magyar munkavédelmi jogszabályokra és az NJT hivatalos jogszabályszövegeire épülő, strukturált és gyakorlatias szakmai útmutatók.
               </p>
             </div>
 
