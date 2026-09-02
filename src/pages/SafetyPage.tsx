@@ -695,7 +695,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                 <h4 className="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                   <Users size={14} className="text-primary" /> Célcsoport Kijelölése
                 </h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   {[
                     { id: 'munkavállaló', label: 'Tanulók részére', icon: GraduationCap },
                     { id: 'szakember', label: 'Szakembereknek', icon: HardHat },
@@ -705,7 +705,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                     return (
                       <label
                         key={aud.id}
-                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
+                        className={`p-3 sm:p-3.5 rounded-2xl border text-xs font-bold transition-all flex items-center gap-2.5 cursor-pointer min-w-0 ${
                           isChecked
                             ? 'bg-amber-500/10 border-amber-500 text-amber-950 shadow-2xs'
                             : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
@@ -721,10 +721,10 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                                 : [...prev, aud.id]
                             );
                           }}
-                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary shrink-0"
                         />
-                        <IconComp size={16} className={isChecked ? 'text-amber-700' : 'text-gray-400'} />
-                        <span>{aud.label}</span>
+                        <IconComp size={16} className={`shrink-0 ${isChecked ? 'text-amber-700' : 'text-gray-400'}`} />
+                        <span className="truncate">{aud.label}</span>
                       </label>
                     );
                   })}
