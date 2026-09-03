@@ -232,7 +232,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   return (
                     <img
                       key={img.id || idx}
-                      src={optimizeImageUrl(img.imageUrl, 800)}
+                      src={optimizeImageUrl(img.imageUrl, 550, 65)}
                       alt={img.altText || 'ÉpítőTudás vizuális elem'}
                       loading={isCurrent ? 'eager' : 'lazy'}
                       fetchPriority={isCurrent ? 'high' : 'low'}
@@ -314,7 +314,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     <div className="h-36 relative bg-gray-900 overflow-hidden flex items-center justify-center">
                       {category.image_url ? (
                         <img
-                          src={optimizeImageUrl(category.image_url, 600)}
+                          src={optimizeImageUrl(category.image_url, 400, 65)}
                           alt={category.name}
                           loading="lazy"
                           decoding="async"

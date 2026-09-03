@@ -81,7 +81,7 @@ export default function CookieBanner({ onNavigate }: CookieBannerProps) {
           </button>
           <button
             onClick={handleAcceptAll}
-            className="w-full sm:w-1/2 py-2 px-3 bg-accent hover:bg-accent-hover text-black text-xs font-bold rounded-xl transition-colors"
+            className="w-full sm:w-1/2 py-2 px-3 bg-accent hover:bg-accent-hover text-white text-xs font-extrabold rounded-xl transition-colors shadow-xs"
           >
             Összes elfogadása
           </button>

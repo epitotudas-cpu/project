@@ -275,8 +275,10 @@ export function applySiteSettings(settings: SiteSettings): void {
   try {
     if (typeof document === 'undefined') return;
 
-    const accentColor = settings?.primaryColor || '#FFC400';
+    const accentColor = settings?.primaryColor || '#4165b4';
+    const accentContrastText = getContrastTextColor(accentColor);
     document.documentElement.style.setProperty('--color-accent', accentColor);
+    document.documentElement.style.setProperty('--color-accent-text', accentContrastText);
     document.documentElement.style.setProperty('--color-accent-hover', adjustColorBrightness(accentColor, -15));
     document.documentElement.style.setProperty('--color-accent-light', adjustColorBrightness(accentColor, 15));
 

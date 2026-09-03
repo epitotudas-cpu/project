@@ -315,7 +315,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             {isAdmin && (
               <button
                 onClick={() => onNavigate('admin')}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent-hover text-black text-xs lg:text-sm font-bold rounded-lg transition-all whitespace-nowrap"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent-hover text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
               >
                 <Settings size={14} />
                 Admin panel
@@ -431,7 +431,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 </button>
                 <button
                   onClick={() => onNavigate('register')}
-                  className="hidden md:flex px-3.5 py-1.5 bg-accent hover:bg-accent-hover text-black text-xs lg:text-sm font-bold rounded-lg transition-all whitespace-nowrap"
+                  className="hidden md:flex px-3.5 py-1.5 bg-accent hover:bg-accent-hover text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
                 >
                   Regisztráció
                 </button>

@@ -1,9 +1,9 @@
 /**
  * High-performance image URL optimizer for Pexels, Unsplash, and remote CDN images.
  * Automatically appends and replaces responsive width and compression parameters to shrink
- * image payloads by up to 95% (e.g., from 5MB raw images down to 30-80KB).
+ * image payloads by up to 95% (e.g., from raw 5MB down to 15-40KB per card).
  */
-export function optimizeImageUrl(url: string | undefined | null, width = 600, quality = 70): string {
+export function optimizeImageUrl(url: string | undefined | null, width = 450, quality = 65): string {
   if (!url || typeof url !== 'string' || !url.trim()) return '';
   let trimmed = url.trim();
 
@@ -18,6 +18,9 @@ export function optimizeImageUrl(url: string | undefined | null, width = 600, qu
     } else {
       const sep = trimmed.includes('?') ? '&' : '?';
       trimmed = `${trimmed}${sep}auto=compress&cs=tinysrgb&w=${width}&dpr=1`;
+    }
+    if (trimmed.includes('dpr=')) {
+      trimmed = trimmed.replace(/dpr=\d+(\.\d+)?/, 'dpr=1');
     }
     return trimmed;
   }
