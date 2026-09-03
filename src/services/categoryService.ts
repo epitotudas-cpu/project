@@ -282,6 +282,8 @@ export async function listCategories(): Promise<Category[]> {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
+      .not('name', 'ilike', '__SYSTEM_CONFIG_%')
+      .neq('id', '00000000-0000-0000-0000-000000000001')
       .order('sort_order', { ascending: true });
 
     if (!error && data && data.length > 0) {

@@ -1,64 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
-import CategoryPage from './pages/CategoryPage';
-import ArticlePage from './pages/ArticlePage';
-import GlossaryPage from './pages/GlossaryPage';
-import ToolPage from './pages/ToolPage';
-import PathsHubPage from './pages/PathsHubPage';
-import AboutHubPage from './pages/AboutHubPage';
-import CoursesPage from './pages/CoursesPage';
-import CareersPage from './pages/CareersPage';
-import AdminLayout from './components/AdminLayout';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminArticlesPage from './pages/AdminArticlesPage';
-import AdminCategoriesPage from './pages/AdminCategoriesPage';
-import AdminGlossaryPage from './pages/AdminGlossaryPage';
-import AdminBooksPage from './pages/AdminBooksPage';
-import AdminToolsPage from './pages/AdminToolsPage';
-import AdminTradesPage from './pages/AdminTradesPage';
-import AdminJobsPage from './pages/AdminJobsPage';
-import AdminCoursesPage from './pages/AdminCoursesPage';
-import AdminUsersPage from './pages/AdminUsersPage';
-import AdminModerationPage from './pages/AdminModerationPage';
-import AdminRolesPage from './pages/AdminRolesPage';
-import AdminPartnersPage from './pages/AdminPartnersPage';
-import AdminAdsPage from './pages/AdminAdsPage';
-import AdminAuditPage from './pages/AdminAuditPage';
-import AdminSettingsPage from './pages/AdminSettingsPage';
-import AdminKnowledgeHubPage from './pages/AdminKnowledgeHubPage';
-import AdminMaterialsPage from './pages/AdminMaterialsPage';
-import SafetyPage from './pages/SafetyPage';
-import StandardsPage from './pages/StandardsPage';
-import MaterialsPage from './pages/MaterialsPage';
-import LearningPage from './pages/LearningPage';
-import CourseDetailPage from './pages/CourseDetailPage';
-import QuizPlayerPage from './pages/QuizPlayerPage';
-import LearningPathsPage from './pages/LearningPathsPage';
-import AdminLearningPage from './pages/AdminLearningPage';
-import PartnerLearningPage from './pages/PartnerLearningPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import EmailVerificationPage from './pages/EmailVerificationPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import ProfilePage from './pages/ProfilePage';
-import PartnersPage from './pages/PartnersPage';
-import ImpressumPage from './pages/ImpressumPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsPage from './pages/TermsPage';
-import CookiePolicyPage from './pages/CookiePolicyPage';
-import PartnerApplicationPage from './pages/PartnerApplicationPage';
 import CookieBanner from './components/CookieBanner';
 import { GlossaryProvider } from './contexts/GlossaryContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import KnowledgeHubPage from './pages/KnowledgeHubPage';
-import CalculationsPage from './pages/CalculationsPage';
-import BooksPage from './pages/BooksPage';
-import SoftwarePage from './pages/SoftwarePage';
-import ToolSelectorPage from './pages/ToolSelectorPage';
-import LegalHubPage from './pages/LegalHubPage';
 import {
   getSiteSettings,
   applySiteSettings,
@@ -67,6 +13,62 @@ import {
 } from './services/siteSettingsService';
 import { fetchHeroStateFromCloud } from './services/heroImageService';
 import { fetchImpressumDataFromCloud } from './services/impressumService';
+
+// Dynamic Code Splitting (Lazy Load Subpages to Drastically Reduce Initial Bundle Size)
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
+const ArticlePage = lazy(() => import('./pages/ArticlePage'));
+const GlossaryPage = lazy(() => import('./pages/GlossaryPage'));
+const ToolPage = lazy(() => import('./pages/ToolPage'));
+const PathsHubPage = lazy(() => import('./pages/PathsHubPage'));
+const AboutHubPage = lazy(() => import('./pages/AboutHubPage'));
+const CoursesPage = lazy(() => import('./pages/CoursesPage'));
+const CareersPage = lazy(() => import('./pages/CareersPage'));
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminArticlesPage = lazy(() => import('./pages/AdminArticlesPage'));
+const AdminCategoriesPage = lazy(() => import('./pages/AdminCategoriesPage'));
+const AdminGlossaryPage = lazy(() => import('./pages/AdminGlossaryPage'));
+const AdminBooksPage = lazy(() => import('./pages/AdminBooksPage'));
+const AdminToolsPage = lazy(() => import('./pages/AdminToolsPage'));
+const AdminTradesPage = lazy(() => import('./pages/AdminTradesPage'));
+const AdminJobsPage = lazy(() => import('./pages/AdminJobsPage'));
+const AdminCoursesPage = lazy(() => import('./pages/AdminCoursesPage'));
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
+const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'));
+const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
+const AdminPartnersPage = lazy(() => import('./pages/AdminPartnersPage'));
+const AdminAdsPage = lazy(() => import('./pages/AdminAdsPage'));
+const AdminAuditPage = lazy(() => import('./pages/AdminAuditPage'));
+const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
+const AdminKnowledgeHubPage = lazy(() => import('./pages/AdminKnowledgeHubPage'));
+const AdminMaterialsPage = lazy(() => import('./pages/AdminMaterialsPage'));
+const SafetyPage = lazy(() => import('./pages/SafetyPage'));
+const StandardsPage = lazy(() => import('./pages/StandardsPage'));
+const MaterialsPage = lazy(() => import('./pages/MaterialsPage'));
+const LearningPage = lazy(() => import('./pages/LearningPage'));
+const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'));
+const QuizPlayerPage = lazy(() => import('./pages/QuizPlayerPage'));
+const LearningPathsPage = lazy(() => import('./pages/LearningPathsPage'));
+const AdminLearningPage = lazy(() => import('./pages/AdminLearningPage'));
+const PartnerLearningPage = lazy(() => import('./pages/PartnerLearningPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const EmailVerificationPage = lazy(() => import('./pages/EmailVerificationPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const PartnersPage = lazy(() => import('./pages/PartnersPage'));
+const ImpressumPage = lazy(() => import('./pages/ImpressumPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage'));
+const PartnerApplicationPage = lazy(() => import('./pages/PartnerApplicationPage'));
+const KnowledgeHubPage = lazy(() => import('./pages/KnowledgeHubPage'));
+const CalculationsPage = lazy(() => import('./pages/CalculationsPage'));
+const BooksPage = lazy(() => import('./pages/BooksPage'));
+const SoftwarePage = lazy(() => import('./pages/SoftwarePage'));
+const ToolSelectorPage = lazy(() => import('./pages/ToolSelectorPage'));
+const LegalHubPage = lazy(() => import('./pages/LegalHubPage'));
 
 type PageKey =
   | 'home'
@@ -181,6 +183,15 @@ function getInitialArticleSlug(): string | null {
   } catch {
     return null;
   }
+}
+
+function PageFallback() {
+  return (
+    <div className="min-h-[50vh] bg-background flex flex-col items-center justify-center p-8">
+      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent border-r-transparent mb-3" />
+      <p className="text-xs text-gray-400 font-medium">Betöltés...</p>
+    </div>
+  );
 }
 
 function AppContent() {
@@ -315,44 +326,46 @@ function AppContent() {
   switch (currentPage) {
     case 'admin':
       return (
-        <AdminLayout onNavigate={navigate}>
-          {(view, userEmail, onNavigateView, searchQuery) => {
-            if (view === 'dashboard') return <AdminDashboard userEmail={userEmail} onNavigateView={onNavigateView} />;
-            if (view === 'moderation') return <AdminModerationPage />;
-            if (view === 'articles') return <AdminArticlesPage initialSearchQuery={searchQuery} />;
-            if (view === 'learning') return <AdminLearningPage />;
-            if (view === 'partner-learning') return <PartnerLearningPage />;
-            if (view === 'categories') return <AdminCategoriesPage initialSearchQuery={searchQuery} />;
-            if (view === 'glossary') return <AdminGlossaryPage initialSearchQuery={searchQuery} />;
-            if (view === 'trades') return <AdminTradesPage initialSearchQuery={searchQuery} />;
-            if (view === 'books') return <AdminBooksPage initialSearchQuery={searchQuery} />;
-            if (view === 'tools') return <AdminToolsPage initialSearchQuery={searchQuery} />;
-            if (view === 'jobs') return <AdminJobsPage initialSearchQuery={searchQuery} />;
-            if (view === 'courses') return <AdminCoursesPage initialSearchQuery={searchQuery} />;
-            if (view === 'users') return <AdminUsersPage initialSearchQuery={searchQuery} />;
-            if (view === 'roles') return <AdminRolesPage />;
-            if (view === 'partners') return <AdminPartnersPage initialSearchQuery={searchQuery} />;
-            if (view === 'ads') return <AdminAdsPage onNavigate={navigate} />;
-            if (view === 'knowledge-hub') return <AdminKnowledgeHubPage initialSearchQuery={searchQuery} />;
-            if (view === 'materials') return <AdminMaterialsPage initialSearchQuery={searchQuery} />;
-            if (view === 'audit') return <AdminAuditPage />;
-            if (view === 'settings') return <AdminSettingsPage onNavigate={navigate} />;
-            return <div className="p-8 text-gray-500 text-sm">A(z) "{view}" nézet hamarosan elérhető.</div>;
-          }}
-        </AdminLayout>
+        <Suspense fallback={<PageFallback />}>
+          <AdminLayout onNavigate={navigate}>
+            {(view, userEmail, onNavigateView, searchQuery) => {
+              if (view === 'dashboard') return <AdminDashboard userEmail={userEmail} onNavigateView={onNavigateView} />;
+              if (view === 'moderation') return <AdminModerationPage />;
+              if (view === 'articles') return <AdminArticlesPage initialSearchQuery={searchQuery} />;
+              if (view === 'learning') return <AdminLearningPage />;
+              if (view === 'partner-learning') return <PartnerLearningPage />;
+              if (view === 'categories') return <AdminCategoriesPage initialSearchQuery={searchQuery} />;
+              if (view === 'glossary') return <AdminGlossaryPage initialSearchQuery={searchQuery} />;
+              if (view === 'trades') return <AdminTradesPage initialSearchQuery={searchQuery} />;
+              if (view === 'books') return <AdminBooksPage initialSearchQuery={searchQuery} />;
+              if (view === 'tools') return <AdminToolsPage initialSearchQuery={searchQuery} />;
+              if (view === 'jobs') return <AdminJobsPage initialSearchQuery={searchQuery} />;
+              if (view === 'courses') return <AdminCoursesPage initialSearchQuery={searchQuery} />;
+              if (view === 'users') return <AdminUsersPage initialSearchQuery={searchQuery} />;
+              if (view === 'roles') return <AdminRolesPage />;
+              if (view === 'partners') return <AdminPartnersPage initialSearchQuery={searchQuery} />;
+              if (view === 'ads') return <AdminAdsPage onNavigate={navigate} />;
+              if (view === 'knowledge-hub') return <AdminKnowledgeHubPage initialSearchQuery={searchQuery} />;
+              if (view === 'materials') return <AdminMaterialsPage initialSearchQuery={searchQuery} />;
+              if (view === 'audit') return <AdminAuditPage />;
+              if (view === 'settings') return <AdminSettingsPage onNavigate={navigate} />;
+              return <div className="p-8 text-gray-500 text-sm">A(z) "{view}" nézet hamarosan elérhető.</div>;
+            }}
+          </AdminLayout>
+        </Suspense>
       );
     case 'login':
-      return <LoginPage onNavigate={navigate} />;
+      return <Suspense fallback={<PageFallback />}><LoginPage onNavigate={navigate} /></Suspense>;
     case 'register':
-      return <RegisterPage onNavigate={navigate} />;
+      return <Suspense fallback={<PageFallback />}><RegisterPage onNavigate={navigate} /></Suspense>;
     case 'verify-email':
-      return <EmailVerificationPage onNavigate={navigate} />;
+      return <Suspense fallback={<PageFallback />}><EmailVerificationPage onNavigate={navigate} /></Suspense>;
     case 'forgot-password':
-      return <ForgotPasswordPage onNavigate={navigate} />;
+      return <Suspense fallback={<PageFallback />}><ForgotPasswordPage onNavigate={navigate} /></Suspense>;
     case 'reset-password':
-      return <ResetPasswordPage onNavigate={navigate} />;
+      return <Suspense fallback={<PageFallback />}><ResetPasswordPage onNavigate={navigate} /></Suspense>;
     case 'partner-application':
-      return <PartnerApplicationPage />;
+      return <Suspense fallback={<PageFallback />}><PartnerApplicationPage /></Suspense>;
   }
 
   // Public routes with shared Header/Footer
@@ -403,7 +416,11 @@ function AppContent() {
         </div>
       )}
       <Header currentPage={currentPage} onNavigate={navigate} />
-      <main>{renderPage()}</main>
+      <main>
+        <Suspense fallback={<PageFallback />}>
+          {renderPage()}
+        </Suspense>
+      </main>
       <Footer onNavigate={navigate} />
       <CookieBanner onNavigate={navigate} />
     </div>

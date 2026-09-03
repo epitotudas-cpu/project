@@ -8,12 +8,15 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   build: {
-    chunkSizeWarningLimit: 1000,
+    target: 'es2020',
+    minify: 'esbuild',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'vendor-react';
             }
             if (id.includes('lucide-react')) {
@@ -21,6 +24,9 @@ export default defineConfig({
             }
             if (id.includes('@supabase')) {
               return 'vendor-supabase';
+            }
+            if (id.includes('pdfjs-dist')) {
+              return 'vendor-pdf';
             }
             if (id.includes('recharts')) {
               return 'vendor-charts';

@@ -1,0 +1,24 @@
+# ÉpítőTudás (epitotudas.hu)
+
+> Magyarország online építőipari tudásbázisa, enciklopédiája és szakmai képzési platformja.
+
+## Fő szekciók és szolgáltatások
+
+- **Tudástár & Cikkek**: Szakmai cikkek, szerkezetépítési, alapozási, szigetelési, burkolási és épületgépészeti útmutatók.
+  - [Cikkek / Kategóriák](https://www.epitotudas.hu/#tudastar)
+- **Építőipari Szakszótár (Glossary)**: Építőipari szakkifejezések, magyarized német szakzsargon, szabványos elnevezések és gyakorlati magyarázatok.
+  - [Fogalomtár](https://www.epitotudas.hu/#glossary)
+- **Kalkulátorok & Számítások**: Anyagszükséglet-számítás, betonozás, szigetelés, burkolás és szerkezetépítési kalkulátorok.
+  - [Kalkulátorok](https://www.epitotudas.hu/#calculations)
+- **Képzések & Tananyagok**: Interaktív kurzusok, tesztek és tanulási utak szakembereknek és tanulóknak.
+  - [Kurzusok](https://www.epitotudas.hu/#courses)
+- **Szerszámkatalógus & Választó**: Gépek, szerszámok és méréstechnikai eszközök összehasonlító adatbázisa.
+  - [Szerszámok](https://www.epitotudas.hu/#tool)
+- **Szakmai Szabványok & Munkavédelem**: Építőipari MSZ EN szabványok, munkavédelmi és biztonságtechnikai előírások.
+  - [Szabványok](https://www.epitotudas.hu/#standards)
+  - [Munkavédelem](https://www.epitotudas.hu/#safety)
+
+## Elérhetőségek & Kapcsolat
+
+- Weboldal: https://www.epitotudas.hu
+- E-mail: info@epitotudas.hu

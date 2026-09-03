@@ -758,7 +758,6 @@ export const OFFICIAL_STANDARDS_CARDS: StandardCardItem[] = [
     requirement: "A használatbavételhez be kell nyújtani az FMV nyilatkozatát, a szakhatósági állásfoglalásokat (tűzvédelem, kéményseprő, hálózatkezelők) és az energetikai tanúsítványt.",
     prohibited_action: "Tilos az épületbe beköltözni vagy azt üzemeltetni a használatbavételi eljárás sikeres lezárása előtt.",
     why_it_matters: "Az engedély nélküli használat élet- és vagyonbiztonsági kockázatot jelent, és építésügyi bírságot von maga után.",
-    what_matters: "A használatbavételi engedély a garancia arra, hogy az épület szakszerűen és biztonságosan készült el.",
     when_applicable: "Az építési munkálatok befejezésekor, a használatbavétel előtt.",
     practical_example: "Az építtető az ÉTDR rendszeren keresztül benyújtja a használatbavételi kérelmet az FMV és a műszaki ellenőr igazolásaival együtt.",
     target_audience: ["szakember"],

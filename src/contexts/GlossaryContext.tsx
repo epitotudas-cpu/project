@@ -18,18 +18,27 @@ interface GlossaryProviderProps {
 }
 
 export function GlossaryProvider({ children }: GlossaryProviderProps) {
-  const [terms, setTerms] = useState<GlossaryTermFromJson[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [terms, setTerms] = useState<GlossaryTermFromJson[]>(() => glossaryJsonService.getFallbackTerms());
+  const [categories, setCategories] = useState<string[]>(() => {
+    const fb = glossaryJsonService.getFallbackTerms();
+    return [...new Set(fb.map((t) => t.category).filter(Boolean))].sort();
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadInitialTerms();
+    // Defer cloud sync so initial page load LCP & FCP are not blocked
+    const timer = setTimeout(() => {
+      void loadInitialTerms();
+    }, 1500);
 
     function handleGlossaryUpdate() {
       refreshTerms();
     }
     window.addEventListener('glossary-updated', handleGlossaryUpdate);
-    return () => window.removeEventListener('glossary-updated', handleGlossaryUpdate);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('glossary-updated', handleGlossaryUpdate);
+    };
   }, []);
 
   async function loadInitialTerms() {

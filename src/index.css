@@ -149,3 +149,14 @@
 .admin-scroll::-webkit-scrollbar-track { background: transparent; }
 .admin-scroll::-webkit-scrollbar-thumb { background: #1E1E1E; border-radius: 4px; }
 .admin-scroll::-webkit-scrollbar-thumb:hover { background: #2A2A2A; }
+
+/* Accessibility & Touch Target Minimum Dimensions (WCAG / Lighthouse Accessibility) */
+@media (pointer: coarse) {
+  button, 
+  a.clickable,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+

@@ -225,6 +225,10 @@ class GlossaryJsonService {
     this.terms = [...this.fallbackTerms];
   }
 
+  getFallbackTerms(): GlossaryTermFromJson[] {
+    return [...this.fallbackTerms];
+  }
+
   static getInstance(): GlossaryJsonService {
     if (!GlossaryJsonService.instance) {
       GlossaryJsonService.instance = new GlossaryJsonService();
