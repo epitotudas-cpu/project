@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, Save, AlertCircle, Calculator, Sparkles, Plus, Trash2,
   ChevronUp, ChevronDown, Eye, Image as ImageIcon,
-  Wrench, ShieldAlert, FileText, Table as TableIcon, CheckSquare,
+  Wrench, ShieldAlert, ShieldCheck, FileText, Table as TableIcon, CheckSquare,
   Tag, ListOrdered, BookMarked, CheckCircle2, Copy, Heading, Type, Minus,
   List
 } from 'lucide-react';
@@ -84,6 +84,32 @@ export interface GuideSEOData {
   relatedKeywords: string;
 }
 
+export type SourceType =
+  | 'jogszabaly'
+  | 'intezmenyi'
+  | 'szakkepzes'
+  | 'agazati'
+  | 'gyartoi'
+  | 'hatterforras';
+
+export interface ArticleSource {
+  id: string;
+  sourceType: SourceType;
+  sourceName: string;
+  url?: string;
+  checkDate?: string;
+  status?: string;
+}
+
+export const SOURCE_TYPE_MAP: Record<SourceType, { label: string; icon: string }> = {
+  jogszabaly: { label: 'Jogszabály', icon: '⚖️' },
+  intezmenyi: { label: 'Hivatalos intézményi forrás', icon: '🏛️' },
+  szakkepzes: { label: 'Szakképzési dokumentum', icon: '🎓' },
+  agazati: { label: 'Ágazati / szakmai forrás', icon: '🏗️' },
+  gyartoi: { label: 'Gyártói dokumentáció', icon: '🏭' },
+  hatterforras: { label: 'Szakmai háttérforrás', icon: '📚' },
+};
+
 interface FormState {
   title: string;
   slug: string;
@@ -159,7 +185,7 @@ export function calculateReadTimeFromBlocks(blocks: ContentBlock[]): number {
 // DATA SERIALIZATION & BACKWARD COMPATIBILITY HELPERS
 // ----------------------------------------------------------------------
 
-export function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEOData): string {
+export function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEOData, sources?: ArticleSource[]): string {
   let md = '';
 
   blocks.forEach((block) => {
@@ -272,14 +298,14 @@ export function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEODa
     }
   });
 
-  const payload = JSON.stringify({ blocks, seo });
+  const payload = JSON.stringify({ blocks, seo, sources: sources || [] });
   md += `\n\n[EPITOTUDAS_BLOCKS_DATA:${payload}]`;
   return md;
 }
 
-export function parseBlocksFromContent(content: string): { blocks: ContentBlock[]; seo: GuideSEOData } {
+export function parseBlocksFromContent(content: string): { blocks: ContentBlock[]; seo: GuideSEOData; sources: ArticleSource[] } {
   if (!content) {
-    return { blocks: [], seo: { ...DEFAULT_SEO } };
+    return { blocks: [], seo: { ...DEFAULT_SEO }, sources: [] };
   }
 
   // 1. Try parsing modern EPITOTUDAS_BLOCKS_DATA
@@ -290,6 +316,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
       return {
         blocks: parsed.blocks || [],
         seo: parsed.seo || { ...DEFAULT_SEO },
+        sources: Array.isArray(parsed.sources) ? parsed.sources : [],
       };
     } catch (e) {
       console.error('EPITOTUDAS_BLOCKS_DATA parse error:', e);
@@ -454,7 +481,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
       }
 
       const seo: GuideSEOData = g.seo ? { ...g.seo } : { ...DEFAULT_SEO };
-      return { blocks, seo };
+      return { blocks, seo, sources: [] };
     } catch (e) {
       console.error('Legacy guide parse error:', e);
     }
@@ -462,7 +489,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
 
   // 3. Fallback: Parse plain markdown text into basic text/heading blocks
   const cleanedText = content.replace(/\[EPITOTUDAS_.*\]$/s, '').trim();
-  if (!cleanedText) return { blocks: [], seo: { ...DEFAULT_SEO } };
+  if (!cleanedText) return { blocks: [], seo: { ...DEFAULT_SEO }, sources: [] };
 
   const paragraphs = cleanedText.split(/\n\n+/);
   const blocks: ContentBlock[] = paragraphs.map((p, idx) => {
@@ -485,7 +512,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
     return { id: `p_txt_${idx}`, type: 'text', content: p };
   });
 
-  return { blocks, seo: { ...DEFAULT_SEO } };
+  return { blocks, seo: { ...DEFAULT_SEO }, sources: [] };
 }
 
 // ----------------------------------------------------------------------
@@ -709,9 +736,10 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
   const isCreate = article === null;
   const [form, setForm] = useState<FormState>(() => (article ? formFromArticle(article) : { ...EMPTY_FORM }));
   
-  const parsedData = article ? parseBlocksFromContent(article.content || '') : { blocks: [], seo: { ...DEFAULT_SEO } };
+  const parsedData = article ? parseBlocksFromContent(article.content || '') : { blocks: [], seo: { ...DEFAULT_SEO }, sources: [] };
   const [blocks, setBlocks] = useState<ContentBlock[]>(parsedData.blocks);
   const [seo, setSeo] = useState<GuideSEOData>(parsedData.seo);
+  const [sources, setSources] = useState<ArticleSource[]>(parsedData.sources || []);
 
   const [slugTouched, setSlugTouched] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
@@ -725,11 +753,13 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
       const p = parseBlocksFromContent(article.content || '');
       setBlocks(p.blocks);
       setSeo(p.seo);
+      setSources(p.sources || []);
       setSlugTouched(true);
     } else {
       setForm({ ...EMPTY_FORM });
       setBlocks(STARTER_TEMPLATES.blank.getBlocks());
       setSeo({ ...DEFAULT_SEO });
+      setSources([]);
       setSlugTouched(false);
     }
     setError(null);
@@ -743,6 +773,35 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [saving, onClose]);
+
+  function handleAddSource() {
+    setSources((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        sourceType: 'jogszabaly',
+        sourceName: '',
+        url: '',
+        checkDate: new Date().toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+        status: 'Hatályos',
+      },
+    ]);
+    setDirty(true);
+  }
+
+  function handleRemoveSource(index: number) {
+    setSources((prev) => prev.filter((_, i) => i !== index));
+    setDirty(true);
+  }
+
+  function handleSourceChange<K extends keyof ArticleSource>(index: number, key: K, value: ArticleSource[K]) {
+    setSources((prev) => {
+      const list = [...prev];
+      list[index] = { ...list[index], [key]: value };
+      return list;
+    });
+    setDirty(true);
+  }
 
   function updateForm<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -879,7 +938,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
     setError(null);
 
     try {
-      const serializedContent = serializeBlocksToContent(blocks, seo);
+      const serializedContent = serializeBlocksToContent(blocks, seo, sources);
       const calculatedReadTime = form.read_time || calculateReadTimeFromBlocks(blocks);
 
       const payload = {
@@ -1221,6 +1280,120 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* SECTION 1.B: FORRÁSOK ÉS HITELESSÉG */}
+              <div style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="border rounded-2xl p-5 space-y-4 shadow-sm">
+                <div style={{ borderColor: cardBorder }} className="flex items-center justify-between pb-2 border-b">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={18} style={{ color: cardHighlight }} />
+                    <h3 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
+                      1.B Forrás &amp; Hitelesség ({sources.length} forrás)
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddSource}
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="px-3 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer hover:opacity-90 shadow-2xs"
+                  >
+                    <Plus size={14} /> Forrás Hozzáadása
+                  </button>
+                </div>
+
+                <p className="text-xs opacity-70">
+                  Add meg azokat a hivatalos jogszabályokat, gyártói útmutatókat vagy szabványokat, amelyekre a cikk támaszkodik.
+                </p>
+
+                {sources.length === 0 ? (
+                  <div style={{ backgroundColor: blockBg, borderColor: cardBorder }} className="text-center py-4 border border-dashed rounded-xl text-xs opacity-60">
+                    Még nincs forrás hozzáadva ehhez a cikkhez. (Forrás hiányában a forrásblokk nem jelenik meg a látogatóknak).
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {sources.map((src, idx) => (
+                      <div key={src.id || idx} style={{ backgroundColor: blockBg, borderColor: cardBorder }} className="border rounded-xl p-4 space-y-3 relative">
+                        <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-2">
+                          <span style={{ color: cardHighlight }} className="text-xs font-extrabold">
+                            #{idx + 1} Forrás
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSource(idx)}
+                            className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
+                            title="Forrás törlése"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label style={labelStyle} className={labelClass}>Forrás Típusa</label>
+                            <select
+                              style={fieldStyle}
+                              className={fieldClass}
+                              value={src.sourceType}
+                              onChange={(e) => handleSourceChange(idx, 'sourceType', e.target.value as SourceType)}
+                            >
+                              <option value="jogszabaly">⚖️ Jogszabály</option>
+                              <option value="intezmenyi">🏛️ Hivatalos intézményi forrás</option>
+                              <option value="szakkepzes">🎓 Szakképzési dokumentum</option>
+                              <option value="agazati">🏗️ Ágazati / szakmai forrás</option>
+                              <option value="gyartoi">🏭 Gyártói dokumentáció</option>
+                              <option value="hatterforras">📚 Szakmai háttérforrás</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label style={labelStyle} className={labelClass}>Forrás Megnevezése *</label>
+                            <input
+                              style={fieldStyle}
+                              className={fieldClass}
+                              value={src.sourceName}
+                              onChange={(e) => handleSourceChange(idx, 'sourceName', e.target.value)}
+                              placeholder="Pl. 4/2002. (II. 20.) SzCsM–EüM rendelet"
+                            />
+                          </div>
+
+                          <div>
+                            <label style={labelStyle} className={labelClass}>Eredeti Forrás URL</label>
+                            <input
+                              style={fieldStyle}
+                              className={fieldClass}
+                              value={src.url || ''}
+                              onChange={(e) => handleSourceChange(idx, 'url', e.target.value)}
+                              placeholder="https://..."
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label style={labelStyle} className={labelClass}>Ellenőrzés Dátuma</label>
+                              <input
+                                style={fieldStyle}
+                                className={fieldClass}
+                                value={src.checkDate || ''}
+                                onChange={(e) => handleSourceChange(idx, 'checkDate', e.target.value)}
+                                placeholder="2026. 09. 04."
+                              />
+                            </div>
+                            <div>
+                              <label style={labelStyle} className={labelClass}>Állapot (pl. Hatályos)</label>
+                              <input
+                                style={fieldStyle}
+                                className={fieldClass}
+                                value={src.status || ''}
+                                onChange={(e) => handleSourceChange(idx, 'status', e.target.value)}
+                                placeholder="Hatályos"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* SECTION 2: KEZDŐSABLONOK */}

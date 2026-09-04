@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library, AlertTriangle, CheckSquare, Check, Lightbulb, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Home, ChevronRight, Clock, TrendingUp, Star, AlertCircle, UserCheck, Tag, BookOpen, FileText, Calculator, Library, AlertTriangle, CheckSquare, Check, Lightbulb, Bookmark, BookmarkCheck, ShieldCheck, ExternalLink } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
 import { getRelatedArticles, incrementArticleViews } from '../services/articleService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
-import { parseBlocksFromContent } from '../components/EditArticleModal';
+import { parseBlocksFromContent, SOURCE_TYPE_MAP } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
@@ -450,6 +450,72 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
               </div>
             </div>
           )}
+
+          {/* Forrás és Hitelesség Section */}
+          {(() => {
+            const { sources } = parseBlocksFromContent(article.content || '');
+            if (!sources || sources.length === 0) return null;
+            return (
+              <div className="border-t border-gray-100 pt-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <h3 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                    <ShieldCheck size={18} className="text-accent shrink-0" />
+                    <span>Forrás és Hitelesség</span>
+                  </h3>
+                  <span className="text-[11px] font-bold text-gray-400">
+                    {sources.length} hivatkozott forrás
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {sources.map((src, idx) => {
+                    const info = SOURCE_TYPE_MAP[src.sourceType] || { label: 'Szakmai forrás', icon: '📚' };
+                    return (
+                      <div
+                        key={src.id || idx}
+                        className="p-4 rounded-2xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs hover:border-gray-300 transition-colors"
+                      >
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap text-xs">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-primary/10 text-primary-950 border border-primary/20 flex items-center gap-1">
+                              <span>{info.icon}</span>
+                              <span>{info.label}</span>
+                            </span>
+                            {src.status && (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                Állapot: {src.status}
+                              </span>
+                            )}
+                            {src.checkDate && (
+                              <span className="text-[11px] text-gray-500 font-semibold">
+                                Ellenőrizve: {src.checkDate}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-sm font-bold text-gray-900 leading-snug">
+                            {src.sourceName}
+                          </h4>
+                        </div>
+
+                        {src.url && (
+                          <a
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                          >
+                            <span>Forrás megnyitása</span>
+                            <ExternalLink size={13} />
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Partner Attribution Card */}
           {article.partner_name && (
