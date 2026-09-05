@@ -30,7 +30,7 @@ import { useToast } from '../components/ToastProvider';
 import EditArticleModal from '../components/EditArticleModal';
 import EditCategoryModal from '../components/EditCategoryModal';
 import DeleteCategoryModal from '../components/DeleteCategoryModal';
-import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 export type ArticleHubSubTab =
   | 'overview'
