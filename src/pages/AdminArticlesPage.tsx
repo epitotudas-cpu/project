@@ -361,31 +361,16 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {subTab !== 'overview' && (
+          {subTab !== 'overview' && (
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setSubTab('overview')}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-bold rounded-xl transition-colors border border-gray-700"
               >
                 <ArrowLeft size={16} /> Vissza a Kezdőlapra
               </button>
-            )}
-            <button
-              onClick={() => {
-                if (subTab === 'list-hirek') setLockedArticleTypeForModal('hirek');
-                else if (subTab === 'list-ujdonsagok') setLockedArticleTypeForModal('ujdonsagok');
-                else if (subTab === 'list-utmutatok') setLockedArticleTypeForModal('utmutatok');
-                else setLockedArticleTypeForModal(undefined);
-
-                setEditingArticle(null);
-                setEditorOpen(true);
-              }}
-              style={{ backgroundColor: cardHighlight }}
-              className="flex items-center gap-2 px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all"
-            >
-              <Plus size={16} /> Új Cikk Létrehozása
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
