@@ -651,53 +651,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
       {/* ---------------------------------------------------------------------- */}
       {isListTab && (
         <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-6 border rounded-2xl space-y-6">
-          {/* TOP ARTICLE SUB-HUB NAV TABS */}
-          <div className="flex flex-wrap items-center gap-2 p-1.5 bg-black/40 border border-gray-800 rounded-xl">
-            <button
-              onClick={() => setSubTab('list-hirek')}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                subTab === 'list-hirek'
-                  ? 'bg-amber-400 text-black shadow-md'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              <Newspaper size={16} /> 1. Hírek Kezelése ({hirekTotal} db)
-            </button>
-
-            <button
-              onClick={() => setSubTab('list-ujdonsagok')}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                subTab === 'list-ujdonsagok'
-                  ? 'bg-amber-400 text-black shadow-md'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              <Sparkles size={16} /> 2. Újdonságok Kezelése ({ujdonsagTotal} db)
-            </button>
-
-            <button
-              onClick={() => setSubTab('list-utmutatok')}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                subTab === 'list-utmutatok'
-                  ? 'bg-amber-400 text-black shadow-md'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              <BookOpen size={16} /> 3. Útmutatók Kezelése ({utmutatoTotal} db)
-            </button>
-
-            <button
-              onClick={() => setSubTab('list-all')}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                subTab === 'list-all'
-                  ? 'bg-amber-400 text-black shadow-md'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              <Layers size={16} /> Összes Cikk ({totalCount} db)
-            </button>
-          </div>
-
           {/* SUB-PAGE HEADER BAR */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 border border-gray-800 rounded-xl">
             <div>
