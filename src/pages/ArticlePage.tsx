@@ -22,7 +22,6 @@ import {
   ExternalLink,
   Calendar,
 } from 'lucide-react';
-import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
 import { getRelatedArticles, incrementArticleViews } from '../services/articleService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
@@ -366,33 +365,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         </div>
       </div>
 
-      {/* 2. Sub-navigation Ribbon */}
-      <SectionSubNav
-        ariaLabel="Tudástár navigáció"
-        onNavigate={onNavigate}
-        items={[
-          {
-            label: 'Fogalomtár',
-            page: 'glossary',
-            icon: <BookOpen size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Számítások',
-            page: 'calculations',
-            icon: <Calculator size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Szakmai könyvek',
-            page: 'books',
-            icon: <Library size={14} className="text-accent" />,
-            active: false,
-          },
-        ]}
-      />
-
-      {/* 3. MAIN FULL-WIDTH ARTICLE CONTAINER */}
+      {/* 2. MAIN FULL-WIDTH ARTICLE CONTAINER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         
         {/* HERO AREA: Full-width Header Banner */}
@@ -684,46 +657,85 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
               </button>
             </div>
 
-            {/* Knowledge Hub Shortcuts */}
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs space-y-4">
-              <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider">
-                Kapcsolódó Tudástári Modulok
-              </h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => onNavigate('glossary')}
-                  className="w-full p-3 bg-gray-50 hover:bg-primary/5 border border-gray-200 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <BookOpen size={16} className="text-accent" />
-                    <span>Szakmai Fogalomtár</span>
-                  </div>
-                  <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+            {/* Contextual Knowledge Hub Shortcuts (Kapcsolódó Tudástári Modulok) */}
+            {(() => {
+              const primaryTopic = articleTags[0] || categoryObj?.name || '';
+              const isCalcRelated = /számítás|kalkuláció|méretezés|gipszkarton|beton|szigetelés|burkolás|falazás|festés|tető/i.test(
+                `${article.title} ${article.excerpt || ''} ${articleTags.join(' ')}`
+              );
+              const isBookRelated = /könyv|szakkönyv|szabvány|útmutató|technológia|kivitelezés|tervezés/i.test(
+                `${article.title} ${article.excerpt || ''} ${articleTags.join(' ')}`
+              );
 
-                <button
-                  onClick={() => onNavigate('calculations')}
-                  className="w-full p-3 bg-gray-50 hover:bg-primary/5 border border-gray-200 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Calculator size={16} className="text-accent" />
-                    <span>Építőipari Számítások</span>
+              return (
+                <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                      <BookOpen size={15} className="text-accent" />
+                      <span>Kapcsolódó Tudástári Modulok</span>
+                    </h3>
+                    {primaryTopic && (
+                      <span className="text-[10px] font-bold text-accent bg-accent/10 px-2.5 py-0.5 rounded-full border border-accent/20">
+                        #{primaryTopic}
+                      </span>
+                    )}
                   </div>
-                  <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
 
-                <button
-                  onClick={() => onNavigate('books')}
-                  className="w-full p-3 bg-gray-50 hover:bg-primary/5 border border-gray-200 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Library size={16} className="text-accent" />
-                    <span>Szakmai Könyvek Katalógusa</span>
+                  <div className="space-y-2.5">
+                    {/* Fogalomtár link - search by primary tag if available */}
+                    <button
+                      onClick={() => onNavigate(primaryTopic ? `glossary?q=${encodeURIComponent(primaryTopic)}` : 'glossary')}
+                      className="w-full p-3.5 bg-gray-50 hover:bg-primary/5 border border-gray-200 hover:border-primary/30 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <BookOpen size={16} className="text-accent shrink-0" />
+                        <div className="text-left">
+                          <div>Szakmai Fogalomtár</div>
+                          {primaryTopic && (
+                            <div className="text-[10px] text-gray-500 font-normal">Kifejezések: #{primaryTopic}</div>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    </button>
+
+                    {/* Számítások link - if relevant */}
+                    {isCalcRelated && (
+                      <button
+                        onClick={() => onNavigate(primaryTopic ? `calculations?q=${encodeURIComponent(primaryTopic)}` : 'calculations')}
+                        className="w-full p-3.5 bg-gray-50 hover:bg-primary/5 border border-gray-200 hover:border-primary/30 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Calculator size={16} className="text-accent shrink-0" />
+                          <div className="text-left">
+                            <div>Építőipari Számítások &amp; Kalkulátorok</div>
+                            <div className="text-[10px] text-gray-500 font-normal">Anyagszükséglet és méretezés</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      </button>
+                    )}
+
+                    {/* Szakmai könyvek link - if relevant */}
+                    {isBookRelated && (
+                      <button
+                        onClick={() => onNavigate(primaryTopic ? `books?q=${encodeURIComponent(primaryTopic)}` : 'books')}
+                        className="w-full p-3.5 bg-gray-50 hover:bg-primary/5 border border-gray-200 hover:border-primary/30 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Library size={16} className="text-accent shrink-0" />
+                          <div className="text-left">
+                            <div>Kapcsolódó Szakmai Könyvek</div>
+                            <div className="text-[10px] text-gray-500 font-normal">Hiteles szakkiadványok</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      </button>
+                    )}
                   </div>
-                  <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-              </div>
-            </div>
+                </div>
+              );
+            })()}
 
             {/* Compact Related Articles in Sidebar */}
             {relatedArticles.length > 0 && (
