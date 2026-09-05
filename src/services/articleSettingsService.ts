@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+export interface TypePageSettings {
+  articlesPageTitle: string;
+  articlesPageDescription: string;
+  searchPlaceholderText: string;
+  emptyStateTitle: string;
+  emptyStateText: string;
+  articlesPerPage: number;
+  desktopGridColumns: 2 | 3 | 4;
+  defaultSortMode: 'latest' | 'oldest' | 'featured' | 'manual' | 'popular';
+  featuredMode: 'show' | 'pin' | 'hide';
+}
+
 export interface ArticleSettings {
-  // Category & Listing Page
+  // Category & Listing Page (Default / Global)
   articlesPageTitle: string;
   articlesPageDescription: string;
   searchPlaceholderText: string;
@@ -16,6 +28,11 @@ export interface ArticleSettings {
   showEmptyCategoriesInFilter: boolean;
   showViewCount: boolean;
   showRatings: boolean;
+
+  // Independent Settings per Article Type
+  hirekPageSettings: TypePageSettings;
+  ujdonsagPageSettings: TypePageSettings;
+  utmutatoPageSettings: TypePageSettings;
 
   // Article Detail Page Toggles
   showAuthor: boolean;
@@ -31,6 +48,42 @@ export interface ArticleSettings {
   enforceSingleColumnLayout: boolean;
 }
 
+export const DEFAULT_HIREK_SETTINGS: TypePageSettings = {
+  articlesPageTitle: 'Építőipari Hírek',
+  articlesPageDescription: 'Legfrissebb hírek, piaci fejlemények, rendeleti változások és ágazati bejelentések.',
+  searchPlaceholderText: 'Keresés hírek között (pl. rendelet, áremelkedés, szabályozás)...',
+  emptyStateTitle: 'Nem található hír',
+  emptyStateText: 'Nem található a keresési feltételeknek megfelelő hír.',
+  articlesPerPage: 12,
+  desktopGridColumns: 3,
+  defaultSortMode: 'latest',
+  featuredMode: 'pin',
+};
+
+export const DEFAULT_UJDONSAG_SETTINGS: TypePageSettings = {
+  articlesPageTitle: 'Építőipari Újdonságok',
+  articlesPageDescription: 'Új technológiák, innovatív építőanyagok, modern szerszámok és prémium termékek.',
+  searchPlaceholderText: 'Keresés újdonságok között (pl. hőszigetelés, okosotthon, új szerszám)...',
+  emptyStateTitle: 'Nem található újdonság',
+  emptyStateText: 'Nem található a keresési feltételeknek megfelelő újdonság.',
+  articlesPerPage: 12,
+  desktopGridColumns: 3,
+  defaultSortMode: 'latest',
+  featuredMode: 'pin',
+};
+
+export const DEFAULT_UTMUTATO_SETTINGS: TypePageSettings = {
+  articlesPageTitle: 'Szakmai Útmutatók & Technológiák',
+  articlesPageDescription: 'Gyakorlati lépésről lépésre útmutatók, kivitelezési szabályok és rétegrendek.',
+  searchPlaceholderText: 'Keresés útmutatók között (pl. gipszkarton, betonozás, burkolás)...',
+  emptyStateTitle: 'Nem található útmutató',
+  emptyStateText: 'Nem található a keresési feltételeknek megfelelő útmutató.',
+  articlesPerPage: 12,
+  desktopGridColumns: 3,
+  defaultSortMode: 'latest',
+  featuredMode: 'pin',
+};
+
 export const DEFAULT_ARTICLE_SETTINGS: ArticleSettings = {
   articlesPageTitle: 'Építőipari cikkek',
   articlesPageDescription: 'Gyakorlati útmutatók, szabványok, technológiai leírások és kivitelezési tippek.',
@@ -45,6 +98,10 @@ export const DEFAULT_ARTICLE_SETTINGS: ArticleSettings = {
   showEmptyCategoriesInFilter: true,
   showViewCount: false,
   showRatings: false,
+
+  hirekPageSettings: { ...DEFAULT_HIREK_SETTINGS },
+  ujdonsagPageSettings: { ...DEFAULT_UJDONSAG_SETTINGS },
+  utmutatoPageSettings: { ...DEFAULT_UTMUTATO_SETTINGS },
 
   showAuthor: true,
   showDate: true,
@@ -68,6 +125,21 @@ declare global {
   }
 }
 
+function sanitizeTypeSettings(raw: Partial<TypePageSettings> | undefined, fallback: TypePageSettings): TypePageSettings {
+  if (!raw) return { ...fallback };
+  return {
+    articlesPageTitle: raw.articlesPageTitle?.trim() || fallback.articlesPageTitle,
+    articlesPageDescription: raw.articlesPageDescription?.trim() || fallback.articlesPageDescription,
+    searchPlaceholderText: raw.searchPlaceholderText?.trim() || fallback.searchPlaceholderText,
+    emptyStateTitle: raw.emptyStateTitle?.trim() || fallback.emptyStateTitle || 'Nincs megjeleníthető cikk',
+    emptyStateText: raw.emptyStateText?.trim() || fallback.emptyStateText,
+    articlesPerPage: typeof raw.articlesPerPage === 'number' && raw.articlesPerPage > 0 ? raw.articlesPerPage : fallback.articlesPerPage,
+    desktopGridColumns: raw.desktopGridColumns === 2 || raw.desktopGridColumns === 4 ? raw.desktopGridColumns : fallback.desktopGridColumns,
+    defaultSortMode: raw.defaultSortMode && ['latest', 'oldest', 'featured', 'manual', 'popular'].includes(raw.defaultSortMode) ? raw.defaultSortMode : fallback.defaultSortMode,
+    featuredMode: raw.featuredMode && ['show', 'pin', 'hide'].includes(raw.featuredMode) ? raw.featuredMode : (fallback.featuredMode || 'pin'),
+  };
+}
+
 function sanitizeArticleSettings(raw: Partial<ArticleSettings>): ArticleSettings {
   return {
     articlesPageTitle: raw.articlesPageTitle?.trim() || DEFAULT_ARTICLE_SETTINGS.articlesPageTitle,
@@ -83,6 +155,10 @@ function sanitizeArticleSettings(raw: Partial<ArticleSettings>): ArticleSettings
     showEmptyCategoriesInFilter: raw.showEmptyCategoriesInFilter !== undefined ? Boolean(raw.showEmptyCategoriesInFilter) : DEFAULT_ARTICLE_SETTINGS.showEmptyCategoriesInFilter,
     showViewCount: raw.showViewCount !== undefined ? Boolean(raw.showViewCount) : DEFAULT_ARTICLE_SETTINGS.showViewCount,
     showRatings: raw.showRatings !== undefined ? Boolean(raw.showRatings) : DEFAULT_ARTICLE_SETTINGS.showRatings,
+
+    hirekPageSettings: sanitizeTypeSettings(raw.hirekPageSettings, DEFAULT_HIREK_SETTINGS),
+    ujdonsagPageSettings: sanitizeTypeSettings(raw.ujdonsagPageSettings, DEFAULT_UJDONSAG_SETTINGS),
+    utmutatoPageSettings: sanitizeTypeSettings(raw.utmutatoPageSettings, DEFAULT_UTMUTATO_SETTINGS),
 
     showAuthor: raw.showAuthor !== undefined ? Boolean(raw.showAuthor) : DEFAULT_ARTICLE_SETTINGS.showAuthor,
     showDate: raw.showDate !== undefined ? Boolean(raw.showDate) : DEFAULT_ARTICLE_SETTINGS.showDate,
@@ -133,6 +209,27 @@ export function saveArticleSettings(settings: ArticleSettings): void {
 
   // Sync to Cloud asynchronously
   void syncArticleSettingsToCloud(sanitized);
+}
+
+export function getArticleSettingsForType(type: 'hirek' | 'ujdonsagok' | 'utmutatok'): TypePageSettings {
+  const current = getArticleSettings();
+  if (type === 'hirek') return current.hirekPageSettings || DEFAULT_HIREK_SETTINGS;
+  if (type === 'ujdonsagok') return current.ujdonsagPageSettings || DEFAULT_UJDONSAG_SETTINGS;
+  return current.utmutatoPageSettings || DEFAULT_UTMUTATO_SETTINGS;
+}
+
+export function saveArticleSettingsForType(
+  type: 'hirek' | 'ujdonsagok' | 'utmutatok',
+  typeSettings: TypePageSettings
+): void {
+  const current = getArticleSettings();
+  const updated: ArticleSettings = {
+    ...current,
+    hirekPageSettings: type === 'hirek' ? typeSettings : current.hirekPageSettings,
+    ujdonsagPageSettings: type === 'ujdonsagok' ? typeSettings : current.ujdonsagPageSettings,
+    utmutatoPageSettings: type === 'utmutatok' ? typeSettings : current.utmutatoPageSettings,
+  };
+  saveArticleSettings(updated);
 }
 
 async function syncArticleSettingsToCloud(settings: ArticleSettings): Promise<void> {

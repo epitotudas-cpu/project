@@ -29,7 +29,7 @@ import { useArticleSettings } from '../services/articleSettingsService';
 import { resolveRedirect } from '../services/articleRedirectsService';
 import { getCuratedRelatedArticles } from '../services/articleRecommendationsService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
-import { parseBlocksFromContent, SOURCE_TYPE_MAP } from '../components/EditArticleModal';
+import { parseBlocksFromContent, parseAndSanitizeVideoInput, SOURCE_TYPE_MAP } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
@@ -57,6 +57,7 @@ function formatDateHu(dateStr?: string | null): string {
 
 function ArticleContentRenderer({ content }: { content: string }) {
   const { blocks } = parseBlocksFromContent(content);
+  const [activeLightboxImg, setActiveLightboxImg] = useState<{ url: string; alt: string; caption?: string } | null>(null);
 
   if (!blocks || blocks.length === 0) {
     const cleanContent = content ? content.replace(/\[EPITOTUDAS_.*\]$/s, '').trim() : '';
@@ -71,6 +72,33 @@ function ArticleContentRenderer({ content }: { content: string }) {
 
   return (
     <div className="space-y-6 text-gray-800 text-base md:text-lg leading-relaxed">
+      {/* Lightbox Modal Overlay */}
+      {activeLightboxImg && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
+          onClick={() => setActiveLightboxImg(null)}
+        >
+          <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setActiveLightboxImg(null)}
+              className="absolute -top-10 right-0 text-white hover:text-accent font-bold text-sm flex items-center gap-1 bg-black/50 px-3 py-1 rounded-full border border-white/20"
+            >
+              <span>Bezárás</span> ✕
+            </button>
+            <img
+              src={activeLightboxImg.url}
+              alt={activeLightboxImg.alt}
+              className="max-h-[80vh] w-auto object-contain rounded-2xl shadow-2xl border border-white/10"
+            />
+            {activeLightboxImg.caption && (
+              <p className="mt-4 text-center text-sm text-gray-300 font-medium max-w-2xl bg-black/60 px-4 py-2 rounded-xl backdrop-blur-sm">
+                {activeLightboxImg.caption}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {blocks.map((block, index) => {
         switch (block.type) {
           case 'heading': {
@@ -105,8 +133,8 @@ function ArticleContentRenderer({ content }: { content: string }) {
             const imgMatch = txt.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)\s*(?:\n\*(.*)\*)?$/);
             if (imgMatch) {
               return (
-                <figure key={block.id || index} className="my-8 rounded-3xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
-                  <img src={imgMatch[2]} alt={imgMatch[1] || ''} className="w-full h-auto max-h-[500px] object-cover" />
+                <figure key={block.id || index} className="my-8 rounded-3xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50 max-w-full">
+                  <img src={imgMatch[2]} alt={imgMatch[1] || ''} className="w-full h-auto max-h-[550px] object-cover" loading="lazy" />
                   {imgMatch[3] && (
                     <figcaption className="p-3.5 text-center text-xs text-gray-600 bg-gray-100/80 italic border-t border-gray-200 font-medium">
                       {imgMatch[3]}
@@ -122,18 +150,138 @@ function ArticleContentRenderer({ content }: { content: string }) {
             );
           }
 
-          case 'image':
+          case 'image': {
             if (!block.imageUrl) return null;
+            const widthClass =
+              block.imageWidth === 'small'
+                ? 'max-w-xs'
+                : block.imageWidth === 'medium'
+                ? 'max-w-md'
+                : block.imageWidth === 'large'
+                ? 'max-w-2xl'
+                : 'w-full';
+
+            const alignClass =
+              block.imageAlign === 'left'
+                ? 'mr-auto'
+                : block.imageAlign === 'right'
+                ? 'ml-auto'
+                : 'mx-auto';
+
             return (
-              <figure key={block.id || index} className="my-8 rounded-3xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
-                <img src={block.imageUrl} alt={block.imageAlt || ''} className="w-full h-auto max-h-[500px] object-cover" />
-                {block.imageCaption && (
-                  <figcaption className="p-3.5 text-center text-xs text-gray-600 bg-gray-100/80 italic border-t border-gray-200 font-medium">
-                    {block.imageCaption}
+              <figure key={block.id || index} className={`my-8 rounded-3xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50 ${widthClass} ${alignClass}`}>
+                <img src={block.imageUrl} alt={block.imageAlt || ''} className="w-full h-auto max-h-[550px] object-cover" loading="lazy" />
+                {(block.imageCaption || block.imageSource) && (
+                  <figcaption className="p-3.5 text-center text-xs text-gray-600 bg-gray-100/80 border-t border-gray-200 font-medium">
+                    {block.imageCaption && <span className="italic block">{block.imageCaption}</span>}
+                    {block.imageSource && <span className="block text-[11px] text-gray-500 font-semibold mt-0.5">{block.imageSource}</span>}
                   </figcaption>
                 )}
               </figure>
             );
+          }
+
+          case 'gallery': {
+            if (!block.galleryImages || block.galleryImages.length === 0) return null;
+            const layout = block.galleryLayout || 'grid';
+
+            if (layout === 'stacked') {
+              return (
+                <div key={block.id || index} className="my-8 space-y-6">
+                  {block.galleryImages.map((img, gIdx) => (
+                    <figure key={img.id || gIdx} className="rounded-3xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+                      <img src={img.url} alt={img.alt || ''} className="w-full h-auto max-h-[500px] object-cover" loading="lazy" />
+                      {(img.caption || img.source) && (
+                        <figcaption className="p-3 text-center text-xs text-gray-600 bg-gray-100/80 border-t border-gray-200 font-medium">
+                          {img.caption && <span className="italic block">{img.caption}</span>}
+                          {img.source && <span className="block text-[11px] text-gray-500 mt-0.5">{img.source}</span>}
+                        </figcaption>
+                      )}
+                    </figure>
+                  ))}
+                </div>
+              );
+            }
+
+            return (
+              <div key={block.id || index} className="my-8 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {block.galleryImages.map((img, gIdx) => (
+                    <figure
+                      key={img.id || gIdx}
+                      onClick={() => {
+                        if (layout === 'lightbox') {
+                          setActiveLightboxImg({ url: img.url, alt: img.alt || '', caption: img.caption });
+                        }
+                      }}
+                      className={`rounded-2xl overflow-hidden border border-gray-200 shadow-xs bg-gray-50 group flex flex-col ${
+                        layout === 'lightbox' ? 'cursor-zoom-in hover:shadow-md transition-all' : ''
+                      }`}
+                    >
+                      <div className="aspect-[4/3] w-full overflow-hidden relative bg-gray-200">
+                        <img
+                          src={img.url}
+                          alt={img.alt || ''}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {layout === 'lightbox' && (
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs">
+                            🔍 Nagyítás
+                          </div>
+                        )}
+                      </div>
+                      {(img.caption || img.source) && (
+                        <figcaption className="p-2.5 text-center text-xs text-gray-600 bg-gray-50 border-t border-gray-100">
+                          {img.caption && <span className="font-semibold block truncate">{img.caption}</span>}
+                          {img.source && <span className="text-[10px] text-gray-400 block truncate">{img.source}</span>}
+                        </figcaption>
+                      )}
+                    </figure>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
+          case 'video': {
+            const videoInput = block.videoUrl || block.videoEmbedCode || '';
+            const parsed = parseAndSanitizeVideoInput(videoInput);
+            if (!parsed.isValid || !parsed.embedUrl) return null;
+
+            const widthClass = block.videoWidth === 'full' ? 'w-full' : 'w-full max-w-4xl';
+            const alignClass =
+              block.videoAlign === 'left'
+                ? 'mr-auto'
+                : block.videoAlign === 'right'
+                ? 'ml-auto'
+                : 'mx-auto';
+
+            return (
+              <figure key={block.id || index} className={`my-8 space-y-3 ${widthClass} ${alignClass}`}>
+                <div className="aspect-video w-full rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-black relative">
+                  <iframe
+                    src={parsed.embedUrl}
+                    title={block.videoTitle || 'Beágyazott videó'}
+                    loading="lazy"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                {(block.videoTitle || block.videoDescription) && (
+                  <figcaption className="text-center space-y-1">
+                    {block.videoTitle && (
+                      <div className="font-bold text-gray-900 text-sm sm:text-base">{block.videoTitle}</div>
+                    )}
+                    {block.videoDescription && (
+                      <div className="text-xs sm:text-sm text-gray-600 italic">{block.videoDescription}</div>
+                    )}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          }
 
           case 'table':
             if (!block.tableHeaders || block.tableHeaders.length === 0) return null;
@@ -222,6 +370,7 @@ function ArticleContentRenderer({ content }: { content: string }) {
     </div>
   );
 }
+
 
 export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProps) {
   const { user } = useAuth();

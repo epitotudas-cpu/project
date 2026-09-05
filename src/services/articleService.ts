@@ -443,3 +443,19 @@ export async function deleteArticle(id: string): Promise<void> {
 export async function countArticles(): Promise<number> {
   return getArticlesLocal().length;
 }
+
+export async function reorderArticles(orderedArticleIds: string[]): Promise<void> {
+  const allLocal = getArticlesLocal();
+  const idMap = new Map<string, number>();
+  orderedArticleIds.forEach((id, idx) => idMap.set(id, idx));
+
+  const updatedList = [...allLocal].sort((a, b) => {
+    const idxA = idMap.has(a.id) ? idMap.get(a.id)! : 9999;
+    const idxB = idMap.has(b.id) ? idMap.get(b.id)! : 9999;
+    return idxA - idxB;
+  });
+
+  saveArticlesLocal(updatedList);
+  void logAuditAction('ARTICLE_REORDER', 'articles', 'Cikkek sorrendje frissítve');
+}
+

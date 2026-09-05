@@ -4,7 +4,7 @@ import {
   ChevronUp, ChevronDown, Eye, Image as ImageIcon,
   Wrench, ShieldAlert, ShieldCheck, FileText, Table as TableIcon, CheckSquare,
   Tag, ListOrdered, BookMarked, CheckCircle2, Copy, Heading, Type, Minus,
-  List
+  List, Video, Lock
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { Article, Category } from '../lib/supabase';
@@ -12,9 +12,10 @@ import { createArticle, updateArticle } from '../services/articleService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import { addArticleRedirect } from '../services/articleRedirectsService';
 
-interface EditArticleModalProps {
+export interface EditArticleModalProps {
   article: Article | null; // null = create mode
   categories: Category[];
+  lockedArticleType?: 'hirek' | 'ujdonsagok' | 'utmutatok';
   onClose: () => void;
   onSaved: (saved: Article) => void;
 }
@@ -32,6 +33,7 @@ export type BlockType =
   | 'heading'
   | 'image'
   | 'gallery'
+  | 'video'
   | 'list'
   | 'numbered_list'
   | 'table'
@@ -46,6 +48,7 @@ export interface GalleryImage {
   url: string;
   alt: string;
   caption: string;
+  source?: string;
   prompt: string;
 }
 
@@ -59,11 +62,30 @@ export interface ContentBlock {
   type: BlockType;
   content?: string;
   level?: 'h2' | 'h3' | 'h4';
+  
+  // Image properties
   imageUrl?: string;
   imageAlt?: string;
   imageCaption?: string;
+  imageSource?: string;
   imagePrompt?: string;
+  imageWidth?: 'full' | 'large' | 'medium' | 'small';
+  imageAlign?: 'left' | 'center' | 'right';
+
+  // Gallery properties
   galleryImages?: GalleryImage[];
+  galleryLayout?: 'grid' | 'stacked' | 'lightbox';
+
+  // Video properties (NEW)
+  videoUrl?: string;
+  videoEmbedCode?: string;
+  videoProvider?: 'youtube' | 'vimeo';
+  videoTitle?: string;
+  videoDescription?: string;
+  videoPoster?: string;
+  videoWidth?: 'normal' | 'full';
+  videoAlign?: 'left' | 'center' | 'right';
+
   items?: string[];
   tableHeaders?: string[];
   tableRows?: string[][];
@@ -77,6 +99,111 @@ export interface ContentBlock {
   calcResult?: string;
   calcNote?: string;
 }
+
+export interface ParsedVideoInfo {
+  provider: 'youtube' | 'vimeo' | null;
+  embedUrl: string | null;
+  isValid: boolean;
+  errorMessage?: string;
+}
+
+export function parseAndSanitizeVideoInput(input: string | undefined): ParsedVideoInfo {
+  if (!input || !input.trim()) {
+    return { provider: null, embedUrl: null, isValid: false };
+  }
+
+  let str = input.trim();
+
+  // If input contains an iframe tag, extract the src attribute value safely
+  if (/<iframe/i.test(str)) {
+    const srcMatch = str.match(/src=["']([^"']+)["']/i);
+    if (srcMatch && srcMatch[1]) {
+      str = srcMatch[1];
+    } else {
+      return { provider: null, embedUrl: null, isValid: false, errorMessage: 'Érvénytelen iframe kód: hiányzik a src attribútum.' };
+    }
+  }
+
+  // Reject suspicious scripts, javascript: protocol, or event handlers
+  if (/script|javascript:|onerror=|onload=/i.test(str)) {
+    return { provider: null, embedUrl: null, isValid: false, errorMessage: 'Biztonsági hiba: nem megengedett kód vagy szkript van a beillesztésben.' };
+  }
+
+  // Ensure protocol
+  if (str.startsWith('//')) {
+    str = 'https:' + str;
+  }
+
+  try {
+    const urlObj = new URL(str);
+    const host = urlObj.hostname.toLowerCase();
+
+    // Allowed YouTube domains
+    if (host === 'youtube.com' || host === 'www.youtube.com' || host === 'youtu.be' || host === 'youtube-nocookie.com' || host === 'www.youtube-nocookie.com') {
+      let videoId = '';
+      if (host === 'youtu.be') {
+        videoId = urlObj.pathname.substring(1);
+      } else if (urlObj.pathname.includes('/embed/')) {
+        videoId = urlObj.pathname.split('/embed/')[1]?.split('?')[0] || '';
+      } else if (urlObj.pathname.includes('/watch')) {
+        videoId = urlObj.searchParams.get('v') || '';
+      } else if (urlObj.pathname.includes('/v/')) {
+        videoId = urlObj.pathname.split('/v/')[1]?.split('?')[0] || '';
+      } else if (urlObj.pathname.includes('/shorts/')) {
+        videoId = urlObj.pathname.split('/shorts/')[1]?.split('?')[0] || '';
+      }
+
+      videoId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
+
+      if (videoId) {
+        return {
+          provider: 'youtube',
+          embedUrl: `https://www.youtube.com/embed/${videoId}`,
+          isValid: true,
+        };
+      } else {
+        return { provider: 'youtube', embedUrl: null, isValid: false, errorMessage: 'Nem azonosítható a YouTube videó azonosítója.' };
+      }
+    }
+
+    // Allowed Vimeo domains
+    if (host === 'vimeo.com' || host === 'www.vimeo.com' || host === 'player.vimeo.com') {
+      let videoId = '';
+      if (host === 'player.vimeo.com') {
+        videoId = urlObj.pathname.split('/video/')[1]?.split('?')[0] || '';
+      } else {
+        videoId = urlObj.pathname.substring(1).split('/')[0] || '';
+      }
+
+      videoId = videoId.replace(/[^0-9]/g, '');
+
+      if (videoId) {
+        return {
+          provider: 'vimeo',
+          embedUrl: `https://player.vimeo.com/video/${videoId}`,
+          isValid: true,
+        };
+      } else {
+        return { provider: 'vimeo', embedUrl: null, isValid: false, errorMessage: 'Nem azonosítható a Vimeo videó azonosítója.' };
+      }
+    }
+
+    return {
+      provider: null,
+      embedUrl: null,
+      isValid: false,
+      errorMessage: 'Kizárólag engedélyezett szolgáltatók (YouTube, Vimeo) videói ágyazhatók be.',
+    };
+  } catch (err) {
+    return {
+      provider: null,
+      embedUrl: null,
+      isValid: false,
+      errorMessage: 'Érvénytelen videó URL vagy beágyazási kód.',
+    };
+  }
+}
+
 
 export interface GuideSEOData {
   seoTitle: string;
@@ -226,6 +353,22 @@ export function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEODa
           md += `\n`;
         }
         break;
+
+      case 'video': {
+        const parsed = parseAndSanitizeVideoInput(block.videoUrl || block.videoEmbedCode || '');
+        if (parsed.isValid && parsed.embedUrl) {
+          md += `<iframe src="${parsed.embedUrl}" title="${block.videoTitle || 'Beágyazott videó'}" loading="lazy"></iframe>\n`;
+          if (block.videoTitle?.trim()) {
+            md += `**${block.videoTitle.trim()}**\n`;
+          }
+          if (block.videoDescription?.trim()) {
+            md += `*${block.videoDescription.trim()}*\n`;
+          }
+          md += `\n`;
+        }
+        break;
+      }
+
 
       case 'list':
         if (block.items && block.items.length > 0) {
@@ -733,9 +876,19 @@ export const STARTER_TEMPLATES: Record<
 // MAIN COMPONENT
 // ----------------------------------------------------------------------
 
-export function EditArticleModal({ article, categories, onClose, onSaved }: EditArticleModalProps) {
+export function EditArticleModal({ article, categories, lockedArticleType, onClose, onSaved }: EditArticleModalProps) {
   const isCreate = article === null;
-  const [form, setForm] = useState<FormState>(() => (article ? formFromArticle(article) : { ...EMPTY_FORM }));
+  const [form, setForm] = useState<FormState>(() => {
+    if (article) {
+      const f = formFromArticle(article);
+      if (lockedArticleType) f.article_type = lockedArticleType;
+      return f;
+    }
+    return {
+      ...EMPTY_FORM,
+      article_type: lockedArticleType || 'utmutatok',
+    };
+  });
   
   const parsedData = article ? parseBlocksFromContent(article.content || '') : { blocks: [], seo: { ...DEFAULT_SEO }, sources: [] };
   const [blocks, setBlocks] = useState<ContentBlock[]>(parsedData.blocks);
@@ -750,14 +903,19 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
   useEffect(() => {
     if (article) {
-      setForm(formFromArticle(article));
+      const f = formFromArticle(article);
+      if (lockedArticleType) f.article_type = lockedArticleType;
+      setForm(f);
       const p = parseBlocksFromContent(article.content || '');
       setBlocks(p.blocks);
       setSeo(p.seo);
       setSources(p.sources || []);
       setSlugTouched(true);
     } else {
-      setForm({ ...EMPTY_FORM });
+      setForm({
+        ...EMPTY_FORM,
+        article_type: lockedArticleType || 'utmutatok',
+      });
       setBlocks(STARTER_TEMPLATES.blank.getBlocks());
       setSeo({ ...DEFAULT_SEO });
       setSources([]);
@@ -765,7 +923,8 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
     }
     setError(null);
     setDirty(false);
-  }, [article]);
+  }, [article, lockedArticleType]);
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -861,11 +1020,26 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
         newBlock.imageUrl = '';
         newBlock.imageAlt = '';
         newBlock.imageCaption = '';
+        newBlock.imageSource = '';
         newBlock.imagePrompt = '';
+        newBlock.imageWidth = 'full';
+        newBlock.imageAlign = 'center';
         break;
       case 'gallery':
         newBlock.galleryImages = [];
+        newBlock.galleryLayout = 'grid';
         break;
+      case 'video':
+        newBlock.videoUrl = '';
+        newBlock.videoEmbedCode = '';
+        newBlock.videoProvider = 'youtube';
+        newBlock.videoTitle = '';
+        newBlock.videoDescription = '';
+        newBlock.videoPoster = '';
+        newBlock.videoWidth = 'normal';
+        newBlock.videoAlign = 'center';
+        break;
+
       case 'list':
       case 'numbered_list':
         newBlock.items = [''];
@@ -1200,17 +1374,27 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div>
                     <label style={labelStyle} className={labelClass}>Cikk Típusa *</label>
-                    <select
-                      style={fieldStyle}
-                      className={fieldClass}
-                      value={form.article_type}
-                      onChange={(e) => updateForm('article_type', e.target.value as any)}
-                    >
-                      <option value="utmutatok">Útmutató</option>
-                      <option value="hirek">Hír</option>
-                      <option value="ujdonsagok">Újdonság</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        style={fieldStyle}
+                        className={`${fieldClass} ${lockedArticleType ? 'opacity-85 cursor-not-allowed border-amber-500/50 pr-24' : ''}`}
+                        value={form.article_type}
+                        disabled={Boolean(lockedArticleType)}
+                        onChange={(e) => updateForm('article_type', e.target.value as any)}
+                      >
+                        <option value="hirek">Hír</option>
+                        <option value="ujdonsagok">Újdonság</option>
+                        <option value="utmutatok">Útmutató</option>
+                      </select>
+                      {lockedArticleType && (
+                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] text-amber-400 font-bold pointer-events-none bg-black/80 px-2 py-0.5 rounded border border-amber-500/30">
+                          <Lock size={12} />
+                          <span>Rögzítve</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
 
                   <div>
                     <label style={labelStyle} className={labelClass}>Borítókép URL</label>
@@ -1469,7 +1653,9 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               {block.type === 'heading' && `📌 Címsor (${block.level || 'h2'})`}
                               {block.type === 'image' && '🖼️ Kép'}
                               {block.type === 'gallery' && '🖼️🖼️ Képgaléria'}
+                              {block.type === 'video' && '🎬 Beágyazott Videó'}
                               {block.type === 'list' && '• Pontozott Lista'}
+
                               {block.type === 'numbered_list' && '1. Számozott Lista'}
                               {block.type === 'table' && '📊 Táblázat'}
                               {block.type === 'highlight' && `💡 Kiemelés (${block.highlightType || 'Szakmai tipp'})`}
@@ -1577,7 +1763,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                           <div className="space-y-3">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label style={labelStyle} className={labelClass}>Kép URL (Közvetlen kép link, https://...)</label>
+                                <label style={labelStyle} className={labelClass}>Kép URL (Közvetlen link, https://...)</label>
                                 <input
                                   style={fieldStyle}
                                   className={fieldClass}
@@ -1612,13 +1798,13 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div>
-                                <label style={labelStyle} className={labelClass}>ALT Leíró Szöveg (SEO/Akadálymentesség)</label>
+                                <label style={labelStyle} className={labelClass}>ALT Leíró Szöveg (SEO/Akadálymentes)</label>
                                 <input
                                   style={fieldStyle}
                                   className={fieldClass}
-                                  placeholder="Rövid leírás a képről..."
+                                  placeholder="Leírás képernyőolvasóknak..."
                                   value={block.imageAlt || ''}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -1631,27 +1817,70 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                                 />
                               </div>
                               <div>
-                                <label style={labelStyle} className={labelClass}>AI Generálási Prompt (Opcionális)</label>
+                                <label style={labelStyle} className={labelClass}>Képforrás / Szerzői Megjelölés</label>
                                 <input
                                   style={fieldStyle}
                                   className={fieldClass}
-                                  placeholder="Képleírás az AI generátorhoz..."
-                                  value={block.imagePrompt || ''}
+                                  placeholder="Pl. Fotó: ÉpítőTudás / Pexels"
+                                  value={block.imageSource || ''}
                                   onChange={(e) => {
                                     const val = e.target.value;
                                     updateBlocks((list) => {
                                       const next = [...list];
-                                      next[idx].imagePrompt = val;
+                                      next[idx].imageSource = val;
                                       return next;
                                     });
                                   }}
                                 />
                               </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label style={labelStyle} className={labelClass}>Szélesség</label>
+                                  <select
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    value={block.imageWidth || 'full'}
+                                    onChange={(e) => {
+                                      const val = e.target.value as any;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        next[idx].imageWidth = val;
+                                        return next;
+                                      });
+                                    }}
+                                  >
+                                    <option value="full">100% Teljes</option>
+                                    <option value="large">Nagy (75%)</option>
+                                    <option value="medium">Közepes (50%)</option>
+                                    <option value="small">Kicsi (30%)</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label style={labelStyle} className={labelClass}>Igazítás</label>
+                                  <select
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    value={block.imageAlign || 'center'}
+                                    onChange={(e) => {
+                                      const val = e.target.value as any;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        next[idx].imageAlign = val;
+                                        return next;
+                                      });
+                                    }}
+                                  >
+                                    <option value="center">Középre</option>
+                                    <option value="left">Balra</option>
+                                    <option value="right">Jobbra</option>
+                                  </select>
+                                </div>
+                              </div>
                             </div>
 
                             {block.imageUrl && (
-                              <div style={{ borderColor: cardBorder }} className="h-32 w-full overflow-hidden rounded-lg border">
-                                <img src={block.imageUrl} alt={block.imageAlt || 'Előnézet'} className="h-full w-full object-cover" />
+                              <div style={{ borderColor: cardBorder }} className="h-32 w-full overflow-hidden rounded-lg border bg-black/40 flex items-center justify-center">
+                                <img src={block.imageUrl} alt={block.imageAlt || 'Előnézet'} className="h-full w-full object-contain" />
                               </div>
                             )}
                           </div>
@@ -1659,81 +1888,151 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
                         {block.type === 'gallery' && (
                           <div className="space-y-3">
-                            <label style={labelStyle} className={labelClass}>Képek a galériában ({block.galleryImages?.length || 0} db)</label>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                              <label style={labelStyle} className={labelClass}>Képek a galériában ({block.galleryImages?.length || 0} db)</label>
+                              <div className="flex items-center gap-2">
+                                <label style={labelStyle} className={labelClass}>Galéria Megjelenése:</label>
+                                <select
+                                  style={fieldStyle}
+                                  className={`${fieldClass} w-48`}
+                                  value={block.galleryLayout || 'grid'}
+                                  onChange={(e) => {
+                                    const val = e.target.value as any;
+                                    updateBlocks((list) => {
+                                      const next = [...list];
+                                      next[idx].galleryLayout = val;
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  <option value="grid">▦ Rács (2-3 oszlopos)</option>
+                                  <option value="stacked">≡ Egymás alatti képek</option>
+                                  <option value="lightbox">🔍 Kattintással nagyítható</option>
+                                </select>
+                              </div>
+                            </div>
+
                             {block.galleryImages?.map((gImg, gIdx) => (
-                              <div key={gImg.id} style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 border rounded-lg">
-                                <input
-                                  style={fieldStyle}
-                                  className={fieldClass}
-                                  placeholder="Kép URL"
-                                  value={gImg.url}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    updateBlocks((list) => {
-                                      const next = [...list];
-                                      const imgs = [...(next[idx].galleryImages || [])];
-                                      imgs[gIdx].url = val;
-                                      next[idx].galleryImages = imgs;
-                                      return next;
-                                    });
-                                  }}
-                                />
-                                <input
-                                  style={fieldStyle}
-                                  className={fieldClass}
-                                  placeholder="Képaláírás"
-                                  value={gImg.caption}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    updateBlocks((list) => {
-                                      const next = [...list];
-                                      const imgs = [...(next[idx].galleryImages || [])];
-                                      imgs[gIdx].caption = val;
-                                      next[idx].galleryImages = imgs;
-                                      return next;
-                                    });
-                                  }}
-                                />
-                                <div className="flex items-center gap-2">
+                              <div key={gImg.id} style={{ backgroundColor: sectionBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-2">
+                                <div className="flex items-center justify-between border-b pb-1.5" style={{ borderColor: cardBorder }}>
+                                  <span className="text-xs font-bold text-amber-400">#{gIdx + 1} Kép a galériában</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={gIdx === 0}
+                                      onClick={() => {
+                                        updateBlocks((list) => {
+                                          const next = [...list];
+                                          const imgs = [...(next[idx].galleryImages || [])];
+                                          const temp = imgs[gIdx - 1];
+                                          imgs[gIdx - 1] = imgs[gIdx];
+                                          imgs[gIdx] = temp;
+                                          next[idx].galleryImages = imgs;
+                                          return next;
+                                        });
+                                      }}
+                                      className="p-1 text-gray-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                                      title="Mozgatás fel"
+                                    >
+                                      <ChevronUp size={14} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={gIdx === (block.galleryImages?.length || 0) - 1}
+                                      onClick={() => {
+                                        updateBlocks((list) => {
+                                          const next = [...list];
+                                          const imgs = [...(next[idx].galleryImages || [])];
+                                          const temp = imgs[gIdx + 1];
+                                          imgs[gIdx + 1] = imgs[gIdx];
+                                          imgs[gIdx] = temp;
+                                          next[idx].galleryImages = imgs;
+                                          return next;
+                                        });
+                                      }}
+                                      className="p-1 text-gray-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                                      title="Mozgatás le"
+                                    >
+                                      <ChevronDown size={14} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateBlocks((list) => {
+                                          const next = [...list];
+                                          next[idx].galleryImages = next[idx].galleryImages?.filter((_, i) => i !== gIdx);
+                                          return next;
+                                        });
+                                      }}
+                                      className="p-1 text-gray-400 hover:text-red-400 cursor-pointer"
+                                      title="Törlés"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                   <input
                                     style={fieldStyle}
                                     className={fieldClass}
-                                    placeholder="ALT szöveg"
-                                    value={gImg.alt}
+                                    placeholder="Kép URL (https://...)"
+                                    value={gImg.url}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        const imgs = [...(next[idx].galleryImages || [])];
+                                        imgs[gIdx].url = val;
+                                        next[idx].galleryImages = imgs;
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                  <input
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    placeholder="Képaláírás"
+                                    value={gImg.caption}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        const imgs = [...(next[idx].galleryImages || [])];
+                                        imgs[gIdx].caption = val;
+                                        next[idx].galleryImages = imgs;
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                  <input
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    placeholder="ALT / Forrás megjelölés"
+                                    value={gImg.alt || gImg.source || ''}
                                     onChange={(e) => {
                                       const val = e.target.value;
                                       updateBlocks((list) => {
                                         const next = [...list];
                                         const imgs = [...(next[idx].galleryImages || [])];
                                         imgs[gIdx].alt = val;
+                                        imgs[gIdx].source = val;
                                         next[idx].galleryImages = imgs;
                                         return next;
                                       });
                                     }}
                                   />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      updateBlocks((list) => {
-                                        const next = [...list];
-                                        next[idx].galleryImages = next[idx].galleryImages?.filter((_, i) => i !== gIdx);
-                                        return next;
-                                      });
-                                    }}
-                                    className="p-2 text-gray-400 hover:text-red-400 cursor-pointer"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
                                 </div>
                               </div>
                             ))}
+
                             <button
                               type="button"
                               onClick={() => {
                                 updateBlocks((list) => {
                                   const next = [...list];
                                   const imgs = [...(next[idx].galleryImages || [])];
-                                  imgs.push({ id: Date.now().toString(), url: '', caption: '', alt: '', prompt: '' });
+                                  imgs.push({ id: Date.now().toString() + Math.random().toString(36).substring(2, 4), url: '', caption: '', alt: '', source: '', prompt: '' });
                                   next[idx].galleryImages = imgs;
                                   return next;
                                 });
@@ -1741,10 +2040,177 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                               style={{ backgroundColor: sectionBg, borderColor: cardBorder, color: cardHighlight }}
                               className="px-3 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1 cursor-pointer hover:opacity-90"
                             >
-                              <Plus size={14} /> Új Kép a Galériába
+                              <Plus size={14} /> Új Kép Hozzáadása a Galériához
                             </button>
                           </div>
                         )}
+
+                        {block.type === 'video' && (() => {
+                          const videoInput = block.videoUrl || block.videoEmbedCode || '';
+                          const parsed = parseAndSanitizeVideoInput(videoInput);
+
+                          return (
+                            <div className="space-y-4">
+                              <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <label style={labelStyle} className={labelClass}>
+                                    Videó URL vagy Beágyazott Iframe Kód *
+                                  </label>
+                                  {videoInput && (
+                                    parsed.isValid ? (
+                                      <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                        <CheckCircle2 size={12} /> Szanitált {parsed.provider === 'youtube' ? 'YouTube' : 'Vimeo'} Beágyazás
+                                      </span>
+                                    ) : (
+                                      <span className="text-[11px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                        <AlertCircle size={12} /> {parsed.errorMessage || 'Érvénytelen beágyazási kód'}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+
+                                <textarea
+                                  style={fieldStyle}
+                                  className={`${fieldClass} resize-none font-mono text-xs`}
+                                  rows={2}
+                                  placeholder="Illeszd be a YouTube / Vimeo linket (pl. https://www.youtube.com/watch?v=...) vagy az iframe beágyazási kódot..."
+                                  value={videoInput}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const res = parseAndSanitizeVideoInput(val);
+                                    updateBlocks((list) => {
+                                      const next = [...list];
+                                      next[idx].videoUrl = val;
+                                      next[idx].videoEmbedCode = val;
+                                      if (res.isValid && res.provider) {
+                                        next[idx].videoProvider = res.provider;
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <p className="text-[11px] opacity-60 mt-1">
+                                  Kizárólag engedélyezett szolgáltatók (YouTube, Vimeo) fogadhatók el. A rendszer tisztítja és szanitálja az iframe kódot a biztonság érdekében.
+                                </p>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label style={labelStyle} className={labelClass}>Videó Címe (Akadálymentességhez)</label>
+                                  <input
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    placeholder="Pl. Betonozás folyamata és tömörítés..."
+                                    value={block.videoTitle || ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        next[idx].videoTitle = val;
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={labelStyle} className={labelClass}>Videó Leírása / Képaláírás</label>
+                                  <input
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    placeholder="Rövid leírás a videó alatt..."
+                                    value={block.videoDescription || ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        next[idx].videoDescription = val;
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                  <label style={labelStyle} className={labelClass}>Opcionális Borítókép URL</label>
+                                  <input
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    placeholder="https://..."
+                                    value={block.videoPoster || ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        next[idx].videoPoster = val;
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={labelStyle} className={labelClass}>Megjelenési Szélesség</label>
+                                  <select
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    value={block.videoWidth || 'normal'}
+                                    onChange={(e) => {
+                                      const val = e.target.value as any;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        next[idx].videoWidth = val;
+                                        return next;
+                                      });
+                                    }}
+                                  >
+                                    <option value="normal">Normál Szélesség</option>
+                                    <option value="full">Teljes Szélesség (100%)</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label style={labelStyle} className={labelClass}>Igazítás</label>
+                                  <select
+                                    style={fieldStyle}
+                                    className={fieldClass}
+                                    value={block.videoAlign || 'center'}
+                                    onChange={(e) => {
+                                      const val = e.target.value as any;
+                                      updateBlocks((list) => {
+                                        const next = [...list];
+                                        next[idx].videoAlign = val;
+                                        return next;
+                                      });
+                                    }}
+                                  >
+                                    <option value="center">Középre</option>
+                                    <option value="left">Balra</option>
+                                    <option value="right">Jobbra</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              {parsed.isValid && parsed.embedUrl && (
+                                <div className="space-y-2 pt-2 border-t" style={{ borderColor: cardBorder }}>
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                                    🎬 Videó Beágyazás Előnézete (16:9 képarány, Lazy Loading):
+                                  </span>
+                                  <div className="aspect-video w-full max-w-xl mx-auto rounded-xl overflow-hidden border border-gray-700 bg-black shadow-md">
+                                    <iframe
+                                      src={parsed.embedUrl}
+                                      title={block.videoTitle || 'Videó előnézet'}
+                                      loading="lazy"
+                                      className="w-full h-full border-0"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
 
                         {(block.type === 'list' || block.type === 'numbered_list') && (
                           <div className="space-y-2">
@@ -2149,6 +2615,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                       { type: 'heading', label: 'Címsor', icon: <Heading size={14} /> },
                       { type: 'image', label: 'Kép', icon: <ImageIcon size={14} /> },
                       { type: 'gallery', label: 'Galéria', icon: <ImageIcon size={14} /> },
+                      { type: 'video', label: 'Videó', icon: <Video size={14} /> },
                       { type: 'list', label: 'Lista', icon: <List size={14} /> },
                       { type: 'numbered_list', label: 'Számozott', icon: <ListOrdered size={14} /> },
                       { type: 'table', label: 'Táblázat', icon: <TableIcon size={14} /> },
@@ -2158,6 +2625,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
                       { type: 'calculation', label: 'Számítás', icon: <Calculator size={14} /> },
                       { type: 'divider', label: 'Elválasztó', icon: <Minus size={14} /> },
                     ].map((btn) => (
+
                       <button
                         key={btn.type}
                         type="button"

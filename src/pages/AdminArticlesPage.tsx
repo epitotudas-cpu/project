@@ -3,9 +3,6 @@ import {
   FileText,
   FolderTree,
   Edit3,
-  Layout,
-  Sliders,
-  Compass,
   Search,
   Plus,
   Pencil,
@@ -18,11 +15,33 @@ import {
   ArrowLeft,
   Link,
   CheckSquare,
+  ArrowUp,
+  ArrowDown,
+  Settings,
+  Newspaper,
+  Sparkles,
+  BookOpen,
+  Layers,
+  X,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Image as ImageIcon,
+  Clock,
+  Calendar,
+  User,
 } from 'lucide-react';
 import type { Article, Category } from '../lib/supabase';
 import * as articleService from '../services/articleService';
 import { listCategories } from '../services/categoryService';
-import { getArticleSettings, saveArticleSettings, type ArticleSettings } from '../services/articleSettingsService';
+import {
+  getArticleSettings,
+  saveArticleSettings,
+  getArticleSettingsForType,
+  saveArticleSettingsForType,
+  type ArticleSettings,
+  type TypePageSettings,
+} from '../services/articleSettingsService';
 import { getArticleRedirects, type ArticleRedirect } from '../services/articleRedirectsService';
 import { getRecommendationsMap, saveRecommendationConfig } from '../services/articleRecommendationsService';
 import { useToast } from '../components/ToastProvider';
@@ -33,74 +52,16 @@ import { useSiteSettings, adjustColorBrightness } from '../services/siteSettings
 
 export type ArticleHubSubTab =
   | 'overview'
-  | 'list'
+  | 'list-hirek'
+  | 'list-ujdonsagok'
+  | 'list-utmutatok'
+  | 'list-all'
   | 'categories'
   | 'content'
   | 'detail_layout'
   | 'category_layout'
   | 'recommendations'
   | 'seo';
-
-interface ArticleHubTile {
-  key: ArticleHubSubTab;
-  title: string;
-  subtitle: string;
-  description: string;
-  icon: any;
-  badge?: string;
-}
-
-const HUB_TILES: ArticleHubTile[] = [
-  {
-    key: 'list',
-    title: '1. Cikkek Lista & Műveletek',
-    subtitle: 'Keresés, szűrés, státuszok, duplikálás és törlés',
-    description: 'Böngéssz a cikkek között kategória, státusz (vázlat, ellenőrzésre vár, publikált, archivált), szerző és kiemelt állapot szerint.',
-    icon: FileText,
-  },
-  {
-    key: 'categories',
-    title: '2. Cikk kategóriák',
-    subtitle: 'Hírek, Újdonságok, Útmutatók & egyedi kategóriák',
-    description: 'Kategóriák neve, leírása, slugja, sorrendje, ikonja és színe. Törlés esetén meglévő cikkek kötelező célkategóriás áthelyezése.',
-    icon: FolderTree,
-  },
-  {
-    key: 'content',
-    title: '3. Cikk tartalma & Szerkesztő',
-    subtitle: 'Rich text szerkesztő, vázlatmentés és URL átirányítások',
-    description: 'Blokkalapú szövegszerkesztő címsorokkal, táblázatokkal és kiemelésekkel. Slug változásakor automatikus URL átirányítás.',
-    icon: Edit3,
-  },
-  {
-    key: 'detail_layout',
-    title: '4. Cikkoldal elemei & Elrendezés',
-    subtitle: 'Megjelenő elemek kapcsolói és széles 1-oszlopos elrendezés',
-    description: 'Állítsd be, hogy a részletes cikkoldalon megjelenjen-e a szerző, dátum, képek, ajánlók, hozzászólások és partneri blokk.',
-    icon: Layout,
-  },
-  {
-    key: 'category_layout',
-    title: '5. Kategóriaoldal elemei',
-    subtitle: 'Listaoldal címe, leírása, keresője és kártyaelrendezése',
-    description: 'Testreszabható cikklista beállítások: kártyák száma, rácselrendezés, rendezés (legújabb, kiemelt) és lapozási mód.',
-    icon: Sliders,
-  },
-  {
-    key: 'recommendations',
-    title: '6. Cikkajánlók & Kapcsolódó Cikkek',
-    subtitle: 'Automata vs kézi rögzítés és kizárások kezelése',
-    description: 'Állíts be cikkenként manuálisan rögzített vagy kizárt kapcsolódó cikkeket. Nem publikált cikkek automatikusan kizárva.',
-    icon: Compass,
-  },
-  {
-    key: 'seo',
-    title: '7. Keresőoptimalizálás (SEO Központ)',
-    subtitle: 'SEO cím, meta leírás, kanonikus URL és ellenőrzőlista',
-    description: 'Auditáld a cikkek keresőoptimalizálási hiányosságait (cím, lead, tartalom, meta leírás, kiemelt kép) publikálás előtt.',
-    icon: Search,
-  },
-];
 
 const STATUS_BADGES: Record<Article['status'], { label: string; class: string }> = {
   draft: { label: 'Piszkozat', class: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
@@ -133,10 +94,19 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [authorFilter, setAuthorFilter] = useState<string>('all');
   const [featuredFilter, setFeaturedFilter] = useState<string>('all');
+  const [sortMode, setSortMode] = useState<'latest' | 'oldest' | 'title' | 'manual'>('latest');
 
   // Modals & Selection States
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [lockedArticleTypeForModal, setLockedArticleTypeForModal] = useState<
+    'hirek' | 'ujdonsagok' | 'utmutatok' | undefined
+  >(undefined);
+
+  const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
+
+  const [typeSettingsModalType, setTypeSettingsModalType] = useState<'hirek' | 'ujdonsagok' | 'utmutatok' | null>(null);
+  const [editingTypeSettings, setEditingTypeSettings] = useState<TypePageSettings | null>(null);
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -201,6 +171,21 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
     toast.success('Beállítások sikeresen elmentve!');
   };
 
+  const handleOpenTypeSettingsModal = (type: 'hirek' | 'ujdonsagok' | 'utmutatok') => {
+    setTypeSettingsModalType(type);
+    setEditingTypeSettings(getArticleSettingsForType(type));
+  };
+
+  const handleSaveTypeSettingsConfirmed = () => {
+    if (!typeSettingsModalType || !editingTypeSettings) return;
+    saveArticleSettingsForType(typeSettingsModalType, editingTypeSettings);
+    setArticleSettingsState(getArticleSettings());
+    const label = typeSettingsModalType === 'hirek' ? 'Hírek' : typeSettingsModalType === 'ujdonsagok' ? 'Újdonságok' : 'Útmutatók';
+    toast.success(`${label} oldal beállításai sikeresen elmentve!`);
+    setTypeSettingsModalType(null);
+    setEditingTypeSettings(null);
+  };
+
   const handleDuplicateArticle = async (articleId: string) => {
     try {
       const dup = await articleService.duplicateArticle(articleId);
@@ -210,6 +195,21 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
       }
     } catch (err) {
       toast.error('Duplikálás sikertelen.');
+    }
+  };
+
+  const handleTogglePublishStatus = async (art: Article) => {
+    try {
+      const newStatus = art.status === 'published' ? 'draft' : 'published';
+      await articleService.setArticleStatus(art.id, newStatus);
+      toast.success(
+        newStatus === 'published'
+          ? `"${art.title}" cikk sikeresen közzétéve!`
+          : `"${art.title}" cikk piszkozatba helyezve.`
+      );
+      await loadAllData();
+    } catch (err) {
+      toast.error('Státuszmódosítás hiba.');
     }
   };
 
@@ -236,6 +236,27 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
     }
   };
 
+  const handleMoveArticleOrder = async (art: Article, direction: 'up' | 'down', currentList: Article[]) => {
+    const idx = currentList.findIndex((a) => a.id === art.id);
+    if (idx < 0) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentList.length) return;
+
+    const newList = [...currentList];
+    const temp = newList[idx];
+    newList[idx] = newList[targetIdx];
+    newList[targetIdx] = temp;
+
+    const orderedIds = newList.map((a) => a.id);
+    try {
+      await articleService.reorderArticles(orderedIds);
+      toast.success('Cikkek sorrendje frissítve!');
+      await loadAllData();
+    } catch (err) {
+      toast.error('Sorrend módosítása hiba.');
+    }
+  };
+
   const handleSaveRecommendationConfig = () => {
     if (!selectedRecArticleId) return;
     saveRecommendationConfig({
@@ -247,8 +268,15 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
     toast.success('Cikkajánló beállítások elmentve!');
   };
 
-  // Filtered articles list
-  const filteredArticles = articles.filter((a) => {
+  // Determine current active sub-page category filter
+  const currentTabType = subTab === 'list-hirek' ? 'hirek' : subTab === 'list-ujdonsagok' ? 'ujdonsagok' : subTab === 'list-utmutatok' ? 'utmutatok' : 'all';
+
+  // Filtered articles list for current active view
+  let filteredArticles = articles.filter((a) => {
+    if (currentTabType !== 'all') {
+      const artType = a.article_type || 'utmutatok';
+      if (artType !== currentTabType) return false;
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       const matchTitle = a.title.toLowerCase().includes(q);
@@ -265,21 +293,45 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
     return true;
   });
 
+  // Sorting
+  if (sortMode === 'latest') {
+    filteredArticles = [...filteredArticles].sort(
+      (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    );
+  } else if (sortMode === 'oldest') {
+    filteredArticles = [...filteredArticles].sort(
+      (a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+    );
+  } else if (sortMode === 'title') {
+    filteredArticles = [...filteredArticles].sort((a, b) => a.title.localeCompare(b.title, 'hu'));
+  }
+
   // Unique Authors list
   const authorsList = Array.from(new Set(articles.map((a) => a.author).filter(Boolean)));
 
   // Published articles only (strictly enforced for recommendations)
   const publishedArticles = articles.filter((a) => a.status === 'published');
 
+  // Per-Type Counts for the 3 main cards
+  const hirekArticles = articles.filter((a) => a.article_type === 'hirek');
+  const hirekTotal = hirekArticles.length;
+  const hirekPublished = hirekArticles.filter((a) => a.status === 'published').length;
+  const hirekDraft = hirekArticles.filter((a) => a.status === 'draft' || a.status === 'pending' || a.status === 'review').length;
+
+  const ujdonsagArticles = articles.filter((a) => a.article_type === 'ujdonsagok');
+  const ujdonsagTotal = ujdonsagArticles.length;
+  const ujdonsagPublished = ujdonsagArticles.filter((a) => a.status === 'published').length;
+  const ujdonsagDraft = ujdonsagArticles.filter((a) => a.status === 'draft' || a.status === 'pending' || a.status === 'review').length;
+
+  const utmutatoArticles = articles.filter((a) => (a.article_type || 'utmutatok') === 'utmutatok');
+  const utmutatoTotal = utmutatoArticles.length;
+  const utmutatoPublished = utmutatoArticles.filter((a) => a.status === 'published').length;
+  const utmutatoDraft = utmutatoArticles.filter((a) => a.status === 'draft' || a.status === 'pending' || a.status === 'review').length;
+
   // KPI Calculations
   const totalCount = articles.length;
-  const publishedCount = articles.filter((a) => a.status === 'published').length;
-  const draftCount = articles.filter((a) => a.status === 'draft' || a.status === 'pending' || a.status === 'review').length;
 
-  // SEO Completeness Audit
-  const articlesWithSeoIssues = articles.filter(
-    (a) => !a.title || !a.excerpt || !a.featured_image || !a.category_id || (a.content && a.content.length < 50)
-  );
+  const isListTab = subTab.startsWith('list-');
 
   return (
     <div className="space-y-6 text-white pb-20">
@@ -300,11 +352,11 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
               <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
                 <span>Cikkek Kezelése Központ</span>
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20 font-bold">
-                  8 Kezelőmodul
+                  Szakmai Adminisztráció
                 </span>
               </h1>
               <p className="text-xs text-gray-400 mt-1">
-                Áttekinthető csempés szerkezet a cikkek, kategóriák, tartalmak, elrendezés, ajánlók és SEO adminisztrációjához.
+                Áttekinthető, elkülönített kezelőközpont a Hírek, Újdonságok és Útmutatók független szerkesztéséhez.
               </p>
             </div>
           </div>
@@ -320,6 +372,11 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
             )}
             <button
               onClick={() => {
+                if (subTab === 'list-hirek') setLockedArticleTypeForModal('hirek');
+                else if (subTab === 'list-ujdonsagok') setLockedArticleTypeForModal('ujdonsagok');
+                else if (subTab === 'list-utmutatok') setLockedArticleTypeForModal('utmutatok');
+                else setLockedArticleTypeForModal(undefined);
+
                 setEditingArticle(null);
                 setEditorOpen(true);
               }}
@@ -333,90 +390,403 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
       </div>
 
       {/* ---------------------------------------------------------------------- */}
-      {/* SUBTAB 0: OVERVIEW HUB (CSEMPÉS KEZDŐLAP) */}
+      {/* SUBTAB 0: OVERVIEW HUB (CSEMPÉS KEZDŐLAP 3 NAGY KEZELŐCSEMPÉVEL) */}
       {/* ---------------------------------------------------------------------- */}
       {subTab === 'overview' && (
-        <div className="space-y-6">
-          {/* KPI STATS BAR */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl">
-              <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Összes Cikk</div>
-              <div className="text-2xl font-black text-white mt-1">{totalCount} db</div>
+        <div className="space-y-8">
+          {/* SECTION HEADER */}
+          <div>
+            <h2 className="text-lg font-black text-white flex items-center gap-2">
+              <span>Fő Kezelőmodulok</span>
+              <span className="text-xs text-gray-400 font-normal">(Válassz egy típust a belépéshez)</span>
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">
+              Kattints a kártyákra vagy a gyorsgombokra az adott cikk-típus elkülönített kezeléséhez.
+            </p>
+          </div>
+
+          {/* 3 LARGE MAIN TYPE TILES */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* TILE 1: HÍREK KEZELÉSE */}
+            <div
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="group p-6 border rounded-2xl hover:border-amber-400/60 transition-all duration-200 hover:shadow-2xl hover:shadow-amber-400/5 flex flex-col justify-between space-y-5"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl">
+                    <Newspaper size={28} />
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-blue-400/10 text-blue-400 border border-blue-400/20 font-bold uppercase tracking-wider">
+                    1. Típus
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-black text-white group-hover:text-amber-400 transition-colors">
+                    Hírek Kezelése
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                    Legfrissebb iparági hírek, piaci elemzések, jogszabályi változások és ágazati bejelentések.
+                  </p>
+                </div>
+
+                {/* COUNTS COUNTER BADGES */}
+                <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 border border-gray-800 rounded-xl text-center">
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Összes</div>
+                    <div className="text-base font-black text-white">{hirekTotal} db</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Publikált</div>
+                    <div className="text-base font-black text-green-400">{hirekPublished} db</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Piszkozat</div>
+                    <div className="text-base font-black text-amber-400">{hirekDraft} db</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD ACTIONS */}
+              <div className="pt-4 border-t border-gray-800/80 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setLockedArticleTypeForModal('hirek');
+                    setEditingArticle(null);
+                    setEditorOpen(true);
+                  }}
+                  className="flex-1 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Plus size={14} /> + Új Hír
+                </button>
+                <button
+                  onClick={() => setSubTab('list-hirek')}
+                  style={{ backgroundColor: cardHighlight }}
+                  className="px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all flex items-center gap-1"
+                >
+                  Kezelés &rarr;
+                </button>
+              </div>
             </div>
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl">
-              <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Publikált</div>
-              <div className="text-2xl font-black text-green-400 mt-1">{publishedCount} db</div>
+
+            {/* TILE 2: ÚJDONSÁGOK KEZELÉSE */}
+            <div
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="group p-6 border rounded-2xl hover:border-amber-400/60 transition-all duration-200 hover:shadow-2xl hover:shadow-amber-400/5 flex flex-col justify-between space-y-5"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-xl">
+                    <Sparkles size={28} />
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-purple-400/10 text-purple-400 border border-purple-400/20 font-bold uppercase tracking-wider">
+                    2. Típus
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-black text-white group-hover:text-amber-400 transition-colors">
+                    Újdonságok Kezelése
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                    Új technológiák, innovatív építőanyagok, modern szerszámok és prémium termékek bemutatói.
+                  </p>
+                </div>
+
+                {/* COUNTS COUNTER BADGES */}
+                <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 border border-gray-800 rounded-xl text-center">
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Összes</div>
+                    <div className="text-base font-black text-white">{ujdonsagTotal} db</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Publikált</div>
+                    <div className="text-base font-black text-green-400">{ujdonsagPublished} db</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Piszkozat</div>
+                    <div className="text-base font-black text-amber-400">{ujdonsagDraft} db</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD ACTIONS */}
+              <div className="pt-4 border-t border-gray-800/80 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setLockedArticleTypeForModal('ujdonsagok');
+                    setEditingArticle(null);
+                    setEditorOpen(true);
+                  }}
+                  className="flex-1 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Plus size={14} /> + Új Újdonság
+                </button>
+                <button
+                  onClick={() => setSubTab('list-ujdonsagok')}
+                  style={{ backgroundColor: cardHighlight }}
+                  className="px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all flex items-center gap-1"
+                >
+                  Kezelés &rarr;
+                </button>
+              </div>
             </div>
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl">
-              <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Piszkozat / Várakozó</div>
-              <div className="text-2xl font-black text-amber-400 mt-1">{draftCount} db</div>
-            </div>
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 border rounded-2xl">
-              <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">SEO Hiányosság</div>
-              <div className="text-2xl font-black text-red-400 mt-1">{articlesWithSeoIssues.length} cikk</div>
+
+            {/* TILE 3: ÚTMUTATÓK KEZELÉSE */}
+            <div
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="group p-6 border rounded-2xl hover:border-amber-400/60 transition-all duration-200 hover:shadow-2xl hover:shadow-amber-400/5 flex flex-col justify-between space-y-5"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl">
+                    <BookOpen size={28} />
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 font-bold uppercase tracking-wider">
+                    3. Típus
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-black text-white group-hover:text-amber-400 transition-colors">
+                    Útmutatók Kezelése
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                    Gyakorlati lépésről lépésre kivitelezési útmutatók, rétegrendek és munkavédelmi leírások.
+                  </p>
+                </div>
+
+                {/* COUNTS COUNTER BADGES */}
+                <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 border border-gray-800 rounded-xl text-center">
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Összes</div>
+                    <div className="text-base font-black text-white">{utmutatoTotal} db</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Publikált</div>
+                    <div className="text-base font-black text-green-400">{utmutatoPublished} db</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase">Piszkozat</div>
+                    <div className="text-base font-black text-amber-400">{utmutatoDraft} db</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD ACTIONS */}
+              <div className="pt-4 border-t border-gray-800/80 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setLockedArticleTypeForModal('utmutatok');
+                    setEditingArticle(null);
+                    setEditorOpen(true);
+                  }}
+                  className="flex-1 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Plus size={14} /> + Új Útmutató
+                </button>
+                <button
+                  onClick={() => setSubTab('list-utmutatok')}
+                  style={{ backgroundColor: cardHighlight }}
+                  className="px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all flex items-center gap-1"
+                >
+                  Kezelés &rarr;
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* TILES GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {HUB_TILES.map((tile) => {
-              const Icon = tile.icon;
-              return (
-                <div
-                  key={tile.key}
-                  onClick={() => setSubTab(tile.key)}
-                  style={{ backgroundColor: cardBg, borderColor: cardBorder }}
-                  className="group cursor-pointer p-6 border rounded-2xl hover:border-amber-400/60 transition-all duration-200 hover:shadow-xl hover:shadow-amber-400/5 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div
-                        style={{ backgroundColor: `${cardHighlight}15`, color: cardHighlight, borderColor: `${cardHighlight}30` }}
-                        className="p-3 border rounded-xl group-hover:scale-105 transition-transform"
-                      >
-                        <Icon size={24} />
-                      </div>
-                      <ChevronRight size={20} className="text-gray-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors">
-                        {tile.title}
-                      </h3>
-                      <p className="text-xs font-semibold text-amber-400/90 mt-0.5">{tile.subtitle}</p>
-                    </div>
-                    <p className="text-xs text-gray-400 leading-relaxed pt-1">
-                      {tile.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-4 mt-4 border-t border-gray-800/80 flex items-center justify-between text-xs text-gray-400 font-medium">
-                    <span>Megnyitás</span>
-                    <span className="text-amber-400 font-bold group-hover:underline">Kezelés &rarr;</span>
-                  </div>
+          {/* SECONDARY TILES: ÖSSZES CIKK & EGYÉB MODULOK */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-800">
+            {/* ÖSSZES CIKK SECONDARY CARD */}
+            <div
+              onClick={() => setSubTab('list-all')}
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="group cursor-pointer p-5 border rounded-2xl hover:border-amber-400/50 transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-400/10 text-amber-400 border border-amber-400/20 rounded-xl">
+                  <Layers size={24} />
                 </div>
-              );
-            })}
+                <div>
+                  <h4 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors">
+                    Összes Cikk Együttes Áttekintése ({totalCount} db)
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Másodlagos nézet: az összes cikk keresése, szűrése és tömeges ellenőrzése.
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-gray-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all shrink-0" />
+            </div>
+
+            {/* CIKK KATEGÓRIÁK CARD */}
+            <div
+              onClick={() => setSubTab('categories')}
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="group cursor-pointer p-5 border rounded-2xl hover:border-amber-400/50 transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gray-800 text-gray-300 border border-gray-700 rounded-xl">
+                  <FolderTree size={24} />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors">
+                    Cikk Kategóriák Kezelése ({categories.length} kategória)
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Kategóriák nevei, leírásai, színei és törlési áthelyezési szabályai.
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-gray-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all shrink-0" />
+            </div>
           </div>
         </div>
       )}
 
       {/* ---------------------------------------------------------------------- */}
-      {/* SUBTAB 1: CIKKEK LISTA & MŰVELETEK */}
+      {/* SUBTABS 1: HÍREK, ÚJDONSÁGOK, ÚTMUTATÓK ÉS ÖSSZES CIKK DEDIKÁLT NÉZETEI */}
       {/* ---------------------------------------------------------------------- */}
-      {subTab === 'list' && (
+      {isListTab && (
         <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-6 border rounded-2xl space-y-6">
-          {/* FILTER TOOLBAR */}
+          {/* TOP ARTICLE SUB-HUB NAV TABS */}
+          <div className="flex flex-wrap items-center gap-2 p-1.5 bg-black/40 border border-gray-800 rounded-xl">
+            <button
+              onClick={() => setSubTab('list-hirek')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
+                subTab === 'list-hirek'
+                  ? 'bg-amber-400 text-black shadow-md'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <Newspaper size={16} /> 1. Hírek Kezelése ({hirekTotal} db)
+            </button>
+
+            <button
+              onClick={() => setSubTab('list-ujdonsagok')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
+                subTab === 'list-ujdonsagok'
+                  ? 'bg-amber-400 text-black shadow-md'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <Sparkles size={16} /> 2. Újdonságok Kezelése ({ujdonsagTotal} db)
+            </button>
+
+            <button
+              onClick={() => setSubTab('list-utmutatok')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
+                subTab === 'list-utmutatok'
+                  ? 'bg-amber-400 text-black shadow-md'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <BookOpen size={16} /> 3. Útmutatók Kezelése ({utmutatoTotal} db)
+            </button>
+
+            <button
+              onClick={() => setSubTab('list-all')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
+                subTab === 'list-all'
+                  ? 'bg-amber-400 text-black shadow-md'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <Layers size={16} /> Összes Cikk ({totalCount} db)
+            </button>
+          </div>
+
+          {/* SUB-PAGE HEADER BAR */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 border border-gray-800 rounded-xl">
+            <div>
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                {subTab === 'list-hirek' && <>📰 Hírek Kezelése</>}
+                {subTab === 'list-ujdonsagok' && <>✨ Újdonságok Kezelése</>}
+                {subTab === 'list-utmutatok' && <>📚 Szakmai Útmutatók Kezelése</>}
+                {subTab === 'list-all' && <>📂 Összes Cikk Kezelése</>}
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {subTab === 'list-hirek' && 'Kizárólag a Hírek típusú cikkek listája, kategórián belüli sorrendezése és egyedi oldalbeállításai.'}
+                {subTab === 'list-ujdonsagok' && 'Kizárólag az Újdonságok típusú cikkek listája, kategórián belüli sorrendezése és egyedi oldalbeállításai.'}
+                {subTab === 'list-utmutatok' && 'Kizárólag a Szakmai Útmutatók típusú cikkek listája, kategórián belüli sorrendezése és egyedi oldalbeállításai.'}
+                {subTab === 'list-all' && 'Az ÉpítőTudás teljes cikkbázisának áttekintése keresővel és szűrőkkel.'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {(subTab === 'list-hirek' || subTab === 'list-ujdonsagok' || subTab === 'list-utmutatok') && (
+                <button
+                  onClick={() =>
+                    handleOpenTypeSettingsModal(
+                      subTab === 'list-hirek' ? 'hirek' : subTab === 'list-ujdonsagok' ? 'ujdonsagok' : 'utmutatok'
+                    )
+                  }
+                  className="flex items-center gap-2 px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-amber-400 text-xs font-bold rounded-xl border border-gray-700 transition-colors cursor-pointer"
+                >
+                  <Settings size={15} /> Oldal Beállításai
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  if (subTab === 'list-hirek') setLockedArticleTypeForModal('hirek');
+                  else if (subTab === 'list-ujdonsagok') setLockedArticleTypeForModal('ujdonsagok');
+                  else if (subTab === 'list-utmutatok') setLockedArticleTypeForModal('utmutatok');
+                  else setLockedArticleTypeForModal(undefined);
+
+                  setEditingArticle(null);
+                  setEditorOpen(true);
+                }}
+                style={{ backgroundColor: cardHighlight }}
+                className="flex items-center gap-2 px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all cursor-pointer"
+              >
+                <Plus size={16} />
+                {subTab === 'list-hirek' && 'Új Hír Létrehozása'}
+                {subTab === 'list-ujdonsagok' && 'Új Újdonság Létrehozása'}
+                {subTab === 'list-utmutatok' && 'Új Útmutató Létrehozása'}
+                {subTab === 'list-all' && 'Új Cikk Létrehozása'}
+              </button>
+            </div>
+          </div>
+
+          {/* FILTER & SORT TOOLBAR */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-3 p-4 bg-black/40 border border-gray-800 rounded-xl">
             {/* Search */}
             <div className="md:col-span-2 relative">
               <Search size={16} className="absolute left-3 top-3 text-gray-400" />
               <input
                 type="text"
-                placeholder="Keresés címben vagy leírásban..."
+                placeholder={
+                  subTab === 'list-hirek'
+                    ? 'Keresés a hírek között...'
+                    : subTab === 'list-ujdonsagok'
+                    ? 'Keresés az újdonságok között...'
+                    : subTab === 'list-utmutatok'
+                    ? 'Keresés az útmutatók között...'
+                    : 'Keresés az összes cikk között...'
+                }
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-black/60 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
               />
+            </div>
+
+            {/* Category Filter */}
+            <div>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+              >
+                <option value="all">Minden Kategória</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Status Filter */}
@@ -434,22 +804,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                 <option value="published">Közzétéve</option>
                 <option value="rejected">Elutasítva</option>
                 <option value="archived">Archivált</option>
-              </select>
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
-              >
-                <option value="all">Minden Kategória</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
               </select>
             </div>
 
@@ -481,72 +835,156 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                 <option value="false">Nem Kiemelt</option>
               </select>
             </div>
+
+            {/* Sort Mode Select */}
+            <div>
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value as any)}
+                className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-bold text-amber-400"
+              >
+                <option value="latest">Legújabb elöl</option>
+                <option value="oldest">Legrégebbi elöl</option>
+                <option value="title">Cím szerint (A-Z)</option>
+                <option value="manual">Kézi megadott sorrend</option>
+              </select>
+            </div>
           </div>
 
-          {/* TABLE */}
+          {/* ARTICLE TABLE */}
           <div className="overflow-x-auto border border-gray-800 rounded-xl">
             <table className="w-full text-left text-xs text-gray-300">
               <thead className="bg-black/60 border-b border-gray-800 text-gray-400 uppercase font-bold tracking-wider">
                 <tr>
-                  <th className="p-3">Cikk Címe & Slug</th>
+                  <th className="p-3 w-16">Sorrend</th>
+                  <th className="p-3">Borítókép &amp; Cikk Címe</th>
                   <th className="p-3">Kategória</th>
                   <th className="p-3">Státusz</th>
                   <th className="p-3">Szerző</th>
-                  <th className="p-3">Publikálva & Módosítva</th>
+                  <th className="p-3">Publikálva &amp; Módosítva</th>
                   <th className="p-3 text-right">Műveletek</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/60">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-400">
+                    <td colSpan={7} className="p-8 text-center text-gray-400">
                       Cikkek betöltése...
                     </td>
                   </tr>
                 ) : filteredArticles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-400">
-                      Nem található cikk a keresési feltételek alapján.
+                    <td colSpan={7} className="p-8 text-center text-gray-400">
+                      Nem található cikk a megadott keresési feltételekkel.
                     </td>
                   </tr>
                 ) : (
-                  filteredArticles.map((art) => {
+                  filteredArticles.map((art, idx) => {
                     const catObj = categories.find((c) => c.id === art.category_id);
                     const badge = STATUS_BADGES[art.status || 'draft'] || STATUS_BADGES.draft;
+                    const isPub = art.status === 'published';
+
                     return (
                       <tr key={art.id} className="hover:bg-gray-800/40 transition-colors">
+                        {/* ORDERING REORDER BUTTONS */}
                         <td className="p-3">
-                          <div className="font-bold text-white text-sm">{art.title}</div>
-                          <div className="text-[11px] text-gray-500 font-mono flex items-center gap-2 mt-0.5">
-                            <span>/{art.slug}</span>
-                            {art.featured && (
-                              <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[10px] font-bold">
-                                Kiemelt
-                              </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] font-mono text-gray-500 w-4 text-center">#{idx + 1}</span>
+                            {subTab !== 'list-all' && (
+                              <div className="flex flex-col gap-0.5">
+                                <button
+                                  disabled={idx === 0}
+                                  onClick={() => handleMoveArticleOrder(art, 'up', filteredArticles)}
+                                  title="Mozgatás felfelé"
+                                  className="p-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 rounded transition-colors"
+                                >
+                                  <ArrowUp size={12} />
+                                </button>
+                                <button
+                                  disabled={idx === filteredArticles.length - 1}
+                                  onClick={() => handleMoveArticleOrder(art, 'down', filteredArticles)}
+                                  title="Mozgatás lefelé"
+                                  className="p-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 rounded transition-colors"
+                                >
+                                  <ArrowDown size={12} />
+                                </button>
+                              </div>
                             )}
                           </div>
                         </td>
+
+                        {/* COVER THUMBNAIL & TITLE */}
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-gray-900 border border-gray-800 overflow-hidden shrink-0 flex items-center justify-center">
+                              {art.featured_image ? (
+                                <img src={art.featured_image} alt={art.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <ImageIcon size={20} className="text-gray-600" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-bold text-white text-sm leading-snug">{art.title}</div>
+                              <div className="text-[11px] text-gray-500 font-mono flex items-center gap-2 mt-0.5">
+                                <span>/{art.slug}</span>
+                                {art.featured && (
+                                  <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[10px] font-bold">
+                                    Kiemelt
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
                         <td className="p-3">
                           <span className="px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-300 font-medium">
                             {catObj?.name || 'Általános'}
                           </span>
                         </td>
+
                         <td className="p-3">
                           <span className={`px-2.5 py-1 rounded-full border text-[11px] font-bold ${badge.class}`}>
                             {badge.label}
                           </span>
                         </td>
+
                         <td className="p-3 font-medium text-gray-300">
                           {art.author || 'Szerkesztőség'}
                         </td>
+
                         <td className="p-3 text-[11px] text-gray-400 space-y-0.5">
                           <div>Publikálva: {art.created_at ? new Date(art.created_at).toLocaleDateString('hu-HU') : '-'}</div>
                           <div className="text-gray-500">Frissítve: {art.updated_at ? new Date(art.updated_at).toLocaleDateString('hu-HU') : '-'}</div>
                         </td>
+
+                        {/* ACTION BUTTONS */}
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* PREVIEW */}
+                            <button
+                              onClick={() => setPreviewArticle(art)}
+                              title="Előnézet"
+                              className="p-1.5 bg-gray-800 hover:bg-gray-700 text-blue-400 rounded-lg transition-colors"
+                            >
+                              <Eye size={15} />
+                            </button>
+
+                            {/* PUBLISH TOGGLE */}
+                            <button
+                              onClick={() => handleTogglePublishStatus(art)}
+                              title={isPub ? 'Visszavonás piszkozatba' : 'Közzététel'}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isPub ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-gray-800 text-gray-400 hover:text-green-400'
+                              }`}
+                            >
+                              {isPub ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                            </button>
+
+                            {/* EDIT */}
                             <button
                               onClick={() => {
+                                setLockedArticleTypeForModal((art.article_type as any) || undefined);
                                 setEditingArticle(art);
                                 setEditorOpen(true);
                               }}
@@ -555,13 +993,17 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                             >
                               <Pencil size={15} />
                             </button>
+
+                            {/* DUPLICATE */}
                             <button
                               onClick={() => handleDuplicateArticle(art.id)}
                               title="Duplikálás"
-                              className="p-1.5 bg-gray-800 hover:bg-gray-700 text-blue-400 rounded-lg transition-colors"
+                              className="p-1.5 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-lg transition-colors"
                             >
                               <Copy size={15} />
                             </button>
+
+                            {/* ARCHIVE */}
                             <button
                               onClick={() => handleToggleArchiveArticle(art)}
                               title={art.status === 'archived' ? 'Visszaállítás' : 'Archiválás'}
@@ -569,6 +1011,8 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                             >
                               <Archive size={15} />
                             </button>
+
+                            {/* DELETE */}
                             <button
                               onClick={() => setDeletingArticle(art)}
                               title="Törlés"
@@ -700,6 +1144,7 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                 onChange={(e) => {
                   const found = articles.find((a) => a.id === e.target.value);
                   if (found) {
+                    setLockedArticleTypeForModal((found.article_type as any) || undefined);
                     setEditingArticle(found);
                     setEditorOpen(true);
                   }
@@ -1035,6 +1480,7 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                       <td className="p-3 text-right">
                         <button
                           onClick={() => {
+                            setLockedArticleTypeForModal((art.article_type as any) || undefined);
                             setEditingArticle(art);
                             setEditorOpen(true);
                           }}
@@ -1055,21 +1501,277 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
       {/* ---------------------------------------------------------------------- */}
       {/* MODALS */}
       {/* ---------------------------------------------------------------------- */}
+
+      {/* ARTICLE PREVIEW MODAL */}
+      {previewArticle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-[#121212] border border-blue-500/30 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden text-white shadow-2xl">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-gray-900/80">
+              <div className="flex items-center gap-2 text-blue-400">
+                <Eye size={20} />
+                <h3 className="text-base font-bold">Cikk Előnézete</h3>
+              </div>
+              <button
+                onClick={() => setPreviewArticle(null)}
+                className="p-1 text-gray-400 hover:text-white rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              <div>
+                <span className="px-2.5 py-1 rounded bg-amber-400/20 text-amber-300 font-bold text-xs uppercase">
+                  {previewArticle.article_type === 'hirek'
+                    ? 'Hír'
+                    : previewArticle.article_type === 'ujdonsagok'
+                    ? 'Újdonság'
+                    : 'Útmutató'}
+                </span>
+                <h1 className="text-2xl font-black text-white mt-2 leading-tight">{previewArticle.title}</h1>
+                <div className="flex items-center gap-4 text-xs text-gray-400 mt-2">
+                  <span className="flex items-center gap-1"><User size={13} /> {previewArticle.author || 'Szerkesztőség'}</span>
+                  <span className="flex items-center gap-1"><Calendar size={13} /> {new Date(previewArticle.created_at || Date.now()).toLocaleDateString('hu-HU')}</span>
+                  <span className="flex items-center gap-1"><Clock size={13} /> {previewArticle.read_time || 5} perc</span>
+                </div>
+              </div>
+
+              {previewArticle.excerpt && (
+                <p className="text-sm text-gray-300 italic p-4 bg-gray-900/60 border-l-4 border-amber-400 rounded-r-xl">
+                  {previewArticle.excerpt}
+                </p>
+              )}
+
+              {previewArticle.featured_image && (
+                <div className="w-full aspect-video rounded-xl overflow-hidden border border-gray-800">
+                  <img src={previewArticle.featured_image} alt={previewArticle.title} className="w-full h-full object-cover" />
+                </div>
+              )}
+
+              <div className="text-sm text-gray-200 leading-relaxed space-y-4 whitespace-pre-line border-t border-gray-800 pt-6 font-sans">
+                {previewArticle.content?.replace(/\[EPITOTUDAS_BLOCKS_DATA:.*\]$/s, '') || 'Nincs megjeleníthető tartalom.'}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-800 flex items-center justify-end gap-3 bg-gray-900/80">
+              <button
+                onClick={() => setPreviewArticle(null)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold rounded-xl"
+              >
+                Bezárás
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* EDIT ARTICLE MODAL */}
       {editorOpen && (
         <EditArticleModal
           article={editingArticle}
           categories={categories}
+          lockedArticleType={lockedArticleTypeForModal}
           onClose={() => {
             setEditorOpen(false);
             setEditingArticle(null);
+            setLockedArticleTypeForModal(undefined);
           }}
           onSaved={() => {
             setEditorOpen(false);
             setEditingArticle(null);
+            setLockedArticleTypeForModal(undefined);
             loadAllData();
           }}
         />
+      )}
+
+      {/* ISOLATED TYPE PAGE SETTINGS MODAL */}
+      {typeSettingsModalType && editingTypeSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#121212] border border-amber-500/40 rounded-2xl max-w-2xl w-full p-6 text-white shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-3 text-amber-400">
+                <Settings size={24} />
+                <div>
+                  <h3 className="text-lg font-bold">
+                    {typeSettingsModalType === 'hirek'
+                      ? 'Hírek Oldal Elkülenített Beállításai'
+                      : typeSettingsModalType === 'ujdonsagok'
+                      ? 'Újdonságok Oldal Elkülönített Beállításai'
+                      : 'Útmutatók Oldal Elkülönített Beállításai'}
+                  </h3>
+                  <p className="text-xs text-gray-400">Kizárólag a publikus {typeSettingsModalType} oldal felületi beállításait módosítja.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setTypeSettingsModalType(null);
+                  setEditingTypeSettings(null);
+                }}
+                className="text-gray-400 hover:text-white p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs">
+              <div>
+                <label className="block font-bold text-gray-400 uppercase mb-1">1. Oldalcím (H1)</label>
+                <input
+                  type="text"
+                  value={editingTypeSettings.articlesPageTitle}
+                  onChange={(e) =>
+                    setEditingTypeSettings({ ...editingTypeSettings, articlesPageTitle: e.target.value })
+                  }
+                  className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-400 uppercase mb-1">2. Rövid Bevezető / Leírás</label>
+                <textarea
+                  rows={2}
+                  value={editingTypeSettings.articlesPageDescription}
+                  onChange={(e) =>
+                    setEditingTypeSettings({ ...editingTypeSettings, articlesPageDescription: e.target.value })
+                  }
+                  className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-400 uppercase mb-1">3. Keresőmező Helyőrző Szövege</label>
+                <input
+                  type="text"
+                  value={editingTypeSettings.searchPlaceholderText}
+                  onChange={(e) =>
+                    setEditingTypeSettings({ ...editingTypeSettings, searchPlaceholderText: e.target.value })
+                  }
+                  className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-gray-400 uppercase mb-1">4. Üres Állapot Címe</label>
+                  <input
+                    type="text"
+                    value={editingTypeSettings.emptyStateTitle || ''}
+                    onChange={(e) =>
+                      setEditingTypeSettings({ ...editingTypeSettings, emptyStateTitle: e.target.value })
+                    }
+                    className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-400 uppercase mb-1">5. Üres Állapot Szövege</label>
+                  <input
+                    type="text"
+                    value={editingTypeSettings.emptyStateText}
+                    onChange={(e) =>
+                      setEditingTypeSettings({ ...editingTypeSettings, emptyStateText: e.target.value })
+                    }
+                    className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block font-bold text-gray-400 uppercase mb-1">6. Oldalonkénti Cikkek</label>
+                  <input
+                    type="number"
+                    min={3}
+                    max={48}
+                    value={editingTypeSettings.articlesPerPage}
+                    onChange={(e) =>
+                      setEditingTypeSettings({ ...editingTypeSettings, articlesPerPage: Number(e.target.value) })
+                    }
+                    className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-400 uppercase mb-1">7. Desktop Grid Oszlopok</label>
+                  <select
+                    value={editingTypeSettings.desktopGridColumns}
+                    onChange={(e) =>
+                      setEditingTypeSettings({
+                        ...editingTypeSettings,
+                        desktopGridColumns: Number(e.target.value) as any,
+                      })
+                    }
+                    className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value={2}>2 Oszlop</option>
+                    <option value={3}>3 Oszlop (Alapértelmezett)</option>
+                    <option value={4}>4 Oszlop</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-400 uppercase mb-1">8. Kiemeltek Kezelése</label>
+                  <select
+                    value={editingTypeSettings.featuredMode || 'pin'}
+                    onChange={(e) =>
+                      setEditingTypeSettings({
+                        ...editingTypeSettings,
+                        featuredMode: e.target.value as any,
+                      })
+                    }
+                    className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="pin">Rögzítés a lista tetején</option>
+                    <option value="show">Normál sorrendben</option>
+                    <option value="hide">Elrejtés a listából</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-400 uppercase mb-1">9. Alapértelmezett Rendezési Mód</label>
+                <select
+                  value={editingTypeSettings.defaultSortMode}
+                  onChange={(e) =>
+                    setEditingTypeSettings({
+                      ...editingTypeSettings,
+                      defaultSortMode: e.target.value as any,
+                    })
+                  }
+                  className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                >
+                  <option value="latest">Legújabb elöl</option>
+                  <option value="oldest">Legrégebbi elöl</option>
+                  <option value="featured">Kiemeltek elöl</option>
+                  <option value="manual">Kézi megadott sorrend</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
+              <button
+                onClick={() => {
+                  setTypeSettingsModalType(null);
+                  setEditingTypeSettings(null);
+                }}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold rounded-xl"
+              >
+                Mégse
+              </button>
+              <button
+                onClick={handleSaveTypeSettingsConfirmed}
+                style={{ backgroundColor: cardHighlight }}
+                className="px-5 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Save size={16} /> Beállítások Mentése
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* EDIT CATEGORY MODAL */}

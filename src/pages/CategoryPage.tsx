@@ -36,8 +36,9 @@ import {
 import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
 import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
-import { useArticleSettings } from '../services/articleSettingsService';
+import { useArticleSettings, getArticleSettingsForType } from '../services/articleSettingsService';
 import type { Category, Article } from '../lib/supabase';
+
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -94,9 +95,14 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const typePageSettings = useMemo(() => {
+    return getArticleSettingsForType(selectedArticleType);
+  }, [selectedArticleType, articleSettings]);
+
   // Modals / Dropdowns State
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState<number>(articleSettings.articlesPerPage || 12);
+  const [visibleCount, setVisibleCount] = useState<number>(typePageSettings.articlesPerPage || 12);
+
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [savedArticleIds, setSavedArticleIds] = useState<Set<string>>(new Set());
@@ -299,7 +305,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     });
 
     // Apply Sorting Mode
-    switch (articleSettings.defaultSortMode) {
+    switch (typePageSettings.defaultSortMode) {
       case 'featured':
         list.sort((a, b) => (b.views || 0) - (a.views || 0));
         break;
@@ -316,7 +322,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     }
 
     return list;
-  }, [articles, selectedArticleType, selectedCategories, searchQuery, articleSettings.defaultSortMode]);
+  }, [articles, selectedArticleType, selectedCategories, searchQuery, typePageSettings.defaultSortMode]);
 
   const paginatedArticles = useMemo(() => {
     return filteredArticles.slice(0, visibleCount);
@@ -352,9 +358,9 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   }
 
   const desktopGridClass =
-    articleSettings.desktopGridColumns === 2
+    typePageSettings.desktopGridColumns === 2
       ? 'lg:grid-cols-2'
-      : articleSettings.desktopGridColumns === 4
+      : typePageSettings.desktopGridColumns === 4
       ? 'lg:grid-cols-4'
       : 'lg:grid-cols-3';
 
@@ -383,10 +389,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 <FileText size={13} /> Építőipari Szakmai Cikkek &amp; Technológiák
               </span>
               <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-                {articleSettings.articlesPageTitle}
+                {typePageSettings.articlesPageTitle}
               </h1>
               <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-                {articleSettings.articlesPageDescription}
+                {typePageSettings.articlesPageDescription}
               </p>
             </div>
 
@@ -481,7 +487,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder={articleSettings.searchPlaceholderText || 'Keresés cikkek között (pl. betonozás, szigetelés, csempézés)...'}
+                placeholder={typePageSettings.searchPlaceholderText || 'Keresés cikkek között (pl. betonozás, szigetelés, csempézés)...'}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -501,6 +507,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                 </button>
               )}
             </div>
+
 
             {/* Compact Filter Action Buttons */}
             <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
