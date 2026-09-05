@@ -1110,8 +1110,18 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
       setError('A slug megadása kötelező.');
       return;
     }
-    setSaving(true);
-    setError(null);
+    const targetType = lockedArticleType || form.article_type;
+    if (!targetType || !['hirek', 'ujdonsagok', 'utmutatok'].includes(targetType)) {
+      setError('A cikk típusa érvénytelen vagy hiányzik. Kérjük válasszon érvényes cikktípust!');
+      setSaving(false);
+      return;
+    }
+
+    if (lockedArticleType && form.article_type !== lockedArticleType) {
+      setError(`A cikk típusa kötelezően "${lockedArticleType === 'hirek' ? 'Hír' : lockedArticleType === 'ujdonsagok' ? 'Újdonság' : 'Útmutató'}" kell legyen az indító gomb alapján.`);
+      setSaving(false);
+      return;
+    }
 
     try {
       const serializedContent = serializeBlocksToContent(blocks, seo, sources);
@@ -1122,7 +1132,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
         slug: form.slug.trim(),
         excerpt: form.excerpt.trim() || null,
         content: serializedContent,
-        article_type: form.article_type,
+        article_type: targetType,
         category_id: form.category_id || null,
         subcategory_name: form.subcategory_name.trim() || null,
         tags: form.tags,
@@ -1146,6 +1156,11 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
       } else {
         savedData = await createArticle(payload);
       }
+
+      if (!savedData || savedData.article_type !== targetType) {
+        savedData = { ...savedData, article_type: targetType };
+      }
+
       setDirty(false);
       onSaved(savedData);
     } catch (err) {
@@ -1206,9 +1221,37 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
             </div>
             <div>
               <h2 className="text-base font-black text-white flex items-center gap-2">
-                <span>{isCreate ? 'Új Szakmai Cikk Létrehozása' : 'Szakmai Cikk Szerkesztése'}</span>
+                <span>
+                  {isCreate
+                    ? `Új ${
+                        lockedArticleType === 'hirek' || form.article_type === 'hirek'
+                          ? 'Hír'
+                          : lockedArticleType === 'ujdonsagok' || form.article_type === 'ujdonsagok'
+                          ? 'Újdonság'
+                          : lockedArticleType === 'utmutatok' || form.article_type === 'utmutatok'
+                          ? 'Útmutató'
+                          : 'Szakmai Cikk'
+                      } Létrehozása`
+                    : `${
+                        lockedArticleType === 'hirek' || form.article_type === 'hirek'
+                          ? 'Hír'
+                          : lockedArticleType === 'ujdonsagok' || form.article_type === 'ujdonsagok'
+                          ? 'Újdonság'
+                          : lockedArticleType === 'utmutatok' || form.article_type === 'utmutatok'
+                          ? 'Útmutató'
+                          : 'Szakmai Cikk'
+                      } Szerkesztése`}
+                </span>
               </h2>
-              <p className="text-xs text-gray-400">Rugalmas, blokkalapú építőipari cikkszerkesztő</p>
+              <p className="text-xs text-gray-400">
+                {lockedArticleType === 'hirek' || form.article_type === 'hirek'
+                  ? 'Publikálás után kizárólag a Hírek oldalon jelenik meg.'
+                  : lockedArticleType === 'ujdonsagok' || form.article_type === 'ujdonsagok'
+                  ? 'Publikálás után kizárólag az Újdonságok oldalon jelenik meg.'
+                  : lockedArticleType === 'utmutatok' || form.article_type === 'utmutatok'
+                  ? 'Publikálás után kizárólag az Útmutatók oldalon jelenik meg.'
+                  : 'Rugalmas, blokkalapú építőipari cikkszerkesztő'}
+              </p>
             </div>
           </div>
 

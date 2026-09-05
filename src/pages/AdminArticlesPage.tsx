@@ -1560,11 +1560,33 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
           categories={categories}
           lockedArticleType={lockedArticleTypeForModal}
           onClose={() => {
+            if (lockedArticleTypeForModal === 'hirek') setSubTab('list-hirek');
+            else if (lockedArticleTypeForModal === 'ujdonsagok') setSubTab('list-ujdonsagok');
+            else if (lockedArticleTypeForModal === 'utmutatok') setSubTab('list-utmutatok');
+
             setEditorOpen(false);
             setEditingArticle(null);
             setLockedArticleTypeForModal(undefined);
           }}
-          onSaved={() => {
+          onSaved={(savedData) => {
+            const targetType = savedData.article_type || lockedArticleTypeForModal || 'utmutatok';
+            if (targetType === 'hirek') {
+              setSubTab('list-hirek');
+              toast.success(
+                `Hír (${savedData.status === 'published' ? 'Közzétéve' : 'Piszkozat'}) sikeresen elmentve! Megjelenik a Hírek kezelése listában és a publikus Hírek fül alatt.`
+              );
+            } else if (targetType === 'ujdonsagok') {
+              setSubTab('list-ujdonsagok');
+              toast.success(
+                `Újdonság (${savedData.status === 'published' ? 'Közzétéve' : 'Piszkozat'}) sikeresen elmentve! Megjelenik az Újdonságok kezelése listában és a publikus Újdonságok fül alatt.`
+              );
+            } else {
+              setSubTab('list-utmutatok');
+              toast.success(
+                `Útmutató (${savedData.status === 'published' ? 'Közzétéve' : 'Piszkozat'}) sikeresen elmentve! Megjelenik az Útmutatók kezelése listában és a publikus Útmutatók fül alatt.`
+              );
+            }
+
             setEditorOpen(false);
             setEditingArticle(null);
             setLockedArticleTypeForModal(undefined);
