@@ -467,253 +467,167 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           </div>
         </div>
 
-        {/* 2-COLUMN DESKTOP GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* MAIN ARTICLE BODY (FULL WIDTH) */}
+        <div className="space-y-8 w-full">
           
-          {/* MAIN ARTICLE BODY (LEFT COLUMN: 8 cols) */}
-          <div className="lg:col-span-8 space-y-8 min-w-0">
+          {/* Featured Image */}
+          {article.featured_image && (
+            <div className="rounded-3xl overflow-hidden shadow-md border border-gray-200 bg-gray-100 aspect-[16/9] w-full">
+              <img
+                src={article.featured_image}
+                alt={article.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {/* Main Article Content Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 border border-gray-200/90 shadow-xs space-y-8">
             
-            {/* Featured Image */}
-            {article.featured_image && (
-              <div className="rounded-3xl overflow-hidden shadow-md border border-gray-200 bg-gray-100 aspect-[16/9] w-full">
-                <img
-                  src={article.featured_image}
-                  alt={article.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <ArticleContentRenderer content={article.content || ''} />
 
-            {/* Main Article Content Card */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 border border-gray-200/90 shadow-xs space-y-8">
-              
-              <ArticleContentRenderer content={article.content || ''} />
-
-              {/* Downloadable PDF Documents */}
-              {article.documents && article.documents.length > 0 && (
-                <div className="border-t border-gray-100 pt-8 space-y-4">
-                  <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
-                    <FileText size={18} className="text-primary" /> Letölthető Műszaki Dokumentumok &amp; Útmutatók
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {article.documents.map((doc) => (
-                      <a
-                        key={doc.id}
-                        href={doc.file_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-4 bg-gray-50 hover:bg-accent/10 border border-gray-200 hover:border-accent rounded-2xl flex items-center justify-between transition-all group cursor-pointer shadow-2xs"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText size={22} className="text-red-500 shrink-0" />
-                          <div>
-                            <div className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary">{doc.title}</div>
-                            <div className="text-[11px] text-gray-500">{doc.file_size || 'PDF Dokumentum'}</div>
-                          </div>
-                        </div>
-                        <span className="text-xs font-bold text-primary group-hover:underline shrink-0">Letöltés</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Forrás és Hitelesség Section */}
-              {(() => {
-                const { sources } = parseBlocksFromContent(article.content || '');
-                if (!sources || sources.length === 0) return null;
-                return (
-                  <div className="border-t border-gray-100 pt-8 space-y-4">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                      <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
-                        <ShieldCheck size={20} className="text-accent shrink-0" />
-                        <span>Forrás és Hitelesség</span>
-                      </h3>
-                      <span className="text-xs font-bold text-gray-400">
-                        {sources.length} ellenőrzött forrás
-                      </span>
-                    </div>
-
-                    <div className="space-y-3">
-                      {sources.map((src, idx) => {
-                        const info = SOURCE_TYPE_MAP[src.sourceType] || { label: 'Szakmai forrás', icon: '📚' };
-                        return (
-                          <div
-                            key={src.id || idx}
-                            className="p-4 rounded-2xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs hover:border-gray-300 transition-colors"
-                          >
-                            <div className="space-y-1.5 flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap text-xs">
-                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-primary/10 text-primary-950 border border-primary/20 flex items-center gap-1">
-                                  <span>{info.icon}</span>
-                                  <span>{info.label}</span>
-                                </span>
-                                {src.status && (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                                    Állapot: {src.status}
-                                  </span>
-                                )}
-                                {src.checkDate && (
-                                  <span className="text-[11px] text-gray-500 font-semibold">
-                                    Ellenőrizve: {src.checkDate}
-                                  </span>
-                                )}
-                              </div>
-
-                              <h4 className="text-sm font-bold text-gray-900 leading-snug">
-                                {src.sourceName}
-                              </h4>
-                            </div>
-
-                            {src.url && (
-                              <a
-                                href={src.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-                              >
-                                <span>Eredeti megnyitása</span>
-                                <ExternalLink size={13} />
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Partner Attribution Card */}
-              {article.partner_name && (
-                <div className="border-t border-gray-100 pt-8">
-                  <div className="bg-primary/5 border border-primary/15 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-primary px-2.5 py-1 rounded-md inline-block">
-                        Hivatalos Építőipari Partner
-                      </span>
-                      <h4 className="font-extrabold text-gray-900 text-base">{article.partner_name}</h4>
-                      <p className="text-xs text-gray-600 leading-relaxed">
-                        Ez a szakmai cikk a {article.partner_name} szakmai közreműködésével és jóváhagyásával készült.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onNavigate('partners')}
-                      className="px-4 py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shrink-0 cursor-pointer shadow-xs"
-                    >
-                      Partner Profilja
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Tags & Keywords */}
-              <div className="border-t border-gray-100 pt-6 space-y-3">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Tag size={14} /> Szakmai Kulcsszavak &amp; Témakörök
+            {/* Downloadable PDF Documents */}
+            {article.documents && article.documents.length > 0 && (
+              <div className="border-t border-gray-100 pt-8 space-y-4">
+                <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                  <FileText size={18} className="text-primary" /> Letölthető Műszaki Dokumentumok &amp; Útmutatók
                 </h3>
-                <div className="flex flex-wrap gap-2">
-                  {articleTags.map((tag, i) => (
-                    <span key={i} className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border border-gray-200 hover:bg-gray-200 transition-colors">
-                      #{tag}
-                    </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {article.documents.map((doc) => (
+                    <a
+                      key={doc.id}
+                      href={doc.file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-4 bg-gray-50 hover:bg-accent/10 border border-gray-200 hover:border-accent rounded-2xl flex items-center justify-between transition-all group cursor-pointer shadow-2xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText size={22} className="text-red-500 shrink-0" />
+                        <div>
+                          <div className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary">{doc.title}</div>
+                          <div className="text-[11px] text-gray-500">{doc.file_size || 'PDF Dokumentum'}</div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-primary group-hover:underline shrink-0">Letöltés</span>
+                    </a>
                   ))}
                 </div>
               </div>
-            </div>
-
-            {/* Community Comments & Ratings Section */}
-            {article && (
-              <CommunityCommentsSection
-                contentType="article"
-                contentId={article.id}
-                altContentId={article.slug}
-                title={article.title}
-              />
             )}
-          </div>
 
-          {/* RIGHT SIDEBAR (STICKY: 4 cols) */}
-          <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
-            
-            {/* Table of Contents Box */}
+            {/* Forrás és Hitelesség Section */}
             {(() => {
-              const { blocks } = parseBlocksFromContent(article.content || '');
-              const headings = blocks.filter((b) => b.type === 'heading' && b.content);
-              if (headings.length < 2) return null;
+              const { sources } = parseBlocksFromContent(article.content || '');
+              if (!sources || sources.length === 0) return null;
               return (
-                <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs space-y-4">
-                  <h3 className="font-extrabold text-sm text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b border-gray-100 pb-3">
-                    <BookOpen size={16} className="text-accent" />
-                    <span>Tartalomjegyzék</span>
-                  </h3>
-                  <nav className="space-y-2 text-xs font-semibold text-gray-700 max-h-96 overflow-y-auto pr-2 scrollbar-thin">
-                    {headings.map((h, i) => (
-                      <a
-                        key={h.id || i}
-                        href={`#heading-${i}`}
-                        className={`hover:text-primary hover:bg-primary/5 p-2 rounded-xl flex items-center gap-2 transition-colors ${
-                          h.level === 'h3' ? 'ml-3 text-gray-600 font-normal' : ''
-                        }`}
-                      >
-                        <span className="text-accent font-bold">●</span>
-                        <span className="line-clamp-2">{h.content}</span>
-                      </a>
-                    ))}
-                  </nav>
+                <div className="border-t border-gray-100 pt-8 space-y-4">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                      <ShieldCheck size={20} className="text-accent shrink-0" />
+                      <span>Forrás és Hitelesség</span>
+                    </h3>
+                    <span className="text-xs font-bold text-gray-400">
+                      {sources.length} ellenőrzött forrás
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {sources.map((src, idx) => {
+                      const info = SOURCE_TYPE_MAP[src.sourceType] || { label: 'Szakmai forrás', icon: '📚' };
+                      return (
+                        <div
+                          key={src.id || idx}
+                          className="p-4 rounded-2xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs hover:border-gray-300 transition-colors"
+                        >
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap text-xs">
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-primary/10 text-primary-950 border border-primary/20 flex items-center gap-1">
+                                <span>{info.icon}</span>
+                                <span>{info.label}</span>
+                              </span>
+                              {src.status && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                  Állapot: {src.status}
+                                </span>
+                              )}
+                              {src.checkDate && (
+                                <span className="text-[11px] text-gray-500 font-semibold">
+                                  Ellenőrizve: {src.checkDate}
+                                </span>
+                              )}
+                            </div>
+
+                            <h4 className="text-sm font-bold text-gray-900 leading-snug">
+                              {src.sourceName}
+                            </h4>
+                          </div>
+
+                          {src.url && (
+                            <a
+                              href={src.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                            >
+                              <span>Eredeti megnyitása</span>
+                              <ExternalLink size={13} />
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })()}
 
-            {/* Category Back Link Card */}
-            <div className="bg-primary text-white border border-primary-700 rounded-3xl p-6 space-y-3 shadow-md">
-              <span className="text-[10px] font-bold text-accent bg-white/10 px-3 py-1 rounded-full uppercase tracking-wider">
-                Kategória Navigáció
-              </span>
-              <h4 className="text-base font-extrabold text-white">
-                {articleTypeLabel} Szakcikkek
-              </h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Tekintsd meg a többi kapcsolódó szakmai cikket és útmutatót a(z) <strong>{articleTypeLabel}</strong> kategóriában.
-              </p>
-              <button
-                onClick={() => onNavigate(`category?type=${articleTypeKey}`)}
-                className="w-full py-3 px-4 bg-accent hover:bg-accent-hover text-primary-950 font-black text-xs rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>← Vissza a {articleTypeLabel} kategóriához</span>
-              </button>
-            </div>
-
-
-
-            {/* Compact Related Articles in Sidebar */}
-            {relatedArticles.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs space-y-4">
-                <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider">
-                  Tovább olvasásra ajánlott
-                </h3>
-                <div className="space-y-3">
-                  {relatedArticles.map((rel) => (
-                    <div
-                      key={rel.id}
-                      onClick={() => onNavigate('article', { articleSlug: rel.slug })}
-                      className="p-3.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl transition-all cursor-pointer group space-y-1"
-                    >
-                      <h4 className="font-bold text-xs text-gray-900 group-hover:text-primary line-clamp-2">
-                        {rel.title}
-                      </h4>
-                      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1">
-                        <span>{rel.read_time || 5} p olvasás</span>
-                        <span className="text-accent font-extrabold group-hover:underline flex items-center gap-0.5">
-                          Olvasás <ChevronRight size={12} />
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            {/* Partner Attribution Card */}
+            {article.partner_name && (
+              <div className="border-t border-gray-100 pt-8">
+                <div className="bg-primary/5 border border-primary/15 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-primary px-2.5 py-1 rounded-md inline-block">
+                      Hivatalos Építőipari Partner
+                    </span>
+                    <h4 className="font-extrabold text-gray-900 text-base">{article.partner_name}</h4>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      Ez a szakmai cikk a {article.partner_name} szakmai közreműködésével és jóváhagyásával készült.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onNavigate('partners')}
+                    className="px-4 py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shrink-0 cursor-pointer shadow-xs"
+                  >
+                    Partner Profilja
+                  </button>
                 </div>
               </div>
             )}
+
+            {/* Tags & Keywords */}
+            <div className="border-t border-gray-100 pt-6 space-y-3">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Tag size={14} /> Szakmai Kulcsszavak &amp; Témakörök
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {articleTags.map((tag, i) => (
+                  <span key={i} className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border border-gray-200 hover:bg-gray-200 transition-colors">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
+
+          {/* Community Comments & Ratings Section */}
+          {article && (
+            <CommunityCommentsSection
+              contentType="article"
+              contentId={article.id}
+              altContentId={article.slug}
+              title={article.title}
+            />
+          )}
         </div>
 
         {/* BOTTOM SECTION: Full Width Related Articles Grid */}
