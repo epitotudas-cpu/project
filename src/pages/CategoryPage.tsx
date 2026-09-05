@@ -327,7 +327,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       <div className="bg-background min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent mb-3" />
-          <p className="text-gray-600 text-sm font-medium">Cikkek és útmutatók betöltése...</p>
+          <p className="text-gray-600 text-sm font-medium">Cikkek betöltése...</p>
         </div>
       </div>
     );
@@ -369,7 +369,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
             </button>
             <ChevronRight size={13} />
             <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
-              Cikkek &amp; Útmutatók
+              Cikkek
             </button>
             <ChevronRight size={13} />
             <span className="text-gray-200 font-medium">

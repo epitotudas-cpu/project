@@ -100,7 +100,7 @@ export default function ArticleSettingsModal({ isOpen, onClose }: ArticleSetting
                 className={fieldClass}
                 value={form.articlesPageTitle}
                 onChange={(e) => update('articlesPageTitle', e.target.value)}
-                placeholder="Építőipari cikkek és útmutatók"
+                placeholder="Építőipari cikkek"
               />
             </div>
 

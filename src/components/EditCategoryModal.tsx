@@ -913,7 +913,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
                   className={fieldClass}
                   value={form.seo_title}
                   onChange={(e) => update('seo_title', e.target.value)}
-                  placeholder={form.name ? `${form.name} – Cikkek és Útmutatók | Építőtudás` : 'Kategória SEO Cím...'}
+                  placeholder={form.name ? `${form.name} – Cikkek | Építőtudás` : 'Kategória SEO Cím...'}
                 />
                 <p className="text-[11px] text-gray-400 mt-1">Keresőmotorokban megjelenő egyedi oldalcím.</p>
               </div>

@@ -354,7 +354,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             </button>
             <ChevronRight size={13} />
             <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
-              Cikkek &amp; Útmutatók
+              Cikkek
             </button>
             <ChevronRight size={13} />
             <button onClick={() => onNavigate(`category?type=${articleTypeKey}`)} className="hover:text-white transition-colors">

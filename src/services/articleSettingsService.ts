@@ -15,7 +15,7 @@ export interface ArticleSettings {
 }
 
 export const DEFAULT_ARTICLE_SETTINGS: ArticleSettings = {
-  articlesPageTitle: 'Építőipari cikkek és útmutatók',
+  articlesPageTitle: 'Építőipari cikkek',
   articlesPageDescription: 'Gyakorlati útmutatók, szabványok, technológiai leírások és kivitelezési tippek.',
   articlesPerPage: 12,
   desktopGridColumns: 3,
