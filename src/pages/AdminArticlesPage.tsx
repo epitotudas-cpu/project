@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Save,
   ArrowLeft,
-  Sparkles,
   Link,
   CheckSquare,
 } from 'lucide-react';
@@ -330,39 +329,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
               <Plus size={16} /> Új Cikk Létrehozása
             </button>
           </div>
-        </div>
-
-        {/* HUB SUB-NAV TAB BAR */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-gray-800/60 no-scrollbar">
-          <button
-            onClick={() => setSubTab('overview')}
-            className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 ${
-              subTab === 'overview'
-                ? 'bg-amber-400 text-black shadow-md font-black'
-                : 'bg-black/40 text-gray-400 hover:text-white hover:bg-gray-800'
-            }`}
-          >
-            <Sparkles size={14} /> Kezdőlap
-          </button>
-
-          {HUB_TILES.map((t) => {
-            const Icon = t.icon;
-            const isActive = subTab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setSubTab(t.key)}
-                className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 ${
-                  isActive
-                    ? 'bg-amber-400 text-black shadow-md font-black'
-                    : 'bg-black/40 text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
-              >
-                <Icon size={14} />
-                <span>{t.title.split('.')[1]?.trim() || t.title}</span>
-              </button>
-            );
-          })}
         </div>
       </div>
 
