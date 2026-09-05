@@ -10,6 +10,7 @@ import { slugify } from '../lib/slugify';
 import type { Article, Category } from '../lib/supabase';
 import { createArticle, updateArticle } from '../services/articleService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import { addArticleRedirect } from '../services/articleRedirectsService';
 
 interface EditArticleModalProps {
   article: Article | null; // null = create mode
@@ -926,6 +927,7 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
     if (!form.title.trim()) {
       setError('A cím megadása kötelező.');
       return;
@@ -958,6 +960,11 @@ export function EditArticleModal({ article, categories, onClose, onSaved }: Edit
         read_time: calculatedReadTime,
         featured_image: form.featured_image.trim() || null,
       };
+
+      // Check slug change and register URL redirect
+      if (article && article.slug && article.slug !== form.slug.trim()) {
+        addArticleRedirect(article.slug, form.slug.trim(), article.id);
+      }
 
       let savedData: Article;
       if (article) {

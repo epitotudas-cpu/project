@@ -458,3 +458,43 @@ export async function countArticlesForCategories(categoryIds: string[]): Promise
   );
   return new Map(entries);
 }
+
+export async function deleteCategoryAndReassignArticles(
+  sourceCategoryId: string,
+  targetCategoryId: string
+): Promise<void> {
+  // Reassign local articles
+  try {
+    const rawArticles = localStorage.getItem('epitotudas_articles_v2');
+    if (rawArticles) {
+      const parsed = JSON.parse(rawArticles);
+      if (Array.isArray(parsed)) {
+        const updated = parsed.map((a: any) =>
+          a.category_id === sourceCategoryId ? { ...a, category_id: targetCategoryId } : a
+        );
+        localStorage.setItem('epitotudas_articles_v2', JSON.stringify(updated));
+        window.dispatchEvent(new Event('articles-updated'));
+      }
+    }
+  } catch (err) {
+    console.warn('Reassign local articles warning:', err);
+  }
+
+  // Reassign Supabase articles
+  try {
+    await supabase.from('articles').update({ category_id: targetCategoryId }).eq('category_id', sourceCategoryId);
+  } catch (err) {
+    console.warn('Reassign Supabase articles warning:', err);
+  }
+
+  // Mark category as deleted locally
+  addDeletedCategoryId(sourceCategoryId);
+
+  // Delete from Supabase
+  try {
+    await supabase.from('categories').delete().eq('id', sourceCategoryId);
+  } catch (err) {
+    console.warn('Delete category Supabase warning:', err);
+  }
+}
+

@@ -1,4 +1,5 @@
 import { supabase, type Article } from '../lib/supabase';
+import { logAuditAction } from './auditLogService';
 
 export interface ArticleWithCategory extends Article {
   categories: { name: string } | null;
@@ -325,7 +326,7 @@ export async function createArticle(payload: Record<string, unknown>): Promise<A
     views: 0,
     rating: 5.0,
     rating_count: 1,
-    status: (payload.status as any) || 'published',
+    status: (payload.status as any) || 'draft',
     rejection_note: (payload.rejection_note as string) || null,
     featured: Boolean(payload.featured),
     featured_image: (payload.featured_image as string) || 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
@@ -343,6 +344,8 @@ export async function createArticle(payload: Record<string, unknown>): Promise<A
   } catch (err) {
     console.warn('Supabase article insert info:', err);
   }
+
+  void logAuditAction('ARTICLE_CREATE', 'articles', `Új cikk létrehozva: "${newItem.title}" (${newItem.status})`);
 
   return newItem;
 }
@@ -373,14 +376,23 @@ export async function updateArticle(id: string, payload: Record<string, unknown>
     console.warn('Supabase article update info:', err);
   }
 
+  if (updatedArticle) {
+    void logAuditAction('ARTICLE_UPDATE', 'articles', `Cikk frissítve: "${(updatedArticle as Article).title}"`);
+  }
+
   return updatedArticle || (allLocal[0] as Article);
 }
 
 export async function setArticleStatus(id: string, status: Article['status'], rejectionNote?: string | null): Promise<void> {
   const allLocal = getArticlesLocal();
-  const updatedList = allLocal.map((a) =>
-    a.id === id ? { ...a, status, rejection_note: rejectionNote ?? null, updated_at: new Date().toISOString() } : a
-  );
+  let targetTitle = id;
+  const updatedList = allLocal.map((a) => {
+    if (a.id === id) {
+      targetTitle = a.title;
+      return { ...a, status, rejection_note: rejectionNote ?? null, updated_at: new Date().toISOString() };
+    }
+    return a;
+  });
   saveArticlesLocal(updatedList);
 
   try {
@@ -388,10 +400,34 @@ export async function setArticleStatus(id: string, status: Article['status'], re
   } catch (err) {
     console.warn('Supabase article status update info:', err);
   }
+
+  void logAuditAction('ARTICLE_STATUS_CHANGE', 'articles', `Cikk státusza módosítva (${status}): "${targetTitle}"`);
+}
+
+export async function duplicateArticle(id: string): Promise<Article | null> {
+  const allLocal = getArticlesLocal();
+  const source = allLocal.find((a) => a.id === id);
+  if (!source) return null;
+
+  const duplicatedPayload: Record<string, unknown> = {
+    ...source,
+    id: `art-dup-${Date.now()}`,
+    title: `${source.title} (Másolat)`,
+    slug: `${source.slug}-masolat-${Date.now().toString().slice(-4)}`,
+    status: 'draft',
+    views: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const newArticle = await createArticle(duplicatedPayload);
+  void logAuditAction('ARTICLE_DUPLICATE', 'articles', `Cikk duplikálva: "${source.title}" -> "${newArticle.title}"`);
+  return newArticle;
 }
 
 export async function deleteArticle(id: string): Promise<void> {
   const allLocal = getArticlesLocal();
+  const target = allLocal.find((a) => a.id === id);
   const updatedList = allLocal.filter((a) => a.id !== id);
   saveArticlesLocal(updatedList);
 
@@ -400,6 +436,8 @@ export async function deleteArticle(id: string): Promise<void> {
   } catch (err) {
     console.warn('Supabase article delete info:', err);
   }
+
+  void logAuditAction('ARTICLE_DELETE', 'articles', `Cikk törölve: "${target?.title || id}"`);
 }
 
 export async function countArticles(): Promise<number> {

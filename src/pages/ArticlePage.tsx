@@ -24,7 +24,10 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
-import { getRelatedArticles, incrementArticleViews } from '../services/articleService';
+import { incrementArticleViews } from '../services/articleService';
+import { useArticleSettings } from '../services/articleSettingsService';
+import { resolveRedirect } from '../services/articleRedirectsService';
+import { getCuratedRelatedArticles } from '../services/articleRecommendationsService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
 import { parseBlocksFromContent, SOURCE_TYPE_MAP } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
@@ -222,6 +225,7 @@ function ArticleContentRenderer({ content }: { content: string }) {
 
 export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProps) {
   const { user } = useAuth();
+  const articleSettings = useArticleSettings();
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [categoryObj, setCategoryObj] = useState<Category | null>(null);
@@ -256,7 +260,14 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
     async function loadData() {
       try {
         setLoading(true);
-        const slugToFetch = articleSlug || 'gipszkarton-valaszfal-keszitese-lepesrol-lepesre';
+        let slugToFetch = articleSlug || 'gipszkarton-valaszfal-keszitese-lepesrol-lepesre';
+
+        // Check if slug has a registered redirect
+        const redirectSlug = resolveRedirect(slugToFetch);
+        if (redirectSlug && redirectSlug !== slugToFetch) {
+          slugToFetch = redirectSlug;
+        }
+
         const [articleData, categoriesData] = await Promise.all([
           getArticleBySlug(slugToFetch),
           getCategories(),
@@ -278,7 +289,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             // ignore
           }
 
-          const related = await getRelatedArticles(articleData.id, articleData.category_id, 3);
+          const related = getCuratedRelatedArticles(articleData.id, articleData.category_id, articleData.tags || [], 3);
           setRelatedArticles(related);
 
           // Increment view count in Supabase / DB
@@ -419,30 +430,38 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
 
           {/* META BAR: Author, Date, Read time, Views, Actions */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100 text-xs md:text-sm text-gray-600">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold">
-                <UserCheck size={20} />
+            {articleSettings.showAuthor && (
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold">
+                  <UserCheck size={20} />
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900 text-sm md:text-base">{article.author || 'ÉpítőTudás Szerkesztőség'}</div>
+                  <div className="text-xs text-gray-500">Minősített Szakmai Szerző</div>
+                </div>
               </div>
-              <div>
-                <div className="font-bold text-gray-900 text-sm md:text-base">{article.author || 'ÉpítőTudás Szerkesztőség'}</div>
-                <div className="text-xs text-gray-500">Minősített Szakmai Szerző</div>
-              </div>
-            </div>
+            )}
 
             <div className="flex items-center gap-4 flex-wrap">
-              <span className="flex items-center gap-1.5 font-medium"><Calendar size={14} className="text-gray-400" /> {formatDateHu(article.created_at)}</span>
-              <span className="flex items-center gap-1.5 font-medium"><Clock size={14} className="text-gray-400" /> {article.read_time || 5} perc olvasás</span>
+              {articleSettings.showDate && (
+                <span className="flex items-center gap-1.5 font-medium"><Calendar size={14} className="text-gray-400" /> {formatDateHu(article.created_at)}</span>
+              )}
+              {articleSettings.showReadTime && (
+                <span className="flex items-center gap-1.5 font-medium"><Clock size={14} className="text-gray-400" /> {article.read_time || 5} perc olvasás</span>
+              )}
               <span className="flex items-center gap-1.5 font-medium"><TrendingUp size={14} className="text-gray-400" /> {formatViews(article.views)} megtekintés</span>
               <span className="flex items-center gap-1 font-bold text-amber-500"><Star size={14} fill="currentColor" /> {article.rating.toFixed(1)}</span>
             </div>
 
             {/* Quick Share & Save */}
             <div className="flex items-center gap-2">
-              <SocialShareButton
-                title={article.title}
-                excerpt={article.excerpt || ''}
-                imageUrl={article.featured_image || undefined}
-              />
+              {articleSettings.showShareButtons && (
+                <SocialShareButton
+                  title={article.title}
+                  excerpt={article.excerpt || ''}
+                  imageUrl={article.featured_image || undefined}
+                />
+              )}
               <button
                 onClick={handleToggleBookmark}
                 className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer ${
@@ -471,7 +490,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         <div className="space-y-8 w-full">
           
           {/* Featured Image */}
-          {article.featured_image && (
+          {articleSettings.showFeaturedImage && article.featured_image && (
             <div className="rounded-3xl overflow-hidden shadow-md border border-gray-200 bg-gray-100 aspect-[16/9] w-full">
               <img
                 src={article.featured_image}
@@ -582,7 +601,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             })()}
 
             {/* Partner Attribution Card */}
-            {article.partner_name && (
+            {articleSettings.showPartnerBlock && article.partner_name && (
               <div className="border-t border-gray-100 pt-8">
                 <div className="bg-primary/5 border border-primary/15 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1">
@@ -605,22 +624,24 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             )}
 
             {/* Tags & Keywords */}
-            <div className="border-t border-gray-100 pt-6 space-y-3">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Tag size={14} /> Szakmai Kulcsszavak &amp; Témakörök
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {articleTags.map((tag, i) => (
-                  <span key={i} className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border border-gray-200 hover:bg-gray-200 transition-colors">
-                    #{tag}
-                  </span>
-                ))}
+            {articleSettings.showTags && (
+              <div className="border-t border-gray-100 pt-6 space-y-3">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Tag size={14} /> Szakmai Kulcsszavak &amp; Témakörök
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {articleTags.map((tag, i) => (
+                    <span key={i} className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border border-gray-200 hover:bg-gray-200 transition-colors">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Community Comments & Ratings Section */}
-          {article && (
+          {articleSettings.showComments && article && (
             <CommunityCommentsSection
               contentType="article"
               contentId={article.id}
@@ -631,7 +652,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         </div>
 
         {/* BOTTOM SECTION: Full Width Related Articles Grid */}
-        {relatedArticles.length > 0 && (
+        {articleSettings.showRelatedArticles && relatedArticles.length > 0 && (
           <div className="pt-10 border-t border-gray-200 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
