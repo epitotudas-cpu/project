@@ -684,46 +684,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
               </button>
             </div>
 
-            {/* Knowledge Hub Shortcuts */}
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs space-y-4">
-              <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider">
-                Kapcsolódó Tudástári Modulok
-              </h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => onNavigate('glossary')}
-                  className="w-full p-3 bg-gray-50 hover:bg-primary/5 border border-gray-200 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <BookOpen size={16} className="text-accent" />
-                    <span>Szakmai Fogalomtár</span>
-                  </div>
-                  <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
 
-                <button
-                  onClick={() => onNavigate('calculations')}
-                  className="w-full p-3 bg-gray-50 hover:bg-primary/5 border border-gray-200 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Calculator size={16} className="text-accent" />
-                    <span>Építőipari Számítások</span>
-                  </div>
-                  <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
-                <button
-                  onClick={() => onNavigate('books')}
-                  className="w-full p-3 bg-gray-50 hover:bg-primary/5 border border-gray-200 rounded-2xl flex items-center justify-between text-xs font-bold text-gray-800 hover:text-primary transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Library size={16} className="text-accent" />
-                    <span>Szakmai Könyvek Katalógusa</span>
-                  </div>
-                  <ChevronRight size={15} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-              </div>
-            </div>
 
             {/* Compact Related Articles in Sidebar */}
             {relatedArticles.length > 0 && (
