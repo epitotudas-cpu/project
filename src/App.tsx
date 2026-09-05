@@ -154,7 +154,10 @@ function getInitialPage(): PageKey {
       return 'login';
     }
 
-    const rawHash = window.location.hash.replace(/^#\/?/, '');
+    let rawHash = window.location.hash.replace(/^#\/?/, '');
+    if (rawHash.startsWith('cikkek')) {
+      rawHash = rawHash.replace(/^cikkek/, 'category');
+    }
     const mainHash = rawHash.split('?')[0].split('#')[0];
     if (mainHash && ALL_VALID_PAGES.includes(mainHash as PageKey)) {
       return mainHash as PageKey;
@@ -241,7 +244,10 @@ function AppContent() {
   }, []);
 
   const navigate = (page: string, params?: { articleSlug?: string; slug?: string; quizId?: string }) => {
-    const rawTarget = page.replace(/^#\/?/, '');
+    let rawTarget = page.replace(/^#\/?/, '');
+    if (rawTarget.startsWith('cikkek')) {
+      rawTarget = rawTarget.replace(/^cikkek/, 'category');
+    }
     const mainPage = rawTarget.split('?')[0].split('#')[0];
     const targetAnchor = rawTarget.includes('#') ? '#' + rawTarget.split('#')[1].split('?')[0] : '';
     const validPage = (ALL_VALID_PAGES.includes(mainPage as PageKey) ? mainPage : 'home') as PageKey;
@@ -268,7 +274,14 @@ function AppContent() {
     try {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('epitotudas_active_page', validPage);
-        const targetHash = validPage === 'home' ? '' : params?.articleSlug ? `#article?slug=${params.articleSlug}` : page.includes('?') || page.includes('#') ? `#${page}` : `#${validPage}`;
+        const targetHash =
+          validPage === 'home'
+            ? ''
+            : params?.articleSlug
+            ? `#article?slug=${params.articleSlug}`
+            : rawTarget.includes('?') || rawTarget.includes('#')
+            ? `#${rawTarget}`
+            : `#${validPage}`;
         if (window.location.hash !== targetHash) {
           window.history.pushState(null, '', targetHash || window.location.pathname);
         }

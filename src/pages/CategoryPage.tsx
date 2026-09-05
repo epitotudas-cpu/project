@@ -368,11 +368,13 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               <Home size={13} /> Főoldal
             </button>
             <ChevronRight size={13} />
-            <button onClick={() => onNavigate('tudastar')} className="hover:text-white transition-colors">
-              Tudástár
+            <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
+              Cikkek &amp; Útmutatók
             </button>
             <ChevronRight size={13} />
-            <span className="text-gray-200 font-medium">Cikkek &amp; Útmutatók</span>
+            <span className="text-gray-200 font-medium">
+              {selectedArticleType === 'hirek' ? 'Hírek' : selectedArticleType === 'ujdonsagok' ? 'Újdonságok' : 'Útmutatók'}
+            </span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

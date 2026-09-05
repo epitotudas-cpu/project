@@ -218,6 +218,12 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           const cat = categoriesData.find((c) => c.id === articleData.category_id || c.slug === articleData.category_id);
           setCategoryObj(cat || null);
 
+          try {
+            sessionStorage.setItem('epitotudas_article_type', articleData.article_type || 'hirek');
+          } catch {
+            // ignore
+          }
+
           const related = await getRelatedArticles(articleData.id, articleData.category_id, 3);
           setRelatedArticles(related);
 
@@ -260,8 +266,8 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
           <h2 className="text-lg font-bold text-gray-900 mb-2">Hiba történt</h2>
           <p className="text-gray-600 text-sm mb-4">{error || 'Cikk nem található'}</p>
-          <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-accent text-white font-semibold rounded-lg">
-            Vissza a főoldalra
+          <button onClick={() => onNavigate('category?type=hirek')} className="px-4 py-2 bg-accent text-white font-semibold rounded-lg">
+            Vissza a cikkekhez
           </button>
         </div>
       </div>
@@ -273,24 +279,33 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
     ? [seo.primaryKeyword, ...(seo.relatedKeywords?.split(',').map((k) => k.trim()) || [])]
     : ['Gipszkarton', 'Szárazépítés', 'Anyagismeret', 'Kivitelezés'];
 
+  const articleTypeKey = article.article_type || 'hirek';
+  const articleTypeLabel =
+    articleTypeKey === 'hirek'
+      ? 'Hírek'
+      : articleTypeKey === 'ujdonsagok'
+      ? 'Újdonságok'
+      : 'Útmutatók';
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header Breadcrumb */}
       <div className="bg-primary border-b border-primary-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-2 text-sm text-gray-400">
-            <button onClick={() => onNavigate('home')} className="flex items-center gap-1 hover:text-white">
+            <button onClick={() => onNavigate('home')} className="flex items-center gap-1 hover:text-white transition-colors">
               <Home size={13} /> Főoldal
             </button>
             <ChevronRight size={13} />
-            <button onClick={() => onNavigate('category')} className="hover:text-white flex items-center gap-1.5">
-              {categoryObj && (
-                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: categoryObj.color || '#FFC400' }} />
-              )}
-              {categoryObj ? categoryObj.name : 'Kategóriák'}
+            <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
+              Cikkek &amp; Útmutatók
             </button>
             <ChevronRight size={13} />
-            <span className="text-gray-300 font-medium truncate max-w-xs">{article.title}</span>
+            <button onClick={() => onNavigate(`category?type=${articleTypeKey}`)} className="hover:text-white transition-colors">
+              {articleTypeLabel}
+            </button>
+            <ChevronRight size={13} />
+            <span className="text-gray-300 font-medium truncate max-w-xs md:max-w-md">{article.title}</span>
           </div>
         </div>
       </div>

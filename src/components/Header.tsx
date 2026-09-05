@@ -116,7 +116,6 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     const fullSearch = search || (hash.includes('?') ? '?' + hash.split('?')[1] : '');
     const queryParams = new URLSearchParams(fullSearch);
 
-    const articleType = queryParams.get('type') || queryParams.get('tab');
     const learningTab = queryParams.get('tab');
 
     const cleanHash = hash.replace(/^#\/?/, '').split('?')[0];
@@ -130,16 +129,33 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     if (subBasePage === 'category' || subBasePage === 'cikkek') {
       const isCategoryPage =
         pageState === 'category' ||
+        pageState === 'article' ||
         cleanPathname === 'category' ||
         cleanPathname === 'cikkek' ||
+        cleanPathname === 'article' ||
         cleanHash === 'category' ||
-        cleanHash === 'cikkek';
+        cleanHash === 'cikkek' ||
+        cleanHash === 'article';
 
       if (!isCategoryPage) return false;
 
-      const targetType = subParams.get('type') || subParams.get('tab') || 'hirek';
-      const activeType = articleType || (cleanHash === 'ujdonsagok' || cleanHash === 'utmutatok' ? cleanHash : 'hirek');
+      let activeType = queryParams.get('type') || queryParams.get('tab');
+      if (!activeType && (pageState === 'article' || cleanHash === 'article')) {
+        try {
+          activeType = sessionStorage.getItem('epitotudas_article_type');
+        } catch {
+          // ignore
+        }
+      }
+      if (!activeType) {
+        if (cleanHash === 'ujdonsagok' || cleanHash === 'utmutatok') {
+          activeType = cleanHash;
+        } else {
+          activeType = 'hirek';
+        }
+      }
 
+      const targetType = subParams.get('type') || subParams.get('tab') || 'hirek';
       return targetType === activeType;
     }
 
