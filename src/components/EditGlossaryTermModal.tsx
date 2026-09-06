@@ -3,7 +3,7 @@ import { X, Save, AlertCircle, Image, Video, Info, CheckCircle2, Globe, Plus, Tr
 import { slugify } from '../lib/slugify';
 import type { GlossaryTerm, GlossaryTermTranslation } from '../lib/supabase';
 import { createGlossaryTerm, updateGlossaryTerm, listTermTranslations, upsertTermTranslation, deleteTermTranslation } from '../services/glossaryService';
-import { getGlossaryLanguages, type GlossaryLanguage } from '../services/languageService';
+import { getGlossaryLanguages, useGlossaryLanguages, type GlossaryLanguage } from '../services/languageService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 function isValidUrl(url: string): boolean {
@@ -161,6 +161,7 @@ function parseList(value: string): string[] {
 }
 
 export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGlossaryTermModalProps) {
+  const { activeLanguages } = useGlossaryLanguages();
   const isCreate = term === null;
   const [form, setForm] = useState<FormState>(() => (term ? formFromTerm(term) : { ...EMPTY_FORM }));
   const [slugTouched, setSlugTouched] = useState(!isCreate);
@@ -471,12 +472,12 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
           <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
             <div className="flex items-center justify-between">
               <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <Globe size={14} /> Többnyelvű Fordítások Kezelése ({activeLangs.filter(l => l.iso_code !== 'hu').length} aktív célnyelv)
+                <Globe size={14} /> Többnyelvű Fordítások Kezelése ({activeLanguages.filter(l => l.iso_code !== 'hu').length} aktív célnyelv)
               </h4>
             </div>
 
             <div className="space-y-4">
-              {activeLangs.filter((l) => l.iso_code !== 'hu').map((lang) => {
+              {activeLanguages.filter((l) => l.iso_code !== 'hu').map((lang) => {
                 const code = lang.iso_code.toLowerCase();
                 const transItem = dynTranslations[code] || {
                   translated_term: code === 'en' ? form.trans_en : code === 'de' ? form.trans_de : code === 'ro' ? form.trans_ro : '',
