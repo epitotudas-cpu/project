@@ -22,11 +22,9 @@ import {
   X,
   Bookmark,
   BookmarkCheck,
-  Globe,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useGlossary } from '../contexts/GlossaryContext';
-import { useGlossaryLanguages } from '../services/languageService';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import { getTradeEducationalPathways } from '../services/glossaryService';
@@ -131,9 +129,7 @@ function getTermGradient(cat?: string | null): string {
 export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const { user } = useAuth();
   const glossary = useGlossary();
-  const { activeLanguages } = useGlossaryLanguages();
   const categorySettings = useGlossaryCategorySettings();
-  const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string | null>(null);
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     try {
