@@ -312,55 +312,17 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
               </div>
             </div>
 
-            {/* Sticky Table of Contents Quick Nav */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm sticky top-4 z-30 overflow-x-auto scrollbar-none flex items-center gap-2">
-              {[
-                ...(activeTrade.timelineStations && activeTrade.timelineStations.length > 0
-                  ? [{ id: 'sec-timeline', label: 'Múlt → Jelen → Jövő' }]
-                  : []),
-                { id: 'sec-1', label: 'Mi ez a szakma?' },
-                { id: 'sec-2', label: 'Mit csinál?' },
-                { id: 'sec-4', label: 'Eszközök & Anyagok' },
-                { id: 'sec-5-6', label: 'Mit kell megtanulni?' },
-                { id: 'sec-7-10', label: 'Terhelés & Körülmények' },
-                { id: 'sec-11-12', label: 'Előnyök & Hátrányok' },
-                { id: 'sec-13-15', label: 'Karrier & Vállalkozás' },
-                ...((activeTrade.futureTechCards && activeTrade.futureTechCards.length > 0) || activeTrade.futureTechClosure
-                  ? [{ id: 'sec-future-tech', label: 'Merre tart a szakma?' }]
-                  : []),
-                { id: 'sec-19', label: 'Neked való?' },
-              ].map((nav) => (
-                <a
-                  key={nav.id}
-                  href={`#${nav.id}`}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 hover:bg-primary hover:text-white text-gray-700 whitespace-nowrap transition-all"
-                >
-                  {nav.label}
-                </a>
-              ))}
-            </div>
-
             {/* UNNUMBERED FEJEZET TARTALOM */}
             <div className="space-y-10">
 
               {/* MÚLT → JELEN → JÖVŐ TIMELINE SECTION */}
               {activeTrade.timelineStations && activeTrade.timelineStations.length > 0 && (
                 <section id="sec-timeline" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
-                        <History size={18} />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-extrabold text-accent uppercase tracking-wider">A Szakma Fejlődése</span>
-                        <h2 className="text-xl font-extrabold text-gray-900">
-                          {activeTrade.timelineTitle || 'MÚLT → JELEN → JÖVŐ'}
-                        </h2>
-                      </div>
-                    </div>
-                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-full">
-                      MÚLT → JELEN → JÖVŐ → TE
-                    </span>
+                  <div className="border-b border-gray-100 pb-4">
+                    <span className="text-[10px] font-extrabold text-accent uppercase tracking-wider">A Szakma Fejlődése</span>
+                    <h2 className="text-xl font-extrabold text-gray-900">
+                      {activeTrade.timelineTitle || 'MÚLT → JELEN → JÖVŐ'}
+                    </h2>
                   </div>
 
                   {activeTrade.timelineSubtitle && (
