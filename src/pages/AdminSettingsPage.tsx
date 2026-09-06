@@ -52,6 +52,7 @@ import {
   getContrastTextColor,
   useSiteSettings,
   generateManifestJson,
+  generateRobotsTxt,
   DEFAULT_SITE_SETTINGS,
   type SiteSettings,
 } from '../services/siteSettingsService';
@@ -145,6 +146,7 @@ const PRESET_ADMIN_CARD_HIGHLIGHTS = [
 export type SettingsCategoryKey =
   | 'overview'
   | 'general'
+  | 'seo_robots'
   | 'design'
   | 'hero'
   | 'navigation'
@@ -170,6 +172,12 @@ export const SETTINGS_CARDS: SettingsCardDef[] = [
     title: 'Alapértelmezett',
     description: 'A webhely alapvető adatai, általános konfiguráció és globális működés.',
     icon: Globe,
+  },
+  {
+    key: 'seo_robots',
+    title: 'SEO & Robots.txt (AI Opt-out)',
+    description: 'Robots.txt szabályok, Google-Extended automatizált lekérdezés és AI robotok ki/be kapcsolása.',
+    icon: Search,
   },
   {
     key: 'design',
@@ -1174,6 +1182,176 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                     className="w-full border rounded-xl px-4 py-3 text-sm opacity-60 cursor-not-allowed"
                   />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: SEO & ROBOTS.TXT (GOOGLE-EXTENDED OPT-OUT) */}
+          {(activeTab === 'seo_robots' || activeTab === 'general') && (
+            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl max-w-4xl">
+              <div className="border-b pb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
+                  <Search size={20} style={{ color: cardHighlight }} /> Keresőoptimalizálás (SEO) &amp; Robots.txt (Google-Extended Opt-out)
+                </h2>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                  !settings.googleExtendedOptOut
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                }`}>
+                  {!settings.googleExtendedOptOut ? '✓ Google-Extended Opt-out Feloldva (Engedélyezve)' : '⛔ Google-Extended Opt-out Aktív (Tiltva)'}
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Szabályozza a keresőmotorok és a mesterséges intelligencia (AI) gyűjtőrobotok (pl. Google Gemini/Extended, ChatGPT/GPTBot) automatizált lekérdezési jogosultságait a webhelyen.
+              </p>
+
+              {/* MAIN TOGGLE 1: GOOGLE-EXTENDED OPT-OUT */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-sm font-extrabold text-white flex items-center gap-2">
+                      <span>🤖 Google-Extended AI Automatizált Lekérés (Opt-out)</span>
+                    </span>
+                    <p className="text-xs text-gray-400 leading-relaxed max-w-xl">
+                      A <strong>Google-Extended</strong> user-agent határozza meg, hogy a Google AI modelljei (Gemini, Vertex AI) lekérdezhetik-e a weboldal nyilvános tartalmát.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, googleExtendedOptOut: !settings.googleExtendedOptOut })}
+                      className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        settings.googleExtendedOptOut ? 'bg-amber-500' : 'bg-emerald-600'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          settings.googleExtendedOptOut ? 'translate-x-7' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-xs font-bold w-32">
+                      {settings.googleExtendedOptOut ? (
+                        <span className="text-amber-400">Tiltva (Disallow)</span>
+                      ) : (
+                        <span className="text-emerald-400">Feloldva (Allow)</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`p-3.5 border rounded-xl text-xs flex items-start gap-2.5 ${
+                  !settings.googleExtendedOptOut
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                    : 'bg-amber-500/10 border-amber-500/20 text-amber-300'
+                }`}>
+                  <Info size={16} className="shrink-0 mt-0.5" />
+                  <div>
+                    {!settings.googleExtendedOptOut ? (
+                      <span><strong>Jelenlegi állapot (Opt-out Feloldva):</strong> A Google-Extended botok lekérdezhetik az oldalt (<code>User-agent: Google-Extended Allow: /</code>). A keresőoptimalizálás és az AI láthatóság maximális.</span>
+                    ) : (
+                      <span><strong>Jelenlegi állapot (Opt-out Aktív / Tiltva):</strong> A Google-Extended botok ki vannak zárva a lekérdezésből (<code>User-agent: Google-Extended Disallow: /</code>).</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* TOGGLE 2: EGYÉB AI ROBOTOK TILTÁSA */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-sm font-extrabold text-white">
+                      🛡️ Egyéb AI Scraperek Tiltása (GPTBot, CCBot, Claude-Web, Anthropic, PerplexityBot)
+                    </span>
+                    <p className="text-xs text-gray-400 leading-relaxed max-w-xl">
+                      Ha bekapcsolja, a robots.txt letiltja az OpenAI (GPTBot), Common Crawl (CCBot), Anthropic (Claude-Web) és Perplexity gyűjtőrobotjait.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, blockAiCrawlers: !settings.blockAiCrawlers })}
+                      className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        settings.blockAiCrawlers ? 'bg-amber-500' : 'bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          settings.blockAiCrawlers ? 'translate-x-7' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-xs font-bold w-32">
+                      {settings.blockAiCrawlers ? (
+                        <span className="text-amber-400">AI botok tiltva</span>
+                      ) : (
+                        <span className="text-gray-400">Engedélyezve</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* EGYEDI ROBOTS.TXT SZABÁLYOK */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-3">
+                <label className="text-xs font-bold text-gray-300 block">
+                  📝 Egyedi Robots.txt Szabályok (Opcionális)
+                </label>
+                <textarea
+                  rows={3}
+                  value={settings.customRobotsTxtRules || ''}
+                  onChange={(e) => setSettings({ ...settings, customRobotsTxtRules: e.target.value })}
+                  style={{ backgroundColor: adjustColorBrightness(inputBg, -5), borderColor: cardBorder, color: textColor }}
+                  className="w-full border rounded-xl p-3 text-xs font-mono focus:outline-none"
+                  placeholder="# További egyedi szabályok pl:\nDisallow: /admin/\nDisallow: /private/"
+                />
+              </div>
+
+              {/* ÉLŐ ROBOTS.TXT ELŐNÉZET & MÁSOLÁS / LETÖLTÉS */}
+              <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-5 border rounded-2xl space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <FileCode size={16} /> Dinamikus Robots.txt Generált Előnézet (/robots.txt)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const content = generateRobotsTxt(settings);
+                        navigator.clipboard.writeText(content);
+                        setCopiedSmtpField('robots');
+                        setTimeout(() => setCopiedSmtpField(null), 2000);
+                      }}
+                      className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {copiedSmtpField === 'robots' ? <Check size={14} /> : <Copy size={14} />}
+                      {copiedSmtpField === 'robots' ? 'Másolva!' : 'Másolás'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const content = generateRobotsTxt(settings);
+                        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'robots.txt';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Upload size={14} className="rotate-180" /> Letöltés (.txt)
+                    </button>
+                  </div>
+                </div>
+
+                <pre style={{ backgroundColor: adjustColorBrightness(inputBg, -6) }} className="p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto border border-white/10 select-all leading-relaxed">
+                  {generateRobotsTxt(settings)}
+                </pre>
               </div>
             </div>
           )}

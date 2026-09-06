@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# Google-Extended AI Crawler (Opt-out: Inactive - Automated retrieval enabled / Feloldva)
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://epitotudas.hu/sitemap.xml

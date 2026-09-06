@@ -63,6 +63,11 @@ export interface SiteSettings {
   allowRegistration: boolean;
   requireAuthForDetailedGlossary: boolean;
 
+  // SEO & Robots.txt (AI Crawlers / Google-Extended Opt-out)
+  googleExtendedOptOut?: boolean;
+  blockAiCrawlers?: boolean;
+  customRobotsTxtRules?: string;
+
   // E-mail & SMTP Configuration
   smtpSettings?: SmtpSettings;
 }
@@ -180,8 +185,47 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   allowRegistration: true,
   requireAuthForDetailedGlossary: true,
 
+  googleExtendedOptOut: false,
+  blockAiCrawlers: false,
+  customRobotsTxtRules: '',
+
   smtpSettings: DEFAULT_SMTP_SETTINGS,
 };
+
+export function generateRobotsTxt(settings: SiteSettings): string {
+  const lines: string[] = ['User-agent: *', 'Allow: /', ''];
+
+  if (settings?.googleExtendedOptOut) {
+    lines.push('# Google-Extended AI Crawler Opt-out (AKTÍV - Disallow / Tiltva)');
+    lines.push('User-agent: Google-Extended');
+    lines.push('Disallow: /');
+    lines.push('');
+  } else {
+    lines.push('# Google-Extended AI Crawler Opt-out (INAKTÍV - Allow / Feloldva / Engedélyezve)');
+    lines.push('User-agent: Google-Extended');
+    lines.push('Allow: /');
+    lines.push('');
+  }
+
+  if (settings?.blockAiCrawlers) {
+    lines.push('# Egyéb AI Robotok (GPTBot, CCBot, Claude-Web, Anthropic, PerplexityBot) (AKTÍV - Tiltva)');
+    const aiBots = ['GPTBot', 'CCBot', 'Claude-Web', 'Anthropic-ai', 'PerplexityBot'];
+    for (const bot of aiBots) {
+      lines.push(`User-agent: ${bot}`);
+      lines.push('Disallow: /');
+    }
+    lines.push('');
+  }
+
+  if (settings?.customRobotsTxtRules?.trim()) {
+    lines.push('# Egyedi Beállított Szabályok');
+    lines.push(settings.customRobotsTxtRules.trim());
+    lines.push('');
+  }
+
+  lines.push('Sitemap: https://epitotudas.hu/sitemap.xml');
+  return lines.join('\n');
+}
 
 const STORAGE_KEY = 'epitotudas_site_settings_v1';
 const BACKUP_STORAGE_KEY = 'epitotudas_site_settings_backup_v1';
