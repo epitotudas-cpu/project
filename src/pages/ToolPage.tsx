@@ -125,6 +125,180 @@ const CATEGORIES_CONFIG = [
   },
 ];
 
+interface FeaturedPartnerOffersProps {
+  partnerAds: AdCampaign[];
+}
+
+function FeaturedPartnerOffers({ partnerAds }: FeaturedPartnerOffersProps) {
+  if (!partnerAds || partnerAds.length === 0) return null;
+
+  const featuredAd = partnerAds[0];
+  const secondaryAds = partnerAds.slice(1);
+
+  const getShortDesc = (ad: AdCampaign) => {
+    const rawDesc = (ad as any).description || (ad as any).excerpt || (ad as any).summary;
+    if (rawDesc && typeof rawDesc === 'string') {
+      if (rawDesc.length <= 120) return rawDesc;
+      return rawDesc.slice(0, 117).trim() + '...';
+    }
+    return 'Válogatott minőségű építőipari gép, szerszám vagy anyag megbízható partnerünktől.';
+  };
+
+  return (
+    <section aria-label="Kiemelt partneri ajánlatok" className="space-y-6">
+      {/* Section Header */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-1 border-b border-gray-200/60">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
+              Kiemelt partneri ajánlatok
+            </h2>
+            <span className="text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full">
+              Partneri ajánlat
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">
+            Válogatott eszközök, gépek és anyagok megbízható építőipari partnerektől.
+          </p>
+        </div>
+      </div>
+
+      {/* 1. FEATURED CARD (Highest Priority) */}
+      {featuredAd && (
+        <a
+          href={featuredAd.target_url || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => recordAdClick(featuredAd.id)}
+          className="group block bg-gradient-to-br from-amber-50/40 via-white to-slate-50/40 border border-amber-200/80 hover:border-amber-400 rounded-3xl p-6 sm:p-8 shadow-xs hover:shadow-md transition-all duration-200 motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            {/* Left Content Column */}
+            <div className="md:col-span-8 space-y-3.5">
+              {/* Brand logo/name & Partner Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400/20 text-amber-950 border border-amber-400/40 text-xs font-black rounded-xl uppercase tracking-wider">
+                  <Sparkles size={13} className="text-amber-600 shrink-0" />
+                  {featuredAd.sponsor_name}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-bold rounded-lg bg-gray-100 text-gray-600 border border-gray-200">
+                  Hivatalos partner
+                </span>
+                {(featuredAd as any).category && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-medium rounded-lg bg-slate-100 text-slate-600">
+                    {(featuredAd as any).category}
+                  </span>
+                )}
+              </div>
+
+              {/* Offer Title (Max 2 lines) */}
+              <h3 className="text-lg sm:text-xl font-black text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                {featuredAd.title}
+              </h3>
+
+              {/* Offer Description (Max 2 lines, <= 120 chars) */}
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-2">
+                {getShortDesc(featuredAd)}
+              </p>
+
+              {/* CTA Action Button */}
+              <div className="pt-1">
+                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl group-hover:bg-primary-800 transition-colors shadow-xs">
+                  Ajánlat megtekintése <ExternalLink size={14} className="opacity-90 shrink-0" />
+                </span>
+              </div>
+            </div>
+
+            {/* Right Column: Image or Fallback */}
+            <div className="md:col-span-4 flex justify-center md:justify-end">
+              {featuredAd.banner_image_url ? (
+                <div className="w-full max-w-[240px] h-36 sm:h-40 rounded-2xl overflow-hidden border border-gray-200/80 bg-white shadow-xs group-hover:scale-[1.02] transition-transform duration-200 motion-reduce:transition-none">
+                  <img
+                    src={featuredAd.banner_image_url}
+                    alt={`${featuredAd.sponsor_name} - ${featuredAd.title}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                /* Elegant Graphic Fallback */
+                <div className="w-full max-w-[240px] h-36 sm:h-40 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-primary p-5 flex flex-col justify-between text-white border border-gray-800 shadow-xs group-hover:scale-[1.02] transition-transform duration-200 motion-reduce:transition-none">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-accent font-mono uppercase tracking-wider">
+                      {featuredAd.sponsor_name}
+                    </span>
+                    <Sparkles size={16} className="text-accent" />
+                  </div>
+                  <div className="text-xs font-extrabold text-white/90 line-clamp-2 leading-snug">
+                    {featuredAd.title}
+                  </div>
+                  <div className="text-[10px] text-gray-300 font-bold flex items-center gap-1">
+                    <span>Kiemelt Ajánlat</span>
+                    <ExternalLink size={11} className="text-accent" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </a>
+      )}
+
+      {/* 2. SECONDARY COMPACT CARDS */}
+      {secondaryAds.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <h4 className="text-xs font-extrabold text-gray-500 uppercase tracking-wider">
+            További ajánlatok
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {secondaryAds.map((ad) => (
+              <a
+                key={ad.id}
+                href={ad.target_url || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => recordAdClick(ad.id)}
+                className="group bg-white border border-gray-200/90 hover:border-primary/50 hover:bg-gray-50/60 rounded-2xl p-4 sm:p-5 transition-all duration-200 flex items-center justify-between gap-4 shadow-2xs hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-amber-500 motion-reduce:transition-none"
+              >
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-wider">
+                      {ad.sponsor_name}
+                    </span>
+                    <span className="text-[9px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md">
+                      Partneri ajánlat
+                    </span>
+                  </div>
+
+                  <h5 className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                    {ad.title}
+                  </h5>
+
+                  <div className="pt-0.5">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-gray-600 group-hover:text-primary transition-colors">
+                      Megnézem <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
+                    </span>
+                  </div>
+                </div>
+
+                {ad.banner_image_url ? (
+                  <img
+                    src={ad.banner_image_url}
+                    alt={`${ad.sponsor_name} - ${ad.title}`}
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border border-gray-200/80 shrink-0 group-hover:scale-105 transition-transform duration-200 motion-reduce:transition-none"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    <ExternalLink size={16} />
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function ToolPage({ onNavigate }: ToolPageProps) {
   const { user } = useAuth();
   const [tools, setTools] = useState<Tool[]>([]);
@@ -585,39 +759,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                     </span>
                   </div>
 
-                  {partnerAds.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {partnerAds.map((ad) => (
-                        <a
-                          key={ad.id}
-                          href={ad.target_url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => recordAdClick(ad.id)}
-                          className="bg-white border border-amber-300 hover:border-amber-500 rounded-2xl p-5 transition-all flex items-center justify-between group shadow-sm hover:shadow-md"
-                        >
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold bg-amber-400 text-black px-2 py-0.5 rounded">
-                              Kiemelt Szponzor: {ad.sponsor_name}
-                            </span>
-                            <h4 className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">
-                              {ad.title}
-                            </h4>
-                            <span className="text-xs text-gray-500 flex items-center gap-1">
-                              Kattints az ajánlat megtekintéséhez <ExternalLink size={12} />
-                            </span>
-                          </div>
-                          {ad.banner_image_url && (
-                            <img
-                              src={ad.banner_image_url}
-                              alt={ad.title}
-                              className="w-16 h-16 object-cover rounded-xl shrink-0 border border-gray-200"
-                            />
-                          )}
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  <FeaturedPartnerOffers partnerAds={partnerAds} />
 
                   {selectedTool.recommended_products && selectedTool.recommended_products.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -757,47 +899,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
           /* VIEW 3: CATALOG & SEARCH VIEW */
           <div className="space-y-8">
             {/* Active Partner Banners */}
-            {partnerAds.length > 0 && (
-              <div className="bg-white border border-amber-300 rounded-3xl p-6 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-black bg-amber-400 px-3 py-1 rounded-full uppercase tracking-wider">
-                    📢 Kiemelt Szponzori & Partneri Ajánlatok
-                  </span>
-                  <span className="text-[11px] text-gray-500 font-semibold">Aktív Hirdetések</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {partnerAds.map((ad) => (
-                    <a
-                      key={ad.id}
-                      href={ad.target_url || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => recordAdClick(ad.id)}
-                      className="bg-gray-50 border border-gray-200 hover:border-primary rounded-2xl p-4 transition-all flex items-center justify-between group shadow-xs"
-                    >
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                          {ad.sponsor_name}
-                        </span>
-                        <h4 className="text-xs font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
-                          {ad.title}
-                        </h4>
-                        <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                          Ajánlat megtekintése <ExternalLink size={10} />
-                        </span>
-                      </div>
-                      {ad.banner_image_url && (
-                        <img
-                          src={ad.banner_image_url}
-                          alt={ad.title}
-                          className="w-12 h-12 object-cover rounded-xl shrink-0 border border-gray-200"
-                        />
-                      )}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+            <FeaturedPartnerOffers partnerAds={partnerAds} />
 
             {/* Dedicated Search & Filter Hub Card Block */}
             <div id="eszkoz-kereso-block" className="bg-white border border-gray-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all">
