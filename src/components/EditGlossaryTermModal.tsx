@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, Image, Video, Info, CheckCircle2, Globe, Plus, Trash2 } from 'lucide-react';
+import { X, Save, AlertCircle, Image, Video, Info, CheckCircle2, Globe } from 'lucide-react';
 import { slugify } from '../lib/slugify';
-import type { GlossaryTerm, GlossaryTermTranslation } from '../lib/supabase';
-import { createGlossaryTerm, updateGlossaryTerm, listTermTranslations, upsertTermTranslation, deleteTermTranslation } from '../services/glossaryService';
-import { getGlossaryLanguages, useGlossaryLanguages, type GlossaryLanguage } from '../services/languageService';
+import type { GlossaryTerm, GlossaryLanguage } from '../lib/supabase';
+import { createGlossaryTerm, updateGlossaryTerm } from '../services/glossaryService';
+import { useGlossaryLanguages } from '../services/languageService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 function isValidUrl(url: string): boolean {
@@ -20,7 +20,6 @@ function isValidUrl(url: string): boolean {
 function parseSupabaseError(err: unknown): string {
   if (!err) return 'Ismeretlen hiba történt.';
 
-  // Supabase PostgrestError: { code, message, details, hint }
   if (typeof err === 'object') {
     const e = err as Record<string, unknown>;
     const code = String(e.code ?? '');
@@ -28,7 +27,6 @@ function parseSupabaseError(err: unknown): string {
     const details = e.details ? `\nRészletek: ${e.details}` : '';
     const hint = e.hint ? `\nTipp: ${e.hint}` : '';
 
-    // Ismert Postgres hiba kódok
     if (code === '23505' || /duplicate|unique/i.test(message)) {
       return `❗ Ez a slug már foglalt – válassz másik azonosítót.${details}`;
     }
@@ -67,7 +65,6 @@ function parseSupabaseError(err: unknown): string {
 
   return 'Ismeretlen hiba történt a mentéskor.';
 }
-
 
 interface EditGlossaryTermModalProps {
   term: GlossaryTerm | null; // null = create mode
@@ -128,6 +125,7 @@ function formFromTerm(t: GlossaryTerm): FormState {
   const vUrls = t.video_urls && t.video_urls.length > 0
     ? t.video_urls
     : (t.video_url ? [t.video_url] : []);
+
   return {
     term: t.term,
     slug: t.slug,
@@ -160,6 +158,13 @@ function parseList(value: string): string[] {
     .filter((s) => s.length > 0);
 }
 
+interface DynamicTranslationItem {
+  translated_term: string;
+  definition: string;
+  synonyms: string;
+  status: 'draft' | 'reviewed' | 'published';
+}
+
 export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGlossaryTermModalProps) {
   const { activeLanguages } = useGlossaryLanguages();
   const isCreate = term === null;
@@ -169,13 +174,41 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
+  const [dynTranslations, setDynTranslations] = useState<Record<string, DynamicTranslationItem>>(() => {
+    const initial: Record<string, DynamicTranslationItem> = {};
+    if (term && term.translations) {
+      Object.entries(term.translations).forEach(([k, v]) => {
+        initial[k.toLowerCase()] = {
+          translated_term: typeof v === 'string' ? v : (v as any)?.translated_term || '',
+          definition: typeof v === 'string' ? '' : (v as any)?.definition || '',
+          synonyms: '',
+          status: 'published',
+        };
+      });
+    }
+    return initial;
+  });
+
   useEffect(() => {
     if (term) {
       setForm(formFromTerm(term));
       setSlugTouched(true);
+      if (term.translations) {
+        const initial: Record<string, DynamicTranslationItem> = {};
+        Object.entries(term.translations).forEach(([k, v]) => {
+          initial[k.toLowerCase()] = {
+            translated_term: typeof v === 'string' ? v : (v as any)?.translated_term || '',
+            definition: typeof v === 'string' ? '' : (v as any)?.definition || '',
+            synonyms: '',
+            status: 'published',
+          };
+        });
+        setDynTranslations(initial);
+      }
     } else {
       setForm({ ...EMPTY_FORM });
       setSlugTouched(false);
+      setDynTranslations({});
     }
     setError(null);
     setSaveStatus('idle');
@@ -247,6 +280,12 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
       if (form.trans_de.trim()) translationsPayload.de = form.trans_de.trim();
       if (form.trans_ro.trim()) translationsPayload.ro = form.trans_ro.trim();
 
+      Object.entries(dynTranslations).forEach(([k, item]) => {
+        if (item.translated_term.trim()) {
+          translationsPayload[k.toLowerCase()] = item.translated_term.trim();
+        }
+      });
+
       const payload = {
         term: form.term.trim(),
         slug: finalSlug,
@@ -298,413 +337,387 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   const textColor = getContrastTextColor(cardBg);
   const inputTextColor = getContrastTextColor(inputBg);
 
-  const fieldStyle: React.CSSProperties = {
-    backgroundColor: inputBg,
-    borderColor: cardBorder,
-    color: inputTextColor,
-  };
-  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors';
-  const labelClass = 'block text-[10px] font-bold uppercase tracking-wide mb-1';
-  const labelStyle: React.CSSProperties = {
-    color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
-  };
+  const fieldStyle = { backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor };
+  const labelStyle = { color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' };
+  const labelClass = 'block text-xs font-bold mb-1';
+  const fieldClass = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
       <div
         style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
-        className="border rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+        className="border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
       >
-        <div
-          style={{ backgroundColor: headerBg, borderColor: cardBorder }}
-          className="px-6 py-4 border-b flex items-center justify-between"
-        >
-          <h2 style={{ color: textColor }} className="text-lg font-black">
-            {isCreate ? 'Új fogalom hozzáadása' : `Fogalom szerkesztése: ${term?.term}`}
-          </h2>
-          <button onClick={onClose} disabled={saving} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
+        {/* Fejléc */}
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="px-6 py-5 border-b flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 style={{ color: textColor }} className="text-lg font-black">
+              {isCreate ? 'Új fogalom létrehozása' : `Fogalom szerkesztése: ${term.term}`}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-40"
+          >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs flex items-start gap-2 whitespace-pre-line font-mono">
-              <AlertCircle size={14} className="mt-0.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="p-6 overflow-y-auto space-y-4 flex-1 text-sm">
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-xs font-medium whitespace-pre-line animate-fadeIn">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <div className="flex-1">{error}</div>
+              </div>
+            )}
 
-          <div>
-            <label style={labelStyle} className={labelClass}>Tartalom Típusa</label>
-            <select
-              style={fieldStyle}
-              className={fieldClass}
-              value={form.entry_type}
-              onChange={(e) => update('entry_type', e.target.value as 'technical_concept' | 'industry_term')}
-            >
-              <option value="technical_concept">📘 Szakmai Fogalom (technical_concept)</option>
-              <option value="industry_term">🗣 Nyelvi Szótár / Zsargon (industry_term)</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={labelStyle} className={labelClass}>Kifejezés neve <span className="text-red-400">*</span></label>
-            <input
-              style={fieldStyle}
-              className={fieldClass}
-              value={form.term}
-              onChange={(e) => handleTermChange(e.target.value)}
-              placeholder={form.entry_type === 'industry_term' ? 'pl. Malter' : 'pl. Betonacél'}
-              autoFocus={isCreate}
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle} className={labelClass}>Slug</label>
-            <input style={fieldStyle} className={fieldClass} value={form.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="url-barat-azonosito" />
-          </div>
-
-          <div>
-            <label style={labelStyle} className={labelClass}>{form.entry_type === 'industry_term' ? 'Jelentése / Leírás' : 'Definíció'} <span className="text-red-400">*</span></label>
-            <textarea
-              style={fieldStyle}
-              className={`${fieldClass} resize-none`}
-              rows={3}
-              value={form.definition}
-              onChange={(e) => update('definition', e.target.value)}
-              placeholder="Definíció vagy jelentés..."
-            />
-          </div>
-
-          {form.entry_type === 'industry_term' ? (
-            <>
-              <div>
-                <label style={labelStyle} className={labelClass}>Hivatalos Szakmai Megfelelő Neve</label>
+            {/* Fogalom típusa */}
+            <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-3 border rounded-xl flex items-center gap-4">
+              <span style={labelStyle} className="text-xs font-bold">Fogalom Típusa:</span>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold">
                 <input
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.official_term_name}
-                  onChange={(e) => update('official_term_name', e.target.value)}
-                  placeholder="pl. Habarcs"
+                  type="radio"
+                  name="entry_type"
+                  checked={form.entry_type === 'technical_concept'}
+                  onChange={() => update('entry_type', 'technical_concept')}
                 />
-              </div>
-
-              <div>
-                <label style={labelStyle} className={labelClass}>Használati Példamondat</label>
-                <input
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.usage_example}
-                  onChange={(e) => update('usage_example', e.target.value)}
-                  placeholder='pl. "A maltert bekevertük a falazáshoz."'
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle} className={labelClass}>Zsargon Sub-típus</label>
-                <select
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.jargon_subtype}
-                  onChange={(e) => update('jargon_subtype', e.target.value as FormState['jargon_subtype'])}
-                >
-                  <option value="">(Nincs kiválasztva)</option>
-                  <option value="brand_name">🏷️ Márkanévből lett köznév (pl. Flex, Hilti, Dryvit)</option>
-                  <option value="german_origin">🏷️ Német mesterszó (pl. Malter, Stafni, Trepedli)</option>
-                  <option value="workplace_slang">🏷️ Munkanyelvi szleng (pl. Béka, Zsiráf, Cigi)</option>
-                  <option value="synonym">🏷️ Műszaki szinonima (pl. Falazóhabarcs)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={labelStyle} className={labelClass}>Eredet / Etimológia</label>
-                <input
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.origin_note}
-                  onChange={(e) => update('origin_note', e.target.value)}
-                  placeholder="pl. Német eredetű szakmai szó (Mörtel)."
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label style={labelStyle} className={labelClass}>Részletes Műszaki Leírás</label>
-                <textarea
-                  style={fieldStyle}
-                  className={`${fieldClass} resize-none`}
-                  rows={3}
-                  value={form.detailed_description}
-                  onChange={(e) => update('detailed_description', e.target.value)}
-                  placeholder="Anyagösszetétel, szabványok, működés..."
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle} className={labelClass}>Gyakorlati Alkalmazás</label>
-                <textarea
-                  style={fieldStyle}
-                  className={`${fieldClass} resize-none`}
-                  rows={2}
-                  value={form.practical_applications}
-                  onChange={(e) => update('practical_applications', e.target.value)}
-                  placeholder="Hol és hogyan használják a kivitelezés során..."
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle} className={labelClass}>Gyakori Kivitelezési Hibák</label>
-                <textarea
-                  style={fieldStyle}
-                  className={`${fieldClass} resize-none`}
-                  rows={2}
-                  value={form.common_mistakes}
-                  onChange={(e) => update('common_mistakes', e.target.value)}
-                  placeholder="Typikus hibák és megelőzésük..."
-                />
-              </div>
-            </>
-          )}
-
-          {/* Multilingual Translation Inputs */}
-          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <Globe size={14} /> Többnyelvű Fordítások Kezelése ({activeLanguages.filter(l => l.iso_code !== 'hu').length} aktív célnyelv)
-              </h4>
-            </div>
-
-            <div className="space-y-4">
-              {activeLanguages.filter((l) => l.iso_code !== 'hu').map((lang) => {
-                const code = lang.iso_code.toLowerCase();
-                const transItem = dynTranslations[code] || {
-                  translated_term: code === 'en' ? form.trans_en : code === 'de' ? form.trans_de : code === 'ro' ? form.trans_ro : '',
-                  definition: '',
-                  synonyms: '',
-                  status: 'published' as const,
-                };
-
-                const isDefined = Boolean(transItem.translated_term.trim());
-
-                return (
-                  <div
-                    key={lang.id}
-                    style={{ backgroundColor: inputBg, borderColor: cardBorder }}
-                    className="p-3 border rounded-xl space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{lang.flag_emoji}</span>
-                        <span className="font-bold text-xs" style={{ color: textColor }}>
-                          {lang.name_hu} ({lang.short_label})
-                        </span>
-                        <span className="text-[10px] text-gray-400 font-mono">[{lang.iso_code}]</span>
-                      </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                        isDefined ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-gray-500/20 text-gray-400 border-gray-500/40'
-                      }`}>
-                        {isDefined ? 'Fordítás kitöltve' : 'Nincs fordítás'}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div>
-                        <label style={labelStyle} className="block text-[10px] font-bold mb-1">
-                          Szakkifejezés neve ({lang.short_label})
-                        </label>
-                        <input
-                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
-                          className={fieldClass}
-                          value={transItem.translated_term}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setDynTranslations((prev) => ({
-                              ...prev,
-                              [code]: { ...transItem, translated_term: val },
-                            }));
-                            if (code === 'en') update('trans_en', val);
-                            if (code === 'de') update('trans_de', val);
-                            if (code === 'ro') update('trans_ro', val);
-                          }}
-                          placeholder={`Fordítás ${lang.name_hu} nyelven...`}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={labelStyle} className="block text-[10px] font-bold mb-1">
-                          Fordítás állapota
-                        </label>
-                        <select
-                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
-                          className={fieldClass}
-                          value={transItem.status}
-                          onChange={(e) => {
-                            const st = e.target.value as 'draft' | 'reviewed' | 'published';
-                            setDynTranslations((prev) => ({
-                              ...prev,
-                              [code]: { ...transItem, status: st },
-                            }));
-                          }}
-                        >
-                          <option value="published">🟢 Publikált (published)</option>
-                          <option value="reviewed">🟡 Ellenőrzött (reviewed)</option>
-                          <option value="draft">⚪ Piszkozat (draft)</option>
-                        </select>
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <label style={labelStyle} className="block text-[10px] font-bold mb-1">
-                          Definíció / Magyarázat ({lang.short_label}) - Opcionális
-                        </label>
-                        <textarea
-                          rows={2}
-                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
-                          className={`${fieldClass} resize-none`}
-                          value={transItem.definition}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setDynTranslations((prev) => ({
-                              ...prev,
-                              [code]: { ...transItem, definition: val },
-                            }));
-                          }}
-                          placeholder={`Rövid leírás ${lang.name_hu} nyelven...`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label style={labelStyle} className={labelClass}>Szakág / Témakör</label>
-              <input style={fieldStyle} className={fieldClass} value={form.category} onChange={(e) => update('category', e.target.value)} placeholder="pl. Falazás" />
-            </div>
-            <div>
-              <label style={labelStyle} className={labelClass}>Szint</label>
-              <input style={fieldStyle} className={fieldClass} value={form.szint} onChange={(e) => update('szint', e.target.value)} placeholder="pl. Kezdő" />
-            </div>
-          </div>
-
-          <div>
-            <label style={labelStyle} className={labelClass}>Kulcsszavak (vesszővel)</label>
-            <input style={fieldStyle} className={fieldClass} value={form.kulcsszavak} onChange={(e) => update('kulcsszavak', e.target.value)} placeholder="beton, vas, szilárdság" />
-          </div>
-
-          {/* Kép és Videó URL-ek */}
-          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
-            <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-              <Image size={12} /> Média (Képek &amp; Videó)
-            </h4>
-
-            <div>
-              <label style={labelStyle} className="block text-[10px] font-bold mb-1">
-                <Image size={10} className="inline mr-1" />
-                Kép URL-ek (soronként egy, https://... kezdetű)
+                📘 Szakmai Fogalom
               </label>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold">
+                <input
+                  type="radio"
+                  name="entry_type"
+                  checked={form.entry_type === 'industry_term'}
+                  onChange={() => update('entry_type', 'industry_term')}
+                />
+                🗣 Zsargon / Szleng
+              </label>
+            </div>
+
+            {/* Alap adatok */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label style={labelStyle} className={labelClass}>Kifejezés Neve *</label>
+                <input
+                  style={fieldStyle}
+                  className={fieldClass}
+                  value={form.term}
+                  onChange={(e) => handleTermChange(e.target.value)}
+                  placeholder="pl. Vasbeton"
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle} className={labelClass}>URL Slug *</label>
+                <input
+                  style={fieldStyle}
+                  className={fieldClass}
+                  value={form.slug}
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  placeholder="vasbeton"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Definíció */}
+            <div>
+              <label style={labelStyle} className={labelClass}>Rövid Definíció / Meghatározás *</label>
               <textarea
                 style={fieldStyle}
-                className={`${fieldClass} resize-none font-mono text-[11px]`}
+                className={`${fieldClass} resize-none`}
                 rows={3}
-                value={form.image_urls}
-                onChange={(e) => update('image_urls', e.target.value)}
-                placeholder={`https://images.pexels.com/photos/11891953/pexels-photo-11891953.jpeg\nhttps://example.com/masik-kep.jpg`}
+                value={form.definition}
+                onChange={(e) => update('definition', e.target.value)}
+                placeholder="Rövid, pontos összefoglaló magyarázat..."
+                required
               />
-              {/* Valós idejű szintaxis-ellenőrzés */}
-              {form.image_urls.split('\n').map((u) => u.trim()).filter(Boolean).map((u, i) =>
-                !isValidUrl(u) ? (
-                  <p key={i} className="text-red-400 text-[10px] mt-1 flex items-center gap-1">
-                    <AlertCircle size={10} /> {i + 1}. sor: Érvénytelen URL formátum (https://... szükséges)
-                  </p>
-                ) : null
-              )}
-              {/* Pexels útmutató */}
-              {form.image_urls.includes('pexels.com') && !form.image_urls.includes('images.pexels.com') && (
-                <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                  <div className="flex items-start gap-1.5 text-[10px] text-amber-400">
-                    <Info size={10} className="flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong>Pexels oldal URL</strong> – ez egy weblap, nem közvetlen kép. A kép helyes URL-jéhez:
-                      <ol className="list-decimal ml-4 mt-1 space-y-0.5">
-                        <li>Nyisd meg a Pexels oldalt</li>
-                        <li>Jobb klikk a képen → "Kép link másolása" (Copy image address)</li>
-                        <li>Az eredmény valami ilyesmi lesz: <code className="bg-black/30 px-1 rounded">https://images.pexels.com/photos/.../...</code></li>
-                      </ol>
-                    </div>
+            </div>
+
+            {/* Zsargon-specifikus mezők */}
+            {form.entry_type === 'industry_term' && (
+              <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
+                <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider">
+                  Zsargon &amp; Szleng Részletek
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label style={labelStyle} className={labelClass}>Hivatalos Megfelelő Neve</label>
+                    <input
+                      style={fieldStyle}
+                      className={fieldClass}
+                      value={form.official_term_name}
+                      onChange={(e) => update('official_term_name', e.target.value)}
+                      placeholder="pl. Betonkeverő"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={labelStyle} className={labelClass}>Zsargon Alkategória</label>
+                    <select
+                      style={fieldStyle}
+                      className={fieldClass}
+                      value={form.jargon_subtype}
+                      onChange={(e) => update('jargon_subtype', e.target.value as FormState['jargon_subtype'])}
+                    >
+                      <option value="">— Válassz —</option>
+                      <option value="brand_name">Márkanév (pl. Flex, Hilti)</option>
+                      <option value="german_origin">Német eredetű szakszó (pl. Stafni)</option>
+                      <option value="workplace_slang">Munkaterületi szleng (pl. Malter)</option>
+                      <option value="synonym">Szinonima / Rövidítés</option>
+                    </select>
                   </div>
                 </div>
-              )}
-              <p className="text-[10px] text-gray-400 mt-1">Ha nem tölt be a kép, a fogalomkártyán automatikusan kategória ikon jeleník meg helyette.</p>
+
+                <div>
+                  <label style={labelStyle} className={labelClass}>Példamondat / Építkezési Használat</label>
+                  <input
+                    style={fieldStyle}
+                    className={fieldClass}
+                    value={form.usage_example}
+                    onChange={(e) => update('usage_example', e.target.value)}
+                    placeholder="„Hozd a flexet a sarok csiszolásához!”"
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle} className={labelClass}>Eredet / Etimológiai Megjegyzés</label>
+                  <input
+                    style={fieldStyle}
+                    className={fieldClass}
+                    value={form.origin_note}
+                    onChange={(e) => update('origin_note', e.target.value)}
+                    placeholder="A német 'Staffel' szóból ered..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Szakmai-specifikus mezők */}
+            {form.entry_type === 'technical_concept' && (
+              <>
+                <div>
+                  <label style={labelStyle} className={labelClass}>Részletes Műszaki Magyarázat</label>
+                  <textarea
+                    style={fieldStyle}
+                    className={`${fieldClass} resize-none`}
+                    rows={4}
+                    value={form.detailed_description}
+                    onChange={(e) => update('detailed_description', e.target.value)}
+                    placeholder="Részletes szabványi és szerkezeti leírás..."
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle} className={labelClass}>Gyakorlati Alkalmazások &amp; Technológia</label>
+                  <textarea
+                    style={fieldStyle}
+                    className={`${fieldClass} resize-none`}
+                    rows={2}
+                    value={form.practical_applications}
+                    onChange={(e) => update('practical_applications', e.target.value)}
+                    placeholder="Hol és hogyan használják a kivitelezés során..."
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle} className={labelClass}>Gyakori Kivitelezési Hibák</label>
+                  <textarea
+                    style={fieldStyle}
+                    className={`${fieldClass} resize-none`}
+                    rows={2}
+                    value={form.common_mistakes}
+                    onChange={(e) => update('common_mistakes', e.target.value)}
+                    placeholder="Typikus hibák és megelőzésük..."
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Multilingual Translation Inputs */}
+            <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                  <Globe size={14} /> Többnyelvű Fordítások Kezelése ({activeLanguages.filter((l) => l.iso_code !== 'hu').length} aktív célnyelv)
+                </h4>
+              </div>
+
+              <div className="space-y-4">
+                {activeLanguages.filter((l) => l.iso_code !== 'hu').map((lang) => {
+                  const code = lang.iso_code.toLowerCase();
+                  const transItem = dynTranslations[code] || {
+                    translated_term: code === 'en' ? form.trans_en : code === 'de' ? form.trans_de : code === 'ro' ? form.trans_ro : '',
+                    definition: '',
+                    synonyms: '',
+                    status: 'published' as const,
+                  };
+
+                  const isDefined = Boolean(transItem.translated_term.trim());
+
+                  return (
+                    <div
+                      key={lang.id}
+                      style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+                      className="p-3 border rounded-xl space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{lang.flag_emoji}</span>
+                          <span className="font-bold text-xs" style={{ color: textColor }}>
+                            {lang.name_hu} ({lang.short_label})
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-mono">[{lang.iso_code}]</span>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                          isDefined ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-gray-500/20 text-gray-400 border-gray-500/40'
+                        }`}>
+                          {isDefined ? 'Fordítás kitöltve' : 'Nincs fordítás'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                          <label style={labelStyle} className="block text-[10px] font-bold mb-1">
+                            Szakkifejezés neve ({lang.short_label})
+                          </label>
+                          <input
+                            style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
+                            className={fieldClass}
+                            value={transItem.translated_term}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setDynTranslations((prev) => ({
+                                ...prev,
+                                [code]: { ...transItem, translated_term: val },
+                              }));
+                              if (code === 'en') update('trans_en', val);
+                              if (code === 'de') update('trans_de', val);
+                              if (code === 'ro') update('trans_ro', val);
+                            }}
+                            placeholder={`Fordítás ${lang.name_hu} nyelven...`}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={labelStyle} className="block text-[10px] font-bold mb-1">
+                            Fordítás állapota
+                          </label>
+                          <select
+                            style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
+                            className={fieldClass}
+                            value={transItem.status}
+                            onChange={(e) => {
+                              const st = e.target.value as 'draft' | 'reviewed' | 'published';
+                              setDynTranslations((prev) => ({
+                                ...prev,
+                                [code]: { ...transItem, status: st },
+                              }));
+                            }}
+                          >
+                            <option value="published">🟢 Publikált (published)</option>
+                            <option value="reviewed">🟡 Ellenőrzött (reviewed)</option>
+                            <option value="draft">⚪ Piszkozat (draft)</option>
+                          </select>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label style={labelStyle} className="block text-[10px] font-bold mb-1">
+                            Definíció / Magyarázat ({lang.short_label}) - Opcionális
+                          </label>
+                          <textarea
+                            rows={2}
+                            style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
+                            className={`${fieldClass} resize-none`}
+                            value={transItem.definition}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setDynTranslations((prev) => ({
+                                ...prev,
+                                [code]: { ...transItem, definition: val },
+                              }));
+                            }}
+                            placeholder={`Rövid leírás ${lang.name_hu} nyelven...`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label style={labelStyle} className={labelClass}>Szakág / Témakör</label>
+                <input style={fieldStyle} className={fieldClass} value={form.category} onChange={(e) => update('category', e.target.value)} placeholder="pl. Falazás" />
+              </div>
+              <div>
+                <label style={labelStyle} className={labelClass}>Szint</label>
+                <input style={fieldStyle} className={fieldClass} value={form.szint} onChange={(e) => update('szint', e.target.value)} placeholder="pl. Kezdő" />
+              </div>
             </div>
 
             <div>
-              <label style={labelStyle} className="block text-[10px] font-bold mb-1">
-                <Video size={10} className="inline mr-1" style={{ color: cardHighlight }} />
-                Videó URL-ek (YouTube / Vimeo, soronként egy URL)
-              </label>
-              <textarea
-                style={fieldStyle}
-                className={`${fieldClass} font-mono text-[11px] h-20 leading-snug`}
-                value={form.video_urls}
-                onChange={(e) => update('video_urls', e.target.value)}
-                placeholder={'https://www.youtube.com/watch?v=...\nhttps://vimeo.com/...'}
-              />
-              {form.video_urls.trim() && (
-                <div className="mt-1 space-y-0.5">
-                  {form.video_urls.split('\n').map((u) => u.trim()).filter(Boolean).map((u, i) => {
-                    const valid = isValidUrl(u);
-                    return (
-                      <p key={i} className={`text-[10px] flex items-center gap-1 ${valid ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {valid ? '✓' : '✗'} Videó #{i + 1}: {u}
-                      </p>
-                    );
-                  })}
-                </div>
-              )}
-              <p className="text-[10px] text-gray-400 mt-1">Több videó megadása esetén a látogatók a részletes adatlap oktatóvideó füle alatt válogathatnak a videók között.</p>
+              <label style={labelStyle} className={labelClass}>Kulcsszavak (vesszővel)</label>
+              <input style={fieldStyle} className={fieldClass} value={form.kulcsszavak} onChange={(e) => update('kulcsszavak', e.target.value)} placeholder="beton, vas, szilárdság" />
+            </div>
+
+            {/* Kép és Videó URL-ek */}
+            <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
+              <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider">
+                Média / URL-ek
+              </h4>
+
+              <div>
+                <label style={labelStyle} className={labelClass}>Oktatóvideó URL-ek (soronként 1 URL)</label>
+                <textarea
+                  style={fieldStyle}
+                  className={`${fieldClass} font-mono text-xs resize-none`}
+                  rows={2}
+                  value={form.video_urls}
+                  onChange={(e) => update('video_urls', e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle} className={labelClass}>Képek / Illusztrációk URL-ek (soronként 1 URL)</label>
+                <textarea
+                  style={fieldStyle}
+                  className={`${fieldClass} font-mono text-xs resize-none`}
+                  rows={2}
+                  value={form.image_urls}
+                  onChange={(e) => update('image_urls', e.target.value)}
+                  placeholder="https://domain.com/image.jpg"
+                />
+              </div>
             </div>
           </div>
 
-          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-3 pt-3 pb-3 px-4 border-t sticky bottom-0 z-10 rounded-b-xl backdrop-blur-md">
-            <div className="flex flex-wrap items-center gap-3 ml-auto">
-              {saveStatus === 'saving' && (
-                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
-                  <span className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
-                  Mentés folyamatban...
-                </span>
-              )}
-
-              {saveStatus === 'success' && (
-                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl animate-fadeIn">
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-                  A módosítások sikeresen mentve.
-                </span>
-              )}
-
-              {(saveStatus === 'error' || error) && (
-                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl animate-fadeIn">
-                  <AlertCircle size={16} className="text-red-400 shrink-0" />
-                  {error || 'A mentés nem sikerült. Próbáld újra.'}
-                </span>
-              )}
-
-              <button type="button" onClick={onClose} disabled={saving} className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-200 disabled:opacity-40 transition-colors cursor-pointer">
-                Mégse
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-md"
-              >
-                <Save size={14} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
-              </button>
-            </div>
+          {/* Modal Footer */}
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="px-6 py-4 border-t sticky bottom-0 z-10 backdrop-blur-md flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-80 disabled:opacity-40 transition-colors cursor-pointer"
+            >
+              Mégse
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="px-5 py-2 font-black text-xs rounded-xl transition-colors flex items-center gap-1.5 shadow-md cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save size={14} /> {saving ? 'Mentés...' : 'Fogalom Mentése'}
+            </button>
           </div>
         </form>
       </div>
