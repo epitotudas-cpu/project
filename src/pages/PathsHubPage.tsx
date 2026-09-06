@@ -25,6 +25,10 @@ import {
   Award,
   UserCheck,
   UserX,
+  History,
+  Cpu,
+  ExternalLink,
+  Rocket,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { type TradeDetail } from '../data/tradeDetailsData';
@@ -311,6 +315,9 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
             {/* Sticky Table of Contents Quick Nav */}
             <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm sticky top-4 z-30 overflow-x-auto scrollbar-none flex items-center gap-2">
               {[
+                ...(activeTrade.timelineStations && activeTrade.timelineStations.length > 0
+                  ? [{ id: 'sec-timeline', label: 'Múlt → Jelen → Jövő' }]
+                  : []),
                 { id: 'sec-1', label: 'Mi ez a szakma?' },
                 { id: 'sec-2', label: 'Mit csinál?' },
                 { id: 'sec-4', label: 'Eszközök & Anyagok' },
@@ -318,6 +325,9 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                 { id: 'sec-7-10', label: 'Terhelés & Körülmények' },
                 { id: 'sec-11-12', label: 'Előnyök & Hátrányok' },
                 { id: 'sec-13-15', label: 'Karrier & Vállalkozás' },
+                ...((activeTrade.futureTechCards && activeTrade.futureTechCards.length > 0) || activeTrade.futureTechClosure
+                  ? [{ id: 'sec-future-tech', label: 'Merre tart a szakma?' }]
+                  : []),
                 { id: 'sec-19', label: 'Neked való?' },
               ].map((nav) => (
                 <a
@@ -332,6 +342,98 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
 
             {/* UNNUMBERED FEJEZET TARTALOM */}
             <div className="space-y-10">
+
+              {/* MÚLT → JELEN → JÖVŐ TIMELINE SECTION */}
+              {activeTrade.timelineStations && activeTrade.timelineStations.length > 0 && (
+                <section id="sec-timeline" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
+                        <History size={18} />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-extrabold text-accent uppercase tracking-wider">A Szakma Fejlődése</span>
+                        <h2 className="text-xl font-extrabold text-gray-900">
+                          {activeTrade.timelineTitle || 'MÚLT → JELEN → JÖVŐ'}
+                        </h2>
+                      </div>
+                    </div>
+                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-full">
+                      MÚLT → JELEN → JÖVŐ → TE
+                    </span>
+                  </div>
+
+                  {activeTrade.timelineSubtitle && (
+                    <p className="text-xs md:text-sm text-gray-600 font-medium">
+                      {activeTrade.timelineSubtitle}
+                    </p>
+                  )}
+
+                  {/* Timeline Image */}
+                  {activeTrade.timelineImage && (
+                    <div className="relative rounded-2xl overflow-hidden shadow-md max-h-72 border border-gray-200">
+                      <img
+                        src={activeTrade.timelineImage}
+                        alt={activeTrade.timelineImageAlt || activeTrade.name}
+                        className="w-full h-64 md:h-72 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4 md:p-6">
+                        <div className="text-white space-y-1">
+                          <span className="text-xs font-bold text-accent uppercase tracking-wider">Vizuális Képzés &amp; Múlt-Jelen Illusztráció</span>
+                          <p className="text-xs md:text-sm text-gray-200 font-medium">{activeTrade.timelineImageAlt || `${activeTrade.name} technológiai fejlődése`}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stations Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative pt-2">
+                    {activeTrade.timelineStations.map((station, index) => {
+                      let badgeColor = 'bg-gray-100 text-gray-700 border-gray-300';
+                      let borderColor = 'border-gray-200';
+
+                      if (station.badge.toUpperCase().includes('RÉGEN')) {
+                        badgeColor = 'bg-stone-100 text-stone-700 border-stone-300';
+                        borderColor = 'border-stone-200 bg-stone-50/30';
+                      } else if (station.badge.toUpperCase().includes('MA')) {
+                        badgeColor = 'bg-blue-100 text-blue-800 border-blue-300';
+                        borderColor = 'border-blue-200 bg-blue-50/30';
+                      } else if (station.badge.toUpperCase().includes('JÖVŐ')) {
+                        badgeColor = 'bg-purple-100 text-purple-800 border-purple-300';
+                        borderColor = 'border-purple-200 bg-purple-50/30';
+                      } else if (station.badge.toUpperCase().includes('TE')) {
+                        badgeColor = 'bg-accent/20 text-primary font-black border-accent/40';
+                        borderColor = 'border-accent/40 bg-amber-50/40';
+                      }
+
+                      return (
+                        <div
+                          key={station.id || index}
+                          className={`p-5 rounded-2xl border ${borderColor} space-y-3 relative flex flex-col justify-between transition-all hover:shadow-md`}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black border uppercase tracking-wider ${badgeColor}`}>
+                                {station.badge}
+                              </span>
+                              <span className="text-[11px] font-bold text-gray-500">{station.period}</span>
+                            </div>
+                            <h3 className="text-sm font-extrabold text-gray-900 leading-snug">{station.title}</h3>
+                            <p className="text-xs text-gray-600 leading-relaxed font-medium">{station.description}</p>
+                          </div>
+                          {index < activeTrade.timelineStations!.length - 1 && (
+                            <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
+                              <div className="w-6 h-6 rounded-full bg-white border border-gray-300 flex items-center justify-center text-gray-400 shadow-xs">
+                                <ArrowRight size={12} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
 
               {/* MI EZ A SZAKMA? */}
               <section id="sec-1" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-4">
@@ -593,6 +695,109 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                   </div>
                 </div>
               </section>
+
+              {/* MERRE TART A SZAKMA? FUTURE TECH CARDS & CLOSURE SECTION */}
+              {((activeTrade.futureTechCards && activeTrade.futureTechCards.length > 0) || activeTrade.futureTechClosure) && (
+                <section id="sec-future-tech" className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center font-bold">
+                        <Cpu size={18} />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider">Jövőbeli Technológiák &amp; Innovációk</span>
+                        <h2 className="text-xl font-extrabold text-gray-900">
+                          {activeTrade.futureTechTitle || 'MERRE TART A SZAKMA?'}
+                        </h2>
+                      </div>
+                    </div>
+                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 border border-purple-200 text-purple-800 text-xs font-bold rounded-full">
+                      <Rocket size={13} /> CSÚCSTECHNOLÓGIÁK
+                    </span>
+                  </div>
+
+                  {activeTrade.futureTechSubtitle && (
+                    <p className="text-xs md:text-sm text-gray-600 font-medium">
+                      {activeTrade.futureTechSubtitle}
+                    </p>
+                  )}
+
+                  {/* Future Tech Cards Grid */}
+                  {activeTrade.futureTechCards && activeTrade.futureTechCards.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+                      {activeTrade.futureTechCards.map((card) => {
+                        let catBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                        if (card.category === 'FEJLŐDŐ') {
+                          catBadge = 'bg-blue-50 text-blue-700 border-blue-200';
+                        } else if (card.category === 'KÍSÉRLETI') {
+                          catBadge = 'bg-amber-50 text-amber-800 border-amber-200';
+                        }
+
+                        return (
+                          <div
+                            key={card.id}
+                            className="p-5 rounded-2xl border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-purple-300 transition-all duration-200 shadow-xs hover:shadow-md space-y-3 flex flex-col justify-between"
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${catBadge}`}>
+                                  {card.category}
+                                </span>
+                                {card.sourceDate && (
+                                  <span className="text-[10px] font-semibold text-gray-400">
+                                    {card.sourceDate}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="text-sm font-extrabold text-gray-900 group-hover:text-primary transition-colors">
+                                {card.title}
+                              </h3>
+                              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                                {card.description}
+                              </p>
+                            </div>
+
+                            {/* Source attribution */}
+                            {card.sourceName && (
+                              <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                                <span className="text-gray-500 font-medium">Forrás: <strong className="text-gray-700">{card.sourceName}</strong></span>
+                                {card.sourceUrl && (
+                                  <a
+                                    href={card.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary font-bold hover:underline inline-flex items-center gap-1"
+                                  >
+                                    <span>Cikk hivatkozás</span>
+                                    <ExternalLink size={11} />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* TE MILYEN SZAKEMBER LESZEL? CLOSURE BANNER */}
+                  {activeTrade.futureTechClosure && (
+                    <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary via-primary-700 to-primary text-white border border-primary-600 shadow-lg space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-accent text-primary text-[10px] font-black uppercase rounded-md tracking-wider">
+                          TE MILYEN SZAKEMBER LESZEL?
+                        </span>
+                      </div>
+                      <h3 className="text-lg md:text-xl font-black text-white">
+                        A Te Jövőbeli Szereped a Szakmában
+                      </h3>
+                      <p className="text-xs md:text-sm text-gray-200 leading-relaxed font-medium">
+                        {activeTrade.futureTechClosure}
+                      </p>
+                    </div>
+                  )}
+                </section>
+              )}
 
               {/* RÖVID ÖSSZEFOGLALÓ - NEKED VALÓ EZ A SZAKMA? */}
               <section id="sec-19" className="bg-primary text-white rounded-3xl p-6 md:p-10 shadow-xl space-y-6">

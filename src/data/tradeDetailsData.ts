@@ -4,6 +4,29 @@ export interface MaterialToolItem {
   description: string;
 }
 
+export interface TimelineStation {
+  id: string;
+  badge: string; // e.g. "RÉGEN", "MA", "JÖVŐ", "TE"
+  title: string;
+  period: string; // e.g. "19-20. század", "Napjainkban", "Közeli jövő", "Holnap"
+  description: string;
+  highlights?: string[];
+}
+
+export interface FutureTechCard {
+  id: string;
+  title: string;
+  category: 'MÁR LÉTEZŐ' | 'FEJLŐDŐ' | 'KÍSÉRLETI';
+  description: string;
+  iconName?: string;
+  imageUrl?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourceDate?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
 export interface TradeDetail {
   id: string;
   name: string;
@@ -11,6 +34,19 @@ export interface TradeDetail {
   tagline: string;
   categoryLabel: string;
   
+  // MÚLT -> JELEN -> JÖVŐ Timeline
+  timelineTitle?: string;
+  timelineSubtitle?: string;
+  timelineImage?: string;
+  timelineImageAlt?: string;
+  timelineStations?: TimelineStation[];
+
+  // MERRE TART A SZAKMA? Future Tech
+  futureTechTitle?: string;
+  futureTechSubtitle?: string;
+  futureTechCards?: FutureTechCard[];
+  futureTechClosure?: string; // TE MILYEN SZAKEMBER LESZEL?
+
   // 1. MI EZ A SZAKMA?
   overview: string;
 
@@ -91,6 +127,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'Hammer',
     tagline: 'Az építmények vázának, teherhordó és elválasztó falainak mestere',
     categoryLabel: 'Szerkezetépítés',
+    
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart a kőműves mesterség?',
+    timelineSubtitle: 'A kézi téglaöntéstől és mészhabarcstól a 3D betonnyomtatásig és robotizált falazásig',
+    timelineImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Kőműves munkálatok és falazási technológiák',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Kézi téglaöntés és mészhabarcsos falazás',
+        period: '19-20. század',
+        description: 'Nehéz kézi fizikai munka, tömör kisméretű téglák, helyszíni mészoltás és lassú építési ütem.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'Precíziós vékonyrétegű ragasztott falazóblokkok és gépi vakolás',
+        period: 'Napjainkban',
+        description: 'Csiszolt kerámia és pórusbeton elemek, lézeres szintezés, gépi habarcskeverés és gépi vakolóberendezések.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'Robotizált falazási technológiák és 3D betonnyomtatás',
+        period: 'Közeli jövő',
+        description: 'Automatizált 3D nyomtatófejek, fali robotkarok és digitális BIM modellek közvetlen helyszíni alkalmazása.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Digitális szakember és robottechnológiai irányító',
+        period: 'Holnap',
+        description: 'A fizikai terhelés helyett a gépi rendszerek felügyelete, precíziós szintezés és automatizált szerkezetépítés.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart a kőműves szakma?',
+    futureTechSubtitle: 'Innovációk, automatizáció és új generációs anyagok a szerkezetépítésben',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: '3D Épületnyomtatás (Betonnyomtatás)',
+        category: 'MÁR LÉTEZŐ',
+        description: 'Nagy méretű ipari 3D nyomtatók, amelyek órák alatt képesek teherhordó szerkezeti falakat kiönteni speciális habarcsrétegekből.',
+        sourceName: 'Construction Europe',
+        sourceUrl: 'https://www.constructioneurope.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Kiterjesztett Valóság (AR) Munkaszemüvegek',
+        category: 'FEJLŐDŐ',
+        description: 'A kőműves AR szemüvegén látja a virtuális tervrajzot közvetlenül a falra vetítve, megszüntetve a mérési és kitűzési hibákat.',
+        sourceName: 'BIM Today',
+        sourceUrl: 'https://www.bimtoday.co.uk',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-3',
+        title: 'Exoskeleton (Külső vázas ergonómiai támogatás)',
+        category: 'FEJLŐDŐ',
+        description: 'Hordható váztámasz, amely 40-60%-kal csökkenti a derékra és vállra nehezedő terhelést nehéz téglák és blokkok emelésekor.',
+        sourceName: 'Building Design & Construction',
+        sourceUrl: 'https://www.bdcnetwork.com',
+        sourceDate: '2024',
+      },
+      {
+        id: 'tech-4',
+        title: 'Öngyógyító Öko-beton és Szénmegkötő Blokkok',
+        category: 'KÍSÉRLETI',
+        description: 'Baktériumos mikrokapszulákat tartalmazó betonok, amelyek víz hatására automatikusan eltömítik a mikrorepedéseket.',
+        sourceName: 'Nature Materials',
+        sourceUrl: 'https://www.nature.com/nmat/',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'A kőműves szakma a fizikai erőkifejtésből gyorsan átalakul a digitális precizitás és az automatizált szerkezetépítés mesterségévé.',
     overview:
       'A kőműves az az építőipari szakember, aki megépíti az épületek szilárd szerkezetét. Téglákból, blokkelemekből falakat emel, elvégzi az alapozási munkákat, felhúzza a teherhordó pilléreket, és kiszintezi a beton aljzatokat. Munkája nélkül egyetlen családi ház vagy társasház sem állhat meg a lábán.',
     whatDoesDo: {
@@ -224,6 +339,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'HomeIcon',
     tagline: 'Faszerkezetek, tetők és ipari zsalurendszerek formálója',
     categoryLabel: 'Szerkezetépítés',
+
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart az ács mesterség?',
+    timelineSubtitle: 'A kézi bárdolástól és fa csapolástól a CNC robotkarokig és CLT tömörfa felhőkarcolókig',
+    timelineImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Ács és tetőszerkezet építési munkák',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Kézi favágás, kézi faragás és fa csapolás',
+        period: '19. század',
+        description: 'Bárdolt gerendák, hagyományos faszerkezetek kézi illesztése és kézzel vert ácsszegek.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'CNC fa megmunkálás és modultetők',
+        period: 'Napjainkban',
+        description: 'Előre gyártott szeglemezes rácsostartók, lézeres bemérés, elektromos szerszámok és szisztémás zsalurendszerek.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'CLT masszív faépítészet és paraméteres CNC szerelés',
+        period: 'Közeli jövő',
+        description: 'Nagy fesztávú többemeletes faházak előregyártása CNC robotkamrákban és gyors helyszíni moduláris szerelés.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Faépítészeti mérnök-szakember',
+        period: 'Holnap',
+        description: 'A fenntartható zöld építészet megvalósítója, digitális 3D modell alapján szerelő prémium ácsmester.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart az ács szakma?',
+    futureTechSubtitle: 'Csúcstechnológiás faépítészet, prémium előregyártás és intelligens faszerkezetek',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: 'CLT (Cross-Laminated Timber) Masszív Faépítés',
+        category: 'MÁR LÉTEZŐ',
+        description: 'Több rétegben ragasztott tömör fapanelek, amelyek felhőkarcolók beton- és acélelemeit is képesek környezetbarát módon kiváltani.',
+        sourceName: 'Timber Design Mag',
+        sourceUrl: 'https://www.timberdesignmag.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Automatizált CNC Ácsmodulok és Robotiká Illesztés',
+        category: 'FEJLŐDŐ',
+        description: 'A milliméter pontos gerendakivágásokat ipari CNC robotkarok végzik a csarnokban, a helyszínen csak a gyors szerelés történik.',
+        sourceName: 'Woodworking International',
+        sourceUrl: 'https://www.woodworking.com',
+        sourceDate: '2024',
+      },
+      {
+        id: 'tech-3',
+        title: 'Hordható Exoskeleton a Gerendák Mozgatásához',
+        category: 'FEJLŐDŐ',
+        description: 'Tehermentesítő váztámasz a vállizomzat védelmére magasban végzett nehéz gerendamunkáknál.',
+        sourceName: 'Safety & Health Practitioner',
+        sourceUrl: 'https://www.shponline.co.uk',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-4',
+        title: 'Intelligens Szenzoros Faanyagok',
+        category: 'KÍSÉRLETI',
+        description: 'Faanyagba épített nedvesség- és feszültségmérő mikroszenzorok, amelyek valós időben jelzik a tetőszerkezet állapotát.',
+        sourceName: 'Smart Materials Journal',
+        sourceUrl: 'https://www.smartmaterials.com',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'A jövő ácsmestere a környezetbarát faépítészet és a csúcstechnológiás előregyártás digitális specialistája.',
     overview:
       'Az ács a faanyagok és zsaluzatok mestere. Ő készíti el a családi házak és épületek tetőszerkezetét (szarufák, szelemenek, torokgerendák), valamint a monolit vasbeton szerkezetek öntéséhez szükséges komplex zsaluzatokat és állványokat.',
     whatDoesDo: {
@@ -299,6 +493,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'Layers',
     tagline: 'Az esztétikus és vízálló padlók, falak és teraszok megteremtője',
     categoryLabel: 'Befejező Munkák',
+
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart a burkoló mesterség?',
+    timelineSubtitle: 'A kis méretű kerámiáktól és habarcságytól a giga greslapokig és okos fugákig',
+    timelineImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Burkolási munkálatok és modern hidegburkolás',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Kishálózatú kerámiák és cementhabarcsos fektetés',
+        period: '20. század közepe',
+        description: 'Vastag habarcságyas fektetés, kézi karcoló csempevágás és korlátozott 15x15 cm-es lapméretek.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'Giga lapméretek, flexibilis ragasztók és lézeres szintezők',
+        period: 'Napjainkban',
+        description: 'Akár 300x100 cm-es óriásgres lapok, vákuumos emelőkeretek, szintező klipszek és vizes vágógépek.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'Vákuumos félautomatizált burkolás és digitális mintailletés',
+        period: 'Közeli jövő',
+        description: 'AR szemüveges mintakiterjesztés és precíziós lapfektető szívófejes rendszerek a tökéletes sík felületekért.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Enteriőr-burkoló felülettechnológus',
+        period: 'Holnap',
+        description: 'Prémium minőségű belsőépítészeti felületek és intelligens fűtött/okos burkolatrendszerek szakértője.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart a burkoló szakma?',
+    futureTechSubtitle: 'Óriásformátumú lapok, integrált felületfűtés és nanotechnológiás felületkezelés',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: 'Giga-méretű Kerámialapok és Vákuumos Kezelőrendszerek',
+        category: 'MÁR LÉTEZŐ',
+        description: 'Több négyzetméteres egybefüggő lapok mozgatása és szakszerű fektetése vákuumos emelőkeretekkel.',
+        sourceName: 'Tile & Stone Journal',
+        sourceUrl: 'https://www.tilestonejournal.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Ultravékony Elektromos Fűtőfóliák Burkolat Alá',
+        category: 'FEJLŐDŐ',
+        description: 'Csemperagasztó rétegbe integrált mikronvastag fűtőszálak és digitális zónánkénti hőmérséklet-szabályozás.',
+        sourceName: 'Interior Tech Guide',
+        sourceUrl: 'https://www.interiortech.com',
+        sourceDate: '2024',
+      },
+      {
+        id: 'tech-3',
+        title: 'Kiterjesztett Valóságú (AR) Mintatervező Szemüveg',
+        category: 'FEJLŐDŐ',
+        description: 'A burkoló AR szemüvegén látja a legoptimálisabb vágási vonalakat, mintaforgatást és fugaszélességet.',
+        sourceName: 'BIM Forum',
+        sourceUrl: 'https://www.bimforum.org',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-4',
+        title: 'Öntisztuló és Antibakteriális Nano-Fugázók',
+        category: 'KÍSÉRLETI',
+        description: 'Ezüstionos és titán-dioxidos nanobevonatok, amelyek fény hatására lebontják a szennyeződést és a penészt.',
+        sourceName: 'Nano Building Materials',
+        sourceUrl: 'https://www.nanobuilding.com',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'A burkoló szakma a fizikai igazításból a csúcskategóriás belsőépítészeti felülettechnológiává alakul.',
     overview:
       'A burkoló az az építőipari szakember, aki felteszi a pontot az i-re az épületek belső és külső felületein. Csempékből, greslapokból, természetes kövekből vagy parkettából gyönyörű, vízálló és tartós padló- és falburkolatokat készít.',
     whatDoesDo: {
@@ -367,6 +640,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'Zap',
     tagline: 'Az épületek energiájának, világításának és biztonságának mestere',
     categoryLabel: 'Épületgépészet & Érintésvédelem',
+
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart a villanyszerelő mesterség?',
+    timelineSubtitle: 'Az alumínium drótoktól és olvadóbiztosítóktól a smart home buszokig és V2G energiatárolókig',
+    timelineImage: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Villanyszerelési munkálatok és biztosító tábla',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Sodort alumíniumvezetékek és olvadóbiztosítók',
+        period: '20. század közepe',
+        description: 'Egyszerű világítási és dugaljhálózatok, falon kívüli kábelezés és manuális hibakeresés.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'Rézkábeles hálózatok, automatizált kismegszakítók és okosotthon alapok',
+        period: 'Napjainkban',
+        description: 'KNX és vezeték nélküli smart home rendszerek, túlfeszültség-védelem, napelem inverterek bekötése.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'IoT okoshálózatok, lakossági energiatárolás és EV villamosság',
+        period: 'Közeli jövő',
+        description: 'Napelem-akkumulátor rendszerek, V2G kétirányú autótöltők és mesterséges intelligencia által vezérelt hálózatok.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Smart Energy & Energetikai Rendszerintegrátor',
+        period: 'Holnap',
+        description: 'Az épületek energetikai függetlenségének és intelligens vezérlésének kulcsszakembere.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart a villanyszerelő szakma?',
+    futureTechSubtitle: 'Intelligens hálózatok, mikro-erőművek és vezeték nélküli energiatechnológia',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: 'Okosotthon Rendszerek & KNX/LoRaWAN Integráció',
+        category: 'MÁR LÉTEZŐ',
+        description: 'Épületautomatizálási rendszerek, ahol a világítás, hűtés-fűtés és árnyékolás egyetlen központi buszhálózaton kommunikál.',
+        sourceName: 'Smart Home World',
+        sourceUrl: 'https://www.smarthomeworld.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Bifaciális Napelem & Akkumulátoros Energiatárolók',
+        category: 'MÁR LÉTEZŐ',
+        description: 'Házilagos energiatárolás és dinamikus tarifájú intelligens energiagazdálkodás.',
+        sourceName: 'PV Magazine',
+        sourceUrl: 'https://www.pv-magazine.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-3',
+        title: 'V2G (Vehicle-to-Grid) Kétirányú Autótöltők',
+        category: 'FEJLŐDŐ',
+        description: 'Az elektromos autó akkumulátora áramkimaradás esetén visszatáplál a ház vagy az elektromos hálózat felé.',
+        sourceName: 'EV Infrastructure',
+        sourceUrl: 'https://www.evinfrastructure.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-4',
+        title: 'Vezeték Nélküli Nagyfrekvenciás Energiaátvitel',
+        category: 'KÍSÉRLETI',
+        description: 'Fali mágneses rezonanciás mezők, amelyek kábelek nélkül táplálják a beépített fogyasztókat.',
+        sourceName: 'IEEE Spectrum',
+        sourceUrl: 'https://spectrum.ieee.org',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'A villanyszerelő a kábelhúzóból az intelligens energiagazdálkodás és az okosotthonok első számú mérnök-technológusává válik.',
     overview:
       'A villanyszerelő az az építőipari és technológiai szakember, aki kiépíti az épületek elektromos hálózatát. Védőcsöveket fúr, vezetékeket húz, elosztótáblákat szerel, kapcsolókat és lámpákat köt be, valamint gondoskodik a szigorú érintésvédelmi biztonságról.',
     whatDoesDo: {
@@ -435,6 +787,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'Flame',
     tagline: 'A víz, gáz, fűtés, hűtés és szellőztetés éltető rendszereinek megépítője',
     categoryLabel: 'Épületgépészet',
+
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart az épületgépész mesterség?',
+    timelineSubtitle: 'A szénkazánoktól és acélcsövektől az hőszivattyúkig és zöld hidrogén gépészetig',
+    timelineImage: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Épületgépészeti csőrendszerek és hőszivattyús fűtés',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Gravitációs szénkazánok és horganyzott acélcsövek',
+        period: '20. század közepe',
+        description: 'Kézi menetvágás acélcsövekre, öntöttvas radiátorok és nyitott tágulási tartályok.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'Hőszivattyúk, kondenzációs kazánok és ötrétegű csövek',
+        period: 'Napjainkban',
+        description: 'Inverteres levegő-víz hőszivattyúk, pressemberes gyorscsatlakozók, felülethűtés és felületfűtés.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'Geotermikus hibrid rendszerek és AI klímavezérlés',
+        period: 'Közeli jövő',
+        description: 'Nulla emissziós gépészet, gépi tanuló termosztátok és hidrogénkompatibilis fűtési hálózatok.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Zöld Gépészeti & Klímatechnológiai Szakértő',
+        period: 'Holnap',
+        description: 'A fenntartható épületklimatizálás és megújuló energiaforrások mestere.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart az épületgépész szakma?',
+    futureTechSubtitle: 'Megújuló hőtárolás, prediktív AI fűtésvezérlés és zöld hidrogén technológia',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: 'Inverteres Levegő-Víz és Geotermikus Hőszivattyúk',
+        category: 'MÁR LÉTEZŐ',
+        description: 'A környezeti hőt hasznosító, 400-500%-os hatékonyságú fűtési és melegvíz előállító rendszerek.',
+        sourceName: 'HVAC Journal',
+        sourceUrl: 'https://www.hvacjournal.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Hővisszanyerős Központi és Decentralizált Szellőztetés',
+        category: 'MÁR LÉTEZŐ',
+        description: 'A friss levegőt biztosító, akár 95%-os hőtartalmú levegő-levegő hőcserélő gépészet.',
+        sourceName: 'Clean Air Building',
+        sourceUrl: 'https://www.cleanairbuilding.com',
+        sourceDate: '2024',
+      },
+      {
+        id: 'tech-3',
+        title: 'AI Vezérelt Prediktív Energetikai Menedzsment',
+        category: 'FEJLŐDŐ',
+        description: 'Mesterséges intelligencia, ami az időjárás-előrejelzés alapján optimalizálja a hőszivattyú működését.',
+        sourceName: 'Energy Systems Europe',
+        sourceUrl: 'https://www.energysystems.eu',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-4',
+        title: 'Zöld Hidrogén Üzemanyagcellás Fűtési Rendszerek',
+        category: 'KÍSÉRLETI',
+        description: 'Tiszta hidrogént égető vagy üzemanyagcellás minierőművek lakóépületekhez.',
+        sourceName: 'Hydrogen Tech Review',
+        sourceUrl: 'https://www.hydrogentech.com',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'Az épületgépész a csőfektetőből az emissziómentes zöld otthonok és klímatechnológiák kulcsfigurájává lép elő.',
     overview:
       'Az épületgépész az a szakember, aki gondoskodik az épületek komfortjáról: ivóvízellátásról, szennyvízelvezetésről, fűtésről, hűtésről és friss levegőről. Ő telepíti a korszerű levegő-víz hőszivattyúkat, padlófűtési köröket és klímaberendezéseket.',
     whatDoesDo: {
@@ -503,6 +934,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'Building',
     tagline: 'A vízhatlan védőernyő és a precíz fémlemez-szegélyek mestere',
     categoryLabel: 'Szerkezetépítés',
+
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart a tetőfedő mesterség?',
+    timelineSubtitle: 'A nehéz agyagcserepektől a beépített napelemes szolárcserepekig és drónos diagnosztikáig',
+    timelineImage: 'https://images.unsplash.com/photo-1632759145351-1d592919f522?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Tetőfedési munkálatok és héjazat építés',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Hagyományos agyagcserép és vashuzalos rögzítés',
+        period: '20. század közepe',
+        description: 'Kézi bádogszabás, nehéz feljutás állványok nélkül, minimális hőszigetelési technológia.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'Szellőztetett tetőszerkezetek, fóliák és gépi élhajlítás',
+        period: 'Napjainkban',
+        description: 'Rendszertetők, beton- és kerámiacserepek, beépített napelem modulok és vízszigetelő membránok.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'BIPV Solartető-cserepek és drónos tetőfelmérés',
+        period: 'Közeli jövő',
+        description: 'Napelemmel egybeöntött szintetikus cserepek, hőkamerás drónos diagnosztika és gyors szerelhetőség.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Szolár-Tetőtechnológus és Karbantartási Specialist',
+        period: 'Holnap',
+        description: 'Energiatermelő tetőrendszerek és modern vízszigetelések profi szakembere.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart a tetőfedő szakma?',
+    futureTechSubtitle: 'Beépített napelemek, drónos mérések és ön-hűtő tetőbevonatok',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: 'BIPV (Building Integrated Photovoltaics) Szolárcserepek',
+        category: 'MÁR LÉTEZŐ',
+        description: 'A tetőfedő anyagba teljes mértékben integrált napelemek, amelyek észrevétlenül termelnek áramot.',
+        sourceName: 'Solar Architecture',
+        sourceUrl: 'https://www.solararchitecture.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Drónos Hőkamerás Tetődiagnosztika és CAD Modell',
+        category: 'MÁR LÉTEZŐ',
+        description: 'Automatikus drónos repülés a tető felett, ami perceken belül 3D modellt készít a hibák és szivárgások feltárására.',
+        sourceName: 'Roofing Contractor',
+        sourceUrl: 'https://www.roofingcontractor.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-3',
+        title: 'Ultra-könnyű Újrahasznosított Szintetikus Cserepek',
+        category: 'FEJLŐDŐ',
+        description: 'Újrahasznosított műanyagból és kőporból készült 50 év garanciás, extrém időjárásálló kompozitok.',
+        sourceName: 'Green Materials',
+        sourceUrl: 'https://www.greenmaterials.com',
+        sourceDate: '2024',
+      },
+      {
+        id: 'tech-4',
+        title: 'Self-Cooling Cool-Roof Titán-Dioxid Bevonatok',
+        category: 'KÍSÉRLETI',
+        description: 'Napsugárzást 90%-ban visszaverő nano-bevonatok, amelyek nyáron jelentősen hűtik a tetőteret.',
+        sourceName: 'Climate Building Tech',
+        sourceUrl: 'https://www.climatebuilding.com',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'A tetőfedő a cserepezőből a ház elsődleges védelmének és energiatermelő héjazatának specialistája.',
     overview:
       'A tetőfedő és bádogos szakember felelős az épületek csapadékvíz elleni védelméért. Kerámia és beton cserepeket, cserepeslemezeket fektet fel, elkészíti az ereszcsatornákat, a kémény- és ablakbádogozásokat, megelőzve az épületek beázását.',
     whatDoesDo: {
@@ -571,6 +1081,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'Maximize2',
     tagline: 'A modern, gyors és precíz belső terek formálója',
     categoryLabel: 'Befejező Munkák',
+
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart a gipszkartonozó mesterség?',
+    timelineSubtitle: 'A nádszövetes vakolástól a fémvázas profilokig és glettelő robotokig',
+    timelineImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Gipszkartonozási és szárazépítő munkák',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Nádszövetes vakolás és fa lécezés',
+        period: '20. század közepe',
+        description: 'Időigényes nedves vakolás, lassú száradás, fa válaszfal-vázak és nagy szerkezeti tömeg.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'Csomagolt profilrendszerek és gépi csavarozás',
+        period: 'Napjainkban',
+        description: 'CD/UD profilok, szigetelt válaszfalak, gipszkarton emelő állványok és gépi glettelés.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'Előre gyártott válaszfal-modulok és felületkezelő automaták',
+        period: 'Közeli jövő',
+        description: 'Laser-guided profilállítás, csavartalan gyorscsatlakozók és pormentes csiszolórobotok.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Belső Térformáló & Akusztikai Specialist',
+        period: 'Holnap',
+        description: 'Környezetbarát, gyors és professzionális belsőépítészeti válaszfal-rendszerek építője.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart a gipszkartonozó szakma?',
+    futureTechSubtitle: 'Ergonomikus szerelési segédeszközök, robottal végzett glettelés és okoslapok',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: 'Exoskeleton és Magaslati Emelőeszközök',
+        category: 'MÁR LÉTEZŐ',
+        description: 'A mennyezeti kartonozást segítő ergonomikus tartószerkezet és pneumatikus emelő állványok.',
+        sourceName: 'Drywall Pro',
+        sourceUrl: 'https://www.drywallpro.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Mobil Glettelő és Csiszoló Robotok',
+        category: 'FEJLŐDŐ',
+        description: 'Automatizált csiszolókarok pormentes elszívással, amelyek tükörsima falfelületet képeznek.',
+        sourceName: 'Robotics in Construction',
+        sourceUrl: 'https://www.roboticinconstruction.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-3',
+        title: 'Magas Akusztikai Szigetelésű Grafénos Gipszkartonok',
+        category: 'FEJLŐDŐ',
+        description: 'Rendkívül vékony, mégis kiemelkedő hanggátló és tűzálló tulajdonságú kompozit lapok.',
+        sourceName: 'Acoustics World',
+        sourceUrl: 'https://www.acousticsworld.com',
+        sourceDate: '2024',
+      },
+      {
+        id: 'tech-4',
+        title: 'Nedvességre Színváltó Intelligens Gipszkarton',
+        category: 'KÍSÉRLETI',
+        description: 'Belső bevonat, amely vizuálisan jelzi a fal mögötti csőtörést vagy rejtett páralecsapódást.',
+        sourceName: 'Smart Interiors',
+        sourceUrl: 'https://www.smartinteriors.com',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'A gipszkartonozó a glettelőből a gyors, flexibilis és akusztikailag optimalizált beltérformálás mesterévé válik.',
     overview:
       'A gipszkartonozó és szárazépítő szakember az a belsőépítészeti kivitelező, aki könnyű fémvázas profilokból és gipszkarton táblákból válaszfalakat, előtétfalakat, álmennyezeteket és tetőtéri beépítéseket épít. Munkája gyors, tiszta és hajszálpontos.',
     whatDoesDo: {
@@ -639,6 +1228,85 @@ export const TRADE_DETAILS: Record<string, TradeDetail> = {
     iconName: 'Sparkles',
     tagline: 'A felületek végső színeinek, védelmének és dekorációjának művésze',
     categoryLabel: 'Befejező Munkák',
+
+    // MÚLT -> JELEN -> JÖVŐ Timeline
+    timelineTitle: 'Honnan indult és merre tart a festő mesterség?',
+    timelineSubtitle: 'A mészolástól és keféktől az airless gépi szóráson át a fotokatalitikus légtisztító festékekig',
+    timelineImage: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=1200&q=80',
+    timelineImageAlt: 'Szobafestés és gépi festékszórás',
+    timelineStations: [
+      {
+        id: 'station-1',
+        badge: 'RÉGEN',
+        title: 'Készült mészfestés, kefe és kézi enyves glettelés',
+        period: '20. század közepe',
+        description: 'Mészégetés, nehéz szagmentesítés, kézi felhordás kefével és többszöri lassú glettelési rétegezés.',
+      },
+      {
+        id: 'station-2',
+        badge: 'MA',
+        title: 'Airless gépi szórás, diszperziós festékek és prémium tapéták',
+        period: 'Napjainkban',
+        description: 'Nagy nyomású festékszóró gépek, mosható és dörzsálló felületek, lézeres maszkolástechnika.',
+      },
+      {
+        id: 'station-3',
+        badge: 'JÖVŐ',
+        title: 'Öntisztuló fotokatalitikus festékek és robotizált szórófejek',
+        period: 'Közeli jövő',
+        description: 'Légtisztító belső bevonatok, robottal végzett nagyfelületű festés és intelligens színillesztés.',
+      },
+      {
+        id: 'station-4',
+        badge: 'TE',
+        title: 'Öko-Felületkezelő és Belsőépítészeti Szín-Szakértő',
+        period: 'Holnap',
+        description: 'Egészséges beltéri klímát és esztétikai élményt biztosító felülettechnológus.',
+      },
+    ],
+
+    // MERRE TART A SZAKMA? Future Tech
+    futureTechTitle: 'Merre tart a festő szakma?',
+    futureTechSubtitle: 'Airless szórástechnika, légtisztító bevonatok és színváltó okosfestékek',
+    futureTechCards: [
+      {
+        id: 'tech-1',
+        title: 'Airless (Levegő Nélküli) Gépi Festékszórás',
+        category: 'MÁR LÉTEZŐ',
+        description: 'Nagy nyomással dolgozó szóróberendezések, amelyek percek alatt egyenletes, csíkmentes felületet biztosítanak.',
+        sourceName: 'Painter & Decorator',
+        sourceUrl: 'https://www.painterdecorator.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-2',
+        title: 'Fotokatalitikus Légtisztító Festékek',
+        category: 'FEJLŐDŐ',
+        description: 'Titán-dioxidot tartalmazó bevonatok, amelyek a szobai fény hatására lebontják a szagokat és baktériumokat.',
+        sourceName: 'Coatings World',
+        sourceUrl: 'https://www.coatingsworld.com',
+        sourceDate: '2025',
+      },
+      {
+        id: 'tech-3',
+        title: 'Önjavító (Self-Healing) Karcmentes Bevonatok',
+        category: 'FEJLŐDŐ',
+        description: 'A mikrokarcokat testhőmérséklet vagy napsütés hatására automatikusan kisimító intelligens lakkok.',
+        sourceName: 'Materials Today',
+        sourceUrl: 'https://www.materialstoday.com',
+        sourceDate: '2024',
+      },
+      {
+        id: 'tech-4',
+        title: 'Elektrokromatikus Színváltó Okosfestékek',
+        category: 'KÍSÉRLETI',
+        description: 'Gyenge elektromos feszültség hatására árnyalatot vagy mintát változtató pigmentes felületek.',
+        sourceName: 'Advanced Decorative Tech',
+        sourceUrl: 'https://www.decorativetech.com',
+        sourceDate: '2025',
+      },
+    ],
+    futureTechClosure: 'A festő szakma a felületmázolásból az egészséges beltéri környezetet teremtő felületfejlesztés művészetévé alakul.',
     overview:
       'A festő, mázoló és tapétázó szakember adja meg az építmények végső arculatát. Gletteli és simítja a falfelületeket, belső és külső festéseket készít, nyílászárókat mázol, és luxus tapétákat vagy dekorációs vakolatokat visz fel.',
     whatDoesDo: {
