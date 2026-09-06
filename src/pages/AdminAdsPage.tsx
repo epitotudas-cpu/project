@@ -31,6 +31,7 @@ import {
   createAdCampaign,
   AD_PACKAGES,
 } from '../services/advertisementService';
+import { AdminAdPackagesManager } from '../components/AdminAdPackagesManager';
 import {
   getContracts,
 } from '../services/contractService';
@@ -730,29 +731,7 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
 
           {/* TAB 5: REKLÁMCSOMAGOK */}
           {activeTab === 'packages' && (
-            <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
-              <h2 style={{ color: textColor }} className="text-lg font-bold border-b border-white/10 pb-4 flex items-center gap-2">
-                <Package size={20} style={{ color: cardHighlight }} /> Reklámcsomagok &amp; Árazás
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {AD_PACKAGES.map((pkg) => (
-                  <div key={pkg.id} style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-6 rounded-2xl border space-y-4 shadow flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <span style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider block">{pkg.id} tier</span>
-                      <h3 className="text-lg font-black text-white">{pkg.name}</h3>
-                      <div className="text-2xl font-black text-emerald-400">
-                        {pkg.monthlyPriceHuf.toLocaleString('hu-HU')} HUF <span className="text-xs text-gray-400 font-normal">/ hó</span>
-                      </div>
-                      <ul className="space-y-2 text-xs text-gray-300 pt-3 border-t border-white/10">
-                        {pkg.features.map((feat, idx) => (
-                          <li key={idx} className="flex items-center gap-2"><Check size={14} className="text-emerald-400 shrink-0" /> {feat}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <AdminAdPackagesManager />
           )}
 
           {/* TAB 6: SZERZŐDÉSEK */}
