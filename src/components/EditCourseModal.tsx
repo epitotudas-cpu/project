@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, BookOpen, Layers, Sparkles } from 'lucide-react';
+import { X, Plus, Trash2, BookOpen, Layers, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import type { LearningCourse, LearningChapter, KeyTermItem, CourseDifficulty, TargetAudience, LearningStatus } from '../lib/supabase';
 import { saveCourse } from '../services/learningService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
@@ -25,6 +25,7 @@ export default function EditCourseModal({
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
+  const headerBg = adjustColorBrightness(cardBg, 4);
   const inputBg = adjustColorBrightness(cardBg, -4);
   const textColor = getContrastTextColor(cardBg);
   const inputTextColor = getContrastTextColor(inputBg);
@@ -51,6 +52,7 @@ export default function EditCourseModal({
   const [chapters, setChapters] = useState<LearningChapter[]>([]);
   const [keyTerms, setKeyTerms] = useState<KeyTermItem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (course) {
@@ -140,6 +142,7 @@ export default function EditCourseModal({
 
     try {
       setSaving(true);
+      setSaveStatus('saving');
       const tags = tagsStr.split(',').map((t) => t.trim()).filter(Boolean);
       const slug = title
         .toLowerCase()
@@ -168,10 +171,15 @@ export default function EditCourseModal({
         partner_name: partnerName || course?.partner_name || null,
       });
 
-      onSaved();
-      onClose();
+      setSaveStatus('success');
+      setTimeout(() => {
+        onSaved();
+        onClose();
+        setSaveStatus('idle');
+      }, 1200);
     } catch (e) {
       console.warn('Hiba a tananyag mentésekor:', e);
+      setSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -394,23 +402,47 @@ export default function EditCourseModal({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-              className="px-5 py-2.5 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
-            >
-              Mégse
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{ backgroundColor: cardHighlight, color: '#000000' }}
-              className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90 disabled:opacity-50"
-            >
-              {saving ? 'Mentés...' : 'Tananyag Mentése'}
-            </button>
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-3 pt-3 pb-3 px-4 border-t sticky bottom-0 z-10 rounded-b-3xl backdrop-blur-md">
+            <div className="flex flex-wrap items-center gap-3 ml-auto">
+              {saveStatus === 'saving' && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
+                  <span className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                  Mentés folyamatban...
+                </span>
+              )}
+
+              {saveStatus === 'success' && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl animate-fadeIn">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  A módosítások sikeresen mentve.
+                </span>
+              )}
+
+              {saveStatus === 'error' && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl animate-fadeIn">
+                  <AlertCircle size={16} className="text-red-400 shrink-0" />
+                  A mentés nem sikerült. Próbáld újra.
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-5 py-2.5 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90 disabled:opacity-40"
+              >
+                Mégse
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                className="px-6 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Mentés...' : 'Tananyag Mentése'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

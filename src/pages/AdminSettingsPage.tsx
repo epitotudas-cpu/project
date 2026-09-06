@@ -645,15 +645,33 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
-    saveSiteSettings(settings);
-    saveImpressumData(impressumData);
-    saveHeroState(heroState);
-    saveCalculatorConfig(calcConfig);
-    saveLegalDocs(legalDocs);
-    saveAboutSettings(aboutSettings);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    if (saveStatus === 'saving') return;
+    setSaveStatus('saving');
+    setSaveErrorMsg(null);
+
+    try {
+      await saveSiteSettings(settings);
+      await saveImpressumData(impressumData);
+      await saveHeroState(heroState);
+      await saveCalculatorConfig(calcConfig);
+      await saveLegalDocs(legalDocs);
+      await saveAboutSettings(aboutSettings);
+
+      setSaveStatus('success');
+      setSavedSuccess(true);
+
+      setTimeout(() => {
+        setSaveStatus((prev) => (prev === 'success' ? 'idle' : prev));
+        setSavedSuccess(false);
+      }, 3500);
+    } catch (err) {
+      setSaveStatus('error');
+      setSaveErrorMsg(err instanceof Error ? err.message : 'A mentés nem sikerült. Próbáld újra.');
+    }
   };
 
   const handleResetDefaults = () => {
@@ -4350,27 +4368,64 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             </span>
           </div>
 
-          <div className="flex items-center gap-3 ml-auto">
+          <div className="flex flex-wrap items-center gap-3 ml-auto">
+            {/* Inline 3-State Save Status Feedback */}
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
+                <span className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                Mentés folyamatban...
+              </span>
+            )}
+
+            {saveStatus === 'success' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl animate-fadeIn shadow-sm">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                A módosítások sikeresen mentve.
+              </span>
+            )}
+
+            {saveStatus === 'error' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl animate-fadeIn shadow-sm">
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                {saveErrorMsg || 'A mentés nem sikerült. Próbáld újra.'}
+              </span>
+            )}
+
             <button
+              type="button"
               onClick={() => setActiveTab('overview')}
+              disabled={saveStatus === 'saving'}
               style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <ArrowLeft size={14} /> Vissza a csempékhez
             </button>
             <button
+              type="button"
               onClick={handleResetDefaults}
+              disabled={saveStatus === 'saving'}
               style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <RotateCcw size={14} /> Elvetés
             </button>
             <button
+              type="button"
               onClick={handleSave}
+              disabled={saveStatus === 'saving'}
               style={{ backgroundColor: cardHighlight, color: '#000000' }}
-              className="px-6 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+              className="px-6 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save size={16} /> Mentés &amp; Alkalmazás
+              {saveStatus === 'saving' ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin shrink-0" />
+                  Mentés...
+                </>
+              ) : (
+                <>
+                  <Save size={16} /> Mentés &amp; Alkalmazás
+                </>
+              )}
             </button>
           </div>
         </div>

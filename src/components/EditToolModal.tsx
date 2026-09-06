@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { Tool } from '../lib/supabase';
 import { createTool, updateTool } from '../services/toolService';
@@ -94,6 +94,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   const [form, setForm] = useState<FormState>(() => (tool ? formFromTool(tool) : EMPTY_FORM));
   const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const siteSettings = useSiteSettings();
@@ -106,10 +107,24 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   const inputTextColor = getContrastTextColor(inputBg);
 
   useEffect(() => {
-    setForm(tool ? formFromTool(tool) : EMPTY_FORM);
-    setSlugTouched(false);
+    if (tool) {
+      setForm(formFromTool(tool));
+      setSlugTouched(true);
+    } else {
+      setForm({ ...EMPTY_FORM });
+      setSlugTouched(false);
+    }
     setError(null);
+    setSaveStatus('idle');
   }, [tool]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !saving) onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [saving, onClose]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -129,19 +144,23 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     e.preventDefault();
     if (!form.name.trim()) {
       setError('Az eszköz neve megadása kötelező.');
+      setSaveStatus('error');
       return;
     }
     const finalSlug = form.slug.trim() || slugify(form.name);
     if (!finalSlug) {
       setError('A slug érvénytelen.');
+      setSaveStatus('error');
       return;
     }
     setSaving(true);
+    setSaveStatus('saving');
     setError(null);
     try {
       const priceNum = form.price.trim() === '' ? null : Number(form.price.trim());
       if (priceNum != null && Number.isNaN(priceNum)) {
         setError('A ár értéke érvénytelen szám.');
+        setSaveStatus('error');
         setSaving(false);
         return;
       }
@@ -173,14 +192,16 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
       } else {
         data = await createTool(payload);
       }
+      setSaveStatus('success');
       onSaved(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Mentés sikertelen.';
+      const msg = err instanceof Error ? err.message : 'A mentés nem sikerült. Próbáld újra.';
       if (/duplicate|unique|23505/i.test(msg)) {
         setError('Ez a slug már foglalt.');
       } else {
         setError(msg);
       }
+      setSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -340,13 +361,36 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
             </div>
           </div>
 
-          <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-3 pt-3 border-t">
-            <button type="button" onClick={onClose} disabled={saving} style={{ borderColor: cardBorder, color: textColor }} className="px-4 py-2 border font-bold text-xs rounded-lg hover:opacity-80 disabled:opacity-40 transition-colors cursor-pointer">
-              Mégse
-            </button>
-            <button type="submit" disabled={saving} style={{ backgroundColor: cardHighlight, color: '#000000' }} className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-md">
-              <Save size={14} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
-            </button>
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-3 pt-3 pb-3 px-4 border-t sticky bottom-0 z-10 rounded-b-xl backdrop-blur-md">
+            <div className="flex flex-wrap items-center gap-3 ml-auto">
+              {saveStatus === 'saving' && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
+                  <span className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                  Mentés folyamatban...
+                </span>
+              )}
+
+              {saveStatus === 'success' && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl animate-fadeIn">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  A módosítások sikeresen mentve.
+                </span>
+              )}
+
+              {(saveStatus === 'error' || error) && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl animate-fadeIn">
+                  <AlertCircle size={16} className="text-red-400 shrink-0" />
+                  {error || 'A mentés nem sikerült. Próbáld újra.'}
+                </span>
+              )}
+
+              <button type="button" onClick={onClose} disabled={saving} style={{ borderColor: cardBorder, color: textColor }} className="px-4 py-2 border font-bold text-xs rounded-lg hover:opacity-80 disabled:opacity-40 transition-colors cursor-pointer">
+                Mégse
+              </button>
+              <button type="submit" disabled={saving} style={{ backgroundColor: cardHighlight, color: '#000000' }} className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-md">
+                <Save size={14} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

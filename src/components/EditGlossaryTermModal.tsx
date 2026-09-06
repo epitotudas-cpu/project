@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, Image, Video, Info } from 'lucide-react';
+import { X, Save, AlertCircle, Image, Video, Info, CheckCircle2 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { GlossaryTerm } from '../lib/supabase';
 import { createGlossaryTerm, updateGlossaryTerm } from '../services/glossaryService';
@@ -164,6 +164,7 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   const [form, setForm] = useState<FormState>(() => (term ? formFromTerm(term) : { ...EMPTY_FORM }));
   const [slugTouched, setSlugTouched] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -175,6 +176,7 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
       setSlugTouched(false);
     }
     setError(null);
+    setSaveStatus('idle');
   }, [term]);
 
   useEffect(() => {
@@ -202,16 +204,19 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.term.trim()) {
-      setError('\u2757 Kötelező mező hiányzik: "Kifejezés neve" – töltsd ki a fogalom nevét.');
+      setError('❗ Kötelező mező hiányzik: "Kifejezés neve" – töltsd ki a fogalom nevét.');
+      setSaveStatus('error');
       return;
     }
     if (!form.definition.trim()) {
-      setError('\u2757 Kötelező mező hiányzik: "Definíció" – írj le rövid meghatározást.');
+      setError('❗ Kötelező mező hiányzik: "Definíció" – írj le rövid meghatározást.');
+      setSaveStatus('error');
       return;
     }
     const finalSlug = form.slug.trim() || slugify(form.term);
     if (!finalSlug) {
-      setError('\u2757 A slug érvénytelen – csak kisbetűk, számok és kötőjelek megengedettek.');
+      setError('❗ A slug érvénytelen – csak kisbetűk, számok és kötőjelek megengedettek.');
+      setSaveStatus('error');
       return;
     }
     const imageLines = form.image_urls.split('\n').map((u) => u.trim()).filter(Boolean);
@@ -220,16 +225,19 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
     const syntaxInvalidUrls = imageLines.filter((u) => !isValidUrl(u));
     if (syntaxInvalidUrls.length > 0) {
       setError('❗ Kép URL hiba – az alábbi sorok nem érvényesek:\n' + syntaxInvalidUrls.join('\n'));
+      setSaveStatus('error');
       return;
     }
 
     const syntaxInvalidVideoUrls = videoLines.filter((u) => !isValidUrl(u));
     if (syntaxInvalidVideoUrls.length > 0) {
       setError('❗ Videó URL hiba – az alábbi sorok nem érvényesek:\n' + syntaxInvalidVideoUrls.join('\n'));
+      setSaveStatus('error');
       return;
     }
 
     setSaving(true);
+    setSaveStatus('saving');
     setError(null);
     try {
       const translationsPayload: Record<string, string> = {};
@@ -266,10 +274,14 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
       } else {
         data = await createGlossaryTerm(payload);
       }
-      onSaved(data);
+      setSaveStatus('success');
       window.dispatchEvent(new CustomEvent('glossary-updated'));
+      setTimeout(() => {
+        onSaved(data);
+      }, 1200);
     } catch (err) {
       setError(parseSupabaseError(err));
+      setSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -581,18 +593,41 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2 border-t" style={{ borderColor: cardBorder }}>
-            <button type="button" onClick={onClose} disabled={saving} className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-gray-200 disabled:opacity-40 transition-colors">
-              Mégse
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{ backgroundColor: cardHighlight, color: '#000000' }}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save size={14} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
-            </button>
+          <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-3 pt-3 pb-3 px-4 border-t sticky bottom-0 z-10 rounded-b-xl backdrop-blur-md">
+            <div className="flex flex-wrap items-center gap-3 ml-auto">
+              {saveStatus === 'saving' && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
+                  <span className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                  Mentés folyamatban...
+                </span>
+              )}
+
+              {saveStatus === 'success' && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl animate-fadeIn">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  A módosítások sikeresen mentve.
+                </span>
+              )}
+
+              {(saveStatus === 'error' || error) && (
+                <span className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl animate-fadeIn">
+                  <AlertCircle size={16} className="text-red-400 shrink-0" />
+                  {error || 'A mentés nem sikerült. Próbáld újra.'}
+                </span>
+              )}
+
+              <button type="button" onClick={onClose} disabled={saving} className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-200 disabled:opacity-40 transition-colors cursor-pointer">
+                Mégse
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-md"
+              >
+                <Save size={14} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

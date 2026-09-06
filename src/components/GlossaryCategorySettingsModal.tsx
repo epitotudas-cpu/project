@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Save, Eye, EyeOff, Sparkles, Search, Layers, RefreshCw, Plus, Trash2, Upload, Image as ImageIcon, Link } from 'lucide-react';
+import { X, Save, Eye, EyeOff, Sparkles, Search, Layers, RefreshCw, Plus, Trash2, Upload, Image as ImageIcon, Link, CheckCircle2, AlertCircle } from 'lucide-react';
 import {
   getGlossaryCategorySettings,
   saveGlossaryCategorySettings,
@@ -32,6 +32,8 @@ export default function GlossaryCategorySettingsModal({
   const toast = useToast();
   const [settings, setSettings] = useState<GlossaryCategorySettings>(getGlossaryCategorySettings());
   const [searchFilter, setSearchFilter] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
   // Form State for Adding a New Category Icon
   const [newCatName, setNewCatName] = useState('');
@@ -42,6 +44,25 @@ export default function GlossaryCategorySettingsModal({
   // Hidden File Input Ref for Local File Uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeUploadCatName, setActiveUploadCatName] = useState<string | null>(null);
+
+  function handleSave() {
+    setSaving(true);
+    setSaveStatus('saving');
+    try {
+      saveGlossaryCategorySettings(settings);
+      setSaveStatus('success');
+      toast.success('Fogalomtár kategória beállítások elmentve!');
+      setTimeout(() => {
+        onClose();
+        setSaveStatus('idle');
+      }, 1200);
+    } catch {
+      setSaveStatus('error');
+      toast.error('Hiba történt a beállítások mentésekor.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -84,12 +105,6 @@ export default function GlossaryCategorySettingsModal({
   }, [settings.categoryItems, searchFilter]);
 
   if (!isOpen) return null;
-
-  function handleSave() {
-    saveGlossaryCategorySettings(settings);
-    toast.success('Fogalomtár kategória beállítások és ikonok elmentve!');
-    onClose();
-  }
 
   function toggleGlobalSection(val: boolean) {
     setSettings((prev) => ({ ...prev, showFeaturedCategories: val }));
@@ -587,32 +602,58 @@ export default function GlossaryCategorySettingsModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-[#222] flex items-center justify-between bg-[#161616]">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="px-6 py-4 border-t sticky bottom-0 z-10 backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
+            disabled={saving}
             onClick={() => {
               setSettings(getGlossaryCategorySettings());
               toast.info('Beállítások visszaállítva az utolsó mentett állapotra.');
             }}
-            className="px-3.5 py-2 text-xs font-bold text-gray-400 hover:text-white transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2 text-xs font-bold text-gray-400 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
           >
             <RefreshCw size={13} /> Alaphelyzet
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3 ml-auto">
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
+                <span className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                Mentés folyamatban...
+              </span>
+            )}
+
+            {saveStatus === 'success' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl animate-fadeIn">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                A módosítások sikeresen mentve.
+              </span>
+            )}
+
+            {saveStatus === 'error' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl animate-fadeIn">
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                A mentés nem sikerült. Próbáld újra.
+              </span>
+            )}
+
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-[#222] hover:bg-[#2A2A2A] text-gray-300 font-bold text-xs rounded-xl transition-colors"
+              disabled={saving}
+              className="px-4 py-2 border font-bold text-xs rounded-xl hover:opacity-80 disabled:opacity-40 transition-colors cursor-pointer"
+              style={{ borderColor: cardBorder, color: textColor }}
             >
               Mégse
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 bg-[#FFC400] hover:bg-[#E6B000] text-black font-extrabold text-xs rounded-xl transition-colors flex items-center gap-1.5 shadow-md"
+              disabled={saving}
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="px-5 py-2 font-black text-xs rounded-xl transition-colors flex items-center gap-1.5 shadow-md cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save size={14} /> Beállítások Mentése
+              <Save size={14} /> {saving ? 'Mentés...' : 'Beállítások Mentése'}
             </button>
           </div>
         </div>

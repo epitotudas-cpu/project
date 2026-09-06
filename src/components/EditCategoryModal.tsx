@@ -3,6 +3,7 @@ import {
   X,
   Save,
   AlertCircle,
+  CheckCircle2,
   Image as ImageIcon,
   Palette,
   Layout,
@@ -191,6 +192,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
   const [form, setForm] = useState<FormState>(() => (category ? formFromCategory(category) : { ...EMPTY_FORM }));
   const [slugTouched, setSlugTouched] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'style' | 'media' | 'seo'>('general');
   const previewRef = useRef<HTMLDivElement>(null);
@@ -230,6 +232,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
       setSlugTouched(false);
     }
     setError(null);
+    setSaveStatus('idle');
   }, [category]);
 
   useEffect(() => {
@@ -271,28 +274,33 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
     e.preventDefault();
     if (!form.name.trim()) {
       setError('A kategória neve megadása kötelező.');
+      setSaveStatus('error');
       setActiveTab('general');
       return;
     }
     if (!form.slug.trim()) {
       setError('A slug megadása kötelező.');
+      setSaveStatus('error');
       setActiveTab('general');
       return;
     }
 
     if (form.image_url.trim() && !isValidUrl(form.image_url)) {
       setError('A borítókép URL-je érvénytelen (https://... kezdetű link szükséges).');
+      setSaveStatus('error');
       setActiveTab('media');
       return;
     }
 
     if (form.banner_url.trim() && !isValidUrl(form.banner_url)) {
       setError('A banner kép URL-je érvénytelen (https://... kezdetű link szükséges).');
+      setSaveStatus('error');
       setActiveTab('media');
       return;
     }
 
     setSaving(true);
+    setSaveStatus('saving');
     setError(null);
     try {
       const payload = {
@@ -318,14 +326,16 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
       } else {
         data = await createCategory(payload);
       }
+      setSaveStatus('success');
       onSaved(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Mentés sikertelen.';
+      const msg = err instanceof Error ? err.message : 'A mentés nem sikerült. Próbáld újra.';
       if (/duplicate|unique|23505/i.test(msg)) {
         setError('Ez a slug vagy név már foglalt.');
       } else {
         setError(msg);
       }
+      setSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -940,11 +950,32 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
         </form>
 
         {/* Lábjegyzet gombok */}
-        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between px-6 py-4 border-t sticky bottom-0 z-10">
+        <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex flex-wrap items-center justify-between px-6 py-4 border-t sticky bottom-0 z-10 backdrop-blur-md">
           <span className="text-xs text-gray-400">
             {isCreate ? 'Új kategória mentése' : 'Módosítások mentése'}
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 ml-auto">
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
+                <span className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                Mentés folyamatban...
+              </span>
+            )}
+
+            {saveStatus === 'success' && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl animate-fadeIn">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                A módosítások sikeresen mentve.
+              </span>
+            )}
+
+            {(saveStatus === 'error' || error) && (
+              <span className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl animate-fadeIn">
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                {error || 'A mentés nem sikerült. Próbáld újra.'}
+              </span>
+            )}
+
             <button
               type="button"
               onClick={onClose}
@@ -958,9 +989,18 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
               onClick={handleSubmit}
               disabled={saving}
               style={{ backgroundColor: cardHighlight, color: '#000000' }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-black rounded-xl hover:opacity-90 disabled:opacity-60 transition-colors shadow-md cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-black rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md cursor-pointer"
             >
-              <Save size={16} /> {saving ? 'Mentés...' : isCreate ? 'Létrehozás' : 'Mentés'}
+              {saving ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin shrink-0" />
+                  Mentés...
+                </>
+              ) : (
+                <>
+                  <Save size={16} /> {isCreate ? 'Létrehozás' : 'Mentés'}
+                </>
+              )}
             </button>
           </div>
         </div>
