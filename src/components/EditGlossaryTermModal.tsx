@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, Image, Video, Info, CheckCircle2 } from 'lucide-react';
+import { X, Save, AlertCircle, Image, Video, Info, CheckCircle2, Globe, Plus, Trash2 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
-import type { GlossaryTerm } from '../lib/supabase';
-import { createGlossaryTerm, updateGlossaryTerm } from '../services/glossaryService';
+import type { GlossaryTerm, GlossaryTermTranslation } from '../lib/supabase';
+import { createGlossaryTerm, updateGlossaryTerm, listTermTranslations, upsertTermTranslation, deleteTermTranslation } from '../services/glossaryService';
+import { getGlossaryLanguages, type GlossaryLanguage } from '../services/languageService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 function isValidUrl(url: string): boolean {
@@ -468,38 +469,113 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
 
           {/* Multilingual Translation Inputs */}
           <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="p-4 border rounded-xl space-y-3 shadow-sm">
-            <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider">🌐 Többnyelvű Szakszótár (HU - EN - DE - RO)</h4>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label style={labelStyle} className="block text-[10px] font-bold mb-1">🇬🇧 Angol (EN)</label>
-                <input
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.trans_en}
-                  onChange={(e) => update('trans_en', e.target.value)}
-                  placeholder="pl. Mortar"
-                />
-              </div>
-              <div>
-                <label style={labelStyle} className="block text-[10px] font-bold mb-1">🇩🇪 Német (DE)</label>
-                <input
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.trans_de}
-                  onChange={(e) => update('trans_de', e.target.value)}
-                  placeholder="pl. Mörtel"
-                />
-              </div>
-              <div>
-                <label style={labelStyle} className="block text-[10px] font-bold mb-1">🇷🇴 Román (RO)</label>
-                <input
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.trans_ro}
-                  onChange={(e) => update('trans_ro', e.target.value)}
-                  placeholder="pl. Mortar"
-                />
-              </div>
+            <div className="flex items-center justify-between">
+              <h4 style={{ color: cardHighlight }} className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Globe size={14} /> Többnyelvű Fordítások Kezelése ({activeLangs.filter(l => l.iso_code !== 'hu').length} aktív célnyelv)
+              </h4>
+            </div>
+
+            <div className="space-y-4">
+              {activeLangs.filter((l) => l.iso_code !== 'hu').map((lang) => {
+                const code = lang.iso_code.toLowerCase();
+                const transItem = dynTranslations[code] || {
+                  translated_term: code === 'en' ? form.trans_en : code === 'de' ? form.trans_de : code === 'ro' ? form.trans_ro : '',
+                  definition: '',
+                  synonyms: '',
+                  status: 'published' as const,
+                };
+
+                const isDefined = Boolean(transItem.translated_term.trim());
+
+                return (
+                  <div
+                    key={lang.id}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+                    className="p-3 border rounded-xl space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{lang.flag_emoji}</span>
+                        <span className="font-bold text-xs" style={{ color: textColor }}>
+                          {lang.name_hu} ({lang.short_label})
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-mono">[{lang.iso_code}]</span>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                        isDefined ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-gray-500/20 text-gray-400 border-gray-500/40'
+                      }`}>
+                        {isDefined ? 'Fordítás kitöltve' : 'Nincs fordítás'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label style={labelStyle} className="block text-[10px] font-bold mb-1">
+                          Szakkifejezés neve ({lang.short_label})
+                        </label>
+                        <input
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
+                          className={fieldClass}
+                          value={transItem.translated_term}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDynTranslations((prev) => ({
+                              ...prev,
+                              [code]: { ...transItem, translated_term: val },
+                            }));
+                            if (code === 'en') update('trans_en', val);
+                            if (code === 'de') update('trans_de', val);
+                            if (code === 'ro') update('trans_ro', val);
+                          }}
+                          placeholder={`Fordítás ${lang.name_hu} nyelven...`}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={labelStyle} className="block text-[10px] font-bold mb-1">
+                          Fordítás állapota
+                        </label>
+                        <select
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
+                          className={fieldClass}
+                          value={transItem.status}
+                          onChange={(e) => {
+                            const st = e.target.value as 'draft' | 'reviewed' | 'published';
+                            setDynTranslations((prev) => ({
+                              ...prev,
+                              [code]: { ...transItem, status: st },
+                            }));
+                          }}
+                        >
+                          <option value="published">🟢 Publikált (published)</option>
+                          <option value="reviewed">🟡 Ellenőrzött (reviewed)</option>
+                          <option value="draft">⚪ Piszkozat (draft)</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label style={labelStyle} className="block text-[10px] font-bold mb-1">
+                          Definíció / Magyarázat ({lang.short_label}) - Opcionális
+                        </label>
+                        <textarea
+                          rows={2}
+                          style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
+                          className={`${fieldClass} resize-none`}
+                          value={transItem.definition}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDynTranslations((prev) => ({
+                              ...prev,
+                              [code]: { ...transItem, definition: val },
+                            }));
+                          }}
+                          placeholder={`Rövid leírás ${lang.name_hu} nyelven...`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

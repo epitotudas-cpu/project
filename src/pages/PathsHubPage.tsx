@@ -25,7 +25,6 @@ import {
   Award,
   UserCheck,
   UserX,
-  History,
   Cpu,
   ExternalLink,
   Rocket,

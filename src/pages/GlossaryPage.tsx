@@ -22,9 +22,11 @@ import {
   X,
   Bookmark,
   BookmarkCheck,
+  Globe,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useGlossary } from '../contexts/GlossaryContext';
+import { useGlossaryLanguages } from '../services/languageService';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import { getTradeEducationalPathways } from '../services/glossaryService';
@@ -129,7 +131,9 @@ function getTermGradient(cat?: string | null): string {
 export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const { user } = useAuth();
   const glossary = useGlossary();
+  const { activeLanguages } = useGlossaryLanguages();
   const categorySettings = useGlossaryCategorySettings();
+  const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string | null>(null);
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     try {
@@ -294,6 +298,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     setSelectedCategories([]);
     setModalCategories([]);
     setSearchQuery('');
+    setSelectedLanguageFilter(null);
     updateUrlParams([], '');
     setIsCategoryModalOpen(false);
   };
@@ -365,8 +370,19 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     if (selectedCategories.length > 0) {
       res = res.filter((t) => t.category && selectedCategories.includes(t.category.trim()));
     }
+    if (selectedLanguageFilter) {
+      if (selectedLanguageFilter === 'has_translation') {
+        res = res.filter((t) => t.translations && Object.keys(t.translations).length > 0);
+      } else {
+        res = res.filter((t) => {
+          if (!t.translations) return false;
+          const tr = t.translations[selectedLanguageFilter] || t.translations[selectedLanguageFilter.toUpperCase()];
+          return Boolean(tr);
+        });
+      }
+    }
     return res.sort((a, b) => a.term.localeCompare(b.term, 'hu'));
-  }, [tabTerms, selectedCategories, searchQuery]);
+  }, [tabTerms, selectedCategories, searchQuery, selectedLanguageFilter]);
 
   const latestTerms = useMemo(
     () => [...glossary.terms].slice(-6).reverse(),
@@ -437,11 +453,13 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 <div className="p-2.5 bg-accent/15 rounded-xl border border-accent/25">
                   <BookOpen size={26} className="text-accent" />
                 </div>
-                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Fogalmak</h1>
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                  🌐 Többnyelvű Szakszótár <span className="text-accent font-mono text-xl md:text-2xl">({activeLanguages.map(l => l.short_label).join(' – ')})</span>
+                </h1>
               </div>
               <p className="text-gray-400 text-sm max-w-lg leading-relaxed">
                 Szakmai Szótár &amp; Enciklopédia – Minden tudás, egy helyen.<br />
-                Építőipari fogalmak és szakifejezések magyarázata az alapoktól a tetőszerkezetig.
+                Építőipari fogalmak és szakifejezések magyarázata magyarul és adminisztrációból tetszőlegesen bővíthető nyelveken.
               </p>
             </div>
 
@@ -594,8 +612,54 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
           </div>
 
+          {/* DYNAMIC LANGUAGE FILTER BADGES */}
+          <div className="flex items-center gap-1.5 flex-wrap pt-3 border-t border-gray-100">
+            <span className="text-xs font-extrabold text-gray-700 flex items-center gap-1 mr-1">
+              <Globe size={14} className="text-primary" /> Nyelv:
+            </span>
+            <button
+              onClick={() => setSelectedLanguageFilter(null)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                selectedLanguageFilter === null
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Összes
+            </button>
+            <button
+              onClick={() => setSelectedLanguageFilter('has_translation')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                selectedLanguageFilter === 'has_translation'
+                  ? 'bg-amber-400 text-black font-black shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/80'
+              }`}
+            >
+              Fordítással rendelkező
+            </button>
+            {activeLanguages
+              .filter((l) => l.iso_code !== 'hu')
+              .map((lang) => {
+                const isSelected = selectedLanguageFilter === lang.iso_code;
+                return (
+                  <button
+                    key={lang.iso_code}
+                    onClick={() => setSelectedLanguageFilter(isSelected ? null : lang.iso_code)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-sm font-black'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/80'
+                    }`}
+                  >
+                    <span>{lang.flag_emoji || '🌐'}</span>
+                    <span>{lang.short_label}</span>
+                  </button>
+                );
+              })}
+          </div>
+
           {/* ACTIVE FILTER REMOVABLE CHIPS */}
-          {(selectedCategories.length > 0 || searchQuery.trim()) && (
+          {(selectedCategories.length > 0 || searchQuery.trim() || selectedLanguageFilter) && (
             <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100">
               <span className="text-xs font-bold text-gray-500">Aktív szűrők:</span>
 
@@ -625,6 +689,24 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                       updateUrlParams(selectedCategories, '');
                     }}
                     className="hover:bg-amber-200 rounded-full p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              )}
+
+              {/* Language Filter Chip */}
+              {selectedLanguageFilter && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 border border-blue-300 text-blue-900 font-bold text-xs rounded-full shadow-2xs">
+                  <span>
+                    Nyelv:{' '}
+                    {selectedLanguageFilter === 'has_translation'
+                      ? 'Fordítással rendelkező'
+                      : activeLanguages.find((l) => l.iso_code === selectedLanguageFilter)?.name_hu || selectedLanguageFilter.toUpperCase()}
+                  </span>
+                  <button
+                    onClick={() => setSelectedLanguageFilter(null)}
+                    className="hover:bg-blue-200 rounded-full p-0.5"
                   >
                     <X size={13} />
                   </button>
@@ -812,6 +894,29 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 font-normal">
                             {item.definition}
                           </p>
+
+                          {/* Dynamic Target Language Translation Badges */}
+                          {item.translations && Object.keys(item.translations).length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap pt-1">
+                              {activeLanguages
+                                .filter((l) => l.iso_code !== 'hu')
+                                .map((lang) => {
+                                  const tr = (item.translations as Record<string, any>)?.[lang.iso_code] || (item.translations as Record<string, any>)?.[lang.iso_code.toUpperCase()];
+                                  if (!tr) return null;
+                                  const text = typeof tr === 'string' ? tr : tr.translated_term;
+                                  return (
+                                    <span
+                                      key={lang.iso_code}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200"
+                                      title={`${lang.name_hu}: ${text}`}
+                                    >
+                                      <span>{lang.flag_emoji || '🌐'}</span>
+                                      <span>{lang.short_label}</span>
+                                    </span>
+                                  );
+                                })}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -965,9 +1070,21 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                 <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-xl text-xs">
                                   <div className="font-bold text-blue-900 mb-1.5">🌐 Idegen Nyelvi Szakszótár:</div>
                                   <div className="flex gap-4 flex-wrap text-gray-700">
-                                    {item.translations.en && <div><strong className="text-gray-900">🇬🇧 EN:</strong> {item.translations.en}</div>}
-                                    {item.translations.de && <div><strong className="text-gray-900">🇩🇪 DE:</strong> {item.translations.de}</div>}
-                                    {item.translations.ro && <div><strong className="text-gray-900">🇷🇴 RO:</strong> {item.translations.ro}</div>}
+                                    {activeLanguages
+                                      .filter((l) => l.iso_code !== 'hu')
+                                      .map((lang) => {
+                                        const tr = (item.translations as Record<string, any>)?.[lang.iso_code] || (item.translations as Record<string, any>)?.[lang.iso_code.toUpperCase()];
+                                        if (!tr) return null;
+                                        const text = typeof tr === 'string' ? tr : tr.translated_term;
+                                        return (
+                                          <div key={lang.iso_code}>
+                                            <strong className="text-gray-900">
+                                              {lang.flag_emoji || '🌐'} {lang.short_label}:
+                                            </strong>{' '}
+                                            {text}
+                                          </div>
+                                        );
+                                      })}
                                   </div>
                                 </div>
                               )}

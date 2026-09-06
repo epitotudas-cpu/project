@@ -352,3 +352,83 @@ export function getTradeEducationalPathways(trade: string): TradeEducationalStep
   ];
 }
 
+// ── MULTILINGUAL TRANSLATION SERVICES ──
+
+export async function listTermTranslations(termId: string): Promise<import('../lib/supabase').GlossaryTermTranslation[]> {
+  try {
+    const { data, error } = await supabase
+      .from('glossary_term_translations')
+      .select('*')
+      .eq('glossary_term_id', termId);
+    if (error) {
+      console.warn('listTermTranslations info:', error);
+      return [];
+    }
+    return (data || []) as import('../lib/supabase').GlossaryTermTranslation[];
+  } catch (err) {
+    console.warn('listTermTranslations catch:', err);
+    return [];
+  }
+}
+
+export async function upsertTermTranslation(payload: {
+  id?: string;
+  glossary_term_id: string;
+  language_code: string;
+  translated_term: string;
+  definition?: string | null;
+  synonyms?: string[] | null;
+  status?: 'draft' | 'reviewed' | 'published';
+  source?: string | null;
+}): Promise<import('../lib/supabase').GlossaryTermTranslation> {
+  const cleanIso = payload.language_code.trim().toLowerCase();
+  const cleanTerm = payload.translated_term.trim();
+
+  const row = {
+    glossary_term_id: payload.glossary_term_id,
+    language_code: cleanIso,
+    translated_term: cleanTerm,
+    definition: payload.definition ? payload.definition.trim() : null,
+    synonyms: payload.synonyms || [],
+    status: payload.status || 'published',
+    source: payload.source ? payload.source.trim() : null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from('glossary_term_translations')
+    .upsert(row as any, { onConflict: 'glossary_term_id,language_code' })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as import('../lib/supabase').GlossaryTermTranslation;
+}
+
+export async function deleteTermTranslation(termId: string, languageCode: string): Promise<void> {
+  const { error } = await supabase
+    .from('glossary_term_translations')
+    .delete()
+    .eq('glossary_term_id', termId)
+    .eq('language_code', languageCode.toLowerCase());
+  if (error) throw error;
+}
+
+export async function getAllPublishedTranslations(): Promise<import('../lib/supabase').GlossaryTermTranslation[]> {
+  try {
+    const { data, error } = await supabase
+      .from('glossary_term_translations')
+      .select('*')
+      .eq('status', 'published');
+    if (error) {
+      console.warn('Hiba a fordítások lekérdezésekor:', error);
+      return [];
+    }
+    return (data || []) as import('../lib/supabase').GlossaryTermTranslation[];
+  } catch (err) {
+    console.warn('getAllPublishedTranslations catch:', err);
+    return [];
+  }
+}
+
+

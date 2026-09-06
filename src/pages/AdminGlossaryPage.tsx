@@ -10,6 +10,7 @@ import EditGlossaryTermModal from '../components/EditGlossaryTermModal';
 import ImportGlossaryValidationModal from '../components/ImportGlossaryValidationModal';
 import BatchEditGlossaryModal from '../components/BatchEditGlossaryModal';
 import GlossaryCategorySettingsModal from '../components/GlossaryCategorySettingsModal';
+import GlossaryLanguageSettingsModal from '../components/GlossaryLanguageSettingsModal';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 type GlossaryTermWithCount = GlossaryTerm & { articleCount: number };
@@ -53,6 +54,7 @@ export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryP
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchOpen, setBatchOpen] = useState(false);
   const [catSettingsOpen, setCatSettingsOpen] = useState(false);
+  const [langSettingsOpen, setLangSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterType, setFilterType] = useState<'all' | 'technical_concept' | 'industry_term'>('all');
 
@@ -204,6 +206,18 @@ export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryP
             title="Kiemelt kategóriák és ikonok testreszabása"
           >
             <Sparkles size={14} /> Kategória Ikonok &amp; Megjelenítés
+          </button>
+          <button
+            onClick={() => setLangSettingsOpen(true)}
+            style={{
+              borderColor: `${cardHighlight}60`,
+              color: cardHighlight,
+              backgroundColor: `${cardHighlight}15`,
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 border text-sm font-bold rounded-lg hover:opacity-90 transition-all cursor-pointer"
+            title="Szótár célnyelveinek kezelése és bővítése"
+          >
+            <Globe size={14} /> Szótár Nyelvei
           </button>
           <button
             onClick={() => setImportValidationOpen(true)}
@@ -527,6 +541,11 @@ export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryP
         isOpen={catSettingsOpen}
         onClose={() => setCatSettingsOpen(false)}
         availableCategories={availableCategories}
+      />
+
+      <GlossaryLanguageSettingsModal
+        isOpen={langSettingsOpen}
+        onClose={() => setLangSettingsOpen(false)}
       />
     </div>
   );

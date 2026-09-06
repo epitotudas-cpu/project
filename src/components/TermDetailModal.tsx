@@ -20,6 +20,7 @@ import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import { getVideoUrls } from '../lib/glossaryJsonService';
 import { useAuth } from '../contexts/AuthContext';
 import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
+import { useGlossaryLanguages } from '../services/languageService';
 
 export function getEmbedVideoUrl(url: string | null | undefined): string | null {
   if (!url || !url.trim()) return null;
@@ -52,6 +53,7 @@ export default function TermDetailModal({
   term,
 }: TermDetailModalProps) {
   const { user } = useAuth();
+  const { activeLanguages } = useGlossaryLanguages();
   const [activeTab, setActiveTab] = useState<'details' | 'slides' | 'video' | 'gallery' | 'dictionary'>('details');
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
@@ -402,24 +404,26 @@ export default function TermDetailModal({
                 <Globe size={16} className="text-primary" /> Nemzetközi Szakszótár Megfeleltetések
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {translations.en && (
-                  <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 space-y-1">
-                    <span className="text-xs font-bold text-blue-700">🇬🇧 Angol (EN)</span>
-                    <p className="text-sm font-bold text-gray-900">{translations.en}</p>
-                  </div>
-                )}
-                {translations.de && (
-                  <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 space-y-1">
-                    <span className="text-xs font-bold text-amber-800">🇩🇪 Német (DE)</span>
-                    <p className="text-sm font-bold text-gray-900">{translations.de}</p>
-                  </div>
-                )}
-                {translations.ro && (
-                  <div className="bg-red-50/70 border border-red-200 rounded-2xl p-4 space-y-1">
-                    <span className="text-xs font-bold text-red-700">🇷🇴 Román (RO)</span>
-                    <p className="text-sm font-bold text-gray-900">{translations.ro}</p>
-                  </div>
-                )}
+                {activeLanguages
+                  .filter((lang) => lang.iso_code !== 'hu')
+                  .map((lang) => {
+                    const transVal = (translations as Record<string, any>)[lang.iso_code] || (translations as Record<string, any>)[lang.iso_code.toUpperCase()];
+                    const text = typeof transVal === 'string' ? transVal : transVal?.translated_term;
+
+                    return (
+                      <div key={lang.iso_code} className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 space-y-1">
+                        <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
+                          <span>{lang.flag_emoji || '🌐'}</span>
+                          <span>{lang.name_hu} ({lang.short_label})</span>
+                        </span>
+                        {text ? (
+                          <p className="text-sm font-bold text-gray-900">{text}</p>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">Fordítás folyamatban...</p>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}

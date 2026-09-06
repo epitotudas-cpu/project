@@ -872,6 +872,37 @@ export type Category = Database['public']['Tables']['categories']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type GlossaryTerm = Database['public']['Tables']['glossary_terms']['Row'];
 export type GlossaryTermRelation = Database['public']['Tables']['glossary_term_relations']['Row'];
+
+export interface GlossaryLanguage {
+  id: string;
+  name_hu: string;
+  name_native: string;
+  iso_code: string;
+  flag_code?: string | null;
+  flag_emoji: string;
+  short_label: string;
+  sort_order: number;
+  is_active: boolean;
+  is_default: boolean;
+  is_system_protected: boolean;
+  is_rtl: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GlossaryTermTranslation {
+  id: string;
+  glossary_term_id: string;
+  language_code: string;
+  translated_term: string;
+  definition?: string | null;
+  synonyms?: string[] | null;
+  status: 'draft' | 'reviewed' | 'published';
+  source?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export type Tool = Database['public']['Tables']['tools']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Role = Database['public']['Tables']['roles']['Row'];
