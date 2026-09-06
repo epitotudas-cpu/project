@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, Image, Video, Info, CheckCircle2, Globe } from 'lucide-react';
+import { X, Save, AlertCircle, Globe } from 'lucide-react';
 import { slugify } from '../lib/slugify';
-import type { GlossaryTerm, GlossaryLanguage } from '../lib/supabase';
+import type { GlossaryTerm } from '../lib/supabase';
 import { createGlossaryTerm, updateGlossaryTerm } from '../services/glossaryService';
 import { useGlossaryLanguages } from '../services/languageService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
@@ -171,7 +171,6 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
   const [form, setForm] = useState<FormState>(() => (term ? formFromTerm(term) : { ...EMPTY_FORM }));
   const [slugTouched, setSlugTouched] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const [dynTranslations, setDynTranslations] = useState<Record<string, DynamicTranslationItem>>(() => {
@@ -211,7 +210,6 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
       setDynTranslations({});
     }
     setError(null);
-    setSaveStatus('idle');
   }, [term]);
 
   useEffect(() => {
@@ -240,18 +238,15 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
     e.preventDefault();
     if (!form.term.trim()) {
       setError('❗ Kötelező mező hiányzik: "Kifejezés neve" – töltsd ki a fogalom nevét.');
-      setSaveStatus('error');
       return;
     }
     if (!form.definition.trim()) {
       setError('❗ Kötelező mező hiányzik: "Definíció" – írj le rövid meghatározást.');
-      setSaveStatus('error');
       return;
     }
     const finalSlug = form.slug.trim() || slugify(form.term);
     if (!finalSlug) {
       setError('❗ A slug érvénytelen – csak kisbetűk, számok és kötőjelek megengedettek.');
-      setSaveStatus('error');
       return;
     }
     const imageLines = form.image_urls.split('\n').map((u) => u.trim()).filter(Boolean);
@@ -260,19 +255,16 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
     const syntaxInvalidUrls = imageLines.filter((u) => !isValidUrl(u));
     if (syntaxInvalidUrls.length > 0) {
       setError('❗ Kép URL hiba – az alábbi sorok nem érvényesek:\n' + syntaxInvalidUrls.join('\n'));
-      setSaveStatus('error');
       return;
     }
 
     const syntaxInvalidVideoUrls = videoLines.filter((u) => !isValidUrl(u));
     if (syntaxInvalidVideoUrls.length > 0) {
       setError('❗ Videó URL hiba – az alábbi sorok nem érvényesek:\n' + syntaxInvalidVideoUrls.join('\n'));
-      setSaveStatus('error');
       return;
     }
 
     setSaving(true);
-    setSaveStatus('saving');
     setError(null);
     try {
       const translationsPayload: Record<string, string> = {};
@@ -315,14 +307,12 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
       } else {
         data = await createGlossaryTerm(payload);
       }
-      setSaveStatus('success');
       window.dispatchEvent(new CustomEvent('glossary-updated'));
       setTimeout(() => {
         onSaved(data);
       }, 1200);
     } catch (err) {
       setError(parseSupabaseError(err));
-      setSaveStatus('error');
     } finally {
       setSaving(false);
     }
