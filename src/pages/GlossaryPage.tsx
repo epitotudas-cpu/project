@@ -454,12 +454,12 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   <BookOpen size={26} className="text-accent" />
                 </div>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                  🌐 Többnyelvű Szakszótár <span className="text-accent font-mono text-xl md:text-2xl">({activeLanguages.map(l => l.short_label).join(' – ')})</span>
+                  Tudástár - Fogalom
                 </h1>
               </div>
               <p className="text-gray-400 text-sm max-w-lg leading-relaxed">
-                Szakmai Szótár &amp; Enciklopédia – Minden tudás, egy helyen.<br />
-                Építőipari fogalmak és szakifejezések magyarázata magyarul és adminisztrációból tetszőlegesen bővíthető nyelveken.
+                Építőipari Fogalomtár &amp; Enciklopédia – Minden szakmai fogalom és szakszó egy helyen.<br />
+                Részletes magyar nyelvű műszaki magyarázatok, kivitelezési tudnivalók és szakmai kifejezések gyűjteménye.
               </p>
             </div>
 
@@ -496,7 +496,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Fogalomtár & Szótár',
+            label: 'Fogalomtár',
             page: 'glossary',
             icon: <BookOpen size={14} className="text-accent" />,
             active: true,
@@ -612,54 +612,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
           </div>
 
-          {/* DYNAMIC LANGUAGE FILTER BADGES */}
-          <div className="flex items-center gap-1.5 flex-wrap pt-3 border-t border-gray-100">
-            <span className="text-xs font-extrabold text-gray-700 flex items-center gap-1 mr-1">
-              <Globe size={14} className="text-primary" /> Nyelv:
-            </span>
-            <button
-              onClick={() => setSelectedLanguageFilter(null)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                selectedLanguageFilter === null
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Összes
-            </button>
-            <button
-              onClick={() => setSelectedLanguageFilter('has_translation')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                selectedLanguageFilter === 'has_translation'
-                  ? 'bg-amber-400 text-black font-black shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/80'
-              }`}
-            >
-              Fordítással rendelkező
-            </button>
-            {activeLanguages
-              .filter((l) => l.iso_code !== 'hu')
-              .map((lang) => {
-                const isSelected = selectedLanguageFilter === lang.iso_code;
-                return (
-                  <button
-                    key={lang.iso_code}
-                    onClick={() => setSelectedLanguageFilter(isSelected ? null : lang.iso_code)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      isSelected
-                        ? 'bg-blue-600 text-white shadow-sm font-black'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/80'
-                    }`}
-                  >
-                    <span>{lang.flag_emoji || '🌐'}</span>
-                    <span>{lang.short_label}</span>
-                  </button>
-                );
-              })}
-          </div>
-
           {/* ACTIVE FILTER REMOVABLE CHIPS */}
-          {(selectedCategories.length > 0 || searchQuery.trim() || selectedLanguageFilter) && (
+          {(selectedCategories.length > 0 || searchQuery.trim()) && (
             <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100">
               <span className="text-xs font-bold text-gray-500">Aktív szűrők:</span>
 
@@ -689,24 +643,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                       updateUrlParams(selectedCategories, '');
                     }}
                     className="hover:bg-amber-200 rounded-full p-0.5"
-                  >
-                    <X size={13} />
-                  </button>
-                </span>
-              )}
-
-              {/* Language Filter Chip */}
-              {selectedLanguageFilter && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 border border-blue-300 text-blue-900 font-bold text-xs rounded-full shadow-2xs">
-                  <span>
-                    Nyelv:{' '}
-                    {selectedLanguageFilter === 'has_translation'
-                      ? 'Fordítással rendelkező'
-                      : activeLanguages.find((l) => l.iso_code === selectedLanguageFilter)?.name_hu || selectedLanguageFilter.toUpperCase()}
-                  </span>
-                  <button
-                    onClick={() => setSelectedLanguageFilter(null)}
-                    className="hover:bg-blue-200 rounded-full p-0.5"
                   >
                     <X size={13} />
                   </button>
