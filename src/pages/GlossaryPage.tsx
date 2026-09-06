@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useGlossary } from '../contexts/GlossaryContext';
+import { useGlossaryLanguages } from '../services/languageService';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import { getTradeEducationalPathways } from '../services/glossaryService';
@@ -129,6 +130,7 @@ function getTermGradient(cat?: string | null): string {
 export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const { user } = useAuth();
   const glossary = useGlossary();
+  const { activeLanguages } = useGlossaryLanguages();
   const categorySettings = useGlossaryCategorySettings();
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
@@ -294,7 +296,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     setSelectedCategories([]);
     setModalCategories([]);
     setSearchQuery('');
-    setSelectedLanguageFilter(null);
     updateUrlParams([], '');
     setIsCategoryModalOpen(false);
   };
@@ -366,19 +367,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     if (selectedCategories.length > 0) {
       res = res.filter((t) => t.category && selectedCategories.includes(t.category.trim()));
     }
-    if (selectedLanguageFilter) {
-      if (selectedLanguageFilter === 'has_translation') {
-        res = res.filter((t) => t.translations && Object.keys(t.translations).length > 0);
-      } else {
-        res = res.filter((t) => {
-          if (!t.translations) return false;
-          const tr = t.translations[selectedLanguageFilter] || t.translations[selectedLanguageFilter.toUpperCase()];
-          return Boolean(tr);
-        });
-      }
-    }
     return res.sort((a, b) => a.term.localeCompare(b.term, 'hu'));
-  }, [tabTerms, selectedCategories, searchQuery, selectedLanguageFilter]);
+  }, [tabTerms, selectedCategories, searchQuery]);
 
   const latestTerms = useMemo(
     () => [...glossary.terms].slice(-6).reverse(),
