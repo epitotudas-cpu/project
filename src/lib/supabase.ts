@@ -1052,6 +1052,8 @@ export interface AdCreative {
   cta_url: string;
   image_url?: string | null;
   mobile_image_url?: string | null;
+  logo_url?: string | null;
+  accent_color?: string | null;
   background_style: BackgroundStyle;
   overlay_style?: string | null;
   button_style: ButtonStyle;

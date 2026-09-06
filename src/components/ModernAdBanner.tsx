@@ -3,7 +3,7 @@ import { optimizeImageUrl } from '../utils/imageOptimizer';
 import { ExternalLink, Sparkles, ShieldCheck, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { recordAdClick, recordAdImpression, type AdvertisementSlot } from '../services/advertisementService';
 import { getCreativesByPlacementSync } from '../services/bannerCreativeService';
-import type { AdCreative, BackgroundStyle, ButtonStyle, AnimationType, TransitionEffect } from '../lib/supabase';
+import type { AdCreative, TransitionEffect } from '../lib/supabase';
 
 interface TopBannerProps {
   slots?: AdvertisementSlot[];
@@ -13,6 +13,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
   const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('top_banner'));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     function handleCreativeChange() {
@@ -27,9 +28,9 @@ export function TopAdBanner({ slots }: TopBannerProps) {
 
   const activeCreative = creatives[currentIndex] || creatives[0];
 
-  // Dynamic Auto-rotation timer reading each ad's rotation_seconds
+  // Dynamic Auto-rotation timer - pauses on hover OR keyboard focus
   useEffect(() => {
-    if (creatives.length <= 1 || isHovered) return;
+    if (creatives.length <= 1 || isHovered || isFocused) return;
 
     const durationSeconds = activeCreative?.rotation_seconds || 6;
     const timer = setTimeout(() => {
@@ -37,7 +38,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
     }, Math.max(2, durationSeconds) * 1000);
 
     return () => clearTimeout(timer);
-  }, [currentIndex, creatives.length, isHovered, activeCreative?.rotation_seconds]);
+  }, [currentIndex, creatives.length, isHovered, isFocused, activeCreative?.rotation_seconds]);
 
   useEffect(() => {
     if (activeCreative?.id && activeCreative.is_active) {
@@ -51,106 +52,37 @@ export function TopAdBanner({ slots }: TopBannerProps) {
     if (!activeSlot) return null;
 
     return (
-      <div className="bg-slate-50 border-b border-slate-200 py-2.5 px-4 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 py-3 px-4 sticky top-0 z-30 shadow-xs backdrop-blur-md">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
           <a
             href={activeSlot.targetUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeSlot.id)}
-            className="w-full group flex flex-col sm:flex-row items-center justify-between gap-3 bg-white hover:bg-slate-50/90 border border-slate-200/80 p-3 sm:px-4 rounded-2xl transition-all duration-300 shadow-xs hover:shadow-md"
+            className="w-full group flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900 hover:bg-slate-850 border border-slate-800 p-4 rounded-2xl transition-all duration-300 shadow-xs hover:shadow-md"
           >
-            <div className="flex flex-col sm:flex-row items-center gap-3 min-w-0 text-center sm:text-left">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-700/20 flex items-center justify-center text-[#0F766E] shrink-0">
-                <Sparkles size={18} />
+            <div className="flex flex-col md:flex-row items-center gap-3.5 min-w-0 text-center md:text-left">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 font-black text-xs">
+                {activeSlot.sponsorName.charAt(0)}
               </div>
-              <div className="min-w-0 space-y-0.5">
-                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-700/20 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
-                    {activeSlot.sponsorName || 'Partner'}
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
+              <div className="min-w-0 space-y-1">
+                <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
+                  {activeSlot.sponsorName || 'Hivatalos partner'}
+                </span>
+                <p className="text-sm md:text-base font-bold text-white truncate">
                   {activeSlot.title}
                 </p>
               </div>
             </div>
-            <div className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 bg-[#0F766E] text-white font-bold text-xs px-4 py-2 rounded-xl">
+            <div className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs md:text-sm h-11 px-5 rounded-xl transition-all shadow-sm group-hover:scale-[1.02]">
               <span>Ajánlat megtekintése</span>
-              <ExternalLink size={13} />
+              <ExternalLink size={14} />
             </div>
           </a>
         </div>
-      </div>
+      </aside>
     );
   }
-
-  // Background style helper
-  const getBackgroundClasses = (bg: BackgroundStyle) => {
-    switch (bg) {
-      case 'light_neutral':
-        return 'bg-slate-50 border-b border-slate-200 text-slate-900 shadow-xs';
-      case 'dark_slate':
-        return 'bg-slate-950 border-b border-slate-800 text-white shadow-md';
-      case 'petrol_teal':
-        return 'bg-[#0F766E] border-b border-teal-600 text-white shadow-md';
-      case 'glassmorphism':
-        return 'bg-slate-900/90 backdrop-blur-xl border-b border-white/20 text-white shadow-md';
-      case 'soft_gradient':
-        return 'bg-gradient-to-r from-teal-900 via-slate-900 to-amber-950 border-b border-teal-500/40 text-white shadow-md';
-      default:
-        return 'bg-slate-50 border-b border-slate-200 text-slate-900';
-    }
-  };
-
-  // Button style helper
-  const getButtonClasses = (btn: ButtonStyle) => {
-    switch (btn) {
-      case 'petrol_teal':
-        return 'bg-[#0F766E] hover:bg-[#115E59] text-white border border-teal-500/40 shadow-xs';
-      case 'amber_gold':
-        return 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black border border-amber-400/50 shadow-sm';
-      case 'dark_slate':
-        return 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/50 shadow-xs';
-      case 'outline':
-        return 'bg-transparent border-2 border-[#0F766E] text-[#0F766E] hover:bg-[#0F766E] hover:text-white font-black';
-      default:
-        return 'bg-[#0F766E] text-white';
-    }
-  };
-
-  // Animation helper
-  const getAnimationClass = (anim: AnimationType) => {
-    switch (anim) {
-      case 'fade_in':
-        return 'animate-banner-fade-in';
-      case 'float':
-        return 'animate-banner-float';
-      case 'pulse':
-        return 'animate-banner-pulse';
-      case 'marquee':
-        return 'animate-banner-marquee';
-      default:
-        return '';
-    }
-  };
-
-  // Inter-banner Transition Helper
-  const getTransitionClass = (effect?: TransitionEffect) => {
-    switch (effect) {
-      case 'slide_left':
-        return 'banner-trans-slide-left';
-      case 'slide_up':
-        return 'banner-trans-slide-up';
-      case 'zoom':
-        return 'banner-trans-zoom';
-      case 'instant':
-        return 'banner-trans-instant';
-      case 'fade':
-      default:
-        return 'banner-trans-fade';
-    }
-  };
 
   function handlePrev(e: React.MouseEvent) {
     e.preventDefault();
@@ -164,142 +96,164 @@ export function TopAdBanner({ slots }: TopBannerProps) {
     setCurrentIndex((prev) => (prev + 1) % creatives.length);
   }
 
+  const accentColor = activeCreative.accent_color || '#FFC400';
+
   return (
-    <div
+    <aside
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Partneri reklámajánlatok"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`py-2 px-3 sm:py-2.5 sm:px-4 sticky top-0 z-30 transition-colors duration-500 ${getBackgroundClasses(
-        activeCreative.background_style
-      )}`}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      className="w-full bg-slate-950 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md"
     >
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-        {/* Banner Clickable Main Card */}
-        <a
-          key={`${activeCreative.id}-${currentIndex}`}
-          href={activeCreative.cta_url || '#'}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => recordAdClick(activeCreative.id)}
-          className={`w-full group flex flex-col sm:flex-row items-center justify-between gap-3 p-3 sm:px-4 rounded-2xl transition-all duration-300 ${
-            activeCreative.background_style === 'light_neutral'
-              ? 'bg-white hover:bg-slate-50/90 border border-slate-200/80 shadow-xs'
-              : 'bg-black/20 hover:bg-black/40 border border-white/10'
-          } ${getTransitionClass(activeCreative.transition_effect)} ${getAnimationClass(
-            activeCreative.animation_type
-          )}`}
-        >
-          <div
-            className={`w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3.5 min-w-0 ${
-              activeCreative.text_align === 'center'
-                ? 'text-center items-center'
-                : activeCreative.text_align === 'right'
-                ? 'sm:flex-row-reverse text-center sm:text-right items-center'
-                : 'text-center sm:text-left items-center sm:items-start'
-            }`}
+      <div className="max-w-7xl mx-auto px-3 py-2.5 sm:px-4 md:px-6 md:py-3.5">
+        <div className="relative group/banner flex items-center">
+          
+          {/* Main Clickable Promo Card */}
+          <a
+            key={`${activeCreative.id}-${currentIndex}`}
+            href={activeCreative.cta_url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => recordAdClick(activeCreative.id)}
+            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-3.5 sm:p-4 md:px-6 md:py-4 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 motion-reduce:transition-none"
+            style={{
+              borderLeft: `4px solid ${accentColor}`,
+            }}
           >
-            {activeCreative.image_url ? (
-              <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/80 w-10 h-10 bg-slate-100 shadow-sm">
-                <picture>
-                  {activeCreative.mobile_image_url && (
-                    <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
-                  )}
-                  <img
-                    src={activeCreative.image_url}
-                    alt={activeCreative.partner_name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </picture>
-              </div>
-            ) : (
-              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-700/20 flex items-center justify-center text-[#0F766E] shrink-0">
-                <Sparkles size={18} />
-              </div>
-            )}
-
-            <div
-              className={`min-w-0 space-y-0.5 ${
-                activeCreative.text_align === 'center'
-                  ? 'text-center'
-                  : activeCreative.text_align === 'right'
-                  ? 'text-center sm:text-right'
-                  : 'text-center sm:text-left'
-              }`}
-            >
-              <div
-                className={`flex items-center justify-center gap-2 flex-wrap ${
-                  activeCreative.text_align === 'center'
-                    ? 'sm:justify-center'
-                    : activeCreative.text_align === 'right'
-                    ? 'sm:justify-end'
-                    : 'sm:justify-start'
-                }`}
-              >
-                <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-700/20 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse" />
-                  {activeCreative.partner_name}
-                </span>
-                {activeCreative.badge_text && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-800">
-                    <ShieldCheck size={13} className="text-[#0F766E]" /> {activeCreative.badge_text}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-6">
+              
+              {/* Left Column: Badge & Partner Name / Logo */}
+              <div className="w-full md:w-1/4 lg:w-1/5 shrink-0 flex flex-row md:flex-col items-center md:items-start justify-between md:justify-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse motion-reduce:animate-none" />
+                    {activeCreative.badge_text || 'Hivatalos partner'}
                   </span>
+                </div>
+
+                {activeCreative.logo_url ? (
+                  <div className="h-7 max-w-[130px] shrink-0 overflow-hidden flex items-center">
+                    <img
+                      src={activeCreative.logo_url}
+                      alt={activeCreative.partner_name}
+                      className="h-full w-auto object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40`, color: accentColor }}
+                      className="w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-black shrink-0"
+                    >
+                      {activeCreative.partner_name.charAt(0)}
+                    </span>
+                    <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[150px]">
+                      {activeCreative.partner_name}
+                    </span>
+                  </div>
                 )}
               </div>
-              <p className="text-xs sm:text-sm font-semibold sm:truncate leading-snug group-hover:text-[#0F766E] transition-colors">
-                {activeCreative.headline}
-              </p>
-            </div>
-          </div>
 
-          <div
-            className={`w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 font-bold text-xs px-4 py-2 rounded-xl transition-all duration-300 group-hover:translate-x-0.5 ${getButtonClasses(
-              activeCreative.button_style
-            )}`}
-          >
-            <span>{activeCreative.cta_text || 'Ajánlat megtekintése'}</span>
-            <ExternalLink size={13} />
-          </div>
-        </a>
+              {/* Middle Column: Headline & Description */}
+              <div className="flex-1 min-w-0 space-y-1 text-left">
+                <h3 className="text-sm sm:text-base md:text-lg font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
+                  {activeCreative.headline}
+                </h3>
+                {activeCreative.description && (
+                  <p className="text-xs md:text-sm text-gray-300 line-clamp-2 font-normal leading-normal max-w-2xl">
+                    {activeCreative.description}
+                  </p>
+                )}
+              </div>
 
-        {/* Multi-banner Rotator Navigation Controls */}
-        {creatives.length > 1 && (
-          <div className="shrink-0 flex items-center gap-1.5 bg-black/20 px-2 py-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
-            <button
-              onClick={handlePrev}
-              title="Előző banner"
-              className="p-1 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-            >
-              <ChevronLeft size={16} />
-            </button>
+              {/* Right Column: Campaign Image & Primary CTA Button */}
+              <div className="w-full md:w-auto shrink-0 flex flex-col sm:flex-row items-center justify-end gap-3 md:gap-5">
+                
+                {/* Campaign Image */}
+                {activeCreative.image_url ? (
+                  <div className="hidden sm:block w-36 md:w-44 lg:w-48 h-24 md:h-28 rounded-xl overflow-hidden border border-slate-800 shadow-xs shrink-0 bg-slate-950">
+                    <picture>
+                      {activeCreative.mobile_image_url && (
+                        <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+                      )}
+                      <img
+                        src={activeCreative.image_url}
+                        alt={activeCreative.headline}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none"
+                      />
+                    </picture>
+                  </div>
+                ) : (
+                  <div className="hidden sm:flex w-36 md:w-44 lg:w-48 h-24 md:h-28 rounded-xl border border-slate-800 bg-slate-950/60 items-center justify-center text-amber-400/80 shrink-0">
+                    <Sparkles size={24} />
+                  </div>
+                )}
 
-            {/* Pagination indicators with seconds tooltip */}
-            <div className="flex items-center gap-1 px-1">
-              {creatives.map((c, idx) => (
-                <button
-                  key={c.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setCurrentIndex(idx);
+                {/* Primary CTA Button */}
+                <div
+                  style={{
+                    backgroundColor: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#FFC400' : accentColor,
+                    color: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#000000' : '#FFFFFF',
                   }}
-                  title={`${c.partner_name} (Prioritás: ${c.sort_order}, Váltás: ${c.rotation_seconds || 6} mp)`}
-                  className={`h-2 rounded-full transition-all cursor-pointer ${
-                    idx === currentIndex ? 'w-5 bg-[#0F766E]' : 'w-2 bg-gray-400/50 hover:bg-white'
-                  }`}
-                />
-              ))}
+                  className="w-full sm:w-auto h-11 px-5 rounded-xl font-extrabold text-xs md:text-sm inline-flex items-center justify-center gap-2 transition-all duration-300 shadow-sm group-hover:scale-[1.03] group-hover:shadow-md cursor-pointer shrink-0"
+                >
+                  <span>{activeCreative.cta_text || 'Ajánlat megtekintése'}</span>
+                  <ExternalLink size={14} />
+                </div>
+              </div>
             </div>
+          </a>
 
-            <button
-              onClick={handleNext}
-              title="Következő banner"
-              className="p-1 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-            >
-              <ChevronRight size={16} />
-            </button>
+          {/* Discreet Circular Carousel Arrow Navigation Buttons */}
+          {creatives.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                aria-label="Előző szponzorált ajánlat"
+                className="absolute -left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-10"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNext}
+                aria-label="Következő szponzorált ajánlat"
+                className="absolute -right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-10"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Carousel Indicator Dots */}
+        {creatives.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 pt-2">
+            {creatives.map((c, idx) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentIndex(idx);
+                }}
+                aria-label={`Ugrás a(z) ${idx + 1}. szponzorált ajánlatra: ${c.partner_name}`}
+                className={`h-1.5 rounded-full transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                  idx === currentIndex ? 'w-5 bg-amber-400' : 'w-1.5 bg-slate-700 hover:bg-slate-500'
+                }`}
+              />
+            ))}
           </div>
         )}
       </div>
-    </div>
+    </aside>
   );
 }
 
