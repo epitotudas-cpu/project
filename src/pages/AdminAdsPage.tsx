@@ -15,7 +15,6 @@ import {
   UserCheck,
   ChevronRight,
   ChevronDown,
-  Check,
   Sparkles,
   ArrowLeft,
   Search,
@@ -29,7 +28,6 @@ import {
 import {
   listAdCampaigns,
   createAdCampaign,
-  AD_PACKAGES,
 } from '../services/advertisementService';
 import { AdminAdPackagesManager } from '../components/AdminAdPackagesManager';
 import {

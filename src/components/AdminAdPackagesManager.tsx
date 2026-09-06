@@ -21,7 +21,6 @@ import {
   BarChart3,
   CheckCircle2,
   ShieldCheck,
-  Layers,
 } from 'lucide-react';
 import {
   getAdPackages,
