@@ -59,32 +59,29 @@ export function TopAdBanner({ slots }: TopBannerProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeSlot.id)}
-            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-4 sm:p-5 md:p-6 md:h-[200px] lg:h-[210px] transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full block relative overflow-hidden rounded-2xl border border-slate-800 hover:border-slate-700 h-[200px] sm:h-[210px] md:h-[235px] transition-all duration-300 shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
             style={{ borderLeft: '4px solid #FFC400' }}
           >
-            <div className="h-full flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6 lg:gap-8">
-              <div className="w-full md:w-[68%] lg:w-[70%] shrink-0 flex flex-col justify-center space-y-2 md:space-y-2.5 md:pr-4">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    {activeSlot.sponsorName || 'Hivatalos partner'}
-                  </span>
-                </div>
-                <div className="space-y-1.5 text-left">
-                  <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
-                    {activeSlot.title}
-                  </h3>
-                </div>
+            {activeSlot.imageUrl && (
+              <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
+                <img
+                  src={activeSlot.imageUrl}
+                  alt={activeSlot.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-slate-950/40 md:bg-gradient-to-r md:from-slate-950/95 md:via-slate-950/80 md:to-slate-950/30" />
               </div>
-              {activeSlot.imageUrl && (
-                <div className="w-full md:w-[30%] lg:w-[28%] shrink-0 h-32 sm:h-36 md:h-full relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
-                  <img
-                    src={activeSlot.imageUrl}
-                    alt={activeSlot.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-              )}
+            )}
+            <div className="relative z-20 h-full flex flex-col justify-center p-4 sm:p-5 md:p-6 lg:p-8 max-w-3xl text-left items-start">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 font-extrabold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider backdrop-blur-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  {activeSlot.sponsorName || 'Hivatalos partner'}
+                </span>
+              </div>
+              <h3 className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors drop-shadow-md line-clamp-2">
+                {activeSlot.title}
+              </h3>
             </div>
           </a>
         </div>
@@ -105,6 +102,40 @@ export function TopAdBanner({ slots }: TopBannerProps) {
   }
 
   const accentColor = activeCreative.accent_color || '#FFC400';
+  const hasCtaButton = Boolean(activeCreative.cta_text && activeCreative.cta_text.trim() !== '');
+  const isMediaVideo = activeCreative.media_type === 'video';
+
+  const desktopImg = activeCreative.image_url || '';
+  const mobileImg = activeCreative.mobile_image_url || desktopImg;
+  const desktopVideo = activeCreative.video_url || '';
+  const mobileVideo = activeCreative.mobile_video_url || desktopVideo;
+
+  const animationClass = (() => {
+    switch (activeCreative.animation_type) {
+      case 'fade_in':
+        return 'animate-banner-fade-in';
+      case 'float':
+        return 'group-hover:scale-105 transition-transform duration-700 ease-out motion-reduce:transform-none';
+      case 'pulse':
+        return 'animate-banner-pulse';
+      case 'marquee':
+        return 'animate-banner-marquee';
+      default:
+        return 'group-hover:scale-102 transition-transform duration-500 motion-reduce:transform-none';
+    }
+  })();
+
+  const textAlignClasses = (() => {
+    switch (activeCreative.text_align) {
+      case 'center':
+        return 'text-center items-center justify-center mx-auto';
+      case 'right':
+        return 'text-right items-end justify-center ml-auto';
+      case 'left':
+      default:
+        return 'text-left items-start justify-center';
+    }
+  })();
 
   return (
     <aside
@@ -120,84 +151,129 @@ export function TopAdBanner({ slots }: TopBannerProps) {
       <div className="max-w-7xl mx-auto px-3 py-2.5 sm:px-4 md:px-6 md:py-3.5">
         <div className="relative group/banner flex items-center">
           
-          {/* Main Clickable Promo Card */}
+          {/* Main Full-Surface Clickable Promo Card */}
           <a
             key={`${activeCreative.id}-${currentIndex}`}
             href={activeCreative.cta_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeCreative.id)}
-            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-4 sm:p-5 md:p-6 md:h-[200px] lg:h-[210px] transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 motion-reduce:transition-none"
+            className="w-full block relative overflow-hidden rounded-2xl border border-slate-800 hover:border-slate-700 h-[200px] sm:h-[210px] md:h-[235px] transition-all duration-300 shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500 motion-reduce:transition-none"
             style={{
               borderLeft: `4px solid ${accentColor}`,
             }}
           >
-            <div className="h-full flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6 lg:gap-8">
-              
-              {/* Left Column: Partner Info & Text Content (68-70% width on desktop) */}
-              <div className="w-full md:w-[68%] lg:w-[70%] shrink-0 flex flex-col justify-center space-y-2 md:space-y-2.5 md:pr-4">
-                {/* Badge & Partner Name / Logo */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse motion-reduce:animate-none" />
-                    {activeCreative.badge_text || 'Hivatalos partner'}
-                  </span>
-
-                  {activeCreative.logo_url ? (
-                    <div className="h-6 sm:h-7 max-w-[140px] shrink-0 overflow-hidden flex items-center">
+            {/* Full-Surface Background Media (Video / Image / GIF) */}
+            <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
+              {isMediaVideo && (desktopVideo || mobileVideo) ? (
+                <>
+                  {/* Poster / Fallback Image */}
+                  {desktopImg && (
+                    <picture className="absolute inset-0 w-full h-full block z-0">
+                      {mobileImg && <source media="(max-width: 640px)" srcSet={mobileImg} />}
                       <img
-                        src={activeCreative.logo_url}
-                        alt={activeCreative.partner_name}
-                        className="h-full w-auto object-contain"
+                        src={desktopImg}
+                        alt={activeCreative.headline}
+                        className={`w-full h-full object-cover z-0 ${animationClass}`}
                       />
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40`, color: accentColor }}
-                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg border flex items-center justify-center text-xs font-black shrink-0"
-                      >
-                        {activeCreative.partner_name.charAt(0)}
-                      </span>
-                      <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[180px]">
-                        {activeCreative.partner_name}
-                      </span>
-                    </div>
+                    </picture>
                   )}
+                  {/* Video Element */}
+                  <video
+                    key={desktopVideo}
+                    src={desktopVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    poster={desktopImg || undefined}
+                    className={`absolute inset-0 w-full h-full object-cover z-10 ${animationClass}`}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                </>
+              ) : desktopImg || mobileImg ? (
+                <picture className="absolute inset-0 w-full h-full block z-0">
+                  {mobileImg && <source media="(max-width: 640px)" srcSet={mobileImg} />}
+                  <img
+                    src={desktopImg}
+                    alt={activeCreative.headline}
+                    className={`w-full h-full object-cover z-0 ${animationClass}`}
+                  />
+                </picture>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-slate-950 text-amber-400/50 z-0">
+                  <Sparkles size={48} />
                 </div>
+              )}
 
-                {/* Headline & Description */}
-                <div className="space-y-1.5 text-left">
-                  <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
-                    {activeCreative.headline}
-                  </h3>
-                  {activeCreative.description && (
-                    <p className="text-xs sm:text-sm text-gray-300 line-clamp-2 md:line-clamp-3 font-normal leading-relaxed max-w-3xl">
-                      {activeCreative.description}
-                    </p>
-                  )}
-                </div>
-              </div>
+              {/* High Contrast Gradient Overlay */}
+              <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-slate-950/40 md:bg-gradient-to-r md:from-slate-950/95 md:via-slate-950/80 md:to-slate-950/30 pointer-events-none" />
+            </div>
 
-              {/* Right Column: Campaign Image (28-30% width on desktop, 128-144px height on mobile) */}
-              <div className="w-full md:w-[30%] lg:w-[28%] shrink-0 h-32 sm:h-36 md:h-full relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
-                {activeCreative.image_url ? (
-                  <picture className="w-full h-full block">
-                    {activeCreative.mobile_image_url && (
-                      <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
-                    )}
+            {/* Content Layer over Background */}
+            <div className={`relative z-20 h-full flex flex-col p-4 sm:p-5 md:p-6 lg:p-8 max-w-3xl ${textAlignClasses}`}>
+              
+              {/* Partner Badge & Name/Logo */}
+              <div className={`flex items-center gap-2.5 flex-wrap ${
+                activeCreative.text_align === 'center' ? 'justify-center' : activeCreative.text_align === 'right' ? 'justify-end' : 'justify-start'
+              }`}>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs backdrop-blur-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse motion-reduce:animate-none" />
+                  {activeCreative.badge_text || 'Hivatalos partner'}
+                </span>
+
+                {activeCreative.logo_url ? (
+                  <div className="h-6 sm:h-7 max-w-[140px] shrink-0 overflow-hidden flex items-center">
                     <img
-                      src={activeCreative.image_url}
-                      alt={activeCreative.headline}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none"
+                      src={activeCreative.logo_url}
+                      alt={activeCreative.partner_name}
+                      className="h-full w-auto object-contain drop-shadow-sm"
                     />
-                  </picture>
+                  </div>
                 ) : (
-                  <div className="w-full h-full min-h-[120px] flex items-center justify-center border border-slate-800 bg-slate-950/60 text-amber-400/80">
-                    <Sparkles size={28} />
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      style={{ backgroundColor: `${accentColor}30`, borderColor: `${accentColor}60`, color: accentColor }}
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg border flex items-center justify-center text-xs font-black shrink-0 shadow-xs"
+                    >
+                      {activeCreative.partner_name.charAt(0)}
+                    </span>
+                    <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[180px] drop-shadow-xs">
+                      {activeCreative.partner_name}
+                    </span>
                   </div>
                 )}
               </div>
+
+              {/* Headline & Description */}
+              <div className="mt-2 space-y-1">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors drop-shadow-md line-clamp-2">
+                  {activeCreative.headline}
+                </h3>
+                {activeCreative.description && (
+                  <p className="text-xs sm:text-sm text-gray-200 line-clamp-2 sm:line-clamp-3 font-normal leading-relaxed drop-shadow-xs opacity-90 max-w-2xl">
+                    {activeCreative.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Optional CTA Button */}
+              {hasCtaButton && (
+                <div className="mt-3 shrink-0">
+                  <div
+                    style={{
+                      backgroundColor: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#FFC400' : accentColor,
+                      color: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#000000' : '#FFFFFF',
+                    }}
+                    className="inline-flex items-center justify-center gap-2 h-10 px-4 sm:px-5 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-300 shadow-md group-hover:scale-105 cursor-pointer"
+                  >
+                    <span>{activeCreative.cta_text}</span>
+                    <ExternalLink size={14} />
+                  </div>
+                </div>
+              )}
 
             </div>
           </a>
@@ -209,7 +285,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                 type="button"
                 onClick={handlePrev}
                 aria-label="Előző szponzorált ajánlat"
-                className="absolute -left-3 md:-left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-20"
+                className="absolute -left-3 md:-left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-30"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -218,7 +294,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                 type="button"
                 onClick={handleNext}
                 aria-label="Következő szponzorált ajánlat"
-                className="absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-20"
+                className="absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-30"
               >
                 <ChevronRight size={18} />
               </button>
@@ -228,7 +304,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
 
         {/* Carousel Indicator Dots */}
         {creatives.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 pt-2">
+          <div className="flex items-center justify-center gap-1.5 pt-2.5">
             {creatives.map((c, idx) => (
               <button
                 key={c.id}

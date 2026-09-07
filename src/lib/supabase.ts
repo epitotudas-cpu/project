@@ -1070,6 +1070,7 @@ export type ButtonStyle = 'petrol_teal' | 'amber_gold' | 'dark_slate' | 'outline
 export type TextAlign = 'left' | 'center' | 'right';
 export type AnimationType = 'none' | 'fade_in' | 'float' | 'marquee' | 'pulse';
 export type TransitionEffect = 'fade' | 'slide_left' | 'slide_up' | 'zoom' | 'instant';
+export type MediaType = 'image' | 'gif' | 'video';
 
 export interface AdCreative {
   id: string;
@@ -1083,6 +1084,9 @@ export interface AdCreative {
   cta_url: string;
   image_url?: string | null;
   mobile_image_url?: string | null;
+  media_type?: MediaType;
+  video_url?: string | null;
+  mobile_video_url?: string | null;
   logo_url?: string | null;
   accent_color?: string | null;
   background_style: BackgroundStyle;

@@ -20,6 +20,7 @@ import {
   Trash2,
   Check,
   Layers,
+  Film,
 } from 'lucide-react';
 import {
   getStoredCreatives,
@@ -677,33 +678,110 @@ export function BannerCreativeEditor() {
               </div>
             </div>
 
-            {/* Image URLs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Media Type & URLs */}
+            <div className="p-4 bg-[#161616] border border-[#222] rounded-2xl space-y-4">
               <div>
                 <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
-                  <ImageIcon size={12} className="text-accent" /> Desktop Kép URL
+                  <Film size={12} className="text-accent" /> Média Típusa
                 </label>
-                <input
-                  type="url"
-                  value={activeCreative.image_url || ''}
-                  onChange={(e) => handleInputChange('image_url', e.target.value)}
-                  placeholder="https://images.unsplash..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
-                />
+                <select
+                  value={activeCreative.media_type || 'image'}
+                  onChange={(e) => handleInputChange('media_type', e.target.value as AdCreative['media_type'])}
+                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-accent font-bold"
+                >
+                  <option value="image">Kép (PNG, JPG, WebP)</option>
+                  <option value="gif">GIF Animáció (.gif teljes háttérként)</option>
+                  <option value="video">Videó (MP4, WebM)</option>
+                </select>
               </div>
 
-              <div>
-                <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
-                  <Smartphone size={12} className="text-accent" /> Mobil Kép URL (Külön)
-                </label>
-                <input
-                  type="url"
-                  value={activeCreative.mobile_image_url || ''}
-                  onChange={(e) => handleInputChange('mobile_image_url', e.target.value)}
-                  placeholder="https://images.unsplash..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
-                />
-              </div>
+              {activeCreative.media_type === 'video' ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
+                        <Film size={12} className="text-accent" /> Desktop Videó URL (MP4 / WebM)
+                      </label>
+                      <input
+                        type="url"
+                        value={activeCreative.video_url || ''}
+                        onChange={(e) => handleInputChange('video_url', e.target.value)}
+                        placeholder="https://domain.hu/banner-video.mp4"
+                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
+                        <Smartphone size={12} className="text-accent" /> Mobil Videó URL (Külön)
+                      </label>
+                      <input
+                        type="url"
+                        value={activeCreative.mobile_video_url || ''}
+                        onChange={(e) => handleInputChange('mobile_video_url', e.target.value)}
+                        placeholder="https://domain.hu/mobile-video.mp4"
+                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
+                        <ImageIcon size={12} className="text-accent" /> Poster / Fallback Desktop Kép URL
+                      </label>
+                      <input
+                        type="url"
+                        value={activeCreative.image_url || ''}
+                        onChange={(e) => handleInputChange('image_url', e.target.value)}
+                        placeholder="https://images.unsplash..."
+                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
+                        <Smartphone size={12} className="text-accent" /> Poster / Fallback Mobil Kép URL
+                      </label>
+                      <input
+                        type="url"
+                        value={activeCreative.mobile_image_url || ''}
+                        onChange={(e) => handleInputChange('mobile_image_url', e.target.value)}
+                        placeholder="https://images.unsplash..."
+                        className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
+                      <ImageIcon size={12} className="text-accent" /> Desktop Kép / GIF URL
+                    </label>
+                    <input
+                      type="url"
+                      value={activeCreative.image_url || ''}
+                      onChange={(e) => handleInputChange('image_url', e.target.value)}
+                      placeholder="https://images.unsplash... vagy .gif link"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-gray-400 font-semibold block mb-1 flex items-center gap-1">
+                      <Smartphone size={12} className="text-accent" /> Mobil Kép / GIF URL (Külön)
+                    </label>
+                    <input
+                      type="url"
+                      value={activeCreative.mobile_image_url || ''}
+                      onChange={(e) => handleInputChange('mobile_image_url', e.target.value)}
+                      placeholder="https://images.unsplash... vagy .gif link"
+                      className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Visual Styling Grid */}
@@ -888,110 +966,195 @@ export function BannerCreativeEditor() {
               </div>
 
               {/* LIVE RENDERED BANNER CREATIVE */}
-              <div
-                className={`w-full transition-all duration-300 p-4 rounded-2xl ${getBackgroundClasses(
-                  activeCreative.background_style
-                )} ${getAnimationClass(activeCreative.animation_type)}`}
-              >
-                <div
-                  className={`flex items-center justify-between gap-4 flex-wrap ${
-                    viewMode === 'mobile'
-                      ? 'flex-col text-center items-center justify-center'
-                      : activeCreative.text_align === 'center'
-                      ? 'flex-col text-center items-center justify-center'
-                      : activeCreative.text_align === 'right'
-                      ? 'flex-row-reverse text-right items-center justify-between'
-                      : 'flex-row text-left items-center justify-between'
-                  }`}
-                >
-                  <div
-                    className={`flex items-center gap-3 min-w-0 ${
-                      viewMode === 'mobile'
-                        ? 'flex-col text-center items-center'
-                        : activeCreative.text_align === 'center'
-                        ? 'flex-col text-center items-center'
-                        : activeCreative.text_align === 'right'
-                        ? 'flex-row-reverse text-right items-center'
-                        : 'flex-row text-left items-center'
-                    }`}
-                  >
-                    {/* Image / Thumbnail */}
-                    {(viewMode === 'mobile' ? activeCreative.mobile_image_url || activeCreative.image_url : activeCreative.image_url) ? (
-                      <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/40 w-12 h-12 bg-slate-100 shadow-sm">
-                        <img
-                          src={
-                            viewMode === 'mobile'
-                              ? activeCreative.mobile_image_url || activeCreative.image_url || ''
-                              : activeCreative.image_url || ''
-                          }
-                          alt={activeCreative.partner_name}
-                          className="w-full h-full object-cover"
+              {activeCreative.placement_key === 'top_banner' ? (
+                <div className="w-full block relative overflow-hidden rounded-2xl border border-slate-800 h-[200px] sm:h-[210px] md:h-[235px] shadow-xl">
+                  {/* Full-Surface Background Media */}
+                  <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
+                    {activeCreative.media_type === 'video' && (activeCreative.video_url || activeCreative.mobile_video_url) ? (
+                      <>
+                        {(viewMode === 'mobile' ? activeCreative.mobile_image_url || activeCreative.image_url : activeCreative.image_url) && (
+                          <img
+                            src={viewMode === 'mobile' ? activeCreative.mobile_image_url || activeCreative.image_url || '' : activeCreative.image_url || ''}
+                            alt={activeCreative.headline}
+                            className={`w-full h-full object-cover z-0 ${simulateReducedMotion ? '' : getAnimationClass(activeCreative.animation_type)}`}
+                          />
+                        )}
+                        <video
+                          key={viewMode === 'mobile' ? activeCreative.mobile_video_url || activeCreative.video_url || '' : activeCreative.video_url || ''}
+                          src={viewMode === 'mobile' ? activeCreative.mobile_video_url || activeCreative.video_url || '' : activeCreative.video_url || ''}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          poster={viewMode === 'mobile' ? activeCreative.mobile_image_url || activeCreative.image_url || undefined : activeCreative.image_url || undefined}
+                          className={`absolute inset-0 w-full h-full object-cover z-10 ${simulateReducedMotion ? '' : getAnimationClass(activeCreative.animation_type)}`}
                         />
-                      </div>
+                      </>
+                    ) : (viewMode === 'mobile' ? activeCreative.mobile_image_url || activeCreative.image_url : activeCreative.image_url) ? (
+                      <picture className="absolute inset-0 w-full h-full block z-0">
+                        <img
+                          src={viewMode === 'mobile' ? activeCreative.mobile_image_url || activeCreative.image_url || '' : activeCreative.image_url || ''}
+                          alt={activeCreative.headline}
+                          className={`w-full h-full object-cover z-0 ${simulateReducedMotion ? '' : getAnimationClass(activeCreative.animation_type)}`}
+                        />
+                      </picture>
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 shrink-0">
-                        <Sparkles size={20} />
+                      <div className="w-full h-full flex items-center justify-center bg-slate-950 text-amber-400/50 z-0">
+                        <Sparkles size={48} />
                       </div>
                     )}
+                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-slate-950/40 md:bg-gradient-to-r md:from-slate-950/95 md:via-slate-950/80 md:to-slate-950/30 pointer-events-none" />
+                  </div>
 
-                    {/* Text block */}
-                    <div
-                      className={`min-w-0 space-y-1 ${
-                        activeCreative.text_align === 'center' || viewMode === 'mobile'
-                          ? 'text-center'
-                          : activeCreative.text_align === 'right'
-                          ? 'text-right'
-                          : 'text-left'
-                      }`}
-                    >
-                      <div
-                        className={`flex items-center gap-2 flex-wrap ${
-                          activeCreative.text_align === 'center' || viewMode === 'mobile'
-                            ? 'justify-center'
-                            : activeCreative.text_align === 'right'
-                            ? 'justify-end'
-                            : 'justify-start'
-                        }`}
-                      >
-                        <span className="inline-flex items-center gap-1.5 bg-teal-500/10 border border-teal-500/30 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse" />
+                  {/* Foreground Content */}
+                  <div className={`relative z-20 h-full flex flex-col p-4 sm:p-5 md:p-6 max-w-3xl ${
+                    activeCreative.text_align === 'center' || viewMode === 'mobile'
+                      ? 'text-center items-center justify-center mx-auto'
+                      : activeCreative.text_align === 'right'
+                      ? 'text-right items-end justify-center ml-auto'
+                      : 'text-left items-start justify-center'
+                  }`}>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs backdrop-blur-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        {activeCreative.badge_text || 'Hivatalos partner'}
+                      </span>
+                      {activeCreative.partner_name && (
+                        <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[180px] drop-shadow-xs">
                           {activeCreative.partner_name}
                         </span>
+                      )}
+                    </div>
 
-                        {activeCreative.badge_text && (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-800">
-                            <ShieldCheck size={13} className="text-[#0F766E]" /> {activeCreative.badge_text}
-                          </span>
-                        )}
-                      </div>
-
-                      <h4 className="text-sm sm:text-base font-extrabold leading-tight">
+                    <div className="mt-2 space-y-1">
+                      <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug drop-shadow-md line-clamp-2">
                         {activeCreative.headline}
-                      </h4>
-
+                      </h3>
                       {activeCreative.description && (
-                        <p className="text-xs opacity-80 leading-relaxed line-clamp-2">
+                        <p className="text-xs sm:text-sm text-gray-200 line-clamp-2 font-normal leading-relaxed opacity-90 max-w-2xl">
                           {activeCreative.description}
                         </p>
                       )}
                     </div>
-                  </div>
 
-                  {/* CTA Button */}
-                  <a
-                    href={activeCreative.cta_url || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.preventDefault()}
-                    className={`w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 ${getButtonClasses(
-                      activeCreative.button_style
-                    )}`}
-                  >
-                    <span>{activeCreative.cta_text || 'Ajánlat megtekintése'}</span>
-                    <ExternalLink size={13} />
-                  </a>
+                    {activeCreative.cta_text && activeCreative.cta_text.trim() !== '' && (
+                      <div className="mt-3 shrink-0">
+                        <div className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl font-extrabold text-xs bg-amber-400 text-slate-950 shadow-md">
+                          <span>{activeCreative.cta_text}</span>
+                          <ExternalLink size={13} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  className={`w-full transition-all duration-300 p-4 rounded-2xl ${getBackgroundClasses(
+                    activeCreative.background_style
+                  )} ${getAnimationClass(activeCreative.animation_type)}`}
+                >
+                  <div
+                    className={`flex items-center justify-between gap-4 flex-wrap ${
+                      viewMode === 'mobile'
+                        ? 'flex-col text-center items-center justify-center'
+                        : activeCreative.text_align === 'center'
+                        ? 'flex-col text-center items-center justify-center'
+                        : activeCreative.text_align === 'right'
+                        ? 'flex-row-reverse text-right items-center justify-between'
+                        : 'flex-row text-left items-center justify-between'
+                    }`}
+                  >
+                    <div
+                      className={`flex items-center gap-3 min-w-0 ${
+                        viewMode === 'mobile'
+                          ? 'flex-col text-center items-center'
+                          : activeCreative.text_align === 'center'
+                          ? 'flex-col text-center items-center'
+                          : activeCreative.text_align === 'right'
+                          ? 'flex-row-reverse text-right items-center'
+                          : 'flex-row text-left items-center'
+                      }`}
+                    >
+                      {/* Image / Thumbnail */}
+                      {(viewMode === 'mobile' ? activeCreative.mobile_image_url || activeCreative.image_url : activeCreative.image_url) ? (
+                        <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200/40 w-12 h-12 bg-slate-100 shadow-sm">
+                          <img
+                            src={
+                              viewMode === 'mobile'
+                                ? activeCreative.mobile_image_url || activeCreative.image_url || ''
+                                : activeCreative.image_url || ''
+                            }
+                            alt={activeCreative.partner_name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 shrink-0">
+                          <Sparkles size={20} />
+                        </div>
+                      )}
+
+                      {/* Text block */}
+                      <div
+                        className={`min-w-0 space-y-1 ${
+                          activeCreative.text_align === 'center' || viewMode === 'mobile'
+                            ? 'text-center'
+                            : activeCreative.text_align === 'right'
+                            ? 'text-right'
+                            : 'text-left'
+                        }`}
+                      >
+                        <div
+                          className={`flex items-center gap-2 flex-wrap ${
+                            activeCreative.text_align === 'center' || viewMode === 'mobile'
+                              ? 'justify-center'
+                              : activeCreative.text_align === 'right'
+                              ? 'justify-end'
+                              : 'justify-start'
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-1.5 bg-teal-500/10 border border-teal-500/30 text-[#0F766E] font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse" />
+                            {activeCreative.partner_name}
+                          </span>
+
+                          {activeCreative.badge_text && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-800">
+                              <ShieldCheck size={13} className="text-[#0F766E]" /> {activeCreative.badge_text}
+                            </span>
+                          )}
+                        </div>
+
+                        <h4 className="text-sm sm:text-base font-extrabold leading-tight">
+                          {activeCreative.headline}
+                        </h4>
+
+                        {activeCreative.description && (
+                          <p className="text-xs opacity-80 leading-relaxed line-clamp-2">
+                            {activeCreative.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* CTA Button */}
+                    {activeCreative.cta_text && activeCreative.cta_text.trim() !== '' && (
+                      <a
+                        href={activeCreative.cta_url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.preventDefault()}
+                        className={`w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 ${getButtonClasses(
+                          activeCreative.button_style
+                        )}`}
+                      >
+                        <span>{activeCreative.cta_text}</span>
+                        <ExternalLink size={13} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
