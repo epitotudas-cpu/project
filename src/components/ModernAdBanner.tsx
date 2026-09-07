@@ -59,25 +59,25 @@ export function TopAdBanner({ slots }: TopBannerProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeSlot.id)}
-            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-3.5 sm:p-4 md:px-6 md:py-4 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-4 sm:p-5 md:p-6 md:h-[200px] lg:h-[210px] transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             style={{ borderLeft: '4px solid #FFC400' }}
           >
-            <div className="flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6">
-              <div className="flex-1 min-w-0 flex flex-col justify-center space-y-2 md:pr-2">
+            <div className="h-full flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6 lg:gap-8">
+              <div className="w-full md:w-[68%] lg:w-[70%] shrink-0 flex flex-col justify-center space-y-2 md:space-y-2.5 md:pr-4">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                     {activeSlot.sponsorName || 'Hivatalos partner'}
                   </span>
                 </div>
-                <div className="space-y-1 text-left">
+                <div className="space-y-1.5 text-left">
                   <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
                     {activeSlot.title}
                   </h3>
                 </div>
               </div>
               {activeSlot.imageUrl && (
-                <div className="w-full md:w-[42%] lg:w-[44%] shrink-0 h-40 sm:h-48 md:h-auto md:min-h-[140px] relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
+                <div className="w-full md:w-[30%] lg:w-[28%] shrink-0 h-32 sm:h-36 md:h-full relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
                   <img
                     src={activeSlot.imageUrl}
                     alt={activeSlot.title}
@@ -127,15 +127,15 @@ export function TopAdBanner({ slots }: TopBannerProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeCreative.id)}
-            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-3.5 sm:p-4 md:px-6 md:py-4 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 motion-reduce:transition-none"
+            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-4 sm:p-5 md:p-6 md:h-[200px] lg:h-[210px] transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 motion-reduce:transition-none"
             style={{
               borderLeft: `4px solid ${accentColor}`,
             }}
           >
-            <div className="flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6">
+            <div className="h-full flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6 lg:gap-8">
               
-              {/* Left Column: Partner Info & Text Content (55-60% width on desktop) */}
-              <div className="flex-1 min-w-0 flex flex-col justify-center space-y-2 md:pr-2">
+              {/* Left Column: Partner Info & Text Content (68-70% width on desktop) */}
+              <div className="w-full md:w-[68%] lg:w-[70%] shrink-0 flex flex-col justify-center space-y-2 md:space-y-2.5 md:pr-4">
                 {/* Badge & Partner Name / Logo */}
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -167,20 +167,20 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                 </div>
 
                 {/* Headline & Description */}
-                <div className="space-y-1 text-left">
+                <div className="space-y-1.5 text-left">
                   <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
                     {activeCreative.headline}
                   </h3>
                   {activeCreative.description && (
-                    <p className="text-xs sm:text-sm text-gray-300 line-clamp-2 font-normal leading-relaxed max-w-3xl">
+                    <p className="text-xs sm:text-sm text-gray-300 line-clamp-2 md:line-clamp-3 font-normal leading-relaxed max-w-3xl">
                       {activeCreative.description}
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Right Column: Prominent Expanded Campaign Image (40-45% width on desktop) */}
-              <div className="w-full md:w-[42%] lg:w-[44%] shrink-0 h-40 sm:h-48 md:h-auto md:min-h-[140px] relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
+              {/* Right Column: Campaign Image (28-30% width on desktop, 128-144px height on mobile) */}
+              <div className="w-full md:w-[30%] lg:w-[28%] shrink-0 h-32 sm:h-36 md:h-full relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
                 {activeCreative.image_url ? (
                   <picture className="w-full h-full block">
                     {activeCreative.mobile_image_url && (
@@ -193,8 +193,8 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                     />
                   </picture>
                 ) : (
-                  <div className="w-full h-full min-h-[140px] flex items-center justify-center border border-slate-800 bg-slate-950/60 text-amber-400/80">
-                    <Sparkles size={32} />
+                  <div className="w-full h-full min-h-[120px] flex items-center justify-center border border-slate-800 bg-slate-950/60 text-amber-400/80">
+                    <Sparkles size={28} />
                   </div>
                 )}
               </div>
@@ -202,14 +202,14 @@ export function TopAdBanner({ slots }: TopBannerProps) {
             </div>
           </a>
 
-          {/* Discreet Circular Carousel Arrow Navigation Buttons */}
+          {/* Carousel Arrow Navigation Buttons */}
           {creatives.length > 1 && (
             <>
               <button
                 type="button"
                 onClick={handlePrev}
                 aria-label="Előző szponzorált ajánlat"
-                className="absolute -left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-10"
+                className="absolute -left-3 md:-left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-20"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -218,7 +218,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
                 type="button"
                 onClick={handleNext}
                 aria-label="Következő szponzorált ajánlat"
-                className="absolute -right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-10"
+                className="absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-500 text-gray-300 hover:text-slate-950 border border-slate-700 flex items-center justify-center shadow-md transition-all cursor-pointer opacity-80 group-hover/banner:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 z-20"
               >
                 <ChevronRight size={18} />
               </button>
