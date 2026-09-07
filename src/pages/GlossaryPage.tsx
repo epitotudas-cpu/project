@@ -104,24 +104,24 @@ function renderCategoryIconElement(cat?: string | null, customSettings?: Glossar
 /* ── Kategória gradiens (jobb oldali panel) ────────────────────── */
 function getTermGradient(cat?: string | null): string {
   const map: Record<string, string> = {
-    'Falazás':              'from-amber-400 to-orange-500',
-    'Vasbeton':             'from-slate-400 to-slate-600',
-    'Hőszigetelés':         'from-blue-400 to-cyan-500',
-    'Hőszigetelek':         'from-blue-400 to-cyan-500',
-    'Szigetelés':           'from-blue-400 to-cyan-500',
-    'Vízszigetelés':        'from-sky-400 to-blue-600',
-    'Alapozás':             'from-stone-400 to-stone-600',
+    'Falazás': 'from-amber-400 to-orange-500',
+    'Vasbeton': 'from-slate-400 to-slate-600',
+    'Hőszigetelés': 'from-blue-400 to-cyan-500',
+    'Hőszigetelek': 'from-blue-400 to-cyan-500',
+    'Szigetelés': 'from-blue-400 to-cyan-500',
+    'Vízszigetelés': 'from-sky-400 to-blue-600',
+    'Alapozás': 'from-stone-400 to-stone-600',
     'Alapozás & Földmunka': 'from-stone-400 to-amber-600',
-    'Szerkezetépítés':      'from-orange-400 to-red-500',
-    'Gépek & Szerszámok':   'from-indigo-400 to-blue-600',
-    'Anyagismeret':         'from-emerald-400 to-teal-600',
-    'Tetőfedés':            'from-red-400 to-rose-600',
-    'Zsaluzás':             'from-yellow-500 to-amber-600',
-    'Gépészet':             'from-emerald-400 to-teal-600',
-    'Villamos':             'from-yellow-300 to-yellow-500',
-    'Páratechnika':         'from-cyan-400 to-teal-500',
-    'Vakolás':              'from-orange-300 to-amber-500',
-    'Burkolás':             'from-indigo-400 to-violet-600',
+    'Szerkezetépítés': 'from-orange-400 to-red-500',
+    'Gépek & Szerszámok': 'from-indigo-400 to-blue-600',
+    'Anyagismeret': 'from-emerald-400 to-teal-600',
+    'Tetőfedés': 'from-red-400 to-rose-600',
+    'Zsaluzás': 'from-yellow-500 to-amber-600',
+    'Gépészet': 'from-emerald-400 to-teal-600',
+    'Villamos': 'from-yellow-300 to-yellow-500',
+    'Páratechnika': 'from-cyan-400 to-teal-500',
+    'Vakolás': 'from-orange-300 to-amber-500',
+    'Burkolás': 'from-indigo-400 to-violet-600',
   };
   return (cat && map[cat]) ? map[cat] : 'from-accent/60 to-yellow-500/40';
 }
@@ -440,7 +440,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   <BookOpen size={26} className="text-accent" />
                 </div>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                  Tudástár - Fogalom
+                  Építőipari Fogalomtár & Enciklopédia
                 </h1>
               </div>
               <p className="text-gray-400 text-sm max-w-lg leading-relaxed">
@@ -453,21 +453,19 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/10 self-start md:self-auto">
               <button
                 onClick={() => handleTabChange('technical')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'technical'
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'technical'
                     ? 'bg-accent text-black shadow-md'
                     : 'text-gray-400 hover:text-white'
-                }`}
+                  }`}
               >
                 Szakmai Fogalomtár
               </button>
               <button
                 onClick={() => handleTabChange('industry')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'industry'
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'industry'
                     ? 'bg-accent text-black shadow-md'
                     : 'text-gray-400 hover:text-white'
-                }`}
+                  }`}
               >
                 Zsargon Szótár
               </button>
@@ -542,7 +540,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
         {/* ═══════════ SEARCH AND COMPACT CATEGORY FILTER BAR ═══════════ */}
         <div className="mb-8 bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row items-center gap-4">
-            
+
             {/* Live Search Input */}
             <div className="relative flex-1 w-full">
               <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -578,11 +576,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
               <div className="relative flex-1 md:flex-initial">
                 <button
                   onClick={handleOpenCategoryModal}
-                  className={`w-full md:w-auto px-4 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-between gap-2 border shadow-xs ${
-                    selectedCategories.length > 0
+                  className={`w-full md:w-auto px-4 py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-between gap-2 border shadow-xs ${selectedCategories.length > 0
                       ? 'bg-primary text-white border-primary-700 shadow-md'
                       : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-800'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <span>
@@ -658,8 +655,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   {selectedCategories.length > 0
                     ? `Szűrt fogalmak (${selectedCategories.join(', ')})`
                     : searchQuery
-                    ? 'Keresési eredmények'
-                    : 'Összes fogalom'}
+                      ? 'Keresési eredmények'
+                      : 'Összes fogalom'}
                 </h2>
                 <span className="text-xs text-gray-400 font-medium">
                   • {filteredTerms.length} fogalom
@@ -676,11 +673,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 <button
                   type="button"
                   onClick={() => changeViewMode('list')}
-                  className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
-                    viewMode === 'list'
+                  className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${viewMode === 'list'
                       ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80 font-black'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                  }`}
+                    }`}
                   title="Lista nézet – részletes, soros elrendezés"
                 >
                   <LayoutList size={16} className={viewMode === 'list' ? 'text-primary' : 'text-gray-400'} />
@@ -689,11 +685,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 <button
                   type="button"
                   onClick={() => changeViewMode('grid')}
-                  className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
-                    viewMode === 'grid'
+                  className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${viewMode === 'grid'
                       ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80 font-black'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                  }`}
+                    }`}
                   title="Csempe nézet – kompakt, pásztázható kártyák"
                 >
                   <LayoutGrid size={16} className={viewMode === 'grid' ? 'text-primary' : 'text-gray-400'} />
@@ -780,11 +775,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           {/* Képre úszó jelvények (Badges overlay) */}
                           <div className="absolute top-2.5 left-2.5 right-2.5 z-30 flex items-center justify-between gap-1.5 pointer-events-none">
                             <span
-                              className={`font-extrabold px-2 py-0.5 rounded text-[10px] tracking-wider uppercase border shadow-sm backdrop-blur-md ${
-                                item.entry_type === 'industry_term'
+                              className={`font-extrabold px-2 py-0.5 rounded text-[10px] tracking-wider uppercase border shadow-sm backdrop-blur-md ${item.entry_type === 'industry_term'
                                   ? 'bg-amber-900/80 text-amber-200 border-amber-500/40'
                                   : 'bg-blue-900/80 text-blue-200 border-blue-500/40'
-                              }`}
+                                }`}
                             >
                               {item.entry_type === 'industry_term' ? 'Zsargon' : 'Szakmai'}
                             </span>
@@ -850,11 +844,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={(e) => handleToggleBookmark(e, item)}
-                            className={`p-1.5 rounded-lg border transition-all ${
-                              savedItemIds.has(item.id)
+                            className={`p-1.5 rounded-lg border transition-all ${savedItemIds.has(item.id)
                                 ? 'bg-amber-100 border-amber-300 text-amber-900 shadow-2xs'
                                 : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-100'
-                            }`}
+                              }`}
                             title={savedItemIds.has(item.id) ? 'Mentés eltávolítása' : 'Elmentés a mentéseim közé'}
                           >
                             {savedItemIds.has(item.id) ? (
@@ -894,11 +887,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           {/* Badge sor */}
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
-                              className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${
-                                item.entry_type === 'industry_term'
+                              className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${item.entry_type === 'industry_term'
                                   ? 'bg-amber-50 text-amber-700 border-amber-200'
                                   : 'bg-blue-50 text-blue-700 border-blue-200'
-                              }`}
+                                }`}
                             >
                               {item.entry_type === 'industry_term' ? '🗣 Zsargon' : '📘 Szakmai'}
                             </span>
@@ -1041,11 +1033,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
                               <button
                                 onClick={(e) => handleToggleBookmark(e, item)}
-                                className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition-all flex items-center gap-1 ${
-                                  savedItemIds.has(item.id)
+                                className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition-all flex items-center gap-1 ${savedItemIds.has(item.id)
                                     ? 'bg-amber-100 border-amber-300 text-amber-900'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                                }`}
+                                  }`}
                                 title={savedItemIds.has(item.id) ? 'Mentés eltávolítása' : 'Elmentés a mentéseim közé'}
                               >
                                 {savedItemIds.has(item.id) ? (
@@ -1173,11 +1164,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                   <button
                     key={tr}
                     onClick={() => setSelectedTrade(selectedTrade === tr ? null : tr)}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all ${
-                      selectedTrade === tr
+                    className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all ${selectedTrade === tr
                         ? 'bg-accent text-black'
                         : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                    }`}
+                      }`}
                   >
                     {tr} útvonal
                   </button>
@@ -1256,7 +1246,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
           aria-labelledby="cat-modal-title"
         >
           <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-lg p-6 space-y-5 shadow-2xl relative text-gray-900 max-h-[85vh] flex flex-col overflow-hidden">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div className="space-y-0.5">
@@ -1280,11 +1270,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               <button
                 onClick={() => setModalCategories([])}
-                className={`w-full p-3 rounded-2xl border text-left font-bold text-xs transition-all flex items-center justify-between ${
-                  modalCategories.length === 0
+                className={`w-full p-3 rounded-2xl border text-left font-bold text-xs transition-all flex items-center justify-between ${modalCategories.length === 0
                     ? 'bg-primary/10 border-primary text-primary-950 font-black'
                     : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <span>Összes kategória</span>
                 <span className="text-xs bg-white px-2.5 py-0.5 rounded-full border border-gray-200">
@@ -1299,11 +1288,10 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                 return (
                   <label
                     key={catName}
-                    className={`w-full p-3 rounded-2xl border text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                      isChecked
+                    className={`w-full p-3 rounded-2xl border text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${isChecked
                         ? 'bg-primary/10 border-primary text-primary-950 shadow-2xs'
                         : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <input
