@@ -52,31 +52,39 @@ export function TopAdBanner({ slots }: TopBannerProps) {
     if (!activeSlot) return null;
 
     return (
-      <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 py-3 px-4 sticky top-0 z-30 shadow-xs backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-3 py-2.5 sm:px-4 md:px-6 md:py-3.5">
           <a
             href={activeSlot.targetUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeSlot.id)}
-            className="w-full group flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900 hover:bg-slate-850 border border-slate-800 p-4 rounded-2xl transition-all duration-300 shadow-xs hover:shadow-md"
+            className="w-full block relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 border border-slate-800 hover:border-slate-700 p-3.5 sm:p-4 md:px-6 md:py-4 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            style={{ borderLeft: '4px solid #FFC400' }}
           >
-            <div className="flex flex-col md:flex-row items-center gap-3.5 min-w-0 text-center md:text-left">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 font-black text-xs">
-                {activeSlot.sponsorName.charAt(0)}
+            <div className="flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6">
+              <div className="flex-1 min-w-0 flex flex-col justify-center space-y-2 md:pr-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    {activeSlot.sponsorName || 'Hivatalos partner'}
+                  </span>
+                </div>
+                <div className="space-y-1 text-left">
+                  <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
+                    {activeSlot.title}
+                  </h3>
+                </div>
               </div>
-              <div className="min-w-0 space-y-1">
-                <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
-                  {activeSlot.sponsorName || 'Hivatalos partner'}
-                </span>
-                <p className="text-sm md:text-base font-bold text-white truncate">
-                  {activeSlot.title}
-                </p>
-              </div>
-            </div>
-            <div className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs md:text-sm h-11 px-5 rounded-xl transition-all shadow-sm group-hover:scale-[1.02]">
-              <span>Ajánlat megtekintése</span>
-              <ExternalLink size={14} />
+              {activeSlot.imageUrl && (
+                <div className="w-full md:w-[42%] lg:w-[44%] shrink-0 h-40 sm:h-48 md:h-auto md:min-h-[140px] relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
+                  <img
+                    src={activeSlot.imageUrl}
+                    alt={activeSlot.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              )}
             </div>
           </a>
         </div>
@@ -124,87 +132,73 @@ export function TopAdBanner({ slots }: TopBannerProps) {
               borderLeft: `4px solid ${accentColor}`,
             }}
           >
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-6">
+            <div className="flex flex-col md:flex-row items-stretch justify-between gap-4 md:gap-6">
               
-              {/* Left Column: Badge & Partner Name / Logo */}
-              <div className="w-full md:w-1/4 lg:w-1/5 shrink-0 flex flex-row md:flex-col items-center md:items-start justify-between md:justify-center gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
+              {/* Left Column: Partner Info & Text Content (55-60% width on desktop) */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center space-y-2 md:pr-2">
+                {/* Badge & Partner Name / Logo */}
+                <div className="flex items-center gap-3 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse motion-reduce:animate-none" />
                     {activeCreative.badge_text || 'Hivatalos partner'}
                   </span>
-                </div>
 
-                {activeCreative.logo_url ? (
-                  <div className="h-7 max-w-[130px] shrink-0 overflow-hidden flex items-center">
-                    <img
-                      src={activeCreative.logo_url}
-                      alt={activeCreative.partner_name}
-                      className="h-full w-auto object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40`, color: accentColor }}
-                      className="w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-black shrink-0"
-                    >
-                      {activeCreative.partner_name.charAt(0)}
-                    </span>
-                    <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[150px]">
-                      {activeCreative.partner_name}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Middle Column: Headline & Description */}
-              <div className="flex-1 min-w-0 space-y-1 text-left">
-                <h3 className="text-sm sm:text-base md:text-lg font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
-                  {activeCreative.headline}
-                </h3>
-                {activeCreative.description && (
-                  <p className="text-xs md:text-sm text-gray-300 line-clamp-2 font-normal leading-normal max-w-2xl">
-                    {activeCreative.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Right Column: Campaign Image & Primary CTA Button */}
-              <div className="w-full md:w-auto shrink-0 flex flex-col sm:flex-row items-center justify-end gap-3 md:gap-5">
-                
-                {/* Campaign Image */}
-                {activeCreative.image_url ? (
-                  <div className="hidden sm:block w-36 md:w-44 lg:w-48 h-24 md:h-28 rounded-xl overflow-hidden border border-slate-800 shadow-xs shrink-0 bg-slate-950">
-                    <picture>
-                      {activeCreative.mobile_image_url && (
-                        <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
-                      )}
+                  {activeCreative.logo_url ? (
+                    <div className="h-6 sm:h-7 max-w-[140px] shrink-0 overflow-hidden flex items-center">
                       <img
-                        src={activeCreative.image_url}
-                        alt={activeCreative.headline}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none"
+                        src={activeCreative.logo_url}
+                        alt={activeCreative.partner_name}
+                        className="h-full w-auto object-contain"
                       />
-                    </picture>
-                  </div>
-                ) : (
-                  <div className="hidden sm:flex w-36 md:w-44 lg:w-48 h-24 md:h-28 rounded-xl border border-slate-800 bg-slate-950/60 items-center justify-center text-amber-400/80 shrink-0">
-                    <Sparkles size={24} />
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40`, color: accentColor }}
+                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg border flex items-center justify-center text-xs font-black shrink-0"
+                      >
+                        {activeCreative.partner_name.charAt(0)}
+                      </span>
+                      <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[180px]">
+                        {activeCreative.partner_name}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-                {/* Primary CTA Button */}
-                <div
-                  style={{
-                    backgroundColor: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#FFC400' : accentColor,
-                    color: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#000000' : '#FFFFFF',
-                  }}
-                  className="w-full sm:w-auto h-11 px-5 rounded-xl font-extrabold text-xs md:text-sm inline-flex items-center justify-center gap-2 transition-all duration-300 shadow-sm group-hover:scale-[1.03] group-hover:shadow-md cursor-pointer shrink-0"
-                >
-                  <span>{activeCreative.cta_text || 'Ajánlat megtekintése'}</span>
-                  <ExternalLink size={14} />
+                {/* Headline & Description */}
+                <div className="space-y-1 text-left">
+                  <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">
+                    {activeCreative.headline}
+                  </h3>
+                  {activeCreative.description && (
+                    <p className="text-xs sm:text-sm text-gray-300 line-clamp-2 font-normal leading-relaxed max-w-3xl">
+                      {activeCreative.description}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Right Column: Prominent Expanded Campaign Image (40-45% width on desktop) */}
+              <div className="w-full md:w-[42%] lg:w-[44%] shrink-0 h-40 sm:h-48 md:h-auto md:min-h-[140px] relative rounded-xl overflow-hidden border border-slate-800 shadow-xs bg-slate-950">
+                {activeCreative.image_url ? (
+                  <picture className="w-full h-full block">
+                    {activeCreative.mobile_image_url && (
+                      <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+                    )}
+                    <img
+                      src={activeCreative.image_url}
+                      alt={activeCreative.headline}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none"
+                    />
+                  </picture>
+                ) : (
+                  <div className="w-full h-full min-h-[140px] flex items-center justify-center border border-slate-800 bg-slate-950/60 text-amber-400/80">
+                    <Sparkles size={32} />
+                  </div>
+                )}
+              </div>
+
             </div>
           </a>
 
