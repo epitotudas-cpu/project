@@ -27,6 +27,10 @@ import {
   saveBannerCreative,
   saveStoredCreatives,
   resetCreativeToDefaults,
+  getFallbackVideoSettings,
+  saveFallbackVideoSettings,
+  listFallbackVideoSettings,
+  type FallbackVideoSettings,
 } from '../services/bannerCreativeService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import type {
@@ -40,6 +44,8 @@ import type {
 
 export function BannerCreativeEditor() {
   const [storedCreatives, setStoredCreatives] = useState<AdCreative[]>([]);
+  const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
+  const [showFallbackPanel, setShowFallbackPanel] = useState(false);
   
   // Navigation & View State: 'selector' (dashboard list of creatives) or 'editing' (form + live preview)
   const [editorView, setEditorView] = useState<'selector' | 'editing'>('selector');
@@ -62,7 +68,24 @@ export function BannerCreativeEditor() {
 
   useEffect(() => {
     refreshCreativesList();
+    async function loadFallback() {
+      const cloud = await listFallbackVideoSettings();
+      setFallbackSettings(cloud);
+    }
+    loadFallback();
   }, []);
+
+  function handleToggleFallbackEnabled() {
+    const updated = { ...fallbackSettings, enabled: !fallbackSettings.enabled };
+    setFallbackSettings(updated);
+    saveFallbackVideoSettings(updated);
+  }
+
+  function handleSaveFallbackSettings() {
+    saveFallbackVideoSettings(fallbackSettings);
+    setSaveSuccessMessage('🎬 Videó fallback beállítások mentve!');
+    setTimeout(() => setSaveSuccessMessage(null), 3000);
+  }
 
   function refreshCreativesList() {
     const creatives = getStoredCreatives();
@@ -343,6 +366,115 @@ export function BannerCreativeEditor() {
               ⚪ {storedCreatives.filter((c) => !c.is_active).length} Inaktív / Vázlat
             </span>
           </div>
+        </div>
+
+        {/* Fallback Video Control Section */}
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl p-5 shadow-lg space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Film size={18} className="text-amber-400" />
+                <h3 style={{ color: textColor }} className="text-base font-extrabold">
+                  Főoldali Videó Banner Fallback (Ha 0 hirdetés van)
+                </h3>
+              </div>
+              <p className="text-xs text-gray-400">
+                Ha az admin panelen nincs egyetlen aktív hirdető vagy kreatív sem, itt engedélyezheted vagy tilthatod le a bemutató WebM videó lejátszását.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Toggle Button */}
+              <button
+                type="button"
+                onClick={handleToggleFallbackEnabled}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border ${
+                  fallbackSettings.enabled
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                    : 'bg-red-500/20 text-red-300 border-red-500/40'
+                }`}
+              >
+                <span className={`w-2.5 h-2.5 rounded-full ${fallbackSettings.enabled ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                <span>{fallbackSettings.enabled ? 'BEKAPCSOLVA (Videó fut 0 hirdetésnél)' : 'KIKAPCSOLVA (Nincs sáv 0 hirdetésnél)'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowFallbackPanel(!showFallbackPanel)}
+                style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                className="px-3 py-2 border rounded-xl text-xs font-bold hover:opacity-80 transition-all cursor-pointer"
+              >
+                {showFallbackPanel ? 'Részletek elrejtése' : 'Szerkesztés ⚙️'}
+              </button>
+            </div>
+          </div>
+
+          {/* Expanded Edit Form for Fallback Video */}
+          {showFallbackPanel && (
+            <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="border rounded-xl p-4 space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-gray-400 block mb-1">Videó URL (WebM / MP4)</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.video_url}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, video_url: e.target.value })}
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                    className="w-full border rounded-lg p-2 font-mono text-xs"
+                    placeholder="https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/log%C3%B3.webm"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-400 block mb-1">Jelvény / Szponzor Neve</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.sponsor_name}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, sponsor_name: e.target.value })}
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                    className="w-full border rounded-lg p-2 text-xs"
+                    placeholder="ÉpítőTudás • Hirdetési Hely"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-400 block mb-1">Banner Főcím</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.title}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, title: e.target.value })}
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                    className="w-full border rounded-lg p-2 text-xs"
+                    placeholder="Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-400 block mb-1">Kattintási Cél URL</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.target_url}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, target_url: e.target.value })}
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+                    className="w-full border rounded-lg p-2 font-mono text-xs"
+                    placeholder="#"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={handleSaveFallbackSettings}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 font-extrabold text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-1.5 hover:opacity-90"
+                >
+                  <Save size={14} />
+                  <span>Videó Beállítások Mentése</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CREATIVE CARDS GRID GROUPED BY PLACEMENT */}

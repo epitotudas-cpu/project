@@ -204,8 +204,94 @@ export function getCreativesByPlacementSync(placementKey: string): AdCreative[] 
   return creatives.filter((c) => c.placement_key === placementKey && c.is_active);
 }
 
-export async function deleteBannerCreative(id: string): Promise<void> {
-  const creatives = getStoredCreatives();
-  const filtered = creatives.filter((c) => c.id !== id);
-  saveStoredCreatives(filtered);
+export interface FallbackVideoSettings {
+  enabled: boolean;
+  video_url: string;
+  sponsor_name: string;
+  title: string;
+  target_url: string;
+}
+
+const FALLBACK_VIDEO_STORAGE_KEY = 'epitotudas_ad_fallback_video_v1';
+const SUPABASE_FALLBACK_SYSTEM_ID = '00000000-0000-0000-0000-000000000019';
+
+export const DEFAULT_FALLBACK_VIDEO_SETTINGS: FallbackVideoSettings = {
+  enabled: true,
+  video_url: 'https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/log%C3%B3.webm',
+  sponsor_name: 'ÉpítőTudás • Hirdetési Hely',
+  title: 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások',
+  target_url: '#',
+};
+
+export function getFallbackVideoSettings(): FallbackVideoSettings {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(FALLBACK_VIDEO_STORAGE_KEY);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            ...DEFAULT_FALLBACK_VIDEO_SETTINGS,
+            ...parsed,
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Hiba a videó fallback beállítások olvasásakor:', err);
+  }
+  return DEFAULT_FALLBACK_VIDEO_SETTINGS;
+}
+
+export function saveFallbackVideoSettings(settings: FallbackVideoSettings): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(FALLBACK_VIDEO_STORAGE_KEY, JSON.stringify(settings));
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ad-fallback-video-changed'));
+    }
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_FALLBACK_SYSTEM_ID,
+          name: '__SYSTEM_CONFIG_AD_FALLBACK_VIDEO__',
+          slug: 'system-ad-fallback-video-config',
+          description: JSON.stringify(settings),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
+  } catch (err) {
+    console.error('Hiba a videó fallback beállítások mentésekor:', err);
+  }
+}
+
+export async function listFallbackVideoSettings(): Promise<FallbackVideoSettings> {
+  let settings = getFallbackVideoSettings();
+
+  try {
+    const { data } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_FALLBACK_SYSTEM_ID)
+      .maybeSingle();
+
+    if (data?.description && data.description.startsWith('{')) {
+      const cloudSettings = JSON.parse(data.description);
+      if (cloudSettings && typeof cloudSettings === 'object') {
+        settings = { ...DEFAULT_FALLBACK_VIDEO_SETTINGS, ...cloudSettings };
+        try { localStorage.setItem(FALLBACK_VIDEO_STORAGE_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
+      }
+    }
+  } catch (err) {
+    void err;
+  }
+
+  return settings;
 }
