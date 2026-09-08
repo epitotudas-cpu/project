@@ -14,21 +14,6 @@ const STORAGE_KEY_NOTIFICATIONS = 'epitotudas_ad_notifications_v1';
 
 export const DEFAULT_ADVERTISERS: Advertiser[] = [
   {
-    id: 'adv-leier',
-    name: 'Leier Hungária Kft.',
-    logoUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=300&q=80',
-    contactName: 'Nagy Gábor',
-    contactEmail: 'gabor.nagy@leier.hu',
-    contactPhone: '+36 96 555 123',
-    contactRole: 'Marketing Igazgató',
-    category: 'gyarto',
-    websiteUrl: 'https://www.leier.hu',
-    notes: 'Kiemelt stratégiai gyártó partner. Éves szerződés aktív.',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
     id: 'adv-bosch',
     name: 'Bosch Professional Magyarország',
     logoUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80',
@@ -171,23 +156,6 @@ export const DEFAULT_PLACEMENTS: AdPlacement[] = [
 
 export const DEFAULT_PAYMENTS: AdPayment[] = [
   {
-    id: 'pay-101',
-    paymentNumber: 'ET-INV-2026-001',
-    campaignId: 'camp-101',
-    campaignTitle: 'Leier Taverna & Kaiser Térkő Akció 2026 Tavasz',
-    advertiserName: 'Leier Hungária Kft.',
-    contractId: 'contract-101',
-    amountHuf: 249000,
-    currency: 'HUF',
-    dueDate: '2026-01-15T00:00:00.000Z',
-    paidDate: '2026-01-12T00:00:00.000Z',
-    status: 'paid',
-    paymentMethod: 'Banki átutalás',
-    notes: 'Számla sorszáma: Sz-2026/014',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
     id: 'pay-102',
     paymentNumber: 'ET-INV-2026-002',
     campaignId: 'camp-102',
@@ -257,17 +225,6 @@ export const DEFAULT_NOTIFICATIONS: AdNotification[] = [
     isRead: false,
     createdAt: new Date().toISOString(),
   },
-  {
-    id: 'notif-4',
-    title: 'Új kreatív jóváhagyása',
-    message: 'Leier Taverna új banner kép került feltöltésre ellenőrzésre.',
-    type: 'pending_creative',
-    severity: 'success',
-    targetModule: 'creatives',
-    targetId: 'creative-top-banner-leier',
-    isRead: false,
-    createdAt: new Date().toISOString(),
-  },
 ];
 
 // Helper: Advertisers
@@ -275,21 +232,24 @@ export function getAdvertisers(): Advertiser[] {
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(STORAGE_KEY_ADVERTISERS);
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((a) => a.id !== 'adv-leier' && !a.name?.includes('Leier'));
+        }
       }
     }
   } catch (e) {
     console.error('Hiba a hirdetők olvasásakor:', e);
   }
-  return DEFAULT_ADVERTISERS;
+  return DEFAULT_ADVERTISERS.filter((a) => a.id !== 'adv-leier');
 }
 
 export function saveAdvertisers(advertisers: Advertiser[]): void {
   try {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_ADVERTISERS, JSON.stringify(advertisers));
+      const sanitized = advertisers.filter((a) => a.id !== 'adv-leier' && !a.name?.includes('Leier'));
+      localStorage.setItem(STORAGE_KEY_ADVERTISERS, JSON.stringify(sanitized));
     }
   } catch (e) {
     console.error('Hiba a hirdetők mentésekor:', e);
@@ -301,9 +261,9 @@ export function getPlacements(): AdPlacement[] {
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(STORAGE_KEY_PLACEMENTS);
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     }
   } catch (e) {
@@ -327,21 +287,24 @@ export function getPayments(): AdPayment[] {
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(STORAGE_KEY_PAYMENTS);
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((p) => p.id !== 'pay-101' && !p.advertiserName?.includes('Leier'));
+        }
       }
     }
   } catch (e) {
     console.error('Hiba a fizetések olvasásakor:', e);
   }
-  return DEFAULT_PAYMENTS;
+  return DEFAULT_PAYMENTS.filter((p) => p.id !== 'pay-101');
 }
 
 export function savePayments(payments: AdPayment[]): void {
   try {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_PAYMENTS, JSON.stringify(payments));
+      const sanitized = payments.filter((p) => p.id !== 'pay-101' && !p.advertiserName?.includes('Leier'));
+      localStorage.setItem(STORAGE_KEY_PAYMENTS, JSON.stringify(sanitized));
     }
   } catch (e) {
     console.error('Hiba a fizetések mentésekor:', e);
@@ -353,21 +316,24 @@ export function getNotifications(): AdNotification[] {
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((n) => n.id !== 'notif-4' && !n.message?.includes('Leier'));
+        }
       }
     }
   } catch (e) {
     console.error('Hiba az értesítések olvasásakor:', e);
   }
-  return DEFAULT_NOTIFICATIONS;
+  return DEFAULT_NOTIFICATIONS.filter((n) => n.id !== 'notif-4');
 }
 
 export function saveNotifications(notifications: AdNotification[]): void {
   try {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(notifications));
+      const sanitized = notifications.filter((n) => n.id !== 'notif-4' && !n.message?.includes('Leier'));
+      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(sanitized));
     }
   } catch (e) {
     console.error('Hiba az értesítések mentésekor:', e);

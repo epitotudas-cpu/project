@@ -887,11 +887,11 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
             <form onSubmit={handleCreateCampaignSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="font-bold text-gray-400 block mb-1">Hirdető Neve</label>
-                <input type="text" value={sponsorName} onChange={(e) => setSponsorName(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="Leier Kft." required />
+                <input type="text" value={sponsorName} onChange={(e) => setSponsorName(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="pl. Bosch Professional" required />
               </div>
               <div>
                 <label className="font-bold text-gray-400 block mb-1">Kampány Címe</label>
-                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="Taverna Térkő 2026" required />
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="pl. Akkus Szerszámgép Akció 2026" required />
               </div>
               <div>
                 <label className="font-bold text-gray-400 block mb-1">Elhelyezés</label>

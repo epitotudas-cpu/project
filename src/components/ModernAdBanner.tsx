@@ -53,51 +53,8 @@ export function TopAdBanner({ slots }: TopBannerProps) {
     }
   }, [activeCreative?.id, activeCreative?.is_active]);
 
-  if (!activeCreative || !activeCreative.is_active) {
-    const activeSlots = slots?.filter((s) => s.location === 'top_banner' && !s.isPlaceholder) || [];
-    const activeSlot = activeSlots[0];
-    const fallbackVideoUrl = 'https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/log%C3%B3.webm';
-
-    return (
-      <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-3 py-2.5 sm:px-4 md:px-6 md:py-3.5">
-          <a
-            href={activeSlot?.targetUrl || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => activeSlot?.id && recordAdClick(activeSlot.id)}
-            className="w-full block relative overflow-hidden rounded-2xl border border-slate-800 hover:border-slate-700 h-[200px] sm:h-[210px] md:h-[235px] transition-all duration-300 shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500 group/fallback"
-            style={{ borderLeft: '4px solid #FFC400' }}
-          >
-            {/* Background WebM Video */}
-            <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
-              <video
-                src={fallbackVideoUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover group-hover/fallback:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-slate-950/40 md:bg-gradient-to-r md:from-slate-950/95 md:via-slate-950/80 md:to-slate-950/30" />
-            </div>
-
-            {/* Content Layer */}
-            <div className="relative z-20 h-full flex flex-col justify-center p-4 sm:p-5 md:p-6 lg:p-8 max-w-3xl text-left items-start">
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 font-extrabold px-2.5 py-0.5 rounded-full text-[11px] uppercase tracking-wider backdrop-blur-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  {activeSlot?.sponsorName || 'ÉpítőTudás • Hirdetési Hely'}
-                </span>
-              </div>
-              <h3 className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-snug group-hover/fallback:text-amber-400 transition-colors drop-shadow-md line-clamp-2">
-                {activeSlot?.title || 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások'}
-              </h3>
-            </div>
-          </a>
-        </div>
-      </aside>
-    );
+  if (!activeCreative || !activeCreative.is_active || creatives.length === 0) {
+    return null;
   }
 
   function handlePrev(e: React.MouseEvent) {

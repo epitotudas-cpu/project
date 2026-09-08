@@ -58,33 +58,6 @@ export const DEFAULT_AD_CREATIVES: AdCreative[] = [
     created_by: 'Admin',
     updated_at: new Date().toISOString(),
   },
-  {
-    id: 'creative-top-banner-leier',
-    placement_key: 'top_banner',
-    partner_name: 'Leier Hungária',
-    badge_text: 'Hivatalos partner',
-    headline: 'Leier Taverna Térkövek & Poroton Falazási Rendszerek',
-    description: 'Prémium minőségű magyar építőanyagok közvetlenül a gyártótól építkezőknek.',
-    cta_text: 'Ajánlat megtekintése',
-    cta_url: 'https://www.leier.hu',
-    image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80',
-    mobile_image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=400&q=80',
-    media_type: 'image',
-    accent_color: '#D32F2F',
-    background_style: 'petrol_teal',
-    overlay_style: 'none',
-    button_style: 'amber_gold',
-    text_align: 'left',
-    animation_type: 'none',
-    transition_effect: 'fade',
-    rotation_seconds: 6,
-    is_active: true,
-    starts_at: '2026-01-01T00:00:00.000Z',
-    ends_at: null,
-    sort_order: 3,
-    created_by: 'Admin',
-    updated_at: new Date().toISOString(),
-  },
 ];
 
 export function getStoredCreatives(): AdCreative[] {
@@ -93,7 +66,9 @@ export function getStoredCreatives(): AdCreative[] {
       const raw = localStorage.getItem(CREATIVES_STORAGE_KEY);
       if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((c) => c.id !== 'creative-top-banner-leier' && !c.partner_name?.includes('Leier'));
+        }
       } else {
         localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(DEFAULT_AD_CREATIVES));
         return DEFAULT_AD_CREATIVES;
@@ -102,13 +77,14 @@ export function getStoredCreatives(): AdCreative[] {
   } catch (err) {
     console.error('Hiba a kreatívok olvasásakor:', err);
   }
-  return DEFAULT_AD_CREATIVES;
+  return DEFAULT_AD_CREATIVES.filter((c) => c.id !== 'creative-top-banner-leier');
 }
 
 export function saveStoredCreatives(creatives: AdCreative[]): void {
   try {
+    const sanitized = creatives.filter((c) => c.id !== 'creative-top-banner-leier' && !c.partner_name?.includes('Leier'));
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(creatives));
+      localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(sanitized));
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('ad-creative-changed'));
@@ -120,7 +96,7 @@ export function saveStoredCreatives(creatives: AdCreative[]): void {
           id: SUPABASE_SYSTEM_ID,
           name: '__SYSTEM_CONFIG_AD_CREATIVES__',
           slug: 'system-ad-creatives-config',
-          description: JSON.stringify(creatives),
+          description: JSON.stringify(sanitized),
           article_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -147,7 +123,7 @@ export async function listBannerCreatives(): Promise<AdCreative[]> {
     if (data?.description && data.description.startsWith('[')) {
       const cloudList = JSON.parse(data.description);
       if (Array.isArray(cloudList)) {
-        list = cloudList;
+        list = cloudList.filter((c: AdCreative) => c.id !== 'creative-top-banner-leier' && !c.partner_name?.includes('Leier'));
         try { localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
       }
     }

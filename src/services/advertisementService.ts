@@ -78,31 +78,6 @@ export interface CreateAdCampaignPayload {
 
 const DEFAULT_CAMPAIGNS: ExtendedAdCampaign[] = [
   {
-    id: 'camp-101',
-    sponsor_name: 'Leier Hungária Kft.',
-    placement_slot: 'top_banner',
-    title: 'Leier Taverna & Kaiser Térkő Akció 2026 Tavasz',
-    target_url: 'https://www.leier.hu',
-    banner_image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=1200&q=80',
-    status: 'active',
-    status_v2: 'active',
-    package_tier: 'gold',
-    contract_type: 'annual',
-    price_huf: 249000,
-    payment_status: 'paid',
-    contact_person: {
-      name: 'Nagy Gábor',
-      email: 'gabor.nagy@leier.hu',
-      phone: '+36 96 555 123',
-      role: 'Marketing Igazgató',
-    },
-    start_date: '2026-01-01T00:00:00.000Z',
-    end_date: '2026-12-31T23:59:59.000Z',
-    impressions_count: 154200,
-    clicks_count: 8940,
-    created_at: new Date().toISOString(),
-  },
-  {
     id: 'camp-102',
     sponsor_name: 'BOSCH Professional',
     placement_slot: 'sidebar',
@@ -160,19 +135,22 @@ const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000015';
 export function getStoredCampaigns(): ExtendedAdCampaign[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CAMPAIGNS);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        return parsed.filter((c) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
+      }
     }
   } catch (err) {
     console.error('Hiba a kampányok olvasásakor:', err);
   }
-  return DEFAULT_CAMPAIGNS;
+  return DEFAULT_CAMPAIGNS.filter((c) => c.id !== 'camp-101');
 }
 
 export function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(campaigns));
+    const sanitized = campaigns.filter((c) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
+    localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(sanitized));
     window.dispatchEvent(new Event('ad-campaigns-changed'));
 
     void (async () => {
@@ -181,7 +159,7 @@ export function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): void {
           id: SUPABASE_SYSTEM_ID,
           name: '__SYSTEM_CONFIG_AD_CAMPAIGNS__',
           slug: 'system-ad-campaigns-config',
-          description: JSON.stringify(campaigns),
+          description: JSON.stringify(sanitized),
           article_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -207,8 +185,8 @@ export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
 
     if (data?.description && data.description.startsWith('[')) {
       const cloudList = JSON.parse(data.description);
-      if (Array.isArray(cloudList) && cloudList.length > 0) {
-        list = cloudList;
+      if (Array.isArray(cloudList)) {
+        list = cloudList.filter((c: ExtendedAdCampaign) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
         try { localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(list)); } catch { /* ignore */ }
       }
     }
