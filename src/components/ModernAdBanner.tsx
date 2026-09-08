@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { optimizeImageUrl } from '../utils/imageOptimizer';
 import { ExternalLink, Sparkles, ShieldCheck, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { recordAdClick, recordAdImpression, type AdvertisementSlot } from '../services/advertisementService';
-import { getCreativesByPlacementSync } from '../services/bannerCreativeService';
+import { getCreativesByPlacementSync, listBannerCreatives } from '../services/bannerCreativeService';
 import type { AdCreative, TransitionEffect } from '../lib/supabase';
 
 interface TopBannerProps {
@@ -16,6 +16,13 @@ export function TopAdBanner({ slots }: TopBannerProps) {
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
+    async function syncCloud() {
+      const allCloud = await listBannerCreatives();
+      const activeTop = allCloud.filter((c) => c.placement_key === 'top_banner' && c.is_active);
+      setCreatives(activeTop);
+    }
+    syncCloud();
+
     function handleCreativeChange() {
       const updated = getCreativesByPlacementSync('top_banner');
       setCreatives(updated ? [...updated] : []);

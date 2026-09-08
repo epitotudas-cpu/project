@@ -91,9 +91,12 @@ export function getStoredCreatives(): AdCreative[] {
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(CREATIVES_STORAGE_KEY);
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
+      } else {
+        localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(DEFAULT_AD_CREATIVES));
+        return DEFAULT_AD_CREATIVES;
       }
     }
   } catch (err) {
@@ -143,7 +146,7 @@ export async function listBannerCreatives(): Promise<AdCreative[]> {
 
     if (data?.description && data.description.startsWith('[')) {
       const cloudList = JSON.parse(data.description);
-      if (Array.isArray(cloudList) && cloudList.length > 0) {
+      if (Array.isArray(cloudList)) {
         list = cloudList;
         try { localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
       }
