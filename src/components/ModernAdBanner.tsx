@@ -15,7 +15,7 @@ interface TopBannerProps {
   slots?: AdvertisementSlot[];
 }
 
-export function TopAdBanner({ slots }: TopBannerProps) {
+export function TopAdBanner({ slots: _slots }: TopBannerProps) {
   const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('top_banner'));
   const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
   const [currentIndex, setCurrentIndex] = useState(0);
