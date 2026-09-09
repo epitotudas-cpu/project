@@ -774,8 +774,9 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
         const w = img.naturalWidth;
         const h = img.naturalHeight;
         let warning: string | null = null;
+        const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
 
-        if (recW > 0 && recH > 0 && (w !== recW || h !== recH)) {
+        if (recW > 0 && recH > 0 && (w !== recW || h !== recH) && !isSvg) {
           warning = `⚠️ Figyelmeztetés: A feltöltött kép mérete (${w}×${h} px) eltér az ajánlottól (${recW}×${recH} px). Ennek ellenére elmenthető.`;
         }
 
@@ -3407,12 +3408,12 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                 },
                 {
                   key: 'faviconSvgUrl' as const,
-                  label: 'SVG Favicon (.svg)',
-                  recommended: 'Vektoros .svg fájl',
-                  accept: '.svg,image/svg+xml',
-                  recW: 0,
-                  recH: 0,
-                  fallback: '',
+                  label: 'PNG Favicon (.png)',
+                  recommended: '32×32 px PNG (vagy .svg)',
+                  accept: '.png,.svg,image/png,image/svg+xml',
+                  recW: 32,
+                  recH: 32,
+                  fallback: '/logo.png',
                 },
                 {
                   key: 'faviconPngUrl' as const,
@@ -3524,6 +3525,29 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                               src={currentUrl}
                               alt={item.label}
                               className="max-h-full max-w-full object-contain"
+                              onLoad={(e) => {
+                                const img = e.currentTarget;
+                                if (img.naturalWidth && img.naturalHeight) {
+                                  const w = img.naturalWidth;
+                                  const h = img.naturalHeight;
+                                  let warning: string | null = null;
+                                  const isSvg = currentUrl.toLowerCase().includes('.svg') || currentUrl.startsWith('data:image/svg+xml');
+                                  if (item.recW > 0 && item.recH > 0 && (w !== item.recW || h !== item.recH) && !isSvg) {
+                                    warning = `⚠️ Figyelmeztetés: A feltöltött kép mérete (${w}×${h} px) eltér az ajánlottól (${item.recW}×${item.recH} px). Ennek ellenére elmenthető.`;
+                                  }
+                                  if (
+                                    !iconStats[item.key] ||
+                                    iconStats[item.key]?.width !== w ||
+                                    iconStats[item.key]?.height !== h ||
+                                    iconStats[item.key]?.warning !== warning
+                                  ) {
+                                    setIconStats((prev) => ({
+                                      ...prev,
+                                      [item.key]: { width: w, height: h, warning },
+                                    }));
+                                  }
+                                }
+                              }}
                               onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
                             />
                           ) : (

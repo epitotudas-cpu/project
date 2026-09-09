@@ -397,7 +397,9 @@ export function applySiteSettings(settings: SiteSettings): void {
     // 1. Browser, Opera Speed Dial, Firefox Top Sites & Shortcut Favicons
     setLink('app-favicon-ico', 'icon', withVersion(effectiveIco, '/favicon.ico'), 'image/x-icon', 'any');
     if (settings?.faviconSvgUrl) {
-      setLink('app-favicon-svg', 'icon', withVersion(settings.faviconSvgUrl, ''), 'image/svg+xml');
+      const isSvgUrl = settings.faviconSvgUrl.includes('.svg') || settings.faviconSvgUrl.startsWith('data:image/svg+xml');
+      const mimeType = isSvgUrl ? 'image/svg+xml' : 'image/png';
+      setLink('app-favicon-svg', 'icon', withVersion(settings.faviconSvgUrl, ''), mimeType);
     }
     setLink('app-favicon-png', 'icon', withVersion(effectivePng, '/favicon-32x32.png'), 'image/png', '32x32');
     setLink('app-favicon-shortcut', 'shortcut icon', withVersion(effectivePng, '/favicon-32x32.png'));
