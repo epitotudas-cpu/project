@@ -1,5 +1,6 @@
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { FooterAdBanner } from './ModernAdBanner';
+import AndroidInstallCta from './AndroidInstallCta';
 import {
   ShieldCheck,
   Mail,
@@ -127,6 +128,9 @@ export default function Footer({ onNavigate }: FooterProps) {
                 </button>
               </div>
             </div>
+
+            {/* Android App Installation Responsive CTA */}
+            <AndroidInstallCta />
 
             {/* Quality & Trust Badges */}
             <div className="flex flex-wrap items-center gap-3 pt-1">

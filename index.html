@@ -73,6 +73,11 @@
           window.__INITIAL_SITE_SETTINGS__ = s;
         }
       } catch (e) {}
+
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__DEFERRED_PWA_PROMPT__ = e;
+      });
     })();
   </script>
 
