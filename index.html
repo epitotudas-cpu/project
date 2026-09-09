@@ -37,40 +37,68 @@
         }
 
         if (s) {
-          var v = s.iconsUpdatedAt || Date.now();
+          var v = s.iconsUpdatedAt || '20260910';
           var appendV = function(u) {
             if (!u) return '';
             if (u.indexOf('data:') === 0) return u;
             return u.indexOf('?') !== -1 ? u + '&v=' + v : u + '?v=' + v;
           };
 
-          var effectiveLogo = (s.logoUrl && s.logoUrl !== '/logo.png') ? s.logoUrl : '/logo.png';
-          var effectiveIco = (s.faviconIcoUrl && s.faviconIcoUrl !== '/favicon.ico') ? s.faviconIcoUrl : effectiveLogo;
-          var effectivePng = (s.faviconPngUrl && s.faviconPngUrl !== '/logo.png') ? s.faviconPngUrl : effectiveLogo;
-          var effectiveApple = (s.appleTouchIconUrl && s.appleTouchIconUrl !== '/logo.png') ? s.appleTouchIconUrl : effectiveLogo;
+          var effectiveLogo = (s.logoUrl && s.logoUrl !== '/logo.png') ? s.logoUrl : '/site-tile.png';
+          var effectiveIco = (s.faviconIcoUrl && s.faviconIcoUrl !== '/favicon.ico') ? s.faviconIcoUrl : '/favicon.ico';
+          var effectivePng16 = (s.faviconPngUrl && s.faviconPngUrl !== '/logo.png') ? s.faviconPngUrl : '/favicon-16x16.png';
+          var effectivePng32 = (s.faviconPngUrl && s.faviconPngUrl !== '/logo.png') ? s.faviconPngUrl : '/favicon-32x32.png';
+          var effectiveApple = (s.appleTouchIconUrl && s.appleTouchIconUrl !== '/logo.png') ? s.appleTouchIconUrl : '/apple-touch-icon.png';
+          var effectivePwa192 = (s.pwaIcon192Url && s.pwaIcon192Url !== '/logo.png') ? s.pwaIcon192Url : '/android-chrome-192x192.png';
+          var effectivePwa512 = (s.pwaIcon512Url && s.pwaIcon512Url !== '/logo.png') ? s.pwaIcon512Url : '/android-chrome-512x512.png';
 
           var icoUrl = appendV(effectiveIco);
-          var pngUrl = appendV(effectivePng);
+          var png16Url = appendV(effectivePng16);
+          var png32Url = appendV(effectivePng32);
           var appleUrl = appendV(effectiveApple);
+          var pwa192Url = appendV(effectivePwa192);
+          var pwa512Url = appendV(effectivePwa512);
 
           var elIco = document.getElementById('app-favicon-ico');
           if (elIco) elIco.href = icoUrl;
+          var el16 = document.getElementById('app-favicon-16');
+          if (el16) el16.href = png16Url;
           var elPng = document.getElementById('app-favicon-png');
-          if (elPng) elPng.href = pngUrl;
+          if (elPng) elPng.href = png32Url;
           var elShortcut = document.getElementById('app-favicon-shortcut');
-          if (elShortcut) elShortcut.href = pngUrl;
+          if (elShortcut) elShortcut.href = png32Url;
           var elImageSrc = document.getElementById('app-image-src');
-          if (elImageSrc) elImageSrc.href = pngUrl;
+          if (elImageSrc) elImageSrc.href = appendV(effectiveLogo);
           var elApple = document.getElementById('app-apple-touch-icon');
           if (elApple) elApple.href = appleUrl;
           var elApplePre = document.getElementById('app-apple-touch-precomposed');
           if (elApplePre) elApplePre.href = appleUrl;
           var elPwa192 = document.getElementById('app-pwa-192');
-          if (elPwa192) elPwa192.href = pngUrl;
+          if (elPwa192) elPwa192.href = pwa192Url;
           var elPwa512 = document.getElementById('app-pwa-512');
-          if (elPwa512) elPwa512.href = pngUrl;
+          if (elPwa512) elPwa512.href = pwa512Url;
 
           window.__INITIAL_SITE_SETTINGS__ = s;
+        }
+      } catch (e) {}
+
+      // Cache Storage purge & Service Worker registration
+      try {
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(key) {
+              if (key !== 'epitotudas-v3') {
+                caches.delete(key);
+              }
+            });
+          });
+        }
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(reg) {
+              reg.update();
+            }).catch(function() {});
+          });
         }
       } catch (e) {}
 
@@ -90,19 +118,20 @@
   <link rel="preconnect" href="https://images.unsplash.com" />
   <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
-  <!-- PWA & Opera Speed Dial / Apple Icons -->
-  <link rel="manifest" href="/site.webmanifest?v=1787313602476" id="app-webmanifest-link" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=1787313602476" id="app-favicon-ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1787313602476" id="app-favicon-png" />
-  <link rel="shortcut icon" href="/favicon-32x32.png?v=1787313602476" id="app-favicon-shortcut" />
-  <link rel="image_src" href="/site-tile.png?v=1787313602476" id="app-image-src" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=1787313602476" id="app-apple-touch-icon" />
-  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png?v=1787313602476" id="app-apple-touch-precomposed" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png?v=1787313602476" id="app-pwa-192" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png?v=1787313602476" id="app-pwa-512" />
+  <!-- PWA, Apple Touch & Versioned Favicon Icon Links -->
+  <link rel="manifest" href="/site.webmanifest?v=20260910" id="app-webmanifest-link" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260910" id="app-favicon-ico" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20260910" id="app-favicon-16" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20260910" id="app-favicon-png" />
+  <link rel="shortcut icon" href="/favicon-32x32.png?v=20260910" id="app-favicon-shortcut" />
+  <link rel="image_src" href="/site-tile.png?v=20260910" id="app-image-src" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20260910" id="app-apple-touch-icon" />
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png?v=20260910" id="app-apple-touch-precomposed" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png?v=20260910" id="app-pwa-192" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png?v=20260910" id="app-pwa-512" />
   <meta name="theme-color" content="#4165b4" id="app-theme-color" />
-  <meta name="thumbnail" content="/site-tile.png?v=1787313602476" />
-  <meta name="msapplication-TileImage" content="/mstile-150x150.png?v=1787313602476" />
+  <meta name="thumbnail" content="/site-tile.png?v=20260910" />
+  <meta name="msapplication-TileImage" content="/mstile-150x150.png?v=20260910" />
   <meta name="msapplication-TileColor" content="#4165b4" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
@@ -116,14 +145,14 @@
   <meta property="og:url" content="https://www.epitotudas.hu" />
   <meta property="og:title" content="ÉpítőTudás – Építőipari tudásbázis és szakmai képzések" />
   <meta property="og:description" content="Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek. Szakmai fogalmak, technológiák, szakmák, számítások és gyakorlati tudás egy helyen." />
-  <meta property="og:image" content="/site-tile.png?v=1787313602476" />
-  <meta property="og:image:secure_url" content="/site-tile.png?v=1787313602476" />
+  <meta property="og:image" content="/site-tile.png?v=20260910" />
+  <meta property="og:image:secure_url" content="/site-tile.png?v=20260910" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="ÉpítőTudás – Építőipari tudásbázis és szakmai képzések" />
   <meta name="twitter:description" content="Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek. Szakmai fogalmak, technológiák, szakmák, számítások és gyakorlati tudás egy helyen." />
-  <meta name="twitter:image" content="/site-tile.png?v=1787313602476" />
+  <meta name="twitter:image" content="/site-tile.png?v=20260910" />
 </head>
 
 <body>
