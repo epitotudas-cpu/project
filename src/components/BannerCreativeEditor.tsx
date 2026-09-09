@@ -421,7 +421,7 @@ export function BannerCreativeEditor() {
                     onChange={(e) => setFallbackSettings({ ...fallbackSettings, video_url: e.target.value })}
                     style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
                     className="w-full border rounded-lg p-2 font-mono text-xs"
-                    placeholder="https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/log%C3%B3.webm"
+                    placeholder="https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/logó.webm"
                   />
                 </div>
 

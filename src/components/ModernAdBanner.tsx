@@ -79,7 +79,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
       return null;
     }
 
-    const rawVideoUrl = fallbackSettings.video_url || 'https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/log%C3%B3.webm';
+    const rawVideoUrl = fallbackSettings.video_url || 'https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/logó.webm';
     const encodedO = rawVideoUrl.replace(/log[óő]|\/log[óő]\.webm/g, '/log%C3%B3.webm');
     const encodedOE = rawVideoUrl.replace(/log[óő]|\/log[óő]\.webm/g, '/log%C5%91.webm');
     const encodedPlain = rawVideoUrl.replace(/log[óő]|\/log[óő]\.webm/g, '/logo.webm');
