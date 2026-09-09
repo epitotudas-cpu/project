@@ -22,6 +22,8 @@ export function TopAdBanner({ slots }: TopBannerProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
+  const [fallbackVideoError, setFallbackVideoError] = useState(false);
+
   useEffect(() => {
     async function syncCloud() {
       const allCloud = await listBannerCreatives();
@@ -41,6 +43,7 @@ export function TopAdBanner({ slots }: TopBannerProps) {
 
     function handleFallbackChange() {
       setFallbackSettings(getFallbackVideoSettings());
+      setFallbackVideoError(false);
     }
 
     window.addEventListener('ad-creative-changed', handleCreativeChange);
@@ -77,7 +80,9 @@ export function TopAdBanner({ slots }: TopBannerProps) {
     }
 
     const rawVideoUrl = fallbackSettings.video_url || 'https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/log%C3%B3.webm';
-    const videoUrl = encodeURI(rawVideoUrl);
+    const encodedO = rawVideoUrl.replace(/log[óő]|\/log[óő]\.webm/g, '/log%C3%B3.webm');
+    const encodedOE = rawVideoUrl.replace(/log[óő]|\/log[óő]\.webm/g, '/log%C5%91.webm');
+    const encodedPlain = rawVideoUrl.replace(/log[óő]|\/log[óő]\.webm/g, '/logo.webm');
 
     return (
       <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md">
@@ -89,17 +94,50 @@ export function TopAdBanner({ slots }: TopBannerProps) {
             className="w-full block relative overflow-hidden rounded-xl sm:rounded-2xl border border-slate-800 hover:border-slate-700 h-[140px] sm:h-[185px] md:h-[225px] transition-all duration-300 shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500 group/fallback"
             style={{ borderLeft: '4px solid #FFC400' }}
           >
-            {/* Background WebM / Mobile Video */}
-            <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
-              <video
-                src={videoUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                className="w-full h-full object-cover group-hover/fallback:scale-105 transition-transform duration-700 pointer-events-none"
-              />
+            {/* Background WebM / Mobile Video / Visual Backdrop */}
+            <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/40">
+              {fallbackSettings.poster_url && (
+                <img
+                  src={fallbackSettings.poster_url}
+                  alt={fallbackSettings.title}
+                  className="absolute inset-0 w-full h-full object-cover z-0"
+                />
+              )}
+
+              {!fallbackVideoError && (
+                <video
+                  ref={(el) => {
+                    if (el) {
+                      el.muted = true;
+                      el.defaultMuted = true;
+                      el.setAttribute('playsinline', 'true');
+                      el.setAttribute('webkit-playsinline', 'true');
+                      const playPromise = el.play();
+                      if (playPromise !== undefined) {
+                        playPromise.catch(() => {
+                          // Low power mode or mobile autoplay restrictions
+                        });
+                      }
+                    }
+                  }}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  poster={fallbackSettings.poster_url || undefined}
+                  onError={() => setFallbackVideoError(true)}
+                  className="w-full h-full object-cover group-hover/fallback:scale-105 transition-transform duration-700 pointer-events-none relative z-1"
+                >
+                  <source src={encodedO} type="video/webm" />
+                  <source src={encodedOE} type="video/webm" />
+                  <source src={encodedPlain} type="video/webm" />
+                  <source src={rawVideoUrl} />
+                </video>
+              )}
+
+              {/* Ambient Glowing Branding Backdrop for Mobile Devices */}
+              <div className="absolute inset-0 z-5 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/25 via-transparent to-transparent" />
               <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-slate-950/40 md:bg-gradient-to-r md:from-slate-950/95 md:via-slate-950/80 md:to-slate-950/30" />
             </div>
 

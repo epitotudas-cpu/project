@@ -207,6 +207,7 @@ export function getCreativesByPlacementSync(placementKey: string): AdCreative[] 
 export interface FallbackVideoSettings {
   enabled: boolean;
   video_url: string;
+  poster_url?: string;
   sponsor_name: string;
   title: string;
   target_url: string;
@@ -218,6 +219,7 @@ const SUPABASE_FALLBACK_SYSTEM_ID = '00000000-0000-0000-0000-000000000019';
 export const DEFAULT_FALLBACK_VIDEO_SETTINGS: FallbackVideoSettings = {
   enabled: true,
   video_url: 'https://pub-77180ecae5fa4824aa9ef44ab92aaf5a.r2.dev/log%C3%B3.webm',
+  poster_url: '',
   sponsor_name: 'ÉpítőTudás • Hirdetési Hely',
   title: 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások',
   target_url: '#',
