@@ -3413,7 +3413,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   accept: '.png,.svg,image/png,image/svg+xml',
                   recW: 32,
                   recH: 32,
-                  fallback: '/logo.png',
+                  fallback: '/favicon-32x32.png',
                 },
                 {
                   key: 'faviconPngUrl' as const,
@@ -3422,7 +3422,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   accept: '.png,image/png',
                   recW: 32,
                   recH: 32,
-                  fallback: '/logo.png',
+                  fallback: '/favicon-32x32.png',
                 },
                 {
                   key: 'pwaIcon192Url' as const,
@@ -3431,7 +3431,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   accept: '.png,image/png',
                   recW: 192,
                   recH: 192,
-                  fallback: '/logo.png',
+                  fallback: '/android-chrome-192x192.png',
                 },
                 {
                   key: 'pwaIcon512Url' as const,
@@ -3440,7 +3440,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   accept: '.png,image/png',
                   recW: 512,
                   recH: 512,
-                  fallback: '/logo.png',
+                  fallback: '/android-chrome-512x512.png',
                 },
                 {
                   key: 'appleTouchIconUrl' as const,
@@ -3449,7 +3449,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   accept: '.png,image/png',
                   recW: 180,
                   recH: 180,
-                  fallback: '/logo.png',
+                  fallback: '/apple-touch-icon.png',
                 },
               ].map((item) => {
                 const currentUrl = settings[item.key] || item.fallback;
@@ -3548,7 +3548,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                                   }
                                 }
                               }}
-                              onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
+                              onError={(e) => { (e.target as HTMLImageElement).src = '/site-tile.png'; }}
                             />
                           ) : (
                             <ImageIcon size={18} className="text-gray-600" />

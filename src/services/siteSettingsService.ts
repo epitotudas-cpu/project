@@ -164,12 +164,12 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 
   faviconIcoUrl: '/favicon.ico',
   faviconSvgUrl: '',
-  faviconPngUrl: '/logo.png',
-  pwaIcon192Url: '/logo.png',
-  pwaIcon512Url: '/logo.png',
-  appleTouchIconUrl: '/logo.png',
+  faviconPngUrl: '/favicon-32x32.png',
+  pwaIcon192Url: '/android-chrome-192x192.png',
+  pwaIcon512Url: '/android-chrome-512x512.png',
+  appleTouchIconUrl: '/apple-touch-icon.png',
 
-  ogImageUrl: '/logo.png',
+  ogImageUrl: '/site-tile.png',
   ogTitle: 'ÉpítőTudás',
   ogDescription: 'Építőipari tudásbázis szakembereknek, tanulóknak és kivitelezőknek.',
 
@@ -289,9 +289,9 @@ export function generateManifestJson(settings: SiteSettings) {
     return url.includes('?') ? `${url}&v=${v}` : `${url}?v=${v}`;
   };
 
-  const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/logo.png';
-  const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : effectiveLogo;
-  const effectivePwa512 = (settings?.pwaIcon512Url && settings.pwaIcon512Url !== '/logo.png') ? settings.pwaIcon512Url : effectiveLogo;
+  const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/site-tile.png';
+  const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : '/android-chrome-192x192.png';
+  const effectivePwa512 = (settings?.pwaIcon512Url && settings.pwaIcon512Url !== '/logo.png') ? settings.pwaIcon512Url : '/android-chrome-512x512.png';
 
   return {
     name: settings?.pwaAppName || settings?.siteTitle || 'ÉpítőTudás',
@@ -305,11 +305,13 @@ export function generateManifestJson(settings: SiteSettings) {
         src: appendV(effectivePwa192),
         sizes: '192x192',
         type: 'image/png',
+        purpose: 'any maskable',
       },
       {
         src: appendV(effectivePwa512),
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any maskable',
       },
     ],
   };
@@ -349,7 +351,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     }
 
     // Dynamic Versioning Parameter for Cache-Busting
-    const v = settings?.iconsUpdatedAt || '20260910_v2';
+    const v = settings?.iconsUpdatedAt || '20260910_v3';
     const withVersion = (url: string | undefined, defaultFallback: string) => {
       const target = (url && url.trim()) ? url.trim() : defaultFallback;
       if (!target) return '';
@@ -389,7 +391,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     // Compute effective icon URLs (prioritize custom icon, fallback to custom logo, fallback to default)
     const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/site-tile.png';
     const effectiveIco = (settings?.faviconIcoUrl && settings.faviconIcoUrl !== '/favicon.ico') ? settings.faviconIcoUrl : '/favicon.ico';
-    const effectivePng16 = (settings?.faviconPngUrl && settings.faviconPngUrl !== '/logo.png') ? settings.faviconPngUrl : '/favicon-16x16.png';
+    const effectivePng16 = (settings?.faviconPngUrl && settings.faviconPngUrl !== '/logo.png' && settings.faviconPngUrl !== '/favicon-32x32.png') ? settings.faviconPngUrl : '/favicon-16x16.png';
     const effectivePng32 = (settings?.faviconPngUrl && settings.faviconPngUrl !== '/logo.png') ? settings.faviconPngUrl : '/favicon-32x32.png';
     const effectiveApple = (settings?.appleTouchIconUrl && settings.appleTouchIconUrl !== '/logo.png') ? settings.appleTouchIconUrl : '/apple-touch-icon.png';
     const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : '/android-chrome-192x192.png';
