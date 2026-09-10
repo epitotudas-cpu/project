@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { FooterAdBanner } from './ModernAdBanner';
 import AndroidInstallCta from './AndroidInstallCta';
@@ -5,6 +6,7 @@ import {
   ShieldCheck,
   Mail,
   ChevronRight,
+  ChevronDown,
   Target,
   BookOpen,
   Lock,
@@ -17,6 +19,14 @@ interface FooterProps {
 export default function Footer({ onNavigate }: FooterProps) {
   const siteSettings = useSiteSettings();
   const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
+  const [openMobileSections, setOpenMobileSections] = useState<Record<string, boolean>>({});
+
+  const toggleMobileSection = (title: string) => {
+    setOpenMobileSections((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
 
   const handleNavigate = (pageWithHash: string) => {
     if (pageWithHash.includes('#')) {
@@ -143,16 +153,36 @@ export default function Footer({ onNavigate }: FooterProps) {
             </div>
           </div>
 
-          {/* Columns 2, 3, 4: Categorized Navigation Links */}
+          {/* Columns 2, 3, 4: Categorized Navigation Links (Mobile Accordion / Desktop Static Grid) */}
           {footerColumns.map((col) => {
             const IconComponent = col.icon;
+            const isOpen = !!openMobileSections[col.title];
             return (
-              <div key={col.title} className="space-y-4">
-                <h3 className="text-white font-extrabold text-sm tracking-wide flex items-center gap-2 border-b border-white/10 pb-2.5">
-                  <IconComponent size={16} className="text-accent shrink-0" />
-                  <span>{col.title}</span>
-                </h3>
-                <ul className="space-y-2.5">
+              <div key={col.title} className="space-y-3 md:space-y-4 border-b border-white/10 md:border-b-0 pb-4 md:pb-0">
+                {/* Header: Clickable button on mobile, static heading on desktop */}
+                <button
+                  type="button"
+                  onClick={() => toggleMobileSection(col.title)}
+                  className="w-full text-left flex items-center justify-between gap-2 border-b border-white/10 pb-2.5 md:pointer-events-none md:border-b md:pb-2.5 cursor-pointer md:cursor-default group"
+                  aria-expanded={isOpen}
+                >
+                  <div className="flex items-center gap-2">
+                    <IconComponent size={16} className="text-accent shrink-0" />
+                    <h3 className="text-white font-extrabold text-sm tracking-wide">
+                      {col.title}
+                    </h3>
+                  </div>
+                  {/* Chevron Indicator for Mobile Only */}
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 md:hidden transition-transform duration-200 ${
+                      isOpen ? 'rotate-180 text-accent' : ''
+                    }`}
+                  />
+                </button>
+
+                {/* Collapsible List on Mobile (< md), Always Visible on Desktop (>= md) */}
+                <ul className={`space-y-2.5 pt-1 md:pt-0 ${isOpen ? 'block' : 'hidden md:block'}`}>
                   {col.links.map((link) => (
                     <li key={link.label}>
                       <button
