@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   '/favicon.ico?v=20260910_v3',
   '/favicon-16x16.png?v=20260910_v3',
   '/favicon-32x32.png?v=20260910_v3',
+  '/favicon-48x48.png?v=20260910_v3',
   '/apple-touch-icon.png?v=20260910_v3',
   '/android-chrome-192x192.png?v=20260910_v3',
   '/android-chrome-512x512.png?v=20260910_v3'

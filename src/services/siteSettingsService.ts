@@ -401,6 +401,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     setLink('app-favicon-ico', 'icon', withVersion(effectiveIco, '/favicon.ico'), 'image/x-icon', 'any');
     setLink('app-favicon-16', 'icon', withVersion(effectivePng16, '/favicon-16x16.png'), 'image/png', '16x16');
     setLink('app-favicon-png', 'icon', withVersion(effectivePng32, '/favicon-32x32.png'), 'image/png', '32x32');
+    setLink('app-favicon-48', 'icon', withVersion(effectivePng32, '/favicon-48x48.png'), 'image/png', '48x48');
     setLink('app-favicon-shortcut', 'shortcut icon', withVersion(effectivePng32, '/favicon-32x32.png'));
     setLink('app-image-src', 'image_src', withVersion(effectiveLogo, '/site-tile.png'));
     setLink('app-pwa-192', 'icon', withVersion(effectivePwa192, '/android-chrome-192x192.png'), 'image/png', '192x192');
