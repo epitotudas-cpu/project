@@ -203,30 +203,9 @@ export default function Footer({ onNavigate }: FooterProps) {
           })}
         </div>
 
-        {/* Bottom Bar / Copyright & Legal Quick Links */}
-        <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-gray-400 text-xs text-center md:text-left">
-            <span>© 2026 ÉpítőTudás v2. Minden jog fenntartva.</span>
-          </div>
-
-          {/* Quick Legal Links */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs">
-            {[
-              { label: 'Jogi Nyilatkozatok', page: 'jogi' },
-              { label: 'Impresszum', page: 'impressum' },
-              { label: 'Adatvédelem', page: 'privacy' },
-              { label: 'ÁSZF', page: 'terms' },
-              { label: 'Cookie-kezelés', page: 'cookies' },
-            ].map((item) => (
-              <button
-                key={item.page}
-                onClick={() => handleNavigate(item.page)}
-                className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+        {/* Bottom Bar / Copyright */}
+        <div className="border-t border-white/10 mt-12 pt-8 flex items-center justify-center md:justify-between text-gray-400 text-xs">
+          <span>© 2026 ÉpítőTudás v2. Minden jog fenntartva.</span>
         </div>
       </div>
     </footer>
