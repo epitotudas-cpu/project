@@ -1,14 +1,14 @@
-const CACHE_NAME = 'epitotudas-v3';
+const CACHE_NAME = 'epitotudas-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/site.webmanifest?v=20260910',
-  '/favicon.ico?v=20260910',
-  '/favicon-16x16.png?v=20260910',
-  '/favicon-32x32.png?v=20260910',
-  '/apple-touch-icon.png?v=20260910',
-  '/android-chrome-192x192.png?v=20260910',
-  '/android-chrome-512x512.png?v=20260910'
+  '/site.webmanifest?v=20260910_v2',
+  '/favicon.ico?v=20260910_v2',
+  '/favicon-16x16.png?v=20260910_v2',
+  '/favicon-32x32.png?v=20260910_v2',
+  '/apple-touch-icon.png?v=20260910_v2',
+  '/android-chrome-192x192.png?v=20260910_v2',
+  '/android-chrome-512x512.png?v=20260910_v2'
 ];
 
 self.addEventListener('install', (event) => {

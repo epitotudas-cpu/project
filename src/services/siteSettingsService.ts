@@ -349,7 +349,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     }
 
     // Dynamic Versioning Parameter for Cache-Busting
-    const v = settings?.iconsUpdatedAt || '20260910';
+    const v = settings?.iconsUpdatedAt || '20260910_v2';
     const withVersion = (url: string | undefined, defaultFallback: string) => {
       const target = (url && url.trim()) ? url.trim() : defaultFallback;
       if (!target) return '';
