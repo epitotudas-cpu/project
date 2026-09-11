@@ -238,11 +238,11 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
               {isMediaVideo && (desktopVideo || mobileVideo) ? (
                 <>
                   {/* Poster / Fallback Image */}
-                  {desktopImg && (
+                  {(desktopImg || mobileImg) && (
                     <picture className="absolute inset-0 w-full h-full block z-0">
                       {mobileImg && <source media="(max-width: 640px)" srcSet={mobileImg} />}
                       <img
-                        src={desktopImg}
+                        src={desktopImg || mobileImg}
                         alt={activeCreative.headline}
                         className={`w-full h-full object-cover z-0 ${animationClass}`}
                       />
@@ -250,19 +250,42 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
                   )}
                   {/* Video Element */}
                   <video
-                    key={desktopVideo}
-                    src={desktopVideo}
+                    key={`${desktopVideo}-${mobileVideo}`}
+                    ref={(el) => {
+                      if (el) {
+                        el.muted = true;
+                        el.defaultMuted = true;
+                        el.setAttribute('playsinline', 'true');
+                        el.setAttribute('webkit-playsinline', 'true');
+                        const playPromise = el.play();
+                        if (playPromise !== undefined) {
+                          playPromise.catch(() => {
+                            // Low power mode or mobile autoplay restrictions
+                          });
+                        }
+                      }
+                    }}
                     autoPlay
                     loop
                     muted
                     playsInline
                     preload="auto"
-                    poster={desktopImg || undefined}
+                    poster={mobileImg || desktopImg || undefined}
                     className={`absolute inset-0 w-full h-full object-cover z-10 ${animationClass} pointer-events-none`}
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = 'none';
                     }}
-                  />
+                  >
+                    {activeCreative.mobile_video_url && (
+                      <source src={encodeURI(activeCreative.mobile_video_url)} media="(max-width: 640px)" />
+                    )}
+                    {activeCreative.video_url && (
+                      <source src={encodeURI(activeCreative.video_url)} />
+                    )}
+                    {!activeCreative.video_url && activeCreative.mobile_video_url && (
+                      <source src={encodeURI(activeCreative.mobile_video_url)} />
+                    )}
+                  </video>
                 </>
               ) : desktopImg || mobileImg ? (
                 <picture className="absolute inset-0 w-full h-full block z-0">
@@ -465,6 +488,9 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
   };
 
   if (activeCreative && activeCreative.is_active) {
+    const isVideoMedia = activeCreative.media_type === 'video' && Boolean(activeCreative.video_url || activeCreative.mobile_video_url);
+    const hasMedia = isVideoMedia || Boolean(activeCreative.image_url || activeCreative.mobile_image_url);
+
     return (
       <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         <div
@@ -474,21 +500,73 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
           )}`}
         >
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
-            {activeCreative.image_url && (
+            {hasMedia && (
               <div className="lg:col-span-5 relative">
-                <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3]">
-                  <picture>
-                    {activeCreative.mobile_image_url && (
-                      <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
-                    )}
-                    <img
-                      src={activeCreative.image_url}
-                      alt={activeCreative.headline}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </picture>
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-amber-300 font-semibold bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+                <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3] bg-slate-950">
+                  {isVideoMedia ? (
+                    <>
+                      {(activeCreative.image_url || activeCreative.mobile_image_url) && (
+                        <picture className="absolute inset-0 w-full h-full block z-0">
+                          {activeCreative.mobile_image_url && (
+                            <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+                          )}
+                          <img
+                            src={activeCreative.image_url || activeCreative.mobile_image_url || ''}
+                            alt={activeCreative.headline}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </picture>
+                      )}
+                      <video
+                        key={`${activeCreative.video_url}-${activeCreative.mobile_video_url}`}
+                        ref={(el) => {
+                          if (el) {
+                            el.muted = true;
+                            el.defaultMuted = true;
+                            el.setAttribute('playsinline', 'true');
+                            el.setAttribute('webkit-playsinline', 'true');
+                            const playPromise = el.play();
+                            if (playPromise !== undefined) {
+                              playPromise.catch(() => {});
+                            }
+                          }
+                        }}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="auto"
+                        poster={activeCreative.mobile_image_url || activeCreative.image_url || undefined}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none z-10"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      >
+                        {activeCreative.mobile_video_url && (
+                          <source src={encodeURI(activeCreative.mobile_video_url)} media="(max-width: 640px)" />
+                        )}
+                        {activeCreative.video_url && (
+                          <source src={encodeURI(activeCreative.video_url)} />
+                        )}
+                        {!activeCreative.video_url && activeCreative.mobile_video_url && (
+                          <source src={encodeURI(activeCreative.mobile_video_url)} />
+                        )}
+                      </video>
+                    </>
+                  ) : (
+                    <picture className="absolute inset-0 w-full h-full block z-0">
+                      {activeCreative.mobile_image_url && (
+                        <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+                      )}
+                      <img
+                        src={activeCreative.image_url || activeCreative.mobile_image_url || ''}
+                        alt={activeCreative.headline}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </picture>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent pointer-events-none z-10" />
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-amber-300 font-semibold bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 z-20">
                     <span className="flex items-center gap-1.5">
                       <ShieldCheck size={14} className="text-amber-400" />
                       {activeCreative.partner_name}
@@ -499,7 +577,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
               </div>
             )}
 
-            <div className={`${activeCreative.image_url ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4 text-center sm:text-left`}>
+            <div className={`${hasMedia ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4 text-center sm:text-left`}>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold uppercase tracking-wider">
                 <Sparkles size={13} /> {activeCreative.badge_text || 'Szakmai Partneri Ajánlat'}
               </div>
@@ -842,6 +920,17 @@ export function InGridTileAd() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    async function syncCloud() {
+      const allCloud = await listBannerCreatives();
+      const activeTile = allCloud.filter((c) => c.is_active && (c.placement_key === 'tile_ad' || c.placement_key === 'in_feed' || c.placement_key === 'top_banner'));
+      if (activeTile.length > 0) {
+        setCreatives(activeTile);
+      }
+      const cloudFallback = await listFallbackVideoSettings();
+      setFallbackSettings(cloudFallback);
+    }
+    syncCloud();
+
     function handleCreativeChange() {
       const tile = getCreativesByPlacementSync('tile_ad');
       if (tile && tile.length > 0) {
@@ -954,14 +1043,69 @@ export function InGridTileAd() {
       <div>
         {/* Cover Header */}
         <div className="w-full aspect-[16/9] relative overflow-hidden bg-slate-900 flex items-center justify-center">
-          {activeCreative.image_url ? (
-            <img
-              src={optimizeImageUrl(activeCreative.image_url, 600)}
-              alt={activeCreative.headline}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+          {activeCreative.media_type === 'video' && (activeCreative.video_url || activeCreative.mobile_video_url) ? (
+            <>
+              {(activeCreative.image_url || activeCreative.mobile_image_url) && (
+                <picture className="absolute inset-0 w-full h-full block z-0">
+                  {activeCreative.mobile_image_url && (
+                    <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+                  )}
+                  <img
+                    src={activeCreative.image_url || activeCreative.mobile_image_url || ''}
+                    alt={activeCreative.headline}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </picture>
+              )}
+              <video
+                key={`${activeCreative.video_url}-${activeCreative.mobile_video_url}`}
+                ref={(el) => {
+                  if (el) {
+                    el.muted = true;
+                    el.defaultMuted = true;
+                    el.setAttribute('playsinline', 'true');
+                    el.setAttribute('webkit-playsinline', 'true');
+                    const playPromise = el.play();
+                    if (playPromise !== undefined) {
+                      playPromise.catch(() => {});
+                    }
+                  }
+                }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                poster={activeCreative.mobile_image_url || activeCreative.image_url || undefined}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none z-10"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              >
+                {activeCreative.mobile_video_url && (
+                  <source src={encodeURI(activeCreative.mobile_video_url)} media="(max-width: 640px)" />
+                )}
+                {activeCreative.video_url && (
+                  <source src={encodeURI(activeCreative.video_url)} />
+                )}
+                {!activeCreative.video_url && activeCreative.mobile_video_url && (
+                  <source src={encodeURI(activeCreative.mobile_video_url)} />
+                )}
+              </video>
+            </>
+          ) : activeCreative.image_url ? (
+            <picture className="absolute inset-0 w-full h-full block z-0">
+              {activeCreative.mobile_image_url && (
+                <source media="(max-width: 640px)" srcSet={activeCreative.mobile_image_url} />
+              )}
+              <img
+                src={optimizeImageUrl(activeCreative.image_url, 600)}
+                alt={activeCreative.headline}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            </picture>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 flex flex-col items-center justify-center p-4 text-center">
               <Sparkles size={36} className="text-amber-400 mb-2 animate-pulse" />

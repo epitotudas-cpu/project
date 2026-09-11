@@ -21,6 +21,7 @@ import {
   Check,
   Layers,
   Film,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   getStoredCreatives,
@@ -56,7 +57,7 @@ export function BannerCreativeEditor() {
 
   // Preview options in editor mode
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [simulatedReducedMotion, setSimulateReducedMotion] = useState(false);
+  const [simulateReducedMotion, setSimulateReducedMotion] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | 'loading'; message: string } | null>(null);
 
@@ -1167,6 +1168,18 @@ export function BannerCreativeEditor() {
                         )}
                         <video
                           key={viewMode === 'mobile' ? activeCreative.mobile_video_url || activeCreative.video_url || '' : activeCreative.video_url || ''}
+                          ref={(el) => {
+                            if (el) {
+                              el.muted = true;
+                              el.defaultMuted = true;
+                              el.setAttribute('playsinline', 'true');
+                              el.setAttribute('webkit-playsinline', 'true');
+                              const playPromise = el.play();
+                              if (playPromise !== undefined) {
+                                playPromise.catch(() => {});
+                              }
+                            }
+                          }}
                           src={viewMode === 'mobile' ? activeCreative.mobile_video_url || activeCreative.video_url || '' : activeCreative.video_url || ''}
                           autoPlay
                           loop

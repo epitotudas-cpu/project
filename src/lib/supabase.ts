@@ -1075,7 +1075,7 @@ export type MediaType = 'image' | 'gif' | 'video';
 export interface AdCreative {
   id: string;
   campaign_id?: string | null;
-  placement_key: 'top_banner' | 'in_feed' | 'sidebar' | 'footer_banner';
+  placement_key: 'top_banner' | 'in_feed' | 'sidebar' | 'footer_banner' | 'tile_ad';
   partner_name: string;
   badge_text: string;
   headline: string;

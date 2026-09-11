@@ -9,7 +9,6 @@ import {
   UserCheck,
   Tag,
   BookOpen,
-  FileText,
   Calculator,
   Library,
   AlertTriangle,
@@ -638,58 +637,29 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
           </div>
         </div>
 
-        {/* Sidebar / Partner Ad Banner */}
-        <SidebarAdBanner />
-
-        {/* MAIN ARTICLE BODY (FULL WIDTH) */}
-        <div className="space-y-8 w-full">
+        {/* MAIN ARTICLE CONTENT GRID & SIDEBAR WRAPPER */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Featured Image */}
-          {articleSettings.showFeaturedImage && article.featured_image && (
-            <div className="rounded-3xl overflow-hidden shadow-md border border-gray-200 bg-gray-100 aspect-[16/9] w-full">
-              <img
-                src={article.featured_image}
-                alt={article.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          {/* Main Article Content Card */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 border border-gray-200/90 shadow-xs space-y-8">
+          {/* MAIN ARTICLE BODY (8 Cols) */}
+          <div className="lg:col-span-8 space-y-8 w-full">
             
-            <ArticleContentRenderer content={article.content || ''} />
-
-            {/* Downloadable PDF Documents */}
-            {article.documents && article.documents.length > 0 && (
-              <div className="border-t border-gray-100 pt-8 space-y-4">
-                <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
-                  <FileText size={18} className="text-primary" /> Letölthető Műszaki Dokumentumok &amp; Útmutatók
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {article.documents.map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-4 bg-gray-50 hover:bg-accent/10 border border-gray-200 hover:border-accent rounded-2xl flex items-center justify-between transition-all group cursor-pointer shadow-2xs"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText size={22} className="text-red-500 shrink-0" />
-                        <div>
-                          <div className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-primary">{doc.title}</div>
-                          <div className="text-[11px] text-gray-500">{doc.file_size || 'PDF Dokumentum'}</div>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-primary group-hover:underline shrink-0">Letöltés</span>
-                    </a>
-                  ))}
-                </div>
+            {/* Featured Image */}
+            {articleSettings.showFeaturedImage && article.featured_image && (
+              <div className="rounded-3xl overflow-hidden shadow-md border border-gray-200 bg-gray-100 aspect-[16/9] w-full">
+                <img
+                  src={article.featured_image}
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
 
-            {/* Forrás és Hitelesség Section */}
+            {/* Main Article Content Card */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 border border-gray-200/90 shadow-xs space-y-8">
+              
+              <ArticleContentRenderer content={article.content || ''} />
+
+              {/* Forrás és Hitelesség Section */}
             {(() => {
               const { sources } = parseBlocksFromContent(article.content || '');
               if (!sources || sources.length === 0) return null;
@@ -804,6 +774,13 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
               title={article.title}
             />
           )}
+        </div>
+
+          {/* RIGHT SIDEBAR COLUMN (4 Cols) */}
+          <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+            <SidebarAdBanner />
+          </aside>
+
         </div>
 
         {/* In-Feed Ad Banner */}
