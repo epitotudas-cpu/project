@@ -35,6 +35,9 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
+import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
+import { useArticleSettings, getArticleSettingsForType } from '../services/articleSettingsService';
+import type { Category, Article } from '../lib/supabase';
 import { TopAdBanner, InFeedAdBanner, SidebarAdBanner } from '../components/ModernAdBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
