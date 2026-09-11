@@ -31,6 +31,7 @@ import { getCuratedRelatedArticles } from '../services/articleRecommendationsSer
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
 import { parseBlocksFromContent, parseAndSanitizeVideoInput, SOURCE_TYPE_MAP } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
+import { TopAdBanner, InFeedAdBanner, SidebarAdBanner } from '../components/ModernAdBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
 import SocialShareButton, { updateArticleMetaTags } from '../components/SocialShareButton';
@@ -552,6 +553,8 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         ]}
       />
 
+      <TopAdBanner />
+
       {/* 3. MAIN FULL-WIDTH ARTICLE CONTAINER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         
@@ -634,6 +637,9 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             </div>
           </div>
         </div>
+
+        {/* Sidebar / Partner Ad Banner */}
+        <SidebarAdBanner />
 
         {/* MAIN ARTICLE BODY (FULL WIDTH) */}
         <div className="space-y-8 w-full">
@@ -799,6 +805,9 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             />
           )}
         </div>
+
+        {/* In-Feed Ad Banner */}
+        <InFeedAdBanner onNavigate={onNavigate} />
 
         {/* BOTTOM SECTION: Full Width Related Articles Grid */}
         {articleSettings.showRelatedArticles && relatedArticles.length > 0 && (

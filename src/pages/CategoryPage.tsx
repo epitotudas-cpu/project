@@ -35,10 +35,7 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
-import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
-import { useArticleSettings, getArticleSettingsForType } from '../services/articleSettingsService';
-import type { Category, Article } from '../lib/supabase';
-
+import { TopAdBanner, InFeedAdBanner, SidebarAdBanner } from '../components/ModernAdBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -430,8 +427,12 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           },
         ]}
       />
+      <TopAdBanner />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* Sidebar Ad Banner */}
+        <SidebarAdBanner />
         
         {/* Active Partner & Sidebar Ad Banners */}
         {adSlots.filter((slot) => !slot.isPlaceholder && (slot.location === 'sidebar' || slot.location === 'in_feed')).length > 0 && (
@@ -785,6 +786,9 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
               </button>
             </div>
           )}
+
+          {/* In-Feed Ad Banner */}
+          <InFeedAdBanner onNavigate={onNavigate} />
 
         </div>
       </div>
