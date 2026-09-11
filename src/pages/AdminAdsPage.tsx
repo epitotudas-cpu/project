@@ -51,6 +51,10 @@ import {
   saveFallbackVideoSettings,
   listFallbackVideoSettings,
   type FallbackVideoSettings,
+  getTileAdSettings,
+  saveTileAdSettings,
+  listTileAdSettings,
+  type TileAdSettings,
 } from '../services/bannerCreativeService';
 import { BannerCreativeEditor } from '../components/BannerCreativeEditor';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
@@ -221,6 +225,7 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
   };
 
   const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
+  const [tileAdSettings, setTileAdSettings] = useState<TileAdSettings>(() => getTileAdSettings());
 
   useEffect(() => {
     loadAllData();
@@ -231,6 +236,7 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
       const camps = await listAdCampaigns();
       const advs = await listAdvertisers();
       const fallbacks = await listFallbackVideoSettings();
+      const tiles = await listTileAdSettings();
       setCampaigns(camps || []);
       setContracts(getContracts() || []);
       setAdvertisers(advs || []);
@@ -238,6 +244,7 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
       setPayments(getPayments() || []);
       setNotifications(getNotifications() || []);
       setFallbackSettings(fallbacks);
+      setTileAdSettings(tiles);
     } catch (e) {
       console.error('Hiba az adatok betöltésekor:', e);
     }
@@ -751,6 +758,91 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                     className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
                   >
                     <Save size={15} /> Tartalék Beállítások Mentése
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Hírek Csempe Reklám Beállítások Card */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-6 rounded-3xl border shadow-xl space-y-5 w-full min-w-0 mt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div style={{ backgroundColor: `${cardHighlight}20`, color: cardHighlight }} className="p-2.5 rounded-2xl border border-amber-500/30">
+                  <Layers size={20} />
+                </div>
+                <div>
+                  <h2 style={{ color: textColor }} className="text-lg font-black tracking-tight">
+                    Hírek Csempe Reklám Beállítások
+                  </h2>
+                  <p className="text-xs text-gray-400">
+                    A Hírek / Kategória oldalak cikkrácsában beszúrt szponzorált kártyák megjelenése és gyakorisága.
+                  </p>
+                </div>
+              </div>
+
+              <label className="inline-flex items-center gap-3 cursor-pointer self-start sm:self-auto bg-white/5 px-4 py-2 rounded-2xl border border-white/10 hover:border-white/20 transition-all">
+                <input
+                  type="checkbox"
+                  checked={tileAdSettings.enabled}
+                  onChange={(e) => {
+                    const updated = { ...tileAdSettings, enabled: e.target.checked };
+                    setTileAdSettings(updated);
+                    saveTileAdSettings(updated);
+                  }}
+                  className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+                />
+                <span className="text-xs font-extrabold text-white">
+                  {tileAdSettings.enabled ? '🟢 Csempe Reklámok Aktívak' : '🔴 Csempe Reklámok Kikapcsolva'}
+                </span>
+              </label>
+            </div>
+
+            {tileAdSettings.enabled && (
+              <div className="space-y-4 text-left">
+                <div className="space-y-2">
+                  <label className="text-xs font-extrabold text-gray-300 flex items-center justify-between">
+                    <span>Csempe reklám megjelenítési gyakorisága</span>
+                    <span className="text-amber-400 font-black">Minden {tileAdSettings.frequency}. hír után</span>
+                  </label>
+
+                  <p className="text-[11px] text-gray-400">
+                    Válaszd ki, hány hírkártya után jelenjen meg automatikusan 1 szponzorált reklámcsempe a hírek rácsában:
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {[2, 3, 4, 6, 8, 10, 12].map((freq) => (
+                      <button
+                        key={freq}
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...tileAdSettings, frequency: freq };
+                          setTileAdSettings(updated);
+                          saveTileAdSettings(updated);
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
+                          tileAdSettings.frequency === freq
+                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md scale-105'
+                            : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        Minden {freq}. hír után {freq === 6 ? '(Ajánlott)' : ''}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between border-t border-white/10 text-xs text-gray-400">
+                  <span>A beállítások azonnal szinkronizálódnak a cloud adatbázissal és megőrződnek az oldalon.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveTileAdSettings(tileAdSettings);
+                    }}
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+                  >
+                    <Save size={15} /> Csempe Beállítások Mentése
                   </button>
                 </div>
               </div>

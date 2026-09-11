@@ -828,3 +828,200 @@ export function FooterAdBanner() {
     </section>
   );
 }
+
+export function InGridTileAd() {
+  const [creatives, setCreatives] = useState<AdCreative[]>(() => {
+    const tile = getCreativesByPlacementSync('tile_ad');
+    if (tile && tile.length > 0) return tile;
+    const inFeed = getCreativesByPlacementSync('in_feed');
+    if (inFeed && inFeed.length > 0) return inFeed;
+    return getCreativesByPlacementSync('top_banner');
+  });
+
+  const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    function handleCreativeChange() {
+      const tile = getCreativesByPlacementSync('tile_ad');
+      if (tile && tile.length > 0) {
+        setCreatives(tile);
+      } else {
+        const inFeed = getCreativesByPlacementSync('in_feed');
+        if (inFeed && inFeed.length > 0) {
+          setCreatives(inFeed);
+        } else {
+          setCreatives(getCreativesByPlacementSync('top_banner') || []);
+        }
+      }
+      setCurrentIndex(0);
+    }
+
+    function handleFallbackChange() {
+      setFallbackSettings(getFallbackVideoSettings());
+    }
+
+    window.addEventListener('ad-creative-changed', handleCreativeChange);
+    window.addEventListener('ad-fallback-video-changed', handleFallbackChange);
+    return () => {
+      window.removeEventListener('ad-creative-changed', handleCreativeChange);
+      window.removeEventListener('ad-fallback-video-changed', handleFallbackChange);
+    };
+  }, []);
+
+  const activeCreative = creatives[currentIndex] || creatives[0];
+
+  useEffect(() => {
+    if (activeCreative?.id && activeCreative.is_active) {
+      recordAdImpression(activeCreative.id);
+    }
+  }, [activeCreative?.id, activeCreative?.is_active]);
+
+  if (!activeCreative || !activeCreative.is_active) {
+    if (!fallbackSettings.enabled) return null;
+
+    return (
+      <article className="h-full flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/50 border-2 border-amber-500/40 hover:border-amber-400 hover:shadow-2xl rounded-3xl transition-all duration-300 group overflow-hidden shadow-xs relative">
+        <div>
+          {/* Header Cover */}
+          <div className="w-full aspect-[16/9] relative overflow-hidden bg-slate-900 flex items-center justify-center">
+            {fallbackSettings.poster_url ? (
+              <img
+                src={optimizeImageUrl(fallbackSettings.poster_url, 600)}
+                alt={fallbackSettings.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-slate-950 via-amber-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center">
+                <Sparkles size={36} className="text-amber-400 mb-2 animate-pulse" />
+                <span className="text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  Partneri Ajánlat
+                </span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+
+            {/* Badges */}
+            <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 uppercase tracking-wider shadow-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
+                {fallbackSettings.sponsor_name || 'ÉpítőTudás Partner'}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-amber-300 border border-amber-500/30 uppercase tracking-widest backdrop-blur-xs">
+                Hirdetés
+              </span>
+            </div>
+
+            {/* Headline overlay */}
+            <div className="absolute bottom-3 left-4 right-4 text-white">
+              <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 text-amber-300 group-hover:text-amber-200 transition-colors">
+                {fallbackSettings.title || 'Szakmai Ajánlatok & Partneri Megoldások'}
+              </h3>
+            </div>
+          </div>
+
+          {/* Excerpt */}
+          <div className="p-5 space-y-3">
+            <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">
+              {fallbackSettings.description || 'Jelenítsd meg termékeidet és szakmai ajánlataidat az ÉpítőTudás több ezer szakembere előtt.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-5 pt-3 border-t border-amber-500/20 flex items-center justify-between">
+          <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+            <ShieldCheck size={14} /> Szponzorált Csempe
+          </span>
+          <a
+            href={fallbackSettings.target_url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-md group-hover:scale-105"
+          >
+            <span>{fallbackSettings.cta_text || 'Megtekintem'}</span>
+            <ExternalLink size={13} />
+          </a>
+        </div>
+      </article>
+    );
+  }
+
+  const accentColor = activeCreative.accent_color || '#FFC400';
+
+  return (
+    <article className="h-full flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-amber-500/40 hover:border-amber-400 hover:shadow-2xl rounded-3xl transition-all duration-300 group overflow-hidden shadow-xs relative">
+      <div>
+        {/* Cover Header */}
+        <div className="w-full aspect-[16/9] relative overflow-hidden bg-slate-900 flex items-center justify-center">
+          {activeCreative.image_url ? (
+            <img
+              src={optimizeImageUrl(activeCreative.image_url, 600)}
+              alt={activeCreative.headline}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 flex flex-col items-center justify-center p-4 text-center">
+              <Sparkles size={36} className="text-amber-400 mb-2 animate-pulse" />
+              <span className="text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+                {activeCreative.partner_name}
+              </span>
+            </div>
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+
+          {/* Badges */}
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
+              {activeCreative.badge_text || 'Hivatalos Partner'}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-amber-300 border border-amber-500/30 uppercase tracking-widest backdrop-blur-xs">
+              Hirdetés
+            </span>
+          </div>
+
+          {/* Headline overlay */}
+          <div className="absolute bottom-3 left-4 right-4 text-white">
+            <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 text-white group-hover:text-amber-300 transition-colors">
+              {activeCreative.headline}
+            </h3>
+          </div>
+        </div>
+
+        {/* Excerpt */}
+        <div className="p-5 space-y-3">
+          <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">
+            {activeCreative.description || 'Kiemelt szakmai partnerünk ajánlata.'}
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="p-5 pt-3 border-t border-slate-800 flex items-center justify-between">
+        <span className="text-[11px] font-bold text-gray-300 flex items-center gap-1 truncate max-w-[140px]">
+          <ShieldCheck size={14} className="text-amber-400 shrink-0" />
+          <span className="truncate">{activeCreative.partner_name}</span>
+        </span>
+        <a
+          href={activeCreative.cta_url || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => recordAdClick(activeCreative.id)}
+          style={{
+            backgroundColor: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#FFC400' : accentColor,
+            color: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#000000' : '#FFFFFF',
+          }}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-extrabold text-xs transition-all shadow-md group-hover:scale-105 cursor-pointer shrink-0"
+        >
+          <span>{activeCreative.cta_text || 'Megtekintem'}</span>
+          <ExternalLink size={13} />
+        </a>
+      </div>
+    </article>
+  );
+}
+

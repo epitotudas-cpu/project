@@ -301,3 +301,90 @@ export async function listFallbackVideoSettings(): Promise<FallbackVideoSettings
 
   return settings;
 }
+
+export interface TileAdSettings {
+  enabled: boolean;
+  frequency: number;
+}
+
+const TILE_AD_STORAGE_KEY = 'epitotudas_ad_tile_settings_v1';
+const SUPABASE_TILE_AD_SYSTEM_ID = '00000000-0000-0000-0000-000000000020';
+
+export const DEFAULT_TILE_AD_SETTINGS: TileAdSettings = {
+  enabled: true,
+  frequency: 6,
+};
+
+export function getTileAdSettings(): TileAdSettings {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(TILE_AD_STORAGE_KEY);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            ...DEFAULT_TILE_AD_SETTINGS,
+            ...parsed,
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Hiba a csempe reklám beállítások olvasásakor:', err);
+  }
+  return DEFAULT_TILE_AD_SETTINGS;
+}
+
+export function saveTileAdSettings(settings: TileAdSettings): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(TILE_AD_STORAGE_KEY, JSON.stringify(settings));
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ad-tile-settings-changed'));
+    }
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_TILE_AD_SYSTEM_ID,
+          name: '__SYSTEM_CONFIG_AD_TILE_SETTINGS__',
+          slug: 'system-ad-tile-settings-config',
+          description: JSON.stringify(settings),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
+  } catch (err) {
+    console.error('Hiba a csempe reklám beállítások mentésekor:', err);
+  }
+}
+
+export async function listTileAdSettings(): Promise<TileAdSettings> {
+  let settings = getTileAdSettings();
+
+  try {
+    const { data } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_TILE_AD_SYSTEM_ID)
+      .maybeSingle();
+
+    if (data?.description && data.description.startsWith('{')) {
+      const cloudSettings = JSON.parse(data.description);
+      if (cloudSettings && typeof cloudSettings === 'object') {
+        settings = { ...DEFAULT_TILE_AD_SETTINGS, ...cloudSettings };
+        try { localStorage.setItem(TILE_AD_STORAGE_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
+      }
+    }
+  } catch (err) {
+    void err;
+  }
+
+  return settings;
+}
+

@@ -38,7 +38,8 @@ import { getCategories, getArticles } from '../lib/api';
 import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
 import { useArticleSettings, getArticleSettingsForType } from '../services/articleSettingsService';
 import type { Category, Article } from '../lib/supabase';
-import { TopAdBanner, InFeedAdBanner, SidebarAdBanner } from '../components/ModernAdBanner';
+import { TopAdBanner, InFeedAdBanner, SidebarAdBanner, InGridTileAd } from '../components/ModernAdBanner';
+import { getTileAdSettings, listTileAdSettings, type TileAdSettings } from '../services/bannerCreativeService';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -106,6 +107,23 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [savedArticleIds, setSavedArticleIds] = useState<Set<string>>(new Set());
+  const [tileAdSettings, setTileAdSettings] = useState<TileAdSettings>(() => getTileAdSettings());
+
+  useEffect(() => {
+    async function syncTileAd() {
+      const cloudSettings = await listTileAdSettings();
+      setTileAdSettings(cloudSettings);
+    }
+    syncTileAd();
+
+    function handleTileAdChange() {
+      setTileAdSettings(getTileAdSettings());
+    }
+    window.addEventListener('ad-tile-settings-changed', handleTileAdChange);
+    return () => {
+      window.removeEventListener('ad-tile-settings-changed', handleTileAdChange);
+    };
+  }, []);
 
   useEffect(() => {
     const items = getSavedItems(user?.id);
@@ -660,120 +678,128 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
             </div>
           ) : (
             <div className={`grid grid-cols-1 md:grid-cols-2 ${desktopGridClass} gap-6 items-stretch`}>
-              {paginatedArticles.map((article) => {
-                const catObj = categories.find((c) => c.id === article.category_id);
-                const hasImage = Boolean(article.featured_image);
+              {(() => {
+                const gridNodes: React.ReactNode[] = [];
+                paginatedArticles.forEach((article, index) => {
+                  const catObj = categories.find((c) => c.id === article.category_id);
+                  const hasImage = Boolean(article.featured_image);
 
-                return (
-                  <article
-                    key={article.id}
-                    onClick={() => onNavigate('article', { articleSlug: article.slug })}
-                    className="h-full flex flex-col justify-between bg-white border border-gray-200 hover:border-primary/40 hover:shadow-xl rounded-3xl transition-all duration-300 group cursor-pointer overflow-hidden shadow-xs"
-                  >
-                    <div>
-                      {/* Cover Header */}
-                      <div className="w-full aspect-[16/9] relative overflow-hidden bg-primary flex items-center justify-center">
-                        {hasImage ? (
-                          <img
-                            src={optimizeImageUrl(article.featured_image, 600)}
-                            alt={article.title}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out opacity-90 group-hover:opacity-100"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-primary via-primary-800 to-primary-950 flex flex-col items-center justify-center p-4 text-center">
-                            <BookOpen size={36} className="text-accent mb-2 opacity-80" />
-                            <span className="text-white/70 text-[10px] font-bold uppercase tracking-wider">
-                              ÉpítőTudás Szakcikk
-                            </span>
+                  gridNodes.push(
+                    <article
+                      key={article.id}
+                      onClick={() => onNavigate('article', { articleSlug: article.slug })}
+                      className="h-full flex flex-col justify-between bg-white border border-gray-200 hover:border-primary/40 hover:shadow-xl rounded-3xl transition-all duration-300 group cursor-pointer overflow-hidden shadow-xs"
+                    >
+                      <div>
+                        {/* Cover Header */}
+                        <div className="w-full aspect-[16/9] relative overflow-hidden bg-primary flex items-center justify-center">
+                          {hasImage ? (
+                            <img
+                              src={optimizeImageUrl(article.featured_image, 600)}
+                              alt={article.title}
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out opacity-90 group-hover:opacity-100"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-primary via-primary-800 to-primary-950 flex flex-col items-center justify-center p-4 text-center">
+                              <BookOpen size={36} className="text-accent mb-2 opacity-80" />
+                              <span className="text-white/70 text-[10px] font-bold uppercase tracking-wider">
+                                ÉpítőTudás Szakcikk
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                          {/* Top Badges */}
+                          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
+                            <div className="flex items-center gap-1.5">
+                              {catObj && (
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-black/60 text-white backdrop-blur-md border border-white/20">
+                                  {catObj.name}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {(article.views && article.views > 2500) && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-accent text-primary-950 shadow-sm">
+                                  <Sparkles size={11} /> Kiemelt
+                                </span>
+                              )}
+                              <button
+                                onClick={(e) => handleToggleBookmark(e, article, catObj?.name)}
+                                className={`p-1.5 rounded-full backdrop-blur-md transition-all shadow-md ${
+                                  savedArticleIds.has(article.id)
+                                    ? 'bg-amber-400 text-primary-950'
+                                    : 'bg-black/50 text-white hover:bg-black/70'
+                                }`}
+                                title={savedArticleIds.has(article.id) ? 'Mentés eltávolítása' : 'Elmentés a mentéseim közé'}
+                              >
+                                {savedArticleIds.has(article.id) ? (
+                                  <BookmarkCheck size={14} className="fill-primary-950" />
+                                ) : (
+                                  <Bookmark size={14} />
+                                )}
+                              </button>
+                            </div>
                           </div>
+
+                          {/* Title Overlay in Cover */}
+                          <div className="absolute bottom-3 left-4 right-4 text-white">
+                            <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+                              {article.title}
+                            </h3>
+                          </div>
+                        </div>
+
+                        {/* Body Excerpt */}
+                        <div className="p-5 space-y-3">
+                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                            {article.excerpt || 'Részletes építőipari technológiai leírás, munkavédelmi előírások és gyakorlati útmutató.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Card Footer Metadata (NO FAKE STATS) */}
+                      <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1">
+                            <Clock size={13} className="text-gray-400" />
+                            <span>{article.read_time || 5} perc olvasás</span>
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar size={13} className="text-gray-400" />
+                            <span>Frissítve: {formatDateHu(article.updated_at || article.created_at)}</span>
+                          </span>
+                        </div>
+
+                        {/* Display View Count ONLY if enabled in settings and real data exists */}
+                        {articleSettings.showViewCount && (article.views || 0) > 0 && (
+                          <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1">
+                            👁 {article.views}
+                          </span>
                         )}
 
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                        {/* Top Badges */}
-                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
-                          <div className="flex items-center gap-1.5">
-                            {catObj && (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-black/60 text-white backdrop-blur-md border border-white/20">
-                                {catObj.name}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            {(article.views && article.views > 2500) && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-accent text-primary-950 shadow-sm">
-                                <Sparkles size={11} /> Kiemelt
-                              </span>
-                            )}
-                            <button
-                              onClick={(e) => handleToggleBookmark(e, article, catObj?.name)}
-                              className={`p-1.5 rounded-full backdrop-blur-md transition-all shadow-md ${
-                                savedArticleIds.has(article.id)
-                                  ? 'bg-amber-400 text-primary-950'
-                                  : 'bg-black/50 text-white hover:bg-black/70'
-                              }`}
-                              title={savedArticleIds.has(article.id) ? 'Mentés eltávolítása' : 'Elmentés a mentéseim közé'}
-                            >
-                              {savedArticleIds.has(article.id) ? (
-                                <BookmarkCheck size={14} className="fill-primary-950" />
-                              ) : (
-                                <Bookmark size={14} />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Title Overlay in Cover */}
-                        <div className="absolute bottom-3 left-4 right-4 text-white">
-                          <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 group-hover:text-accent transition-colors">
-                            {article.title}
-                          </h3>
-                        </div>
+                        {/* Display Rating ONLY if enabled in settings and rating_count > 0 */}
+                        {articleSettings.showRatings && (article.rating_count || 0) > 0 && (
+                          <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1">
+                            <Star size={12} className="fill-amber-400 text-amber-400" />
+                            {article.rating ? article.rating.toFixed(1) : '5.0'}/5 ({article.rating_count})
+                          </span>
+                        )}
                       </div>
+                    </article>
+                  );
 
-                      {/* Body Excerpt */}
-                      <div className="p-5 space-y-3">
-                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                          {article.excerpt || 'Részletes építőipari technológiai leírás, munkavédelmi előírások és gyakorlati útmutató.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Card Footer Metadata (NO FAKE STATS) */}
-                    <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <Clock size={13} className="text-gray-400" />
-                          <span>{article.read_time || 5} perc olvasás</span>
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar size={13} className="text-gray-400" />
-                          <span>Frissítve: {formatDateHu(article.updated_at || article.created_at)}</span>
-                        </span>
-                      </div>
-
-                      {/* Display View Count ONLY if enabled in settings and real data exists */}
-                      {articleSettings.showViewCount && (article.views || 0) > 0 && (
-                        <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1">
-                          👁 {article.views}
-                        </span>
-                      )}
-
-                      {/* Display Rating ONLY if enabled in settings and rating_count > 0 */}
-                      {articleSettings.showRatings && (article.rating_count || 0) > 0 && (
-                        <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1">
-                          <Star size={12} className="fill-amber-400 text-amber-400" />
-                          {article.rating ? article.rating.toFixed(1) : '5.0'}/5 ({article.rating_count})
-                        </span>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
+                  if (tileAdSettings.enabled && (index + 1) % Math.max(1, tileAdSettings.frequency) === 0) {
+                    gridNodes.push(<InGridTileAd key={`tile-ad-${index}`} />);
+                  }
+                });
+                return gridNodes;
+              })()}
             </div>
           )}
 
