@@ -56,8 +56,9 @@ export function BannerCreativeEditor() {
 
   // Preview options in editor mode
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [simulateReducedMotion, setSimulateReducedMotion] = useState(false);
+  const [simulatedReducedMotion, setSimulateReducedMotion] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | 'loading'; message: string } | null>(null);
 
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
@@ -82,9 +83,15 @@ export function BannerCreativeEditor() {
   }
 
   function handleSaveFallbackSettings() {
-    saveFallbackVideoSettings(fallbackSettings);
-    setSaveSuccessMessage('🎬 Videó fallback beállítások mentve!');
-    setTimeout(() => setSaveSuccessMessage(null), 3000);
+    try {
+      saveFallbackVideoSettings(fallbackSettings);
+      setSaveStatus({ type: 'success', message: '✓ Videó beállítások sikeresen mentve!' });
+      setSaveSuccessMessage('🎬 Videó fallback beállítások mentve!');
+      setTimeout(() => setSaveStatus(null), 3500);
+      setTimeout(() => setSaveSuccessMessage(null), 3500);
+    } catch (err: any) {
+      setSaveStatus({ type: 'error', message: `⚠️ Hiba a mentés során: ${err?.message || 'Sikertelen mentés'}` });
+    }
   }
 
   function refreshCreativesList() {
@@ -97,6 +104,7 @@ export function BannerCreativeEditor() {
     setActiveCreative({ ...creative });
     setEditorView('editing');
     setSaveSuccessMessage(null);
+    setSaveStatus(null);
   }
 
   // Create a brand new creative for a placement
@@ -129,6 +137,7 @@ export function BannerCreativeEditor() {
     setActiveCreative(newCreative);
     setEditorView('editing');
     setSaveSuccessMessage(null);
+    setSaveStatus(null);
   }
 
   // Toggle active status directly from selector card
@@ -153,34 +162,57 @@ export function BannerCreativeEditor() {
     refreshCreativesList();
     setEditorView('selector');
     setActiveCreative(null);
+    setSaveStatus(null);
   }
 
   // Editor form input change handler
   function handleInputChange<K extends keyof AdCreative>(key: K, value: AdCreative[K]) {
     if (!activeCreative) return;
     setActiveCreative((prev) => (prev ? { ...prev, [key]: value } : null));
+    if (saveStatus) setSaveStatus(null);
   }
 
   // Save changes
   async function handleSave(isDraft = false) {
     if (!activeCreative) return;
 
-    const toSave: AdCreative = {
-      ...activeCreative,
-      is_active: isDraft ? false : activeCreative.is_active,
-      updated_at: new Date().toISOString(),
-    };
+    if (!activeCreative.partner_name || !activeCreative.partner_name.trim()) {
+      setSaveStatus({ type: 'error', message: '⚠️ Kérjük, add meg a hirdető partner nevét!' });
+      return;
+    }
 
-    await saveBannerCreative(toSave);
-    refreshCreativesList();
+    if (!activeCreative.headline || !activeCreative.headline.trim()) {
+      setSaveStatus({ type: 'error', message: '⚠️ Kérjük, add meg a hirdetés főcímét!' });
+      return;
+    }
 
-    setSaveSuccessMessage(
-      isDraft
-        ? '⚠️ Vázlatként elmentve! (Inaktív állapotban tárolva)'
-        : '🎉 Hirdetés sikeresen mentve és élesítve!'
-    );
+    try {
+      setSaveStatus({ type: 'loading', message: 'Mentés folyamatban...' });
+      const toSave: AdCreative = {
+        ...activeCreative,
+        is_active: isDraft ? false : activeCreative.is_active,
+        updated_at: new Date().toISOString(),
+      };
 
-    setTimeout(() => setSaveSuccessMessage(null), 4000);
+      await saveBannerCreative(toSave);
+      refreshCreativesList();
+
+      const successMsg = isDraft
+        ? '✓ Vázlatként sikeresen elmentve!'
+        : '✓ Hirdetés sikeresen mentve és élesítve!';
+
+      setSaveStatus({ type: 'success', message: successMsg });
+      setSaveSuccessMessage(successMsg);
+
+      setTimeout(() => setSaveStatus(null), 4000);
+      setTimeout(() => setSaveSuccessMessage(null), 4000);
+    } catch (err: any) {
+      console.error('Hiba a hirdetés mentésekor:', err);
+      setSaveStatus({
+        type: 'error',
+        message: `⚠️ Hiba a mentés során: ${err?.message || 'Ismeretlen hiba történt.'}`,
+      });
+    }
   }
 
   // Reset current creative to default settings
@@ -462,7 +494,12 @@ export function BannerCreativeEditor() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-1">
+              <div className="flex items-center justify-end gap-3 pt-1">
+                {saveStatus && (
+                  <span className={`text-xs font-bold ${saveStatus.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {saveStatus.message}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={handleSaveFallbackSettings}
@@ -1009,7 +1046,7 @@ export function BannerCreativeEditor() {
           </div>
 
           {/* Action Toolbar */}
-          <div className="pt-4 border-t border-[#222] flex items-center justify-between flex-wrap gap-3">
+          <div className="pt-4 border-t border-[#222] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button
               onClick={handleReset}
               className="px-4 py-2.5 bg-[#161616] border border-[#333] hover:bg-[#222] text-gray-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
@@ -1017,7 +1054,24 @@ export function BannerCreativeEditor() {
               <RotateCcw size={14} /> Alaphelyzet Visszaállítása
             </button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              {saveStatus && (
+                <div
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 border transition-all ${
+                    saveStatus.type === 'success'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                      : saveStatus.type === 'error'
+                      ? 'bg-red-500/20 text-red-300 border-red-500/40 shadow-sm'
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                  }`}
+                >
+                  {saveStatus.type === 'loading' && <RefreshCw size={14} className="animate-spin" />}
+                  {saveStatus.type === 'success' && <CheckCircle2 size={14} className="text-emerald-400" />}
+                  {saveStatus.type === 'error' && <AlertTriangle size={14} className="text-red-400" />}
+                  <span>{saveStatus.message}</span>
+                </div>
+              )}
+
               <button
                 onClick={() => handleSave(true)}
                 className="px-4 py-2.5 bg-[#181F33] border border-blue-500/40 text-blue-300 hover:bg-blue-600 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"

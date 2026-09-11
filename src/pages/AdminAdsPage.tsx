@@ -152,6 +152,9 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
   const [activeTab, setActiveTab] = useState<AdCategoryKey>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [modalFeedback, setModalFeedback] = useState<{ type: 'success' | 'error' | 'loading'; message: string } | null>(null);
+  const [fallbackSaveStatus, setFallbackSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [tileSaveStatus, setTileSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Core Data States
   const [campaigns, setCampaigns] = useState<ExtendedAdCampaign[]>([]);
@@ -264,9 +267,17 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
   // Handlers for Campaign Creation
   const handleCreateCampaignSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sponsorName.trim() || !title.trim()) return;
+    if (!sponsorName.trim()) {
+      setModalFeedback({ type: 'error', message: '⚠️ Kérjük, add meg a hirdető nevét!' });
+      return;
+    }
+    if (!title.trim()) {
+      setModalFeedback({ type: 'error', message: '⚠️ Kérjük, add meg a kampány címét!' });
+      return;
+    }
 
     try {
+      setModalFeedback({ type: 'loading', message: 'Kampány létrehozása folyamatban...' });
       await createAdCampaign({
         sponsorName: sponsorName.trim(),
         title: title.trim(),
@@ -279,90 +290,123 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
         statusV2: 'active',
         startDate: new Date().toISOString(),
       });
-      setShowCampaignModal(false);
-      setSponsorName('');
-      setTitle('');
-      setTargetUrl('');
-      setBannerImageUrl('');
+
+      setModalFeedback({ type: 'success', message: '✓ Kampány sikeresen létrehozva!' });
       await loadAllData();
-      triggerSaveToast();
-    } catch (err) {
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setShowCampaignModal(false);
+        setModalFeedback(null);
+        setSponsorName('');
+        setTitle('');
+        setTargetUrl('');
+        setBannerImageUrl('');
+        setSavedSuccess(false);
+      }, 1000);
+    } catch (err: any) {
       console.error('Hiba a kampány mentésekor:', err);
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentés során: ${err?.message || 'Ismeretlen hiba'}` });
     }
   };
 
   // Handlers for Contract Creation
   const handleCreateContractSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ctrPartnerName.trim() || !ctrCampaignTitle.trim()) return;
+    if (!ctrPartnerName.trim() || !ctrCampaignTitle.trim()) {
+      setModalFeedback({ type: 'error', message: '⚠️ Kérjük, töltsd ki a partner nevét és a kampány címét!' });
+      return;
+    }
 
-    const newContract: AdvertisementContract = {
-      id: `contract-${Date.now()}`,
-      contractNumber: ctrNumber.trim() || `ET-2026-${Math.floor(Math.random() * 900 + 100)}`,
-      campaignId: `camp-${Date.now()}`,
-      partnerId: `partner-${Date.now()}`,
-      partnerName: ctrPartnerName.trim(),
-      campaignTitle: ctrCampaignTitle.trim(),
-      placementSlot: ctrPlacementSlot,
-      templateId: 'tmpl-annual',
-      status: ctrStatus,
-      startDate: ctrStartDate || new Date().toISOString().split('T')[0],
-      endDate: ctrEndDate || new Date().toISOString().split('T')[0],
-      amount: ctrAmount,
-      currency: 'HUF',
-      content: '',
-      versions: [
-        {
-          versionNumber: 1,
-          createdAt: new Date().toISOString(),
-          amount: ctrAmount,
-          content: '',
-          changeNote: 'Kezdeti szerződés létrejött',
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      setModalFeedback({ type: 'loading', message: 'Szerződés mentése...' });
+      const newContract: AdvertisementContract = {
+        id: `contract-${Date.now()}`,
+        contractNumber: ctrNumber.trim() || `ET-2026-${Math.floor(Math.random() * 900 + 100)}`,
+        campaignId: `camp-${Date.now()}`,
+        partnerId: `partner-${Date.now()}`,
+        partnerName: ctrPartnerName.trim(),
+        campaignTitle: ctrCampaignTitle.trim(),
+        placementSlot: ctrPlacementSlot,
+        templateId: 'tmpl-annual',
+        status: ctrStatus,
+        startDate: ctrStartDate || new Date().toISOString().split('T')[0],
+        endDate: ctrEndDate || new Date().toISOString().split('T')[0],
+        amount: ctrAmount,
+        currency: 'HUF',
+        content: '',
+        versions: [
+          {
+            versionNumber: 1,
+            createdAt: new Date().toISOString(),
+            amount: ctrAmount,
+            content: '',
+            changeNote: 'Kezdeti szerződés létrejött',
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    const updated = [newContract, ...contracts];
-    setContracts(updated);
-    saveContracts(updated);
-    setShowContractModal(false);
-    setCtrNumber('');
-    setCtrPartnerName('');
-    setCtrCampaignTitle('');
-    triggerSaveToast();
+      const updated = [newContract, ...contracts];
+      setContracts(updated);
+      saveContracts(updated);
+      setModalFeedback({ type: 'success', message: '✓ Szerződés sikeresen elmentve!' });
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setShowContractModal(false);
+        setCtrNumber('');
+        setCtrPartnerName('');
+        setCtrCampaignTitle('');
+        setModalFeedback(null);
+        setSavedSuccess(false);
+      }, 1000);
+    } catch (err: any) {
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err?.message || 'Sikertelen mentés'}` });
+    }
   };
 
   // Handlers for Payment Creation
   const handleCreatePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!payAdvertiserName.trim() || !payCampaignTitle.trim()) return;
+    if (!payAdvertiserName.trim() || !payCampaignTitle.trim()) {
+      setModalFeedback({ type: 'error', message: '⚠️ Kérjük, töltsd ki a hirdető nevét és a kampány címét!' });
+      return;
+    }
 
-    const newPayment: AdPayment = {
-      id: `pay-${Date.now()}`,
-      paymentNumber: payNumber.trim() || `ET-INV-2026-${Math.floor(Math.random() * 900 + 100)}`,
-      campaignId: `camp-${Date.now()}`,
-      campaignTitle: payCampaignTitle.trim(),
-      advertiserName: payAdvertiserName.trim(),
-      amountHuf: payAmount,
-      currency: 'HUF',
-      dueDate: payDueDate ? new Date(payDueDate).toISOString() : new Date().toISOString(),
-      paidDate: payStatus === 'paid' ? new Date().toISOString() : null,
-      status: payStatus,
-      paymentMethod: payMethod,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      setModalFeedback({ type: 'loading', message: 'Fizetési tétel mentése...' });
+      const newPayment: AdPayment = {
+        id: `pay-${Date.now()}`,
+        paymentNumber: payNumber.trim() || `ET-INV-2026-${Math.floor(Math.random() * 900 + 100)}`,
+        campaignId: `camp-${Date.now()}`,
+        campaignTitle: payCampaignTitle.trim(),
+        advertiserName: payAdvertiserName.trim(),
+        amountHuf: payAmount,
+        currency: 'HUF',
+        dueDate: payDueDate ? new Date(payDueDate).toISOString() : new Date().toISOString(),
+        paidDate: payStatus === 'paid' ? new Date().toISOString() : null,
+        status: payStatus,
+        paymentMethod: payMethod,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    const updated = [newPayment, ...payments];
-    setPayments(updated);
-    savePayments(updated);
-    setShowPaymentModal(false);
-    setPayNumber('');
-    setPayAdvertiserName('');
-    setPayCampaignTitle('');
-    triggerSaveToast();
+      const updated = [newPayment, ...payments];
+      setPayments(updated);
+      savePayments(updated);
+      setModalFeedback({ type: 'success', message: '✓ Fizetési tétel sikeresen rögzítve!' });
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setShowPaymentModal(false);
+        setPayNumber('');
+        setPayAdvertiserName('');
+        setPayCampaignTitle('');
+        setModalFeedback(null);
+        setSavedSuccess(false);
+      }, 1000);
+    } catch (err: any) {
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err?.message || 'Sikertelen mentés'}` });
+    }
   };
 
   // Handlers for Clear All Notifications
@@ -370,58 +414,72 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
     if (window.confirm('Biztosan törölni szeretnéd az összes értesítést?')) {
       setNotifications([]);
       saveNotifications([]);
-      triggerSaveToast();
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
     }
   };
 
   // Handlers for Advertiser Creation / Edit
   const handleSaveAdvertiserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!advName.trim()) return;
-
-    const currentList = [...advertisers];
-    if (editingAdvertiser) {
-      const updated = currentList.map((a) =>
-        a.id === editingAdvertiser.id
-          ? {
-              ...a,
-              name: advName.trim(),
-              logoUrl: advLogo.trim() || undefined,
-              contactName: advContactName.trim() || 'Kapcsolattartó',
-              contactEmail: advContactEmail.trim() || 'info@partner.hu',
-              contactPhone: advContactPhone.trim(),
-              websiteUrl: advWebsite.trim(),
-              notes: advNotes.trim(),
-              updatedAt: new Date().toISOString(),
-            }
-          : a
-      );
-      setAdvertisers(updated);
-      saveAdvertisers(updated);
-    } else {
-      const newAdv: Advertiser = {
-        id: `adv-${Date.now()}`,
-        name: advName.trim(),
-        logoUrl: advLogo.trim() || undefined,
-        contactName: advContactName.trim() || 'Kapcsolattartó',
-        contactEmail: advContactEmail.trim() || 'info@partner.hu',
-        contactPhone: advContactPhone.trim(),
-        category: 'gyarto',
-        websiteUrl: advWebsite.trim(),
-        notes: advNotes.trim(),
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const updated = [...currentList, newAdv];
-      setAdvertisers(updated);
-      saveAdvertisers(updated);
+    if (!advName.trim()) {
+      setModalFeedback({ type: 'error', message: '⚠️ Kérjük, add meg a cégnevet!' });
+      return;
     }
 
-    setShowAdvertiserModal(false);
-    setEditingAdvertiser(null);
-    resetAdvForm();
-    triggerSaveToast();
+    try {
+      setModalFeedback({ type: 'loading', message: 'Hirdető mentése...' });
+      const currentList = [...advertisers];
+      if (editingAdvertiser) {
+        const updated = currentList.map((a) =>
+          a.id === editingAdvertiser.id
+            ? {
+                ...a,
+                name: advName.trim(),
+                logoUrl: advLogo.trim() || undefined,
+                contactName: advContactName.trim() || 'Kapcsolattartó',
+                contactEmail: advContactEmail.trim() || 'info@partner.hu',
+                contactPhone: advContactPhone.trim(),
+                websiteUrl: advWebsite.trim(),
+                notes: advNotes.trim(),
+                updatedAt: new Date().toISOString(),
+              }
+            : a
+        );
+        setAdvertisers(updated);
+        saveAdvertisers(updated);
+      } else {
+        const newAdv: Advertiser = {
+          id: `adv-${Date.now()}`,
+          name: advName.trim(),
+          logoUrl: advLogo.trim() || undefined,
+          contactName: advContactName.trim() || 'Kapcsolattartó',
+          contactEmail: advContactEmail.trim() || 'info@partner.hu',
+          contactPhone: advContactPhone.trim(),
+          category: 'gyarto',
+          websiteUrl: advWebsite.trim(),
+          notes: advNotes.trim(),
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const updated = [...currentList, newAdv];
+        setAdvertisers(updated);
+        saveAdvertisers(updated);
+      }
+
+      setModalFeedback({ type: 'success', message: editingAdvertiser ? '✓ Hirdető adatai frissítve!' : '✓ Új hirdető sikeresen elmentve!' });
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setShowAdvertiserModal(false);
+        setEditingAdvertiser(null);
+        resetAdvForm();
+        setModalFeedback(null);
+        setSavedSuccess(false);
+      }, 1000);
+    } catch (err: any) {
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err?.message || 'Sikertelen mentés'}` });
+    }
   };
 
   function resetAdvForm() {
@@ -747,12 +805,22 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                   />
                 </div>
 
-                <div className="md:col-span-2 pt-2 flex justify-end">
+                <div className="md:col-span-2 pt-2 flex items-center justify-end gap-3">
+                  {fallbackSaveStatus && (
+                    <span className={`text-xs font-bold ${fallbackSaveStatus.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {fallbackSaveStatus.message}
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
-                      saveFallbackVideoSettings(fallbackSettings);
-                      triggerSaveToast();
+                      try {
+                        saveFallbackVideoSettings(fallbackSettings);
+                        setFallbackSaveStatus({ type: 'success', message: '✓ Tartalék beállítások sikeresen mentve!' });
+                        setTimeout(() => setFallbackSaveStatus(null), 3500);
+                      } catch (err: any) {
+                        setFallbackSaveStatus({ type: 'error', message: `⚠️ Hiba: ${err?.message || 'Sikertelen mentés'}` });
+                      }
                     }}
                     style={{ backgroundColor: cardHighlight, color: '#000000' }}
                     className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
@@ -789,6 +857,8 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                     const updated = { ...tileAdSettings, enabled: e.target.checked };
                     setTileAdSettings(updated);
                     saveTileAdSettings(updated);
+                    setTileSaveStatus({ type: 'success', message: '✓ Frissítve!' });
+                    setTimeout(() => setTileSaveStatus(null), 3000);
                   }}
                   className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                 />
@@ -819,6 +889,8 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                           const updated = { ...tileAdSettings, frequency: freq };
                           setTileAdSettings(updated);
                           saveTileAdSettings(updated);
+                          setTileSaveStatus({ type: 'success', message: `✓ Beállítva: Minden ${freq}. hír után!` });
+                          setTimeout(() => setTileSaveStatus(null), 3000);
                         }}
                         className={`px-3.5 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
                           tileAdSettings.frequency === freq
@@ -834,16 +906,29 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
 
                 <div className="pt-2 flex items-center justify-between border-t border-white/10 text-xs text-gray-400">
                   <span>A beállítások azonnal szinkronizálódnak a cloud adatbázissal és megőrződnek az oldalon.</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      saveTileAdSettings(tileAdSettings);
-                    }}
-                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                    className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
-                  >
-                    <Save size={15} /> Csempe Beállítások Mentése
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {tileSaveStatus && (
+                      <span className={`text-xs font-bold ${tileSaveStatus.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {tileSaveStatus.message}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          saveTileAdSettings(tileAdSettings);
+                          setTileSaveStatus({ type: 'success', message: '✓ Csempe beállítások mentve!' });
+                          setTimeout(() => setTileSaveStatus(null), 3500);
+                        } catch (err: any) {
+                          setTileSaveStatus({ type: 'error', message: `⚠️ Hiba: ${err?.message || 'Sikertelen mentés'}` });
+                        }
+                      }}
+                      style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                      className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+                    >
+                      <Save size={15} /> Csempe Beállítások Mentése
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1334,9 +1419,23 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                 <label className="font-bold text-gray-400 block mb-1">Keretösszeg (HUF)</label>
                 <input type="number" value={priceHuf} onChange={(e) => setPriceHuf(Number(e.target.value))} style={fieldStyle} className="w-full border rounded-xl p-2.5" />
               </div>
+              
+              {modalFeedback && (
+                <div className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                  modalFeedback.type === 'success'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : modalFeedback.type === 'error'
+                    ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}>
+                  {modalFeedback.type === 'loading' && <RotateCcw size={14} className="animate-spin" />}
+                  <span>{modalFeedback.message}</span>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
-                <button type="button" onClick={() => setShowCampaignModal(false)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
-                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl">Létrehozás</button>
+                <button type="button" onClick={() => { setShowCampaignModal(false); setModalFeedback(null); }} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
+                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl hover:opacity-90 transition-all cursor-pointer">Létrehozás</button>
               </div>
             </form>
           </div>
@@ -1391,9 +1490,23 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                   <option value="draft">Piszkozat</option>
                 </select>
               </div>
+
+              {modalFeedback && (
+                <div className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                  modalFeedback.type === 'success'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : modalFeedback.type === 'error'
+                    ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}>
+                  {modalFeedback.type === 'loading' && <RotateCcw size={14} className="animate-spin" />}
+                  <span>{modalFeedback.message}</span>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
-                <button type="button" onClick={() => setShowContractModal(false)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
-                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl">Mentés</button>
+                <button type="button" onClick={() => { setShowContractModal(false); setModalFeedback(null); }} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
+                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl hover:opacity-90 transition-all cursor-pointer">Mentés</button>
               </div>
             </form>
           </div>
@@ -1442,9 +1555,23 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                   <option value="overdue">Késedelmes (Overdue)</option>
                 </select>
               </div>
+
+              {modalFeedback && (
+                <div className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                  modalFeedback.type === 'success'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : modalFeedback.type === 'error'
+                    ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}>
+                  {modalFeedback.type === 'loading' && <RotateCcw size={14} className="animate-spin" />}
+                  <span>{modalFeedback.message}</span>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
-                <button type="button" onClick={() => setShowPaymentModal(false)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
-                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl">Mentés</button>
+                <button type="button" onClick={() => { setShowPaymentModal(false); setModalFeedback(null); }} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
+                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl hover:opacity-90 transition-all cursor-pointer">Mentés</button>
               </div>
             </form>
           </div>
@@ -1469,9 +1596,23 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                 <label className="font-bold text-gray-400 block mb-1">E-mail címe</label>
                 <input type="email" value={advContactEmail} onChange={(e) => setAdvContactEmail(e.target.value)} style={fieldStyle} className="w-full border rounded-xl p-2.5" placeholder="andrea@bosch.hu" />
               </div>
+
+              {modalFeedback && (
+                <div className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                  modalFeedback.type === 'success'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : modalFeedback.type === 'error'
+                    ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}>
+                  {modalFeedback.type === 'loading' && <RotateCcw size={14} className="animate-spin" />}
+                  <span>{modalFeedback.message}</span>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
-                <button type="button" onClick={() => setShowAdvertiserModal(false)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
-                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl">Mentés</button>
+                <button type="button" onClick={() => { setShowAdvertiserModal(false); setEditingAdvertiser(null); setModalFeedback(null); }} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl">Mégse</button>
+                <button type="submit" style={{ backgroundColor: cardHighlight, color: '#000' }} className="px-5 py-2 font-extrabold rounded-xl hover:opacity-90 transition-all cursor-pointer">Mentés</button>
               </div>
             </form>
           </div>
