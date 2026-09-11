@@ -210,6 +210,8 @@ export interface FallbackVideoSettings {
   poster_url?: string;
   sponsor_name: string;
   title: string;
+  description?: string;
+  cta_text?: string;
   target_url: string;
 }
 
@@ -222,7 +224,9 @@ export const DEFAULT_FALLBACK_VIDEO_SETTINGS: FallbackVideoSettings = {
   poster_url: '',
   sponsor_name: 'ÉpítőTudás • Hirdetési Hely',
   title: 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások',
-  target_url: '#',
+  description: 'Jelenítsd meg termékeidet és szakmai ajánlataidat az ÉpítőTudás több ezer szakembere és tanulója előtt.',
+  cta_text: 'Partneri Program & Kapcsolat',
+  target_url: 'https://epitotudas.hu/#contact',
 };
 
 export function getFallbackVideoSettings(): FallbackVideoSettings {

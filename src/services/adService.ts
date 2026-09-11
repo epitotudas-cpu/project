@@ -4,10 +4,12 @@ import {
   type AdPlacement,
   type AdPayment,
   type AdNotification,
+  supabase,
 } from '../lib/supabase';
 import { getStoredCreatives } from './bannerCreativeService';
 
 const STORAGE_KEY_ADVERTISERS = 'epitotudas_advertisers_v1';
+const SUPABASE_SYSTEM_ID_ADVERTISERS = '00000000-0000-0000-0000-000000000021';
 const STORAGE_KEY_PLACEMENTS = 'epitotudas_ad_placements_v1';
 const STORAGE_KEY_PAYMENTS = 'epitotudas_ad_payments_v1';
 const STORAGE_KEY_NOTIFICATIONS = 'epitotudas_ad_notifications_v1';
@@ -247,14 +249,58 @@ export function getAdvertisers(): Advertiser[] {
 
 export function saveAdvertisers(advertisers: Advertiser[]): void {
   try {
+    const sanitized = advertisers.filter((a) => a.id !== 'adv-leier' && !a.name?.includes('Leier'));
     if (typeof localStorage !== 'undefined') {
-      const sanitized = advertisers.filter((a) => a.id !== 'adv-leier' && !a.name?.includes('Leier'));
       localStorage.setItem(STORAGE_KEY_ADVERTISERS, JSON.stringify(sanitized));
     }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('advertisers-changed'));
+    }
+
+    void (async () => {
+      try {
+        await supabase.from('categories').upsert({
+          id: SUPABASE_SYSTEM_ID_ADVERTISERS,
+          name: '__SYSTEM_CONFIG_ADVERTISERS__',
+          slug: 'system-advertisers-config',
+          description: JSON.stringify(sanitized),
+          article_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (err) {
+        void err;
+      }
+    })();
   } catch (e) {
     console.error('Hiba a hirdetők mentésekor:', e);
   }
 }
+
+export async function listAdvertisers(): Promise<Advertiser[]> {
+  let list = getAdvertisers();
+
+  try {
+    const { data } = await supabase
+      .from('categories')
+      .select('description')
+      .eq('id', SUPABASE_SYSTEM_ID_ADVERTISERS)
+      .maybeSingle();
+
+    if (data?.description && data.description.startsWith('[')) {
+      const cloudList = JSON.parse(data.description);
+      if (Array.isArray(cloudList)) {
+        list = cloudList.filter((a: Advertiser) => a.id !== 'adv-leier' && !a.name?.includes('Leier'));
+        try { localStorage.setItem(STORAGE_KEY_ADVERTISERS, JSON.stringify(list)); } catch { /* ignore */ }
+      }
+    }
+  } catch (err) {
+    void err;
+  }
+
+  return list;
+}
+
 
 // Helper: Placements
 export function getPlacements(): AdPlacement[] {

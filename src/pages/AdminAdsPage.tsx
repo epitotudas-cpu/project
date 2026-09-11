@@ -28,6 +28,7 @@ import {
 import {
   listAdCampaigns,
   createAdCampaign,
+  saveStoredCampaigns,
 } from '../services/advertisementService';
 import { AdminAdPackagesManager } from '../components/AdminAdPackagesManager';
 import {
@@ -35,8 +36,8 @@ import {
   saveContracts,
 } from '../services/contractService';
 import {
-  getAdvertisers,
   saveAdvertisers,
+  listAdvertisers,
   getPlacements,
   savePlacements,
   getPayments,
@@ -45,6 +46,12 @@ import {
   saveNotifications,
   calculateAdKpiStats,
 } from '../services/adService';
+import {
+  getFallbackVideoSettings,
+  saveFallbackVideoSettings,
+  listFallbackVideoSettings,
+  type FallbackVideoSettings,
+} from '../services/bannerCreativeService';
 import { BannerCreativeEditor } from '../components/BannerCreativeEditor';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import type {
@@ -213,6 +220,8 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
     color: inputTextColor,
   };
 
+  const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -220,12 +229,15 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
   async function loadAllData() {
     try {
       const camps = await listAdCampaigns();
+      const advs = await listAdvertisers();
+      const fallbacks = await listFallbackVideoSettings();
       setCampaigns(camps || []);
       setContracts(getContracts() || []);
-      setAdvertisers(getAdvertisers() || []);
+      setAdvertisers(advs || []);
       setPlacements(getPlacements() || []);
       setPayments(getPayments() || []);
       setNotifications(getNotifications() || []);
+      setFallbackSettings(fallbacks);
     } catch (e) {
       console.error('Hiba az adatok betöltésekor:', e);
     }
@@ -280,6 +292,7 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
     const newContract: AdvertisementContract = {
       id: `contract-${Date.now()}`,
       contractNumber: ctrNumber.trim() || `ET-2026-${Math.floor(Math.random() * 900 + 100)}`,
+      campaignId: `camp-${Date.now()}`,
       partnerId: `partner-${Date.now()}`,
       partnerName: ctrPartnerName.trim(),
       campaignTitle: ctrCampaignTitle.trim(),
@@ -291,6 +304,15 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
       amount: ctrAmount,
       currency: 'HUF',
       content: '',
+      versions: [
+        {
+          versionNumber: 1,
+          createdAt: new Date().toISOString(),
+          amount: ctrAmount,
+          content: '',
+          changeNote: 'Kezdeti szerződés létrejött',
+        },
+      ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -428,6 +450,7 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
     } else if (type === 'campaign') {
       const updated = campaigns.filter((c) => c.id !== id);
       setCampaigns(updated);
+      saveStoredCampaigns(updated);
     } else if (type === 'placement') {
       const updated = placements.filter((p) => p.id !== id);
       setPlacements(updated);
@@ -595,6 +618,144 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
               })}
             </div>
           </section>
+
+          {/* Tartalék (Fallback) Hirdetési Beállítások Card */}
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-6 rounded-3xl border shadow-xl space-y-5 w-full min-w-0 mt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div style={{ backgroundColor: `${cardHighlight}20`, color: cardHighlight }} className="p-2.5 rounded-2xl border border-amber-500/30">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h2 style={{ color: textColor }} className="text-lg font-black tracking-tight">
+                    Tartalék (Fallback) Hirdetés Beállítások
+                  </h2>
+                  <p className="text-xs text-gray-400">
+                    Beállíthatod, hogy mi jelenjen meg a felületeken, ha nincsenek aktív hirdetők vagy kampányok.
+                  </p>
+                </div>
+              </div>
+
+              <label className="inline-flex items-center gap-3 cursor-pointer self-start sm:self-auto bg-white/5 px-4 py-2 rounded-2xl border border-white/10 hover:border-white/20 transition-all">
+                <input
+                  type="checkbox"
+                  checked={fallbackSettings.enabled}
+                  onChange={(e) => {
+                    const updated = { ...fallbackSettings, enabled: e.target.checked };
+                    setFallbackSettings(updated);
+                    saveFallbackVideoSettings(updated);
+                    triggerSaveToast();
+                  }}
+                  className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+                />
+                <span className="text-xs font-extrabold text-white">
+                  {fallbackSettings.enabled ? '🟢 Tartalék Banner Aktív' : '🔴 Banner Rejtve (Ha nincs aktív hirdető)'}
+                </span>
+              </label>
+            </div>
+
+            {fallbackSettings.enabled && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-gray-300">Szponzor / Jelvény Felirat</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.sponsor_name || ''}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, sponsor_name: e.target.value })}
+                    placeholder="pl. ÉpítőTudás • Hirdetési Hely"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-gray-300">Főcím</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.title || ''}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, title: e.target.value })}
+                    placeholder="pl. Szakmai Ajánlatok és Kiemelt Megoldások"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-xs font-extrabold text-gray-300">Alcím / Leírás</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.description || ''}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, description: e.target.value })}
+                    placeholder="pl. Jelenítsd meg termékeidet több ezer szakember előtt..."
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-gray-300">Gomb Felirata (CTA)</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.cta_text || ''}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, cta_text: e.target.value })}
+                    placeholder="pl. Partneri Program & Kapcsolat"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-gray-300">Célhivatkozás URL (Target Link)</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.target_url || ''}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, target_url: e.target.value })}
+                    placeholder="https://..."
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-gray-300">Videó URL (WebM/MP4 - Opcionális)</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.video_url || ''}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, video_url: e.target.value })}
+                    placeholder="https://...video.webm"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-gray-300">Poszter / Kép Háttér URL (Opcionális)</label>
+                  <input
+                    type="text"
+                    value={fallbackSettings.poster_url || ''}
+                    onChange={(e) => setFallbackSettings({ ...fallbackSettings, poster_url: e.target.value })}
+                    placeholder="https://...image.jpg"
+                    style={fieldStyle}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2 pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveFallbackVideoSettings(fallbackSettings);
+                      triggerSaveToast();
+                    }}
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer hover:opacity-90"
+                  >
+                    <Save size={15} /> Tartalék Beállítások Mentése
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

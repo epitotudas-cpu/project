@@ -405,6 +405,7 @@ interface InFeedAdBannerProps {
 
 export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
   const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('in_feed'));
+  const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -413,9 +414,16 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
       setCreatives(updated ? [...updated] : []);
       setCurrentIndex(0);
     }
+    function handleFallbackChange() {
+      setFallbackSettings(getFallbackVideoSettings());
+    }
 
     window.addEventListener('ad-creative-changed', handleCreativeChange);
-    return () => window.removeEventListener('ad-creative-changed', handleCreativeChange);
+    window.addEventListener('ad-fallback-video-changed', handleFallbackChange);
+    return () => {
+      window.removeEventListener('ad-creative-changed', handleCreativeChange);
+      window.removeEventListener('ad-fallback-video-changed', handleFallbackChange);
+    };
   }, []);
 
   const activeCreative = creatives[currentIndex] || creatives[0];
@@ -589,31 +597,35 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
   }
 
   // Fallback Promo Banner for Industrial Partners
+  if (!fallbackSettings.enabled) {
+    return null;
+  }
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-500/20 p-5 sm:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left max-w-2xl">
             <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
-              <Sparkles size={12} /> Szakmai Hirdetési Hely
+              <Sparkles size={12} /> {fallbackSettings.sponsor_name || 'Szakmai Hirdetési Hely'}
             </div>
             <h3 className="text-xl md:text-2xl font-extrabold text-white">
-              Építőipari Gyártó vagy Forgalmazó Vagy?
+              {fallbackSettings.title || 'Építőipari Gyártó vagy Forgalmazó Vagy?'}
             </h3>
             <p className="text-sm text-gray-300">
-              Jelenítsd meg termékeidet és szakmai ajánlataidat az ÉpítőTudás több ezer szakembere és tanulója előtt.
+              {fallbackSettings.description || 'Jelenítsd meg termékeidet és szakmai ajánlataidat az ÉpítőTudás több ezer szakembere és tanulója előtt.'}
             </p>
           </div>
 
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('partners')}
-              className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Partneri Program & Kapcsolat</span>
-              <ArrowRight size={16} />
-            </button>
-          )}
+          <a
+            href={fallbackSettings.target_url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>{fallbackSettings.cta_text || 'Partneri Program & Kapcsolat'}</span>
+            <ArrowRight size={16} />
+          </a>
         </div>
       </div>
     </section>
@@ -622,6 +634,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
 
 export function SidebarAdBanner() {
   const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('sidebar'));
+  const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -630,8 +643,15 @@ export function SidebarAdBanner() {
       setCreatives(updated ? [...updated] : []);
       setCurrentIndex(0);
     }
+    function handleFallbackChange() {
+      setFallbackSettings(getFallbackVideoSettings());
+    }
     window.addEventListener('ad-creative-changed', handleCreativeChange);
-    return () => window.removeEventListener('ad-creative-changed', handleCreativeChange);
+    window.addEventListener('ad-fallback-video-changed', handleFallbackChange);
+    return () => {
+      window.removeEventListener('ad-creative-changed', handleCreativeChange);
+      window.removeEventListener('ad-fallback-video-changed', handleFallbackChange);
+    };
   }, []);
 
   const activeCreative = creatives[currentIndex] || creatives[0];
@@ -642,7 +662,39 @@ export function SidebarAdBanner() {
     }
   }, [activeCreative?.id, activeCreative?.is_active]);
 
-  if (!activeCreative || !activeCreative.is_active) return null;
+  if (!activeCreative || !activeCreative.is_active) {
+    if (!fallbackSettings.enabled) return null;
+    return (
+      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+        <div className="flex items-center justify-between text-xs text-amber-400 font-extrabold uppercase tracking-wider">
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck size={14} /> {fallbackSettings.sponsor_name || 'ÉpítőTudás • Hirdetés'}
+          </span>
+          <span className="text-[10px] text-gray-400">Oldalsáv</span>
+        </div>
+
+        <h4 className="text-base font-extrabold text-white leading-snug">
+          {fallbackSettings.title || 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások'}
+        </h4>
+
+        {fallbackSettings.description && (
+          <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">
+            {fallbackSettings.description}
+          </p>
+        )}
+
+        <a
+          href={fallbackSettings.target_url || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all"
+        >
+          <span>{fallbackSettings.cta_text || 'Kapcsolat'}</span>
+          <ExternalLink size={13} />
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-900 border border-teal-500/30 rounded-2xl p-5 shadow-xl space-y-4">
@@ -685,6 +737,7 @@ export function SidebarAdBanner() {
 
 export function FooterAdBanner() {
   const [creatives, setCreatives] = useState<AdCreative[]>(() => getCreativesByPlacementSync('footer_banner'));
+  const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -693,8 +746,15 @@ export function FooterAdBanner() {
       setCreatives(updated ? [...updated] : []);
       setCurrentIndex(0);
     }
+    function handleFallbackChange() {
+      setFallbackSettings(getFallbackVideoSettings());
+    }
     window.addEventListener('ad-creative-changed', handleCreativeChange);
-    return () => window.removeEventListener('ad-creative-changed', handleCreativeChange);
+    window.addEventListener('ad-fallback-video-changed', handleFallbackChange);
+    return () => {
+      window.removeEventListener('ad-creative-changed', handleCreativeChange);
+      window.removeEventListener('ad-fallback-video-changed', handleFallbackChange);
+    };
   }, []);
 
   const activeCreative = creatives[currentIndex] || creatives[0];
@@ -705,7 +765,35 @@ export function FooterAdBanner() {
     }
   }, [activeCreative?.id, activeCreative?.is_active]);
 
-  if (!activeCreative || !activeCreative.is_active) return null;
+  if (!activeCreative || !activeCreative.is_active) {
+    if (!fallbackSettings.enabled) return null;
+    return (
+      <section className="bg-gradient-to-r from-slate-950 via-amber-950/40 to-slate-950 border-t border-amber-500/30 py-6 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-center md:text-left">
+            <div>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                {fallbackSettings.sponsor_name || 'ÉpítőTudás Partneri Program'}
+              </span>
+              <h4 className="text-sm sm:text-base font-extrabold text-white mt-1">
+                {fallbackSettings.title || 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások'}
+              </h4>
+            </div>
+          </div>
+
+          <a
+            href={fallbackSettings.target_url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all flex items-center gap-2"
+          >
+            <span>{fallbackSettings.cta_text || 'Kapcsolat'}</span>
+            <ExternalLink size={14} />
+          </a>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-gradient-to-r from-slate-950 via-teal-950 to-slate-950 border-t border-teal-500/30 py-6 px-4">
