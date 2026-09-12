@@ -289,7 +289,6 @@ export function generateManifestJson(settings: SiteSettings) {
     return url.includes('?') ? `${url}&v=${v}` : `${url}?v=${v}`;
   };
 
-  const effectiveLogo = (settings?.logoUrl && settings.logoUrl !== '/logo.png') ? settings.logoUrl : '/site-tile.png';
   const effectivePwa192 = (settings?.pwaIcon192Url && settings.pwaIcon192Url !== '/logo.png') ? settings.pwaIcon192Url : '/android-chrome-192x192.png';
   const effectivePwa512 = (settings?.pwaIcon512Url && settings.pwaIcon512Url !== '/logo.png') ? settings.pwaIcon512Url : '/android-chrome-512x512.png';
 
@@ -351,7 +350,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     }
 
     // Dynamic Versioning Parameter for Cache-Busting
-    const v = settings?.iconsUpdatedAt || '20260910_v3';
+    const v = settings?.iconsUpdatedAt || '20260912_v4';
     const withVersion = (url: string | undefined, defaultFallback: string) => {
       const target = (url && url.trim()) ? url.trim() : defaultFallback;
       if (!target) return '';
