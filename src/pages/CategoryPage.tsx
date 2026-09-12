@@ -24,7 +24,6 @@ import {
   Settings,
   BookOpen,
   Filter,
-  ExternalLink,
   FileText,
   X,
   ChevronDown,
@@ -35,7 +34,6 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
-import { getAdvertisementSlots, recordAdClick, type AdvertisementSlot } from '../services/advertisementService';
 import { useArticleSettings, getArticleSettingsForType } from '../services/articleSettingsService';
 import type { Category, Article } from '../lib/supabase';
 import { TopAdBanner, InFeedAdBanner, SidebarAdBanner, InGridTileAd } from '../components/ModernAdBanner';
@@ -87,7 +85,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const articleSettings = useArticleSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [adSlots, setAdSlots] = useState<AdvertisementSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -210,16 +207,14 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     async function loadData() {
       try {
         setLoading(true);
-        const [categoriesData, articlesData, slots] = await Promise.all([
+        const [categoriesData, articlesData] = await Promise.all([
           getCategories(),
           getArticles({ limit: 100 }),
-          getAdvertisementSlots(),
         ]);
 
         const publishedOnly = articlesData.filter((a) => a.status === 'published' || !a.status);
         setCategories(categoriesData);
         setArticles(publishedOnly);
-        setAdSlots(slots);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Hiba történt az adatok betöltésekor');
       } finally {
@@ -375,12 +370,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     );
   }
 
-  const desktopGridClass =
-    typePageSettings.desktopGridColumns === 2
-      ? 'lg:grid-cols-2'
-      : typePageSettings.desktopGridColumns === 4
-      ? 'lg:grid-cols-4'
-      : 'lg:grid-cols-3';
+
 
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
