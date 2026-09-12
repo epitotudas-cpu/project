@@ -420,7 +420,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
       {/* ═══════════ HERO HEADER ═══════════ */}
       <div className="bg-primary border-b border-primary-700 pb-10 pt-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-gray-400 mb-5">
             <button
@@ -513,7 +513,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
       />
 
       {/* ═══════════ MAIN CONTENT ═══════════ */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         {/* Linked term bridge */}
         {linkedOfficialTerm && (
@@ -643,10 +643,14 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        {(() => {
+          const hasSidebar = filteredTerms.length >= 6;
 
-          {/* ═══ FŐOSZLOP ═══ */}
-          <div className="flex-1 min-w-0 space-y-8">
+          return (
+            <div className={`grid ${hasSidebar ? 'grid-cols-1 lg:grid-cols-[1fr_300px]' : 'grid-cols-1'} gap-8 items-start`}>
+
+              {/* ═══ FŐOSZLOP ═══ */}
+              <div className="space-y-8 min-w-0">
 
             {/* Szakasz fejléc & Nézetváltó */}
             <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-gray-200/80 mb-6">
@@ -1116,122 +1120,126 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             )}
           </div>
 
-          {/* ═══ OLDALSÁV ═══ */}
-          <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-6">
+              {/* ═══ OLDALSÁV ═══ */}
+              {hasSidebar && (
+                <aside className="w-full space-y-6 lg:sticky lg:top-24">
 
-            {/* Legfrissebb fogalmak */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/50">
-                <Clock size={15} className="text-accent flex-shrink-0" />
-                <h3 className="text-sm font-black text-gray-900">Legfrissebb fogalmak</h3>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {latestTerms.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleTermClick(t)}
-                    className="w-full text-left px-5 py-3.5 hover:bg-gray-50 transition-colors group"
-                  >
-                    <div className="text-sm font-bold text-gray-900 group-hover:text-accent transition-colors leading-tight">
-                      {t.term}
+                  {/* Legfrissebb fogalmak */}
+                  <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+                      <Clock size={15} className="text-accent flex-shrink-0" />
+                      <h3 className="text-sm font-black text-gray-900">Legfrissebb fogalmak</h3>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">
-                      {t.definition}
-                    </p>
-                    {t.category && (
-                      <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400 font-medium">
-                        <Tag size={9} /> {t.category}
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <div className="divide-y divide-gray-100">
+                      {latestTerms.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => handleTermClick(t)}
+                          className="w-full text-left px-5 py-3.5 hover:bg-gray-50 transition-colors group"
+                        >
+                          <div className="text-sm font-bold text-gray-900 group-hover:text-accent transition-colors leading-tight">
+                            {t.term}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">
+                            {t.definition}
+                          </p>
+                          {t.category && (
+                            <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400 font-medium">
+                              <Tag size={9} /> {t.category}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-            {/* Tanulási útvonalak */}
-            <div className="bg-primary rounded-2xl border border-primary-700 p-5 text-white shadow-sm">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="p-2 bg-accent/20 rounded-xl text-accent flex-shrink-0">
-                  <GraduationCap size={18} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-white leading-tight">Szakmai Tanulási Útvonalak</h3>
-                  <p className="text-[11px] text-gray-400">Fokozatos fogalmi haladási útvonal</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {['Kőműves', 'Ács', 'Burkoló'].map((tr) => (
-                  <button
-                    key={tr}
-                    onClick={() => setSelectedTrade(selectedTrade === tr ? null : tr)}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all ${selectedTrade === tr
-                        ? 'bg-accent text-black'
-                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                      }`}
-                  >
-                    {tr} útvonal
-                  </button>
-                ))}
-              </div>
-              {selectedTrade && pathways.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-white/10">
-                  {pathways.map((step, idx) => (
-                    <div key={idx} className="bg-black/30 border border-white/10 p-3 rounded-xl">
-                      <div className="flex items-center justify-between text-[10px] mb-1">
-                        <span className="font-bold text-accent">{step.level}</span>
-                        <span className="text-gray-400">{step.category}</span>
+                  {/* Tanulási útvonalak */}
+                  <div className="bg-primary rounded-2xl border border-primary-700 p-5 text-white shadow-sm">
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <div className="p-2 bg-accent/20 rounded-xl text-accent flex-shrink-0">
+                        <GraduationCap size={18} />
                       </div>
-                      <h4 className="text-xs font-bold text-white mb-1.5">{step.title}</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {step.termNames.map((tName) => (
-                          <button
-                            key={tName}
-                            onClick={() => { setSearchQuery(tName); updateUrlParams(selectedCategories, tName); }}
-                            className="text-[10px] bg-accent/10 border border-accent/20 text-accent px-2 py-0.5 rounded hover:bg-accent/20"
-                          >
-                            {tName}
-                          </button>
+                      <div>
+                        <h3 className="text-sm font-black text-white leading-tight">Szakmai Tanulási Útvonalak</h3>
+                        <p className="text-[11px] text-gray-400">Fokozatos fogalmi haladási útvonal</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {['Kőműves', 'Ács', 'Burkoló'].map((tr) => (
+                        <button
+                          key={tr}
+                          onClick={() => setSelectedTrade(selectedTrade === tr ? null : tr)}
+                          className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all ${selectedTrade === tr
+                              ? 'bg-accent text-black'
+                              : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                            }`}
+                        >
+                          {tr} útvonal
+                        </button>
+                      ))}
+                    </div>
+                    {selectedTrade && pathways.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-white/10">
+                        {pathways.map((step, idx) => (
+                          <div key={idx} className="bg-black/30 border border-white/10 p-3 rounded-xl">
+                            <div className="flex items-center justify-between text-[10px] mb-1">
+                              <span className="font-bold text-accent">{step.level}</span>
+                              <span className="text-gray-400">{step.category}</span>
+                            </div>
+                            <h4 className="text-xs font-bold text-white mb-1.5">{step.title}</h4>
+                            <div className="flex flex-wrap gap-1">
+                              {step.termNames.map((tName) => (
+                                <button
+                                  key={tName}
+                                  onClick={() => { setSearchQuery(tName); updateUrlParams(selectedCategories, tName); }}
+                                  className="text-[10px] bg-accent/10 border border-accent/20 text-accent px-2 py-0.5 rounded hover:bg-accent/20"
+                                >
+                                  {tName}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         ))}
                       </div>
+                    )}
+                  </div>
+
+                  {/* CTA kártya */}
+                  <div className="bg-gradient-to-br from-primary via-[#141414] to-black rounded-2xl border border-primary-700 p-5 text-white relative overflow-hidden shadow-sm">
+                    <div className="absolute top-0 right-0 w-28 h-28 bg-accent/8 rounded-full -translate-y-10 translate-x-10 pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-20 h-20 bg-accent/5 rounded-full translate-y-8 -translate-x-8 pointer-events-none" />
+                    <div className="relative">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-2 bg-accent/20 rounded-xl">
+                          <BookOpen size={16} className="text-accent" />
+                        </div>
+                        <span className="text-[10px] font-black text-accent uppercase tracking-widest">ÉpítőTudás Glossary</span>
+                      </div>
+                      <h3 className="text-base font-black text-white leading-tight mb-1.5">
+                        Szakmai Szótár &amp; Enciklopédia
+                      </h3>
+                      <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                        Minden tudás, egy helyen. Építőipari fogalmak és szaktárak.
+                      </p>
+                      {!user ? (
+                        <button
+                          onClick={() => onNavigate('register')}
+                          className="w-full py-2.5 bg-accent text-black font-black text-sm rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+                        >
+                          Regisztrálok <ArrowRight size={14} />
+                        </button>
+                      ) : (
+                        <div className="text-xs text-gray-400 text-center font-medium">
+                          ✅ Bejelentkezve – teljes hozzáférés
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                </aside>
               )}
             </div>
-
-            {/* CTA kártya */}
-            <div className="bg-gradient-to-br from-primary via-[#141414] to-black rounded-2xl border border-primary-700 p-5 text-white relative overflow-hidden shadow-sm">
-              <div className="absolute top-0 right-0 w-28 h-28 bg-accent/8 rounded-full -translate-y-10 translate-x-10 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-20 h-20 bg-accent/5 rounded-full translate-y-8 -translate-x-8 pointer-events-none" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-accent/20 rounded-xl">
-                    <BookOpen size={16} className="text-accent" />
-                  </div>
-                  <span className="text-[10px] font-black text-accent uppercase tracking-widest">ÉpítőTudás Glossary</span>
-                </div>
-                <h3 className="text-base font-black text-white leading-tight mb-1.5">
-                  Szakmai Szótár &amp; Enciklopédia
-                </h3>
-                <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                  Minden tudás, egy helyen. Építőipari fogalmak és szaktárak.
-                </p>
-                {!user ? (
-                  <button
-                    onClick={() => onNavigate('register')}
-                    className="w-full py-2.5 bg-accent text-black font-black text-sm rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
-                  >
-                    Regisztrálok <ArrowRight size={14} />
-                  </button>
-                ) : (
-                  <div className="text-xs text-gray-400 text-center font-medium">
-                    ✅ Bejelentkezve – teljes hozzáférés
-                  </div>
-                )}
-              </div>
-            </div>
-          </aside>
-        </div>
+          );
+        })()}
       </div>
 
       {/* ── CATEGORY FILTER MODAL / POPUP ── */}

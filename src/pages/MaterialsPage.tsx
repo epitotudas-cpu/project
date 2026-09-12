@@ -104,7 +104,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20 selection:bg-accent selection:text-black">
       {/* Hero Header */}
       <div className="bg-primary text-white border-b border-primary-700 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-4">
+        <div className="max-w-[1440px] mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <button
               onClick={() => onNavigate('home')}
@@ -154,7 +154,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
         ]}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Search & Filter Bar */}
         <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-5">
           <div className="flex flex-col lg:flex-row items-center gap-4">

@@ -184,7 +184,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
       {/* Hero Header */}
       <div className="bg-primary text-white border-b border-primary-700 py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-4">
+        <div className="max-w-[1440px] mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <button
               onClick={() => onNavigate?.('home')}
@@ -267,7 +267,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
       />
 
       {/* Main Content Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
         
         {/* Internal Page Quick Navigation (Karrieroldal részei) */}
         <div className="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-sm flex flex-wrap items-center gap-2">

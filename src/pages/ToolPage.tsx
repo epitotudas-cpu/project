@@ -503,7 +503,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
     <div className="bg-background text-gray-900 min-h-screen pb-20">
       {/* Hero Header */}
       <div className="relative bg-primary text-white border-b border-primary-700 py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-4">
+        <div className="max-w-[1440px] mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs text-gray-300">
             <button onClick={() => onNavigate('home')} className="flex items-center gap-1 hover:text-white transition-colors">
               <Home size={13} /> Főoldal
@@ -592,7 +592,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
         ]}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* VIEW 1: DETAILED TOOL ENCYCLOPEDIA VIEW */}
         {selectedTool ? (
           <div className="space-y-8">

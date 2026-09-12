@@ -743,20 +743,20 @@ export function SidebarAdBanner() {
   if (!activeCreative || !activeCreative.is_active) {
     if (!fallbackSettings.enabled) return null;
     return (
-      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-5 shadow-xl space-y-4">
-        <div className="flex items-center justify-between text-xs text-amber-400 font-extrabold uppercase tracking-wider">
+      <div className="bg-slate-900 border border-amber-500/20 rounded-2xl p-4.5 shadow-md space-y-3">
+        <div className="flex items-center justify-between text-[11px] text-amber-400 font-extrabold uppercase tracking-wider">
           <span className="flex items-center gap-1.5">
-            <ShieldCheck size={14} /> {fallbackSettings.sponsor_name || 'ÉpítőTudás • Hirdetés'}
+            <ShieldCheck size={13} /> {fallbackSettings.sponsor_name || 'ÉpítőTudás Partner'}
           </span>
-          <span className="text-[10px] text-gray-400">Oldalsáv</span>
+          <span className="text-[10px] text-gray-400 font-semibold bg-white/5 px-2 py-0.5 rounded-full">Hirdetés</span>
         </div>
 
-        <h4 className="text-base font-extrabold text-white leading-snug">
-          {fallbackSettings.title || 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások'}
+        <h4 className="text-sm font-extrabold text-white leading-snug">
+          {fallbackSettings.title || 'Szakmai Ajánlatok & Építőipari Partneri Megoldások'}
         </h4>
 
         {fallbackSettings.description && (
-          <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">
+          <p className="text-xs text-gray-300 leading-relaxed line-clamp-2">
             {fallbackSettings.description}
           </p>
         )}
@@ -765,22 +765,22 @@ export function SidebarAdBanner() {
           href={fallbackSettings.target_url || '#'}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all"
+          className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-xs"
         >
-          <span>{fallbackSettings.cta_text || 'Kapcsolat'}</span>
-          <ExternalLink size={13} />
+          <span>{fallbackSettings.cta_text || 'Ajánlat megtekintése'}</span>
+          <ExternalLink size={12} />
         </a>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-900 border border-teal-500/30 rounded-2xl p-5 shadow-xl space-y-4">
-      <div className="flex items-center justify-between text-xs text-teal-400 font-extrabold uppercase tracking-wider">
+    <div className="bg-slate-900 border border-teal-500/30 rounded-2xl p-4.5 shadow-md space-y-3">
+      <div className="flex items-center justify-between text-[11px] text-teal-400 font-extrabold uppercase tracking-wider">
         <span className="flex items-center gap-1.5">
-          <ShieldCheck size={14} /> {activeCreative.partner_name}
+          <ShieldCheck size={13} /> {activeCreative.partner_name}
         </span>
-        <span className="text-[10px] text-gray-400">Oldalsáv</span>
+        <span className="text-[10px] text-gray-400 font-semibold bg-white/5 px-2 py-0.5 rounded-full">Partneri ajánlat</span>
       </div>
 
       {activeCreative.image_url && (
@@ -789,12 +789,12 @@ export function SidebarAdBanner() {
         </div>
       )}
 
-      <h4 className="text-base font-extrabold text-white leading-snug">
+      <h4 className="text-sm font-extrabold text-white leading-snug">
         {activeCreative.headline}
       </h4>
 
       {activeCreative.description && (
-        <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">
+        <p className="text-xs text-gray-300 leading-relaxed line-clamp-2">
           {activeCreative.description}
         </p>
       )}
@@ -804,10 +804,10 @@ export function SidebarAdBanner() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => recordAdClick(activeCreative.id)}
-        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0F766E] hover:bg-[#115E59] text-white font-bold text-xs transition-all"
+        className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0F766E] hover:bg-[#115E59] text-white font-extrabold text-xs transition-all shadow-xs"
       >
         <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
-        <ExternalLink size={13} />
+        <ExternalLink size={12} />
       </a>
     </div>
   );

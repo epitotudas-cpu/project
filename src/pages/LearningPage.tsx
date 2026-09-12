@@ -220,7 +220,7 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
       
       {/* Hero Header */}
       <div className="relative bg-primary text-white border-b border-primary-700 py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-4">
+        <div className="max-w-[1440px] mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <button onClick={() => onNavigate('home')} className="hover:text-white transition-colors">
               Főoldal
@@ -278,7 +278,7 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
         ]}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
         {/* FILTERS BAR */}
         <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">

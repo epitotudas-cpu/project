@@ -181,7 +181,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-primary/80" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-[1440px] px-4 py-20 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left - Text */}
             <div>
@@ -276,7 +276,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       <TopAdBanner slots={adSlots} />
 
       {/* Categories */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-10 flex-wrap gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -391,7 +391,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* Popular articles */}
       <section className="bg-white border-y border-gray-200">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-10 flex items-center justify-between">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -468,7 +468,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* Partner Highlights */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-8 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Partneri Ajánlók & Kiemelt Szervezetek</h2>
@@ -519,7 +519,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* CTA - only for signed-out visitors */}
       {!session && (
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
         <div className="bg-primary rounded-2xl p-8 md:p-12 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
             Kezdj el tanulni ma
