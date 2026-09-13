@@ -441,7 +441,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
           selectedArticleType === 'utmutatok'
             ? [
                 {
-                  label: 'Összes Útmutató',
+                  label: 'Kivitelezési útmutatók',
                   page: 'category?type=utmutatok',
                   icon: <BookOpen size={14} className="text-accent" />,
                   active: selectedCategories.length === 0 && !searchQuery,

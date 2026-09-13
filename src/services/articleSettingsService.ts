@@ -73,7 +73,7 @@ export const DEFAULT_UJDONSAG_SETTINGS: TypePageSettings = {
 };
 
 export const DEFAULT_UTMUTATO_SETTINGS: TypePageSettings = {
-  articlesPageTitle: 'Szakmai Útmutatók & Technológiák',
+  articlesPageTitle: 'Kivitelezési útmutatók',
   articlesPageDescription: 'Gyakorlati lépésről lépésre útmutatók, kivitelezési szabályok és rétegrendek.',
   searchPlaceholderText: 'Keresés útmutatók között (pl. gipszkarton, betonozás, burkolás)...',
   emptyStateTitle: 'Nem található útmutató',
