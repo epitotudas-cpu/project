@@ -24,6 +24,96 @@ const STORAGE_KEY = 'epitotudas_articles_v2';
 
 export const DEFAULT_ARTICLES: Article[] = [
   {
+    id: 'art-demo-eps-utmutato',
+    category_id: 'cat-1',
+    subcategory_name: 'Kőműves / Hőszigetelő',
+    title: 'EPS homlokzati hőszigetelés kivitelezése lépésről lépésre',
+    slug: 'eps-homlokzati-hoszigeteles-kivitelezese-lepesrol-lepesre',
+    article_type: 'utmutatok',
+    tags: ['hőszigetelés', 'eps', 'kőműves', 'homlokzat', 'dübel', 'útmutató', 'munkavédelem'],
+    excerpt: 'Gyakorlati útmutató EPS homlokzati hőszigetelés előkészítéséhez, ragasztásához, dübelezéséhez és ellenőrzéséhez.',
+    difficulty: 'intermediate',
+    read_time: 10,
+    author: 'Kovács Péter Építészmérnök & Hőszigetelő Szakértő',
+    partner_id: 'p-1',
+    partner_name: 'Leier Hungária Kft.',
+    status: 'published',
+    rejection_note: null,
+    featured: true,
+    views: 1850,
+    rating: 4.95,
+    rating_count: 42,
+    featured_image: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=1200&q=80',
+    documents: [
+      {
+        id: 'doc-eps-1',
+        title: 'EPS_Homlokzati_Hoszigetelesi_Utmutato.pdf',
+        file_url: '/docs/eps_hoszigeteles_utmutato.pdf',
+        doc_type: 'utmutato',
+        file_size: '3.1 MB',
+      },
+    ],
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    content: `Ez a szakmai kivitelezési útmutató lépésről lépésre bemutatja az EPS (expandált polisztirol) homlokzati hőszigetelő rendszer szakszerű beépítését a falfelület ellenőrzésétől a ragasztáson és dübelezésen át a hálózásig és minőségellenőrzésig.
+
+## Bevezetés
+
+Az EPS homlokzati hőszigetelés az egyik legelterjedtebb és legköltséghatékonyabb épületenergetikai korszerűsítési megoldás. Megfelelő kivitelezéssel az épület hővesztesége 30-40%-kal csökkenthető, megelőzhető a hőhidak kialakulása és meghosszabbítható a tartószerkezet élettartama.
+
+## Szükséges Anyagok
+
+| Anyag megnevezése | Típus / Specifikáció | Egység | Anyagszükséglet |
+| --- | --- | --- | --- |
+| EPS 80 Hőszigetelő lap | 150 mm vastag / EPS 80 Grafite vagy White | m² | 1.05 m² / m² |
+| Homlokzati ragasztótapasz | Cementbázisú ragasztó- és ágyazóhabarcs | kg | 8.0-10.0 kg / m² |
+| Üvegszövet háló | 145 g/m² lúgálló bevonattal | m² | 1.15 m² / m² |
+| Műanyag tárcsás dübel | 8x200 mm fém vagy műanyag szeggel | db | 6-8 db / m² |
+| Mélyalapozó | Poralapozó / tapadáselősegítő emulzió | liter | 0.15-0.20 l / m² |
+
+## Szükséges Szerszámok
+
+- [Mérőeszközök] Lézeres vízmérték, mérőszalag és csapózsinór
+- [Keverés & Felhordás] Elektromos keverőgép, 10-12 mm-es fogazott glettvas és kőműves spakli
+- [Vágás & Csiszolás] Polisztirolvágó gép vagy polisztirol fűrész, csiszológyalu
+- [Dübelezés] Fúrókalapács 8 mm-es SDS fúrószárral és gumikalapács
+- [Állványzat] Megfelelő munkavédelmi homlokzati állvány
+
+> **🛑 BIZTONSÁG**: Magasban végzett munka esetén megfelelő állványzatot és leesés elleni védelmet kell használni! A homlokzati állványzatnak korláttal és lábléccel felszereltnek kell lennie. Csiszoláskor FFP2 pormaszk és védőszemüveg viselése kötelező!
+
+> **💡 SZAKMAI TIPP**: A ragasztó kötése előtt ellenőrizd, hogy a lapok síkja és illesztése megfelelő legyen! A lapok közötti hézagokba nem kerülhet ragasztó, az 2 mm feletti réseket EPS csíkkal vagy PUR habbal kell kitölteni.
+
+## Kivitelezési Lépések
+
+### 1. Lépés: Alapfelület ellenőrzése
+Vizsgáld meg a homlokzati falazat szilárdságát, pormentességét és nedvességtartalmát. Távolítsd el a málló vakolatrészeket, és javítsd ki a 10 mm-nél nagyobb egyenetlenségeket.
+
+### 2. Lépés: Felület előkészítése és alapozás
+Hordd fel a mélyalapozót hengerrel vagy korongesettel a portalanított falra a megfelelő tapadás biztosítása érdekében. Állítsd be az alumínium lábazati indítóprofilt lézeres szintmérővel.
+
+### 3. Lépés: Ragasztó felhordása (Perem-pont módszer)
+Vidd fel a ragasztóhabarcsot a keret-pont módszerrel: a lap szélein körbefutó csíkban (kb. 5 cm szélességben) és a lap közepén 3-4 pontban. A ragasztási felület érje el a lap területének legalább 40%-át.
+
+### 4. Lépés: EPS lapok felhelyezése (Téglakötésben)
+Helyezd fel az EPS táblákat lentről felfelé haladva, szoros kötésben, téglakötéssel eltolt hézagokkal. A sarkoknál ügyelj a fogazott lapillesztésre.
+
+### 5. Lépés: Dübelezés és ellenőrzés
+A ragasztó száradása után (kb. 24 óra) fúrj lyukakat és rögzítsd a lapokat 6-8 db/m² sűrűséggel tárcsás dübelekkel. Süllyesztett dübelezés esetén használj EPS záródugót.
+
+## Minőségellenőrző Lista
+
+- [ ] Az alapfelület megfelelően elő lett készítve és portalanítva
+- [ ] Az EPS lapok síkban vannak és téglakötésben helyezkednek el
+- [ ] A ragasztás lefedettsége eléri a 40%-ot (perem-pont módszer)
+- [ ] A dübelezés elkészült (6-8 db/m²) és síkba süllyesztett
+- [ ] A felület ellenőrizve lett vízmértékkel és repedésmentes
+
+## Összefoglalás
+
+A szakszerűen kivitelezett EPS homlokzati hőszigetelés hosszú évtizedekre biztosítja az épület alacsony energiaköltségét és a komfortos belső klímát.`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
     id: 'art-demo-1',
     category_id: 'cat-1',
     subcategory_name: 'Gipszkarton szerelés',
@@ -158,7 +248,17 @@ export function getArticlesLocal(): Article[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Merge missing default articles (like art-demo-eps-utmutato) into stored list
+        const existingIds = new Set(parsed.map((a: Article) => a.id));
+        const missingDefaults = DEFAULT_ARTICLES.filter((d) => !existingIds.has(d.id));
+        if (missingDefaults.length > 0) {
+          const merged = [...missingDefaults, ...parsed];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          return merged;
+        }
+        return parsed;
+      }
     }
   } catch (e) {
     console.warn('Hiba a cikkek beolvasásakor:', e);
