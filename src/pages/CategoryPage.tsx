@@ -381,20 +381,40 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
             <button onClick={() => onNavigate('home')} className="flex items-center gap-1 hover:text-white transition-colors">
               <Home size={13} /> Főoldal
             </button>
-            <ChevronRight size={13} />
-            <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
-              Cikkek
-            </button>
-            <ChevronRight size={13} />
-            <span className="text-gray-200 font-medium">
-              {selectedArticleType === 'hirek' ? 'Hírek' : selectedArticleType === 'ujdonsagok' ? 'Újdonságok' : 'Útmutatók'}
-            </span>
+            {selectedArticleType === 'utmutatok' ? (
+              <>
+                <ChevronRight size={13} />
+                <button onClick={() => onNavigate('category?type=utmutatok')} className="hover:text-white transition-colors">
+                  Kivitelezési útmutatók
+                </button>
+                {selectedCategories.length === 1 && (() => {
+                  const catObj = categories.find((c) => c.id === selectedCategories[0]);
+                  return catObj ? (
+                    <>
+                      <ChevronRight size={13} />
+                      <span className="text-gray-200 font-medium">{catObj.name}</span>
+                    </>
+                  ) : null;
+                })()}
+              </>
+            ) : (
+              <>
+                <ChevronRight size={13} />
+                <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
+                  Cikkek
+                </button>
+                <ChevronRight size={13} />
+                <span className="text-gray-200 font-medium">
+                  {selectedArticleType === 'hirek' ? 'Hírek' : 'Újdonságok'}
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <FileText size={13} /> Építőipari Szakmai Cikkek &amp; Technológiák
+                <FileText size={13} /> {selectedArticleType === 'utmutatok' ? 'Gyakorlati Kivitelezési Útmutatók & Technológiák' : 'Építőipari Szakmai Cikkek & Technológiák'}
               </span>
               <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
                 {typePageSettings.articlesPageTitle}
@@ -406,37 +426,72 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-xs bg-white/10 border border-white/20 text-white font-bold px-4 py-2 rounded-xl backdrop-blur-sm">
-                Összesen: <strong className="text-accent">{articles.length}</strong> publikált cikk
+                Összesen: <strong className="text-accent">{filteredArticles.length}</strong> {selectedArticleType === 'utmutatok' ? 'útmutató' : 'publikált cikk'}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sub-navigation Ribbon Bar for Cikkek */}
+      {/* Sub-navigation Ribbon Bar */}
       <SectionSubNav
-        ariaLabel="Cikkek almenü navigáció"
+        ariaLabel={selectedArticleType === 'utmutatok' ? 'Kivitelezési útmutatók almenü navigáció' : 'Cikkek almenü navigáció'}
         onNavigate={onNavigate}
-        items={[
-          {
-            label: 'Hírek',
-            page: 'category?type=hirek',
-            icon: <Sparkles size={14} className="text-accent" />,
-            active: selectedArticleType === 'hirek',
-          },
-          {
-            label: 'Újdonságok',
-            page: 'category?type=ujdonsagok',
-            icon: <Calendar size={14} className="text-accent" />,
-            active: selectedArticleType === 'ujdonsagok',
-          },
-          {
-            label: 'Útmutatók',
-            page: 'category?type=utmutatok',
-            icon: <BookOpen size={14} className="text-accent" />,
-            active: selectedArticleType === 'utmutatok',
-          },
-        ]}
+        items={
+          selectedArticleType === 'utmutatok'
+            ? [
+                {
+                  label: 'Összes Útmutató',
+                  page: 'category?type=utmutatok',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: selectedCategories.length === 0 && !searchQuery,
+                },
+                {
+                  label: 'Hőszigetelés',
+                  page: 'category?type=utmutatok&q=Hőszigetelés',
+                  icon: <Thermometer size={14} className="text-accent" />,
+                  active: searchQuery.toLowerCase() === 'hőszigetelés',
+                },
+                {
+                  label: 'Szárazépítés',
+                  page: 'category?type=utmutatok&q=Szárazépítés',
+                  icon: <Layers size={14} className="text-accent" />,
+                  active: searchQuery.toLowerCase() === 'szárazépítés',
+                },
+                {
+                  label: 'Szerkezetépítés',
+                  page: 'category?type=utmutatok&q=Szerkezetépítés',
+                  icon: <Building size={14} className="text-accent" />,
+                  active: searchQuery.toLowerCase() === 'szerkezetépítés',
+                },
+                {
+                  label: 'Burkolás',
+                  page: 'category?type=utmutatok&q=Burkolás',
+                  icon: <Grid size={14} className="text-accent" />,
+                  active: searchQuery.toLowerCase() === 'burkolás',
+                },
+              ]
+            : [
+                {
+                  label: 'Hírek',
+                  page: 'category?type=hirek',
+                  icon: <Sparkles size={14} className="text-accent" />,
+                  active: selectedArticleType === 'hirek',
+                },
+                {
+                  label: 'Újdonságok',
+                  page: 'category?type=ujdonsagok',
+                  icon: <Calendar size={14} className="text-accent" />,
+                  active: selectedArticleType === 'ujdonsagok',
+                },
+                {
+                  label: 'Kivitelezési Útmutatók',
+                  page: 'category?type=utmutatok',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: selectedArticleType === 'utmutatok',
+                },
+              ]
+        }
       />
       <TopAdBanner />
 

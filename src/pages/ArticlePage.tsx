@@ -498,12 +498,13 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
     : ['Gipszkarton', 'Szárazépítés', 'Anyagismeret', 'Kivitelezés'];
 
   const articleTypeKey = article.article_type || 'hirek';
+  const isUtmutato = articleTypeKey === 'utmutatok';
   const articleTypeLabel =
     articleTypeKey === 'hirek'
       ? 'Hírek'
       : articleTypeKey === 'ujdonsagok'
       ? 'Újdonságok'
-      : 'Útmutatók';
+      : 'Kivitelezési útmutatók';
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#1e293b]">
@@ -514,44 +515,99 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             <button onClick={() => onNavigate('home')} className="flex items-center gap-1 hover:text-white transition-colors">
               <Home size={13} /> Főoldal
             </button>
-            <ChevronRight size={13} />
-            <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
-              Cikkek
-            </button>
-            <ChevronRight size={13} />
-            <button onClick={() => onNavigate(`category?type=${articleTypeKey}`)} className="hover:text-white transition-colors">
-              {articleTypeLabel}
-            </button>
-            <ChevronRight size={13} />
-            <span className="text-gray-300 font-medium truncate max-w-xs md:max-w-md">{article.title}</span>
+            {isUtmutato ? (
+              <>
+                <ChevronRight size={13} />
+                <button onClick={() => onNavigate('category?type=utmutatok')} className="hover:text-white transition-colors">
+                  Kivitelezési útmutatók
+                </button>
+                {(categoryObj || article.subcategory_name) && (
+                  <>
+                    <ChevronRight size={13} />
+                    <button
+                      onClick={() =>
+                        onNavigate(`category?type=utmutatok&q=${encodeURIComponent(categoryObj?.name || article.subcategory_name || '')}`)
+                      }
+                      className="hover:text-white transition-colors"
+                    >
+                      {categoryObj?.name || article.subcategory_name}
+                    </button>
+                  </>
+                )}
+                <ChevronRight size={13} />
+                <span className="text-gray-300 font-medium truncate max-w-xs md:max-w-md">{article.title}</span>
+              </>
+            ) : (
+              <>
+                <ChevronRight size={13} />
+                <button onClick={() => onNavigate('category?type=hirek')} className="hover:text-white transition-colors">
+                  Cikkek
+                </button>
+                <ChevronRight size={13} />
+                <button onClick={() => onNavigate(`category?type=${articleTypeKey}`)} className="hover:text-white transition-colors">
+                  {articleTypeLabel}
+                </button>
+                <ChevronRight size={13} />
+                <span className="text-gray-300 font-medium truncate max-w-xs md:max-w-md">{article.title}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* 2. Sub-navigation Ribbon */}
       <SectionSubNav
-        ariaLabel="Tudástár navigáció"
+        ariaLabel={isUtmutato ? 'Kivitelezési útmutatók navigáció' : 'Tudástár navigáció'}
         onNavigate={onNavigate}
-        items={[
-          {
-            label: 'Fogalomtár',
-            page: 'glossary',
-            icon: <BookOpen size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Számítások',
-            page: 'calculations',
-            icon: <Calculator size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Szakmai könyvek',
-            page: 'books',
-            icon: <Library size={14} className="text-accent" />,
-            active: false,
-          },
-        ]}
+        items={
+          isUtmutato
+            ? [
+                {
+                  label: 'Kivitelezési Útmutatók',
+                  page: 'category?type=utmutatok',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: true,
+                },
+                {
+                  label: 'Hőszigetelés',
+                  page: 'category?type=utmutatok&q=Hőszigetelés',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: false,
+                },
+                {
+                  label: 'Szárazépítés',
+                  page: 'category?type=utmutatok&q=Szárazépítés',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: false,
+                },
+                {
+                  label: 'Szerkezetépítés',
+                  page: 'category?type=utmutatok&q=Szerkezetépítés',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: false,
+                },
+              ]
+            : [
+                {
+                  label: 'Fogalomtár',
+                  page: 'glossary',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: false,
+                },
+                {
+                  label: 'Számítások',
+                  page: 'calculations',
+                  icon: <Calculator size={14} className="text-accent" />,
+                  active: false,
+                },
+                {
+                  label: 'Szakmai könyvek',
+                  page: 'books',
+                  icon: <Library size={14} className="text-accent" />,
+                  active: false,
+                },
+              ]
+        }
       />
 
       <TopAdBanner />
