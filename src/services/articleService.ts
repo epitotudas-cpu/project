@@ -403,7 +403,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
   const localList = getArticlesLocal();
   const match = localList.find((a) => a.slug === slug);
   if (match) return match;
-  return localList[0] || DEFAULT_ARTICLES[0];
+  return null;
 }
 
 export async function getPopularArticles(limit: number = 6): Promise<Article[]> {
