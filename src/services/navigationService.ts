@@ -29,9 +29,8 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-guides', label: 'Kivitelezési útmutatók', page: 'category?type=utmutatok', parentId: 'nav-tudastar', isActive: true, displayOrder: 1 },
   { id: 'sub-glossary', label: 'Fogalomtár & Szótár', page: 'glossary', parentId: 'nav-tudastar', isActive: true, displayOrder: 2 },
   { id: 'sub-calc', label: 'Számítások & Kalkulátorok', page: 'calculations', parentId: 'nav-tudastar', isActive: true, displayOrder: 3 },
-  { id: 'sub-books', label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tudastar', isActive: true, displayOrder: 4 },
-  { id: 'sub-safety', label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 },
-  { id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 6 },
+  { id: 'sub-safety', label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', isActive: true, displayOrder: 4 },
+  { id: 'sub-standards', label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', isActive: true, displayOrder: 5 },
 
   // Tanulás Submenu
   { id: 'sub-learning-courses', label: 'Tananyagok', page: 'learning?tab=courses', parentId: 'nav-learning', isActive: true, displayOrder: 1 },
@@ -43,6 +42,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-materials', label: 'Anyagok', page: 'materials', parentId: 'nav-tool', isActive: true, displayOrder: 2 },
   { id: 'sub-software', label: 'Szoftverek', page: 'software', parentId: 'nav-tool', isActive: true, displayOrder: 3 },
   { id: 'sub-selector', label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', isActive: true, displayOrder: 4 },
+  { id: 'sub-books', label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tool', isActive: true, displayOrder: 5 },
 
   // Pályák Submenu
   { id: 'sub-professions', label: 'Építőipari szakmák', page: 'paths', parentId: 'nav-paths', isActive: true, displayOrder: 1 },
@@ -51,7 +51,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-careers', label: 'Karrier & Állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 ];
 
-const STORAGE_KEY = 'epitotudas_nav_items_v9';
+const STORAGE_KEY = 'epitotudas_nav_items_v10';
 const SUPABASE_NAV_ID = '00000000-0000-0000-0000-000000000004';
 
 declare global {
@@ -141,10 +141,13 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     'sub-guides': { label: 'Kivitelezési útmutatók', page: 'category?type=utmutatok', parentId: 'nav-tudastar', displayOrder: 1 },
     'sub-glossary': { label: 'Fogalomtár & Szótár', page: 'glossary', parentId: 'nav-tudastar', displayOrder: 2 },
     'sub-calc': { label: 'Számítások & Kalkulátorok', page: 'calculations', parentId: 'nav-tudastar', displayOrder: 3 },
-    'sub-books': { label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tudastar', displayOrder: 4 },
-    'sub-safety': { label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', displayOrder: 5 },
-    'sub-standards': { label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', displayOrder: 6 },
-    'sub-materials': { label: 'Anyagok', page: 'materials' },
+    'sub-safety': { label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', displayOrder: 4 },
+    'sub-standards': { label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', displayOrder: 5 },
+    'sub-tools-cat': { label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', displayOrder: 1 },
+    'sub-materials': { label: 'Anyagok', page: 'materials', parentId: 'nav-tool', displayOrder: 2 },
+    'sub-software': { label: 'Szoftverek', page: 'software', parentId: 'nav-tool', displayOrder: 3 },
+    'sub-selector': { label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', displayOrder: 4 },
+    'sub-books': { label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tool', displayOrder: 5 },
   };
 
   let changed = cleanItems.length !== items.length;
@@ -320,7 +323,20 @@ export function getStructuredNav(allItems: MenuItem[], includeInactive = false):
     'nav-articles': {
       'sub-news': 1,
       'sub-novelties': 2,
-      'sub-guides': 3,
+    },
+    'nav-tudastar': {
+      'sub-guides': 1,
+      'sub-glossary': 2,
+      'sub-calc': 3,
+      'sub-safety': 4,
+      'sub-standards': 5,
+    },
+    'nav-tool': {
+      'sub-tools-cat': 1,
+      'sub-materials': 2,
+      'sub-software': 3,
+      'sub-selector': 4,
+      'sub-books': 5,
     },
   };
 
