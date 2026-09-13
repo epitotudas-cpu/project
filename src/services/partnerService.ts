@@ -267,20 +267,35 @@ export async function listPartners(category?: string): Promise<ExtendedPartner[]
   if (listFromSupabase && listFromSupabase.length > 0) {
     const cleanSupabase = filterDemoPartners(listFromSupabase);
     const mergedList = cleanSupabase.map((sp) => {
-      const localExt = stored.find((p) => p.id === sp.id || p.slug === sp.slug);
+      const localExt = stored.find(
+        (p) => p.id === sp.id || p.slug === sp.slug || p.id === sp.slug || p.slug === sp.id
+      );
+      if (!localExt) {
+        return sp as ExtendedPartner;
+      }
       return {
-        ...localExt,
         ...sp,
-        services: localExt?.services || [],
-        references: localExt?.references || [],
-        certificates: localExt?.certificates || [],
-        related_content: localExt?.related_content || [],
+        ...localExt,
+        id: sp.id || localExt.id,
+        slug: sp.slug || localExt.slug,
+        name: localExt.name || sp.name,
+        category: localExt.category || sp.category,
+        description: localExt.description ?? sp.description,
+        website_url: localExt.website_url ?? sp.website_url,
+        logo_url: localExt.logo_url ?? sp.logo_url,
+        is_verified: localExt.is_verified ?? sp.is_verified,
+        services: localExt.services || [],
+        references: localExt.references || [],
+        certificates: localExt.certificates || [],
+        related_content: localExt.related_content || [],
       } as ExtendedPartner;
     });
 
     const supabaseIds = new Set(cleanSupabase.map((s) => s.id));
     const supabaseSlugs = new Set(cleanSupabase.map((s) => s.slug));
-    const localOnly = stored.filter((p) => !supabaseIds.has(p.id) && !supabaseSlugs.has(p.slug));
+    const localOnly = stored.filter(
+      (p) => !supabaseIds.has(p.id) && !supabaseSlugs.has(p.slug) && !supabaseIds.has(p.slug)
+    );
 
     const fullList = [...mergedList, ...localOnly];
     saveStoredPartners(fullList);
@@ -384,7 +399,9 @@ export async function updatePartner(
   payload: Partial<ExtendedPartner>
 ): Promise<ExtendedPartner> {
   const currentList = getStoredPartners();
-  const index = currentList.findIndex((p) => p.id === id || p.slug === id);
+  const index = currentList.findIndex(
+    (p) => p.id === id || p.slug === id || (payload.slug && p.slug === payload.slug)
+  );
   const existing = index !== -1 ? currentList[index] : null;
 
   const updatedSlug = payload.slug
