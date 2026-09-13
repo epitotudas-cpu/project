@@ -303,7 +303,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
               .map((category) => {
                 const Icon = iconMap[category.icon_name || 'Layers'] || Layers;
-                const categoryColor = category.color || '#FFC400';
+                const categoryColor = category.color || '#657736';
 
                 return (
                   <div
@@ -352,8 +352,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       {/* Badges top right */}
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">
                         {category.featured && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#FFC400] text-black shadow-sm">
-                            <Star size={10} className="fill-black" /> Kiemelt
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#657736] text-white shadow-sm">
+                            <Star size={10} className="fill-white text-white" /> Kiemelt
                           </span>
                         )}
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur border border-white/10">
@@ -447,7 +447,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         {article.read_time} perc
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-amber-700 font-bold">
+                    <span className="flex items-center gap-1 text-[#657736] font-bold">
                       <Star size={14} fill="currentColor" />
                       {article.rating.toFixed(1)}
                     </span>
