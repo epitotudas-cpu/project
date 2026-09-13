@@ -358,6 +358,23 @@ export async function getPublishedArticles(options?: {
   limit?: number;
   orderBy?: 'views' | 'rating' | 'created_at';
 }): Promise<Article[]> {
+  try {
+    let query = supabase.from('articles').select('*').eq('status', 'published');
+    if (options?.articleType && options.articleType !== 'all') {
+      query = query.eq('article_type', options.articleType);
+    }
+    if (options?.categoryId) {
+      query = query.eq('category_id', options.categoryId);
+    }
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (!error && data && data.length > 0) return data as Article[];
+  } catch (err) {
+    void err;
+  }
+
   const allLocal = getArticlesLocal().filter((a) => a.status === 'published' || !a.status);
 
   let filtered = allLocal;
@@ -376,6 +393,13 @@ export async function getPublishedArticles(options?: {
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
+  try {
+    const { data, error } = await supabase.from('articles').select('*').eq('slug', slug).maybeSingle();
+    if (!error && data) return data as Article;
+  } catch (err) {
+    void err;
+  }
+
   const localList = getArticlesLocal();
   const match = localList.find((a) => a.slug === slug);
   if (match) return match;
