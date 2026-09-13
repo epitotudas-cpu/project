@@ -353,7 +353,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                 </span>
               </h1>
               <p className="text-xs text-gray-400 mt-1">
-                Áttekinthető, elkülönített kezelőközpont a Hírek, Újdonságok és Útmutatók független szerkesztéséhez.
+                Áttekinthető, elkülönített kezelőközpont a Hírek és Újdonságok független szerkesztéséhez.
               </p>
             </div>
           </div>
