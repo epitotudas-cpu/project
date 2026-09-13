@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, Globe, FileText } from 'lucide-react';
+import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, FileText } from 'lucide-react';
 import { listPartners, getCategoryLabel, type PartnerCategory } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
@@ -77,15 +77,9 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Célunk',
+            label: 'Rólunk',
             page: 'about',
             icon: <Target size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'ÉpítőTudás',
-            page: 'about',
-            icon: <Globe size={14} className="text-accent" />,
             active: false,
           },
           {

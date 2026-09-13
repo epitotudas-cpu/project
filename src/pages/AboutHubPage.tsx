@@ -75,16 +75,10 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Célunk',
-            href: '#celunk',
+            label: 'Rólunk',
+            page: 'about',
             icon: <Target size={14} className="text-accent" />,
             active: true,
-          },
-          {
-            label: 'ÉpítőTudás',
-            href: '#platform',
-            icon: <Globe size={14} className="text-accent" />,
-            active: false,
           },
           {
             label: 'Partnerek',
@@ -116,7 +110,7 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
         </section>
 
         {/* Section 1: Célunk & Küldetésünk (Mission & Vision) */}
-        <section id="celunk" className="space-y-6">
+        <section className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white border border-gray-200 rounded-3xl p-6 space-y-3 shadow-sm hover:shadow-md transition-all">
               <h2 className="text-xl font-bold text-[#202628] flex items-center gap-2">

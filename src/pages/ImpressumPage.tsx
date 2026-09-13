@@ -69,15 +69,9 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Célunk',
+            label: 'Rólunk',
             page: 'about',
             icon: <Target size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'ÉpítőTudás',
-            page: 'about',
-            icon: <Globe size={14} className="text-accent" />,
             active: false,
           },
           {

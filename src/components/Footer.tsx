@@ -66,9 +66,7 @@ export default function Footer({ onNavigate }: FooterProps) {
       title: 'Rólunk & Küldetésünk',
       icon: Target,
       links: [
-        { label: 'Bemutatkozás (Rólunk)', page: 'about' },
-        { label: 'Célunk & Küldetésünk', page: 'about#celunk' },
-        { label: 'ÉpítőTudás Modulok', page: 'about#platform' },
+        { label: 'Rólunk', page: 'about' },
         { label: 'Partnerek & Támogatók', page: 'partners' },
         { label: 'Oktatás & Kurzusok', page: 'courses' },
         { label: 'Pályák & Karrier', page: 'careers' },

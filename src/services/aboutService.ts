@@ -25,7 +25,7 @@ export interface AboutSettings {
 
 export const DEFAULT_ABOUT_SETTINGS: AboutSettings = {
   heroTagline: 'Rólunk',
-  heroTitle: 'Az ÉpítőTudásról és küldetésünkről',
+  heroTitle: 'Az ÉpítőTudásról',
   heroDescription: 'Magyarország online építőipari tudásbázisa. Célunk a szakképesítés támogatása, a szakmai normák terjesztése és az iparági szereplők összekapcsolása.',
   introTitle: 'Bemutatkozás',
   introDescription: 'Az ÉpítőTudás egy független, szakmailag hiteles digitális platform, amelyet mérnökök, oktatók és tapasztalt kivitelezők hoztak létre a hazai építőipar fejlesztése érdekében.',
