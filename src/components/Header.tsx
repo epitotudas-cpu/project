@@ -195,8 +195,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   };
 
   const getActiveArticleType = (pageState: string, loc: { pathname: string; search: string; hash: string }) => {
-    const queryParams = new URLSearchParams(loc.search);
     const hash = loc.hash || '';
+    const fullSearch = loc.search || (hash.includes('?') ? '?' + hash.split('?')[1] : '');
+    const queryParams = new URLSearchParams(fullSearch);
     const cleanHash = hash.replace(/^#\/?/, '').split('?')[0];
 
     let activeType = queryParams.get('type') || queryParams.get('tab');
