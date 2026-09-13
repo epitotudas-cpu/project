@@ -19,52 +19,18 @@ export interface CreatePartnerPayload {
 const STORAGE_KEY = 'epitotudas_partners_v1';
 const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000011';
 
-const DEFAULT_PARTNERS: Partner[] = [
-  {
-    id: 'p-1',
-    name: 'Leier Hungária Kft.',
-    slug: 'leier-hungaria',
-    category: 'gyarto',
-    description: 'Építőanyag-gyártó: téglák, térkövek, beton elemek és szigetelő rendszerek.',
-    website_url: 'https://www.leier.hu',
-    logo_url: null,
-    is_verified: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'p-2',
-    name: 'Cemex Magyarország',
-    slug: 'cemex-magyarorszag',
-    category: 'gyarto',
-    description: 'Beton- és cementipari prémium megoldások és transzportbeton.',
-    website_url: 'https://www.cemex.hu',
-    logo_url: null,
-    is_verified: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'p-3',
-    name: 'BME Építőmérnöki Kar',
-    slug: 'bme-epito',
-    category: 'iskola',
-    description: 'Felsőfokú építőmérnöki, laboratóriumi és szakmai szakképzési központ.',
-    website_url: 'https://www.epito.bme.hu',
-    logo_url: null,
-    is_verified: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'p-4',
-    name: 'Stahlbau Kivitelező Zrt.',
-    slug: 'stahlbau-kivitelezo',
-    category: 'ceg',
-    description: 'Acélszerkezetek és ipari csarnokok generálkivitelezője.',
-    website_url: 'https://www.stahlbau.hu',
-    logo_url: null,
-    is_verified: true,
-    created_at: new Date().toISOString(),
-  },
-];
+// Pre-launch mode: DEFAULT_PARTNERS is empty to prevent showing demo partners
+const DEFAULT_PARTNERS: Partner[] = [];
+
+// Helper to filter out legacy demo partners
+function filterDemoPartners(list: Partner[]): Partner[] {
+  if (!Array.isArray(list)) return [];
+  const demoIds = ['p-1', 'p-2', 'p-3', 'p-4'];
+  const demoSlugs = ['leier-hungaria', 'cemex-magyarorszag', 'bme-epito', 'stahlbau-kivitelezo'];
+  return list.filter(
+    (p) => p && !demoIds.includes(p.id) && !demoSlugs.includes(p.slug)
+  );
+}
 
 export function getCategoryLabel(cat: string): string {
   const map: Record<string, string> = {
@@ -80,10 +46,12 @@ export function getCategoryLabel(cat: string): string {
 
 function getStoredPartners(): Partner[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return filterDemoPartners(parsed);
+      }
     }
   } catch (err) {
     void err;
@@ -92,8 +60,11 @@ function getStoredPartners(): Partner[] {
 }
 
 function saveStoredPartners(list: Partner[]): void {
+  const cleanList = filterDemoPartners(list);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanList));
+    }
 
     void (async () => {
       try {
@@ -101,7 +72,7 @@ function saveStoredPartners(list: Partner[]): void {
           id: SUPABASE_SYSTEM_ID,
           name: '__SYSTEM_CONFIG_PARTNERS__',
           slug: 'system-partners-config',
-          description: JSON.stringify(list),
+          description: JSON.stringify(cleanList),
           article_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -116,26 +87,23 @@ function saveStoredPartners(list: Partner[]): void {
 }
 
 export async function listPartners(category?: string): Promise<Partner[]> {
-  let list = getStoredPartners();
-
   try {
-    const { data } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_SYSTEM_ID)
-      .maybeSingle();
-
-    if (data?.description && data.description.startsWith('[')) {
-      const cloudList = JSON.parse(data.description);
-      if (Array.isArray(cloudList) && cloudList.length > 0) {
-        list = cloudList;
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
-      }
+    let query = supabase.from('partners').select('*').order('created_at', { ascending: false });
+    if (category && category !== 'all') {
+      query = query.eq('category', category);
+    }
+    const { data, error } = await query;
+    if (!error && data) {
+      const cleanData = filterDemoPartners(data);
+      saveStoredPartners(cleanData);
+      return cleanData;
     }
   } catch (err) {
     void err;
   }
 
+  // Fallback to local storage / system config
+  let list = getStoredPartners();
   if (category && category !== 'all') {
     return list.filter((p) => p.category === category);
   }
@@ -148,14 +116,40 @@ export async function createPartner(payload: CreatePartnerPayload): Promise<Part
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
+  try {
+    const { data, error } = await supabase
+      .from('partners')
+      .insert({
+        name: payload.name.trim(),
+        slug: slug || `partner-${Date.now()}`,
+        category: payload.category,
+        description: payload.description?.trim() || null,
+        website_url: payload.website_url?.trim() || null,
+        logo_url: payload.logo_url?.trim() || null,
+        is_verified: true,
+      })
+      .select('*')
+      .single();
+
+    if (!error && data) {
+      const currentList = getStoredPartners();
+      currentList.unshift(data);
+      saveStoredPartners(currentList);
+      return data;
+    }
+  } catch (err) {
+    void err;
+  }
+
+  // Fallback local create if Supabase insert encounters issue
   const newPartner: Partner = {
     id: `p-${Date.now()}`,
-    name: payload.name,
-    slug,
+    name: payload.name.trim(),
+    slug: slug || `partner-${Date.now()}`,
     category: payload.category,
-    description: payload.description || null,
-    website_url: payload.website_url || null,
-    logo_url: payload.logo_url || null,
+    description: payload.description?.trim() || null,
+    website_url: payload.website_url?.trim() || null,
+    logo_url: payload.logo_url?.trim() || null,
     is_verified: true,
     created_at: new Date().toISOString(),
   };
@@ -166,10 +160,44 @@ export async function createPartner(payload: CreatePartnerPayload): Promise<Part
   return newPartner;
 }
 
-export async function updatePartner(id: string, payload: Partial<CreatePartnerPayload & { is_verified?: boolean }>): Promise<Partner> {
+export async function updatePartner(
+  id: string,
+  payload: Partial<CreatePartnerPayload & { is_verified?: boolean }>
+): Promise<Partner> {
+  try {
+    const updatePayload: Record<string, any> = {};
+    if (payload.name !== undefined) {
+      updatePayload.name = payload.name.trim();
+      updatePayload.slug = payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+    if (payload.category !== undefined) updatePayload.category = payload.category;
+    if (payload.description !== undefined) updatePayload.description = payload.description?.trim() || null;
+    if (payload.website_url !== undefined) updatePayload.website_url = payload.website_url?.trim() || null;
+    if (payload.logo_url !== undefined) updatePayload.logo_url = payload.logo_url?.trim() || null;
+    if (payload.is_verified !== undefined) updatePayload.is_verified = payload.is_verified;
+
+    const { data, error } = await supabase
+      .from('partners')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('*')
+      .maybeSingle();
+
+    if (!error && data) {
+      const list = getStoredPartners();
+      const idx = list.findIndex((p) => p.id === id);
+      if (idx !== -1) {
+        list[idx] = data;
+        saveStoredPartners(list);
+      }
+      return data;
+    }
+  } catch (err) {
+    void err;
+  }
+
   const list = getStoredPartners();
   const index = list.findIndex((p) => p.id === id);
-
   if (index !== -1) {
     list[index] = {
       ...list[index],
@@ -183,6 +211,11 @@ export async function updatePartner(id: string, payload: Partial<CreatePartnerPa
 }
 
 export async function deletePartner(id: string): Promise<void> {
+  try {
+    await supabase.from('partners').delete().eq('id', id);
+  } catch (err) {
+    void err;
+  }
   const list = getStoredPartners();
   const filtered = list.filter((p) => p.id !== id);
   saveStoredPartners(filtered);
