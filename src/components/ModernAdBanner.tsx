@@ -506,7 +506,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
       <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         <div
           key={`${activeCreative.id}-${currentIndex}`}
-          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-5 sm:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300 ${getTransitionClass(
+          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/30 p-5 sm:p-8 shadow-2xl group hover:border-emerald-400/60 transition-all duration-300 ${getTransitionClass(
             activeCreative.transition_effect
           )}`}
         >
@@ -577,9 +577,9 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
                     </picture>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent pointer-events-none z-10" />
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-amber-300 font-semibold bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 z-20">
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-emerald-300 font-semibold bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 z-20">
                     <span className="flex items-center gap-1.5">
-                      <ShieldCheck size={14} className="text-amber-400" />
+                      <ShieldCheck size={14} className="text-emerald-400" />
                       {activeCreative.partner_name}
                     </span>
                     <span className="text-[10px] uppercase tracking-wider text-gray-400">Hirdetés</span>
@@ -589,11 +589,11 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
             )}
 
             <div className={`${hasMedia ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4 text-center sm:text-left`}>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
                 <Sparkles size={13} /> {activeCreative.badge_text || 'Szakmai Partneri Ajánlat'}
               </div>
 
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight group-hover:text-amber-300 transition-colors">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight group-hover:text-emerald-300 transition-colors">
                 {activeCreative.headline}
               </h3>
 
@@ -609,7 +609,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => recordAdClick(activeCreative.id)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-[1.02]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:scale-[1.02]"
                 >
                   <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
                   <ExternalLink size={16} />
@@ -636,7 +636,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
                   key={c.id}
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-full transition-all cursor-pointer ${
-                    idx === currentIndex ? 'w-6 bg-amber-400' : 'w-2 bg-gray-600'
+                    idx === currentIndex ? 'w-6 bg-emerald-400' : 'w-2 bg-gray-600'
                   }`}
                 />
               ))}
@@ -650,7 +650,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
   if (activeSlot) {
     return (
       <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-5 sm:p-8 shadow-2xl group hover:border-amber-400/60 transition-all duration-300">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/30 p-5 sm:p-8 shadow-2xl group hover:border-emerald-400/60 transition-all duration-300">
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-lg aspect-video lg:aspect-[4/3]">
@@ -672,7 +672,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => recordAdClick(activeSlot.id)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-sm"
                 >
                   <span>Ajánlat Megtekintése</span>
                   <ExternalLink size={16} />
@@ -692,10 +692,10 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-500/20 p-5 sm:p-8 shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/20 p-5 sm:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
+            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
               <Sparkles size={12} /> {fallbackSettings.sponsor_name || 'Szakmai Hirdetési Hely'}
             </div>
             <h3 className="text-xl md:text-2xl font-extrabold text-white">
@@ -710,7 +710,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
             href={getValidAdUrl(fallbackSettings.target_url)}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>{fallbackSettings.cta_text || 'Partneri Program & Kapcsolat'}</span>
             <ArrowRight size={16} />
@@ -754,8 +754,8 @@ export function SidebarAdBanner() {
   if (!activeCreative || !activeCreative.is_active) {
     if (!fallbackSettings.enabled) return null;
     return (
-      <div className="bg-slate-900 border border-amber-500/20 rounded-2xl p-4.5 shadow-md space-y-3">
-        <div className="flex items-center justify-between text-[11px] text-amber-400 font-extrabold uppercase tracking-wider">
+      <div className="bg-slate-900 border border-emerald-500/20 rounded-2xl p-4.5 shadow-md space-y-3">
+        <div className="flex items-center justify-between text-[11px] text-emerald-400 font-extrabold uppercase tracking-wider">
           <span className="flex items-center gap-1.5">
             <ShieldCheck size={13} /> {fallbackSettings.sponsor_name || 'ÉpítőTudás Partner'}
           </span>
@@ -776,7 +776,7 @@ export function SidebarAdBanner() {
           href={getValidAdUrl(fallbackSettings.target_url)}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-xs"
+          className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-xs"
         >
           <span>{fallbackSettings.cta_text || 'Ajánlat megtekintése'}</span>
           <ExternalLink size={12} />
@@ -857,11 +857,11 @@ export function FooterAdBanner() {
   if (!activeCreative || !activeCreative.is_active) {
     if (!fallbackSettings.enabled) return null;
     return (
-      <section className="bg-gradient-to-r from-slate-950 via-amber-950/40 to-slate-950 border-t border-amber-500/30 py-6 px-4">
+      <section className="bg-gradient-to-r from-slate-950 via-emerald-950/40 to-slate-950 border-t border-emerald-500/30 py-6 px-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 text-center md:text-left">
             <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                 {fallbackSettings.sponsor_name || 'ÉpítőTudás Partneri Program'}
               </span>
               <h4 className="text-sm sm:text-base font-extrabold text-white mt-1">
@@ -874,7 +874,7 @@ export function FooterAdBanner() {
             href={getValidAdUrl(fallbackSettings.target_url)}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all flex items-center gap-2"
+            className="shrink-0 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all flex items-center gap-2"
           >
             <span>{fallbackSettings.cta_text || 'Kapcsolat'}</span>
             <ExternalLink size={14} />
@@ -981,7 +981,7 @@ export function InGridTileAd() {
     if (!fallbackSettings.enabled) return null;
 
     return (
-      <article className="h-full flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/50 border-2 border-amber-500/40 hover:border-amber-400 hover:shadow-2xl rounded-3xl transition-all duration-300 group overflow-hidden shadow-xs relative">
+      <article className="h-full flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/50 border-2 border-emerald-500/40 hover:border-emerald-400 hover:shadow-2xl rounded-3xl transition-all duration-300 group overflow-hidden shadow-xs relative">
         <div>
           {/* Header Cover */}
           <div className="w-full aspect-[16/9] relative overflow-hidden bg-slate-900 flex items-center justify-center">
@@ -992,9 +992,9 @@ export function InGridTileAd() {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-slate-950 via-amber-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center">
-                <Sparkles size={36} className="text-amber-400 mb-2 animate-pulse" />
-                <span className="text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+              <div className="w-full h-full bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center">
+                <Sparkles size={36} className="text-emerald-400 mb-2 animate-pulse" />
+                <span className="text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
                   Partneri Ajánlat
                 </span>
               </div>
@@ -1003,18 +1003,18 @@ export function InGridTileAd() {
 
             {/* Badges */}
             <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 uppercase tracking-wider shadow-sm flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
                 {fallbackSettings.sponsor_name || 'ÉpítőTudás Partner'}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-amber-300 border border-amber-500/30 uppercase tracking-widest backdrop-blur-xs">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-emerald-300 border border-emerald-500/30 uppercase tracking-widest backdrop-blur-xs">
                 Hirdetés
               </span>
             </div>
 
             {/* Headline overlay */}
             <div className="absolute bottom-3 left-4 right-4 text-white">
-              <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 text-amber-300 group-hover:text-amber-200 transition-colors">
+              <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 text-emerald-300 group-hover:text-emerald-200 transition-colors">
                 {fallbackSettings.title || 'Szakmai Ajánlatok & Partneri Megoldások'}
               </h3>
             </div>
@@ -1029,15 +1029,15 @@ export function InGridTileAd() {
         </div>
 
         {/* Footer */}
-        <div className="p-5 pt-3 border-t border-amber-500/20 flex items-center justify-between">
-          <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+        <div className="p-5 pt-3 border-t border-emerald-500/20 flex items-center justify-between">
+          <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
             <ShieldCheck size={14} /> Szponzorált Csempe
           </span>
           <a
             href={getValidAdUrl(fallbackSettings.target_url)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-md group-hover:scale-105"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-md group-hover:scale-105"
           >
             <span>{fallbackSettings.cta_text || 'Megtekintem'}</span>
             <ExternalLink size={13} />
@@ -1047,10 +1047,10 @@ export function InGridTileAd() {
     );
   }
 
-  const accentColor = activeCreative.accent_color || '#FFC400';
+  const accentColor = activeCreative.accent_color || '#10B981';
 
   return (
-    <article className="h-full flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-amber-500/40 hover:border-amber-400 hover:shadow-2xl rounded-3xl transition-all duration-300 group overflow-hidden shadow-xs relative">
+    <article className="h-full flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-emerald-500/40 hover:border-emerald-400 hover:shadow-2xl rounded-3xl transition-all duration-300 group overflow-hidden shadow-xs relative">
       <div>
         {/* Cover Header */}
         <div className="w-full aspect-[16/9] relative overflow-hidden bg-slate-900 flex items-center justify-center">
@@ -1118,9 +1118,9 @@ export function InGridTileAd() {
               />
             </picture>
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 flex flex-col items-center justify-center p-4 text-center">
-              <Sparkles size={36} className="text-amber-400 mb-2 animate-pulse" />
-              <span className="text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+            <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex flex-col items-center justify-center p-4 text-center">
+              <Sparkles size={36} className="text-emerald-400 mb-2 animate-pulse" />
+              <span className="text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
                 {activeCreative.partner_name}
               </span>
             </div>
@@ -1130,18 +1130,18 @@ export function InGridTileAd() {
 
           {/* Badges */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 uppercase tracking-wider shadow-sm flex items-center gap-1">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 uppercase tracking-wider shadow-sm flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
               {activeCreative.badge_text || 'Hivatalos Partner'}
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-amber-300 border border-amber-500/30 uppercase tracking-widest backdrop-blur-xs">
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-emerald-300 border border-emerald-500/30 uppercase tracking-widest backdrop-blur-xs">
               Hirdetés
             </span>
           </div>
 
           {/* Headline overlay */}
           <div className="absolute bottom-3 left-4 right-4 text-white">
-            <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 text-white group-hover:text-amber-300 transition-colors">
+            <h3 className="text-base sm:text-lg font-extrabold leading-snug line-clamp-2 text-white group-hover:text-emerald-300 transition-colors">
               {activeCreative.headline}
             </h3>
           </div>
@@ -1158,7 +1158,7 @@ export function InGridTileAd() {
       {/* Footer */}
       <div className="p-5 pt-3 border-t border-slate-800 flex items-center justify-between">
         <span className="text-[11px] font-bold text-gray-300 flex items-center gap-1 truncate max-w-[140px]">
-          <ShieldCheck size={14} className="text-amber-400 shrink-0" />
+          <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
           <span className="truncate">{activeCreative.partner_name}</span>
         </span>
         <a
@@ -1167,7 +1167,7 @@ export function InGridTileAd() {
           rel="noopener noreferrer"
           onClick={() => recordAdClick(activeCreative.id)}
           style={{
-            backgroundColor: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#FFC400' : accentColor,
+            backgroundColor: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#10B981' : accentColor,
             color: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#000000' : '#FFFFFF',
           }}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-extrabold text-xs transition-all shadow-md group-hover:scale-105 cursor-pointer shrink-0"
