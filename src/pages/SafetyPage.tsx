@@ -14,7 +14,6 @@ import {
   HelpCircle,
   Tag,
   Calculator,
-  Library,
   FileCheck,
   ExternalLink,
   CheckCircle2,

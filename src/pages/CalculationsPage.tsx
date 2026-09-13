@@ -3,7 +3,6 @@ import {
   Calculator,
   ChevronRight,
   BookOpen,
-  Library,
   Layers,
   Home,
   Zap,

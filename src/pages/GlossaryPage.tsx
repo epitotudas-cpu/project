@@ -16,7 +16,6 @@ import {
   LayoutList,
   LayoutGrid,
   Calculator,
-  Library,
   ShieldAlert,
   FileCheck,
   X,
