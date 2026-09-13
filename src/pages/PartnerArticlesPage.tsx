@@ -590,6 +590,33 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="font-bold text-gray-700 block mb-1">Szakma / Alkategória</label>
+                      <input
+                        type="text"
+                        placeholder="pl. Kőműves / Hőszigetelő"
+                        value={formData.subcategory_name || ''}
+                        onChange={(e) => setFormData({ ...formData, subcategory_name: e.target.value })}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-gray-700 block mb-1">Nehézségi Szint</label>
+                      <select
+                        value={formData.difficulty || 'intermediate'}
+                        onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      >
+                        <option value="beginner">Kezdő</option>
+                        <option value="intermediate">Haladó</option>
+                        <option value="advanced">Tapasztalt</option>
+                        <option value="expert">Szakértő</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
 
