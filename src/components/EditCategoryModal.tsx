@@ -869,7 +869,7 @@ export default function EditCategoryModal({ category, onClose, onSaved }: EditCa
               {/* Banner / Hero Háttérkép URL és Helyi Fájl Feltöltés */}
               <div className="space-y-2">
                 <label className={labelClass}>
-                  <Link size={12} className="inline mr-1 text-[#FFC400]" /> Fejléc Banner / Hero Háttérkép (Saját gép vagy URL)
+                  <Link size={12} className="inline mr-1 text-emerald-400" /> Fejléc Banner / Hero Háttérkép (Saját gép vagy URL)
                 </label>
                 <div className="flex items-center gap-2">
                   <input

@@ -316,7 +316,7 @@ export function AdminAdPackagesManager() {
             <h2 style={{ color: textColor }} className="text-xl font-black tracking-tight">
               B2B Reklámcsomagok &amp; Árlista Kezelő
             </h2>
-            <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
               {packages.length} csomag a rendszerben
             </span>
           </div>
@@ -407,8 +407,8 @@ export function AdminAdPackagesManager() {
                         </span>
                       )}
                       {pkg.is_popular && (
-                        <span className="px-2.5 py-0.5 rounded-md font-bold text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                          <Sparkles size={11} className="text-amber-400" /> Legnépszerűbb
+                        <span className="px-2.5 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                          <Sparkles size={11} className="text-emerald-400" /> Legnépszerűbb
                         </span>
                       )}
                       {pkg.visibility === 'admin_only' && (
