@@ -12,15 +12,9 @@ import {
   Globe,
   Plus,
   Trash2,
-  ChevronUp,
-  ChevronDown,
   CheckCircle2,
   ExternalLink,
   Sparkles,
-  AlertCircle,
-  FileText,
-  User,
-  MapPin,
 } from 'lucide-react';
 import type {
   ExtendedPartner,
@@ -30,7 +24,6 @@ import type {
   CertificateItem,
   RelatedContentItem,
 } from '../services/partnerService';
-import { getCategoryLabel } from '../services/partnerService';
 
 interface PartnerEditorModalProps {
   partner: ExtendedPartner | null;

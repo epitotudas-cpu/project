@@ -81,6 +81,7 @@ export interface ExtendedPartner extends Partner {
 export interface CreatePartnerPayload {
   name: string;
   category: PartnerCategory;
+  slug?: string;
   description?: string;
   website_url?: string;
   logo_url?: string;
@@ -352,7 +353,7 @@ export async function createPartner(payload: CreatePartnerPayload): Promise<Exte
 
 export async function updatePartner(
   id: string,
-  payload: Partial<CreatePartnerPayload & { is_verified?: boolean }>
+  payload: Partial<ExtendedPartner>
 ): Promise<ExtendedPartner> {
   const currentList = getStoredPartners();
   const index = currentList.findIndex((p) => p.id === id || p.slug === id);
