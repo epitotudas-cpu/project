@@ -2158,6 +2158,12 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
         onNavigate={onNavigate}
         items={[
           {
+            label: 'Kivitelezési útmutatók',
+            page: 'category?type=utmutatok',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
             label: 'Fogalomtár & Szótár',
             page: 'glossary',
             icon: <BookOpen size={14} className="text-accent" />,
@@ -2168,12 +2174,6 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
             page: 'calculations',
             icon: <Calculator size={14} className="text-accent" />,
             active: true,
-          },
-          {
-            label: 'Szakmai Könyvek',
-            page: 'books',
-            icon: <Library size={14} className="text-accent" />,
-            active: false,
           },
           {
             label: 'Munkavédelem',

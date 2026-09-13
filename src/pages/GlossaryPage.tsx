@@ -480,7 +480,13 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Fogalomtár',
+            label: 'Kivitelezési útmutatók',
+            page: 'category?type=utmutatok',
+            icon: <BookOpen size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Fogalomtár & Szótár',
             page: 'glossary',
             icon: <BookOpen size={14} className="text-accent" />,
             active: true,
@@ -489,12 +495,6 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             label: 'Számítások & Kalkulátorok',
             page: 'calculations',
             icon: <Calculator size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Szakmai Könyvek',
-            page: 'books',
-            icon: <Library size={14} className="text-accent" />,
             active: false,
           },
           {
