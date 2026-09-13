@@ -8,28 +8,186 @@ export type PartnerCategory =
   | 'oktato'
   | 'tamogato';
 
+export interface ServiceItem {
+  id: string;
+  name: string;
+  description?: string;
+  icon_category?: string;
+  display_order: number;
+  is_active: boolean;
+}
+
+export interface ReferenceItem {
+  id: string;
+  title: string;
+  image_url?: string;
+  location?: string;
+  year?: string;
+  description?: string;
+  is_published: boolean;
+  display_order: number;
+}
+
+export interface CertificateItem {
+  id: string;
+  title: string;
+  issuer?: string;
+  valid_until?: string;
+  doc_url?: string;
+  is_published: boolean;
+  display_order: number;
+}
+
+export interface RelatedContentItem {
+  id: string;
+  title: string;
+  type: string; // 'cikk' | 'utmutato' | 'kalkulator' | 'kepzes' | 'konyv'
+  url: string;
+  display_order: number;
+}
+
+export interface ExtendedPartner extends Partner {
+  official_name?: string | null;
+  partner_type?: string | null;
+  detailed_description?: string | null;
+  status?: 'draft' | 'published' | 'inactive';
+  is_featured?: boolean;
+  cover_url?: string | null;
+  logo_bg?: 'white' | 'light_gray' | 'transparent';
+  contact_person_name?: string | null;
+  contact_person_title?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  address?: string | null;
+  zip_code?: string | null;
+  city?: string | null;
+  county?: string | null;
+  operating_area?: 'local' | 'county' | 'national' | null;
+  business_hours?: string | null;
+  inquiry_email?: string | null;
+  social_facebook?: string | null;
+  social_linkedin?: string | null;
+  social_instagram?: string | null;
+  social_youtube?: string | null;
+  services?: ServiceItem[];
+  references?: ReferenceItem[];
+  certificates?: CertificateItem[];
+  related_content?: RelatedContentItem[];
+  seo_title?: string | null;
+  seo_description?: string | null;
+  is_indexable?: boolean;
+}
+
 export interface CreatePartnerPayload {
   name: string;
   category: PartnerCategory;
   description?: string;
   website_url?: string;
   logo_url?: string;
+  official_name?: string;
+  partner_type?: string;
+  detailed_description?: string;
+  status?: 'draft' | 'published' | 'inactive';
+  is_featured?: boolean;
+  is_verified?: boolean;
+  cover_url?: string;
+  logo_bg?: 'white' | 'light_gray' | 'transparent';
+  contact_person_name?: string;
+  contact_person_title?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  address?: string;
+  zip_code?: string;
+  city?: string;
+  county?: string;
+  operating_area?: 'local' | 'county' | 'national';
+  business_hours?: string;
+  inquiry_email?: string;
+  social_facebook?: string;
+  social_linkedin?: string;
+  social_instagram?: string;
+  social_youtube?: string;
+  services?: ServiceItem[];
+  references?: ReferenceItem[];
+  certificates?: CertificateItem[];
+  related_content?: RelatedContentItem[];
+  seo_title?: string;
+  seo_description?: string;
+  is_indexable?: boolean;
 }
 
 const STORAGE_KEY = 'epitotudas_partners_v1';
 const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000011';
 
-// Pre-launch mode: DEFAULT_PARTNERS is empty to prevent showing demo partners
-const DEFAULT_PARTNERS: Partner[] = [];
+export const SAMPLE_78AS_EPITOK: ExtendedPartner = {
+  id: 'p-78as-epitok',
+  name: '78-as Építők Kft.',
+  official_name: '78-as Építőipari és Kivitelező Korlátolt Felelősségű Társaság',
+  slug: '78-as-epitok',
+  category: 'ceg',
+  partner_type: 'Generálkivitelező Cég',
+  description: 'Magas- és mélyépítési generálkivitelezésre, szerkezetépítésre és ipari csarnokok megvalósítására szakosodott elismert építőipari cég.',
+  detailed_description: `A 78-as Építők Kft. több mint 15 éves tapasztalattal rendelkező hazai generálkivitelező vállalkozás. Fő szakterületünk a lakó- és ipari épületek szerkezetkész és kulcsrakész kivitelezése, valamint a műszaki ellenőrzés.
+
+Vállalkozásunk kiemelt figyelmet fordít a korszerű MSZ és EU szabványok szerinti munkavégzésre, a környezettudatos építési technológiákra és a legújabb hőszigetelési normák betartására. Projektjeink során mérnöki precizitással és megbízható alvállalkozói hálózattal dolgozunk.`,
+  website_url: 'https://78asepitok.hu',
+  logo_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?w=400&auto=format&fit=crop&q=80',
+  cover_url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1600&auto=format&fit=crop&q=80',
+  logo_bg: 'white',
+  is_verified: true,
+  is_featured: true,
+  status: 'published',
+  contact_person_name: 'Nagy Gábor',
+  contact_person_title: 'Ügyvezető Igazgató',
+  contact_email: 'info@78asepitok.hu',
+  contact_phone: '+36 1 234 5678',
+  address: 'Kivitelezők útja 78.',
+  zip_code: '1118',
+  city: 'Budapest',
+  county: 'Pest vármegye',
+  operating_area: 'national',
+  business_hours: 'Hétfő - Péntek: 08:00 - 17:00',
+  inquiry_email: 'ajanlat@78asepitok.hu',
+  social_facebook: 'https://facebook.com/78asepitok',
+  social_linkedin: 'https://linkedin.com/company/78asepitok',
+  services: [
+    { id: 's-1', name: 'Generálkivitelezés', description: 'Teljes körű projektmenedzsment a tervezéstől az átadásig', icon_category: 'building', display_order: 1, is_active: true },
+    { id: 's-2', name: 'Szerkezetépítés', description: 'Monolit vasbeton és falazott szerkezetek kivitelezése', icon_category: 'hammer', display_order: 2, is_active: true },
+    { id: 's-3', name: 'Energetikai korszerűsítés', description: 'Homlokzati hőszigetelés és nyílászárók cseréje', icon_category: 'shield', display_order: 3, is_active: true },
+    { id: 's-4', name: 'Ipari csarnokok építése', description: 'Acélszerkezetes és prefabricated ipari létesítmények', icon_category: 'warehouse', display_order: 4, is_active: true }
+  ],
+  references: [
+    { id: 'r-1', title: 'Buda-Garten 24 lakásos Társasház', location: 'Budapest XI. kerület', year: '2025', description: 'A-kategóriás energetikai besorolású, monolit vasbeton szerkezetű lakópark kulcsrakész kivitelezése.', image_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=80', is_published: true, display_order: 1 },
+    { id: 'r-2', title: 'Logisztikai Központ & Raktárcsarnok', location: 'Biatorbágy', year: '2024', description: '3500 m² alapterületű acélszerkezetes raktárcsarnok és irodaház kivitelezése.', image_url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80', is_published: true, display_order: 2 }
+  ],
+  certificates: [
+    { id: 'c-1', title: 'ISO 9001:2015 Minőségirányítási Rendszer', issuer: 'TÜV Rheinland', valid_until: '2028-12-31', doc_url: '', is_published: true, display_order: 1 },
+    { id: 'c-2', title: 'ÉVOSZ Minősített Kivitelezői Tanúsítvány', issuer: 'Építési Vállalkozók Országos Szakszövetsége', valid_until: '2027-06-30', doc_url: '', is_published: true, display_order: 2 }
+  ],
+  related_content: [
+    { id: 'rc-1', title: 'Falazási munkák technológiai előírásai és MSZ szabványok', type: 'cikk', url: '#article?slug=falazasi-utmutato', display_order: 1 },
+    { id: 'rc-2', title: 'Homlokzati hőszigetelés kalkulátor 2026', type: 'kalkulator', url: '#calculations', display_order: 2 }
+  ],
+  seo_title: '78-as Építők Kft. - Minősített Építőipari Generálkivitelező',
+  seo_description: 'A 78-as Építők Kft. magas- és mélyépítési generálkivitelezésre, szerkezetépítésre szakosodott minősített építőipari partner.',
+  is_indexable: true,
+  created_at: new Date().toISOString()
+};
 
 // Helper to filter out legacy demo partners
 function filterDemoPartners(list: Partner[]): Partner[] {
-  if (!Array.isArray(list)) return [];
+  if (!Array.isArray(list)) return [SAMPLE_78AS_EPITOK];
   const demoIds = ['p-1', 'p-2', 'p-3', 'p-4'];
   const demoSlugs = ['leier-hungaria', 'cemex-magyarorszag', 'bme-epito', 'stahlbau-kivitelezo'];
-  return list.filter(
+  const filtered = list.filter(
     (p) => p && !demoIds.includes(p.id) && !demoSlugs.includes(p.slug)
   );
+
+  // Ensure 78-as Építők exists in sample list
+  if (!filtered.some((p) => p.slug === '78-as-epitok' || p.id === 'p-78as-epitok')) {
+    filtered.unshift(SAMPLE_78AS_EPITOK);
+  }
+  return filtered;
 }
 
 export function getCategoryLabel(cat: string): string {
@@ -44,22 +202,24 @@ export function getCategoryLabel(cat: string): string {
   return map[cat] || cat;
 }
 
-function getStoredPartners(): Partner[] {
+function getStoredPartners(): ExtendedPartner[] {
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return filterDemoPartners(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return filterDemoPartners(parsed) as ExtendedPartner[];
+        }
       }
     }
   } catch (err) {
     void err;
   }
-  return DEFAULT_PARTNERS;
+  return [SAMPLE_78AS_EPITOK];
 }
 
-function saveStoredPartners(list: Partner[]): void {
+function saveStoredPartners(list: ExtendedPartner[]): void {
   const cleanList = filterDemoPartners(list);
   try {
     if (typeof localStorage !== 'undefined') {
@@ -86,15 +246,15 @@ function saveStoredPartners(list: Partner[]): void {
   }
 }
 
-export async function listPartners(category?: string): Promise<Partner[]> {
+export async function listPartners(category?: string): Promise<ExtendedPartner[]> {
   try {
     let query = supabase.from('partners').select('*').order('created_at', { ascending: false });
     if (category && category !== 'all') {
       query = query.eq('category', category);
     }
     const { data, error } = await query;
-    if (!error && data) {
-      const cleanData = filterDemoPartners(data);
+    if (!error && data && data.length > 0) {
+      const cleanData = filterDemoPartners(data) as ExtendedPartner[];
       saveStoredPartners(cleanData);
       return cleanData;
     }
@@ -110,104 +270,136 @@ export async function listPartners(category?: string): Promise<Partner[]> {
   return list;
 }
 
-export async function createPartner(payload: CreatePartnerPayload): Promise<Partner> {
-  const slug = payload.name
+export async function createPartner(payload: CreatePartnerPayload): Promise<ExtendedPartner> {
+  const slug = (payload.slug || payload.name)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+
+  const partnerObject: ExtendedPartner = {
+    id: `p-${Date.now()}`,
+    name: payload.name.trim(),
+    official_name: payload.official_name?.trim() || null,
+    slug: slug || `partner-${Date.now()}`,
+    category: payload.category,
+    partner_type: payload.partner_type?.trim() || null,
+    description: payload.description?.trim() || null,
+    detailed_description: payload.detailed_description?.trim() || null,
+    status: payload.status || 'published',
+    is_featured: payload.is_featured || false,
+    is_verified: payload.is_verified ?? true,
+    website_url: payload.website_url?.trim() || null,
+    logo_url: payload.logo_url?.trim() || null,
+    cover_url: payload.cover_url?.trim() || null,
+    logo_bg: payload.logo_bg || 'white',
+    contact_person_name: payload.contact_person_name?.trim() || null,
+    contact_person_title: payload.contact_person_title?.trim() || null,
+    contact_email: payload.contact_email?.trim() || null,
+    contact_phone: payload.contact_phone?.trim() || null,
+    address: payload.address?.trim() || null,
+    zip_code: payload.zip_code?.trim() || null,
+    city: payload.city?.trim() || null,
+    county: payload.county?.trim() || null,
+    operating_area: payload.operating_area || null,
+    business_hours: payload.business_hours?.trim() || null,
+    inquiry_email: payload.inquiry_email?.trim() || null,
+    social_facebook: payload.social_facebook?.trim() || null,
+    social_linkedin: payload.social_linkedin?.trim() || null,
+    social_instagram: payload.social_instagram?.trim() || null,
+    social_youtube: payload.social_youtube?.trim() || null,
+    services: payload.services || [],
+    references: payload.references || [],
+    certificates: payload.certificates || [],
+    related_content: payload.related_content || [],
+    seo_title: payload.seo_title?.trim() || null,
+    seo_description: payload.seo_description?.trim() || null,
+    is_indexable: payload.is_indexable ?? true,
+    created_at: new Date().toISOString(),
+  };
 
   try {
     const { data, error } = await supabase
       .from('partners')
       .insert({
-        name: payload.name.trim(),
-        slug: slug || `partner-${Date.now()}`,
-        category: payload.category,
-        description: payload.description?.trim() || null,
-        website_url: payload.website_url?.trim() || null,
-        logo_url: payload.logo_url?.trim() || null,
-        is_verified: true,
+        name: partnerObject.name,
+        slug: partnerObject.slug,
+        category: partnerObject.category,
+        description: partnerObject.description,
+        website_url: partnerObject.website_url,
+        logo_url: partnerObject.logo_url,
+        is_verified: partnerObject.is_verified,
       })
       .select('*')
       .single();
 
     if (!error && data) {
+      const merged = { ...partnerObject, ...data };
       const currentList = getStoredPartners();
-      currentList.unshift(data);
+      currentList.unshift(merged);
       saveStoredPartners(currentList);
-      return data;
+      return merged;
     }
   } catch (err) {
     void err;
   }
 
-  // Fallback local create if Supabase insert encounters issue
-  const newPartner: Partner = {
-    id: `p-${Date.now()}`,
-    name: payload.name.trim(),
-    slug: slug || `partner-${Date.now()}`,
-    category: payload.category,
-    description: payload.description?.trim() || null,
-    website_url: payload.website_url?.trim() || null,
-    logo_url: payload.logo_url?.trim() || null,
-    is_verified: true,
-    created_at: new Date().toISOString(),
-  };
-
+  // Fallback local save
   const list = getStoredPartners();
-  list.unshift(newPartner);
+  list.unshift(partnerObject);
   saveStoredPartners(list);
-  return newPartner;
+  return partnerObject;
 }
 
 export async function updatePartner(
   id: string,
   payload: Partial<CreatePartnerPayload & { is_verified?: boolean }>
-): Promise<Partner> {
+): Promise<ExtendedPartner> {
+  const currentList = getStoredPartners();
+  const index = currentList.findIndex((p) => p.id === id || p.slug === id);
+
+  if (index === -1) {
+    throw new Error('Partner nem található');
+  }
+
+  const existing = currentList[index];
+  const updatedSlug = payload.slug
+    ? payload.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    : payload.name
+    ? payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    : existing.slug;
+
+  const updatedPartner: ExtendedPartner = {
+    ...existing,
+    ...payload,
+    name: payload.name !== undefined ? payload.name.trim() : existing.name,
+    slug: updatedSlug,
+    category: payload.category !== undefined ? payload.category : existing.category,
+    description: payload.description !== undefined ? (payload.description?.trim() || null) : existing.description,
+    website_url: payload.website_url !== undefined ? (payload.website_url?.trim() || null) : existing.website_url,
+    logo_url: payload.logo_url !== undefined ? (payload.logo_url?.trim() || null) : existing.logo_url,
+    is_verified: payload.is_verified !== undefined ? payload.is_verified : existing.is_verified,
+  };
+
   try {
-    const updatePayload: Record<string, any> = {};
-    if (payload.name !== undefined) {
-      updatePayload.name = payload.name.trim();
-      updatePayload.slug = payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    }
-    if (payload.category !== undefined) updatePayload.category = payload.category;
-    if (payload.description !== undefined) updatePayload.description = payload.description?.trim() || null;
-    if (payload.website_url !== undefined) updatePayload.website_url = payload.website_url?.trim() || null;
-    if (payload.logo_url !== undefined) updatePayload.logo_url = payload.logo_url?.trim() || null;
-    if (payload.is_verified !== undefined) updatePayload.is_verified = payload.is_verified;
-
-    const { data, error } = await supabase
+    await supabase
       .from('partners')
-      .update(updatePayload)
-      .eq('id', id)
-      .select('*')
-      .maybeSingle();
-
-    if (!error && data) {
-      const list = getStoredPartners();
-      const idx = list.findIndex((p) => p.id === id);
-      if (idx !== -1) {
-        list[idx] = data;
-        saveStoredPartners(list);
-      }
-      return data;
-    }
+      .update({
+        name: updatedPartner.name,
+        slug: updatedPartner.slug,
+        category: updatedPartner.category,
+        description: updatedPartner.description,
+        website_url: updatedPartner.website_url,
+        logo_url: updatedPartner.logo_url,
+        is_verified: updatedPartner.is_verified,
+      })
+      .eq('id', id);
   } catch (err) {
     void err;
   }
 
-  const list = getStoredPartners();
-  const index = list.findIndex((p) => p.id === id);
-  if (index !== -1) {
-    list[index] = {
-      ...list[index],
-      ...payload,
-    };
-    saveStoredPartners(list);
-    return list[index];
-  }
-
-  throw new Error('Partner nem található');
+  currentList[index] = updatedPartner;
+  saveStoredPartners(currentList);
+  return updatedPartner;
 }
 
 export async function deletePartner(id: string): Promise<void> {
@@ -221,7 +413,7 @@ export async function deletePartner(id: string): Promise<void> {
   saveStoredPartners(filtered);
 }
 
-export async function getPartnerBySlug(slugOrId: string): Promise<Partner | null> {
+export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartner | null> {
   if (!slugOrId) return null;
   const cleanKey = slugOrId.trim();
 
@@ -233,7 +425,9 @@ export async function getPartnerBySlug(slugOrId: string): Promise<Partner | null
       .maybeSingle();
 
     if (!error && data) {
-      return data;
+      const stored = getStoredPartners();
+      const localExt = stored.find((p) => p.slug === cleanKey || p.id === cleanKey);
+      return { ...localExt, ...data };
     }
   } catch (err) {
     void err;
@@ -243,6 +437,11 @@ export async function getPartnerBySlug(slugOrId: string): Promise<Partner | null
   const stored = getStoredPartners();
   const found = stored.find((p) => p.slug === cleanKey || p.id === cleanKey);
   if (found) return found;
+
+  // Default fallback if requested slug is 78-as-epitok
+  if (cleanKey === '78-as-epitok' || cleanKey === 'p-78as-epitok') {
+    return SAMPLE_78AS_EPITOK;
+  }
 
   // Fallback partner generator
   const readableName = cleanKey
@@ -261,4 +460,3 @@ export async function getPartnerBySlug(slugOrId: string): Promise<Partner | null
     created_at: new Date().toISOString(),
   };
 }
-

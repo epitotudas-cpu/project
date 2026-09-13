@@ -26,7 +26,9 @@ import {
   deletePartner,
   getCategoryLabel,
   type PartnerCategory,
+  type ExtendedPartner,
 } from '../services/partnerService';
+import PartnerEditorModal from '../components/PartnerEditorModal';
 import {
   createInvitation,
   listInvitations,
@@ -72,14 +74,9 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
-  // Partner Modal State (Direct Create / Edit)
-  const [showModal, setShowModal] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState<PartnerCategory>('gyarto');
-  const [description, setDescription] = useState('');
-  const [websiteUrl, setWebsiteUrl] = useState('');
-  const [isVerified, setIsVerified] = useState(true);
+  // Partner Editor Modal State
+  const [showEditorModal, setShowEditorModal] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<ExtendedPartner | null>(null);
 
   // Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -154,48 +151,23 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
   function openCreateModal() {
     setEditingPartner(null);
-    setName('');
-    setCategory('gyarto');
-    setDescription('');
-    setWebsiteUrl('');
-    setIsVerified(true);
-    setShowModal(true);
+    setShowEditorModal(true);
   }
 
   function openEditModal(p: Partner) {
-    setEditingPartner(p);
-    setName(p.name);
-    setCategory(p.category as PartnerCategory);
-    setDescription(p.description || '');
-    setWebsiteUrl(p.website_url || '');
-    setIsVerified(Boolean(p.is_verified));
-    setShowModal(true);
+    setEditingPartner(p as ExtendedPartner);
+    setShowEditorModal(true);
   }
 
-  async function handleSavePartner(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-
+  async function handleSaveRichPartner(data: Partial<ExtendedPartner>) {
     try {
       if (editingPartner) {
-        await updatePartner(editingPartner.id, {
-          name,
-          category,
-          description,
-          website_url: websiteUrl,
-          is_verified: isVerified,
-        });
+        await updatePartner(editingPartner.id, data);
       } else {
-        await createPartner({
-          name,
-          category,
-          description,
-          website_url: websiteUrl,
-        });
+        await createPartner(data as any);
       }
-
-      setShowModal(false);
-      loadData();
+      setShowEditorModal(false);
+      await loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Hiba történt a partner mentésekor.');
     }
@@ -833,105 +805,13 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         </div>
       )}
 
-      {/* CREATE / EDIT PARTNER DIRECT MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }} className="border rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between border-b pb-3">
-              <h2 style={{ color: textColor }} className="text-lg font-bold">
-                {editingPartner ? 'Partner Szervezet Szerkesztése' : 'Új Partner Szervezet Hozzáadása'}
-              </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white cursor-pointer">✕</button>
-            </div>
-
-            <form onSubmit={handleSavePartner} className="space-y-4 text-xs">
-              <div>
-                <label className="font-semibold block mb-1">Szervezet Neve <span className="text-red-400">*</span></label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="pl. Mapei Kft."
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Kategória</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as PartnerCategory)}
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
-                >
-                  <option value="gyarto">Gyártó</option>
-                  <option value="kereskedo">Kereskedő</option>
-                  <option value="ceg">Cég / Kivitelező</option>
-                  <option value="iskola">Oktatási Intézmény</option>
-                  <option value="oktato">Oktatási Központ</option>
-                  <option value="tamogato">Támogató Szervezet</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Leírás</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Rövid összefoglaló a szervezetről..."
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                  className="w-full border rounded-xl px-3 py-2 text-sm h-20 resize-none focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Weboldal URL</label>
-                <input
-                  type="url"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="https://..."
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                  className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="isVerifiedCheckbox"
-                  checked={isVerified}
-                  onChange={(e) => setIsVerified(e.target.checked)}
-                  className="rounded cursor-pointer"
-                />
-                <label htmlFor="isVerifiedCheckbox" className="font-medium cursor-pointer" style={{ color: textColor }}>
-                  Minősített partner státusz (Verified badge)
-                </label>
-              </div>
-
-              <div style={{ borderColor: cardBorder }} className="flex justify-end gap-3 pt-3 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                  className="px-4 py-2 border font-semibold rounded-xl cursor-pointer hover:opacity-90"
-                >
-                  Mégse
-                </button>
-                <button
-                  type="submit"
-                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-4 py-2 font-bold rounded-xl cursor-pointer hover:opacity-90 shadow-md"
-                >
-                  {editingPartner ? 'Változtatások Mentése' : 'Mentés & Hozzáadás'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* RICH PARTNER EDITOR MODAL */}
+      <PartnerEditorModal
+        partner={editingPartner}
+        isOpen={showEditorModal}
+        onClose={() => setShowEditorModal(false)}
+        onSave={handleSaveRichPartner}
+      />
 
       {/* CREATE INVITATION MODAL (Pre-creation or Existing) */}
       {showInviteModal && (
