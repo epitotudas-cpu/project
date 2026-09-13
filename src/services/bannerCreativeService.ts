@@ -226,7 +226,7 @@ export const DEFAULT_FALLBACK_VIDEO_SETTINGS: FallbackVideoSettings = {
   title: 'Szakmai Ajánlatok és Kiemelt Építőipari Partneri Megoldások',
   description: 'Jelenítsd meg termékeidet és szakmai ajánlataidat az ÉpítőTudás több ezer szakembere és tanulója előtt.',
   cta_text: 'Partneri Program & Kapcsolat',
-  target_url: 'https://epitotudas.hu/#contact',
+  target_url: '#partner-application',
 };
 
 export function getFallbackVideoSettings(): FallbackVideoSettings {

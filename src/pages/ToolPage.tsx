@@ -131,8 +131,8 @@ interface FeaturedPartnerOffersProps {
 }
 
 function getValidAdUrl(url?: string | null): string {
-  if (!url || url.trim() === '' || url.trim() === '#') {
-    return '/partnerek';
+  if (!url || url.trim() === '' || url.trim() === '#' || url.includes('#contact') || url.includes('contact')) {
+    return '#partner-application';
   }
   const trimmed = url.trim();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/') || trimmed.startsWith('#')) {
