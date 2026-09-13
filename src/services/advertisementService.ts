@@ -8,6 +8,7 @@ import {
   type PackageTier,
 } from '../lib/supabase';
 import { logAuditAction } from './auditLogService';
+import { listPartners } from './partnerService';
 
 export interface AdPackageConfig {
   id: PackageTier;
@@ -54,10 +55,13 @@ export interface AdvertisementSlot {
 export interface PartnerHighlight {
   id: string;
   name: string;
+  slug?: string;
   logoUrl?: string;
   description: string;
-  category: 'gyarto' | 'kereskedo' | 'ceg' | 'iskola';
+  category: string;
   websiteUrl?: string;
+  isVerified?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface CreateAdCampaignPayload {
@@ -335,27 +339,34 @@ export async function recordAdClick(campaignId: string): Promise<void> {
 }
 
 export async function getPartnerHighlights(): Promise<PartnerHighlight[]> {
-  return [
-    {
-      id: 'partner-1',
-      name: 'Holcim Magyarország',
-      description: 'Fenntartható kötőanyagok, speciális cementek és betontechnológiák.',
-      category: 'gyarto',
-      websiteUrl: 'https://www.holcim.hu',
-    },
-    {
-      id: 'partner-2',
-      name: 'Wienerberger Téglaipari Zrt.',
-      description: 'Innovatív Porotherm falazati rendszerek és Tondach kerámia cserepek.',
-      category: 'gyarto',
-      websiteUrl: 'https://www.wienerberger.hu',
-    },
-    {
-      id: 'partner-3',
-      name: 'BME Építőmérnöki Kar',
-      description: 'A jövő építőmérnökeinek, mérnöki tudásbázisának és szakembereinek képzése.',
-      category: 'iskola',
-      websiteUrl: 'https://www.epito.bme.hu',
-    },
-  ];
+  try {
+    const allPartners = await listPartners();
+    const active = allPartners.filter((p) => p.status !== 'inactive' && p.status !== 'draft');
+
+    // Sort: Featured partners first, then verified, then newest
+    const sorted = [...active].sort((a, b) => {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+      if (a.is_verified && !b.is_verified) return -1;
+      if (!a.is_verified && b.is_verified) return 1;
+      return 0;
+    });
+
+    const selected = sorted.slice(0, 6);
+
+    return selected.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      logoUrl: p.logo_url || undefined,
+      description: p.description || p.detailed_description || 'Minősített szakmai partner szervezet.',
+      category: p.category,
+      websiteUrl: p.website_url || undefined,
+      isVerified: p.is_verified,
+      isFeatured: p.is_featured,
+    }));
+  } catch (err) {
+    console.error('Hiba a kiemelt partnerek betöltésekor:', err);
+    return [];
+  }
 }

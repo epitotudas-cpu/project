@@ -24,6 +24,7 @@ import { getCategories, getPopularArticles } from '../lib/api';
 import type { Category, Article } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getPartnerHighlights, getAdvertisementSlots, recordAdClick, type PartnerHighlight, type AdvertisementSlot } from '../services/advertisementService';
+import { getCategoryLabel } from '../services/partnerService';
 import { TopAdBanner, InFeedAdBanner } from '../components/ModernAdBanner';
 import { useSiteSettings } from '../services/siteSettingsService';
 import {
@@ -482,39 +483,56 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {partners.map((partner) => (
-            <a
-              key={partner.id}
-              href={partner.websiteUrl || '#'}
-              target={partner.websiteUrl ? '_blank' : '_self'}
-              rel="noopener noreferrer"
-              onClick={() => {
-                if (partner.id) recordAdClick(partner.id);
-              }}
-              className="group bg-white border border-gray-200 hover:border-accent rounded-xl p-6 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between cursor-pointer"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded">
-                    {partner.category}
-                  </span>
-                  <span className="text-xs text-gray-600 font-semibold flex items-center gap-1 group-hover:text-accent transition-colors">
-                    Minősített Partner <ExternalLink size={12} />
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                  {partner.name}
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">{partner.description}</p>
-              </div>
-              <div className="text-xs text-accent font-bold border-t border-gray-100 pt-3 flex items-center justify-between group-hover:translate-x-0.5 transition-transform">
-                <span>Partner weboldalának megnyitása</span>
-                <ArrowRight size={14} />
-              </div>
-            </a>
-          ))}
-        </div>
+        {partners.length === 0 ? (
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center text-gray-500 text-sm">
+            Még nincsenek kiemelt partner szervezetek. Hozzon létre partnereket az Admin felületen.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {partners.map((partner) => {
+              const linkUrl = partner.websiteUrl || `#partnerek/${partner.slug || partner.id}`;
+              const isExternal = Boolean(partner.websiteUrl);
+
+              return (
+                <a
+                  key={partner.id}
+                  href={linkUrl}
+                  target={isExternal ? '_blank' : '_self'}
+                  rel={isExternal ? 'noopener noreferrer' : undefined}
+                  onClick={(e) => {
+                    if (partner.id) recordAdClick(partner.id);
+                    if (!isExternal) {
+                      e.preventDefault();
+                      onNavigate('partnerDetail', { slug: partner.slug || partner.id });
+                    }
+                  }}
+                  className="group bg-white border border-gray-200 hover:border-accent rounded-xl p-6 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between cursor-pointer"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded">
+                        {getCategoryLabel(partner.category)}
+                      </span>
+                      {partner.isVerified && (
+                        <span className="text-xs text-gray-600 font-semibold flex items-center gap-1 group-hover:text-accent transition-colors">
+                          Minősített Partner <ExternalLink size={12} />
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                      {partner.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 leading-relaxed mb-4">{partner.description}</p>
+                  </div>
+                  <div className="text-xs text-accent font-bold border-t border-gray-100 pt-3 flex items-center justify-between group-hover:translate-x-0.5 transition-transform">
+                    <span>{isExternal ? 'Partner weboldalának megnyitása' : 'Részletes adatlap megtekintése'}</span>
+                    <ArrowRight size={14} />
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* CTA - only for signed-out visitors */}
