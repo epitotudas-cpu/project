@@ -10,7 +10,6 @@ import {
   Tag,
   BookOpen,
   Calculator,
-  Library,
   AlertTriangle,
   CheckSquare,
   Check,
