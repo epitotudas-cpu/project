@@ -54,43 +54,60 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'TARTALOM',
     items: [
-      { id: 'articles', label: 'Cikkek', icon: FileText },
+      { id: 'articles', label: 'Hírek & Újdonságok', icon: FileText },
       { id: 'utmutatok', label: 'Kivitelezési útmutatók', icon: BookMarked },
-      { id: 'learning', label: 'Tanulási Rendszer', icon: GraduationCap },
+      { id: 'learning', label: 'Tanulási Rendszer & Kvízek', icon: GraduationCap },
       { id: 'categories', label: 'Kategóriák', icon: FolderTree },
-      { id: 'glossary', label: 'Fogalmak', icon: BookOpen },
-      { id: 'knowledge-hub', label: 'Oktatási Tudásbázis', icon: ShieldAlert },
+      { id: 'glossary', label: 'Szakmai Kislexikon', icon: BookOpen },
+      { id: 'knowledge-hub', label: 'Munkavédelem, Szabványok & Kalkulátorok', icon: ShieldAlert },
       { id: 'materials', label: 'Építőipari Anyagok', icon: Layers },
-      /* trades handles profession profiles and career paths */
-      { id: 'trades', label: 'Építőipari Szakmák & Karrierútvonalak', icon: Compass },
+      { id: 'tools', label: 'Eszközök, Gépek & Szoftverek', icon: Wrench },
       { id: 'books', label: 'Szakmai Könyvek', icon: Library },
-      { id: 'tools', label: 'Eszközök & Gépek', icon: Wrench },
+    ],
+  },
+  {
+    title: 'SZAKMÁK & KARRIER',
+    items: [
+      { id: 'trades', label: 'Építőipari Szakmák & Karrierútvonalak', icon: Compass },
       { id: 'jobs', label: 'Állásajánlatok', icon: Briefcase },
-      { id: 'courses', label: 'Képzések', icon: GraduationCap },
+    ],
+  },
+  {
+    title: 'OKTATÁS',
+    items: [
+      { id: 'courses', label: 'Képzések & Tanfolyamok', icon: GraduationCap },
     ],
   },
   {
     title: 'PARTNEREK',
-    items: [{ id: 'partners', label: 'Partnerek', icon: Building2 }],
+    items: [
+      { id: 'partners', label: 'Partnerek & Jelentkezések', icon: Building2 },
+    ],
   },
   {
     title: 'MARKETING',
-    items: [{ id: 'ads', label: 'Reklámok', icon: Megaphone }],
+    items: [
+      { id: 'ads', label: 'Reklámok & Hirdetések', icon: Megaphone },
+    ],
   },
   {
     title: 'FELHASZNÁLÓK',
     items: [
       { id: 'users', label: 'Felhasználók', icon: Users },
-      { id: 'roles', label: 'Jogosultságok', icon: Shield },
+      { id: 'roles', label: 'Jogosultságok & Szerepkörök', icon: Shield },
     ],
   },
   {
     title: 'AUDIT',
-    items: [{ id: 'audit', label: 'Audit Napló', icon: Activity }],
+    items: [
+      { id: 'audit', label: 'Audit Napló', icon: Activity },
+    ],
   },
   {
     title: 'BEÁLLÍTÁSOK',
-    items: [{ id: 'settings', label: 'Beállítások', icon: Settings }],
+    items: [
+      { id: 'settings', label: 'Beállítások & Jogi Dokumentumok', icon: Settings },
+    ],
   },
 ];
 
