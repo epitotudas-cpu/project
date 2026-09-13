@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, Globe, BookOpen, FileText } from 'lucide-react';
+import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, Globe, FileText } from 'lucide-react';
 import { listPartners, getCategoryLabel, type PartnerCategory } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
@@ -93,12 +93,6 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
             page: 'partners',
             icon: <Building2 size={14} className="text-accent" />,
             active: true,
-          },
-          {
-            label: 'Ajánlott források',
-            page: 'about',
-            icon: <BookOpen size={14} className="text-accent" />,
-            active: false,
           },
           {
             label: 'Kapcsolat & Impresszum',

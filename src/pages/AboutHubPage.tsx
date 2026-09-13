@@ -93,12 +93,6 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
             active: false,
           },
           {
-            label: 'Ajánlott források',
-            href: '#forrasok',
-            icon: <BookOpen size={14} className="text-accent" />,
-            active: false,
-          },
-          {
             label: 'Kapcsolat & Impresszum',
             page: 'impressum',
             icon: <FileText size={14} className="text-accent" />,
@@ -309,24 +303,6 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
             >
               <FileText size={16} /> Ugrás az Impresszum oldalra
             </button>
-          </div>
-        </section>
-
-        {/* Section 4: Ajánlott források (Placeholder) */}
-        <section id="forrasok" className="border-t border-gray-200 pt-10 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#202628] flex items-center gap-2">
-              <BookOpen className="text-accent" size={20} /> Ajánlott források és szabványok
-            </h2>
-            <span className="text-[11px] font-semibold text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
-              Folyamatosan frissül
-            </span>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2 shadow-sm">
-            <p className="text-xs text-[#5f6868]">
-              A hivatalos építőipari szabványgyűjtemény, szakmai ajánlások és szakirodalmi források jegyzéke hamarosan elérhető ezen a felületen.
-            </p>
           </div>
         </section>
       </div>

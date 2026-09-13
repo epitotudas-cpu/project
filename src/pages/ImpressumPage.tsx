@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe, ChevronRight, Target, BookOpen, FileText, Building2 } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe, ChevronRight, Target, FileText, Building2 } from 'lucide-react';
 import { getImpressumData, type ImpressumData } from '../services/impressumService';
 import SectionSubNav from '../components/SectionSubNav';
 
@@ -84,12 +84,6 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             label: 'Partnerek',
             page: 'partners',
             icon: <Building2 size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Ajánlott források',
-            page: 'about',
-            icon: <BookOpen size={14} className="text-accent" />,
             active: false,
           },
           {

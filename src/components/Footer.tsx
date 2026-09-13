@@ -70,7 +70,6 @@ export default function Footer({ onNavigate }: FooterProps) {
         { label: 'Célunk & Küldetésünk', page: 'about#celunk' },
         { label: 'ÉpítőTudás Modulok', page: 'about#platform' },
         { label: 'Partnerek & Támogatók', page: 'partners' },
-        { label: 'Ajánlott Források', page: 'about#forrasok' },
         { label: 'Oktatás & Kurzusok', page: 'courses' },
         { label: 'Pályák & Karrier', page: 'careers' },
         { label: 'Partneri Jelentkezés', page: 'partner-application' },
