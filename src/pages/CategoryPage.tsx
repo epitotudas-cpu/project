@@ -442,6 +442,70 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
+        {/* WORKFLOW BROWSER FOR EXECUTION GUIDES */}
+        {selectedArticleType === 'utmutatok' && (
+          <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                  <Compass size={18} className="text-accent" />
+                  <span>Böngészés munkafolyamat szerint</span>
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Válassz szakmai szakterületet a célzott kivitelezési útmutatók megjelenítéséhez!
+                </p>
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={handleClearAllFilters}
+                  className="text-xs font-bold text-accent hover:underline"
+                >
+                  Szűrők törlése
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+              {[
+                { label: 'Szerkezetépítés', query: 'szerkezetépítés', icon: Building },
+                { label: 'Hőszigetelés', query: 'hőszigetelés', icon: Thermometer },
+                { label: 'Tető', query: 'tető', icon: Home },
+                { label: 'Burkolás', query: 'burkolás', icon: Grid },
+                { label: 'Szárazépítés', query: 'gipszkarton', icon: Layers },
+                { label: 'Felületképzés', query: 'felületképzés', icon: Paintbrush },
+                { label: 'Épületgépészet', query: 'gépészet', icon: Droplets },
+                { label: 'Villanyszerelés', query: 'villanyszerelés', icon: Zap },
+              ].map((wf) => {
+                const IconComp = wf.icon;
+                const isActive = searchQuery.toLowerCase() === wf.query.toLowerCase();
+
+                return (
+                  <button
+                    key={wf.label}
+                    onClick={() => {
+                      if (isActive) {
+                        setSearchQuery('');
+                        updateUrlParams('utmutatok', selectedCategories, '');
+                      } else {
+                        setSearchQuery(wf.query);
+                        updateUrlParams('utmutatok', selectedCategories, wf.query);
+                      }
+                    }}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-primary text-white border-primary-700 font-extrabold shadow-md scale-102'
+                        : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-800 font-bold hover:border-gray-300'
+                    }`}
+                  >
+                    <IconComp size={20} className={isActive ? 'text-accent mb-1.5' : 'text-primary mb-1.5'} />
+                    <span className="text-xs leading-tight line-clamp-1">{wf.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* SEARCH BAR & FILTERS */}
         <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row items-center gap-4">
