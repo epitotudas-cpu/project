@@ -166,10 +166,10 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       } else {
         await createPartner(data as any);
       }
-      setShowEditorModal(false);
       await loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Hiba történt a partner mentésekor.');
+      throw err;
     }
   }
 
@@ -505,6 +505,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredPartners.map((partner) => {
                 const staffList = staffMap[partner.id] || [];
+                const hasContactPerson = Boolean(partner.contact_person_name?.trim());
+                const totalContactsCount = staffList.length + (hasContactPerson ? 1 : 0);
 
                 return (
                   <div
@@ -551,16 +553,32 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                       <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-2">
                         <div className="flex items-center justify-between text-[11px] font-bold text-gray-300 border-b pb-1.5" style={{ borderColor: cardBorder }}>
                           <span className="flex items-center gap-1.5">
-                            <Users size={14} className="text-amber-400" /> Kapcsolattartók ({staffList.length})
+                            <Users size={14} className="text-amber-400" /> Kapcsolattartók ({totalContactsCount})
                           </span>
                         </div>
 
-                        {staffList.length === 0 ? (
+                        {totalContactsCount === 0 ? (
                           <div className="text-[11px] text-gray-500 italic py-1">
-                            Még nincs bejegyzett munkatárs a szervezetnél.
+                            Még nincs bejegyzett munkatárs vagy kapcsolattartó a szervezetnél.
                           </div>
                         ) : (
                           <div className="space-y-1.5 text-[11px]">
+                            {hasContactPerson && (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="truncate">
+                                  <span className="font-semibold text-gray-200">{partner.contact_person_name}</span>
+                                  {(partner.contact_person_title || partner.contact_email || partner.contact_phone) && (
+                                    <span className="text-gray-400 block text-[10px] truncate">
+                                      {[partner.contact_person_title, partner.contact_email || partner.contact_phone].filter(Boolean).join(' • ')}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 bg-amber-500/20 text-amber-400 border-amber-500/30">
+                                  Kapcsolattartó
+                                </span>
+                              </div>
+                            )}
+
                             {staffList.map((m, idx) => (
                               <div key={idx} className="flex items-center justify-between gap-2">
                                 <div className="truncate">

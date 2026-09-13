@@ -62,6 +62,7 @@ export default function PartnerEditorModal({
 }: PartnerEditorModalProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('basic');
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Form Fields State
   const [name, setName] = useState('');
@@ -193,6 +194,7 @@ export default function PartnerEditorModal({
       setSeoDescription('');
       setIsIndexable(true);
     }
+    setSaveSuccess(false);
   }, [partner, isOpen]);
 
   if (!isOpen) return null;
@@ -255,7 +257,10 @@ export default function PartnerEditorModal({
 
     try {
       await onSave(payload);
-      onClose();
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 5000);
     } catch (err) {
       console.error('Hiba a partner mentésekor:', err);
       alert('A partner adatainak mentésekor hiba történt.');
@@ -1303,28 +1308,37 @@ export default function PartnerEditorModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs rounded-xl transition-colors"
+                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
               >
-                Mégse
+                Bezárás
               </button>
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-black border-r-transparent" />
-                    <span>Mentés folyamatban...</span>
-                  </>
-                ) : (
-                  <>
+              <div className="flex items-center gap-3">
+                {saveSuccess && (
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold animate-fade-in">
                     <CheckCircle2 size={16} />
-                    <span>Változtatások Mentése & Publikálás</span>
-                  </>
+                    <span>Mentés sikeres!</span>
+                  </div>
                 )}
-              </button>
+
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-black border-r-transparent" />
+                      <span>Mentés folyamatban...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} />
+                      <span>Változtatások Mentése & Publikálás</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         </div>
