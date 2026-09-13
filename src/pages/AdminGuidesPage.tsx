@@ -157,10 +157,12 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
       const cats = await listCategories();
       setCategories(cats);
 
-      // List all articles filtered by article_type === 'utmutatok'
+      // List all articles filtered by article_type === 'utmutatok' (or empty/undefined defaulting to utmutatok)
       const artsRes = await articleService.listArticles({ pageSize: 300 });
       const allArts = (artsRes.rows as unknown as Article[]) || [];
-      const guidesOnly = allArts.filter((a) => a.article_type === 'utmutatok');
+      const guidesOnly = allArts.filter(
+        (a) => (!a.article_type || a.article_type === 'utmutatok') && a.article_type !== 'hirek' && a.article_type !== 'ujdonsagok'
+      );
       setArticles(guidesOnly);
 
       setPageSettings(getArticleSettingsForType('utmutatok'));
