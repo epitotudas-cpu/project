@@ -160,7 +160,7 @@ export default function PartnerEditorModal({
       setOfficialName('');
       setSlug('');
       setCategory('ceg');
-      setPartnerType('Kivitelező Cég');
+      setPartnerType('');
       setDescription('');
       setDetailedDescription('');
       setStatus('published');
@@ -377,7 +377,7 @@ export default function PartnerEditorModal({
                           setName(e.target.value);
                           if (!slug) generateSlugFromName(e.target.value);
                         }}
-                        placeholder="pl. 78-as Építők Kft."
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
                       />
                     </div>
@@ -388,7 +388,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={officialName}
                         onChange={(e) => setOfficialName(e.target.value)}
-                        placeholder="pl. 78-as Építőipari Korlátolt Felelősségű Társaság"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
                       />
                     </div>
@@ -400,7 +400,7 @@ export default function PartnerEditorModal({
                           type="text"
                           value={slug}
                           onChange={(e) => setSlug(e.target.value)}
-                          placeholder="78-as-epitok"
+                          placeholder=""
                           className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm font-mono text-amber-400 focus:outline-hidden"
                         />
                         <button
@@ -435,7 +435,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={partnerType}
                         onChange={(e) => setPartnerType(e.target.value)}
-                        placeholder="pl. Generálkivitelező Cég, Szakképző Centrum"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
                       />
                     </div>
@@ -465,7 +465,7 @@ export default function PartnerEditorModal({
                       rows={2}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Egy-két mondatos tömör szlogen vagy leírás a partnerkártyákra..."
+                      placeholder=""
                       className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white focus:outline-hidden"
                     />
                   </div>
@@ -476,7 +476,7 @@ export default function PartnerEditorModal({
                       rows={6}
                       value={detailedDescription}
                       onChange={(e) => setDetailedDescription(e.target.value)}
-                      placeholder="Részletes leírás a cégről, tapasztalatról, szakterületekről és szakmai célokról..."
+                      placeholder=""
                       className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl p-4 text-sm text-white focus:outline-hidden"
                     />
                   </div>
@@ -543,7 +543,7 @@ export default function PartnerEditorModal({
                             type="text"
                             value={logoUrl}
                             onChange={(e) => setLogoUrl(e.target.value)}
-                            placeholder="https://domained.hu/logo.png"
+                            placeholder=""
                             className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white"
                           />
                           <p className="text-[11px] text-gray-400">
@@ -596,7 +596,7 @@ export default function PartnerEditorModal({
                           type="text"
                           value={coverUrl}
                           onChange={(e) => setCoverUrl(e.target.value)}
-                          placeholder="https://domained.hu/cover.jpg"
+                          placeholder=""
                           className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white"
                         />
                         <p className="text-[11px] text-gray-400">
@@ -622,7 +622,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={contactPersonName}
                         onChange={(e) => setContactPersonName(e.target.value)}
-                        placeholder="pl. Nagy Gábor"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -633,7 +633,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={contactPersonTitle}
                         onChange={(e) => setContactPersonTitle(e.target.value)}
-                        placeholder="pl. Ügyvezető Igazgató"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -644,7 +644,7 @@ export default function PartnerEditorModal({
                         type="email"
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.target.value)}
-                        placeholder="info@ceg.hu"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -655,7 +655,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={contactPhone}
                         onChange={(e) => setContactPhone(e.target.value)}
-                        placeholder="+36 1 234 5678"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -666,7 +666,7 @@ export default function PartnerEditorModal({
                         type="url"
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
-                        placeholder="https://ceg.hu"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -677,7 +677,7 @@ export default function PartnerEditorModal({
                         type="email"
                         value={inquiryEmail}
                         onChange={(e) => setInquiryEmail(e.target.value)}
-                        placeholder="ajanlat@ceg.hu"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -688,7 +688,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
-                        placeholder="Kivitelezők útja 78."
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -700,7 +700,7 @@ export default function PartnerEditorModal({
                           type="text"
                           value={zipCode}
                           onChange={(e) => setZipCode(e.target.value)}
-                          placeholder="1118"
+                          placeholder=""
                           className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-3 text-sm text-white"
                         />
                       </div>
@@ -710,7 +710,7 @@ export default function PartnerEditorModal({
                           type="text"
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
-                          placeholder="Budapest"
+                          placeholder=""
                           className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-3 text-sm text-white"
                         />
                       </div>
@@ -722,7 +722,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={county}
                         onChange={(e) => setCounty(e.target.value)}
-                        placeholder="Pest vármegye"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -746,7 +746,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={businessHours}
                         onChange={(e) => setBusinessHours(e.target.value)}
-                        placeholder="Hétfő - Péntek: 08:00 - 17:00"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -768,7 +768,7 @@ export default function PartnerEditorModal({
                         type="url"
                         value={socialFacebook}
                         onChange={(e) => setSocialFacebook(e.target.value)}
-                        placeholder="https://facebook.com/partneroldal"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -779,7 +779,7 @@ export default function PartnerEditorModal({
                         type="url"
                         value={socialLinkedin}
                         onChange={(e) => setSocialLinkedin(e.target.value)}
-                        placeholder="https://linkedin.com/company/partneroldal"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -790,7 +790,7 @@ export default function PartnerEditorModal({
                         type="url"
                         value={socialInstagram}
                         onChange={(e) => setSocialInstagram(e.target.value)}
-                        placeholder="https://instagram.com/partneroldal"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -801,7 +801,7 @@ export default function PartnerEditorModal({
                         type="url"
                         value={socialYoutube}
                         onChange={(e) => setSocialYoutube(e.target.value)}
-                        placeholder="https://youtube.com/@partnercsatorna"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -874,7 +874,7 @@ export default function PartnerEditorModal({
                                 next[index].name = e.target.value;
                                 setServices(next);
                               }}
-                              placeholder="Szakterület megnevezése (pl. Generálkivitelezés)"
+                              placeholder=""
                               className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm text-white font-bold"
                             />
 
@@ -909,7 +909,7 @@ export default function PartnerEditorModal({
                               next[index].description = e.target.value;
                               setServices(next);
                             }}
-                            placeholder="Rövid leírás a szolgáltatásról (opcionális)..."
+                            placeholder=""
                             className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-gray-300"
                           />
                         </div>
@@ -936,7 +936,7 @@ export default function PartnerEditorModal({
                             title: '',
                             image_url: '',
                             location: '',
-                            year: new Date().getFullYear().toString(),
+                            year: '',
                             description: '',
                             is_published: true,
                             display_order: references.length + 1,
@@ -969,7 +969,7 @@ export default function PartnerEditorModal({
                                 next[index].title = e.target.value;
                                 setReferences(next);
                               }}
-                              placeholder="Projekt Neve (pl. Buda-Garten Társasház)"
+                              placeholder=""
                               className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm font-bold text-white"
                             />
 
@@ -1005,7 +1005,7 @@ export default function PartnerEditorModal({
                                 next[index].location = e.target.value;
                                 setReferences(next);
                               }}
-                              placeholder="Helyszín (pl. Budapest XI.)"
+                              placeholder=""
                               className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
                             />
                             <input
@@ -1016,7 +1016,7 @@ export default function PartnerEditorModal({
                                 next[index].year = e.target.value;
                                 setReferences(next);
                               }}
-                              placeholder="Év (pl. 2025)"
+                              placeholder=""
                               className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
                             />
                             <input
@@ -1027,7 +1027,7 @@ export default function PartnerEditorModal({
                                 next[index].image_url = e.target.value;
                                 setReferences(next);
                               }}
-                              placeholder="Kép URL (https://...)"
+                              placeholder=""
                               className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
                             />
                           </div>
@@ -1040,7 +1040,7 @@ export default function PartnerEditorModal({
                               next[index].description = e.target.value;
                               setReferences(next);
                             }}
-                            placeholder="Rövid projektleírás a kivitelezési munkáról..."
+                            placeholder=""
                             className="w-full bg-[#1e2225] border border-gray-700 rounded-xl p-3 text-xs text-white"
                           />
                         </div>
@@ -1099,7 +1099,7 @@ export default function PartnerEditorModal({
                                 next[index].title = e.target.value;
                                 setCertificates(next);
                               }}
-                              placeholder="Tanúsítvány megnevezése (pl. ISO 9001:2015)"
+                              placeholder=""
                               className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm font-bold text-white"
                             />
 
@@ -1135,7 +1135,7 @@ export default function PartnerEditorModal({
                                 next[index].issuer = e.target.value;
                                 setCertificates(next);
                               }}
-                              placeholder="Kibocsátó Szervezet (pl. TÜV Rheinland)"
+                              placeholder=""
                               className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
                             />
                             <input
@@ -1176,7 +1176,7 @@ export default function PartnerEditorModal({
                             id: `rc-${Date.now()}`,
                             title: '',
                             type: 'cikk',
-                            url: '#',
+                            url: '',
                             display_order: relatedContent.length + 1,
                           },
                         ]);
@@ -1222,7 +1222,7 @@ export default function PartnerEditorModal({
                               next[index].title = e.target.value;
                               setRelatedContent(next);
                             }}
-                            placeholder="Tartalom címe..."
+                            placeholder=""
                             className="flex-1 bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
                           />
 
@@ -1234,7 +1234,7 @@ export default function PartnerEditorModal({
                               next[index].url = e.target.value;
                               setRelatedContent(next);
                             }}
-                            placeholder="URL / Hivatkozás (pl. #calculations)"
+                            placeholder=""
                             className="w-48 bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs font-mono text-gray-300"
                           />
 
@@ -1266,7 +1266,7 @@ export default function PartnerEditorModal({
                         type="text"
                         value={seoTitle}
                         onChange={(e) => setSeoTitle(e.target.value)}
-                        placeholder="pl. 78-as Építők Kft. - Minősített Építőipari Generálkivitelező"
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
@@ -1277,7 +1277,7 @@ export default function PartnerEditorModal({
                         rows={3}
                         value={seoDescription}
                         onChange={(e) => setSeoDescription(e.target.value)}
-                        placeholder="A Google keresőben megjelenő rövid összefoglaló leírás (150-160 karakter)..."
+                        placeholder=""
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white"
                       />
                     </div>
