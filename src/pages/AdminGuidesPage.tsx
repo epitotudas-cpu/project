@@ -9,22 +9,11 @@ import {
   Eye,
   CheckCircle2,
   XCircle,
-  Clock,
-  Layers,
   Sparkles,
   FileText,
   Settings,
-  Archive,
   Save,
-  HelpCircle,
-  ChevronRight,
-  Shield,
   HardHat,
-  Thermometer,
-  Grid,
-  Building,
-  Wrench,
-  Zap,
 } from 'lucide-react';
 import type { Article, Category } from '../lib/supabase';
 import * as articleService from '../services/articleService';
@@ -99,29 +88,24 @@ Az EPS (expandált polisztirol) homlokzati hőszigetelés az egyik leghatékonya
     title: 'Gipszkarton Válaszfal Építése Szerkezetépítéssel',
     trade: 'Szárazépítő / Gipszkartonozó',
     difficulty: 'intermediate',
-    excerpt: 'Professzionális útmutató UW és CW profilok vázszerkezetének felépítéséhez, gipszkartonozásához és hézagolásához.',
-    content: `## 1. BEVEZETÉS ÉS ESZKÖZIGÉNY
-A gipszkarton válaszfalak gyors, száraz és kiváló hangszigetelő belső térrelválasztó megoldások.
+    excerpt: 'Lépésről lépésre gipszkarton válaszfal váza, szigetelése és borítása.',
+    content: `## 1. ALAPOK ÉS ELŐKÉSZÍTÉS
+UW profilok rögzítése aljzatra és födémre szigetelő szalaggal ellátva.
 
-## 2. VÁZSZERKEZET ÉPÍTÉSE
-- UW vezetőprofilok rögzítése aljzatra és födémre szigetelő szalaggal
-- CW függőleges profilok beállítása 60 cm tengelytávolsággal
-
-## 3. KIVITELEZÉSI LÉPÉSEK
-1. **Profilváz szerelése**: UW és CW profilok rögzítése dűbellel.
-2. **Egyik oldali borítás**: Gipszkarton lapok csavarozása 25 cm-enként.
-3. **Szigetelés és gépészet**: Ásványgyapot hőszigetelés és védőcsövek elhelyezése.
-4. **Másik oldali borítás**: Lapok kötésben való csavarozása.
-5. **Hézagolás és glettelés**: Q2 vagy Q3 minőségben hézagerősítő szalaggal.`,
+## 2. KIVITELEZÉS
+1. CW profilok beállítása 60 cm tengelytávval.
+2. Egyoldali gipszkarton borítás.
+3. Ásványgyapot szigetelés elhelyezése.
+4. Másik oldali borítás és hézagolás (Q1-Q4).`,
   },
   {
     id: 'tiling-bathroom',
-    title: 'Fürdőszobai Csempeburkolás és Kenhető Vízszigetelés',
+    title: 'Fürdőszobai Hidegburkolás és Vízszigetelés Rétegrendje',
     trade: 'Burkoló',
-    difficulty: 'intermediate',
-    excerpt: 'Lépésről lépésre útmutató kent vízszigetelés, hajlatszalagok és nagyméretű kerámia burkolólapok fektetéséhez.',
-    content: `## 1. ALJZATELŐKÉSZÍTÉS ÉS KNET HÍD
-Aljzatkiegyenlítés és mélyalapozás után 2 réteg kent vízszigetelés felhordása.
+    difficulty: 'advanced',
+    excerpt: 'Szakszerű kenhető vízszigetelés és lapburkolás fürdőszobában.',
+    content: `## 1. ELŐKÉSZÍTÉS
+Aljzat kiegyenlítése, felület portalanítása és mélyalapozása.
 
 ## 2. LÉPÉSEK
 1. **Hajlatszalag beágyazása**: A sarokcsatlakozásoknál rugalmas hajlatszalag beágyazása.
@@ -131,7 +115,11 @@ Aljzatkiegyenlítés és mélyalapozás után 2 réteg kent vízszigetelés felh
   },
 ];
 
-export default function AdminGuidesPage() {
+interface AdminGuidesPageProps {
+  initialSearchQuery?: string;
+}
+
+export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageProps = {}) {
   const toast = useToast();
   const siteSettings = useSiteSettings();
 
@@ -141,7 +129,7 @@ export default function AdminGuidesPage() {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearchQuery || '');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [tradeFilter, setTradeFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -439,6 +427,20 @@ export default function AdminGuidesPage() {
                 {TRADES_LIST.map((tr) => (
                   <option key={tr} value={tr}>
                     {tr}
+                  </option>
+                ))}
+              </select>
+
+              {/* Category Filter */}
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="bg-[#1e1e1e] border border-[#333] text-gray-200 text-xs font-bold px-3 py-2.5 rounded-xl focus:outline-none focus:border-accent"
+              >
+                <option value="all">Minden Kategória</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -772,12 +774,11 @@ export default function AdminGuidesPage() {
       {/* EDIT/CREATE ARTICLE MODAL (LOCKED TO utmutatok) */}
       {editorOpen && (
         <EditArticleModal
-          isOpen={editorOpen}
           article={editingArticle}
           categories={categories}
           lockedArticleType="utmutatok"
           onClose={() => setEditorOpen(false)}
-          onSave={async () => {
+          onSaved={async () => {
             setEditorOpen(false);
             await loadData();
           }}
