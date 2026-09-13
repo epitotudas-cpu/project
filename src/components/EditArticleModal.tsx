@@ -22,8 +22,10 @@ export interface EditArticleModalProps {
 
 const STATUS_OPTIONS: { value: Article['status'] | 'archived'; label: string }[] = [
   { value: 'draft', label: 'Piszkozat' },
-  { value: 'review', label: 'Felülvizsgálatra vár' },
-  { value: 'published', label: 'Közzétéve' },
+  { value: 'pending', label: 'Jóváhagyásra vár' },
+  { value: 'review', label: 'Felülvizsgálat alatt' },
+  { value: 'published', label: 'Közzétéve (Published)' },
+  { value: 'rejected', label: 'Elutasítva (Rejected)' },
   { value: 'archived', label: 'Archivált' },
 ];
 
@@ -246,6 +248,7 @@ interface FormState {
   category_id: string;
   subcategory_name: string;
   status: Article['status'];
+  rejection_note: string;
   author: string;
   partner_id: string;
   partner_name: string;
@@ -263,6 +266,7 @@ const EMPTY_FORM: FormState = {
   category_id: '',
   subcategory_name: '',
   status: 'draft',
+  rejection_note: '',
   author: 'ÉpítőTudás Szerkesztőség',
   partner_id: '',
   partner_name: '',
@@ -288,6 +292,7 @@ function formFromArticle(article: Article): FormState {
     category_id: article.category_id ?? '',
     subcategory_name: article.subcategory_name ?? '',
     status: article.status || 'draft',
+    rejection_note: article.rejection_note ?? '',
     author: article.author ?? 'ÉpítőTudás Szerkesztőség',
     partner_id: article.partner_id ?? '',
     partner_name: article.partner_name ?? '',
@@ -1146,6 +1151,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
         subcategory_name: form.subcategory_name.trim() || null,
         tags: form.tags,
         status: form.status,
+        rejection_note: form.status === 'rejected' ? (form.rejection_note.trim() || null) : null,
         author: form.author.trim() || null,
         partner_id: form.partner_id || null,
         partner_name: form.partner_name || null,
@@ -1490,6 +1496,22 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                     </select>
                   </div>
                 </div>
+
+                {form.status === 'rejected' && (
+                  <div>
+                    <label style={labelStyle} className={labelClass}>
+                      Elutasítás Indoklása (rejection_note) <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      style={fieldStyle}
+                      className={`${fieldClass} resize-none`}
+                      rows={2}
+                      value={form.rejection_note}
+                      onChange={(e) => updateForm('rejection_note', e.target.value)}
+                      placeholder="Kérjük adja meg az elutasítás pontos okát..."
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                   <div>

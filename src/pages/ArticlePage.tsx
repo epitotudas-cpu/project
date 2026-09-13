@@ -20,6 +20,8 @@ import {
   ShieldCheck,
   ExternalLink,
   Calendar,
+  FileText,
+  Video,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getArticleBySlug, getCategories } from '../lib/api';
@@ -744,6 +746,71 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                               </div>
                             );
                           })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Csatolt Szakmai Dokumentumok & Mellékletek */}
+                  {article.documents && article.documents.length > 0 && (
+                    <div className="border-t border-gray-100 pt-8 space-y-4">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                          <FileText size={20} className="text-accent shrink-0" />
+                          <span>Csatolt Dokumentumok &amp; Segédletek</span>
+                        </h3>
+                        <span className="text-xs font-bold text-gray-400">
+                          {article.documents.length} letölthető fájl
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {article.documents.map((doc: { id?: string; title: string; file_url: string; file_size?: string }, idx: number) => (
+                          <a
+                            key={doc.id || idx}
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-4 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-between gap-3 hover:border-accent hover:bg-amber-50/50 transition-all group cursor-pointer"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0 font-black text-xs">
+                                PDF
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-xs text-gray-900 truncate group-hover:text-primary transition-colors">
+                                  {doc.title}
+                                </div>
+                                <div className="text-[11px] text-gray-500 font-medium">
+                                  {doc.file_size || 'Letölthető dokumentum'}
+                                </div>
+                              </div>
+                            </div>
+                            <ExternalLink size={14} className="text-gray-400 group-hover:text-accent shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Csatolt Oktató Videó */}
+                  {article.video_url && (() => {
+                    const parsed = parseAndSanitizeVideoInput(article.video_url);
+                    if (!parsed.isValid || !parsed.embedUrl) return null;
+                    return (
+                      <div className="border-t border-gray-100 pt-8 space-y-4">
+                        <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
+                          <Video size={20} className="text-accent shrink-0" />
+                          <span>Oktató &amp; Kivitelezési Videó</span>
+                        </h3>
+                        <div className="aspect-video w-full rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-black">
+                          <iframe
+                            src={parsed.embedUrl}
+                            title={article.title}
+                            loading="lazy"
+                            className="w-full h-full border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
                         </div>
                       </div>
                     );
