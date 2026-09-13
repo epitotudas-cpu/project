@@ -177,14 +177,14 @@ export default function AdminSidebar({
                             }
                           : {}
                       }
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer text-left ${
                         active
                           ? 'font-bold border-l-2'
                           : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'
                       }`}
                     >
-                      <Icon size={15} style={active ? { color: adminAccent } : {}} className={active ? '' : 'text-gray-400'} />
-                      {label}
+                      <Icon size={15} style={active ? { color: adminAccent } : {}} className={`shrink-0 ${active ? '' : 'text-gray-400'}`} />
+                      <span className="min-w-0 flex-1 text-left leading-snug break-words">{label}</span>
                     </button>
                   );
                 })}
