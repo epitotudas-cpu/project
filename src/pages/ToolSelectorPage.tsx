@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop, Layers } from 'lucide-react';
+import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop, Layers, Library } from 'lucide-react';
 import { MOCK_TOOLS, type Tool } from '../services/toolService';
 import SectionSubNav from '../components/SectionSubNav';
 
@@ -111,6 +111,12 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
             page: 'valaszto',
             icon: <Sparkles size={14} className="text-accent" />,
             active: true,
+          },
+          {
+            label: 'Szakmai Könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
+            active: false,
           },
         ]}
       />

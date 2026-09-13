@@ -19,6 +19,10 @@ import {
   ExternalLink,
   ShieldAlert,
   FileCheck,
+  Wrench,
+  Layers,
+  Laptop,
+  Sparkles,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { useBooks, useBookCategories, type BookItem } from '../services/bookService';
@@ -233,10 +237,10 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
             </button>
             <ChevronRight size={13} />
             <button
-              onClick={() => onNavigate('tudastar')}
+              onClick={() => onNavigate('tool')}
               className="hover:text-white transition-colors"
             >
-              Tudástár
+              Eszközök
             </button>
             <ChevronRight size={13} />
             <span className="text-gray-200 font-medium">Szakmai Könyvek</span>
@@ -260,19 +264,31 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
 
       {/* Sub-navigation */}
       <SectionSubNav
-        ariaLabel="Tudástár navigáció"
+        ariaLabel="Eszközök almenü navigáció"
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Fogalomtár & Szótár',
-            page: 'glossary',
-            icon: <BookOpen size={14} className="text-accent" />,
+            label: 'Gép & Szerszám Katalógus',
+            page: 'tool',
+            icon: <Wrench size={14} className="text-accent" />,
             active: false,
           },
           {
-            label: 'Számítások & Kalkulátorok',
-            page: 'calculations',
-            icon: <Calculator size={14} className="text-accent" />,
+            label: 'Anyagok',
+            page: 'materials',
+            icon: <Layers size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szoftverek',
+            page: 'software',
+            icon: <Laptop size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Eszközválasztó',
+            page: 'valaszto',
+            icon: <Sparkles size={14} className="text-accent" />,
             active: false,
           },
           {
@@ -280,18 +296,6 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
             page: 'books',
             icon: <Library size={14} className="text-accent" />,
             active: true,
-          },
-          {
-            label: 'Munkavédelem',
-            page: 'safety',
-            icon: <ShieldAlert size={14} className="text-accent" />,
-            active: false,
-          },
-          {
-            label: 'Szabályok, szabványok',
-            page: 'standards',
-            icon: <FileCheck size={14} className="text-accent" />,
-            active: false,
           },
         ]}
       />

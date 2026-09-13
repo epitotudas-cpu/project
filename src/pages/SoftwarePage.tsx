@@ -1,4 +1,4 @@
-import { ChevronRight, Clock, Laptop, ArrowRight, CheckCircle2, Wrench, Sparkles, Layers } from 'lucide-react';
+import { ChevronRight, Clock, Laptop, ArrowRight, CheckCircle2, Wrench, Sparkles, Layers, Library } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface SoftwarePageProps {
@@ -70,6 +70,12 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
             label: 'Eszközválasztó',
             page: 'valaszto',
             icon: <Sparkles size={14} className="text-accent" />,
+            active: false,
+          },
+          {
+            label: 'Szakmai Könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
             active: false,
           },
         ]}

@@ -20,6 +20,7 @@ import {
   X,
   SearchX,
   Laptop,
+  Library,
 } from 'lucide-react';
 import { getActiveTools } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
@@ -588,6 +589,12 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
             page: 'valaszto',
             icon: <Sparkles size={14} className="text-accent" />,
             active: activeViewTab === 'wizard',
+          },
+          {
+            label: 'Szakmai Könyvek',
+            page: 'books',
+            icon: <Library size={14} className="text-accent" />,
+            active: false,
           },
         ]}
       />

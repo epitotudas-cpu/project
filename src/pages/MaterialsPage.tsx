@@ -16,6 +16,7 @@ import {
   Package,
   Wrench,
   Sparkles,
+  Library,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import {
@@ -151,6 +152,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
           { label: 'Anyagok', page: 'materials', icon: <Layers size={14} className="text-accent" />, active: true },
           { label: 'Szoftverek', page: 'software', icon: <Package size={14} className="text-accent" />, active: false },
           { label: 'Eszközválasztó Modul', page: 'valaszto', icon: <Sparkles size={14} className="text-accent" />, active: false },
+          { label: 'Szakmai Könyvek', page: 'books', icon: <Library size={14} className="text-accent" />, active: false },
         ]}
       />
 
