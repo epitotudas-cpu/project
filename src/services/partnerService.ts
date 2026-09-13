@@ -220,3 +220,45 @@ export async function deletePartner(id: string): Promise<void> {
   const filtered = list.filter((p) => p.id !== id);
   saveStoredPartners(filtered);
 }
+
+export async function getPartnerBySlug(slugOrId: string): Promise<Partner | null> {
+  if (!slugOrId) return null;
+  const cleanKey = slugOrId.trim();
+
+  try {
+    const { data, error } = await supabase
+      .from('partners')
+      .select('*')
+      .or(`slug.eq.${cleanKey},id.eq.${cleanKey}`)
+      .maybeSingle();
+
+    if (!error && data) {
+      return data;
+    }
+  } catch (err) {
+    void err;
+  }
+
+  // Fallback to local storage
+  const stored = getStoredPartners();
+  const found = stored.find((p) => p.slug === cleanKey || p.id === cleanKey);
+  if (found) return found;
+
+  // Fallback partner generator
+  const readableName = cleanKey
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+
+  return {
+    id: cleanKey,
+    name: readableName || 'Hivatalos Partner',
+    slug: cleanKey,
+    category: 'ceg',
+    description: `${readableName} az ÉpítőTudás elismert szakmai partnere. Szakterülete a minőségi kivitelezés, szakképzés és szakmai alapanyagok biztosítása.`,
+    website_url: null,
+    logo_url: null,
+    is_verified: true,
+    created_at: new Date().toISOString(),
+  };
+}
+

@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, FileText } from 'lucide-react';
+import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, FileText, ChevronRight } from 'lucide-react';
 import { listPartners, getCategoryLabel, type PartnerCategory } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface PartnersPageProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, params?: Record<string, any>) => void;
 }
 
 export default function PartnersPage({ onNavigate }: PartnersPageProps) {
@@ -172,12 +172,10 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
         {!loading && filteredPartners.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPartners.map((partner) => (
-              <a
+              <div
                 key={partner.id}
-                href={partner.website_url || '#'}
-                target={partner.website_url ? '_blank' : '_self'}
-                rel="noopener noreferrer"
-                className="group bg-white border border-gray-200 hover:border-accent rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between"
+                onClick={() => onNavigate('partner-detail', { partnerSlug: partner.slug || partner.id })}
+                className="group bg-white border border-gray-200 hover:border-accent rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -195,9 +193,6 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors flex items-center gap-1.5">
                       {partner.name}
-                      {partner.website_url && (
-                        <ExternalLink size={14} className="text-gray-400 group-hover:text-accent transition-colors" />
-                      )}
                     </h2>
 
                     {partner.description && (
@@ -208,11 +203,25 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                   </div>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-primary group-hover:text-accent group-hover:translate-x-0.5 transition-transform">
-                  <span>Hivatalos weboldal megnyitása</span>
-                  <ExternalLink size={14} />
+                <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
+                  <span className="text-primary group-hover:text-accent transition-colors flex items-center gap-1">
+                    Partneri adatlap megtekintése <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </span>
+
+                  {partner.website_url && (
+                    <a
+                      href={partner.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-2.5 py-1 bg-gray-100 hover:bg-accent hover:text-black text-gray-600 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
+                      title="Hivatalos weboldal megnyitása"
+                    >
+                      <ExternalLink size={12} /> Weboldal
+                    </a>
+                  )}
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         )}

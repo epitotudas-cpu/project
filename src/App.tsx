@@ -59,6 +59,7 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const PartnersPage = lazy(() => import('./pages/PartnersPage'));
+const PartnerDetailPage = lazy(() => import('./pages/PartnerDetailPage'));
 const ImpressumPage = lazy(() => import('./pages/ImpressumPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
@@ -92,6 +93,7 @@ type PageKey =
   | 'paths'
   | 'about'
   | 'partners'
+  | 'partner-detail'
   | 'admin'
   | 'login'
   | 'register'
@@ -129,6 +131,7 @@ const ALL_VALID_PAGES: PageKey[] = [
   'paths',
   'about',
   'partners',
+  'partner-detail',
   'admin',
   'login',
   'register',
@@ -158,6 +161,9 @@ function getInitialPage(): PageKey {
     let rawHash = window.location.hash.replace(/^#\/?/, '');
     if (rawHash.startsWith('cikkek')) {
       rawHash = rawHash.replace(/^cikkek/, 'category');
+    }
+    if (rawHash.startsWith('partnerek/')) {
+      return 'partner-detail';
     }
     const mainHash = rawHash.split('?')[0].split('#')[0];
     if (mainHash && ALL_VALID_PAGES.includes(mainHash as PageKey)) {
@@ -189,6 +195,24 @@ function getInitialArticleSlug(): string | null {
   }
 }
 
+function getInitialPartnerSlug(): string | null {
+  try {
+    const hash = window.location.hash;
+    if (hash.includes('partner-detail') || hash.includes('partnerek/')) {
+      const queryPart = hash.includes('?') ? hash.split('?')[1] : '';
+      const params = new URLSearchParams(queryPart);
+      const slug = params.get('slug') || params.get('partnerSlug') || params.get('id');
+      if (slug) return decodeURIComponent(slug);
+
+      const match = hash.match(/^#\/?partnerek\/([^\/?#]+)/);
+      if (match && match[1]) return decodeURIComponent(match[1]);
+    }
+    return sessionStorage.getItem('epitotudas_partner_slug');
+  } catch {
+    return null;
+  }
+}
+
 function PageFallback() {
   return (
     <div className="min-h-[50vh] bg-background flex flex-col items-center justify-center p-8">
@@ -202,6 +226,7 @@ function AppContent() {
   const { user, loading, authEvent } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageKey>(getInitialPage);
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(getInitialArticleSlug);
+  const [selectedPartnerSlug, setSelectedPartnerSlug] = useState<string | null>(getInitialPartnerSlug);
   const [selectedCourseSlug, setSelectedCourseSlug] = useState<string>('gipszkartonozas-es-szarazepitesi-alapismeretek');
   const [selectedQuizId, setSelectedQuizId] = useState<string>('quiz-1');
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
@@ -244,7 +269,10 @@ function AppContent() {
     };
   }, []);
 
-  const navigate = (page: string, params?: { articleSlug?: string; slug?: string; quizId?: string }) => {
+  const navigate = (
+    page: string,
+    params?: { articleSlug?: string; partnerSlug?: string; slug?: string; quizId?: string }
+  ) => {
     let rawTarget = page.replace(/^#\/?/, '');
     if (rawTarget.startsWith('cikkek')) {
       rawTarget = rawTarget.replace(/^cikkek/, 'category');
@@ -262,7 +290,17 @@ function AppContent() {
       }
     }
 
-    if (params?.slug) {
+    if (params?.partnerSlug || (params?.slug && validPage === 'partner-detail')) {
+      const pSlug = params.partnerSlug || params.slug || null;
+      setSelectedPartnerSlug(pSlug);
+      try {
+        if (pSlug) sessionStorage.setItem('epitotudas_partner_slug', pSlug);
+      } catch (err) {
+        void err;
+      }
+    }
+
+    if (params?.slug && validPage !== 'partner-detail') {
       setSelectedCourseSlug(params.slug);
     }
 
@@ -278,6 +316,8 @@ function AppContent() {
         const targetHash =
           validPage === 'home'
             ? ''
+            : validPage === 'partner-detail' && (params?.partnerSlug || params?.slug || selectedPartnerSlug)
+            ? `#partnerek/${params?.partnerSlug || params?.slug || selectedPartnerSlug}`
             : params?.articleSlug
             ? `#article?slug=${params.articleSlug}`
             : rawTarget.includes('?') || rawTarget.includes('#')
@@ -405,6 +445,7 @@ function AppContent() {
       case 'paths': return <PathsHubPage onNavigate={navigate} />;
       case 'about': return <AboutHubPage onNavigate={navigate} />;
       case 'partners': return <PartnersPage onNavigate={navigate} />;
+      case 'partner-detail': return <PartnerDetailPage partnerSlug={selectedPartnerSlug} onNavigate={navigate} />;
       case 'courses': return <CoursesPage onNavigate={navigate} />;
       case 'careers': return <CareersPage onNavigate={navigate} />;
       case 'jogi': return <LegalHubPage onNavigate={navigate} />;
