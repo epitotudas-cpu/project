@@ -11,6 +11,17 @@ import {
 } from '../services/bannerCreativeService';
 import type { AdCreative, TransitionEffect } from '../lib/supabase';
 
+function getValidAdUrl(url?: string | null): string {
+  if (!url || url.trim() === '' || url.trim() === '#') {
+    return '/partnerek';
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
 interface TopBannerProps {
   slots?: AdvertisementSlot[];
 }
@@ -88,7 +99,7 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
       <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-2.5 py-2 sm:px-4 md:px-6 md:py-3.5">
           <a
-            href={fallbackSettings.target_url || '#'}
+            href={getValidAdUrl(fallbackSettings.target_url)}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full block relative overflow-hidden rounded-xl sm:rounded-2xl border border-slate-800 hover:border-slate-700 h-[140px] sm:h-[185px] md:h-[225px] transition-all duration-300 shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500 group/fallback"
@@ -224,7 +235,7 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
           {/* Main Full-Surface Clickable Promo Card */}
           <a
             key={`${activeCreative.id}-${currentIndex}`}
-            href={activeCreative.cta_url || '#'}
+            href={getValidAdUrl(activeCreative.cta_url)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => recordAdClick(activeCreative.id)}
@@ -657,7 +668,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
               </h3>
               <div className="pt-2 flex flex-col sm:flex-row flex-wrap items-center gap-3.5">
                 <a
-                  href={activeSlot.targetUrl || '#'}
+                  href={getValidAdUrl(activeSlot.targetUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => recordAdClick(activeSlot.id)}
@@ -696,7 +707,7 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
           </div>
 
           <a
-            href={fallbackSettings.target_url || '#'}
+            href={getValidAdUrl(fallbackSettings.target_url)}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full md:w-auto shrink-0 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-amber-500/20 hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
@@ -762,7 +773,7 @@ export function SidebarAdBanner() {
         )}
 
         <a
-          href={fallbackSettings.target_url || '#'}
+          href={getValidAdUrl(fallbackSettings.target_url)}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-xs"
@@ -800,7 +811,7 @@ export function SidebarAdBanner() {
       )}
 
       <a
-        href={activeCreative.cta_url || '#'}
+        href={getValidAdUrl(activeCreative.cta_url)}
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => recordAdClick(activeCreative.id)}
@@ -860,7 +871,7 @@ export function FooterAdBanner() {
           </div>
 
           <a
-            href={fallbackSettings.target_url || '#'}
+            href={getValidAdUrl(fallbackSettings.target_url)}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all flex items-center gap-2"
@@ -893,7 +904,7 @@ export function FooterAdBanner() {
         </div>
 
         <a
-          href={activeCreative.cta_url || '#'}
+          href={getValidAdUrl(activeCreative.cta_url)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => recordAdClick(activeCreative.id)}
@@ -1023,7 +1034,7 @@ export function InGridTileAd() {
             <ShieldCheck size={14} /> Szponzorált Csempe
           </span>
           <a
-            href={fallbackSettings.target_url || '#'}
+            href={getValidAdUrl(fallbackSettings.target_url)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-md group-hover:scale-105"
@@ -1151,7 +1162,7 @@ export function InGridTileAd() {
           <span className="truncate">{activeCreative.partner_name}</span>
         </span>
         <a
-          href={activeCreative.cta_url || '#'}
+          href={getValidAdUrl(activeCreative.cta_url)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => recordAdClick(activeCreative.id)}

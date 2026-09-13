@@ -24,6 +24,7 @@ import {
   Trash2,
   Layers,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react';
 import {
   listAdCampaigns,
@@ -148,7 +149,7 @@ export const AD_MODULE_CARDS: AdModuleCardDef[] = [
   },
 ];
 
-export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPageProps) {
+export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
   const [activeTab, setActiveTab] = useState<AdCategoryKey>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -1053,7 +1054,22 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                       <tr key={camp.id} className="hover:bg-white/5 transition-colors">
                         <td className="p-3">
                           <span className="font-bold text-white block text-sm">{camp.title}</span>
-                          <span className="text-gray-400">{camp.sponsor_name}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onNavigate) {
+                                onNavigate('adminPartners');
+                              } else {
+                                setActiveTab('advertisers');
+                                setSearchQuery(camp.sponsor_name);
+                              }
+                            }}
+                            className="text-amber-400 hover:text-amber-300 font-bold hover:underline inline-flex items-center gap-1.5 cursor-pointer text-xs transition-colors mt-0.5"
+                            title="Hirdető partner adatlapjának megtekintése"
+                          >
+                            <Building2 size={13} className="shrink-0" />
+                            <span>{camp.sponsor_name}</span>
+                          </button>
                         </td>
                         <td className="p-3">
                           <span className="px-2 py-1 rounded bg-white/10 font-mono text-[11px] text-gray-300">
@@ -1094,13 +1110,26 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                 <h2 style={{ color: textColor }} className="text-lg font-bold flex items-center gap-2">
                   <Building2 size={20} style={{ color: cardHighlight }} /> Hirdető Partnerek Cégjegyzéke
                 </h2>
-                <button
-                  onClick={() => { setEditingAdvertiser(null); resetAdvForm(); setShowAdvertiserModal(true); }}
-                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-4 py-2 text-xs font-extrabold rounded-xl shadow hover:opacity-90 transition-all cursor-pointer flex items-center gap-2"
-                >
-                  <Plus size={14} /> Új Hirdető Hozzáadása
-                </button>
+                <div className="flex items-center gap-2.5">
+                  {onNavigate && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('adminPartners')}
+                      className="px-3.5 py-2 text-xs font-extrabold rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                      title="Partner & Iskola Szervezetek Kezelője"
+                    >
+                      <Building2 size={14} />
+                      <span>Partnerek Kezelője ↗</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setEditingAdvertiser(null); resetAdvForm(); setShowAdvertiserModal(true); }}
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="px-4 py-2 text-xs font-extrabold rounded-xl shadow hover:opacity-90 transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <Plus size={14} /> Új Hirdető Hozzáadása
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1115,18 +1144,45 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                         <span className="text-[11px] text-gray-400 capitalize">{adv.category}</span>
                       </div>
                     </div>
-                    <div className="space-y-1 text-xs text-gray-300 pt-2 border-t border-white/10">
+                    <div className="space-y-1.5 text-xs text-gray-300 pt-2 border-t border-white/10">
                       <p className="flex items-center gap-1.5"><UserCheck size={13} className="text-accent shrink-0" /> {adv.contactName} ({adv.contactRole || 'Kapcsolattartó'})</p>
                       <p className="flex items-center gap-1.5"><Mail size={13} className="text-accent shrink-0" /> {adv.contactEmail}</p>
                       {adv.contactPhone && <p className="flex items-center gap-1.5"><Phone size={13} className="text-accent shrink-0" /> {adv.contactPhone}</p>}
+                      {adv.websiteUrl && (
+                        <p className="flex items-center gap-1.5 truncate pt-0.5">
+                          <ExternalLink size={13} className="text-amber-400 shrink-0" />
+                          <a
+                            href={adv.websiteUrl.startsWith('http') ? adv.websiteUrl : `https://${adv.websiteUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-amber-400 font-semibold hover:underline truncate"
+                          >
+                            {adv.websiteUrl}
+                          </a>
+                        </p>
+                      )}
                     </div>
-                    <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                      <button onClick={() => openEditAdvertiser(adv)} className="text-accent font-bold hover:underline cursor-pointer">
-                        Szerkesztés
-                      </button>
-                      <button onClick={() => setDeleteConfirmId({ id: adv.id, type: 'advertiser' })} className="text-red-400 font-bold hover:underline cursor-pointer">
-                        Törlés
-                      </button>
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs gap-2">
+                      {onNavigate ? (
+                        <button
+                          type="button"
+                          onClick={() => onNavigate('adminPartners')}
+                          className="text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                          title="Megtekintés a Partner Szervezetek Kezelőjében"
+                        >
+                          <Building2 size={13} /> Partner Adatlap ↗
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 font-medium text-[11px]">{adv.category || 'Partner'}</span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => openEditAdvertiser(adv)} className="text-accent font-bold hover:underline cursor-pointer">
+                          Szerkesztés
+                        </button>
+                        <button onClick={() => setDeleteConfirmId({ id: adv.id, type: 'advertiser' })} className="text-red-400 font-bold hover:underline cursor-pointer">
+                          Törlés
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1206,8 +1262,23 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                       <tr key={c.id} className="hover:bg-white/5 transition-colors">
                         <td className="p-3 font-mono font-bold text-amber-400">{c.contractNumber}</td>
                         <td className="p-3">
-                          <span className="font-bold text-white block">{c.partnerName}</span>
-                          <span className="text-gray-400">{c.campaignTitle}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onNavigate) {
+                                onNavigate('adminPartners');
+                              } else {
+                                setActiveTab('advertisers');
+                                setSearchQuery(c.partnerName);
+                              }
+                            }}
+                            className="font-bold text-amber-400 hover:text-amber-300 hover:underline inline-flex items-center gap-1 cursor-pointer text-xs text-left"
+                            title="Hirdető partner adatlapjának megtekintése"
+                          >
+                            <Building2 size={13} className="shrink-0" />
+                            <span>{c.partnerName}</span>
+                          </button>
+                          <span className="text-gray-400 block mt-0.5">{c.campaignTitle}</span>
                         </td>
                         <td className="p-3">
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
@@ -1265,8 +1336,23 @@ export default function AdminAdsPage({ onNavigate: _onNavigate }: AdminAdsPagePr
                       <tr key={p.id} className="hover:bg-white/5 transition-colors">
                         <td className="p-3 font-mono font-bold text-accent">{p.paymentNumber}</td>
                         <td className="p-3">
-                          <span className="font-bold text-white block">{p.advertiserName}</span>
-                          <span className="text-gray-400">{p.campaignTitle}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onNavigate) {
+                                onNavigate('adminPartners');
+                              } else {
+                                setActiveTab('advertisers');
+                                setSearchQuery(p.advertiserName);
+                              }
+                            }}
+                            className="font-bold text-amber-400 hover:text-amber-300 hover:underline inline-flex items-center gap-1 cursor-pointer text-xs text-left"
+                            title="Hirdető partner adatlapjának megtekintése"
+                          >
+                            <Building2 size={13} className="shrink-0" />
+                            <span>{p.advertiserName}</span>
+                          </button>
+                          <span className="text-gray-400 block mt-0.5">{p.campaignTitle}</span>
                         </td>
                         <td className="p-3 font-mono font-bold text-emerald-400">{p.amountHuf.toLocaleString('hu-HU')} HUF</td>
                         <td className="p-3 text-gray-300">{new Date(p.dueDate).toLocaleDateString('hu-HU')}</td>

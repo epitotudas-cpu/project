@@ -130,6 +130,17 @@ interface FeaturedPartnerOffersProps {
   partnerAds: AdCampaign[];
 }
 
+function getValidAdUrl(url?: string | null): string {
+  if (!url || url.trim() === '' || url.trim() === '#') {
+    return '/partnerek';
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
 function FeaturedPartnerOffers({ partnerAds }: FeaturedPartnerOffersProps) {
   if (!partnerAds || partnerAds.length === 0) return null;
 
@@ -167,7 +178,7 @@ function FeaturedPartnerOffers({ partnerAds }: FeaturedPartnerOffersProps) {
       {/* 1. FEATURED CARD (Highest Priority) */}
       {featuredAd && (
         <a
-          href={featuredAd.target_url || '#'}
+          href={getValidAdUrl(featuredAd.target_url)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => recordAdClick(featuredAd.id)}
@@ -253,7 +264,7 @@ function FeaturedPartnerOffers({ partnerAds }: FeaturedPartnerOffersProps) {
             {secondaryAds.map((ad) => (
               <a
                 key={ad.id}
-                href={ad.target_url || '#'}
+                href={getValidAdUrl(ad.target_url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => recordAdClick(ad.id)}
