@@ -51,7 +51,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-careers', label: 'Karrier & Állások', page: 'careers', parentId: 'nav-paths', isActive: true, displayOrder: 4 },
 ];
 
-const STORAGE_KEY = 'epitotudas_nav_items_v8';
+const STORAGE_KEY = 'epitotudas_nav_items_v9';
 const SUPABASE_NAV_ID = '00000000-0000-0000-0000-000000000004';
 
 declare global {
@@ -136,14 +136,14 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     'sub-paths': { label: 'Tanulási Útvonalak & Karrierlépcsők', page: 'learning-paths', displayOrder: 2 },
     'sub-courses': { label: 'Képzések & Kurzusok', page: 'courses', displayOrder: 3 },
     'sub-careers': { label: 'Karrier & Állások', page: 'careers', displayOrder: 4 },
-    'sub-news': { label: 'Hírek', page: 'category?type=hirek', displayOrder: 1 },
-    'sub-novelties': { label: 'Újdonságok', page: 'category?type=ujdonsagok', displayOrder: 2 },
+    'sub-news': { label: 'Hírek', page: 'category?type=hirek', parentId: 'nav-articles', displayOrder: 1 },
+    'sub-novelties': { label: 'Újdonságok', page: 'category?type=ujdonsagok', parentId: 'nav-articles', displayOrder: 2 },
     'sub-guides': { label: 'Kivitelezési útmutatók', page: 'category?type=utmutatok', parentId: 'nav-tudastar', displayOrder: 1 },
-    'sub-glossary': { label: 'Fogalomtár & Szótár', page: 'glossary', displayOrder: 2 },
-    'sub-calc': { label: 'Számítások & Kalkulátorok', page: 'calculations', displayOrder: 3 },
-    'sub-books': { label: 'Szakmai Könyvek', page: 'books', displayOrder: 4 },
-    'sub-safety': { label: 'Munkavédelem', page: 'safety', displayOrder: 5 },
-    'sub-standards': { label: 'Szabályok, szabványok', page: 'standards', displayOrder: 6 },
+    'sub-glossary': { label: 'Fogalomtár & Szótár', page: 'glossary', parentId: 'nav-tudastar', displayOrder: 2 },
+    'sub-calc': { label: 'Számítások & Kalkulátorok', page: 'calculations', parentId: 'nav-tudastar', displayOrder: 3 },
+    'sub-books': { label: 'Szakmai Könyvek', page: 'books', parentId: 'nav-tudastar', displayOrder: 4 },
+    'sub-safety': { label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', displayOrder: 5 },
+    'sub-standards': { label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', displayOrder: 6 },
     'sub-materials': { label: 'Anyagok', page: 'materials' },
   };
 
@@ -153,13 +153,15 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     if (target) {
       const needsLabel = item.label !== target.label;
       const needsPage = item.page !== target.page;
+      const needsParent = target.parentId !== undefined && item.parentId !== target.parentId;
       const needsOrder = target.displayOrder !== undefined && item.displayOrder !== target.displayOrder;
-      if (needsLabel || needsPage || needsOrder) {
+      if (needsLabel || needsPage || needsParent || needsOrder) {
         changed = true;
         return {
           ...item,
           label: target.label,
           page: target.page,
+          parentId: target.parentId !== undefined ? target.parentId : item.parentId,
           displayOrder: target.displayOrder !== undefined ? target.displayOrder : item.displayOrder,
         };
       }
