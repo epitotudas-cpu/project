@@ -50,11 +50,12 @@ import EditCategoryModal from '../components/EditCategoryModal';
 import DeleteCategoryModal from '../components/DeleteCategoryModal';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
+import type { AdminView } from '../components/AdminSidebar';
+
 export type ArticleHubSubTab =
   | 'overview'
   | 'list-hirek'
   | 'list-ujdonsagok'
-  | 'list-utmutatok'
   | 'list-all'
   | 'categories'
   | 'content'
@@ -75,9 +76,10 @@ const STATUS_BADGES: Record<Article['status'], { label: string; class: string }>
 
 interface AdminArticlesPageProps {
   initialSearchQuery?: string;
+  onNavigateView?: (view: AdminView) => void;
 }
 
-export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesPageProps = {}) {
+export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }: AdminArticlesPageProps = {}) {
   const toast = useToast();
   const siteSettings = useSiteSettings();
 
@@ -105,7 +107,7 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
 
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
 
-  const [typeSettingsModalType, setTypeSettingsModalType] = useState<'hirek' | 'ujdonsagok' | 'utmutatok' | null>(null);
+  const [typeSettingsModalType, setTypeSettingsModalType] = useState<'hirek' | 'ujdonsagok' | null>(null);
   const [editingTypeSettings, setEditingTypeSettings] = useState<TypePageSettings | null>(null);
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -171,7 +173,7 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
     toast.success('Beállítások sikeresen elmentve!');
   };
 
-  const handleOpenTypeSettingsModal = (type: 'hirek' | 'ujdonsagok' | 'utmutatok') => {
+  const handleOpenTypeSettingsModal = (type: 'hirek' | 'ujdonsagok') => {
     setTypeSettingsModalType(type);
     setEditingTypeSettings(getArticleSettingsForType(type));
   };
@@ -180,7 +182,7 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
     if (!typeSettingsModalType || !editingTypeSettings) return;
     saveArticleSettingsForType(typeSettingsModalType, editingTypeSettings);
     setArticleSettingsState(getArticleSettings());
-    const label = typeSettingsModalType === 'hirek' ? 'Hírek' : typeSettingsModalType === 'ujdonsagok' ? 'Újdonságok' : 'Útmutatók';
+    const label = typeSettingsModalType === 'hirek' ? 'Hírek' : 'Újdonságok';
     toast.success(`${label} oldal beállításai sikeresen elmentve!`);
     setTypeSettingsModalType(null);
     setEditingTypeSettings(null);
@@ -269,12 +271,12 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
   };
 
   // Determine current active sub-page category filter
-  const currentTabType = subTab === 'list-hirek' ? 'hirek' : subTab === 'list-ujdonsagok' ? 'ujdonsagok' : subTab === 'list-utmutatok' ? 'utmutatok' : 'all';
+  const currentTabType = subTab === 'list-hirek' ? 'hirek' : subTab === 'list-ujdonsagok' ? 'ujdonsagok' : 'all';
 
   // Filtered articles list for current active view
   let filteredArticles = articles.filter((a) => {
     if (currentTabType !== 'all') {
-      const artType = a.article_type || 'utmutatok';
+      const artType = a.article_type || 'hirek';
       if (artType !== currentTabType) return false;
     }
     if (search.trim()) {
@@ -312,7 +314,7 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
   // Published articles only (strictly enforced for recommendations)
   const publishedArticles = articles.filter((a) => a.status === 'published');
 
-  // Per-Type Counts for the 3 main cards
+  // Per-Type Counts for the main cards
   const hirekArticles = articles.filter((a) => a.article_type === 'hirek');
   const hirekTotal = hirekArticles.length;
   const hirekPublished = hirekArticles.filter((a) => a.status === 'published').length;
@@ -322,11 +324,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
   const ujdonsagTotal = ujdonsagArticles.length;
   const ujdonsagPublished = ujdonsagArticles.filter((a) => a.status === 'published').length;
   const ujdonsagDraft = ujdonsagArticles.filter((a) => a.status === 'draft' || a.status === 'pending' || a.status === 'review').length;
-
-  const utmutatoArticles = articles.filter((a) => (a.article_type || 'utmutatok') === 'utmutatok');
-  const utmutatoTotal = utmutatoArticles.length;
-  const utmutatoPublished = utmutatoArticles.filter((a) => a.status === 'published').length;
-  const utmutatoDraft = utmutatoArticles.filter((a) => a.status === 'draft' || a.status === 'pending' || a.status === 'review').length;
 
   // KPI Calculations
   const totalCount = articles.length;
@@ -390,8 +387,8 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
             </p>
           </div>
 
-          {/* 3 LARGE MAIN TYPE TILES */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* 2 LARGE MAIN TYPE TILES */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* TILE 1: HÍREK KEZELÉSE */}
             <div
               style={{ backgroundColor: cardBg, borderColor: cardBorder }}
@@ -517,73 +514,32 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                 </button>
               </div>
             </div>
-
-            {/* TILE 3: ÚTMUTATÓK KEZELÉSE */}
-            <div
-              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
-              className="group p-6 border rounded-2xl hover:border-amber-400/60 transition-all duration-200 hover:shadow-2xl hover:shadow-amber-400/5 flex flex-col justify-between space-y-5"
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl">
-                    <BookOpen size={28} />
-                  </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 font-bold uppercase tracking-wider">
-                    3. Típus
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-black text-white group-hover:text-amber-400 transition-colors">
-                    Útmutatók Kezelése
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                    Gyakorlati lépésről lépésre kivitelezési útmutatók, rétegrendek és munkavédelmi leírások.
-                  </p>
-                </div>
-
-                {/* COUNTS COUNTER BADGES */}
-                <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 border border-gray-800 rounded-xl text-center">
-                  <div>
-                    <div className="text-[10px] text-gray-400 font-bold uppercase">Összes</div>
-                    <div className="text-base font-black text-white">{utmutatoTotal} db</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-400 font-bold uppercase">Publikált</div>
-                    <div className="text-base font-black text-green-400">{utmutatoPublished} db</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-400 font-bold uppercase">Piszkozat</div>
-                    <div className="text-base font-black text-amber-400">{utmutatoDraft} db</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD ACTIONS */}
-              <div className="pt-4 border-t border-gray-800/80 flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setLockedArticleTypeForModal('utmutatok');
-                    setEditingArticle(null);
-                    setEditorOpen(true);
-                  }}
-                  className="flex-1 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Plus size={14} /> + Új Útmutató
-                </button>
-                <button
-                  onClick={() => setSubTab('list-utmutatok')}
-                  style={{ backgroundColor: cardHighlight }}
-                  className="px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all flex items-center gap-1"
-                >
-                  Kezelés &rarr;
-                </button>
-              </div>
-            </div>
           </div>
 
-          {/* SECONDARY TILES: ÖSSZES CIKK & EGYÉB MODULOK */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-800">
+          {/* SECONDARY TILES: ÖSSZES CIKK, ÚTMUTATÓK ÖNÁLLÓ MENU & EGYÉB MODULOK */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-800">
+            {/* KIVITELEZÉSI ÚTMUTATÓK DEDICATED MENU LINK */}
+            <div
+              onClick={() => onNavigateView?.('utmutatok')}
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              className="group cursor-pointer p-5 border rounded-2xl hover:border-emerald-400/50 transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl">
+                  <BookOpen size={24} />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors flex items-center gap-2">
+                    <span>Kivitelezési Útmutatók</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold uppercase">Új önálló menü</span>
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Ugrás a különálló Kivitelezési Útmutatók kezelőfelületére.
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-gray-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all shrink-0" />
+            </div>
             {/* ÖSSZES CIKK SECONDARY CARD */}
             <div
               onClick={() => setSubTab('list-all')}
@@ -661,17 +617,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
             </button>
 
             <button
-              onClick={() => setSubTab('list-utmutatok')}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                subTab === 'list-utmutatok'
-                  ? 'bg-amber-400 text-black shadow-md'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              <BookOpen size={16} /> 3. Útmutatók Kezelése ({utmutatoTotal} db)
-            </button>
-
-            <button
               onClick={() => setSubTab('list-all')}
               className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all ${
                 subTab === 'list-all'
@@ -689,23 +634,21 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 {subTab === 'list-hirek' && <>📰 Hírek Kezelése</>}
                 {subTab === 'list-ujdonsagok' && <>✨ Újdonságok Kezelése</>}
-                {subTab === 'list-utmutatok' && <>📚 Szakmai Útmutatók Kezelése</>}
                 {subTab === 'list-all' && <>📂 Összes Cikk Kezelése</>}
               </h2>
               <p className="text-xs text-gray-400 mt-0.5">
                 {subTab === 'list-hirek' && 'Kizárólag a Hírek típusú cikkek listája, kategórián belüli sorrendezése és egyedi oldalbeállításai.'}
                 {subTab === 'list-ujdonsagok' && 'Kizárólag az Újdonságok típusú cikkek listája, kategórián belüli sorrendezése és egyedi oldalbeállításai.'}
-                {subTab === 'list-utmutatok' && 'Kizárólag a Szakmai Útmutatók típusú cikkek listája, kategórián belüli sorrendezése és egyedi oldalbeállításai.'}
                 {subTab === 'list-all' && 'Az ÉpítőTudás teljes cikkbázisának áttekintése keresővel és szűrőkkel.'}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              {(subTab === 'list-hirek' || subTab === 'list-ujdonsagok' || subTab === 'list-utmutatok') && (
+              {(subTab === 'list-hirek' || subTab === 'list-ujdonsagok') && (
                 <button
                   onClick={() =>
                     handleOpenTypeSettingsModal(
-                      subTab === 'list-hirek' ? 'hirek' : subTab === 'list-ujdonsagok' ? 'ujdonsagok' : 'utmutatok'
+                      subTab === 'list-hirek' ? 'hirek' : 'ujdonsagok'
                     )
                   }
                   className="flex items-center gap-2 px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-amber-400 text-xs font-bold rounded-xl border border-gray-700 transition-colors cursor-pointer"
@@ -718,7 +661,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                 onClick={() => {
                   if (subTab === 'list-hirek') setLockedArticleTypeForModal('hirek');
                   else if (subTab === 'list-ujdonsagok') setLockedArticleTypeForModal('ujdonsagok');
-                  else if (subTab === 'list-utmutatok') setLockedArticleTypeForModal('utmutatok');
                   else setLockedArticleTypeForModal(undefined);
 
                   setEditingArticle(null);
@@ -730,7 +672,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                 <Plus size={16} />
                 {subTab === 'list-hirek' && 'Új Hír Létrehozása'}
                 {subTab === 'list-ujdonsagok' && 'Új Újdonság Létrehozása'}
-                {subTab === 'list-utmutatok' && 'Új Útmutató Létrehozása'}
                 {subTab === 'list-all' && 'Új Cikk Létrehozása'}
               </button>
             </div>
@@ -748,8 +689,6 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                     ? 'Keresés a hírek között...'
                     : subTab === 'list-ujdonsagok'
                     ? 'Keresés az újdonságok között...'
-                    : subTab === 'list-utmutatok'
-                    ? 'Keresés az útmutatók között...'
                     : 'Keresés az összes cikk között...'
                 }
                 value={search}
@@ -1562,14 +1501,13 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
           onClose={() => {
             if (lockedArticleTypeForModal === 'hirek') setSubTab('list-hirek');
             else if (lockedArticleTypeForModal === 'ujdonsagok') setSubTab('list-ujdonsagok');
-            else if (lockedArticleTypeForModal === 'utmutatok') setSubTab('list-utmutatok');
 
             setEditorOpen(false);
             setEditingArticle(null);
             setLockedArticleTypeForModal(undefined);
           }}
           onSaved={(savedData) => {
-            const targetType = savedData.article_type || lockedArticleTypeForModal || 'utmutatok';
+            const targetType = savedData.article_type || lockedArticleTypeForModal || 'hirek';
             if (targetType === 'hirek') {
               setSubTab('list-hirek');
               toast.success(
@@ -1581,9 +1519,9 @@ export default function AdminArticlesPage({ initialSearchQuery }: AdminArticlesP
                 `Újdonság (${savedData.status === 'published' ? 'Közzétéve' : 'Piszkozat'}) sikeresen elmentve! Megjelenik az Újdonságok kezelése listában és a publikus Újdonságok fül alatt.`
               );
             } else {
-              setSubTab('list-utmutatok');
+              setSubTab('list-all');
               toast.success(
-                `Útmutató (${savedData.status === 'published' ? 'Közzétéve' : 'Piszkozat'}) sikeresen elmentve! Megjelenik az Útmutatók kezelése listában és a publikus Útmutatók fül alatt.`
+                `Tartalom (${savedData.status === 'published' ? 'Közzétéve' : 'Piszkozat'}) sikeresen elmentve! Megjelenik a cikkek listájában.`
               );
             }
 

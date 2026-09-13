@@ -208,7 +208,15 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
             <p className="text-xs text-gray-400">Modulok közvetlen elérése</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <button
+              onClick={() => onNavigateView('utmutatok')}
+              style={{ backgroundColor: innerCardBg, borderColor: cardBorder }}
+              className="p-3.5 border hover:border-white/30 rounded-xl text-left transition-colors cursor-pointer"
+            >
+              <div className="text-xs font-bold uppercase mb-1" style={{ color: cardHighlight }}>Útmutatók</div>
+              <div className="text-sm font-bold text-white">Kivitelezési Útmutatók</div>
+            </button>
             <button
               onClick={() => onNavigateView('roles')}
               style={{ backgroundColor: innerCardBg, borderColor: cardBorder }}

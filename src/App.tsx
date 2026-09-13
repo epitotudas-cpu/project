@@ -26,6 +26,7 @@ const CareersPage = lazy(() => import('./pages/CareersPage'));
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminArticlesPage = lazy(() => import('./pages/AdminArticlesPage'));
+const AdminGuidesPage = lazy(() => import('./pages/AdminGuidesPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/AdminCategoriesPage'));
 const AdminGlossaryPage = lazy(() => import('./pages/AdminGlossaryPage'));
 const AdminBooksPage = lazy(() => import('./pages/AdminBooksPage'));
@@ -344,7 +345,8 @@ function AppContent() {
             {(view, userEmail, onNavigateView, searchQuery) => {
               if (view === 'dashboard') return <AdminDashboard userEmail={userEmail} onNavigateView={onNavigateView} />;
               if (view === 'moderation') return <AdminModerationPage />;
-              if (view === 'articles') return <AdminArticlesPage initialSearchQuery={searchQuery} />;
+              if (view === 'articles') return <AdminArticlesPage initialSearchQuery={searchQuery} onNavigateView={onNavigateView} />;
+              if (view === 'utmutatok') return <AdminGuidesPage initialSearchQuery={searchQuery} />;
               if (view === 'learning') return <AdminLearningPage />;
               if (view === 'partner-learning') return <PartnerLearningPage />;
               if (view === 'categories') return <AdminCategoriesPage initialSearchQuery={searchQuery} />;
