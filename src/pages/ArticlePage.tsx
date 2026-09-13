@@ -18,6 +18,8 @@ import {
   Bookmark,
   BookmarkCheck,
   ShieldCheck,
+  ShieldAlert,
+  Sparkles,
   ExternalLink,
   Calendar,
   FileText,
@@ -518,6 +520,10 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
             {isUtmutato ? (
               <>
                 <ChevronRight size={13} />
+                <button onClick={() => onNavigate('tudastar')} className="hover:text-white transition-colors">
+                  Tudástár
+                </button>
+                <ChevronRight size={13} />
                 <button onClick={() => onNavigate('category?type=utmutatok')} className="hover:text-white transition-colors">
                   Kivitelezési útmutatók
                 </button>
@@ -557,54 +563,54 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
 
       {/* 2. Sub-navigation Ribbon */}
       <SectionSubNav
-        ariaLabel={isUtmutato ? 'Kivitelezési útmutatók navigáció' : 'Tudástár navigáció'}
+        ariaLabel={isUtmutato ? 'Tudástár almenü navigáció' : 'Cikkek almenü navigáció'}
         onNavigate={onNavigate}
         items={
           isUtmutato
             ? [
                 {
-                  label: 'Kivitelezési Útmutatók',
+                  label: 'Kivitelezési útmutatók',
                   page: 'category?type=utmutatok',
                   icon: <BookOpen size={14} className="text-accent" />,
                   active: true,
                 },
                 {
-                  label: 'Hőszigetelés',
-                  page: 'category?type=utmutatok&q=Hőszigetelés',
-                  icon: <BookOpen size={14} className="text-accent" />,
-                  active: false,
-                },
-                {
-                  label: 'Szárazépítés',
-                  page: 'category?type=utmutatok&q=Szárazépítés',
-                  icon: <BookOpen size={14} className="text-accent" />,
-                  active: false,
-                },
-                {
-                  label: 'Szerkezetépítés',
-                  page: 'category?type=utmutatok&q=Szerkezetépítés',
-                  icon: <BookOpen size={14} className="text-accent" />,
-                  active: false,
-                },
-              ]
-            : [
-                {
-                  label: 'Fogalomtár',
+                  label: 'Fogalomtár & Szótár',
                   page: 'glossary',
                   icon: <BookOpen size={14} className="text-accent" />,
                   active: false,
                 },
                 {
-                  label: 'Számítások',
+                  label: 'Számítások & Kalkulátorok',
                   page: 'calculations',
                   icon: <Calculator size={14} className="text-accent" />,
                   active: false,
                 },
                 {
-                  label: 'Szakmai könyvek',
-                  page: 'books',
-                  icon: <Library size={14} className="text-accent" />,
+                  label: 'Munkavédelem',
+                  page: 'safety',
+                  icon: <ShieldAlert size={14} className="text-accent" />,
                   active: false,
+                },
+                {
+                  label: 'Szabályok, szabványok',
+                  page: 'standards',
+                  icon: <ShieldCheck size={14} className="text-accent" />,
+                  active: false,
+                },
+              ]
+            : [
+                {
+                  label: 'Hírek',
+                  page: 'category?type=hirek',
+                  icon: <Sparkles size={14} className="text-accent" />,
+                  active: articleTypeKey === 'hirek',
+                },
+                {
+                  label: 'Újdonságok',
+                  page: 'category?type=ujdonsagok',
+                  icon: <Calendar size={14} className="text-accent" />,
+                  active: articleTypeKey === 'ujdonsagok',
                 },
               ]
         }

@@ -31,6 +31,9 @@ import {
   Calendar,
   Bookmark,
   BookmarkCheck,
+  Calculator,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { getCategories, getArticles } from '../lib/api';
@@ -384,6 +387,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
             {selectedArticleType === 'utmutatok' ? (
               <>
                 <ChevronRight size={13} />
+                <button onClick={() => onNavigate('tudastar')} className="hover:text-white transition-colors">
+                  Tudástár
+                </button>
+                <ChevronRight size={13} />
                 <button onClick={() => onNavigate('category?type=utmutatok')} className="hover:text-white transition-colors">
                   Kivitelezési útmutatók
                 </button>
@@ -435,7 +442,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
       {/* Sub-navigation Ribbon Bar */}
       <SectionSubNav
-        ariaLabel={selectedArticleType === 'utmutatok' ? 'Kivitelezési útmutatók almenü navigáció' : 'Cikkek almenü navigáció'}
+        ariaLabel={selectedArticleType === 'utmutatok' ? 'Tudástár almenü navigáció' : 'Cikkek almenü navigáció'}
         onNavigate={onNavigate}
         items={
           selectedArticleType === 'utmutatok'
@@ -444,31 +451,31 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                   label: 'Kivitelezési útmutatók',
                   page: 'category?type=utmutatok',
                   icon: <BookOpen size={14} className="text-accent" />,
-                  active: selectedCategories.length === 0 && !searchQuery,
+                  active: true,
                 },
                 {
-                  label: 'Hőszigetelés',
-                  page: 'category?type=utmutatok&q=Hőszigetelés',
-                  icon: <Thermometer size={14} className="text-accent" />,
-                  active: searchQuery.toLowerCase() === 'hőszigetelés',
+                  label: 'Fogalomtár & Szótár',
+                  page: 'glossary',
+                  icon: <BookOpen size={14} className="text-accent" />,
+                  active: false,
                 },
                 {
-                  label: 'Szárazépítés',
-                  page: 'category?type=utmutatok&q=Szárazépítés',
-                  icon: <Layers size={14} className="text-accent" />,
-                  active: searchQuery.toLowerCase() === 'szárazépítés',
+                  label: 'Számítások & Kalkulátorok',
+                  page: 'calculations',
+                  icon: <Calculator size={14} className="text-accent" />,
+                  active: false,
                 },
                 {
-                  label: 'Szerkezetépítés',
-                  page: 'category?type=utmutatok&q=Szerkezetépítés',
-                  icon: <Building size={14} className="text-accent" />,
-                  active: searchQuery.toLowerCase() === 'szerkezetépítés',
+                  label: 'Munkavédelem',
+                  page: 'safety',
+                  icon: <ShieldAlert size={14} className="text-accent" />,
+                  active: false,
                 },
                 {
-                  label: 'Burkolás',
-                  page: 'category?type=utmutatok&q=Burkolás',
-                  icon: <Grid size={14} className="text-accent" />,
-                  active: searchQuery.toLowerCase() === 'burkolás',
+                  label: 'Szabályok, szabványok',
+                  page: 'standards',
+                  icon: <ShieldCheck size={14} className="text-accent" />,
+                  active: false,
                 },
               ]
             : [
@@ -483,12 +490,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                   page: 'category?type=ujdonsagok',
                   icon: <Calendar size={14} className="text-accent" />,
                   active: selectedArticleType === 'ujdonsagok',
-                },
-                {
-                  label: 'Kivitelezési Útmutatók',
-                  page: 'category?type=utmutatok',
-                  icon: <BookOpen size={14} className="text-accent" />,
-                  active: selectedArticleType === 'utmutatok',
                 },
               ]
         }

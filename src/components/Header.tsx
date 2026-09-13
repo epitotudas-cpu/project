@@ -194,13 +194,46 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     return isPageMatch;
   };
 
+  const getActiveArticleType = (pageState: string, loc: Location) => {
+    const queryParams = new URLSearchParams(loc.search);
+    const hash = loc.hash || '';
+    const cleanHash = hash.replace(/^#\/?/, '').split('?')[0];
+
+    let activeType = queryParams.get('type') || queryParams.get('tab');
+    if (!activeType && (pageState === 'article' || cleanHash === 'article')) {
+      try {
+        activeType = sessionStorage.getItem('epitotudas_article_type');
+      } catch {
+        // ignore
+      }
+    }
+    if (!activeType) {
+      if (cleanHash === 'ujdonsagok' || cleanHash === 'utmutatok') {
+        activeType = cleanHash;
+      } else {
+        activeType = 'hirek';
+      }
+    }
+    return activeType;
+  };
+
   const isNavItemActive = (itemPage: string, subItems?: Array<{ page: string }>) => {
     const mainItemPage = itemPage.split('?')[0].split('#')[0];
-    if (currentPage === mainItemPage) return true;
+    if (currentPage === mainItemPage) {
+      if (mainItemPage === 'category') {
+        const activeType = getActiveArticleType(currentPage, location);
+        if (activeType === 'utmutatok') return false;
+      }
+      return true;
+    }
     if (mainItemPage === 'learning' && (currentPage === 'learning' || currentPage === 'course-detail' || currentPage === 'quiz-player')) return true;
-    if (mainItemPage === 'category' && (currentPage === 'category' || currentPage === 'article')) return true;
-    if (['tudastar', 'glossary'].includes(mainItemPage) && ['glossary', 'calculations', 'books', 'safety', 'standards'].includes(currentPage)) return true;
-    if (mainItemPage === 'tool' && ['software', 'valaszto', 'materials'].includes(currentPage)) return true;
+    if (mainItemPage === 'category' && (currentPage === 'category' || currentPage === 'article')) {
+      const activeType = getActiveArticleType(currentPage, location);
+      if (activeType === 'utmutatok') return false;
+      return true;
+    }
+    if (['tudastar', 'glossary'].includes(mainItemPage) && ['glossary', 'calculations', 'safety', 'standards'].includes(currentPage)) return true;
+    if (mainItemPage === 'tool' && ['software', 'valaszto', 'materials', 'books'].includes(currentPage)) return true;
     if (mainItemPage === 'paths' && ['courses', 'careers', 'learning-paths'].includes(currentPage)) return true;
     if (subItems?.some((sub) => isSubItemActive(sub.page, currentPage, location))) return true;
     return false;
