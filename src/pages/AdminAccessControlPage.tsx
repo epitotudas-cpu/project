@@ -126,11 +126,11 @@ export function AdminAccessControlPage() {
           onClick={() => handleRoleChange('editor')}
           className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
             selectedRole === 'editor'
-              ? 'bg-amber-500/15 border border-amber-500/40 text-amber-400 shadow-md'
+              ? 'bg-purple-500/15 border border-purple-500/40 text-purple-400 shadow-md'
               : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
-          <UserCheck className="w-5 h-5 text-amber-400" />
+          <UserCheck className="w-5 h-5 text-purple-400" />
           <span>Szerkesztő Szerepkör</span>
           <span className="ml-2 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
             /szerkeszto

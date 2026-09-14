@@ -377,7 +377,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             {isEditor && (
               <button
                 onClick={() => onNavigate('szerkeszto')}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
               >
                 <User size={14} />
                 Szerkesztői panel
@@ -498,9 +498,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       <div className="py-1">
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('szerkeszto'); }}
-                          className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                          className="w-full px-4 py-2 text-left text-purple-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
                         >
-                          <User size={14} className="text-amber-400 shrink-0" />
+                          <User size={14} className="text-purple-400 shrink-0" />
                           Szerkesztői panel
                         </button>
                       </div>
@@ -722,7 +722,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 {isEditor && (
                   <button
                     onClick={() => { onNavigate('szerkeszto'); setMobileOpen(false); }}
-                    className="w-full py-3 border border-amber-500/40 text-amber-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-amber-500/10"
+                    className="w-full py-3 border border-purple-500/40 text-purple-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-purple-500/10"
                   >
                     Szerkesztői panel
                   </button>

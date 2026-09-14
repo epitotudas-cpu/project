@@ -92,19 +92,19 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-slate-900 border-r border-amber-500/20 flex flex-col transition-transform duration-200 ${
+        className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-slate-900 border-r border-purple-500/20 flex flex-col transition-transform duration-200 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         {/* Brand */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
               <UserCheck className="w-6 h-6" />
             </div>
             <div>
               <h1 className="font-bold text-white text-base tracking-tight">Szerkesztői Panel</h1>
-              <p className="text-xs text-amber-400 font-medium">ÉpítőTudás Editorial</p>
+              <p className="text-xs text-purple-400 font-medium">ÉpítőTudás Editorial</p>
             </div>
           </div>
 
@@ -134,11 +134,11 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-amber-500/15 border border-amber-500/40 text-amber-400 shadow-md'
+                    ? 'bg-purple-500/15 border border-purple-500/40 text-purple-400 shadow-md'
                     : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border border-transparent'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber-400' : 'text-slate-500'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-purple-400' : 'text-slate-500'}`} />
                 <span className="truncate">{item.label}</span>
               </button>
             );
@@ -149,7 +149,7 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
         <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-900/60">
           <div className="px-3 py-2 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs">
             <span className="text-slate-400 block truncate">{profile?.email}</span>
-            <span className="text-amber-400 font-bold uppercase text-[10px] tracking-wider">
+            <span className="text-purple-400 font-bold uppercase text-[10px] tracking-wider">
               {profile?.role === 'admin' ? 'Adminisztrátor' : 'Szerkesztő'}
             </span>
           </div>
@@ -188,12 +188,12 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
         {/* Top Navbar */}
         <header className="hidden md:flex bg-slate-900/80 border-b border-slate-800 px-8 py-4 items-center justify-between backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <UserCheck className="w-5 h-5 text-amber-400" />
+            <UserCheck className="w-5 h-5 text-purple-400" />
             <h2 className="text-sm font-bold text-white tracking-tight">Szerkesztői Vezérlőpult</h2>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-slate-400">
-            <span>Aktív szerepkör: <strong className="text-amber-400">{profile?.role}</strong></span>
+            <span>Aktív szerepkör: <strong className="text-purple-400">{profile?.role}</strong></span>
           </div>
         </header>
 
