@@ -531,7 +531,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                     <ChevronRight size={13} />
                     <button
                       onClick={() =>
-                        onNavigate(`category?type=utmutatok&q=${encodeURIComponent(categoryObj?.name || article.subcategory_name || '')}`)
+                        onNavigate(`category?type=utmutatok&cat=${categoryObj?.slug || categoryObj?.id || article.category_id || ''}`)
                       }
                       className="hover:text-white transition-colors"
                     >

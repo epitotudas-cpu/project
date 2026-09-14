@@ -281,18 +281,28 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
     articles.forEach((a) => {
+      const aType = a.article_type || 'utmutatok';
+      if (aType !== selectedArticleType) return;
+
       if (a.category_id) {
-        map.set(a.category_id, (map.get(a.category_id) || 0) + 1);
+        const catObj = categories.find(
+          (c) => c.id === a.category_id || c.slug === a.category_id || c.name === a.category_id
+        );
+        const key = catObj ? catObj.id : a.category_id;
+        map.set(key, (map.get(key) || 0) + 1);
+        if (catObj?.slug && catObj.slug !== key) {
+          map.set(catObj.slug, (map.get(catObj.slug) || 0) + 1);
+        }
       }
     });
     return map;
-  }, [articles]);
+  }, [articles, selectedArticleType, categories]);
 
   // Display Categories (Filtered by empty setting if configured)
   const displayCategories = useMemo(() => {
     let list = [...categories].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
     if (!articleSettings.showEmptyCategoriesInFilter) {
-      list = list.filter((c) => (categoryCounts.get(c.id) || 0) > 0);
+      list = list.filter((c) => (categoryCounts.get(c.id) || 0) > 0 || (c.slug && (categoryCounts.get(c.slug) || 0) > 0));
     }
     return list;
   }, [categories, categoryCounts, articleSettings.showEmptyCategoriesInFilter]);
@@ -305,9 +315,31 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       const matchType = aType === selectedArticleType;
 
       // 2. Category Filter
-      const matchCat =
-        selectedCategories.length === 0 ||
-        (article.category_id && selectedCategories.includes(article.category_id));
+      let matchCat = true;
+      if (selectedCategories.length > 0) {
+        matchCat = selectedCategories.some((selCat) => {
+          if (!article.category_id) return false;
+
+          if (article.category_id === selCat) return true;
+
+          const catObj = categories.find(
+            (c) => c.id === article.category_id || c.slug === article.category_id || c.name === article.category_id
+          );
+
+          if (catObj) {
+            return (
+              catObj.id === selCat ||
+              catObj.slug === selCat ||
+              catObj.slug.toLowerCase() === selCat.toLowerCase() ||
+              catObj.name.toLowerCase() === selCat.toLowerCase()
+            );
+          }
+
+          const normArtCat = article.category_id.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normSelCat = selCat.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return normArtCat === normSelCat || article.category_id.toLowerCase() === selCat.toLowerCase();
+        });
+      }
 
       // 3. Search Query Filter
       const q = searchQuery.toLowerCase().trim();
@@ -338,7 +370,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     }
 
     return list;
-  }, [articles, selectedArticleType, selectedCategories, searchQuery, typePageSettings.defaultSortMode]);
+  }, [articles, selectedArticleType, selectedCategories, searchQuery, typePageSettings.defaultSortMode, categories]);
 
   const paginatedArticles = useMemo(() => {
     return filteredArticles.slice(0, visibleCount);
@@ -511,10 +543,10 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                   Válassz szakmai szakterületet a célzott kivitelezési útmutatók megjelenítéséhez!
                 </p>
               </div>
-              {searchQuery && (
+              {(selectedCategories.length > 0 || searchQuery) && (
                 <button
                   onClick={handleClearAllFilters}
-                  className="text-xs font-bold text-accent hover:underline"
+                  className="text-xs font-bold text-accent hover:underline cursor-pointer"
                 >
                   Szűrők törlése
                 </button>
@@ -523,28 +555,32 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {[
-                { label: 'Szerkezetépítés', query: 'szerkezetépítés', icon: Building },
-                { label: 'Hőszigetelés', query: 'hőszigetelés', icon: Thermometer },
-                { label: 'Tető', query: 'tető', icon: Home },
-                { label: 'Burkolás', query: 'burkolás', icon: Grid },
-                { label: 'Szárazépítés', query: 'gipszkarton', icon: Layers },
-                { label: 'Felületképzés', query: 'felületképzés', icon: Paintbrush },
-                { label: 'Épületgépészet', query: 'gépészet', icon: Droplets },
-                { label: 'Villanyszerelés', query: 'villanyszerelés', icon: Zap },
+                { label: 'Szerkezetépítés', slug: 'szerkezetepites', icon: Building },
+                { label: 'Hőszigetelés', slug: 'hoszigeteles', icon: Thermometer },
+                { label: 'Tető', slug: 'tetofedes', icon: Home },
+                { label: 'Burkolás', slug: 'burkolas', icon: Grid },
+                { label: 'Szárazépítés', slug: 'szarazepites', icon: Layers },
+                { label: 'Felületképzés', slug: 'feluletkepzes', icon: Paintbrush },
+                { label: 'Épületgépészet', slug: 'epuletgepeszet', icon: Droplets },
+                { label: 'Villanyszerelés', slug: 'villanyszereles', icon: Zap },
               ].map((wf) => {
                 const IconComp = wf.icon;
-                const isActive = searchQuery.toLowerCase() === wf.query.toLowerCase();
+                const catObj = categories.find((c) => c.slug === wf.slug || c.id === wf.slug);
+                const targetCatId = catObj ? catObj.id : wf.slug;
+                const isActive = selectedCategories.includes(targetCatId) || selectedCategories.includes(wf.slug);
 
                 return (
                   <button
                     key={wf.label}
                     onClick={() => {
                       if (isActive) {
-                        setSearchQuery('');
-                        updateUrlParams('utmutatok', selectedCategories, '');
+                        const next = selectedCategories.filter((id) => id !== targetCatId && id !== wf.slug);
+                        setSelectedCategories(next);
+                        updateUrlParams('utmutatok', next, searchQuery);
                       } else {
-                        setSearchQuery(wf.query);
-                        updateUrlParams('utmutatok', selectedCategories, wf.query);
+                        const next = [targetCatId];
+                        setSelectedCategories(next);
+                        updateUrlParams('utmutatok', next, searchQuery);
                       }
                     }}
                     className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all cursor-pointer ${
@@ -627,14 +663,14 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
               {/* Category Chips */}
               {selectedCategories.map((catId) => {
-                const cat = categories.find((c) => c.id === catId);
-                if (!cat) return null;
+                const cat = categories.find((c) => c.id === catId || c.slug === catId || c.name.toLowerCase() === catId.toLowerCase());
+                const displayName = cat ? cat.name : catId;
                 return (
                   <span
                     key={catId}
                     className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 text-primary-950 font-bold text-xs rounded-full shadow-2xs"
                   >
-                    <span>{cat.name}</span>
+                    <span>{displayName}</span>
                     <button
                       onClick={() => handleCategoryToggle(catId)}
                       className="hover:bg-primary/20 rounded-full p-0.5"
