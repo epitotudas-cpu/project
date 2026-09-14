@@ -73,6 +73,7 @@ const ToolSelectorPage = lazy(() => import('./pages/ToolSelectorPage'));
 const LegalHubPage = lazy(() => import('./pages/LegalHubPage'));
 const EditorLayout = lazy(() => import('./components/EditorLayout'));
 const EditorDashboardPage = lazy(() => import('./pages/EditorDashboardPage').then(m => ({ default: m.EditorDashboardPage })));
+const EditorSettingsPage = lazy(() => import('./pages/EditorSettingsPage').then(m => ({ default: m.EditorSettingsPage })));
 const PartnerLayout = lazy(() => import('./components/PartnerLayout'));
 const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage').then(m => ({ default: m.PartnerDashboardPage })));
 
@@ -245,6 +246,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
       {editorView === 'tools' && <AdminToolsPage />}
       {editorView === 'books' && <AdminBooksPage />}
       {editorView === 'moderation' && <AdminModerationPage />}
+      {editorView === 'settings' && <EditorSettingsPage />}
     </EditorLayout>
   );
 }

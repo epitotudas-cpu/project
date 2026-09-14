@@ -1,3 +1,4 @@
+import { useEditorTheme } from '../services/editorThemeService';
 import {
   FileText,
   BookMarked,
@@ -15,13 +16,15 @@ interface EditorDashboardPageProps {
 }
 
 export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps) {
+  const theme = useEditorTheme();
+
   return (
     <div className="space-y-8">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 border border-purple-500/20 rounded-2xl p-6 md:p-8 shadow-xl">
+      <div className={`bg-gradient-to-r ${theme.bgGradient} border ${theme.borderSubtle} rounded-2xl p-6 md:p-8 shadow-xl`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-semibold uppercase tracking-wider">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${theme.bgSubtle} border ${theme.borderStrong} ${theme.textAccent} text-xs font-semibold uppercase tracking-wider`}>
               <UserCheck className="w-3.5 h-3.5" />
               Szerkesztői Munkatér
             </div>
@@ -36,7 +39,7 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => onNavigateView('articles')}
-              className="flex items-center gap-2 px-5 py-2.5 bg-purple-500 hover:bg-purple-400 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-purple-500/20"
+              className={`flex items-center gap-2 px-5 py-2.5 ${theme.buttonBg} ${theme.buttonHover} ${theme.buttonText} font-semibold rounded-xl text-sm transition-all shadow-lg ${theme.shadow}`}
             >
               <PlusCircle className="w-4 h-4" />
               Új cikk írása
@@ -48,7 +51,7 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-xl">
+          <div className={`p-3 ${theme.bgSubtle} border ${theme.borderStrong} ${theme.textAccent} rounded-xl`}>
             <FileText className="w-6 h-6" />
           </div>
           <div>
@@ -68,7 +71,7 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-xl">
+          <div className={`p-3 ${theme.bgSubtle} border ${theme.borderStrong} ${theme.textAccent} rounded-xl`}>
             <Clock className="w-6 h-6" />
           </div>
           <div>
@@ -90,8 +93,8 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
 
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-900/70 border border-slate-800 hover:border-purple-500/40 rounded-2xl p-6 transition-all group">
-          <div className="p-3 bg-purple-500/10 text-purple-400 w-fit rounded-xl mb-4">
+        <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-6 transition-all group`}>
+          <div className={`p-3 ${theme.bgSubtle} ${theme.textAccent} w-fit rounded-xl mb-4`}>
             <FileText className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-white mb-2">Cikkek és Hírek Szerkesztése</h3>
@@ -100,13 +103,13 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
           </p>
           <button
             onClick={() => onNavigateView('articles')}
-            className="flex items-center gap-2 text-xs font-bold text-purple-400 group-hover:translate-x-1 transition-transform"
+            className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
           >
             Tovább a cikkekhez <ArrowRight className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="bg-slate-900/70 border border-slate-800 hover:border-purple-500/40 rounded-2xl p-6 transition-all group">
+        <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-6 transition-all group`}>
           <div className="p-3 bg-blue-500/10 text-blue-400 w-fit rounded-xl mb-4">
             <BookMarked className="w-6 h-6" />
           </div>
@@ -116,13 +119,13 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
           </p>
           <button
             onClick={() => onNavigateView('utmutatok')}
-            className="flex items-center gap-2 text-xs font-bold text-purple-400 group-hover:translate-x-1 transition-transform"
+            className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
           >
             Tovább az útmutatókhoz <ArrowRight className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="bg-slate-900/70 border border-slate-800 hover:border-purple-500/40 rounded-2xl p-6 transition-all group">
+        <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-6 transition-all group`}>
           <div className="p-3 bg-emerald-500/10 text-emerald-400 w-fit rounded-xl mb-4">
             <Sparkles className="w-6 h-6" />
           </div>
@@ -132,7 +135,7 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
           </p>
           <button
             onClick={() => onNavigateView('moderation')}
-            className="flex items-center gap-2 text-xs font-bold text-purple-400 group-hover:translate-x-1 transition-transform"
+            className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
           >
             Várólista megtekintése <ArrowRight className="w-4 h-4" />
           </button>
