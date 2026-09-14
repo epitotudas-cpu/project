@@ -27,7 +27,8 @@ import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '..
 
 const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
   admin: { label: 'Adminisztrátor', class: 'bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/30' },
-  editor: { label: 'Szerkesztő', class: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+  editor: { label: 'Szerkesztő', class: 'bg-purple-500/10 text-purple-400 border-purple-500/30' },
+  partner: { label: 'Partner', class: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
   user: { label: 'Felhasználó', class: 'bg-gray-500/10 text-gray-400 border-gray-500/30' },
 };
 
@@ -509,7 +510,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                             >
                               <option value="user">Felhasználó (User)</option>
                               <option value="editor">Szerkesztő (Editor)</option>
-                              <option value="moderator">Moderátor (Moderator)</option>
+                              <option value="partner">Partner (Partner)</option>
                               <option value="admin">Adminisztrátor (Admin)</option>
                             </select>
                           )
