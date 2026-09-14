@@ -1,0 +1,196 @@
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import AccessDeniedPage from '../pages/AccessDeniedPage';
+import { canAccessPartnerPanel } from '../lib/permissions';
+import { canRoleAccessModule } from '../services/permissionService';
+import {
+  LayoutDashboard,
+  Building2,
+  Tag,
+  Package,
+  Wrench,
+  BarChart3,
+  Home,
+  LogOut,
+  Briefcase,
+  X,
+  Menu,
+  CheckCircle2,
+} from 'lucide-react';
+
+export type PartnerView =
+  | 'dashboard'
+  | 'partner_profile'
+  | 'partner_offers'
+  | 'partner_products'
+  | 'catalog'
+  | 'partner_stats';
+
+interface PartnerLayoutProps {
+  onNavigate: (page: string) => void;
+  activeView: PartnerView;
+  onNavigateView: (view: PartnerView) => void;
+  children: React.ReactNode;
+}
+
+const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: string; icon: any }> = [
+  { id: 'dashboard', moduleId: 'partner_profile', label: 'Partner Áttekintés', icon: LayoutDashboard },
+  { id: 'partner_profile', moduleId: 'partner_profile', label: 'Saját Partnerprofil', icon: Building2 },
+  { id: 'partner_offers', moduleId: 'partner_offers', label: 'Saját Ajánlatok & Akciók', icon: Tag },
+  { id: 'partner_products', moduleId: 'partner_products', label: 'Termékek & Szolgáltatások', icon: Package },
+  { id: 'catalog', moduleId: 'catalog', label: 'Gép & Szerszám Katalógus', icon: Wrench },
+  { id: 'partner_stats', moduleId: 'partner_stats', label: 'Statisztikák & Teljesítmény', icon: BarChart3 },
+];
+
+export default function PartnerLayout({ onNavigate, activeView, onNavigateView, children }: PartnerLayoutProps) {
+  const { profile, signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Security guard check
+  if (!canAccessPartnerPanel(profile)) {
+    return (
+      <AccessDeniedPage
+        userEmail={profile?.email || null}
+        role={profile?.role || null}
+        onNavigateHome={() => onNavigate('home')}
+        onSignOut={signOut}
+      />
+    );
+  }
+
+  const role = profile?.role || 'partner';
+
+  // Filter nav items based on admin permissions assigned to Partner
+  const availableNavItems = PARTNER_NAV_ITEMS.filter((item) => {
+    if (item.id === 'dashboard') return true;
+    return canRoleAccessModule(role, item.moduleId);
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
+      {/* Mobile Backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-slate-900 border-r border-blue-500/20 flex flex-col transition-transform duration-200 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        {/* Brand */}
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
+              <Briefcase className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="font-bold text-white text-base tracking-tight">Partner Panel</h1>
+              <p className="text-xs text-blue-400 font-medium">ÉpítőTudás Business</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="md:hidden p-1 text-slate-400 hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Nav Items */}
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+          <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Partneri Funkciók
+          </div>
+
+          {availableNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onNavigateView(item.id);
+                  setMobileOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-blue-500/15 border border-blue-500/40 text-blue-400 shadow-md'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border border-transparent'
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
+                <span className="truncate">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* User Info & Footer */}
+        <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-900/60">
+          <div className="px-3 py-2 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs">
+            <span className="text-slate-400 block truncate">{profile?.email}</span>
+            <div className="flex items-center gap-1.5 mt-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-blue-400 font-bold uppercase text-[10px] tracking-wider">
+                {profile?.role === 'admin' ? 'Adminisztrátor' : 'Hitelesített Partner'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onNavigate('home')}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition-colors"
+            >
+              <Home className="w-3.5 h-3.5" />
+              Főoldal
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="p-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-xs rounded-xl transition-colors"
+              title="Kijelentkezés"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Header */}
+        <header className="md:hidden bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMobileOpen(true)} className="p-2 text-slate-400 hover:text-white">
+              <Menu className="w-6 h-6" />
+            </button>
+            <span className="font-bold text-white text-sm">Partner Panel</span>
+          </div>
+        </header>
+
+        {/* Top Navbar */}
+        <header className="hidden md:flex bg-slate-900/80 border-b border-slate-800 px-8 py-4 items-center justify-between backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <Briefcase className="w-5 h-5 text-blue-400" />
+            <h2 className="text-sm font-bold text-white tracking-tight">Partneri Vezérlőpult</h2>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs text-slate-400">
+            <span>Aktív fiók: <strong className="text-blue-400">{profile?.role}</strong></span>
+          </div>
+        </header>
+
+        {/* Main Body */}
+        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-8">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}

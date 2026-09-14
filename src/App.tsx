@@ -71,6 +71,10 @@ const BooksPage = lazy(() => import('./pages/BooksPage'));
 const SoftwarePage = lazy(() => import('./pages/SoftwarePage'));
 const ToolSelectorPage = lazy(() => import('./pages/ToolSelectorPage'));
 const LegalHubPage = lazy(() => import('./pages/LegalHubPage'));
+const EditorLayout = lazy(() => import('./components/EditorLayout'));
+const EditorDashboardPage = lazy(() => import('./pages/EditorDashboardPage').then(m => ({ default: m.EditorDashboardPage })));
+const PartnerLayout = lazy(() => import('./components/PartnerLayout'));
+const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage').then(m => ({ default: m.PartnerDashboardPage })));
 
 type PageKey =
   | 'home'
@@ -95,6 +99,8 @@ type PageKey =
   | 'partners'
   | 'partner-detail'
   | 'admin'
+  | 'szerkeszto'
+  | 'partner'
   | 'login'
   | 'register'
   | 'verify-email'
@@ -133,6 +139,8 @@ const ALL_VALID_PAGES: PageKey[] = [
   'partners',
   'partner-detail',
   'admin',
+  'szerkeszto',
+  'partner',
   'login',
   'register',
   'verify-email',
@@ -219,6 +227,39 @@ function PageFallback() {
       <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent border-r-transparent mb-3" />
       <p className="text-xs text-gray-400 font-medium">Betöltés...</p>
     </div>
+  );
+}
+
+function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const [editorView, setEditorView] = useState<any>('dashboard');
+  return (
+    <EditorLayout onNavigate={onNavigate} activeView={editorView} onNavigateView={setEditorView}>
+      {editorView === 'dashboard' && <EditorDashboardPage onNavigateView={setEditorView} />}
+      {editorView === 'articles' && <AdminArticlesPage onNavigateView={() => {}} />}
+      {editorView === 'utmutatok' && <AdminGuidesPage />}
+      {editorView === 'learning' && <AdminLearningPage />}
+      {editorView === 'categories' && <AdminCategoriesPage />}
+      {editorView === 'glossary' && <AdminGlossaryPage />}
+      {editorView === 'safety' && <SafetyPage onNavigate={onNavigate} />}
+      {editorView === 'materials' && <AdminMaterialsPage />}
+      {editorView === 'tools' && <AdminToolsPage />}
+      {editorView === 'books' && <AdminBooksPage />}
+      {editorView === 'moderation' && <AdminModerationPage />}
+    </EditorLayout>
+  );
+}
+
+function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const [partnerView, setPartnerView] = useState<any>('dashboard');
+  return (
+    <PartnerLayout onNavigate={onNavigate} activeView={partnerView} onNavigateView={setPartnerView}>
+      {partnerView === 'dashboard' && <PartnerDashboardPage onNavigateView={setPartnerView} />}
+      {partnerView === 'partner_profile' && <ProfilePage />}
+      {partnerView === 'partner_offers' && <AdminPartnersPage />}
+      {partnerView === 'partner_products' && <AdminMaterialsPage />}
+      {partnerView === 'catalog' && <AdminToolsPage />}
+      {partnerView === 'partner_stats' && <AdminPartnersPage />}
+    </PartnerLayout>
   );
 }
 
@@ -407,6 +448,18 @@ function AppContent() {
               return <div className="p-8 text-gray-500 text-sm">A(z) "{view}" nézet hamarosan elérhető.</div>;
             }}
           </AdminLayout>
+        </Suspense>
+      );
+    case 'szerkeszto':
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <EditorPanelContent onNavigate={navigate} />
+        </Suspense>
+      );
+    case 'partner':
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <PartnerPanelContent onNavigate={navigate} />
         </Suspense>
       );
     case 'login':

@@ -109,7 +109,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   };
 
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Fiók';
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'editor';
+  const isAdmin = profile?.role === 'admin';
+  const isEditor = profile?.role === 'editor';
+  const isPartner = profile?.role === 'partner';
 
   const isSubItemActive = (subPage: string, pageState: string, loc: { pathname: string; search: string; hash: string }): boolean => {
     const { pathname, search, hash } = loc;
@@ -372,6 +374,26 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               </button>
             )}
 
+            {isEditor && (
+              <button
+                onClick={() => onNavigate('szerkeszto')}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
+              >
+                <User size={14} />
+                Szerkesztői panel
+              </button>
+            )}
+
+            {isPartner && (
+              <button
+                onClick={() => onNavigate('partner')}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
+              >
+                <Sliders size={14} />
+                Partner panel
+              </button>
+            )}
+
             {user ? (
               /* Logged-in: user dropdown */
               <div className="relative hidden md:block" ref={userMenuRef}>
@@ -447,13 +469,51 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     </div>
 
                     {isAdmin && (
-                      <div className="py-1">
+                      <div className="py-1 space-y-1">
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('admin'); }}
-                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-bold"
+                          className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
                         >
-                          <Settings size={14} className="text-accent shrink-0" />
+                          <Settings size={14} className="text-amber-400 shrink-0" />
                           Admin panel
+                        </button>
+                        <button
+                          onClick={() => { setUserMenuOpen(false); onNavigate('szerkeszto'); }}
+                          className="w-full px-4 py-2 text-left text-amber-300 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                        >
+                          <User size={14} className="text-amber-300 shrink-0" />
+                          Szerkesztői panel
+                        </button>
+                        <button
+                          onClick={() => { setUserMenuOpen(false); onNavigate('partner'); }}
+                          className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                        >
+                          <Sliders size={14} className="text-blue-400 shrink-0" />
+                          Partner panel
+                        </button>
+                      </div>
+                    )}
+
+                    {isEditor && !isAdmin && (
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setUserMenuOpen(false); onNavigate('szerkeszto'); }}
+                          className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                        >
+                          <User size={14} className="text-amber-400 shrink-0" />
+                          Szerkesztői panel
+                        </button>
+                      </div>
+                    )}
+
+                    {isPartner && !isAdmin && (
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setUserMenuOpen(false); onNavigate('partner'); }}
+                          className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                        >
+                          <Sliders size={14} className="text-blue-400 shrink-0" />
+                          Partner panel
                         </button>
                       </div>
                     )}
@@ -657,6 +717,22 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     className="w-full py-3 border border-accent/40 text-accent font-bold text-sm rounded-xl min-h-[48px] active:bg-accent/10"
                   >
                     Admin panel
+                  </button>
+                )}
+                {isEditor && (
+                  <button
+                    onClick={() => { onNavigate('szerkeszto'); setMobileOpen(false); }}
+                    className="w-full py-3 border border-amber-500/40 text-amber-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-amber-500/10"
+                  >
+                    Szerkesztői panel
+                  </button>
+                )}
+                {isPartner && (
+                  <button
+                    onClick={() => { onNavigate('partner'); setMobileOpen(false); }}
+                    className="w-full py-3 border border-blue-500/40 text-blue-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-blue-500/10"
+                  >
+                    Partner panel
                   </button>
                 )}
                 <button

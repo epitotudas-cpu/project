@@ -60,7 +60,7 @@ export async function getAuthDebugInfo(): Promise<AuthDebugInfo> {
     }
 
     const profileRole = await getCachedProfileRole(user.id);
-    const hasAdmin = profileRole === 'admin' || profileRole === 'editor';
+    const hasAdmin = profileRole === 'admin';
 
     return {
       isAuthenticated: true,
@@ -97,7 +97,7 @@ export async function signInAdmin(email: string, password: string): Promise<{ su
 
     const profileRole = await getCachedProfileRole(data.user.id);
 
-    if (!profileRole || (profileRole !== 'admin' && profileRole !== 'editor')) {
+    if (!profileRole || profileRole !== 'admin') {
       await authClient.signOut();
       clearRoleCache();
       return { success: false, error: `Nincs admin jogosultság. Role: ${profileRole || 'nincs profil'}` };
