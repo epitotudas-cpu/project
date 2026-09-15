@@ -90,19 +90,19 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/70 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/75 z-40 md:hidden backdrop-blur-sm transition-opacity"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-slate-900 border-r ${theme.borderSubtle} flex flex-col transition-transform duration-200 ${
+        className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 max-w-[85vw] bg-slate-900 border-r ${theme.borderSubtle} flex flex-col transition-transform duration-200 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         {/* Brand */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-xl ${theme.bgSubtle} border ${theme.borderStrong} ${theme.textAccent}`}>
               <UserCheck className="w-6 h-6" />
@@ -115,14 +115,14 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
 
           <button
             onClick={() => setMobileOpen(false)}
-            className="md:hidden p-1 text-slate-400 hover:text-white"
+            className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 p-3 sm:p-4 space-y-1.5 overflow-y-auto">
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Szerkesztőségi Modulok
           </div>
@@ -137,7 +137,7 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
                   onNavigateView(item.id);
                   setMobileOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all ${
+                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold transition-all ${
                   isActive
                     ? `${theme.bgSubtle} border ${theme.borderStrong} ${theme.textAccent} shadow-md`
                     : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border border-transparent'
@@ -151,7 +151,7 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
         </nav>
 
         {/* User Info & Footer */}
-        <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-900/60">
+        <div className="p-3 sm:p-4 border-t border-slate-800 space-y-3 bg-slate-900/60">
           <div className="px-3 py-2 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs">
             <span className="text-slate-400 block truncate">{profile?.email}</span>
             <span className={`${theme.textAccent} font-bold uppercase text-[10px] tracking-wider`}>
@@ -169,7 +169,7 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
             </button>
             <button
               onClick={() => signOut()}
-              className="p-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-xs rounded-xl transition-colors"
+              className="p-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-xs rounded-xl transition-colors shrink-0"
               title="Kijelentkezés"
             >
               <LogOut className="w-4 h-4" />
@@ -179,14 +179,40 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {/* Mobile Header */}
-        <header className="md:hidden bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="p-2 text-slate-400 hover:text-white">
-              <Menu className="w-6 h-6" />
+        <header className="md:hidden sticky top-0 z-30 bg-slate-900/95 border-b border-slate-800 p-3 sm:p-4 flex items-center justify-between backdrop-blur-md">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 rounded-xl border border-slate-700/80 transition-colors shrink-0"
+              aria-label="Menü megnyitása"
+            >
+              <Menu className="w-5 h-5" />
             </button>
-            <span className="font-bold text-white text-sm">Szerkesztői Panel</span>
+            <div className="min-w-0">
+              <span className="font-extrabold text-white text-xs sm:text-sm block truncate">Szerkesztői Panel</span>
+              <span className={`text-[10px] ${theme.textAccent} font-bold block truncate`}>
+                {availableNavItems.find((i) => i.id === activeView)?.label || 'Vezérlőpult'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => onNavigate('home')}
+              className="p-2 text-slate-300 hover:text-white bg-slate-800/80 rounded-xl border border-slate-700/80 transition-colors text-xs font-medium flex items-center gap-1"
+              title="Főoldal"
+            >
+              <Home className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="p-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 rounded-xl text-xs transition-colors"
+              title="Kijelentkezés"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </header>
 
@@ -203,7 +229,7 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
         </header>
 
         {/* Main Body */}
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-8">
+        <main className="flex-1 p-3 sm:p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6 sm:space-y-8 min-w-0 overflow-x-hidden">
           {children}
         </main>
       </div>
