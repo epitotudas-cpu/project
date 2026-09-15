@@ -50,7 +50,7 @@ export function BannerCreativeEditor() {
   
   // Navigation & View State: 'selector' (dashboard list of creatives) or 'editing' (form + live preview)
   const [editorView, setEditorView] = useState<'selector' | 'editing'>('selector');
-  const [filterPlacement, setFilterPlacement] = useState<'all' | 'top_banner' | 'in_feed' | 'sidebar' | 'footer_banner'>('all');
+  const [filterPlacement, setFilterPlacement] = useState<'all' | AdCreative['placement_key']>('all');
 
   // Currently editing creative
   const [activeCreative, setActiveCreative] = useState<AdCreative | null>(null);
@@ -109,7 +109,7 @@ export function BannerCreativeEditor() {
   }
 
   // Create a brand new creative for a placement
-  function handleCreateNewCreative(placementKey: 'top_banner' | 'in_feed' | 'sidebar' | 'footer_banner' = 'top_banner') {
+  function handleCreateNewCreative(placementKey: AdCreative['placement_key'] = 'top_banner') {
     const newId = `creative-${placementKey}-${Date.now()}`;
     const newCreative: AdCreative = {
       id: newId,
@@ -284,6 +284,7 @@ export function BannerCreativeEditor() {
   const inFeedCreatives = storedCreatives.filter((c) => c.placement_key === 'in_feed');
   const sidebarCreatives = storedCreatives.filter((c) => c.placement_key === 'sidebar');
   const footerCreatives = storedCreatives.filter((c) => c.placement_key === 'footer_banner');
+  const tileAdCreatives = storedCreatives.filter((c) => c.placement_key === 'tile_ad');
 
   // =========================================================================
   // VIEW 1: CREATIVE SELECTOR DASHBOARD (Directory of Advertisers/Banners)
@@ -387,6 +388,20 @@ export function BannerCreativeEditor() {
               }`}
             >
               📍 Lábléc Banner ({footerCreatives.length})
+            </button>
+
+            <button
+              onClick={() => setFilterPlacement('tile_ad')}
+              style={
+                filterPlacement === 'tile_ad'
+                  ? { backgroundColor: cardHighlight, color: '#000000' }
+                  : { backgroundColor: inputBg, borderColor: cardBorder, color: textColor }
+              }
+              className={`px-4 py-2 border rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                filterPlacement === 'tile_ad' ? 'shadow-sm font-extrabold' : 'hover:opacity-90'
+              }`}
+            >
+              📍 Csempe Hirdetés ({tileAdCreatives.length})
             </button>
           </div>
 
@@ -771,6 +786,7 @@ export function BannerCreativeEditor() {
                   <option value="in_feed">In-Feed Banner (Cikkek között)</option>
                   <option value="sidebar">Oldalsáv Banner (Sidebar)</option>
                   <option value="footer_banner">Lábléc Feletti Banner (Footer)</option>
+                  <option value="tile_ad">Csempe Hirdetés (Tile Ad)</option>
                 </select>
               </div>
 

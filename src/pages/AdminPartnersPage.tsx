@@ -64,7 +64,7 @@ interface PartnerStaffMember {
 }
 
 export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersPageProps = {}) {
-  const [partners, setPartners] = useState<Partner[]>([]);
+  const [partners, setPartners] = useState<ExtendedPartner[]>([]);
   const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
   const [applications, setApplications] = useState<PartnerApplication[]>([]);
   const [staffMap, setStaffMap] = useState<Record<string, PartnerStaffMember[]>>({});

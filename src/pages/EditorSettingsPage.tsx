@@ -94,7 +94,7 @@ export function EditorSettingsPage() {
                     ? `${preset.borderStrong} shadow-xl ring-2 ring-offset-2 ring-offset-slate-950`
                     : 'border-slate-800 hover:border-slate-700'
                 }`}
-                style={{ ringColor: isSelected ? preset.hex : undefined }}
+                style={isSelected ? ({ '--tw-ring-color': preset.hex } as React.CSSProperties) : undefined}
               >
                 {/* Header info */}
                 <div className="flex items-center justify-between mb-4">
