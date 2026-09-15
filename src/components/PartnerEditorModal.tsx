@@ -337,7 +337,7 @@ export default function PartnerEditorModal({
         {/* Body Container (Left Nav + Right Form) */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
           {/* Left Navigation Bar */}
-          <div className="w-full md:w-64 bg-[#181b1e] border-b md:border-b-0 md:border-r border-gray-800 p-2 sm:p-3 overflow-x-auto md:overflow-y-auto shrink-0 flex flex-row md:flex-col gap-1">
+          <div className="w-full md:w-64 bg-[#181b1e] border-b md:border-b-0 md:border-r border-gray-800 p-2 sm:p-3 overflow-x-auto md:overflow-y-auto shrink-0 flex flex-row md:flex-col gap-1.5 scrollbar-none">
             {navTabs.map((t) => {
               const Icon = t.icon;
               const isActive = activeTab === t.id;
@@ -346,7 +346,7 @@ export default function PartnerEditorModal({
                   key={t.id}
                   type="button"
                   onClick={() => setActiveTab(t.id)}
-                  className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl font-bold text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${
+                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-xl font-bold text-xs transition-all shrink-0 whitespace-nowrap md:whitespace-normal text-left ${
                     isActive
                       ? 'bg-amber-500 text-black shadow-md'
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -361,7 +361,7 @@ export default function PartnerEditorModal({
 
           {/* Right Form Content Area */}
           <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden bg-[#141719]">
-            <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto space-y-6">
+            <div className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto space-y-6">
               {/* TAB 1: ALAPADATOK */}
               {activeTab === 'basic' && (
                 <div className="space-y-6">
@@ -1304,18 +1304,18 @@ export default function PartnerEditorModal({
             </div>
 
             {/* Bottom Actions Footer Bar */}
-            <div className="p-4 sm:p-5 border-t border-gray-800 bg-[#1a1d20] flex items-center justify-between shrink-0">
+            <div className="p-3.5 sm:p-5 border-t border-gray-800 bg-[#1a1d20] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs rounded-xl transition-colors cursor-pointer text-center"
               >
                 Bezárás
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                 {saveSuccess && (
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold animate-fade-in">
+                  <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold animate-fade-in">
                     <CheckCircle2 size={16} />
                     <span>Mentés sikeres!</span>
                   </div>
@@ -1324,7 +1324,7 @@ export default function PartnerEditorModal({
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {saving ? (
                     <>
@@ -1334,7 +1334,7 @@ export default function PartnerEditorModal({
                   ) : (
                     <>
                       <CheckCircle2 size={16} />
-                      <span>Változtatások Mentése & Publikálás</span>
+                      <span>Változtatások Mentése &amp; Publikálás</span>
                     </>
                   )}
                 </button>

@@ -387,24 +387,24 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const pendingAppsCount = applications.filter((a) => a.status === 'pending').length;
 
   return (
-    <div className="p-6 md:p-8 space-y-6" style={{ color: textColor }}>
+    <div className="space-y-4 sm:space-y-6 min-w-0 max-w-full overflow-x-hidden" style={{ color: textColor }}>
       {/* Header */}
-      <div style={{ borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
+      <div style={{ borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 sm:pb-6">
         <div>
-          <h1 style={{ color: textColor }} className="text-2xl font-bold flex items-center gap-3">
-            <Building2 style={{ color: cardHighlight }} size={26} />
-            Partner és Iskola Szervezetek Kezelője
+          <h1 style={{ color: textColor }} className="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+            <Building2 style={{ color: cardHighlight }} size={24} className="shrink-0" />
+            <span>Partner és Iskola Szervezetek Kezelője</span>
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-400 text-xs sm:text-sm mt-1 leading-relaxed">
             Gyártók, kereskedők, kivitelezők és oktatási intézmények, jelentkezések és biztonsági meghívók.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
           <button
             onClick={() => openCreateInviteModal()}
             style={{ backgroundColor: `${cardHighlight}20`, borderColor: cardHighlight, color: cardHighlight }}
-            className="flex items-center gap-2 border font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer hover:bg-amber-400/30 text-sm"
+            className="flex items-center justify-center gap-2 border font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer hover:bg-amber-400/30 text-xs sm:text-sm"
           >
             <Mail size={16} />
             Új Partner Meghívása
@@ -413,7 +413,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           <button
             onClick={openCreateModal}
             style={{ backgroundColor: cardHighlight, color: '#000000' }}
-            className="flex items-center gap-2 font-bold px-4 py-2.5 rounded-xl transition-colors shadow-md cursor-pointer hover:opacity-90 text-sm"
+            className="flex items-center justify-center gap-2 font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-colors shadow-md cursor-pointer hover:opacity-90 text-xs sm:text-sm"
           >
             <Plus size={16} />
             Szervezet Hozzáadása
@@ -422,12 +422,12 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       </div>
 
       {/* Tabs / Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3">
         {/* Main Tabs */}
-        <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border" style={{ borderColor: cardBorder }}>
+        <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border overflow-x-auto" style={{ borderColor: cardBorder }}>
           <button
             onClick={() => setActiveTab('partners')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'partners'
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'partners'
                 ? 'bg-amber-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
               }`}
@@ -436,7 +436,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           </button>
           <button
             onClick={() => setActiveTab('invitations')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'invitations'
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'invitations'
                 ? 'bg-amber-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
               }`}
@@ -445,7 +445,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           </button>
           <button
             onClick={() => setActiveTab('applications')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'applications'
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'applications'
                 ? 'bg-amber-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
               }`}
@@ -462,7 +462,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
         {/* Category Filters */}
         {activeTab === 'partners' && (
-          <div className="flex flex-wrap gap-1.5 text-xs">
+          <div className="flex items-center gap-1.5 text-xs overflow-x-auto pb-1">
             {[
               { id: 'all', label: 'Összes' },
               { id: 'gyarto', label: 'Gyártó' },
@@ -478,7 +478,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                   borderColor: activeCategory === cat.id ? cardHighlight : cardBorder,
                   color: activeCategory === cat.id ? cardHighlight : '#9CA3AF',
                 }}
-                className="border font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                className="border font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap"
               >
                 {cat.label}
               </button>
