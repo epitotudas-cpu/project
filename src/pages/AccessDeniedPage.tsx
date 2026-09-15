@@ -16,7 +16,7 @@ export default function AccessDeniedPage({ userEmail, role, onNavigateHome, onSi
         </div>
         <h1 className="text-2xl font-black text-white">Hozzáférés megtagadva</h1>
         <p className="text-gray-500 text-sm mt-3">
-          Ön be van jelentkezve, de nincs admin jogosultsága a panel eléréséhez.
+          Ön be van jelentkezve, de nincs megfelelő jogosultsága a panel eléréséhez.
         </p>
 
         {(userEmail || role) && (

@@ -111,7 +111,38 @@ export async function signInAdmin(email: string, password: string): Promise<{ su
 
 export async function signOutAdmin(): Promise<void> {
   clearRoleCache();
-  await authClient.signOut();
+  try {
+    await authClient.signOut();
+  } catch (err) {
+    console.error('Kijelentkezési hiba:', err);
+  } finally {
+    try {
+      sessionStorage.removeItem('epitotudas_active_page');
+      const localKeysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth') || key.includes('token') || key.includes('session'))) {
+          localKeysToRemove.push(key);
+        }
+      }
+      localKeysToRemove.forEach((k) => localStorage.removeItem(k));
+
+      const sessionKeysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth') || key.includes('token') || key.includes('session'))) {
+          sessionKeysToRemove.push(key);
+        }
+      }
+      sessionKeysToRemove.forEach((k) => sessionStorage.removeItem(k));
+    } catch (e) {
+      // ignore storage errors
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.replace('/');
+    }
+  }
 }
 
 export function onAuthStateChange(callback: (isAuthenticated: boolean) => void) {

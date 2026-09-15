@@ -398,8 +398,12 @@ function AppContent() {
         setCurrentPage('home');
       }
     } else if (authEvent === 'SIGNED_OUT') {
-      if (currentPage === 'profile') {
+      const protectedPages: PageKey[] = ['profile', 'admin', 'szerkeszto', 'partner'];
+      if (protectedPages.includes(currentPage)) {
         setCurrentPage('home');
+        if (typeof window !== 'undefined' && window.location.hash) {
+          window.location.replace('/');
+        }
       }
     }
   }, [authEvent, currentPage]);

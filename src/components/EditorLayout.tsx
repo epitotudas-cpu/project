@@ -61,15 +61,45 @@ const EDITOR_NAV_ITEMS: Array<{ id: EditorView; moduleId: string; label: string;
 ];
 
 export default function EditorLayout({ onNavigate, activeView, onNavigateView, children }: EditorLayoutProps) {
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useEditorTheme();
 
   // Security guard check
+  if (!user && !profile) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-center">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-md w-full shadow-2xl space-y-4">
+          <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto text-amber-400">
+            <UserCheck className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Szerkesztői Bejelentkezés Szükséges</h2>
+          <p className="text-slate-400 text-xs leading-relaxed">
+            A szerkesztői panel megtekintéséhez kérjük, jelentkezzen be szerkesztői fiókjával.
+          </p>
+          <div className="pt-2 flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => onNavigate('login')}
+              className="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-colors"
+            >
+              Bejelentkezés
+            </button>
+            <button
+              onClick={() => onNavigate('home')}
+              className="flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl text-xs transition-colors border border-slate-700"
+            >
+              Főoldal
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!canAccessEditorPanel(profile)) {
     return (
       <AccessDeniedPage
-        userEmail={profile?.email || null}
+        userEmail={profile?.email || user?.email || null}
         role={profile?.role || null}
         onNavigateHome={() => onNavigate('home')}
         onSignOut={signOut}

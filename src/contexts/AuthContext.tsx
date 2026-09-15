@@ -173,8 +173,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await authClient.signOut();
-    setProfile(null);
+    try {
+      await authClient.signOut();
+    } catch (err) {
+      console.error('Kijelentkezési hiba:', err);
+    } finally {
+      // Purge all auth tokens & cached state from localStorage & sessionStorage
+      try {
+        sessionStorage.removeItem('epitotudas_active_page');
+        const localKeysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth') || key.includes('token') || key.includes('session'))) {
+            localKeysToRemove.push(key);
+          }
+        }
+        localKeysToRemove.forEach((k) => localStorage.removeItem(k));
+
+        const sessionKeysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth') || key.includes('token') || key.includes('session'))) {
+            sessionKeysToRemove.push(key);
+          }
+        }
+        sessionKeysToRemove.forEach((k) => sessionStorage.removeItem(k));
+      } catch (e) {
+        // ignore storage errors
+      }
+
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+
+      if (typeof window !== 'undefined') {
+        window.location.replace('/');
+      }
+    }
   };
 
   const requestPasswordReset = async (email: string) => {
