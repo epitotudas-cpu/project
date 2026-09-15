@@ -67,7 +67,7 @@ export function resolveTermImages(term: Partial<GlossaryTermFromJson> & { term?:
     return ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'];
   }
   if (name.includes('sarokcsisz') || name.includes('flex') || name.includes('vágó')) {
-    return ['https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80'];
+    return ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'];
   }
   if (name.includes('hőszigetel') || name.includes('dryvit') || name.includes('thr')) {
     return ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80'];
@@ -102,7 +102,7 @@ export function resolveTermImages(term: Partial<GlossaryTermFromJson> & { term?:
     return ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80'];
   }
   if (cat.includes('gép') || cat.includes('szerszám')) {
-    return ['https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80'];
+    return ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'];
   }
   if (cat.includes('alap') || cat.includes('föld')) {
     return ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'];
