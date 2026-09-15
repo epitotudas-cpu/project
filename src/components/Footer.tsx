@@ -19,13 +19,12 @@ interface FooterProps {
 export default function Footer({ onNavigate }: FooterProps) {
   const siteSettings = useSiteSettings();
   const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
-  const [openMobileSections, setOpenMobileSections] = useState<Record<string, boolean>>({});
+  
+  // Accordion state: null means all collapsed by default on mobile (max 1 open at a time)
+  const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
 
-  const toggleMobileSection = (title: string) => {
-    setOpenMobileSections((prev) => ({
-      ...prev,
-      [title]: !prev[title],
-    }));
+  const toggleSection = (title: string) => {
+    setOpenSectionTitle((prev) => (prev === title ? null : title));
   };
 
   const handleNavigate = (pageWithHash: string) => {
@@ -92,8 +91,8 @@ export default function Footer({ onNavigate }: FooterProps) {
       <FooterAdBanner />
 
       {/* Main Footer Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-8">
           
           {/* Column 1: Brand & Bio & Direct Contact */}
           <div className="lg:col-span-2 space-y-6">
@@ -150,58 +149,73 @@ export default function Footer({ onNavigate }: FooterProps) {
             </div>
           </div>
 
-          {/* Columns 2, 3, 4: Categorized Navigation Links (Mobile Accordion / Desktop Static Grid) */}
-          {footerColumns.map((col) => {
-            const IconComponent = col.icon;
-            const isOpen = !!openMobileSections[col.title];
-            return (
-              <div key={col.title} className="space-y-3 md:space-y-4 border-b border-white/10 md:border-b-0 pb-4 md:pb-0">
-                {/* Header: Clickable button on mobile, static heading on desktop */}
-                <button
-                  type="button"
-                  onClick={() => toggleMobileSection(col.title)}
-                  className="w-full text-left flex items-center justify-between gap-2 border-b border-white/10 pb-2.5 md:pointer-events-none md:border-b md:pb-2.5 cursor-pointer md:cursor-default group"
-                  aria-expanded={isOpen}
+          {/* Columns 2, 3, 4: Categorized Navigation Links (Mobile Accordion / Desktop Clean Grid) */}
+          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {footerColumns.map((col) => {
+              const IconComponent = col.icon;
+              const isOpen = openSectionTitle === col.title;
+              return (
+                <div
+                  key={col.title}
+                  className="border-b border-white/10 md:border-b-0 pb-3 md:pb-0 transition-all duration-300"
                 >
-                  <div className="flex items-center gap-2">
-                    <IconComponent size={16} className="text-accent shrink-0" />
-                    <h3 className="text-white font-extrabold text-sm tracking-wide">
-                      {col.title}
-                    </h3>
-                  </div>
-                  {/* Chevron Indicator for Mobile Only */}
-                  <ChevronDown
-                    size={16}
-                    className={`text-gray-400 md:hidden transition-transform duration-200 ${
-                      isOpen ? 'rotate-180 text-accent' : ''
-                    }`}
-                  />
-                </button>
+                  {/* Header: Clickable accordion button on mobile and desktop */}
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(col.title)}
+                    className="w-full text-left flex items-center justify-between gap-2 py-1 md:py-0 border-b border-white/10 pb-2.5 cursor-pointer group hover:border-accent/40 transition-colors"
+                    aria-expanded={isOpen}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <IconComponent size={16} className="text-accent shrink-0" />
+                      <h3 className="text-white font-extrabold text-xs md:text-sm tracking-wide group-hover:text-accent transition-colors truncate">
+                        {col.title}
+                      </h3>
+                    </div>
+                    {/* Chevron Indicator */}
+                    <ChevronDown
+                      size={16}
+                      className={`text-gray-400 transition-transform duration-300 shrink-0 ${
+                        isOpen ? 'rotate-180 text-accent' : 'rotate-0 md:rotate-0'
+                      }`}
+                    />
+                  </button>
 
-                {/* Collapsible List on Mobile (< md), Always Visible on Desktop (>= md) */}
-                <ul className={`space-y-2.5 pt-1 md:pt-0 ${isOpen ? 'block' : 'hidden md:block'}`}>
-                  {col.links.map((link) => (
-                    <li key={link.label}>
-                      <button
-                        onClick={() => handleNavigate(link.page)}
-                        className="text-gray-300 hover:text-accent text-xs md:text-sm transition-colors flex items-center gap-1.5 group text-left cursor-pointer"
-                      >
-                        <ChevronRight
-                          size={12}
-                          className="text-gray-500 group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0"
-                        />
-                        <span className="group-hover:underline">{link.label}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
+                  {/* Collapsible List with smooth CSS Grid height animation */}
+                  <div
+                    className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-in-out ${
+                      isOpen
+                        ? 'grid-rows-[1fr] opacity-100 mt-3 md:grid-rows-[1fr] md:opacity-100 md:mt-3'
+                        : 'grid-rows-[0fr] opacity-0 mt-0 md:grid-rows-[1fr] md:opacity-100 md:mt-3'
+                    }`}
+                  >
+                    <div className="overflow-hidden md:overflow-visible">
+                      <ul className="space-y-2.5 pt-1 md:pt-0 pb-1">
+                        {col.links.map((link) => (
+                          <li key={link.label}>
+                            <button
+                              onClick={() => handleNavigate(link.page)}
+                              className="text-gray-300 hover:text-accent text-xs md:text-sm transition-colors flex items-center gap-1.5 group text-left cursor-pointer"
+                            >
+                              <ChevronRight
+                                size={12}
+                                className="text-gray-500 group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0"
+                              />
+                              <span className="group-hover:underline">{link.label}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Bottom Bar / Copyright */}
-        <div className="border-t border-white/10 mt-12 pt-8 flex items-center justify-center md:justify-between text-gray-400 text-xs">
+        <div className="border-t border-white/10 mt-10 md:mt-12 pt-6 md:pt-8 flex items-center justify-center md:justify-between text-gray-400 text-xs">
           <span>© 2026 ÉpítőTudás v2. Minden jog fenntartva.</span>
         </div>
       </div>
