@@ -117,7 +117,7 @@ export const DEFAULT_COURSES: LearningCourse[] = [
     difficulty: 'beginner',
     audience: 'everyone',
     estimated_time_minutes: 30,
-    featured_image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=1200&q=80',
+    featured_image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80',
     documents: [],
     video_url: null,
     tags: ['munkavédelem', 'állványozás', 'sisak', 'biztonság', 'magasban végzett munka'],

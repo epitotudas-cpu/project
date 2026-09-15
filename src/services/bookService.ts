@@ -264,7 +264,7 @@ export const DEFAULT_BOOKS: BookItem[] = [
     difficulty: 'szakértő',
     badge: 'Mérnöki Tankönyv',
     badgeColor: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30',
-    coverImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=600&auto=format&fit=crop',
+    coverImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=600&auto=format&fit=crop',
     downloadUrl: '',
     format: 'Nyomtatott könyv',
     digitalAccessType: 'none',
@@ -1440,7 +1440,7 @@ export function getBooks(): BookItem[] {
           author: b.author || 'ÉpítőTudás',
           description: b.description || '',
           isbn: b.isbn || '',
-          coverImage: b.generatedCoverImageUrl || b.coverImageUpload || b.coverImageUrl || b.coverImage || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=600&auto=format&fit=crop',
+          coverImage: b.generatedCoverImageUrl || b.coverImageUpload || b.coverImageUrl || b.coverImage || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=600&auto=format&fit=crop',
           digitalAccess: b.digitalAccess || {
             publicationType: b.publicationType || 'pdf',
             accessType: b.accessType || 'free_download',

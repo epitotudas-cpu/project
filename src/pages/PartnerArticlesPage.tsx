@@ -108,7 +108,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
       author: currentPartner.name,
       partner_id: currentPartner.id,
       partner_name: currentPartner.name,
-      featured_image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=1200&q=80',
+      featured_image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80',
       documents: [],
       status: 'draft',
       rejection_note: null,
@@ -194,7 +194,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
         partner_name: currentPartner.name,
         featured_image:
           formData.featured_image ||
-          'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80',
         documents: formData.documents || [],
         read_time: 5,
         views: 0,
