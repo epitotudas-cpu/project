@@ -20,11 +20,11 @@ export default function Footer({ onNavigate }: FooterProps) {
   const siteSettings = useSiteSettings();
   const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
   
-  // Accordion state: null means all collapsed by default on mobile (max 1 open at a time)
-  const [openSectionTitle, setOpenSectionTitle] = useState<string | null>(null);
+  // Accordion state: null means all 3 blocks are closed by default (max 1 open at a time)
+  const [openSectionId, setOpenSectionId] = useState<string | null>(null);
 
-  const toggleSection = (title: string) => {
-    setOpenSectionTitle((prev) => (prev === title ? null : title));
+  const toggleSection = (id: string) => {
+    setOpenSectionId((prev) => (prev === id ? null : id));
   };
 
   const handleNavigate = (pageWithHash: string) => {
@@ -43,9 +43,10 @@ export default function Footer({ onNavigate }: FooterProps) {
     }
   };
 
-  // Structured Link Categories for the Footer
+  // Structured Link Categories with unique IDs
   const footerColumns = [
     {
+      id: 'tudasbazis',
       title: 'Tudásbázis & Modulok',
       icon: BookOpen,
       links: [
@@ -62,6 +63,7 @@ export default function Footer({ onNavigate }: FooterProps) {
       ],
     },
     {
+      id: 'rolunk',
       title: 'Rólunk & Küldetésünk',
       icon: Target,
       links: [
@@ -73,6 +75,7 @@ export default function Footer({ onNavigate }: FooterProps) {
       ],
     },
     {
+      id: 'jogi',
       title: 'Jogi Nyilatkozatok & Info',
       icon: ShieldCheck,
       links: [
@@ -86,13 +89,13 @@ export default function Footer({ onNavigate }: FooterProps) {
   ];
 
   return (
-    <footer className="bg-[#0B1528] text-white border-t border-white/10 relative z-10 selection:bg-accent selection:text-black">
+    <footer className="bg-[#0B1528] text-white border-t border-white/10 relative z-20 selection:bg-accent selection:text-black">
       {/* Optional Ad Banner in Footer Placement */}
       <FooterAdBanner />
 
       {/* Main Footer Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10 items-start">
           
           {/* Column 1: Brand & Bio & Direct Contact */}
           <div className="lg:col-span-2 space-y-6">
@@ -149,59 +152,70 @@ export default function Footer({ onNavigate }: FooterProps) {
             </div>
           </div>
 
-          {/* Columns 2, 3, 4: Categorized Navigation Links (Mobile Accordion / Desktop Clean Grid) */}
-          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          {/* Columns 2, 3, 4: Categorized Navigation Links (Interactive Accordion on all screens) */}
+          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
             {footerColumns.map((col) => {
               const IconComponent = col.icon;
-              const isOpen = openSectionTitle === col.title;
+              const isOpen = openSectionId === col.id;
+              const buttonId = `footer-btn-${col.id}`;
+              const panelId = `footer-panel-${col.id}`;
+
               return (
                 <div
-                  key={col.title}
-                  className="border-b border-white/10 md:border-b-0 pb-3 md:pb-0 transition-all duration-300"
+                  key={col.id}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-2.5 sm:p-3 transition-all duration-300 hover:border-white/20"
                 >
-                  {/* Header: Clickable accordion button on mobile and desktop */}
+                  {/* Header: Clickable button across entire width */}
                   <button
+                    id={buttonId}
                     type="button"
-                    onClick={() => toggleSection(col.title)}
-                    className="w-full text-left flex items-center justify-between gap-2 py-1 md:py-0 border-b border-white/10 pb-2.5 cursor-pointer group hover:border-accent/40 transition-colors"
+                    onClick={() => toggleSection(col.id)}
                     aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    className="w-full text-left flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent/40 transition-all cursor-pointer select-none group focus:outline-none focus:ring-2 focus:ring-accent/50"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <IconComponent size={16} className="text-accent shrink-0" />
-                      <h3 className="text-white font-extrabold text-xs md:text-sm tracking-wide group-hover:text-accent transition-colors truncate">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-1.5 rounded-lg bg-accent/10 border border-accent/20 text-accent shrink-0">
+                        <IconComponent size={16} />
+                      </div>
+                      <h3 className="text-white font-extrabold text-xs sm:text-sm tracking-wide group-hover:text-accent transition-colors truncate">
                         {col.title}
                       </h3>
                     </div>
                     {/* Chevron Indicator */}
                     <ChevronDown
-                      size={16}
+                      size={18}
                       className={`text-gray-400 transition-transform duration-300 shrink-0 ${
-                        isOpen ? 'rotate-180 text-accent' : 'rotate-0 md:rotate-0'
+                        isOpen ? 'rotate-180 text-accent' : 'rotate-0'
                       }`}
                     />
                   </button>
 
-                  {/* Collapsible List with smooth CSS Grid height animation */}
+                  {/* Collapsible Content Panel */}
                   <div
-                    className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-in-out ${
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
                       isOpen
-                        ? 'grid-rows-[1fr] opacity-100 mt-3 md:grid-rows-[1fr] md:opacity-100 md:mt-3'
-                        : 'grid-rows-[0fr] opacity-0 mt-0 md:grid-rows-[1fr] md:opacity-100 md:mt-3'
+                        ? 'grid-rows-[1fr] opacity-100 mt-2'
+                        : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
                     }`}
                   >
-                    <div className="overflow-hidden md:overflow-visible">
-                      <ul className="space-y-2.5 pt-1 md:pt-0 pb-1">
+                    <div className="overflow-hidden">
+                      <ul className="space-y-2 pt-2 px-2 pb-1">
                         {col.links.map((link) => (
                           <li key={link.label}>
                             <button
+                              type="button"
                               onClick={() => handleNavigate(link.page)}
-                              className="text-gray-300 hover:text-accent text-xs md:text-sm transition-colors flex items-center gap-1.5 group text-left cursor-pointer"
+                              className="text-gray-300 hover:text-accent text-xs sm:text-sm transition-colors flex items-center gap-2 group text-left cursor-pointer w-full py-1"
                             >
                               <ChevronRight
-                                size={12}
-                                className="text-gray-500 group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0"
+                                size={13}
+                                className="text-accent/60 group-hover:text-accent group-hover:translate-x-1 transition-all shrink-0"
                               />
-                              <span className="group-hover:underline">{link.label}</span>
+                              <span className="group-hover:underline font-medium">{link.label}</span>
                             </button>
                           </li>
                         ))}
