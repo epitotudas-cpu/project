@@ -26,18 +26,18 @@ export interface GlossaryTermFromJson {
   jargon_subtype?: 'brand_name' | 'german_origin' | 'workplace_slang' | 'synonym' | null;
   knowledge_graph_relations?: Array<{
     relation_type:
-      | 'part_of'
-      | 'contains'
-      | 'made_from'
-      | 'required_for'
-      | 'prerequisite'
-      | 'next_learning_step'
-      | 'frequently_used_with'
-      | 'common_mistake_of'
-      | 'repaired_by'
-      | 'safety_hazard_of'
-      | 'standard_governed_by'
-      | 'related_trade';
+    | 'part_of'
+    | 'contains'
+    | 'made_from'
+    | 'required_for'
+    | 'prerequisite'
+    | 'next_learning_step'
+    | 'frequently_used_with'
+    | 'common_mistake_of'
+    | 'repaired_by'
+    | 'safety_hazard_of'
+    | 'standard_governed_by'
+    | 'related_trade';
     target_term_id?: string;
     target_term_name: string;
     note?: string;
@@ -183,18 +183,18 @@ interface GlossaryTermSupabase {
   jargon_subtype?: 'brand_name' | 'german_origin' | 'workplace_slang' | 'synonym' | null;
   knowledge_graph_relations?: Array<{
     relation_type:
-      | 'part_of'
-      | 'contains'
-      | 'made_from'
-      | 'required_for'
-      | 'prerequisite'
-      | 'next_learning_step'
-      | 'frequently_used_with'
-      | 'common_mistake_of'
-      | 'repaired_by'
-      | 'safety_hazard_of'
-      | 'standard_governed_by'
-      | 'related_trade';
+    | 'part_of'
+    | 'contains'
+    | 'made_from'
+    | 'required_for'
+    | 'prerequisite'
+    | 'next_learning_step'
+    | 'frequently_used_with'
+    | 'common_mistake_of'
+    | 'repaired_by'
+    | 'safety_hazard_of'
+    | 'standard_governed_by'
+    | 'related_trade';
     target_term_id?: string;
     target_term_name: string;
     note?: string;
