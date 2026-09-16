@@ -43,7 +43,7 @@ export const DEFAULT_ARTICLES: Article[] = [
     views: 2450,
     rating: 4.95,
     rating_count: 58,
-    featured_image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80',
+    featured_image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
     documents: [
       {
         id: 'doc-szep-1',
@@ -351,7 +351,7 @@ A szakszerűen kivitelezett EPS homlokzati hőszigetelés hosszú évtizedekre b
     views: 890,
     rating: 4.8,
     rating_count: 19,
-    featured_image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80',
+    featured_image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
     documents: [],
     read_time: 4,
     created_at: new Date().toISOString(),

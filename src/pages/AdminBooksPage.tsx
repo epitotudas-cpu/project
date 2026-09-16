@@ -345,7 +345,7 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
     setIsbn('978-963-12-0000-0');
     setCategory(categories.find((c) => c.id !== 'all')?.id || 'szerkezet');
     setBadge('Új Kiadvány');
-    setCoverImage('https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=800&auto=format&fit=crop');
+    setCoverImage('https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop');
     setDescription('');
     setTableOfContents('1. Fejezet: Bevezetés\n2. Fejezet: Méretezési alapok\n3. Fejezet: Kivitelezési szabályok');
     setSampleExcerpt('');
@@ -579,7 +579,7 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
         categoryLabel,
         badge: badge.trim() || 'Új Kiadvány',
         badgeColor: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
-        coverImage: coverImage.trim() || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=800&auto=format&fit=crop',
+        coverImage: coverImage.trim() || 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop',
         coverImageUrl: coverImage.trim(),
         coverImageAlt: `${title.trim()} borítója`,
 
@@ -752,7 +752,7 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
                     alt={book.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=800&auto=format&fit=crop';
+                      (e.target as HTMLImageElement).src = '/article-default.jpg';
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-transparent" />

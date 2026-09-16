@@ -330,7 +330,7 @@ export const DEFAULT_INTERACTIVE_STEPS: Record<string, InteractiveStep[]> = {
       type: 'info',
       title: '1. Lépés: Zsaluzati Rendszerek & Teherbírás',
       description: 'A zsaluzat a friss beton ideiglenes formája és támasztószerkezete. Elsődleges feladata a biztonságos teherbírás és a méretpontosság szilárdulásig.',
-      image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80',
+      image_url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
     },
     {
       id: 'step-1-2',

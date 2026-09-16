@@ -132,7 +132,7 @@ export const SAMPLE_78AS_EPITOK: ExtendedPartner = {
 
 Vállalkozásunk kiemelt figyelmet fordít a korszerű MSZ és EU szabványok szerinti munkavégzésre, a környezettudatos építési technológiákra és a legújabb hőszigetelési normák betartására. Projektjeink során mérnöki precizitással és megbízható alvállalkozói hálózattal dolgozunk.`,
   website_url: 'https://78asepitok.hu',
-  logo_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?w=400&auto=format&fit=crop&q=80',
+  logo_url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80',
   cover_url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1600&auto=format&fit=crop&q=80',
   logo_bg: 'white',
   is_verified: true,

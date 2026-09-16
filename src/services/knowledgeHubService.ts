@@ -132,7 +132,7 @@ A 2 métert meghaladó szintkülönbség esetén a leesés elleni védelmet koll
     ],
     related_rule_ids: ['kh-std-001'],
     related_item_ids: ['kh-safe-001'],
-    image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=800&auto=format&fit=crop',
+    image_url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop',
     video_url: null,
     author: 'Munkavédelmi Mestermérnök',
     status: 'published',

@@ -368,7 +368,7 @@ export const DEFAULT_ENCYCLOPEDIA_TOOLS: Tool[] = [
     features: ['Beépített korlát és lábdeszka', 'Csúszásmentes járólapok', 'Állítható menetes talpak'],
     rating: 4.85,
     rating_count: 18,
-    image_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80',
+    image_url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     professions: ['Kőműves', 'Homlokzati szigetelő', 'Festő', 'Bádogos'],
     uses: ['Homlokzati hőszigetelés', 'Vakolás és festés', 'Tetőfedés biztonsági zárása'],

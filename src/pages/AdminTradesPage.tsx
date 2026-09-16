@@ -124,7 +124,7 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
     // Default timeline templates for new trade
     setTimelineTitle('Honnan indult és merre tart a szakma?');
     setTimelineSubtitle('A kézi alapoktól a modern gépesített és robotizált technológiákig');
-    setTimelineImage('https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80');
+    setTimelineImage('https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80');
     setTimelineImageAlt('Szakmai fejlődés illusztráció');
     setTimelineStations([
       { id: `st-${Date.now()}-1`, badge: 'RÉGEN', title: 'Hagyományos kézi munkamódszerek', period: '19-20. század', description: 'Kézi szerszámok és nehéz fizikai igénybevétel.' },

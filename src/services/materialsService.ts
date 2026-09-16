@@ -157,7 +157,7 @@ export const DEFAULT_MATERIALS: MaterialItem[] = [
     ],
     main_image_url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=800&auto=format&fit=crop',
     gallery_image_urls: [
-      'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop',
     ],
     documents: [
       {

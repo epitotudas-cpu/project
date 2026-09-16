@@ -98,7 +98,7 @@ const AVAILABLE_ICONS = [
 const SAMPLE_IMAGES = [
   {
     title: 'Szerkezetépítés',
-    url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=800&auto=format&fit=crop',
+    url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop',
   },
   {
     title: 'Szigetelés',

@@ -58,7 +58,7 @@ export function resolveTermImages(term: Partial<GlossaryTermFromJson> & { term?:
   const cat = (term.category || '').toLowerCase();
 
   if (name.includes('habarcs') || name.includes('malter')) {
-    return ['https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80'];
+    return ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'];
   }
   if (name.includes('betonacél') || name.includes('armatura') || name.includes('vasb')) {
     return ['https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80'];
@@ -93,7 +93,7 @@ export function resolveTermImages(term: Partial<GlossaryTermFromJson> & { term?:
 
   // Category level fallback images
   if (cat.includes('fal') || cat.includes('kőműves')) {
-    return ['https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80'];
+    return ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'];
   }
   if (cat.includes('szerkezet') || cat.includes('vasbeton')) {
     return ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'];
