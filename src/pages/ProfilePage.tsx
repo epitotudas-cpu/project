@@ -116,7 +116,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           return tab as MainSection;
         }
       }
-    } catch {}
+    } catch { }
     return 'overview';
   });
 
@@ -136,7 +136,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             setActiveSettingsTab(tab as SettingsSubTab);
           }
         }
-      } catch {}
+      } catch { }
     }
 
     handleTabSync();
@@ -249,7 +249,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       await deleteUser(user.id);
       try {
         localStorage.removeItem(`epitotudas_user_pref_${user.id}`);
-      } catch {}
+      } catch { }
       await signOut();
       if (onNavigate) onNavigate('home');
     } catch (err) {
@@ -293,7 +293,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             if (parsed.selectedInterests) setSelectedInterests(parsed.selectedInterests);
             if (parsed.notifications) setNotifications((prev) => ({ ...prev, ...parsed.notifications }));
           }
-        } catch {}
+        } catch { }
       } catch (err) {
         setErrorMsg('Hiba történt a profil adatok betöltésekor.');
       } finally {
@@ -502,66 +502,60 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       <div className="flex items-center gap-2 p-1.5 bg-[#0C213E] border border-[#1E3A64] rounded-2xl overflow-x-auto">
         <button
           onClick={() => setActiveMainSection('overview')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-            activeMainSection === 'overview'
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'overview'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
-          }`}
+            }`}
         >
           <User size={15} /> Áttekintés
         </button>
 
         <button
           onClick={() => setActiveMainSection('learning')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-            activeMainSection === 'learning'
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'learning'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
-          }`}
+            }`}
         >
           <GraduationCap size={15} /> Tanulásom
         </button>
 
         <button
           onClick={() => setActiveMainSection('saved')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-            activeMainSection === 'saved'
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'saved'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
-          }`}
+            }`}
         >
           <Bookmark size={15} /> Mentéseim
         </button>
 
         <button
           onClick={() => setActiveMainSection('history')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-            activeMainSection === 'history'
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'history'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
-          }`}
+            }`}
         >
           <Clock size={15} /> Előzményeim
         </button>
 
         <button
           onClick={() => setActiveMainSection('settings')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-            activeMainSection === 'settings'
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'settings'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
-          }`}
+            }`}
         >
           <Sliders size={15} /> Beállítások
         </button>
 
         <button
           onClick={() => setActiveMainSection('help')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-            activeMainSection === 'help'
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'help'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
-          }`}
+            }`}
         >
           <HelpCircle size={15} /> Segítség
         </button>
@@ -659,11 +653,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               <div className="flex items-center gap-1 bg-[#142C4E] p-1 rounded-xl border border-[#234775] self-start md:self-auto">
                 <button
                   onClick={() => setSavedViewMode('grid')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    savedViewMode === 'grid'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${savedViewMode === 'grid'
                       ? 'bg-accent text-black font-extrabold shadow-sm'
                       : 'text-gray-400 hover:text-white'
-                  }`}
+                    }`}
                   title="Csempe nézet"
                 >
                   <LayoutGrid size={15} />
@@ -672,11 +665,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
                 <button
                   onClick={() => setSavedViewMode('list')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    savedViewMode === 'list'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${savedViewMode === 'list'
                       ? 'bg-accent text-black font-extrabold shadow-sm'
                       : 'text-gray-400 hover:text-white'
-                  }`}
+                    }`}
                   title="Lista nézet"
                 >
                   <LayoutList size={15} />
@@ -691,41 +683,37 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               <div className="flex items-center gap-1 w-full md:w-auto overflow-x-auto">
                 <button
                   onClick={() => setSavedFilter('all')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    savedFilter === 'all'
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${savedFilter === 'all'
                       ? 'bg-[#4165b4] text-white'
                       : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
-                  }`}
+                    }`}
                 >
                   Összes mentés ({savedItems.length})
                 </button>
                 <button
                   onClick={() => setSavedFilter('book')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                    savedFilter === 'book'
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${savedFilter === 'book'
                       ? 'bg-amber-500 text-black font-extrabold shadow-sm'
                       : 'bg-[#142C4E] text-amber-300 border border-amber-500/30 hover:bg-[#1E3A64]'
-                  }`}
+                    }`}
                 >
                   📚 Könyvek ({savedItems.filter((i) => i.itemType === 'book').length})
                 </button>
                 <button
                   onClick={() => setSavedFilter('article')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    savedFilter === 'article'
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${savedFilter === 'article'
                       ? 'bg-[#4165b4] text-white'
                       : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
-                  }`}
+                    }`}
                 >
                   📄 Cikkek ({savedItems.filter((i) => i.itemType === 'article').length})
                 </button>
                 <button
                   onClick={() => setSavedFilter('glossary')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    savedFilter === 'glossary'
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${savedFilter === 'glossary'
                       ? 'bg-[#4165b4] text-white'
                       : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
-                  }`}
+                    }`}
                 >
                   📘 Fogalmak ({savedItems.filter((i) => i.itemType === 'glossary').length})
                 </button>
@@ -852,11 +840,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       {/* Header Badges */}
                       <div className="flex items-center justify-between gap-2">
                         <span
-                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                            item.itemType === 'article'
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${item.itemType === 'article'
                               ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
                               : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          }`}
+                            }`}
                         >
                           {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
                         </span>
@@ -977,11 +964,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                            item.itemType === 'article'
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${item.itemType === 'article'
                               ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
                               : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          }`}
+                            }`}
                         >
                           {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
                         </span>
@@ -1048,11 +1034,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-3 space-y-1 h-fit">
             <button
               onClick={() => setActiveSettingsTab('profile_data')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${
-                activeSettingsTab === 'profile_data'
+              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'profile_data'
                   ? 'bg-accent text-black font-extrabold shadow-md'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <span>Profiladatok</span>
               <ChevronRight size={14} />
@@ -1060,11 +1045,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
             <button
               onClick={() => setActiveSettingsTab('trade_profile')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${
-                activeSettingsTab === 'trade_profile'
+              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'trade_profile'
                   ? 'bg-accent text-black font-extrabold shadow-md'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <span>Szakmai profil</span>
               <ChevronRight size={14} />
@@ -1072,11 +1056,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
             <button
               onClick={() => setActiveSettingsTab('notifications')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${
-                activeSettingsTab === 'notifications'
+              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'notifications'
                   ? 'bg-accent text-black font-extrabold shadow-md'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <span>Értesítések</span>
               <ChevronRight size={14} />
@@ -1084,11 +1067,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
             <button
               onClick={() => setActiveSettingsTab('security')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${
-                activeSettingsTab === 'security'
+              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'security'
                   ? 'bg-accent text-black font-extrabold shadow-md'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <span>Biztonság</span>
               <ChevronRight size={14} />
@@ -1096,11 +1078,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
             <button
               onClick={() => setActiveSettingsTab('appearance')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${
-                activeSettingsTab === 'appearance'
+              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'appearance'
                   ? 'bg-accent text-black font-extrabold shadow-md'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <span>Megjelenés</span>
               <ChevronRight size={14} />
@@ -1108,11 +1089,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
             <button
               onClick={() => setActiveSettingsTab('privacy')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${
-                activeSettingsTab === 'privacy'
+              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'privacy'
                   ? 'bg-accent text-black font-extrabold shadow-md'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <span>Adatvédelem</span>
               <ChevronRight size={14} />
@@ -1236,11 +1216,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                           key={level.id}
                           type="button"
                           onClick={() => setExperienceLevel(level.id)}
-                          className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
-                            selected
+                          className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${selected
                               ? 'bg-[#162C4E] border-accent text-white shadow-md'
                               : 'bg-[#081528] border-[#1E3A64] text-gray-300 hover:border-gray-500'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between font-bold text-xs">
                             <span className={selected ? 'text-accent' : 'text-white'}>{level.label}</span>
@@ -1266,11 +1245,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                           key={topic}
                           type="button"
                           onClick={() => toggleInterest(topic)}
-                          className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
-                            checked
+                          className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${checked
                               ? 'bg-purple-950/50 border-purple-500/50 text-purple-200'
                               : 'bg-[#081528] border-[#1E3A64] text-gray-400 hover:text-white'
-                          }`}
+                            }`}
                         >
                           <span>{topic}</span>
                           {checked && <Check size={14} className="text-purple-400 shrink-0" />}
@@ -1446,9 +1424,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <button
                     onClick={() => setThemeMode('dark')}
-                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${
-                      themeMode === 'dark' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
-                    }`}
+                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${themeMode === 'dark' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
+                      }`}
                   >
                     <Moon size={24} className="mx-auto text-accent" />
                     <span className="text-xs font-bold block">Sötét Téma (Ajánlott)</span>
@@ -1456,9 +1433,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
                   <button
                     onClick={() => setThemeMode('light')}
-                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${
-                      themeMode === 'light' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
-                    }`}
+                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${themeMode === 'light' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
+                      }`}
                   >
                     <Sun size={24} className="mx-auto text-amber-400" />
                     <span className="text-xs font-bold block">Világos Téma</span>
@@ -1466,9 +1442,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
                   <button
                     onClick={() => setThemeMode('system')}
-                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${
-                      themeMode === 'system' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
-                    }`}
+                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${themeMode === 'system' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
+                      }`}
                   >
                     <Monitor size={24} className="mx-auto text-blue-400" />
                     <span className="text-xs font-bold block">Rendszerbeállítás</span>

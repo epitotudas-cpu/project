@@ -25,9 +25,17 @@ import {
   updatePartner,
   deletePartner,
   getCategoryLabel,
+  assignInstructorTrade,
+  listInstructorTrades,
+  listSchoolInstructors,
+  generateStudentInvitationCode,
+  listStudentInvitationCodes,
   type PartnerCategory,
   type ExtendedPartner,
+  type InstructorTrade,
+  type StudentInvitationCode,
 } from '../services/partnerService';
+import { getTradeItems } from '../services/tradeService';
 import PartnerEditorModal from '../components/PartnerEditorModal';
 import {
   createInvitation,
@@ -96,6 +104,121 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [createdTemplate, setCreatedTemplate] = useState<{ subject: string; body: string; inviteLink: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // School Education State
+  const [schoolInstructorsMap, setSchoolInstructorsMap] = useState<Record<string, any[]>>({});
+  const [schoolCodesMap, setSchoolCodesMap] = useState<Record<string, StudentInvitationCode[]>>({});
+
+  // Assign Trade Modal State
+  const [showAssignTradeModal, setShowAssignTradeModal] = useState(false);
+  const [assignTradePartnerId, setAssignTradePartnerId] = useState('');
+  const [assignTradeInstructorId, setAssignTradeInstructorId] = useState('');
+  const [assignTradeInstructorName, setAssignTradeInstructorName] = useState('');
+  const [assignTradeSelectedId, setAssignTradeSelectedId] = useState('');
+  const [assignTradeSubmitting, setAssignTradeSubmitting] = useState(false);
+
+  // Generate Code Modal State
+  const [showGenerateCodeModal, setShowGenerateCodeModal] = useState(false);
+  const [codePartnerId, setCodePartnerId] = useState('');
+  const [codeInstructorId, setCodeInstructorId] = useState('');
+  const [codeInstructorName, setCodeInstructorName] = useState('');
+  const [codeTradeId, setCodeTradeId] = useState('');
+  const [codeExpiresDays, setCodeExpiresDays] = useState<number>(30);
+  const [codeMaxUsesInput, setCodeMaxUsesInput] = useState<string>('');
+  const [codeSubmitting, setCodeSubmitting] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeCopiedNotice, setCodeCopiedNotice] = useState<string | null>(null);
+  const [instructorTradesForCode, setInstructorTradesForCode] = useState<InstructorTrade[]>([]);
+
+  function getTradeTitle(tradeId: string): string {
+    const items = getTradeItems();
+    const found = items.find((t) => t.id === tradeId);
+    return found ? found.title : tradeId;
+  }
+
+  async function loadSchoolData(schoolId: string) {
+    try {
+      const [insts, codes] = await Promise.all([
+        listSchoolInstructors(schoolId),
+        listStudentInvitationCodes(schoolId),
+      ]);
+      setSchoolInstructorsMap((prev) => ({ ...prev, [schoolId]: insts }));
+      setSchoolCodesMap((prev) => ({ ...prev, [schoolId]: codes }));
+    } catch (err) {
+      console.warn('loadSchoolData notice:', err);
+    }
+  }
+
+  async function handleAssignTradeSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!assignTradePartnerId || !assignTradeInstructorId || !assignTradeSelectedId) return;
+
+    try {
+      setAssignTradeSubmitting(true);
+      await assignInstructorTrade(assignTradePartnerId, assignTradeInstructorId, assignTradeSelectedId);
+      await loadSchoolData(assignTradePartnerId);
+      setShowAssignTradeModal(false);
+      setAssignTradeSelectedId('');
+    } catch (err: any) {
+      alert(err.message || 'Szakma hozzárendelése nem sikerült.');
+    } finally {
+      setAssignTradeSubmitting(false);
+    }
+  }
+
+  async function openGenerateCodeModalForInstructor(partnerId: string, instructorId: string, instructorName?: string) {
+    setCodePartnerId(partnerId);
+    setCodeInstructorId(instructorId);
+    setCodeInstructorName(instructorName || 'Oktató');
+    setCodeExpiresDays(30);
+    setCodeMaxUsesInput('');
+    setCodeError(null);
+    try {
+      const trades = await listInstructorTrades(partnerId, instructorId);
+      setInstructorTradesForCode(trades);
+      if (trades.length > 0) {
+        setCodeTradeId(trades[0].trade_id);
+      } else {
+        setCodeTradeId('');
+      }
+      setShowGenerateCodeModal(true);
+    } catch (err: any) {
+      alert(err.message || 'Szakmák betöltése nem sikerült.');
+    }
+  }
+
+  async function handleGenerateCodeSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!codePartnerId || !codeInstructorId || !codeTradeId) return;
+
+    try {
+      setCodeSubmitting(true);
+      setCodeError(null);
+      const expiresAtDate = new Date(Date.now() + codeExpiresDays * 24 * 60 * 60 * 1000).toISOString();
+      const parsedMaxUses = codeMaxUsesInput.trim() ? parseInt(codeMaxUsesInput.trim(), 10) : undefined;
+
+      await generateStudentInvitationCode({
+        schoolId: codePartnerId,
+        instructorId: codeInstructorId,
+        tradeId: codeTradeId,
+        expiresAt: expiresAtDate,
+        maxUses: parsedMaxUses && !isNaN(parsedMaxUses) && parsedMaxUses > 0 ? parsedMaxUses : undefined,
+      });
+
+      await loadSchoolData(codePartnerId);
+      setShowGenerateCodeModal(false);
+    } catch (err: any) {
+      setCodeError(err.message || 'Osztálytermi kód generálása nem sikerült.');
+    } finally {
+      setCodeSubmitting(false);
+    }
+  }
+
+  function handleCopyCode(code: string) {
+    navigator.clipboard.writeText(code);
+    setCodeCopiedNotice(`Osztálytermi kód kimásolva: ${code}`);
+    setTimeout(() => setCodeCopiedNotice(null), 3500);
+  }
+
   useEffect(() => {
     if (initialSearchQuery !== undefined) {
       setSearchQuery(initialSearchQuery);
@@ -135,6 +258,12 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           grouped[item.partner_id].push(item);
         }
         setStaffMap(grouped);
+      }
+
+      for (const p of partnerData) {
+        if (p.category === 'iskola') {
+          await loadSchoolData(p.id);
+        }
       }
     } finally {
       setLoading(false);
@@ -428,8 +557,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           <button
             onClick={() => setActiveTab('partners')}
             className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'partners'
-                ? 'bg-amber-400 text-black shadow-md'
-                : 'text-gray-400 hover:text-white'
+              ? 'bg-amber-400 text-black shadow-md'
+              : 'text-gray-400 hover:text-white'
               }`}
           >
             Szervezetek ({partners.length})
@@ -437,8 +566,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           <button
             onClick={() => setActiveTab('invitations')}
             className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'invitations'
-                ? 'bg-amber-400 text-black shadow-md'
-                : 'text-gray-400 hover:text-white'
+              ? 'bg-amber-400 text-black shadow-md'
+              : 'text-gray-400 hover:text-white'
               }`}
           >
             Meghívók ({invitations.length})
@@ -446,8 +575,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           <button
             onClick={() => setActiveTab('applications')}
             className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'applications'
-                ? 'bg-amber-400 text-black shadow-md'
-                : 'text-gray-400 hover:text-white'
+              ? 'bg-amber-400 text-black shadow-md'
+              : 'text-gray-400 hover:text-white'
               }`}
           >
             <Inbox size={14} />
@@ -586,8 +715,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                                   <span className="text-gray-400 block text-[10px] truncate">{m.profiles?.email || 'Nincs e-mail'}</span>
                                 </div>
                                 <span className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 ${m.member_role === 'owner'
-                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                                    : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                  : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
                                   }`}>
                                   {m.member_role === 'owner' ? 'Tulajdonos' : 'Munkatárs'}
                                 </span>
@@ -596,6 +725,107 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                           </div>
                         )}
                       </div>
+
+                      {/* SCHOOL INSTRUCTORS, TRADES & CLASSROOM CODES */}
+                      {partner.category === 'iskola' && (
+                        <div style={{ backgroundColor: inputBg, borderColor: cardBorder }} className="p-3 border rounded-xl space-y-3 mt-2">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-gray-300 border-b pb-1.5" style={{ borderColor: cardBorder }}>
+                            <span className="flex items-center gap-1.5 text-amber-400">
+                              <UserCheck size={14} /> Oktatók & Szakmák ({ (schoolInstructorsMap[partner.id] || []).length })
+                            </span>
+                          </div>
+
+                          {(schoolInstructorsMap[partner.id] || []).length === 0 ? (
+                            <div className="text-[11px] text-gray-500 italic py-1">
+                              Még nincs regisztrált oktató a szervezetnél.
+                            </div>
+                          ) : (
+                            <div className="space-y-2 text-[11px]">
+                              {(schoolInstructorsMap[partner.id] || []).map((inst) => (
+                                <div key={inst.user_id} className="p-2 rounded-lg bg-black/20 border border-white/5 space-y-1.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="truncate">
+                                      <span className="font-semibold text-gray-200">{inst.full_name || 'Névtelen oktató'}</span>
+                                      <span className="text-gray-400 block text-[10px] truncate">{inst.email || 'Nincs e-mail'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setAssignTradePartnerId(partner.id);
+                                          setAssignTradeInstructorId(inst.user_id);
+                                          setAssignTradeInstructorName(inst.full_name || 'Oktató');
+                                          setShowAssignTradeModal(true);
+                                        }}
+                                        className="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-colors cursor-pointer"
+                                      >
+                                        + Szakma
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => openGenerateCodeModalForInstructor(partner.id, inst.user_id, inst.full_name)}
+                                        className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors cursor-pointer"
+                                      >
+                                        + Kód
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-1 flex-wrap">
+                                    {inst.trades && inst.trades.length > 0 ? (
+                                      inst.trades.map((tId: string) => (
+                                        <span key={tId} className="px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-300 text-[9px] font-bold border border-amber-400/30">
+                                          {getTradeTitle(tId)}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="text-[10px] text-gray-500 italic">Nincs szakma hozzárendelve</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* CLASSROOM INVITATION CODES */}
+                          <div className="pt-2 border-t border-white/5 space-y-2">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-gray-300">
+                              <span className="flex items-center gap-1.5 text-blue-400">
+                                <KeyRound size={13} /> Osztálytermi Kódok ({ (schoolCodesMap[partner.id] || []).length })
+                              </span>
+                            </div>
+
+                            {(schoolCodesMap[partner.id] || []).length === 0 ? (
+                              <div className="text-[10px] text-gray-500 italic">Még nem jött létre osztálytermi kód.</div>
+                            ) : (
+                              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                {(schoolCodesMap[partner.id] || []).map((c) => (
+                                  <div key={c.id} className="flex items-center justify-between p-1.5 rounded bg-black/30 text-[10px] border border-white/5">
+                                    <div className="truncate pr-2">
+                                      <span className="font-mono font-bold text-amber-300">{c.code}</span>
+                                      <span className="text-gray-300 block font-semibold truncate">
+                                        {getTradeTitle(c.trade_id)} · {c.instructor_name || 'Oktató'}
+                                      </span>
+                                      <span className="text-gray-400 block text-[9px]">
+                                        Lejárat: {new Date(c.expires_at).toLocaleDateString('hu-HU')} · {c.usage_count} / {c.max_uses ? `${c.max_uses} fő` : 'korlátlan'}
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyCode(c.code)}
+                                      className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-gray-200 font-bold shrink-0 transition-colors flex items-center gap-1 cursor-pointer"
+                                      title="Kód másolása"
+                                    >
+                                      <Copy size={11} />
+                                      <span>Másolás</span>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ borderColor: cardBorder }} className="pt-3 border-t flex items-center justify-between text-xs">
@@ -851,8 +1081,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                     type="button"
                     onClick={() => setInvitePartnerMode('uncreated')}
                     className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${invitePartnerMode === 'uncreated'
-                        ? 'bg-amber-400 text-black shadow'
-                        : 'text-gray-400 hover:text-white'
+                      ? 'bg-amber-400 text-black shadow'
+                      : 'text-gray-400 hover:text-white'
                       }`}
                   >
                     Még Nem Létező Szervezet
@@ -861,8 +1091,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                     type="button"
                     onClick={() => setInvitePartnerMode('existing')}
                     className={`flex-1 py-1.5 text-center rounded-lg font-bold transition-all cursor-pointer ${invitePartnerMode === 'existing'
-                        ? 'bg-amber-400 text-black shadow'
-                        : 'text-gray-400 hover:text-white'
+                      ? 'bg-amber-400 text-black shadow'
+                      : 'text-gray-400 hover:text-white'
                       }`}
                   >
                     Már Létező Partner
@@ -1133,6 +1363,178 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* MODAL: SZAKMA HOZZÁRENDELÉSE OKTATÓHOZ */}
+      {showAssignTradeModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: cardBorder }}>
+              <h3 className="font-extrabold text-base flex items-center gap-2" style={{ color: textColor }}>
+                <UserCheck size={18} className="text-amber-400" />
+                Szakma Hozzárendelése ({assignTradeInstructorName})
+              </h3>
+              <button onClick={() => setShowAssignTradeModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignTradeSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="font-semibold block mb-1">Választható Szakma</label>
+                <select
+                  value={assignTradeSelectedId}
+                  onChange={(e) => setAssignTradeSelectedId(e.target.value)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                  className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  required
+                >
+                  <option value="">-- Válasszon szakmát --</option>
+                  {getTradeItems().map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title} ({t.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ borderColor: cardBorder }} className="flex justify-end gap-3 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowAssignTradeModal(false)}
+                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                  className="px-4 py-2 border font-semibold rounded-xl cursor-pointer hover:opacity-90"
+                >
+                  Mégse
+                </button>
+                <button
+                  type="submit"
+                  disabled={assignTradeSubmitting || !assignTradeSelectedId}
+                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                  className="px-4 py-2 font-bold rounded-xl cursor-pointer hover:opacity-90 shadow-md disabled:opacity-50"
+                >
+                  {assignTradeSubmitting ? 'Mentés...' : 'Szakma Hozzárendelése'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: OSZTÁLYTERMI MEGHÍVÓKÓD GENERÁLÁSA */}
+      {showGenerateCodeModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: cardBorder }}>
+              <h3 className="font-extrabold text-base flex items-center gap-2" style={{ color: textColor }}>
+                <KeyRound size={18} className="text-amber-400" />
+                Osztálytermi Kód Generálása ({codeInstructorName})
+              </h3>
+              <button onClick={() => setShowGenerateCodeModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                ✕
+              </button>
+            </div>
+
+            {codeError && (
+              <div className="p-3 bg-red-950/60 border border-red-500/30 rounded-xl text-red-300 text-xs">
+                ⚠️ {codeError}
+              </div>
+            )}
+
+            {instructorTradesForCode.length === 0 ? (
+              <div className="p-4 bg-amber-950/40 border border-amber-500/30 rounded-xl text-amber-300 text-xs space-y-2">
+                <p className="font-bold">Ehhez az oktatóhoz még nincs szakma hozzárendelve!</p>
+                <p className="text-gray-300">
+                  Kód generálása előtt először rendeljen legalább egy szakmát az oktatóhoz a "+ Szakma" gombra kattintva.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowGenerateCodeModal(false)}
+                  className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-xs cursor-pointer mt-2"
+                >
+                  Rendben
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleGenerateCodeSubmit} className="space-y-4 text-xs">
+                <div>
+                  <label className="font-semibold block mb-1">Szakma (Oktatóhoz rendelt)</label>
+                  <select
+                    value={codeTradeId}
+                    onChange={(e) => setCodeTradeId(e.target.value)}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    required
+                  >
+                    {instructorTradesForCode.map((t) => (
+                      <option key={t.trade_id} value={t.trade_id}>
+                        {getTradeTitle(t.trade_id)} ({t.trade_id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold block mb-1">Érvényesség lejárata</label>
+                  <select
+                    value={codeExpiresDays}
+                    onChange={(e) => setCodeExpiresDays(Number(e.target.value))}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  >
+                    <option value={7}>7 nap</option>
+                    <option value={14}>14 nap</option>
+                    <option value={30}>30 nap (Alapértelmezett)</option>
+                    <option value={90}>90 nap</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold block mb-1">Maximális beváltási létszám (Opcionális)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Üres = korlátlan beváltás"
+                    value={codeMaxUsesInput}
+                    onChange={(e) => setCodeMaxUsesInput(e.target.value)}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+                    className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-1">
+                    Ha üresen hagyja, tetszőleges számú tanuló csatlakozhat.
+                  </span>
+                </div>
+
+                <div style={{ borderColor: cardBorder }} className="flex justify-end gap-3 pt-3 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowGenerateCodeModal(false)}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                    className="px-4 py-2 border font-semibold rounded-xl cursor-pointer hover:opacity-90"
+                  >
+                    Mégse
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={codeSubmitting || !codeTradeId}
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="px-4 py-2 font-bold rounded-xl cursor-pointer hover:opacity-90 shadow-md disabled:opacity-50"
+                  >
+                    {codeSubmitting ? 'Generálás...' : 'Kód Generálása'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* COPIED NOTICE TOAST */}
+      {codeCopiedNotice && (
+        <div className="fixed bottom-6 right-6 bg-amber-400 text-black font-extrabold px-4 py-3 rounded-2xl shadow-2xl z-50 flex items-center gap-2 text-xs animate-bounce">
+          <CheckCircle2 size={16} />
+          <span>{codeCopiedNotice}</span>
         </div>
       )}
     </div>
