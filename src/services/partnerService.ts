@@ -516,3 +516,321 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
     created_at: new Date().toISOString(),
   };
 }
+
+// ===============================================================================
+// SCHOOL / INSTRUCTOR / TRADE / STUDENT SERVICE LAYER INTEGRATION (STEP 2)
+// ===============================================================================
+
+export interface PartnerUserTrade {
+  partner_id: string;
+  user_id: string;
+  trade_id: string;
+  created_at: string;
+  profiles?: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+    avatar_url?: string | null;
+  } | null;
+}
+
+export interface StudentInvitationCode {
+  id: string;
+  code: string;
+  school_id: string;
+  instructor_id: string;
+  trade_id: string;
+  created_by: string;
+  expires_at: string;
+  status: 'active' | 'inactive' | 'expired';
+  usage_count: number;
+  max_uses?: number | null;
+  created_at: string;
+  school_name?: string;
+  instructor_name?: string;
+}
+
+export interface StudentCodeInfoResult {
+  valid: boolean;
+  code?: string;
+  school_id?: string;
+  school_name?: string;
+  instructor_id?: string;
+  instructor_name?: string;
+  trade_id?: string;
+  expires_at?: string;
+  error?: string;
+}
+
+export interface RedeemStudentCodeResult {
+  success: boolean;
+  already_enrolled?: boolean;
+  school_id?: string;
+  school_name?: string;
+  instructor_id?: string;
+  instructor_name?: string;
+  trade_id?: string;
+  message?: string;
+}
+
+export interface SchoolStudent {
+  id: string;
+  school_id: string;
+  instructor_id: string;
+  trade_id: string;
+  student_id: string;
+  invitation_code_id?: string | null;
+  status: 'active' | 'graduated' | 'inactive';
+  joined_at: string;
+  profiles?: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+    avatar_url?: string | null;
+  } | null;
+  instructor?: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+  } | null;
+  school?: {
+    id: string;
+    name?: string;
+  } | null;
+}
+
+/**
+ * A) Assigns a construction trade to a school instructor/staff member.
+ */
+export async function assignInstructorTrade(
+  partnerId: string,
+  instructorId: string,
+  tradeId: string
+): Promise<PartnerUserTrade> {
+  const { data, error } = await supabase
+    .from('partner_user_trades')
+    .insert({
+      partner_id: partnerId,
+      user_id: instructorId,
+      trade_id: tradeId.trim(),
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'Szakma oktatóhoz rendelése nem sikerült.');
+  }
+
+  return data as PartnerUserTrade;
+}
+
+/**
+ * B) Lists trades assigned to a specific school instructor.
+ */
+export async function listInstructorTrades(
+  partnerId: string,
+  instructorId: string
+): Promise<PartnerUserTrade[]> {
+  const { data, error } = await supabase
+    .from('partner_user_trades')
+    .select('*')
+    .eq('partner_id', partnerId)
+    .eq('user_id', instructorId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.warn('listInstructorTrades error notice:', error);
+    return [];
+  }
+
+  return (data || []) as PartnerUserTrade[];
+}
+
+/**
+ * C) Lists all school instructors with their assigned trades.
+ */
+export async function listSchoolInstructors(
+  partnerId: string
+): Promise<Array<{ user_id: string; full_name?: string | null; email?: string | null; trades: string[] }>> {
+  const { data, error } = await supabase
+    .from('partner_user_trades')
+    .select('user_id, trade_id, profiles(id, full_name, email)')
+    .eq('partner_id', partnerId);
+
+  if (error) {
+    console.warn('listSchoolInstructors error notice:', error);
+    return [];
+  }
+
+  const instructorMap: Record<string, { user_id: string; full_name?: string | null; email?: string | null; trades: string[] }> = {};
+
+  for (const row of (data || []) as any[]) {
+    const uid = row.user_id;
+    if (!instructorMap[uid]) {
+      instructorMap[uid] = {
+        user_id: uid,
+        full_name: row.profiles?.full_name || null,
+        email: row.profiles?.email || null,
+        trades: [],
+      };
+    }
+    if (row.trade_id && !instructorMap[uid].trades.includes(row.trade_id)) {
+      instructorMap[uid].trades.push(row.trade_id);
+    }
+  }
+
+  return Object.values(instructorMap);
+}
+
+function generateClassCode(tradeId: string): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let rand = '';
+  for (let i = 0; i < 4; i++) {
+    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const tradePrefix = tradeId.toUpperCase().substring(0, 4);
+  return `ET-${tradePrefix}-${rand}`;
+}
+
+/**
+ * D) Generates a reusable class invitation code for a trade taught by an instructor.
+ */
+export async function generateStudentInvitationCode(payload: {
+  schoolId: string;
+  instructorId: string;
+  tradeId: string;
+  expiresAt: string;
+  code?: string;
+  maxUses?: number;
+}): Promise<StudentInvitationCode> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const currentUserId = sessionData.session?.user?.id;
+
+  if (!currentUserId) {
+    throw new Error('Nincs bejelentkezett felhasználói munkamenet.');
+  }
+
+  const generatedCode = payload.code?.trim().toUpperCase() || generateClassCode(payload.tradeId);
+
+  const { data, error } = await supabase
+    .from('student_invitation_codes')
+    .insert({
+      code: generatedCode,
+      school_id: payload.schoolId,
+      instructor_id: payload.instructorId,
+      trade_id: payload.tradeId.trim(),
+      created_by: currentUserId,
+      expires_at: payload.expiresAt,
+      status: 'active',
+      usage_count: 0,
+      max_uses: payload.maxUses ?? null,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'Osztálytermi meghívókód generálása nem sikerült.');
+  }
+
+  return data as StudentInvitationCode;
+}
+
+/**
+ * E) Lists invitation codes generated for a school / instructor.
+ */
+export async function listStudentInvitationCodes(
+  schoolId: string,
+  instructorId?: string
+): Promise<StudentInvitationCode[]> {
+  let query = supabase
+    .from('student_invitation_codes')
+    .select('*, partners:school_id(name), profiles:instructor_id(full_name)')
+    .eq('school_id', schoolId)
+    .order('created_at', { ascending: false });
+
+  if (instructorId) {
+    query = query.eq('instructor_id', instructorId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.warn('listStudentInvitationCodes error notice:', error);
+    return [];
+  }
+
+  return (data || []).map((row: any) => ({
+    ...row,
+    school_name: row.partners?.name || 'Iskola',
+    instructor_name: row.profiles?.full_name || 'Oktató',
+  })) as StudentInvitationCode[];
+}
+
+/**
+ * F) Fetches invitation code info (School name, Instructor name, Trade) via get_student_code_info RPC.
+ */
+export async function getStudentCodeInfo(code: string): Promise<StudentCodeInfoResult> {
+  const cleanCode = code.trim().toUpperCase();
+  const { data, error } = await supabase.rpc('get_student_code_info', {
+    input_code: cleanCode,
+  });
+
+  if (error) {
+    return {
+      valid: false,
+      error: error.message || 'A meghívókód ellenőrzése nem sikerült.',
+    };
+  }
+
+  return data as StudentCodeInfoResult;
+}
+
+/**
+ * G) Redeems a student invitation code server-side via redeem_student_invitation_code RPC.
+ */
+export async function redeemStudentInvitationCode(code: string): Promise<RedeemStudentCodeResult> {
+  const cleanCode = code.trim().toUpperCase();
+
+  const { data, error } = await supabase.rpc('redeem_student_invitation_code', {
+    input_code: cleanCode,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'A meghívókód beváltása nem sikerült.');
+  }
+
+  return data as RedeemStudentCodeResult;
+}
+
+/**
+ * H) Lists students enrolled in a school, optionally filtered by instructor or trade.
+ */
+export async function listSchoolStudents(
+  schoolId: string,
+  instructorId?: string,
+  tradeId?: string
+): Promise<SchoolStudent[]> {
+  let query = supabase
+    .from('school_students')
+    .select('*, profiles:student_id(id, full_name, email, avatar_url), instructor:instructor_id(id, full_name, email), school:school_id(id, name)')
+    .eq('school_id', schoolId)
+    .order('joined_at', { ascending: false });
+
+  if (instructorId) {
+    query = query.eq('instructor_id', instructorId);
+  }
+
+  if (tradeId) {
+    query = query.eq('trade_id', tradeId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.warn('listSchoolStudents error notice:', error);
+    return [];
+  }
+
+  return (data || []) as SchoolStudent[];
+}
+
