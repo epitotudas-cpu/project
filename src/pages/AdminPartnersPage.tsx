@@ -32,7 +32,7 @@ import {
   listStudentInvitationCodes,
   type PartnerCategory,
   type ExtendedPartner,
-  type InstructorTrade,
+  type PartnerUserTrade,
   type StudentInvitationCode,
 } from '../services/partnerService';
 import { getTradeItems } from '../services/tradeService';
@@ -127,12 +127,12 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [codeSubmitting, setCodeSubmitting] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [codeCopiedNotice, setCodeCopiedNotice] = useState<string | null>(null);
-  const [instructorTradesForCode, setInstructorTradesForCode] = useState<InstructorTrade[]>([]);
+  const [instructorTradesForCode, setInstructorTradesForCode] = useState<PartnerUserTrade[]>([]);
 
   function getTradeTitle(tradeId: string): string {
     const items = getTradeItems();
     const found = items.find((t) => t.id === tradeId);
-    return found ? found.title : tradeId;
+    return found ? (found.name || found.id) : tradeId;
   }
 
   async function loadSchoolData(schoolId: string) {
@@ -1393,7 +1393,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                   <option value="">-- Válasszon szakmát --</option>
                   {getTradeItems().map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.title} ({t.id})
+                      {t.name || t.id} ({t.id})
                     </option>
                   ))}
                 </select>
