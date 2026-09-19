@@ -277,12 +277,19 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       if (!user) return;
       try {
         setLoading(true);
-        const data = await getUserDetailedProfile(user.id, user.email, user.user_metadata?.full_name, 'user');
+        const userType = user.user_metadata?.user_type;
+        const data = await getUserDetailedProfile(user.id, user.email, user.user_metadata?.full_name, 'user', userType);
         setProfile(data);
         setFullName(data.fullName || '');
-        setSpecialization(data.specialization || '');
+        const effectiveSpecialization = (userType === 'tanulo' && (!data.specialization || data.specialization === 'Építőipari Szakember'))
+          ? 'Tanuló'
+          : (data.specialization || '');
+        setSpecialization(effectiveSpecialization);
         setCompanyName(data.companyName || '');
-        setBio(data.bio || '');
+        const effectiveBio = (userType === 'tanulo' && (!data.bio || data.bio === 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.'))
+          ? 'Tanulni és fejlődni vágyó felhasználó.'
+          : (data.bio || '');
+        setBio(effectiveBio);
 
         // Load stored local preferences if available
         try {
@@ -322,11 +329,17 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     setSuccessMsg(null);
 
     try {
+      const userType = user.user_metadata?.user_type;
+      const targetSpecialization = (userType === 'tanulo' && (!specialization.trim() || specialization === 'Építőipari Szakember'))
+        ? 'Tanuló'
+        : specialization;
+
       const updated = await updateUserDetailedProfile(user.id, {
         fullName,
-        specialization,
+        specialization: targetSpecialization,
         companyName,
         bio,
+        userType,
       });
 
       // Save additional preferences to localStorage safely
@@ -338,6 +351,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       localStorage.setItem(`epitotudas_user_pref_${user.id}`, JSON.stringify(prefData));
 
       setProfile(updated);
+      setSpecialization(updated.specialization || targetSpecialization);
+      if (updated.bio) setBio(updated.bio);
       setSuccessMsg('A profil beállítások sikeresen mentve lettek!');
       setTimeout(() => setSuccessMsg(null), 3500);
     } catch (err) {
@@ -426,7 +441,13 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-black text-white truncate">{profile.fullName}</h1>
                 <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
-                  {profile.role === 'admin' ? 'Adminisztrátor' : profile.role === 'editor' ? 'Szerkesztő' : 'Felhasználó'}
+                  {profile.role === 'admin'
+                    ? 'Adminisztrátor'
+                    : profile.role === 'editor'
+                      ? 'Szerkesztő'
+                      : (user?.user_metadata?.user_type === 'tanulo' || profile?.user_type === 'tanulo' || profile?.userType === 'tanulo')
+                        ? 'Tanuló'
+                        : 'Építőipari Szakember'}
                 </span>
 
                 {/* Visszafogott 1-soros profil státusz */}

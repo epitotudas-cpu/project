@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          loadProfile(session.user.id).finally(() => setLoading(false));
+          loadProfile(session.user.id, session.user).finally(() => setLoading(false));
           checkPendingInvitation();
         } else {
           setLoading(false);
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (async () => {
         try {
           if (session?.user) {
-            await loadProfile(session.user.id);
+            await loadProfile(session.user.id, session.user);
             await checkPendingInvitation();
           } else {
             setProfile(null);
@@ -118,10 +118,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function loadProfile(userId: string) {
+  async function loadProfile(userId: string, authUser?: User | null) {
     try {
       const data = await userService.getProfile(userId);
-      setProfile(data);
+      if (data) {
+        let metaUserType = authUser?.user_metadata?.user_type;
+        if (!metaUserType) {
+          try {
+            const currentSession = await authClient.getSession();
+            metaUserType = currentSession?.data?.session?.user?.user_metadata?.user_type;
+          } catch { }
+        }
+        setProfile({
+          ...data,
+          ...(metaUserType ? { user_type: metaUserType, userType: metaUserType } : {}),
+        } as any);
+      } else {
+        setProfile(data);
+      }
     } catch {
       setProfile(null);
     }

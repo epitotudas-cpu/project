@@ -36,12 +36,27 @@ export function isIskola(profile: Profile | null | undefined): boolean {
   return profile?.role === 'admin';
 }
 
-export function isSzakember(profile: Profile | null | undefined): boolean {
-  return profile?.role === 'admin' || profile?.role === 'editor';
+export function isSzakember(target?: any): boolean {
+  if (!target) return false;
+  if (typeof target === 'string') {
+    return target === 'szakember';
+  }
+  const userType = target?.user_metadata?.user_type || target?.user_type || target?.userType;
+  if (userType) {
+    return userType === 'szakember';
+  }
+  return target?.role === 'admin' || target?.role === 'editor';
 }
 
-export function isTanulo(profile: Profile | null | undefined): boolean {
-  void profile;
+export function isTanulo(target?: any): boolean {
+  if (!target) return true;
+  if (typeof target === 'string') {
+    return target === 'tanulo';
+  }
+  const userType = target?.user_metadata?.user_type || target?.user_type || target?.userType;
+  if (userType) {
+    return userType === 'tanulo';
+  }
   return true;
 }
 

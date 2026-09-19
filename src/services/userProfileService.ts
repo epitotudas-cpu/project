@@ -6,6 +6,7 @@ export interface UserDetailedProfile {
   fullName: string;
   avatarUrl?: string;
   role: 'admin' | 'editor' | 'user';
+  userType?: 'tanulo' | 'szakember' | string;
   specialization?: string;
   experienceYears?: number;
   companyName?: string;
@@ -17,23 +18,60 @@ export interface UserDetailedProfile {
 
 const IN_MEMORY_DETAILED_PROFILES: Map<string, UserDetailedProfile> = new Map();
 
-export async function getUserDetailedProfile(userId: string, email?: string, fullName?: string, role: 'admin' | 'editor' | 'user' = 'user'): Promise<UserDetailedProfile> {
+export async function getUserDetailedProfile(
+  userId: string,
+  email?: string,
+  fullName?: string,
+  role: 'admin' | 'editor' | 'user' = 'user',
+  userType?: 'tanulo' | 'szakember' | string
+): Promise<UserDetailedProfile> {
   if (IN_MEMORY_DETAILED_PROFILES.has(userId)) {
-    return IN_MEMORY_DETAILED_PROFILES.get(userId)!;
+    const cached = IN_MEMORY_DETAILED_PROFILES.get(userId)!;
+    const effectiveType = userType || cached.userType;
+    if (effectiveType) {
+      cached.userType = effectiveType;
+      if (role === 'user') {
+        if (effectiveType === 'tanulo') {
+          cached.specialization = 'Tanuló';
+          cached.bio = 'Tanulni és fejlődni vágyó felhasználó.';
+        } else if (effectiveType === 'szakember' && cached.specialization === 'Tanuló') {
+          cached.specialization = 'Építőipari Szakember';
+          cached.bio = 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.';
+        }
+      }
+    }
+    return cached;
   }
 
   const trustProfile = await getUserTrustProfile(userId);
+
+  const isTanuloUser = userType === 'tanulo';
+
+  const defaultSpecialization = role === 'admin'
+    ? 'Platform Kezelő'
+    : role === 'editor'
+      ? 'Magasépítés & Szerkezetépítés'
+      : isTanuloUser
+        ? 'Tanuló'
+        : 'Építőipari Szakember';
+
+  const defaultBio = role === 'admin' || role === 'editor'
+    ? 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.'
+    : isTanuloUser
+      ? 'Tanulni és fejlődni vágyó felhasználó.'
+      : 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.';
 
   const profile: UserDetailedProfile = {
     id: userId,
     email: email || 'felhasznalo@epitotudas.hu',
     fullName: fullName || 'Szakmai Felhasználó',
     role,
-    specialization: role === 'admin' ? 'Platform Kezelő' : role === 'editor' ? 'Magasépítés & Szerkezetépítés' : 'Építőipari Szakember',
+    userType: userType || 'tanulo',
+    specialization: defaultSpecialization,
     experienceYears: role === 'admin' ? 10 : 5,
     companyName: 'ÉpítőTudás Partner Kft.',
     institutionName: 'BME Építőmérnöki Kar',
-    bio: 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.',
+    bio: defaultBio,
     createdAt: new Date().toISOString(),
     trustProfile,
   };
@@ -46,10 +84,25 @@ export async function updateUserDetailedProfile(
   userId: string,
   payload: Partial<UserDetailedProfile>
 ): Promise<UserDetailedProfile> {
-  const current = await getUserDetailedProfile(userId);
+  const current = await getUserDetailedProfile(userId, undefined, undefined, undefined, payload.userType);
+  const effectiveUserType = payload.userType || current.userType;
+  
+  let finalSpecialization = payload.specialization !== undefined ? payload.specialization : current.specialization;
+  if (effectiveUserType === 'tanulo' && (!finalSpecialization || finalSpecialization === 'Építőipari Szakember')) {
+    finalSpecialization = 'Tanuló';
+  }
+
+  let finalBio = payload.bio !== undefined ? payload.bio : current.bio;
+  if (effectiveUserType === 'tanulo' && (!finalBio || finalBio === 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.')) {
+    finalBio = 'Tanulni és fejlődni vágyó felhasználó.';
+  }
+
   const updated: UserDetailedProfile = {
     ...current,
     ...payload,
+    userType: effectiveUserType,
+    specialization: finalSpecialization,
+    bio: finalBio,
   };
 
   IN_MEMORY_DETAILED_PROFILES.set(userId, updated);
