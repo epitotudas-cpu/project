@@ -18,21 +18,14 @@ import {
   Users,
   UserPlus,
   Mail,
-  Phone,
   MapPin,
-  Globe,
   Save,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  Sparkles,
-  Wrench,
   Key,
   GraduationCap,
   ShieldCheck,
   Plus,
-  ChevronRight,
-  FileText,
 } from 'lucide-react';
 
 interface PartnerSchoolProfilePageProps {
@@ -41,6 +34,7 @@ interface PartnerSchoolProfilePageProps {
 }
 
 export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: PartnerSchoolProfilePageProps) {
+  void onNavigateView;
   const { user, profile: userProfile } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -114,7 +108,7 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
 
       let currentPartner: ExtendedPartner | null = null;
       if (puData && puData.partner) {
-        currentPartner = puData.partner as ExtendedPartner;
+        currentPartner = (Array.isArray(puData.partner) ? puData.partner[0] : puData.partner) as unknown as ExtendedPartner;
       } else {
         // Fallback: Query partners table for category = 'iskola' or contact email match
         const { data: partnerByEmail } = await supabase
@@ -134,7 +128,7 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
         setName(currentPartner.name || '');
         setOfficialName(currentPartner.official_name || '');
         setPartnerType(currentPartner.partner_type || 'Oktatási Intézmény');
-        setContactPersonName(currentPartner.contact_person_name || userProfile?.fullName || '');
+        setContactPersonName(currentPartner.contact_person_name || userProfile?.full_name || '');
         setContactPersonTitle(currentPartner.contact_person_title || 'Iskolai Kapcsolattartó');
         setContactEmail(currentPartner.contact_email || user!.email || '');
         setContactPhone(currentPartner.contact_phone || '');
@@ -280,7 +274,7 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
               {name || 'Oktatási Intézmény Kezelése'}
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1">
-              Hivatalos kapcsolattartó: <strong className="text-white">{contactPersonName || userProfile?.fullName || 'Kapcsolattartó'}</strong> ({contactEmail || user?.email})
+              Hivatalos kapcsolattartó: <strong className="text-white">{contactPersonName || userProfile?.full_name || 'Kapcsolattartó'}</strong> ({contactEmail || user?.email})
             </p>
           </div>
 

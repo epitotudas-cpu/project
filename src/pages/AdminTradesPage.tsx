@@ -13,8 +13,6 @@ import {
   History,
   Cpu,
   Layers,
-  ArrowRight,
-  ExternalLink,
 } from 'lucide-react';
 import {
   useTrades,

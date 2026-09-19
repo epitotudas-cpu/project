@@ -34,7 +34,7 @@ import {
 } from '../services/heroImageService';
 
 interface HomePageProps {
-  onNavigate: (page: string, params?: { articleSlug?: string }) => void;
+  onNavigate: (page: string, params?: { articleSlug?: string; partnerSlug?: string; slug?: string }) => void;
 }
 
 const iconMap: Record<string, React.ElementType> = {
