@@ -76,23 +76,39 @@ export async function createInvitation(payload: CreateInvitationPayload): Promis
   const { data: sessionData } = await supabase.auth.getSession();
   const currentUserId = sessionData.session?.user?.id ?? null;
 
-  const { data, error } = await supabase
-    .from('partner_invitations')
-    .insert({
-      partner_id: partnerId,
-      organization_name: payload.organizationName?.trim() || null,
-      organization_category: payload.organizationCategory || null,
-      email: cleanEmail,
-      code,
-      expires_at: expiresAt,
-      created_by: currentUserId,
-      status: 'active',
-    })
-    .select('*')
-    .single();
+  // 1. Try RPC method first (bypasses RLS issues via SECURITY DEFINER)
+  const { data: rpcData, error: rpcError } = await supabase.rpc('create_partner_invitation', {
+    p_partner_id: partnerId,
+    p_email: cleanEmail,
+    p_organization_name: payload.organizationName?.trim() || null,
+    p_organization_category: payload.organizationCategory || null,
+    p_expires_in_days: expiresInDays,
+  });
 
-  if (error) {
-    throw new Error(error.message || 'Hiba történt a meghívó létrehozásakor.');
+  let createdInv: PartnerInvitation | null = null;
+  if (!rpcError && rpcData) {
+    createdInv = rpcData as PartnerInvitation;
+  } else {
+    // 2. Direct insert fallback
+    const { data, error } = await supabase
+      .from('partner_invitations')
+      .insert({
+        partner_id: partnerId,
+        organization_name: payload.organizationName?.trim() || null,
+        organization_category: payload.organizationCategory || null,
+        email: cleanEmail,
+        code,
+        expires_at: expiresAt,
+        created_by: currentUserId,
+        status: 'active',
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(error.message || 'Hiba történt a meghívó létrehozásakor.');
+    }
+    createdInv = data as PartnerInvitation;
   }
 
   void logAuditAction(
@@ -101,7 +117,7 @@ export async function createInvitation(payload: CreateInvitationPayload): Promis
     `Partner meghívó kiküldve: ${cleanEmail} (Szervezet: ${payload.organizationName || payload.partnerId || 'Új partner'})`
   );
 
-  return data as PartnerInvitation;
+  return createdInv;
 }
 
 export async function sendInvitationEmail(
