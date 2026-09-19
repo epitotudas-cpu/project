@@ -107,26 +107,30 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isInstructor, setIsInstructor] = useState(false);
+  const [isPartnerContact, setIsPartnerContact] = useState(false);
 
   useEffect(() => {
-    async function checkInstructor() {
+    async function checkPartnerContact() {
       if (!user) return;
       try {
         const { data } = await supabase
           .from('partner_users')
           .select('role')
           .eq('user_id', user.id)
-          .eq('role', 'instructor')
           .limit(1);
 
-        if (data && data.length > 0) {
-          setIsInstructor(true);
-        } else if (user.user_metadata?.user_type === 'oktato') {
-          setIsInstructor(true);
+        const userType = user.user_metadata?.user_type;
+        const isPartner = (data && data.length > 0) || userType === 'partner' || userType === 'oktato' || userType === 'iskola';
+
+        if (isPartner) {
+          setIsPartnerContact(true);
+          if (data?.[0]?.role === 'instructor' || userType === 'oktato') {
+            setIsInstructor(true);
+          }
         }
       } catch { }
     }
-    checkInstructor();
+    checkPartnerContact();
   }, [user]);
 
   // Tab State
@@ -304,9 +308,12 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         const data = await getUserDetailedProfile(user.id, user.email, user.user_metadata?.full_name, 'user', userType);
         setProfile(data);
         setFullName(data.fullName || '');
-        const effectiveSpecialization = (userType === 'tanulo' && (!data.specialization || data.specialization === 'Építőipari Szakember'))
-          ? 'Tanuló'
-          : (data.specialization || '');
+        const isPartnerOrOktato = isPartnerContact || userType === 'partner' || userType === 'oktato' || userType === 'iskola';
+        const effectiveSpecialization = isPartnerOrOktato
+          ? (data.specialization === 'Tanuló' ? '' : (data.specialization || ''))
+          : (userType === 'tanulo' && (!data.specialization || data.specialization === 'Építőipari Szakember'))
+            ? 'Tanuló'
+            : (data.specialization || '');
         setSpecialization(effectiveSpecialization);
         setCompanyName(data.companyName || '');
         const effectiveBio = (userType === 'tanulo' && (!data.bio || data.bio === 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.'))
@@ -463,15 +470,24 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-black text-white truncate">{profile.fullName}</h1>
-                <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
-                  {profile.role === 'admin'
-                    ? 'Adminisztrátor'
-                    : profile.role === 'editor'
-                      ? 'Szerkesztő'
-                      : (user?.user_metadata?.user_type === 'tanulo' || profile?.userType === 'tanulo')
-                        ? 'Tanuló'
-                        : 'Építőipari Szakember'}
-                </span>
+                {profile.role === 'admin' ? (
+                  <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
+                    Adminisztrátor
+                  </span>
+                ) : profile.role === 'editor' ? (
+                  <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
+                    Szerkesztő
+                  </span>
+                ) : isPartnerContact || user?.user_metadata?.user_type === 'partner' || user?.user_metadata?.user_type === 'iskola' || user?.user_metadata?.user_type === 'oktato' || profile?.userType === 'partner' ? (
+                  /* No title badge rendered for school contact person / partner user as requested! */
+                  null
+                ) : (
+                  <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
+                    {user?.user_metadata?.user_type === 'tanulo' || profile?.userType === 'tanulo'
+                      ? 'Tanuló'
+                      : 'Építőipari Szakember'}
+                  </span>
+                )}
 
                 {/* Visszafogott 1-soros profil státusz */}
                 {missingCount === 0 ? (
@@ -499,7 +515,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   <span className="px-2.5 py-0.5 rounded-md bg-[#162C4E] border border-[#234678] font-semibold text-blue-200">
                     {specialization} {experienceLevel ? `· ${EXPERIENCE_LEVELS.find((l) => l.id === experienceLevel)?.label || experienceLevel}` : ''}
                   </span>
-                ) : (
+                ) : !(isPartnerContact || user?.user_metadata?.user_type === 'partner' || user?.user_metadata?.user_type === 'iskola' || user?.user_metadata?.user_type === 'oktato') ? (
                   <button
                     onClick={() => {
                       setActiveMainSection('settings');
@@ -509,7 +525,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   >
                     ⚠️ Állítsd be a szakmádat a személyre szabott tartalomhoz!
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

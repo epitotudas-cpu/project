@@ -23,7 +23,7 @@ export async function getUserDetailedProfile(
   email?: string,
   fullName?: string,
   role: 'admin' | 'editor' | 'user' = 'user',
-  userType?: 'tanulo' | 'szakember' | string
+  userType?: 'tanulo' | 'szakember' | 'partner' | 'oktato' | string
 ): Promise<UserDetailedProfile> {
   if (IN_MEMORY_DETAILED_PROFILES.has(userId)) {
     const cached = IN_MEMORY_DETAILED_PROFILES.get(userId)!;
@@ -34,6 +34,10 @@ export async function getUserDetailedProfile(
         if (effectiveType === 'tanulo') {
           cached.specialization = 'Tanuló';
           cached.bio = 'Tanulni és fejlődni vágyó felhasználó.';
+        } else if (effectiveType === 'partner' || effectiveType === 'oktato' || effectiveType === 'iskola') {
+          if (cached.specialization === 'Tanuló') {
+            cached.specialization = '';
+          }
         } else if (effectiveType === 'szakember' && cached.specialization === 'Tanuló') {
           cached.specialization = 'Építőipari Szakember';
           cached.bio = 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.';
@@ -46,27 +50,32 @@ export async function getUserDetailedProfile(
   const trustProfile = await getUserTrustProfile(userId);
 
   const isTanuloUser = userType === 'tanulo';
+  const isPartnerUser = userType === 'partner' || userType === 'oktato' || userType === 'iskola';
 
   const defaultSpecialization = role === 'admin'
     ? 'Platform Kezelő'
     : role === 'editor'
       ? 'Magasépítés & Szerkezetépítés'
-      : isTanuloUser
-        ? 'Tanuló'
-        : 'Építőipari Szakember';
+      : isPartnerUser
+        ? ''
+        : isTanuloUser
+          ? 'Tanuló'
+          : 'Építőipari Szakember';
 
   const defaultBio = role === 'admin' || role === 'editor'
     ? 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.'
-    : isTanuloUser
-      ? 'Tanulni és fejlődni vágyó felhasználó.'
-      : 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.';
+    : isPartnerUser
+      ? 'Hivatalos partneri kapcsolattartó és szakmai képviselő.'
+      : isTanuloUser
+        ? 'Tanulni és fejlődni vágyó felhasználó.'
+        : 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.';
 
   const profile: UserDetailedProfile = {
     id: userId,
     email: email || 'felhasznalo@epitotudas.hu',
     fullName: fullName || 'Szakmai Felhasználó',
     role,
-    userType: userType || 'tanulo',
+    userType: userType || (isPartnerUser ? 'partner' : 'tanulo'),
     specialization: defaultSpecialization,
     experienceYears: role === 'admin' ? 10 : 5,
     companyName: 'ÉpítőTudás Partner Kft.',
@@ -86,10 +95,13 @@ export async function updateUserDetailedProfile(
 ): Promise<UserDetailedProfile> {
   const current = await getUserDetailedProfile(userId, undefined, undefined, undefined, payload.userType);
   const effectiveUserType = payload.userType || current.userType;
+  const isPartnerUser = effectiveUserType === 'partner' || effectiveUserType === 'oktato' || effectiveUserType === 'iskola';
   
   let finalSpecialization = payload.specialization !== undefined ? payload.specialization : current.specialization;
   if (effectiveUserType === 'tanulo' && (!finalSpecialization || finalSpecialization === 'Építőipari Szakember')) {
     finalSpecialization = 'Tanuló';
+  } else if (isPartnerUser && finalSpecialization === 'Tanuló') {
+    finalSpecialization = '';
   }
 
   let finalBio = payload.bio !== undefined ? payload.bio : current.bio;
