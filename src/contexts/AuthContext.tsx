@@ -185,11 +185,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       const msg = error.message.toLowerCase();
       if (
-        msg.includes('already registered') ||
-        msg.includes('already been registered') ||
-        msg.includes('user already exists') ||
-        msg.includes('already exists') ||
-        msg.includes('duplicate')
+        msg.includes('already') ||
+        msg.includes('exists') ||
+        msg.includes('duplicate') ||
+        msg.includes('unique') ||
+        msg.includes('in_use') ||
+        msg.includes('in use') ||
+        msg.includes('taken') ||
+        msg.includes('registered')
       ) {
         return { error: 'Ez az e-mail-cím már regisztrálva van.' };
       }
@@ -205,13 +208,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Supabase Auth behavior when email confirmation is ON and user already exists:
-    // data.user exists, error is null, but data.user.identities is an empty array ([]) or created_at is in the past!
-    if (
-      data?.user &&
-      ((Array.isArray(data.user.identities) && data.user.identities.length === 0) ||
-       (data.user.created_at && Date.now() - new Date(data.user.created_at).getTime() > 15000 && !data.session))
-    ) {
-      return { error: 'Ez az e-mail-cím már regisztrálva van.' };
+    // GoTrue returns error = null and data.user. Check identities, timestamps & confirmed status.
+    if (data?.user) {
+      const identities = data.user.identities;
+      const isIdentitiesEmpty = !identities || (Array.isArray(identities) && identities.length === 0);
+      const isConfirmed = !!(data.user.email_confirmed_at || data.user.confirmed_at || data.user.last_sign_in_at);
+      const isOldUser = data.user.created_at ? (Date.now() - new Date(data.user.created_at).getTime() > 3000) : false;
+
+      if (isIdentitiesEmpty || isConfirmed || isOldUser) {
+        return { error: 'Ez az e-mail-cím már regisztrálva van.' };
+      }
     }
 
     if (data?.session || (data?.user && !data.user.email_confirmed_at)) {
