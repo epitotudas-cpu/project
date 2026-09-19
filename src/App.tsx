@@ -76,6 +76,7 @@ const EditorDashboardPage = lazy(() => import('./pages/EditorDashboardPage').the
 const EditorSettingsPage = lazy(() => import('./pages/EditorSettingsPage').then(m => ({ default: m.EditorSettingsPage })));
 const PartnerLayout = lazy(() => import('./components/PartnerLayout'));
 const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage').then(m => ({ default: m.PartnerDashboardPage })));
+const PartnerSchoolProfilePage = lazy(() => import('./pages/PartnerSchoolProfilePage'));
 const TeacherDashboardPage = lazy(() => import('./pages/TeacherDashboardPage'));
 
 type PageKey =
@@ -259,7 +260,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
   return (
     <PartnerLayout onNavigate={onNavigate} activeView={partnerView} onNavigateView={setPartnerView}>
       {partnerView === 'dashboard' && <PartnerDashboardPage onNavigateView={setPartnerView} />}
-      {partnerView === 'partner_profile' && <ProfilePage />}
+      {partnerView === 'partner_profile' && <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />}
       {partnerView === 'partner_offers' && <AdminPartnersPage />}
       {partnerView === 'partner_products' && <AdminMaterialsPage />}
       {partnerView === 'catalog' && <AdminToolsPage />}

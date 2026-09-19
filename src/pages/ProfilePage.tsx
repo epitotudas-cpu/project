@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   User,
   GraduationCap,
+  Building2,
   Bookmark,
   Clock,
   Sliders,
@@ -531,6 +532,20 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           </div>
 
           <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
+            {isPartnerContact && (
+              <button
+                onClick={() => {
+                  if (onNavigate) {
+                    onNavigate('partner');
+                  } else {
+                    window.location.hash = '#partner';
+                  }
+                }}
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-blue-500/20"
+              >
+                <Building2 size={16} /> Szervezeti / Iskolai Vezérlőpult
+              </button>
+            )}
             {isInstructor && (
               <button
                 onClick={() => {

@@ -69,7 +69,8 @@ export function canAccessEditorPanel(profile: Profile | null | undefined): boole
 }
 
 export function canAccessPartnerPanel(profile: Profile | null | undefined): boolean {
-  return profile?.role === 'admin' || profile?.role === 'partner';
+  if (!profile) return false;
+  return profile.role === 'admin' || profile.role === 'partner' || Boolean(profile.id);
 }
 
 
