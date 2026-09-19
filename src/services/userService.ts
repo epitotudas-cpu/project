@@ -37,6 +37,44 @@ export async function countUsers(): Promise<number> {
   return count ?? 0;
 }
 
+export async function checkEmailExists(email: string): Promise<boolean> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return false;
+
+  try {
+    const { count: profileCount, error: profileErr } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .ilike('email', cleanEmail);
+
+    if (!profileErr && typeof profileCount === 'number' && profileCount > 0) {
+      return true;
+    }
+
+    const { count: appCount, error: appErr } = await supabase
+      .from('partner_applications')
+      .select('id', { count: 'exact', head: true })
+      .ilike('email', cleanEmail);
+
+    if (!appErr && typeof appCount === 'number' && appCount > 0) {
+      return true;
+    }
+
+    const { count: partnerCount, error: partnerErr } = await supabase
+      .from('partners')
+      .select('id', { count: 'exact', head: true })
+      .ilike('contact_email', cleanEmail);
+
+    if (!partnerErr && typeof partnerCount === 'number' && partnerCount > 0) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export async function updateProfile(userId: string, payload: Partial<Pick<Profile, 'full_name' | 'avatar_url'>>): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')

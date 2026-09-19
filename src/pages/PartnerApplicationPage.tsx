@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Building2,
   Send,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { submitPartnerApplication } from '../services/partnerApplicationService';
 import type { PartnerCategory } from '../services/partnerService';
+import { checkEmailExists } from '../services/userService';
 
 export default function PartnerApplicationPage() {
   const [companyName, setCompanyName] = useState('');
@@ -27,7 +28,58 @@ export default function PartnerApplicationPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  const emailCheckTimeoutRef = useRef<any>(null);
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    const trimmed = val.trim();
+
+    if (emailCheckTimeoutRef.current) {
+      clearTimeout(emailCheckTimeoutRef.current);
+    }
+
+    if (!trimmed) {
+      setEmailError(null);
+      return;
+    }
+
+    const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    if (!isValidFormat && (trimmed.includes('@') || trimmed.length > 5)) {
+      setEmailError('Kérjük, adj meg érvényes e-mail-címet.');
+    } else {
+      setEmailError(null);
+    }
+
+    if (isValidFormat) {
+      emailCheckTimeoutRef.current = setTimeout(async () => {
+        const exists = await checkEmailExists(trimmed);
+        if (exists) {
+          setEmailError('Ez az e-mail-cím már regisztrálva van.');
+          setError('Ez az e-mail-cím már regisztrálva van.');
+        } else {
+          setEmailError(null);
+          setError(prev => (prev === 'Ez az e-mail-cím már regisztrálva van.' || prev === 'Kérjük, adj meg érvényes e-mail-címet.' ? null : prev));
+        }
+      }, 300);
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setEmailError('Kérjük, adj meg érvényes e-mail-címet.');
+      return;
+    }
+    const exists = await checkEmailExists(trimmed);
+    if (exists) {
+      setEmailError('Ez az e-mail-cím már regisztrálva van.');
+      setError('Ez az e-mail-cím már regisztrálva van.');
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,6 +90,14 @@ export default function PartnerApplicationPage() {
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError('Kérjük, adj meg érvényes e-mail-címet.');
+      setEmailError('Kérjük, adj meg érvényes e-mail-címet.');
+      return;
+    }
+
+    const isAlreadyRegistered = await checkEmailExists(email.trim());
+    if (isAlreadyRegistered) {
+      setError('Ez az e-mail-cím már regisztrálva van.');
+      setEmailError('Ez az e-mail-cím már regisztrálva van.');
       return;
     }
 
@@ -343,10 +403,20 @@ export default function PartnerApplicationPage() {
                           type="email"
                           required
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => handleEmailChange(e.target.value)}
+                          onBlur={handleEmailBlur}
                           placeholder="peter.kovacs@szervezet.hu"
-                          className="w-full bg-slate-950 border border-white/15 text-white rounded-xl px-4 py-3 text-xs md:text-sm font-semibold focus:outline-none focus:border-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6] transition-all shadow-inner"
+                          className={`w-full bg-slate-950 border text-white rounded-xl px-4 py-3 text-xs md:text-sm font-semibold focus:outline-none focus:ring-1 transition-all shadow-inner ${
+                            emailError
+                              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                              : 'border-white/15 focus:border-[#3B82F6] focus:ring-[#3B82F6]'
+                          }`}
                         />
+                        {emailError && (
+                          <p className="text-[11px] text-red-400 font-medium pt-1">
+                            {emailError}
+                          </p>
+                        )}
                       </div>
                     </div>
 

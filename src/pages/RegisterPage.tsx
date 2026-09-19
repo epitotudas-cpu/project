@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { getInvitationInfo, type InvitationInfoResult } from '../services/partnerInvitationService';
+import { checkEmailExists } from '../services/userService';
 
 interface RegisterPageProps {
   onNavigate: (page: string) => void;
@@ -59,6 +60,55 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
+  const emailCheckTimeoutRef = useRef<any>(null);
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    const trimmed = val.trim();
+
+    if (emailCheckTimeoutRef.current) {
+      clearTimeout(emailCheckTimeoutRef.current);
+    }
+
+    if (!trimmed) {
+      setFieldErrors(prev => ({ ...prev, email: undefined }));
+      return;
+    }
+
+    const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    if (!isValidFormat && (trimmed.includes('@') || trimmed.length > 5)) {
+      setFieldErrors(prev => ({ ...prev, email: 'Kérjük, adj meg érvényes e-mail-címet.' }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, email: undefined }));
+    }
+
+    if (isValidFormat) {
+      emailCheckTimeoutRef.current = setTimeout(async () => {
+        const exists = await checkEmailExists(trimmed);
+        if (exists) {
+          setFieldErrors(prev => ({ ...prev, email: 'Ez az e-mail-cím már regisztrálva van.' }));
+          setError('Ez az e-mail-cím már regisztrálva van.');
+        } else {
+          setFieldErrors(prev => ({ ...prev, email: undefined }));
+          setError(prev => (prev === 'Ez az e-mail-cím már regisztrálva van.' || prev === 'Kérjük, adj meg érvényes e-mail-címet.' ? null : prev));
+        }
+      }, 300);
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setFieldErrors(prev => ({ ...prev, email: 'Kérjük, adj meg érvényes e-mail-címet.' }));
+      return;
+    }
+    const exists = await checkEmailExists(trimmed);
+    if (exists) {
+      setFieldErrors(prev => ({ ...prev, email: 'Ez az e-mail-cím már regisztrálva van.' }));
+      setError('Ez az e-mail-cím már regisztrálva van.');
+    }
+  };
 
   const siteSettings = useSiteSettings();
   const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
@@ -159,6 +209,15 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
     if (errors.confirmPassword) {
       setError(errors.confirmPassword);
       confirmPasswordRef.current?.focus();
+      return;
+    }
+
+    // Pre-submission availability check
+    const isAlreadyRegistered = await checkEmailExists(email.trim());
+    if (isAlreadyRegistered) {
+      setFieldErrors({ email: 'Ez az e-mail-cím már regisztrálva van.' });
+      setError('Ez az e-mail-cím már regisztrálva van.');
+      emailRef.current?.focus();
       return;
     }
 
@@ -454,10 +513,8 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
                       type="email"
                       required
                       value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
-                      }}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      onBlur={handleEmailBlur}
                       placeholder="pelda@email.hu"
                       className={`w-full bg-[#081528] border rounded-xl pl-10 pr-4 py-3 text-base md:text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
                         fieldErrors.email

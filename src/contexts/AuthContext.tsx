@@ -168,6 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       return { error: 'Kérjük, adj meg érvényes e-mail-címet.' };
     }
+
+    const isExisting = await userService.checkEmailExists(trimmedEmail);
+    if (isExisting) {
+      return { error: 'Ez az e-mail-cím már regisztrálva van.' };
+    }
+
     const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined;
     const { data, error } = await authClient.signUp(trimmedEmail, password, {
       data: {
