@@ -696,8 +696,125 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredPartners.map((partner) => {
                 const staffList = staffMap[partner.id] || [];
-                const hasContactPerson = Boolean(partner.contact_person_name?.trim());
-                const totalContactsCount = staffList.length + (hasContactPerson ? 1 : 0);
+
+                // Unified Contact List Building with Priority Fallback & Deduplication
+                interface DisplayContact {
+                  id: string;
+                  name: string;
+                  subtext?: string;
+                  badgeLabel: string;
+                  badgeStyle: string;
+                }
+
+                const displayContacts: DisplayContact[] = [];
+                const seenEmails = new Set<string>();
+                const seenNames = new Set<string>();
+
+                // Priority 1: Registered Partner Staff (partner_users + profiles)
+                for (const m of staffList) {
+                  const pName = m.profiles?.full_name?.trim() || 'Névtelen';
+                  const pEmail = m.profiles?.email?.trim() || '';
+                  if (pEmail) seenEmails.add(pEmail.toLowerCase());
+                  if (pName) seenNames.add(pName.toLowerCase());
+
+                  displayContacts.push({
+                    id: `staff-${m.profiles?.id || Math.random()}`,
+                    name: pName,
+                    subtext: pEmail || 'Nincs e-mail',
+                    badgeLabel: m.member_role === 'owner' ? 'Tulajdonos' : 'Munkatárs',
+                    badgeStyle: m.member_role === 'owner'
+                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                      : 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+                  });
+                }
+
+                // Priority 2: Partner table contact person fields
+                const pContactName = partner.contact_person_name?.trim() || '';
+                const pContactEmail = partner.contact_email?.trim() || '';
+                const pContactPhone = partner.contact_phone?.trim() || '';
+                const pContactTitle = partner.contact_person_title?.trim() || '';
+
+                if (pContactName || pContactEmail || pContactPhone) {
+                  const emailKey = pContactEmail.toLowerCase();
+                  const nameKey = pContactName.toLowerCase();
+                  const isDuplicate = (emailKey && seenEmails.has(emailKey)) || (nameKey && seenNames.has(nameKey));
+
+                  if (!isDuplicate) {
+                    if (emailKey) seenEmails.add(emailKey);
+                    if (nameKey) seenNames.add(nameKey);
+
+                    const subtextParts = [pContactTitle, pContactEmail || pContactPhone].filter(Boolean);
+                    displayContacts.push({
+                      id: `partner-contact-${partner.id}`,
+                      name: pContactName || pContactEmail || 'Kapcsolattartó',
+                      subtext: subtextParts.join(' • ') || undefined,
+                      badgeLabel: 'Kapcsolattartó',
+                      badgeStyle: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                    });
+                  }
+                }
+
+                // Priority 3: Fallback from Applications (partner_applications)
+                const matchingApp = applications.find((app) => {
+                  if (!app) return false;
+                  const appName = app.company_name?.trim().toLowerCase();
+                  const partnerName = partner.name?.trim().toLowerCase();
+                  const appEmail = app.email?.trim().toLowerCase();
+
+                  return (
+                    (appName && partnerName && appName === partnerName) ||
+                    (appEmail && pContactEmail && appEmail === pContactEmail.toLowerCase())
+                  );
+                });
+
+                if (matchingApp) {
+                  const appContactName = matchingApp.contact_name?.trim() || '';
+                  const appEmail = matchingApp.email?.trim() || '';
+                  const appPhone = matchingApp.phone?.trim() || '';
+                  const emailKey = appEmail.toLowerCase();
+                  const nameKey = appContactName.toLowerCase();
+                  const isDuplicate = (emailKey && seenEmails.has(emailKey)) || (nameKey && seenNames.has(nameKey));
+
+                  if (!isDuplicate && (appContactName || appEmail)) {
+                    if (emailKey) seenEmails.add(emailKey);
+                    if (nameKey) seenNames.add(nameKey);
+
+                    const subtextParts = [appEmail, appPhone].filter(Boolean);
+                    displayContacts.push({
+                      id: `app-contact-${matchingApp.id}`,
+                      name: appContactName || appEmail || 'Jelentkező Kapcsolattartó',
+                      subtext: subtextParts.join(' • ') || undefined,
+                      badgeLabel: 'Kapcsolattartó',
+                      badgeStyle: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                    });
+                  }
+                }
+
+                // Priority 4: Fallback from Invitations (partner_invitations)
+                const matchingInv = invitations.find((inv) => {
+                  if (!inv) return false;
+                  if (inv.partner_id && inv.partner_id === partner.id) return true;
+                  const invOrg = inv.organization_name?.trim().toLowerCase();
+                  const partnerName = partner.name?.trim().toLowerCase();
+                  return invOrg && partnerName && invOrg === partnerName;
+                });
+
+                if (matchingInv && matchingInv.email) {
+                  const invEmail = matchingInv.email.trim();
+                  const emailKey = invEmail.toLowerCase();
+                  if (!seenEmails.has(emailKey)) {
+                    seenEmails.add(emailKey);
+                    displayContacts.push({
+                      id: `inv-contact-${matchingInv.id}`,
+                      name: invEmail,
+                      subtext: 'Meghívó kiküldve',
+                      badgeLabel: 'Meghívott',
+                      badgeStyle: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+                    });
+                  }
+                }
+
+                const totalContactsCount = displayContacts.length;
 
                 return (
                   <div
@@ -754,33 +871,16 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                           </div>
                         ) : (
                           <div className="space-y-1.5 text-[11px]">
-                            {hasContactPerson && (
-                              <div className="flex items-center justify-between gap-2">
+                            {displayContacts.map((c) => (
+                              <div key={c.id} className="flex items-center justify-between gap-2">
                                 <div className="truncate">
-                                  <span className="font-semibold text-gray-200">{partner.contact_person_name}</span>
-                                  {(partner.contact_person_title || partner.contact_email || partner.contact_phone) && (
-                                    <span className="text-gray-400 block text-[10px] truncate">
-                                      {[partner.contact_person_title, partner.contact_email || partner.contact_phone].filter(Boolean).join(' • ')}
-                                    </span>
+                                  <span className="font-semibold text-gray-200">{c.name}</span>
+                                  {c.subtext && (
+                                    <span className="text-gray-400 block text-[10px] truncate">{c.subtext}</span>
                                   )}
                                 </div>
-                                <span className="px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 bg-amber-500/20 text-amber-400 border-amber-500/30">
-                                  Kapcsolattartó
-                                </span>
-                              </div>
-                            )}
-
-                            {staffList.map((m, idx) => (
-                              <div key={idx} className="flex items-center justify-between gap-2">
-                                <div className="truncate">
-                                  <span className="font-semibold text-gray-200">{m.profiles?.full_name || 'Névtelen'}</span>
-                                  <span className="text-gray-400 block text-[10px] truncate">{m.profiles?.email || 'Nincs e-mail'}</span>
-                                </div>
-                                <span className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 ${m.member_role === 'owner'
-                                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                                  : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
-                                  }`}>
-                                  {m.member_role === 'owner' ? 'Tulajdonos' : 'Munkatárs'}
+                                <span className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded border uppercase shrink-0 ${c.badgeStyle}`}>
+                                  {c.badgeLabel}
                                 </span>
                               </div>
                             ))}
