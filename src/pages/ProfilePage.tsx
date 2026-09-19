@@ -105,6 +105,28 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isInstructor, setIsInstructor] = useState(false);
+
+  useEffect(() => {
+    async function checkInstructor() {
+      if (!user) return;
+      try {
+        const { data } = await supabase
+          .from('partner_users')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'instructor')
+          .limit(1);
+
+        if (data && data.length > 0) {
+          setIsInstructor(true);
+        } else if (user.user_metadata?.user_type === 'oktato') {
+          setIsInstructor(true);
+        }
+      } catch { }
+    }
+    checkInstructor();
+  }, [user]);
 
   // Tab State
   const [activeMainSection, setActiveMainSection] = useState<MainSection>(() => {
@@ -492,6 +514,20 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           </div>
 
           <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
+            {isInstructor && (
+              <button
+                onClick={() => {
+                  if (onNavigate) {
+                    onNavigate('teacher');
+                  } else {
+                    window.location.hash = '#teacher';
+                  }
+                }}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-500/10"
+              >
+                <GraduationCap size={16} /> Tanári Vezérlőpult
+              </button>
+            )}
             <button
               onClick={() => {
                 setActiveMainSection('settings');

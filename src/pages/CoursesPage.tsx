@@ -30,8 +30,10 @@ import {
   getUserCertificates,
   getInteractiveStepsForLesson,
   getAllFlashcards,
+  fetchStudentAssignedClassMaterials,
   type DetailedCourse,
   type QuizSubmissionResult,
+  type StudentClassMaterialItem,
 } from '../services/educationService';
 import type { Course, UserCertificate } from '../lib/supabase';
 
@@ -48,6 +50,7 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
   const [topMainTab, setTopMainTab] = useState<'catalog' | 'my-learning' | 'flashcards'>('catalog');
   const [showAdminCardsModal, setShowAdminCardsModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [classMaterials, setClassMaterials] = useState<StudentClassMaterialItem[]>([]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,8 +70,11 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
 
   useEffect(() => {
     loadCatalog();
+    if (user) {
+      fetchStudentAssignedClassMaterials(user.id).then(setClassMaterials).catch(() => {});
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!loading && typeof window !== 'undefined' && window.location.hash.includes('#')) {
@@ -252,6 +258,27 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
 
       {/* Main Content Area */}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {classMaterials.length > 0 && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/20 text-amber-600 rounded-xl">
+                <GraduationCap className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">
+                  Osztályodhoz Kiosztott Tananyagok ({classMaterials.length})
+                </h4>
+                <p className="text-xs text-slate-600">
+                  Az oktatód kijelölt tananyagokat az Ön <strong>{classMaterials[0]?.class_name}</strong> osztálya számára.
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-semibold px-3 py-1 bg-amber-500 text-black rounded-lg self-start sm:self-auto">
+              Kötelező / Kijelölt
+            </span>
+          </div>
+        )}
+
         {/* Main Tab Navigation Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl w-full sm:w-auto">

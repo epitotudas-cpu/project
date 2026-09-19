@@ -705,3 +705,54 @@ export function saveInteractiveStepsForLesson(lessonId: string, steps: Interacti
   };
   saveEducationData({ ...data, interactive_steps: updatedMap });
 }
+
+export interface StudentClassMaterialItem {
+  id: string;
+  class_id: string;
+  class_name?: string;
+  content_type: 'course' | 'article' | 'book' | 'material' | 'tool';
+  content_id: string;
+  assigned_at: string;
+  title?: string;
+}
+
+export async function fetchStudentAssignedClassMaterials(
+  studentId: string
+): Promise<StudentClassMaterialItem[]> {
+  const { data: enrollments, error: enrollError } = await supabase
+    .from('school_students')
+    .select('class_id, school_class:class_id(name)')
+    .eq('student_id', studentId)
+    .not('class_id', 'is', null);
+
+  if (enrollError || !enrollments || enrollments.length === 0) {
+    return [];
+  }
+
+  const classMap = new Map<string, string>();
+  const classIds: string[] = [];
+  for (const e of enrollments as any[]) {
+    if (e.class_id) {
+      classIds.push(e.class_id);
+      classMap.set(e.class_id, e.school_class?.name || 'Osztály');
+    }
+  }
+
+  if (classIds.length === 0) return [];
+
+  const { data: materials, error: matError } = await supabase
+    .from('class_materials')
+    .select('*')
+    .in('class_id', classIds)
+    .order('assigned_at', { ascending: false });
+
+  if (matError || !materials) {
+    return [];
+  }
+
+  return materials.map((m: any) => ({
+    ...m,
+    class_name: classMap.get(m.class_id) || 'Osztály',
+  })) as StudentClassMaterialItem[];
+}
+

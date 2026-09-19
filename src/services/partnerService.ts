@@ -534,12 +534,38 @@ export interface PartnerUserTrade {
   } | null;
 }
 
+export interface SchoolClass {
+  id: string;
+  school_id: string;
+  instructor_id: string;
+  trade_id: string;
+  name: string;
+  grade?: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  school_name?: string;
+  instructor_name?: string;
+  students_count?: number;
+  active_code?: StudentInvitationCode | null;
+}
+
+export interface ClassMaterial {
+  id: string;
+  class_id: string;
+  content_type: 'course' | 'article' | 'book' | 'material' | 'tool';
+  content_id: string;
+  assigned_by: string;
+  assigned_at: string;
+}
+
 export interface StudentInvitationCode {
   id: string;
   code: string;
   school_id: string;
   instructor_id: string;
   trade_id: string;
+  class_id?: string | null;
   created_by: string;
   expires_at: string;
   status: 'active' | 'inactive' | 'expired';
@@ -548,6 +574,7 @@ export interface StudentInvitationCode {
   created_at: string;
   school_name?: string;
   instructor_name?: string;
+  class_name?: string;
 }
 
 export interface StudentCodeInfoResult {
@@ -558,6 +585,9 @@ export interface StudentCodeInfoResult {
   instructor_id?: string;
   instructor_name?: string;
   trade_id?: string;
+  class_id?: string;
+  class_name?: string;
+  class_grade?: number;
   expires_at?: string;
   error?: string;
 }
@@ -570,6 +600,8 @@ export interface RedeemStudentCodeResult {
   instructor_id?: string;
   instructor_name?: string;
   trade_id?: string;
+  class_id?: string;
+  class_name?: string;
   message?: string;
 }
 
@@ -578,6 +610,7 @@ export interface SchoolStudent {
   school_id: string;
   instructor_id: string;
   trade_id: string;
+  class_id?: string | null;
   student_id: string;
   invitation_code_id?: string | null;
   status: 'active' | 'graduated' | 'inactive';
@@ -596,6 +629,11 @@ export interface SchoolStudent {
   school?: {
     id: string;
     name?: string;
+  } | null;
+  school_class?: {
+    id: string;
+    name: string;
+    grade?: number | null;
   } | null;
 }
 
@@ -699,6 +737,7 @@ export async function generateStudentInvitationCode(payload: {
   schoolId: string;
   instructorId: string;
   tradeId: string;
+  classId?: string | null;
   expiresAt: string;
   code?: string;
   maxUses?: number;
@@ -719,6 +758,7 @@ export async function generateStudentInvitationCode(payload: {
       school_id: payload.schoolId,
       instructor_id: payload.instructorId,
       trade_id: payload.tradeId.trim(),
+      class_id: payload.classId ?? null,
       created_by: currentUserId,
       expires_at: payload.expiresAt,
       status: 'active',
@@ -736,20 +776,25 @@ export async function generateStudentInvitationCode(payload: {
 }
 
 /**
- * E) Lists invitation codes generated for a school / instructor.
+ * E) Lists invitation codes generated for a school / instructor / class.
  */
 export async function listStudentInvitationCodes(
   schoolId: string,
-  instructorId?: string
+  instructorId?: string,
+  classId?: string
 ): Promise<StudentInvitationCode[]> {
   let query = supabase
     .from('student_invitation_codes')
-    .select('*, partners:school_id(name), profiles:instructor_id(full_name)')
+    .select('*, partners:school_id(name), profiles:instructor_id(full_name), school_classes:class_id(name)')
     .eq('school_id', schoolId)
     .order('created_at', { ascending: false });
 
   if (instructorId) {
     query = query.eq('instructor_id', instructorId);
+  }
+
+  if (classId) {
+    query = query.eq('class_id', classId);
   }
 
   const { data, error } = await query;
@@ -763,11 +808,12 @@ export async function listStudentInvitationCodes(
     ...row,
     school_name: row.partners?.name || 'Iskola',
     instructor_name: row.profiles?.full_name || 'Oktató',
+    class_name: row.school_classes?.name || undefined,
   })) as StudentInvitationCode[];
 }
 
 /**
- * F) Fetches invitation code info (School name, Instructor name, Trade) via get_student_code_info RPC.
+ * F) Fetches invitation code info (School name, Instructor name, Trade, Class) via get_student_code_info RPC.
  */
 export async function getStudentCodeInfo(code: string): Promise<StudentCodeInfoResult> {
   const cleanCode = code.trim().toUpperCase();
@@ -803,16 +849,17 @@ export async function redeemStudentInvitationCode(code: string): Promise<RedeemS
 }
 
 /**
- * H) Lists students enrolled in a school, optionally filtered by instructor or trade.
+ * H) Lists students enrolled in a school, optionally filtered by instructor, trade, or class.
  */
 export async function listSchoolStudents(
   schoolId: string,
   instructorId?: string,
-  tradeId?: string
+  tradeId?: string,
+  classId?: string
 ): Promise<SchoolStudent[]> {
   let query = supabase
     .from('school_students')
-    .select('*, profiles:student_id(id, full_name, email, avatar_url), instructor:instructor_id(id, full_name, email), school:school_id(id, name)')
+    .select('*, profiles:student_id(id, full_name, email, avatar_url), instructor:instructor_id(id, full_name, email), school:school_id(id, name), school_class:class_id(id, name, grade)')
     .eq('school_id', schoolId)
     .order('joined_at', { ascending: false });
 
@@ -824,6 +871,10 @@ export async function listSchoolStudents(
     query = query.eq('trade_id', tradeId);
   }
 
+  if (classId) {
+    query = query.eq('class_id', classId);
+  }
+
   const { data, error } = await query;
 
   if (error) {
@@ -832,5 +883,219 @@ export async function listSchoolStudents(
   }
 
   return (data || []) as SchoolStudent[];
+}
+
+/**
+ * I) Creates a new explicit school class (e.g. "10.A", grade 10) for an instructor and trade.
+ */
+export async function createSchoolClass(payload: {
+  schoolId: string;
+  instructorId: string;
+  tradeId: string;
+  name: string;
+  grade?: number | null;
+}): Promise<SchoolClass> {
+  const { data, error } = await supabase
+    .from('school_classes')
+    .insert({
+      school_id: payload.schoolId,
+      instructor_id: payload.instructorId,
+      trade_id: payload.tradeId.trim(),
+      name: payload.name.trim(),
+      grade: payload.grade ?? null,
+      is_active: true,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'Osztály létrehozása nem sikerült.');
+  }
+
+  return data as SchoolClass;
+}
+
+/**
+ * J) Lists school classes for an instructor or school.
+ */
+export async function listInstructorClasses(
+  schoolId: string,
+  instructorId?: string
+): Promise<SchoolClass[]> {
+  let query = supabase
+    .from('school_classes')
+    .select(`
+      *,
+      partners:school_id(name),
+      profiles:instructor_id(full_name)
+    `)
+    .eq('school_id', schoolId)
+    .order('created_at', { ascending: false });
+
+  if (instructorId) {
+    query = query.eq('instructor_id', instructorId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.warn('listInstructorClasses error notice:', error);
+    return [];
+  }
+
+  const classes = (data || []).map((row: any) => ({
+    ...row,
+    school_name: row.partners?.name || 'Iskola',
+    instructor_name: row.profiles?.full_name || 'Oktató',
+  })) as SchoolClass[];
+
+  for (const cls of classes) {
+    // 1. Active code
+    const { data: codeData } = await supabase
+      .from('student_invitation_codes')
+      .select('*')
+      .eq('class_id', cls.id)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (codeData) {
+      cls.active_code = codeData as StudentInvitationCode;
+    }
+
+    // 2. Count
+    const { count } = await supabase
+      .from('school_students')
+      .select('id', { count: 'exact', head: true })
+      .eq('class_id', cls.id);
+
+    cls.students_count = count || 0;
+  }
+
+  return classes;
+}
+
+/**
+ * K) Fetches a single school class by ID with enrolled students and active invitation code.
+ */
+export async function getSchoolClassById(classId: string): Promise<SchoolClass | null> {
+  const { data, error } = await supabase
+    .from('school_classes')
+    .select(`
+      *,
+      partners:school_id(name),
+      profiles:instructor_id(full_name)
+    `)
+    .eq('id', classId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const cls: SchoolClass = {
+    ...data,
+    school_name: (data as any).partners?.name || 'Iskola',
+    instructor_name: (data as any).profiles?.full_name || 'Oktató',
+  };
+
+  const { data: codeData } = await supabase
+    .from('student_invitation_codes')
+    .select('*')
+    .eq('class_id', cls.id)
+    .eq('status', 'active')
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (codeData) {
+    cls.active_code = codeData as StudentInvitationCode;
+  }
+
+  const { count } = await supabase
+    .from('school_students')
+    .select('id', { count: 'exact', head: true })
+    .eq('class_id', cls.id);
+
+  cls.students_count = count || 0;
+
+  return cls;
+}
+
+/**
+ * L) Assigns materials to a class.
+ */
+export async function assignMaterialsToClass(
+  classId: string,
+  materials: Array<{ content_type: 'course' | 'article' | 'book' | 'material' | 'tool'; content_id: string }>
+): Promise<boolean> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const currentUserId = sessionData.session?.user?.id;
+
+  if (!currentUserId) {
+    throw new Error('Nincs bejelentkezett munkamenet.');
+  }
+
+  if (materials.length === 0) return true;
+
+  const records = materials.map((m) => ({
+    class_id: classId,
+    content_type: m.content_type,
+    content_id: m.content_id,
+    assigned_by: currentUserId,
+  }));
+
+  const { error } = await supabase
+    .from('class_materials')
+    .upsert(records, { onConflict: 'class_id,content_type,content_id' });
+
+  if (error) {
+    throw new Error(error.message || 'Tananyagok osztályhoz rendelése nem sikerült.');
+  }
+
+  return true;
+}
+
+/**
+ * M) Lists materials assigned to a class.
+ */
+export async function listClassMaterials(classId: string): Promise<ClassMaterial[]> {
+  const { data, error } = await supabase
+    .from('class_materials')
+    .select('*')
+    .eq('class_id', classId)
+    .order('assigned_at', { ascending: false });
+
+  if (error) {
+    console.warn('listClassMaterials error notice:', error);
+    return [];
+  }
+
+  return (data || []) as ClassMaterial[];
+}
+
+/**
+ * N) Removes a material assignment from a class.
+ */
+export async function removeClassMaterial(
+  classId: string,
+  contentType: string,
+  contentId: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('class_materials')
+    .delete()
+    .eq('class_id', classId)
+    .eq('content_type', contentType)
+    .eq('content_id', contentId);
+
+  if (error) {
+    throw new Error(error.message || 'Tananyag eltávolítása nem sikerült.');
+  }
+
+  return true;
 }
 

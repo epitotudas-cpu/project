@@ -76,6 +76,7 @@ const EditorDashboardPage = lazy(() => import('./pages/EditorDashboardPage').the
 const EditorSettingsPage = lazy(() => import('./pages/EditorSettingsPage').then(m => ({ default: m.EditorSettingsPage })));
 const PartnerLayout = lazy(() => import('./components/PartnerLayout'));
 const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage').then(m => ({ default: m.PartnerDashboardPage })));
+const TeacherDashboardPage = lazy(() => import('./pages/TeacherDashboardPage'));
 
 type PageKey =
   | 'home'
@@ -102,6 +103,7 @@ type PageKey =
   | 'admin'
   | 'szerkeszto'
   | 'partner'
+  | 'teacher'
   | 'login'
   | 'register'
   | 'verify-email'
@@ -142,6 +144,7 @@ const ALL_VALID_PAGES: PageKey[] = [
   'admin',
   'szerkeszto',
   'partner',
+  'teacher',
   'login',
   'register',
   'verify-email',
@@ -398,7 +401,7 @@ function AppContent() {
         setCurrentPage('home');
       }
     } else if (authEvent === 'SIGNED_OUT') {
-      const protectedPages: PageKey[] = ['profile', 'admin', 'szerkeszto', 'partner'];
+      const protectedPages: PageKey[] = ['profile', 'admin', 'szerkeszto', 'partner', 'teacher'];
       if (protectedPages.includes(currentPage)) {
         setCurrentPage('home');
         if (typeof window !== 'undefined' && window.location.hash) {
@@ -425,6 +428,12 @@ function AppContent() {
 
   // Full-screen routes (no shared Header/Footer)
   switch (currentPage) {
+    case 'teacher':
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <TeacherDashboardPage onNavigate={navigate} />
+        </Suspense>
+      );
     case 'admin':
       return (
         <Suspense fallback={<PageFallback />}>
