@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Building2,
   CheckCircle2,
@@ -52,6 +52,7 @@ import {
   updateApplicationStatus,
   type PartnerApplication,
 } from '../services/partnerApplicationService';
+import { checkEmailExists } from '../services/userService';
 import { supabase, type Partner } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
@@ -97,7 +98,58 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [expiresInDays, setExpiresInDays] = useState<number>(14);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
   const [emailStatusNotice, setEmailStatusNotice] = useState<string | null>(null);
+
+  const inviteEmailCheckTimeoutRef = useRef<any>(null);
+
+  const handleInviteEmailChange = (val: string) => {
+    setInviteEmail(val);
+    const trimmed = val.trim();
+
+    if (inviteEmailCheckTimeoutRef.current) {
+      clearTimeout(inviteEmailCheckTimeoutRef.current);
+    }
+
+    if (!trimmed) {
+      setInviteEmailError(null);
+      return;
+    }
+
+    const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    if (!isValidFormat && (trimmed.includes('@') || trimmed.length > 5)) {
+      setInviteEmailError('Kérjük, adj meg érvényes e-mail-címet.');
+    } else {
+      setInviteEmailError(null);
+    }
+
+    if (isValidFormat) {
+      inviteEmailCheckTimeoutRef.current = setTimeout(async () => {
+        const exists = await checkEmailExists(trimmed);
+        if (exists) {
+          setInviteEmailError('Ez az e-mail-cím már regisztrálva van.');
+          setInviteError('Ez az e-mail-cím már regisztrálva van.');
+        } else {
+          setInviteEmailError(null);
+          setInviteError((prev) => (prev === 'Ez az e-mail-cím már regisztrálva van.' || prev === 'Kérjük, adj meg érvényes e-mail-címet.' ? null : prev));
+        }
+      }, 300);
+    }
+  };
+
+  const handleInviteEmailBlur = async () => {
+    const trimmed = inviteEmail.trim();
+    if (!trimmed) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setInviteEmailError('Kérjük, adj meg érvényes e-mail-címet.');
+      return;
+    }
+    const exists = await checkEmailExists(trimmed);
+    if (exists) {
+      setInviteEmailError('Ez az e-mail-cím már regisztrálva van.');
+      setInviteError('Ez az e-mail-cím már regisztrálva van.');
+    }
+  };
 
   // Generated Invitation Template State
   const [createdInviteCode, setCreatedInviteCode] = useState<string | null>(null);
@@ -321,6 +373,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     setInviteEmail(prefillEmail || '');
     setExpiresInDays(14);
     setInviteError(null);
+    setInviteEmailError(null);
     setEmailStatusNotice(null);
     setCreatedInviteCode(null);
     setCreatedTemplate(null);
@@ -334,8 +387,9 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
   async function handleCreateInvitation(e: React.FormEvent) {
     e.preventDefault();
-    if (!inviteEmail.trim()) {
-      setInviteError('Kérjük, adja meg a meghívott e-mail címét.');
+    if (!inviteEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail.trim())) {
+      setInviteError('Kérjük, adj meg érvényes e-mail-címet.');
+      setInviteEmailError('Kérjük, adj meg érvényes e-mail-címet.');
       return;
     }
 
@@ -344,8 +398,16 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       return;
     }
 
+    const isAlreadyRegistered = await checkEmailExists(inviteEmail.trim());
+    if (isAlreadyRegistered) {
+      setInviteError('Ez az e-mail-cím már regisztrálva van.');
+      setInviteEmailError('Ez az e-mail-cím már regisztrálva van.');
+      return;
+    }
+
     setInviteLoading(true);
     setInviteError(null);
+    setInviteEmailError(null);
     setEmailStatusNotice(null);
 
     try {
@@ -1167,12 +1229,19 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                     type="email"
                     required
                     value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
+                    onChange={(e) => handleInviteEmailChange(e.target.value)}
+                    onBlur={handleInviteEmailBlur}
                     placeholder="kapcsolattarto@szervezet.hu"
-                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
-                    className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                    style={{ backgroundColor: inputBg, borderColor: inviteEmailError ? '#ef4444' : cardBorder, color: inputTextColor }}
+                    className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors ${
+                      inviteEmailError ? 'border-red-500 focus:border-red-500' : ''
+                    }`}
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">A meghívókódot kizárólag erről az e-mail címről lehet majd beváltani.</p>
+                  {inviteEmailError ? (
+                    <p className="text-[11px] text-red-400 font-medium mt-1">{inviteEmailError}</p>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 mt-1">A meghívókódot kizárólag erről az e-mail címről lehet majd beváltani.</p>
+                  )}
                 </div>
 
                 <div>

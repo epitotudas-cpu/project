@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { logAuditAction } from './auditLogService';
+import { checkEmailExists } from './userService';
 
 export interface PartnerInvitation {
   id: string;
@@ -53,6 +54,15 @@ function generateRandomCode(): string {
 
 export async function createInvitation(payload: CreateInvitationPayload): Promise<PartnerInvitation> {
   const cleanEmail = payload.email.trim().toLowerCase();
+  if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    throw new Error('Kérjük, adj meg érvényes e-mail-címet.');
+  }
+
+  const isRegistered = await checkEmailExists(cleanEmail);
+  if (isRegistered) {
+    throw new Error('Ez az e-mail-cím már regisztrálva van.');
+  }
+
   const code = generateRandomCode();
   const expiresInDays = payload.expiresInDays || 14;
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString();
