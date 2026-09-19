@@ -26,9 +26,6 @@ import {
   RefreshCw,
   ArrowLeft,
   School,
-  Sparkles,
-  ShieldCheck,
-  FileText,
   Wrench,
   Search,
   CheckSquare,
@@ -36,13 +33,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-interface TradeInfo {
-  trade_id: string;
-  trade_name?: string;
-}
-
 export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [schoolInfo, setSchoolInfo] = useState<{ id: string; name: string } | null>(null);

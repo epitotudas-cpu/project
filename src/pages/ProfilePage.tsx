@@ -30,6 +30,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
 import { getTradeItems } from '../services/tradeService';
 import { deleteUser } from '../services/userService';
@@ -467,7 +468,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     ? 'Adminisztrátor'
                     : profile.role === 'editor'
                       ? 'Szerkesztő'
-                      : (user?.user_metadata?.user_type === 'tanulo' || profile?.user_type === 'tanulo' || profile?.userType === 'tanulo')
+                      : (user?.user_metadata?.user_type === 'tanulo' || profile?.userType === 'tanulo')
                         ? 'Tanuló'
                         : 'Építőipari Szakember'}
                 </span>
