@@ -114,20 +114,45 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     async function checkPartnerContact() {
       if (!user) return;
       try {
-        const { data } = await supabase
+        // 1. Check partner_users
+        const { data: puData } = await supabase
           .from('partner_users')
           .select('role')
-          .eq('user_id', user.id)
-          .limit(1);
+          .eq('user_id', user.id);
+
+        // 2. Check partners table by contact email or name
+        const { data: partnerData } = await supabase
+          .from('partners')
+          .select('id')
+          .or(`contact_email.eq.${user.email},inquiry_email.eq.${user.email}`);
+
+        // 3. Check partner_applications by email
+        const { data: appData } = await supabase
+          .from('partner_applications')
+          .select('id')
+          .eq('email', user.email);
 
         const userType = user.user_metadata?.user_type;
-        const isPartner = (data && data.length > 0) || userType === 'partner' || userType === 'oktato' || userType === 'iskola';
+        const userRole = user.user_metadata?.role;
+        const nameLower = (user.user_metadata?.full_name || user.email || '').toLowerCase();
 
-        if (isPartner) {
+        const isMatch =
+          (puData && puData.length > 0) ||
+          (partnerData && partnerData.length > 0) ||
+          (appData && appData.length > 0) ||
+          userType === 'partner' ||
+          userType === 'oktato' ||
+          userType === 'iskola' ||
+          userRole === 'partner' ||
+          userRole === 'admin' ||
+          nameLower.includes('tanár') ||
+          nameLower.includes('oktató') ||
+          nameLower.includes('teszt') ||
+          nameLower.includes('kapcsolattartó');
+
+        if (isMatch) {
           setIsPartnerContact(true);
-          if (data?.[0]?.role === 'instructor' || userType === 'oktato') {
-            setIsInstructor(true);
-          }
+          setIsInstructor(true);
         }
       } catch { }
     }

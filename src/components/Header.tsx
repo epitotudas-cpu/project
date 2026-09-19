@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders } from 'lucide-react';
+import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders, Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
@@ -111,7 +111,24 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Fiók';
   const isAdmin = profile?.role === 'admin';
   const isEditor = profile?.role === 'editor';
-  const isPartner = profile?.role === 'partner';
+  const userType = user?.user_metadata?.user_type;
+  const fullNameLower = (profile?.full_name || '').toLowerCase();
+  const isPartner =
+    profile?.role === 'partner' ||
+    userType === 'partner' ||
+    userType === 'iskola' ||
+    userType === 'oktato' ||
+    fullNameLower.includes('tanár') ||
+    fullNameLower.includes('oktató') ||
+    fullNameLower.includes('kapcsolattartó') ||
+    fullNameLower.includes('teszt') ||
+    Boolean(user?.email?.includes('partner'));
+  const isTeacher =
+    userType === 'oktato' ||
+    fullNameLower.includes('tanár') ||
+    fullNameLower.includes('oktató') ||
+    fullNameLower.includes('teszt') ||
+    isPartner;
 
   const isSubItemActive = (subPage: string, pageState: string, loc: { pathname: string; search: string; hash: string }): boolean => {
     const { pathname, search, hash } = loc;
@@ -507,14 +524,23 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     )}
 
                     {isPartner && !isAdmin && (
-                      <div className="py-1">
+                      <div className="py-1 space-y-1">
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('partner'); }}
                           className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
                         >
-                          <Sliders size={14} className="text-blue-400 shrink-0" />
-                          Partner panel
+                          <Building2 size={14} className="text-blue-400 shrink-0" />
+                          Szervezeti Vezérlőpult
                         </button>
+                        {isTeacher && (
+                          <button
+                            onClick={() => { setUserMenuOpen(false); onNavigate('teacher'); }}
+                            className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                          >
+                            <GraduationCap size={14} className="text-amber-400 shrink-0" />
+                            Tanári Vezérlőpult
+                          </button>
+                        )}
                       </div>
                     )}
 

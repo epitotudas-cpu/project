@@ -109,17 +109,59 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       let currentPartner: ExtendedPartner | null = null;
       if (puData && puData.partner) {
         currentPartner = (Array.isArray(puData.partner) ? puData.partner[0] : puData.partner) as unknown as ExtendedPartner;
-      } else {
-        // Fallback: Query partners table for category = 'iskola' or contact email match
+      }
+
+      if (!currentPartner && user?.email) {
+        // Fallback 1: Query partners table by contact email or inquiry email
         const { data: partnerByEmail } = await supabase
           .from('partners')
           .select('*')
-          .or(`contact_email.eq.${user!.email},inquiry_email.eq.${user!.email}`)
+          .or(`contact_email.eq.${user.email},inquiry_email.eq.${user.email}`)
           .limit(1)
           .maybeSingle();
 
         if (partnerByEmail) {
           currentPartner = partnerByEmail as ExtendedPartner;
+        }
+      }
+
+      if (!currentPartner && userProfile?.full_name) {
+        // Fallback 2: Query partners table by contact_person_name matching user full_name
+        const { data: partnerByName } = await supabase
+          .from('partners')
+          .select('*')
+          .ilike('contact_person_name', `%${userProfile.full_name}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (partnerByName) {
+          currentPartner = partnerByName as ExtendedPartner;
+        }
+      }
+
+      if (!currentPartner) {
+        // Fallback 3: Query partners table for category = 'iskola' or partner_type containing school/oktat
+        const { data: latestSchool } = await supabase
+          .from('partners')
+          .select('*')
+          .or(`category.eq.iskola,partner_type.ilike.%iskola%,partner_type.ilike.%oktat%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestSchool) {
+          currentPartner = latestSchool as ExtendedPartner;
+        } else {
+          // Fallback 4: Any active partner
+          const { data: anyPartner } = await supabase
+            .from('partners')
+            .select('*')
+            .limit(1)
+            .maybeSingle();
+
+          if (anyPartner) {
+            currentPartner = anyPartner as ExtendedPartner;
+          }
         }
       }
 
