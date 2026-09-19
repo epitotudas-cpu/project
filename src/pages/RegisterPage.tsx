@@ -123,10 +123,8 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
       errors.fullName = 'A teljes névnek legalább 2 karakter hosszúnak kell lennie.';
     }
 
-    if (!email.trim()) {
-      errors.email = 'Kérjük, adja meg az email-címét.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Érvénytelen email-cím formátum.';
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.email = 'Kérjük, adj meg érvényes e-mail-címet.';
     }
 
     if (!password) {
@@ -165,12 +163,13 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
     }
 
     setLoading(true);
-    const result = await signUp(email, password, fullName.trim(), userType);
+    const result = await signUp(email.trim(), password, fullName.trim(), userType);
     setLoading(false);
 
     if (result.error) {
       setError(result.error);
-      if (result.error.toLowerCase().includes('email')) {
+      const errLower = result.error.toLowerCase();
+      if (errLower.includes('email') || errLower.includes('e-mail')) {
         setFieldErrors({ email: result.error });
         emailRef.current?.focus();
       }

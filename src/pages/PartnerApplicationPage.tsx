@@ -3,11 +3,7 @@ import {
   Building2,
   Send,
   CheckCircle2,
-  Globe,
-  Phone,
-  Mail,
   User,
-  ShieldCheck,
   ArrowLeft,
   Sparkles,
   Award,
@@ -40,6 +36,11 @@ export default function PartnerApplicationPage() {
       return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Kérjük, adj meg érvényes e-mail-címet.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -56,7 +57,19 @@ export default function PartnerApplicationPage() {
 
       setSubmitted(true);
     } catch (err: any) {
-      setError(err.message || 'Hiba történt a jelentkezés beküldésekor.');
+      const msg = (err?.message || '').toLowerCase();
+      if (
+        msg.includes('already registered') ||
+        msg.includes('already exists') ||
+        msg.includes('duplicate') ||
+        msg.includes('unique')
+      ) {
+        setError('Ez az e-mail-cím már regisztrálva van.');
+      } else if (msg.includes('invalid email') || msg.includes('format')) {
+        setError('Kérjük, adj meg érvényes e-mail-címet.');
+      } else {
+        setError(err?.message || 'Hiba történt a jelentkezés beküldésekor.');
+      }
     } finally {
       setLoading(false);
     }

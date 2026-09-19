@@ -164,8 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string, userType: 'tanulo' | 'szakember' = 'tanulo') => {
+    const trimmedEmail = email ? email.trim() : '';
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      return { error: 'Kérjük, adj meg érvényes e-mail-címet.' };
+    }
     const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined;
-    const { data, error } = await authClient.signUp(email, password, {
+    const { data, error } = await authClient.signUp(trimmedEmail, password, {
       data: {
         full_name: fullName,
         user_type: userType,
@@ -174,8 +178,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) {
       const msg = error.message.toLowerCase();
-      if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already exists')) {
-        return { error: 'Ez az email-cím már regisztrált.' };
+      if (
+        msg.includes('already registered') ||
+        msg.includes('already been registered') ||
+        msg.includes('user already exists') ||
+        msg.includes('already exists') ||
+        msg.includes('duplicate')
+      ) {
+        return { error: 'Ez az e-mail-cím már regisztrálva van.' };
+      }
+      if (
+        msg.includes('invalid email') ||
+        msg.includes('email address is invalid') ||
+        msg.includes('format') ||
+        msg.includes('unable to validate email')
+      ) {
+        return { error: 'Kérjük, adj meg érvényes e-mail-címet.' };
       }
       return { error: error.message };
     }
