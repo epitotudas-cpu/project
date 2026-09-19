@@ -198,6 +198,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error.message };
     }
 
+    // Supabase Auth behavior when email confirmation is ON and user already exists:
+    // data.user exists, error is null, but data.user.identities is an empty array ([]) or created_at is in the past!
+    if (
+      data?.user &&
+      ((Array.isArray(data.user.identities) && data.user.identities.length === 0) ||
+       (data.user.created_at && Date.now() - new Date(data.user.created_at).getTime() > 15000 && !data.session))
+    ) {
+      return { error: 'Ez az e-mail-cím már regisztrálva van.' };
+    }
+
     if (data?.session || (data?.user && !data.user.email_confirmed_at)) {
       await authClient.signOut();
     }
