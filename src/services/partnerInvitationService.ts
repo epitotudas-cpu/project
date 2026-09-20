@@ -171,7 +171,7 @@ export async function sendInvitationEmail(
       },
     });
 
-    if (invokeRes.error && invokeRes.error.message?.includes('Failed to send a request')) {
+    if (invokeRes.error || (invokeRes.data && (invokeRes.data.error || invokeRes.data.name === 'validation_error'))) {
       invokeRes = await supabase.functions.invoke('resend-email', {
         body: {
           to: invitation.email,
