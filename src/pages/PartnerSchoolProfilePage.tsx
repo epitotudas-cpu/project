@@ -125,7 +125,7 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       // 1. Fetch partner user linkage
       const { data: puData } = await supabase
         .from('partner_users')
-        .select('partner_id, role, member_role, partner:partner_id(*)')
+        .select('partner_id, member_role, partner:partner_id(*)')
         .eq('user_id', user!.id)
         .limit(1)
         .maybeSingle();
@@ -136,11 +136,11 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       }
 
       if (!currentPartner && user?.email) {
-        // Fallback 1: Query partners table by contact email or inquiry email
+        // Fallback 1: Query partners table by contact_email
         const { data: partnerByEmail } = await supabase
           .from('partners')
           .select('*')
-          .or(`contact_email.eq.${user.email},inquiry_email.eq.${user.email}`)
+          .eq('contact_email', user.email)
           .limit(1)
           .maybeSingle();
 
@@ -164,11 +164,11 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       }
 
       if (!currentPartner) {
-        // Fallback 3: Query partners table for category = 'iskola' or partner_type containing school/oktat
+        // Fallback 3: Query partners table for category = 'iskola'
         const { data: latestSchool } = await supabase
           .from('partners')
           .select('*')
-          .or(`category.eq.iskola,partner_type.ilike.%iskola%,partner_type.ilike.%oktat%`)
+          .eq('category', 'iskola')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();

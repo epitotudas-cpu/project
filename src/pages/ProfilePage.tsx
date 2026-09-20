@@ -117,14 +117,14 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         // 1. Check partner_users
         const { data: puData } = await supabase
           .from('partner_users')
-          .select('role')
+          .select('member_role')
           .eq('user_id', user.id);
 
-        // 2. Check partners table by contact email or name
+        // 2. Check partners table by contact email
         const { data: partnerData } = await supabase
           .from('partners')
           .select('id')
-          .or(`contact_email.eq.${user.email},inquiry_email.eq.${user.email}`);
+          .eq('contact_email', user.email);
 
         // 3. Check partner_applications by email
         const { data: appData } = await supabase
