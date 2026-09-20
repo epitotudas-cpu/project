@@ -267,7 +267,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
         <header className="hidden md:flex bg-slate-900/80 border-b border-slate-800 px-8 py-4 items-center justify-between backdrop-blur-md">
           <div className="flex items-center gap-3">
             <Briefcase className="w-5 h-5 text-blue-400" />
-            <h2 className="text-sm font-bold text-white tracking-tight">Tanári Vezérlőpult</h2>
+            <h2 className="text-sm font-bold text-white tracking-tight">{sidebarTitle}</h2>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-slate-400">

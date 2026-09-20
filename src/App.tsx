@@ -268,15 +268,32 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
     }
     async function fetchMemberRole() {
       try {
-        const { data } = await supabase
+        // 1. Query partner_users table first
+        const { data: puData } = await supabase
           .from('partner_users')
           .select('member_role')
           .eq('user_id', user!.id)
           .limit(1)
           .maybeSingle();
 
-        if (data) {
-          setMemberRole(data.member_role);
+        if (puData && puData.member_role) {
+          setMemberRole(puData.member_role);
+          return;
+        }
+
+        // 2. Fallback check: query partners table by contact_email matching user.email
+        if (user?.email) {
+          const { data: partnerByEmail } = await supabase
+            .from('partners')
+            .select('category, partner_type')
+            .eq('contact_email', user.email)
+            .limit(1)
+            .maybeSingle();
+
+          if (partnerByEmail && (partnerByEmail.category === 'iskola' || partnerByEmail.partner_type === 'iskola')) {
+            setMemberRole('owner');
+            return;
+          }
         }
       } catch (err) {
         console.warn('Error fetching member role in App.tsx:', err);
