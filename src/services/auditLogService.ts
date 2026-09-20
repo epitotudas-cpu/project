@@ -108,8 +108,10 @@ export async function logAuditAction(
     // Használja az alapelemként megadott emailt
   }
 
+  const uuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : undefined;
+
   const newLog: AuditLog = {
-    id: `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    id: uuid || `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     actorEmail,
     action: action.toUpperCase(),
     targetModule: targetModule.toLowerCase(),
@@ -124,16 +126,17 @@ export async function logAuditAction(
 
   // 2. Próbálkozás mentéssel Supabase-be (ha van audit_logs tábla)
   try {
-    await supabase.from('audit_logs').insert([
-      {
-        id: newLog.id,
-        actor_email: newLog.actorEmail,
-        action: newLog.action,
-        target_module: newLog.targetModule,
-        details: newLog.details,
-        created_at: newLog.timestamp,
-      },
-    ]);
+    const dbPayload: Record<string, any> = {
+      actor_email: newLog.actorEmail,
+      action: newLog.action,
+      target_module: newLog.targetModule,
+      details: newLog.details,
+      created_at: newLog.timestamp,
+    };
+    if (uuid) {
+      dbPayload.id = uuid;
+    }
+    await supabase.from('audit_logs').insert([dbPayload]);
   } catch {
     // Csendes fallback localStorage-ra
   }
