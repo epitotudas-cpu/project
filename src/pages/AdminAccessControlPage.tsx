@@ -1,20 +1,28 @@
 import { useState } from 'react';
-import { Shield, CheckSquare, Square, Save, RotateCcw, AlertTriangle, Lock, UserCheck, Briefcase } from 'lucide-react';
+import { Shield, CheckSquare, Square, Save, RotateCcw, AlertTriangle, Lock, UserCheck, Briefcase, School, GraduationCap } from 'lucide-react';
 import {
   SYSTEM_MODULES,
   getRoleModulePermissions,
   saveRoleModulePermissions,
   type ModuleActionPermissions,
+  type ConfigurableRole,
 } from '../services/permissionService';
 
+const ROLE_LABELS: Record<ConfigurableRole, string> = {
+  editor: 'Szerkesztő',
+  partner: 'Partner',
+  school: 'Iskola',
+  teacher: 'Tanár',
+};
+
 export function AdminAccessControlPage() {
-  const [selectedRole, setSelectedRole] = useState<'editor' | 'partner'>('editor');
+  const [selectedRole, setSelectedRole] = useState<ConfigurableRole>('editor');
   const [permissions, setPermissions] = useState<Record<string, ModuleActionPermissions>>(() =>
     getRoleModulePermissions(selectedRole)
   );
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleRoleChange = (role: 'editor' | 'partner') => {
+  const handleRoleChange = (role: ConfigurableRole) => {
     setSelectedRole(role);
     setPermissions(getRoleModulePermissions(role));
   };
@@ -60,7 +68,7 @@ export function AdminAccessControlPage() {
   const handleSave = () => {
     saveRoleModulePermissions(selectedRole, permissions);
     setToastMessage(
-      `A(z) ${selectedRole === 'editor' ? 'Szerkesztő' : 'Partner'} szerepkör jogosultságai sikeresen elmentve!`
+      `A(z) ${ROLE_LABELS[selectedRole]} szerepkör jogosultságai sikeresen elmentve!`
     );
     setTimeout(() => setToastMessage(null), 4000);
   };
@@ -68,7 +76,7 @@ export function AdminAccessControlPage() {
   const handleReset = () => {
     localStorage.removeItem(`epitotudas_role_permissions_${selectedRole}`);
     setPermissions(getRoleModulePermissions(selectedRole));
-    setToastMessage(`A(z) ${selectedRole === 'editor' ? 'Szerkesztő' : 'Partner'} jogosultságok visszaállítva az alapértelmezettekre.`);
+    setToastMessage(`A(z) ${ROLE_LABELS[selectedRole]} jogosultságok visszaállítva az alapértelmezettekre.`);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
@@ -96,7 +104,7 @@ export function AdminAccessControlPage() {
               Szerepkörök és Jogosultságok Kezelése
             </h1>
             <p className="text-slate-400 text-sm max-w-2xl">
-              Konfiguráld a Szerkesztői és Partneri panelek hozzáférési mátrixát. Állítsd be modulonként a megtekintési, létrehozási, szerkesztési, publikálási és törlési jogosultságokat.
+              Konfiguráld a Szerkesztői, Partneri, Iskolai és Tanári panelek hozzáférési mátrixát. Állítsd be modulonként a megtekintési, létrehozási, szerkesztési, publikálási és törlési jogosultságokat.
             </p>
           </div>
 
@@ -121,10 +129,10 @@ export function AdminAccessControlPage() {
       </div>
 
       {/* Role Selection Tabs */}
-      <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 pb-4">
         <button
           onClick={() => handleRoleChange('editor')}
-          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+          className={`flex items-center gap-3 px-5 py-3 rounded-xl font-semibold text-sm transition-all ${
             selectedRole === 'editor'
               ? 'bg-purple-500/15 border border-purple-500/40 text-purple-400 shadow-md'
               : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -132,14 +140,14 @@ export function AdminAccessControlPage() {
         >
           <UserCheck className="w-5 h-5 text-purple-400" />
           <span>Szerkesztő Szerepkör</span>
-          <span className="ml-2 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
+          <span className="ml-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
             /szerkeszto
           </span>
         </button>
 
         <button
           onClick={() => handleRoleChange('partner')}
-          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+          className={`flex items-center gap-3 px-5 py-3 rounded-xl font-semibold text-sm transition-all ${
             selectedRole === 'partner'
               ? 'bg-blue-500/15 border border-blue-500/40 text-blue-400 shadow-md'
               : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -147,8 +155,38 @@ export function AdminAccessControlPage() {
         >
           <Briefcase className="w-5 h-5 text-blue-400" />
           <span>Partner Szerepkör</span>
-          <span className="ml-2 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
+          <span className="ml-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
             /partner
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleRoleChange('school')}
+          className={`flex items-center gap-3 px-5 py-3 rounded-xl font-semibold text-sm transition-all ${
+            selectedRole === 'school'
+              ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 shadow-md'
+              : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+          }`}
+        >
+          <School className="w-5 h-5 text-emerald-400" />
+          <span>Iskola Szerepkör</span>
+          <span className="ml-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
+            /iskola
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleRoleChange('teacher')}
+          className={`flex items-center gap-3 px-5 py-3 rounded-xl font-semibold text-sm transition-all ${
+            selectedRole === 'teacher'
+              ? 'bg-amber-500/15 border border-amber-500/40 text-amber-400 shadow-md'
+              : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+          }`}
+        >
+          <GraduationCap className="w-5 h-5 text-amber-400" />
+          <span>Tanár Szerepkör</span>
+          <span className="ml-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
+            /tanar
           </span>
         </button>
       </div>
@@ -271,7 +309,7 @@ export function AdminAccessControlPage() {
         <p className="text-xs text-slate-400">
           A beállított jogosultságok azonnal életbe lépnek a(z){' '}
           <strong className="text-amber-400 font-semibold">
-            {selectedRole === 'editor' ? 'Szerkesztő' : 'Partner'}
+            {ROLE_LABELS[selectedRole]}
           </strong>{' '}
           felhasználók számára.
         </p>

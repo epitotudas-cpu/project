@@ -46,6 +46,8 @@ export const SYSTEM_MODULES: ModuleCategoryDef[] = [
   { id: 'access_control', name: 'Jogosultságkezelés', category: 'Admin Rendszer', isAdminOnly: true },
 ];
 
+export type ConfigurableRole = 'editor' | 'partner' | 'school' | 'teacher';
+
 const DEFAULT_EDITOR_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   articles: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
   categories: { view: true, create: true, edit: true, submit: false, publish: false, delete: false },
@@ -96,10 +98,67 @@ const DEFAULT_PARTNER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   access_control: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
 };
 
+const DEFAULT_SCHOOL_PERMISSIONS: Record<string, ModuleActionPermissions> = {
+  articles: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  categories: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  news: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  guides: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  glossary: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  media: { view: true, create: true, edit: true, submit: false, publish: false, delete: false },
+  moderation: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+
+  calculators: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  safety: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  regulations: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  learning: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
+  catalog: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
+
+  partner_profile: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
+  partner_offers: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
+  partner_products: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
+  partner_stats: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+
+  users: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  settings: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  access_control: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+};
+
+const DEFAULT_TEACHER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
+  articles: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  categories: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  news: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  guides: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  glossary: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  media: { view: true, create: true, edit: true, submit: false, publish: false, delete: false },
+  moderation: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+
+  calculators: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  safety: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  regulations: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+  learning: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
+  catalog: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+
+  partner_profile: { view: true, create: false, edit: true, submit: false, publish: false, delete: false },
+  partner_offers: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  partner_products: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  partner_stats: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
+
+  users: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  settings: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  access_control: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+};
+
 const STORAGE_KEY_PREFIX = 'epitotudas_role_permissions_';
 
-export function getRoleModulePermissions(role: 'editor' | 'partner'): Record<string, ModuleActionPermissions> {
-  const defaultPerms = role === 'editor' ? DEFAULT_EDITOR_PERMISSIONS : DEFAULT_PARTNER_PERMISSIONS;
+export function getRoleModulePermissions(role: ConfigurableRole): Record<string, ModuleActionPermissions> {
+  const defaultPerms =
+    role === 'editor'
+      ? DEFAULT_EDITOR_PERMISSIONS
+      : role === 'partner'
+      ? DEFAULT_PARTNER_PERMISSIONS
+      : role === 'school'
+      ? DEFAULT_SCHOOL_PERMISSIONS
+      : DEFAULT_TEACHER_PERMISSIONS;
   try {
     const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${role}`);
     if (saved) {
@@ -112,7 +171,7 @@ export function getRoleModulePermissions(role: 'editor' | 'partner'): Record<str
   return defaultPerms;
 }
 
-export function saveRoleModulePermissions(role: 'editor' | 'partner', permissions: Record<string, ModuleActionPermissions>): void {
+export function saveRoleModulePermissions(role: ConfigurableRole, permissions: Record<string, ModuleActionPermissions>): void {
   try {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${role}`, JSON.stringify(permissions));
   } catch (e) {
@@ -133,11 +192,11 @@ export function hasModuleActionPermission(
     return false;
   }
 
-  if (role !== 'editor' && role !== 'partner') {
+  if (role !== 'editor' && role !== 'partner' && role !== 'school' && role !== 'teacher') {
     return false;
   }
 
-  const rolePerms = getRoleModulePermissions(role);
+  const rolePerms = getRoleModulePermissions(role as ConfigurableRole);
   const modPerms = rolePerms[moduleId];
   if (!modPerms) return false;
 

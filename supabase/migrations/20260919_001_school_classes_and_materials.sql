@@ -250,7 +250,7 @@ BEGIN
     RAISE EXCEPTION 'Kérjük, adja meg a meghívókódot.';
   END IF;
 
-  -- 2. Lock & Fetch code row FOR UPDATE to prevent race conditions
+  -- 2. Lock & Fetch code row FOR UPDATE OF sic to prevent race conditions
   SELECT
     sic.*,
     p.name AS school_name,
@@ -262,7 +262,7 @@ BEGIN
   JOIN profiles pr ON pr.id = sic.instructor_id
   LEFT JOIN school_classes sc ON sc.id = sic.class_id
   WHERE UPPER(TRIM(sic.code)) = UPPER(TRIM(input_code))
-    FOR UPDATE;
+    FOR UPDATE OF sic;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'A megadott osztálytermi kód érvénytelen vagy nem található.';
