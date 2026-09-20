@@ -148,8 +148,10 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
         setValidatedInvite(null);
       } else {
         setValidatedInvite(result);
+        setUserType('tanulo');
         try {
           sessionStorage.setItem('pending_invite_code', result.code || code);
+          sessionStorage.setItem('pending_student_invite_code', result.code || code);
         } catch {}
       }
     } catch (err) {

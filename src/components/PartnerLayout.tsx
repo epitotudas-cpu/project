@@ -119,8 +119,8 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
               <Briefcase className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="font-bold text-white text-base tracking-tight">Partner Panel</h1>
-              <p className="text-xs text-blue-400 font-medium">ÉpítőTudás Business</p>
+              <h1 className="font-bold text-white text-base tracking-tight">Tanár panel</h1>
+              <p className="text-xs text-blue-400 font-medium">ÉpítőTudás Iskolai Rendszer</p>
             </div>
           </div>
 
@@ -135,7 +135,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
         {/* Nav Items */}
         <nav className="flex-1 p-3 sm:p-4 space-y-1.5 overflow-y-auto">
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Partneri Funkciók
+            Tanári Funkciók
           </div>
 
           {availableNavItems.map((item) => {
@@ -168,7 +168,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
             <div className="flex items-center gap-1.5 mt-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
               <span className="text-blue-400 font-bold uppercase text-[10px] tracking-wider">
-                {profile?.role === 'admin' ? 'Adminisztrátor' : 'Hitelesített Partner'}
+                {profile?.role === 'admin' ? 'Adminisztrátor' : 'Oktató / Tanár'}
               </span>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
               <Menu className="w-5 h-5" />
             </button>
             <div className="min-w-0">
-              <span className="font-extrabold text-white text-xs sm:text-sm block truncate">Partner Panel</span>
+              <span className="font-extrabold text-white text-xs sm:text-sm block truncate">Tanár panel</span>
               <span className="text-[10px] text-blue-400 font-bold block truncate">
                 {availableNavItems.find((i) => i.id === activeView)?.label || 'Vezérlőpult'}
               </span>
@@ -234,7 +234,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
         <header className="hidden md:flex bg-slate-900/80 border-b border-slate-800 px-8 py-4 items-center justify-between backdrop-blur-md">
           <div className="flex items-center gap-3">
             <Briefcase className="w-5 h-5 text-blue-400" />
-            <h2 className="text-sm font-bold text-white tracking-tight">Partneri Vezérlőpult</h2>
+            <h2 className="text-sm font-bold text-white tracking-tight">Tanári Vezérlőpult</h2>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-slate-400">

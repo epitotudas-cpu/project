@@ -29,6 +29,9 @@ import {
   BookOpen,
   ShoppingBag,
   Eye,
+  School,
+  KeyRound,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -40,6 +43,7 @@ import { glossaryJsonService, type GlossaryTermFromJson } from '../lib/glossaryJ
 import TermDetailModal from '../components/TermDetailModal';
 import { useBooks, type BookItem } from '../services/bookService';
 import BookCoverImage from '../components/BookCoverImage';
+import { redeemStudentInvitationCode } from '../services/partnerService';
 
 function getMatchingBook(item: SavedItem, allBooks: BookItem[]): BookItem {
   const found = allBooks.find((b) => b.id === item.itemId || b.id === item.slug || b.title === item.title);
@@ -75,7 +79,7 @@ interface ProfilePageProps {
 }
 
 type MainSection = 'overview' | 'learning' | 'saved' | 'history' | 'settings' | 'help';
-type SettingsSubTab = 'profile_data' | 'trade_profile' | 'notifications' | 'security' | 'appearance' | 'privacy';
+type SettingsSubTab = 'profile_data' | 'trade_profile' | 'school_link' | 'notifications' | 'security' | 'appearance' | 'privacy';
 
 const EXPERIENCE_LEVELS = [
   { id: 'beginner', label: 'Kezdő', desc: 'Pályakezdő vagy alapszintű ismeretek' },
@@ -174,6 +178,27 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   });
 
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubTab>('profile_data');
+  const [classCodeInput, setClassCodeInput] = useState('');
+  const [redeemingCode, setRedeemingCode] = useState(false);
+  const [classCodeMsg, setClassCodeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleRedeemClassCode = async () => {
+    if (!classCodeInput.trim()) return;
+    setRedeemingCode(true);
+    setClassCodeMsg(null);
+    try {
+      const res = await redeemStudentInvitationCode(classCodeInput.trim());
+      const msg = res.message || (res.already_enrolled
+        ? `Ön már csatlakozott a(z) ${res.class_name || 'kiválasztott'} osztályhoz!`
+        : `Sikeresen csatlakoztál a(z) ${res.class_name || 'kiválasztott'} osztályhoz!`);
+      setClassCodeMsg({ type: 'success', text: msg });
+      setClassCodeInput('');
+    } catch (err: any) {
+      setClassCodeMsg({ type: 'error', text: err.message || 'A csatlakozás nem sikerült. Ellenőrizze az osztálykódot!' });
+    } finally {
+      setRedeemingCode(false);
+    }
+  };
 
   // Sync tab state dynamically on hashchange / popstate navigation
   useEffect(() => {
@@ -184,7 +209,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           const tab = hash.split('tab=')[1].split('&')[0];
           if (['overview', 'learning', 'saved', 'history', 'settings', 'help'].includes(tab)) {
             setActiveMainSection(tab as MainSection);
-          } else if (['profile_data', 'trade_profile', 'notifications', 'security', 'appearance', 'privacy'].includes(tab)) {
+          } else if (['profile_data', 'trade_profile', 'school_link', 'notifications', 'security', 'appearance', 'privacy'].includes(tab)) {
             setActiveMainSection('settings');
             setActiveSettingsTab(tab as SettingsSubTab);
           }
@@ -1169,6 +1194,17 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             </button>
 
             <button
+              onClick={() => setActiveSettingsTab('school_link')}
+              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'school_link'
+                  ? 'bg-accent text-black font-extrabold shadow-md'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <span>Iskolai / Tanári kapcsolat</span>
+              <ChevronRight size={14} />
+            </button>
+
+            <button
               onClick={() => setActiveSettingsTab('notifications')}
               className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'notifications'
                   ? 'bg-accent text-black font-extrabold shadow-md'
@@ -1380,6 +1416,52 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   >
                     <Save size={14} /> {saving ? 'Mentés...' : 'Szakmai Profil Mentése'}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* ISKOLAI / TANÁRI KAPCSOLAT */}
+            {activeSettingsTab === 'school_link' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-black text-white flex items-center gap-2">
+                    <School className="text-accent" size={20} /> Iskolai / Tanári Kapcsolat
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Csatlakozz az osztályodhoz a tanárodtól kapott egyedi osztálykóddal (pl. EPI-10A-7K2).
+                  </p>
+                </div>
+
+                <div className="p-5 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-4">
+                  <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <KeyRound size={16} className="text-accent" /> Osztálykód megadása
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      value={classCodeInput}
+                      onChange={(e) => setClassCodeInput(e.target.value.toUpperCase())}
+                      placeholder="pl. EPI-10A-7K2"
+                      className="w-full sm:flex-1 bg-[#0C213E] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm text-white font-mono placeholder-gray-500 uppercase tracking-widest focus:outline-none focus:border-accent"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRedeemClassCode}
+                      disabled={redeemingCode || !classCodeInput.trim()}
+                      className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl disabled:opacity-50 transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      {redeemingCode ? 'Csatlakozás...' : 'Csatlakozás'}
+                    </button>
+                  </div>
+
+                  {classCodeMsg && (
+                    <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                      classCodeMsg.type === 'success' ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30' : 'bg-red-950/60 text-red-300 border border-red-500/30'
+                    }`}>
+                      {classCodeMsg.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
+                      <span>{classCodeMsg.text}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
