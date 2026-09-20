@@ -895,12 +895,29 @@ export async function createSchoolClass(payload: {
   name: string;
   grade?: number | null;
 }): Promise<SchoolClass> {
+  const cleanTradeId = payload.tradeId.trim();
+
+  // 1. Ensure instructor trade relationship exists in partner_user_trades so fk_school_classes_trade constraint passes
+  try {
+    await supabase.from('partner_user_trades').upsert(
+      {
+        partner_id: payload.schoolId,
+        user_id: payload.instructorId,
+        trade_id: cleanTradeId,
+      },
+      { onConflict: 'partner_id,user_id,trade_id' }
+    );
+  } catch (e) {
+    console.warn('Notice ensuring partner_user_trades record:', e);
+  }
+
+  // 2. Insert into school_classes
   const { data, error } = await supabase
     .from('school_classes')
     .insert({
       school_id: payload.schoolId,
       instructor_id: payload.instructorId,
-      trade_id: payload.tradeId.trim(),
+      trade_id: cleanTradeId,
       name: payload.name.trim(),
       grade: payload.grade ?? null,
       is_active: true,
