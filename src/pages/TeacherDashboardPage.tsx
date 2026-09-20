@@ -169,7 +169,7 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
       // 1. Find school partner_id where user is instructor or staff
       const { data: partnerUserData, error: puError } = await supabase
         .from('partner_users')
-        .select('partner_id, member_role, partner:partner_id(id, name)')
+        .select('partner_id, member_role')
         .eq('user_id', user!.id)
         .limit(1)
         .maybeSingle();
@@ -180,7 +180,17 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
       }
 
       const partnerId = partnerUserData.partner_id;
-      const partnerName = (partnerUserData.partner as any)?.name || 'Iskola / Szervezet';
+      let partnerName = 'Iskola / Szervezet';
+      if (partnerId) {
+        const { data: pRec } = await supabase
+          .from('partners')
+          .select('name')
+          .eq('id', partnerId)
+          .maybeSingle();
+        if (pRec?.name) {
+          partnerName = pRec.name;
+        }
+      }
       setSchoolInfo({ id: partnerId, name: partnerName });
 
       // 2. Fetch instructor trades

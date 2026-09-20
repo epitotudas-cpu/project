@@ -269,27 +269,40 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
     }
     async function fetchMemberRole() {
       try {
-        // 1. Query partner_users table first with partner category
+        const isEdu = (category?: string | null, partnerType?: string | null) => {
+          const cat = (category || '').toLowerCase();
+          const type = (partnerType || '').toLowerCase();
+          return (
+            cat === 'iskola' ||
+            cat === 'oktato' ||
+            cat === 'oktatasi_intezmeny' ||
+            type.includes('iskola') ||
+            type.includes('oktatá') ||
+            type.includes('intezmen') ||
+            type.includes('intézmén')
+          );
+        };
+
+        // 1. Query partner_users table first
         const { data: puData } = await supabase
           .from('partner_users')
-          .select('member_role, partner:partner_id(category, partner_type)')
+          .select('partner_id, member_role')
           .eq('user_id', user!.id)
           .limit(1)
           .maybeSingle();
 
         if (puData) {
           setMemberRole(puData.member_role);
-          const partnerObj = puData.partner as any;
-          const isSchoolCat = partnerObj && (
-            partnerObj.category === 'iskola' ||
-            partnerObj.partner_type === 'iskola' ||
-            partnerObj.category === 'oktato' ||
-            partnerObj.partner_type === 'oktato' ||
-            partnerObj.category === 'oktatasi_intezmeny' ||
-            partnerObj.partner_type === 'oktatasi_intezmeny'
-          );
-          if (isSchoolCat) {
-            setIsSchoolCategory(true);
+          if (puData.partner_id) {
+            const { data: pRec } = await supabase
+              .from('partners')
+              .select('category, partner_type')
+              .eq('id', puData.partner_id)
+              .maybeSingle();
+
+            if (pRec && isEdu(pRec.category, pRec.partner_type)) {
+              setIsSchoolCategory(true);
+            }
           }
           return;
         }
@@ -303,20 +316,10 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
             .limit(1)
             .maybeSingle();
 
-          if (partnerByEmail) {
-            const isSchoolCat = (
-              partnerByEmail.category === 'iskola' ||
-              partnerByEmail.partner_type === 'iskola' ||
-              partnerByEmail.category === 'oktato' ||
-              partnerByEmail.partner_type === 'oktato' ||
-              partnerByEmail.category === 'oktatasi_intezmeny' ||
-              partnerByEmail.partner_type === 'oktatasi_intezmeny'
-            );
-            if (isSchoolCat) {
-              setMemberRole('owner');
-              setIsSchoolCategory(true);
-              return;
-            }
+          if (partnerByEmail && isEdu(partnerByEmail.category, partnerByEmail.partner_type)) {
+            setMemberRole('owner');
+            setIsSchoolCategory(true);
+            return;
           }
 
           // 3. Fallback check: query partner_applications by email
@@ -327,17 +330,10 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
             .limit(1)
             .maybeSingle();
 
-          if (appByEmail) {
-            const isSchoolCat = (
-              appByEmail.category === 'iskola' ||
-              appByEmail.category === 'oktato' ||
-              appByEmail.category === 'oktatasi_intezmeny'
-            );
-            if (isSchoolCat) {
-              setMemberRole('owner');
-              setIsSchoolCategory(true);
-              return;
-            }
+          if (appByEmail && isEdu(appByEmail.category, null)) {
+            setMemberRole('owner');
+            setIsSchoolCategory(true);
+            return;
           }
         }
 

@@ -126,14 +126,21 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       // 1. Fetch partner user linkage
       const { data: puData } = await supabase
         .from('partner_users')
-        .select('partner_id, member_role, partner:partner_id(*)')
+        .select('partner_id, member_role')
         .eq('user_id', user!.id)
         .limit(1)
         .maybeSingle();
 
       let currentPartner: ExtendedPartner | null = null;
-      if (puData && puData.partner) {
-        currentPartner = (Array.isArray(puData.partner) ? puData.partner[0] : puData.partner) as unknown as ExtendedPartner;
+      if (puData && puData.partner_id) {
+        const { data: pRec } = await supabase
+          .from('partners')
+          .select('*')
+          .eq('id', puData.partner_id)
+          .maybeSingle();
+        if (pRec) {
+          currentPartner = pRec as ExtendedPartner;
+        }
       }
 
       if (!currentPartner && user?.email) {
