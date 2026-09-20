@@ -13,6 +13,7 @@ import {
 } from './services/siteSettingsService';
 import { fetchHeroStateFromCloud } from './services/heroImageService';
 import { fetchImpressumDataFromCloud } from './services/impressumService';
+import { supabase } from './lib/supabase';
 
 // Dynamic Code Splitting (Lazy Load Subpages to Drastically Reduce Initial Bundle Size)
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
@@ -338,7 +339,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
         }
 
         // 4. Fallback check: check user_metadata.user_type
-        const userType = user.user_metadata?.user_type;
+        const userType = user?.user_metadata?.user_type;
         if (userType === 'iskola' || userType === 'oktato') {
           setMemberRole('owner');
           setIsSchoolCategory(true);
