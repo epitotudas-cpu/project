@@ -25,15 +25,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!to || !subject) {
       return new Response(
-        JSON.stringify({ error: 'Címzett (to) és tárgy (subject) megadása kötelező.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ ok: false, error: 'Címzett (to) és tárgy (subject) megadása kötelező.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
     if (!RESEND_API_KEY) {
       return new Response(
-        JSON.stringify({ error: 'RESEND_API_KEY hiányzik a Supabase Secrets közül.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ ok: false, error: 'RESEND_API_KEY hiányzik a Supabase Secrets közül.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
@@ -55,39 +55,47 @@ const handler = async (req: Request): Promise<Response> => {
 
     let data = await res.json();
 
-    if (!res.ok) {
-      console.warn('Primary sender info@epitotudas.hu failed, attempting onboarding@resend.dev fallback:', data);
-      const fallbackRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: 'ÉpítőTudás <onboarding@resend.dev>',
-          to: recipients,
-          subject,
-          html,
-        }),
+    if (res.ok) {
+      return new Response(JSON.stringify({ ok: true, provider: 'Resend', ...data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       });
-
-      const fallbackData = await fallbackRes.json();
-      if (fallbackRes.ok) {
-        return new Response(
-          JSON.stringify({ provider: 'Resend', fallback_used: true, ...fallbackData }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-        );
-      }
     }
 
-    return new Response(JSON.stringify({ provider: 'Resend', ...data }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: res.status,
+    console.warn('Primary sender info@epitotudas.hu failed, attempting onboarding@resend.dev fallback:', data);
+    const fallbackRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'ÉpítőTudás <onboarding@resend.dev>',
+        to: recipients,
+        subject,
+        html,
+      }),
     });
+
+    const fallbackData = await fallbackRes.json();
+    if (fallbackRes.ok) {
+      return new Response(
+        JSON.stringify({ ok: true, provider: 'Resend', fallback_used: true, ...fallbackData }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    const rawError = fallbackData?.message || data?.message || fallbackData?.error || data?.error || 'Szerveroldali Resend hiba';
+    const errString = typeof rawError === 'string' ? rawError : JSON.stringify(rawError);
+
+    return new Response(
+      JSON.stringify({ ok: false, error: errString, primary_error: data, fallback_error: fallbackData }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    );
   } catch (err: any) {
     return new Response(
-      JSON.stringify({ error: err.message || 'Szerveroldali hiba az e-mail küldésekor.' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ ok: false, error: err.message || 'Szerveroldali hiba az e-mail küldésekor.' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   }
 };

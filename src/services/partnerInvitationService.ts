@@ -192,8 +192,8 @@ export async function sendInvitationEmail(
     }
 
     if (data) {
-      if (data.error || (data.statusCode && data.statusCode >= 400) || data.name === 'validation_error') {
-        const msg = data.message || data.error?.message || data.error || data.name || JSON.stringify(data);
+      if (data.ok === false || data.error || (data.statusCode && data.statusCode >= 400) || data.name === 'validation_error') {
+        const msg = data.error?.message || data.error || data.message || data.name || JSON.stringify(data);
         return {
           success: false,
           requires_manual_fallback: true,
