@@ -475,7 +475,7 @@ export interface Database {
           id: string;
           email: string | null;
           full_name: string | null;
-          role: 'user' | 'editor' | 'partner' | 'admin';
+          role: 'user' | 'editor' | 'partner' | 'school' | 'teacher' | 'admin';
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
@@ -489,7 +489,7 @@ export interface Database {
           id: string;
           email?: string | null;
           full_name?: string | null;
-          role?: 'user' | 'editor' | 'partner' | 'admin';
+          role?: 'user' | 'editor' | 'partner' | 'school' | 'teacher' | 'admin';
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -503,7 +503,7 @@ export interface Database {
           id?: string;
           email?: string | null;
           full_name?: string | null;
-          role?: 'user' | 'editor' | 'partner' | 'admin';
+          role?: 'user' | 'editor' | 'partner' | 'school' | 'teacher' | 'admin';
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
