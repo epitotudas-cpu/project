@@ -32,6 +32,7 @@ interface PartnerLayoutProps {
   activeView: PartnerView;
   onNavigateView: (view: PartnerView) => void;
   memberRole?: string | null;
+  isSchoolCategory?: boolean;
   children: React.ReactNode;
 }
 
@@ -44,7 +45,14 @@ const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: strin
   { id: 'partner_stats', moduleId: 'partner_stats', label: 'Statisztikák & Teljesítmény', icon: BarChart3 },
 ];
 
-export default function PartnerLayout({ onNavigate, activeView, onNavigateView, memberRole, children }: PartnerLayoutProps) {
+export default function PartnerLayout({
+  onNavigate,
+  activeView,
+  onNavigateView,
+  memberRole,
+  isSchoolCategory = false,
+  children,
+}: PartnerLayoutProps) {
   const { user, profile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -92,13 +100,13 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
 
   const role = profile?.role || 'partner';
   const isTeacher = memberRole === 'instructor';
-  const isSchoolAdmin = memberRole === 'owner' || memberRole === 'admin';
+  const isSchoolAdmin = Boolean(isSchoolCategory) && memberRole !== 'instructor';
 
   const sidebarTitle = isTeacher
-    ? 'Tanári Panel'
+    ? 'Tanár panel'
     : isSchoolAdmin
-    ? 'Iskolai Kezelőfelület'
-    : 'Partner Panel';
+    ? 'Iskola panel'
+    : 'Partner panel';
 
   const userBadgeRole = profile?.role === 'admin'
     ? 'Adminisztrátor'
