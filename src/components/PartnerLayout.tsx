@@ -31,6 +31,7 @@ interface PartnerLayoutProps {
   onNavigate: (page: string) => void;
   activeView: PartnerView;
   onNavigateView: (view: PartnerView) => void;
+  memberRole?: string | null;
   children: React.ReactNode;
 }
 
@@ -43,7 +44,7 @@ const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: strin
   { id: 'partner_stats', moduleId: 'partner_stats', label: 'Statisztikák & Teljesítmény', icon: BarChart3 },
 ];
 
-export default function PartnerLayout({ onNavigate, activeView, onNavigateView, children }: PartnerLayoutProps) {
+export default function PartnerLayout({ onNavigate, activeView, onNavigateView, memberRole, children }: PartnerLayoutProps) {
   const { user, profile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -90,31 +91,36 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
   }
 
   const role = profile?.role || 'partner';
-  const fullNameLower = (profile?.full_name || '').toLowerCase();
-  const userType = user?.user_metadata?.user_type;
-  const isTeacherOrSchool =
-    (profile?.role as string) === 'school' ||
-    userType === 'oktato' ||
-    userType === 'iskola' ||
-    fullNameLower.includes('tanár') ||
-    fullNameLower.includes('oktató') ||
-    fullNameLower.includes('kapcsolattartó') ||
-    fullNameLower.includes('teszt') ||
-    Boolean(user?.email?.includes('partner'));
+  const isTeacher = memberRole === 'instructor';
+  const isSchoolAdmin = memberRole === 'owner' || memberRole === 'admin';
+
+  const sidebarTitle = isTeacher
+    ? 'Tanári Panel'
+    : isSchoolAdmin
+    ? 'Iskolai Kezelőfelület'
+    : 'Partner Panel';
+
+  const userBadgeRole = profile?.role === 'admin'
+    ? 'Adminisztrátor'
+    : isTeacher
+    ? 'Oktató / Tanár'
+    : isSchoolAdmin
+    ? 'Iskolai Adminisztrátor'
+    : 'Partner';
 
   // Filter nav items based on admin permissions assigned to Partner
   const availableNavItems = PARTNER_NAV_ITEMS.map((item) => {
     if (item.id === 'dashboard') {
       return {
         ...item,
-        label: isTeacherOrSchool ? 'Osztályok & Tananyagok' : 'Partner Áttekintés',
-        icon: isTeacherOrSchool ? GraduationCap : LayoutDashboard,
+        label: isTeacher ? 'Osztályok & Tananyagok' : isSchoolAdmin ? 'Iskolai Áttekintés' : 'Partner Áttekintés',
+        icon: isTeacher ? GraduationCap : Building2,
       };
     }
-    if (item.id === 'partner_profile' && isTeacherOrSchool) {
+    if (item.id === 'partner_profile' && (isTeacher || isSchoolAdmin)) {
       return {
         ...item,
-        label: 'Iskolai / Szervezeti Profil',
+        label: isTeacher ? 'Profil Beállítások' : 'Iskola Adatai & Tanárok',
       };
     }
     return item;
@@ -146,8 +152,8 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
               <Briefcase className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="font-bold text-white text-base tracking-tight">Tanár panel</h1>
-              <p className="text-xs text-blue-400 font-medium">ÉpítőTudás Iskolai Rendszer</p>
+              <h1 className="font-bold text-white text-base tracking-tight">{sidebarTitle}</h1>
+              <p className="text-xs text-blue-400 font-medium">ÉpítőTudás Szervezeti Rendszer</p>
             </div>
           </div>
 
@@ -162,7 +168,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
         {/* Nav Items */}
         <nav className="flex-1 p-3 sm:p-4 space-y-1.5 overflow-y-auto">
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Tanári Funkciók
+            {isTeacher ? 'Tanári Funkciók' : isSchoolAdmin ? 'Intézményi Funkciók' : 'Partner Funkciók'}
           </div>
 
           {availableNavItems.map((item) => {
@@ -195,7 +201,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
             <div className="flex items-center gap-1.5 mt-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
               <span className="text-blue-400 font-bold uppercase text-[10px] tracking-wider">
-                {profile?.role === 'admin' ? 'Adminisztrátor' : 'Oktató / Tanár'}
+                {userBadgeRole}
               </span>
             </div>
           </div>

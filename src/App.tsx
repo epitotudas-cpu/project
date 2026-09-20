@@ -256,31 +256,66 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
 }
 
 function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [partnerView, setPartnerView] = useState<any>('dashboard');
+  const [memberRole, setMemberRole] = useState<string | null>(null);
+  const [loadingRole, setLoadingRole] = useState(true);
 
-  const fullNameLower = (profile?.full_name || '').toLowerCase();
-  const userType = user?.user_metadata?.user_type;
-  const isTeacherOrSchool =
-    (profile?.role as string) === 'school' ||
-    userType === 'oktato' ||
-    userType === 'iskola' ||
-    fullNameLower.includes('tanár') ||
-    fullNameLower.includes('oktató') ||
-    fullNameLower.includes('kapcsolattartó') ||
-    fullNameLower.includes('teszt') ||
-    Boolean(user?.email?.includes('partner'));
+  useEffect(() => {
+    if (!user) {
+      setLoadingRole(false);
+      return;
+    }
+    async function fetchMemberRole() {
+      try {
+        const { data } = await supabase
+          .from('partner_users')
+          .select('member_role')
+          .eq('user_id', user!.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (data) {
+          setMemberRole(data.member_role);
+        }
+      } catch (err) {
+        console.warn('Error fetching member role in App.tsx:', err);
+      } finally {
+        setLoadingRole(false);
+      }
+    }
+    fetchMemberRole();
+  }, [user]);
+
+  const isTeacher = memberRole === 'instructor';
+  const isSchoolAdmin = memberRole === 'owner' || memberRole === 'admin';
+
+  if (loadingRole) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+      </div>
+    );
+  }
 
   return (
-    <PartnerLayout onNavigate={onNavigate} activeView={partnerView} onNavigateView={setPartnerView}>
+    <PartnerLayout onNavigate={onNavigate} activeView={partnerView} onNavigateView={setPartnerView} memberRole={memberRole}>
       {partnerView === 'dashboard' && (
-        isTeacherOrSchool ? (
+        isTeacher ? (
           <TeacherDashboardPage onNavigate={onNavigate} />
+        ) : isSchoolAdmin ? (
+          <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />
         ) : (
           <PartnerDashboardPage onNavigateView={setPartnerView} />
         )
       )}
-      {partnerView === 'partner_profile' && <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />}
+      {partnerView === 'partner_profile' && (
+        isSchoolAdmin || isTeacher ? (
+          <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />
+        ) : (
+          <PartnerDashboardPage onNavigateView={setPartnerView} />
+        )
+      )}
       {partnerView === 'partner_offers' && <AdminPartnersPage />}
       {partnerView === 'partner_products' && <AdminMaterialsPage />}
       {partnerView === 'catalog' && <AdminToolsPage />}
