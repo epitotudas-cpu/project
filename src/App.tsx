@@ -256,10 +256,30 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
 }
 
 function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const { user, profile } = useAuth();
   const [partnerView, setPartnerView] = useState<any>('dashboard');
+
+  const fullNameLower = (profile?.full_name || '').toLowerCase();
+  const userType = user?.user_metadata?.user_type;
+  const isTeacherOrSchool =
+    (profile?.role as string) === 'school' ||
+    userType === 'oktato' ||
+    userType === 'iskola' ||
+    fullNameLower.includes('tanár') ||
+    fullNameLower.includes('oktató') ||
+    fullNameLower.includes('kapcsolattartó') ||
+    fullNameLower.includes('teszt') ||
+    Boolean(user?.email?.includes('partner'));
+
   return (
     <PartnerLayout onNavigate={onNavigate} activeView={partnerView} onNavigateView={setPartnerView}>
-      {partnerView === 'dashboard' && <PartnerDashboardPage onNavigateView={setPartnerView} />}
+      {partnerView === 'dashboard' && (
+        isTeacherOrSchool ? (
+          <TeacherDashboardPage onNavigate={onNavigate} />
+        ) : (
+          <PartnerDashboardPage onNavigateView={setPartnerView} />
+        )
+      )}
       {partnerView === 'partner_profile' && <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />}
       {partnerView === 'partner_offers' && <AdminPartnersPage />}
       {partnerView === 'partner_products' && <AdminMaterialsPage />}

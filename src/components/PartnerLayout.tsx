@@ -16,6 +16,7 @@ import {
   X,
   Menu,
   CheckCircle2,
+  GraduationCap,
 } from 'lucide-react';
 
 export type PartnerView =
@@ -89,9 +90,35 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
   }
 
   const role = profile?.role || 'partner';
+  const fullNameLower = (profile?.full_name || '').toLowerCase();
+  const userType = user?.user_metadata?.user_type;
+  const isTeacherOrSchool =
+    (profile?.role as string) === 'school' ||
+    userType === 'oktato' ||
+    userType === 'iskola' ||
+    fullNameLower.includes('tanár') ||
+    fullNameLower.includes('oktató') ||
+    fullNameLower.includes('kapcsolattartó') ||
+    fullNameLower.includes('teszt') ||
+    Boolean(user?.email?.includes('partner'));
 
   // Filter nav items based on admin permissions assigned to Partner
-  const availableNavItems = PARTNER_NAV_ITEMS.filter((item) => {
+  const availableNavItems = PARTNER_NAV_ITEMS.map((item) => {
+    if (item.id === 'dashboard') {
+      return {
+        ...item,
+        label: isTeacherOrSchool ? 'Osztályok & Tananyagok' : 'Partner Áttekintés',
+        icon: isTeacherOrSchool ? GraduationCap : LayoutDashboard,
+      };
+    }
+    if (item.id === 'partner_profile' && isTeacherOrSchool) {
+      return {
+        ...item,
+        label: 'Iskolai / Szervezeti Profil',
+      };
+    }
+    return item;
+  }).filter((item) => {
     if (item.id === 'dashboard') return true;
     return canRoleAccessModule(role, item.moduleId);
   });
