@@ -296,7 +296,7 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       if (emailRes.success) {
         setInviteSuccessMsg(`Sikeresen létrejött a meghívó, és kiküldtük az e-mailt a(z) ${inviteEmail.trim()} címre! (Kód: ${inv.code})`);
       } else {
-        setInviteSuccessMsg(`A meghívó létrejött a rendszerben! Meghívókód: ${inv.code}. Az e-mail értesítő kódja a lenti listában is megtekinthető és másolható.`);
+        setInviteSuccessMsg(`A meghívó létrejött a rendszerben (Kód: ${inv.code}), de az e-mail küldés meghiúsult: ${emailRes.error || 'Resend API hiba'}.`);
       }
 
       setInviteEmail('');
@@ -327,7 +327,7 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       if (res.success) {
         alert(`Meghívó e-mail sikeresen újraküldve a(z) ${inv.email} címre!`);
       } else {
-        alert(`Meghívó azonosító kód: ${inv.code}. Használhatja a közvetlen kódmásolást is.`);
+        alert(`E-mail küldési hiba (Resend API): ${res.error || 'Szerveroldali hiba'}.\n\nMeghívó kód: ${inv.code}`);
       }
     } catch (err: any) {
       alert(`Újraküldés hiba: ${err.message || err}`);

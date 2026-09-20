@@ -1,6 +1,5 @@
-// Supabase Edge Function: send-invitation-email
-// Serves automated email delivery for partner invitations via Resend API.
-// Handles CORS OPTIONS preflights cleanly and includes automatic fallback to onboarding@resend.dev.
+// Supabase Edge Function: resend-email
+// Alias function for email resending via Resend API.
 
 declare const Deno: {
   env: {
@@ -15,7 +14,6 @@ const corsHeaders = {
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // CORS preflight handling
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -34,14 +32,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!RESEND_API_KEY) {
       return new Response(
-        JSON.stringify({ error: 'RESEND_API_KEY hiányzik a Supabase Secrets közül. Állítsa be a Supabase Dashboard -> Settings -> Edge Functions -> Secrets menüben.' }),
+        JSON.stringify({ error: 'RESEND_API_KEY hiányzik a Supabase Secrets közül.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
     const recipients = Array.isArray(to) ? to : [to];
 
-    // Primary Email Delivery via Resend API (custom domain)
     let res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -58,7 +55,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     let data = await res.json();
 
-    // Fallback attempt if custom domain fails (e.g. domain not verified in Resend)
     if (!res.ok) {
       console.warn('Primary sender info@epitotudas.hu failed, attempting onboarding@resend.dev fallback:', data);
       const fallbackRes = await fetch('https://api.resend.com/emails', {
