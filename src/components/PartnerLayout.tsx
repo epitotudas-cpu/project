@@ -99,8 +99,8 @@ export default function PartnerLayout({
   }
 
   const role = profile?.role || 'partner';
-  const isTeacher = memberRole === 'instructor';
-  const isSchoolAdmin = Boolean(isSchoolCategory) && memberRole !== 'instructor';
+  const isTeacher = memberRole === 'instructor' || memberRole === 'member' || memberRole === 'teacher';
+  const isSchoolAdmin = Boolean(isSchoolCategory) && (memberRole === 'owner' || memberRole === 'admin');
 
   const sidebarTitle = isTeacher
     ? 'Tanár panel'

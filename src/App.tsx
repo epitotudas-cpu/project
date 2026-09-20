@@ -354,8 +354,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
     fetchMemberRole();
   }, [user]);
 
-  const isTeacher = memberRole === 'instructor';
-  const isSchoolAdmin = isSchoolCategory && memberRole !== 'instructor';
+  const isTeacher = memberRole === 'instructor' || memberRole === 'member' || memberRole === 'teacher';
+  const isSchoolAdmin = isSchoolCategory && (memberRole === 'owner' || memberRole === 'admin');
 
   if (loadingRole) {
     return (
@@ -560,7 +560,7 @@ function AppContent() {
     case 'teacher':
       return (
         <Suspense fallback={<PageFallback />}>
-          <TeacherDashboardPage onNavigate={navigate} />
+          <PartnerPanelContent onNavigate={navigate} />
         </Suspense>
       );
     case 'admin':

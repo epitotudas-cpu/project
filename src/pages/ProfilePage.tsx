@@ -118,11 +118,43 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     async function checkPartnerContact() {
       if (!user) return;
       try {
+        const isEdu = (category?: string | null, partnerType?: string | null) => {
+          const cat = (category || '').toLowerCase();
+          const type = (partnerType || '').toLowerCase();
+          return (
+            cat === 'iskola' ||
+            cat === 'oktato' ||
+            cat === 'oktatasi_intezmeny' ||
+            type.includes('iskola') ||
+            type.includes('oktatá') ||
+            type.includes('intezmen') ||
+            type.includes('intézmén')
+          );
+        };
+
         // 1. Check partner_users
         const { data: puData } = await supabase
           .from('partner_users')
-          .select('member_role, partner:partner_id(category, partner_type)')
+          .select('partner_id, member_role')
           .eq('user_id', user.id);
+
+        let isSchoolCat = false;
+        if (puData && puData.length > 0) {
+          for (const pu of puData) {
+            if (pu.partner_id) {
+              const { data: pRec } = await supabase
+                .from('partners')
+                .select('category, partner_type')
+                .eq('id', pu.partner_id)
+                .maybeSingle();
+
+              if (pRec && isEdu(pRec.category, pRec.partner_type)) {
+                isSchoolCat = true;
+                break;
+              }
+            }
+          }
+        }
 
         // 2. Check partners table by contact email
         const { data: partnerData } = await supabase
@@ -139,20 +171,27 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         const userType = user.user_metadata?.user_type;
         const userRole = user.user_metadata?.role;
 
-        const isInstructorRole = puData?.some((p) => p.member_role === 'instructor');
-        const isPartnerOrSchoolAdmin =
-          (puData && puData.some((p) => p.member_role !== 'instructor')) ||
-          (partnerData && partnerData.length > 0) ||
+        const isInstructorRole =
+          (isSchoolCat && puData?.some((p) => p.member_role === 'instructor' || p.member_role === 'member' || p.member_role === 'teacher')) ||
+          userType === 'oktato';
+
+        const isSchoolAdminRole =
+          (isSchoolCat && puData?.some((p) => p.member_role === 'owner' || p.member_role === 'admin')) ||
+          (partnerData && partnerData.some((p) => isEdu(p.category, p.partner_type))) ||
+          userType === 'iskola';
+
+        const isCommercialPartner =
+          (puData && puData.some((p) => !isSchoolCat && (p.member_role === 'owner' || p.member_role === 'admin'))) ||
+          (partnerData && partnerData.some((p) => !isEdu(p.category, p.partner_type))) ||
           (appData && appData.length > 0) ||
           userType === 'partner' ||
-          userType === 'iskola' ||
           userRole === 'partner' ||
           userRole === 'admin';
 
         if (isInstructorRole) {
           setIsInstructor(true);
         }
-        if (isPartnerOrSchoolAdmin) {
+        if (isSchoolAdminRole || isCommercialPartner) {
           setIsPartnerContact(true);
         }
       } catch { }
