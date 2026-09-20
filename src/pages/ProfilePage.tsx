@@ -121,42 +121,39 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         // 1. Check partner_users
         const { data: puData } = await supabase
           .from('partner_users')
-          .select('member_role')
+          .select('member_role, partner:partner_id(category, partner_type)')
           .eq('user_id', user.id);
 
         // 2. Check partners table by contact email
         const { data: partnerData } = await supabase
           .from('partners')
-          .select('id')
+          .select('id, category, partner_type')
           .eq('contact_email', user.email);
 
         // 3. Check partner_applications by email
         const { data: appData } = await supabase
           .from('partner_applications')
-          .select('id')
+          .select('id, category')
           .eq('email', user.email);
 
         const userType = user.user_metadata?.user_type;
         const userRole = user.user_metadata?.role;
-        const nameLower = (user.user_metadata?.full_name || user.email || '').toLowerCase();
 
-        const isMatch =
-          (puData && puData.length > 0) ||
+        const isInstructorRole = puData?.some((p) => p.member_role === 'instructor');
+        const isPartnerOrSchoolAdmin =
+          (puData && puData.some((p) => p.member_role !== 'instructor')) ||
           (partnerData && partnerData.length > 0) ||
           (appData && appData.length > 0) ||
           userType === 'partner' ||
-          userType === 'oktato' ||
           userType === 'iskola' ||
           userRole === 'partner' ||
-          userRole === 'admin' ||
-          nameLower.includes('tanár') ||
-          nameLower.includes('oktató') ||
-          nameLower.includes('teszt') ||
-          nameLower.includes('kapcsolattartó');
+          userRole === 'admin';
 
-        if (isMatch) {
-          setIsPartnerContact(true);
+        if (isInstructorRole) {
           setIsInstructor(true);
+        }
+        if (isPartnerOrSchoolAdmin) {
+          setIsPartnerContact(true);
         }
       } catch { }
     }

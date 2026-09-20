@@ -280,7 +280,15 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
         if (puData) {
           setMemberRole(puData.member_role);
           const partnerObj = puData.partner as any;
-          if (partnerObj && (partnerObj.category === 'iskola' || partnerObj.partner_type === 'iskola')) {
+          const isSchoolCat = partnerObj && (
+            partnerObj.category === 'iskola' ||
+            partnerObj.partner_type === 'iskola' ||
+            partnerObj.category === 'oktato' ||
+            partnerObj.partner_type === 'oktato' ||
+            partnerObj.category === 'oktatasi_intezmeny' ||
+            partnerObj.partner_type === 'oktatasi_intezmeny'
+          );
+          if (isSchoolCat) {
             setIsSchoolCategory(true);
           }
           return;
@@ -295,11 +303,50 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
             .limit(1)
             .maybeSingle();
 
-          if (partnerByEmail && (partnerByEmail.category === 'iskola' || partnerByEmail.partner_type === 'iskola')) {
-            setMemberRole('owner');
-            setIsSchoolCategory(true);
-            return;
+          if (partnerByEmail) {
+            const isSchoolCat = (
+              partnerByEmail.category === 'iskola' ||
+              partnerByEmail.partner_type === 'iskola' ||
+              partnerByEmail.category === 'oktato' ||
+              partnerByEmail.partner_type === 'oktato' ||
+              partnerByEmail.category === 'oktatasi_intezmeny' ||
+              partnerByEmail.partner_type === 'oktatasi_intezmeny'
+            );
+            if (isSchoolCat) {
+              setMemberRole('owner');
+              setIsSchoolCategory(true);
+              return;
+            }
           }
+
+          // 3. Fallback check: query partner_applications by email
+          const { data: appByEmail } = await supabase
+            .from('partner_applications')
+            .select('category')
+            .eq('email', user.email)
+            .limit(1)
+            .maybeSingle();
+
+          if (appByEmail) {
+            const isSchoolCat = (
+              appByEmail.category === 'iskola' ||
+              appByEmail.category === 'oktato' ||
+              appByEmail.category === 'oktatasi_intezmeny'
+            );
+            if (isSchoolCat) {
+              setMemberRole('owner');
+              setIsSchoolCategory(true);
+              return;
+            }
+          }
+        }
+
+        // 4. Fallback check: check user_metadata.user_type
+        const userType = user.user_metadata?.user_type;
+        if (userType === 'iskola' || userType === 'oktato') {
+          setMemberRole('owner');
+          setIsSchoolCategory(true);
+          return;
         }
       } catch (err) {
         console.warn('Error fetching member role in App.tsx:', err);
@@ -311,7 +358,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
   }, [user]);
 
   const isTeacher = memberRole === 'instructor';
-  const isSchoolAdmin = (memberRole === 'owner' || memberRole === 'admin') && isSchoolCategory;
+  const isSchoolAdmin = isSchoolCategory && memberRole !== 'instructor';
 
   if (loadingRole) {
     return (
