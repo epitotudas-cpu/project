@@ -11,7 +11,15 @@ import {
   type StudentInvitationCode,
   type SchoolStudent,
 } from '../services/partnerService';
-import { createInvitation } from '../services/partnerInvitationService';
+import {
+  createInvitation,
+  sendInvitationEmail,
+  listInvitations,
+  revokeInvitation,
+  updateInvitation,
+  deleteInvitation,
+  type PartnerInvitation,
+} from '../services/partnerInvitationService';
 import { getTradeItems } from '../services/tradeService';
 import {
   Building2,
@@ -24,8 +32,15 @@ import {
   AlertCircle,
   Key,
   GraduationCap,
-  ShieldCheck,
   Plus,
+  Edit3,
+  Trash2,
+  Copy,
+  Send,
+  Check,
+  Clock,
+  RefreshCw,
+  X,
 } from 'lucide-react';
 
 interface PartnerSchoolProfilePageProps {
@@ -65,7 +80,7 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
   const [logoUrl, setLogoUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
 
-  // Instructor Management State
+  // Registered Instructor Management State
   const [instructors, setInstructors] = useState<
     Array<{ user_id: string; full_name?: string | null; email?: string | null; trades: string[] }>
   >([]);
@@ -74,6 +89,15 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
   const [inviteTrade, setInviteTrade] = useState('');
   const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
   const [inviteErrorMsg, setInviteErrorMsg] = useState<string | null>(null);
+
+  // Invitations State
+  const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
+  const [editingInvitation, setEditingInvitation] = useState<PartnerInvitation | null>(null);
+  const [editInviteEmail, setEditInviteEmail] = useState('');
+  const [editInviteExpiresAt, setEditInviteExpiresAt] = useState('');
+  const [editInviteStatus, setEditInviteStatus] = useState<'active' | 'used' | 'revoked' | 'expired'>('active');
+  const [savingEditInvite, setSavingEditInvite] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Additional Instructor Trade Modal State
   const [selectedInstructorForTrade, setSelectedInstructorForTrade] = useState<{
@@ -189,6 +213,10 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
         const instructorList = await listSchoolInstructors(currentPartner.id);
         setInstructors(instructorList);
 
+        // Load invitations
+        const invList = await listInvitations(currentPartner.id);
+        setInvitations(invList);
+
         // Load codes & students
         const codes = await listStudentInvitationCodes(currentPartner.id);
         setInvitationCodes(codes);
@@ -248,31 +276,116 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       setInviteErrorMsg('Kérjük, adja meg az oktató e-mail-címét!');
       return;
     }
-    if (!inviteTrade) {
-      setInviteErrorMsg('Kérjük, válassza ki az oktató szakmáját!');
-      return;
-    }
 
     setInvitingInstructor(true);
     setInviteErrorMsg(null);
     setInviteSuccessMsg(null);
 
     try {
-      // 1. Create invitation
-      await createInvitation({
+      // 1. Create invitation row in DB
+      const inv = await createInvitation({
         partnerId: partner.id,
         email: inviteEmail.trim(),
         organizationName: partner.name,
         organizationCategory: 'iskola',
       });
 
-      setInviteSuccessMsg(`Sikeres meghívó elküldve a(z) ${inviteEmail} e-mail-címre!`);
+      // 2. Trigger invitation email sending
+      const emailRes = await sendInvitationEmail(inv, inviteEmail.trim());
+
+      if (emailRes.success) {
+        setInviteSuccessMsg(`Sikeresen létrejött a meghívó, és kiküldtük az e-mailt a(z) ${inviteEmail.trim()} címre! (Kód: ${inv.code})`);
+      } else {
+        setInviteSuccessMsg(`A meghívó létrejött a rendszerben! Meghívókód: ${inv.code}. Az e-mail értesítő kódja a lenti listában is megtekinthető és másolható.`);
+      }
+
       setInviteEmail('');
-      setTimeout(() => setInviteSuccessMsg(null), 4000);
+      setInviteTrade('');
+
+      // 3. Reload invitations & instructors
+      const updatedInvs = await listInvitations(partner.id);
+      setInvitations(updatedInvs);
+
+      const updatedInstructors = await listSchoolInstructors(partner.id);
+      setInstructors(updatedInstructors);
     } catch (err: any) {
       setInviteErrorMsg(err.message || 'Meghívó küldése nem sikerült.');
     } finally {
       setInvitingInstructor(false);
+    }
+  };
+
+  const handleCopyInviteCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const handleResendInvitation = async (inv: PartnerInvitation) => {
+    try {
+      const res = await sendInvitationEmail(inv);
+      if (res.success) {
+        alert(`Meghívó e-mail sikeresen újraküldve a(z) ${inv.email} címre!`);
+      } else {
+        alert(`Meghívó azonosító kód: ${inv.code}. Használhatja a közvetlen kódmásolást is.`);
+      }
+    } catch (err: any) {
+      alert(`Újraküldés hiba: ${err.message || err}`);
+    }
+  };
+
+  const handleRevokeInvitation = async (invId: string) => {
+    if (!confirm('Biztosan vissza szeretné vonni ezt a meghívót?')) return;
+    try {
+      await revokeInvitation(invId);
+      if (partner) {
+        const updated = await listInvitations(partner.id);
+        setInvitations(updated);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Visszavonás nem sikerült.');
+    }
+  };
+
+  const handleDeleteInvitation = async (invId: string) => {
+    if (!confirm('Biztosan törölni szeretné ezt a meghívót a listából?')) return;
+    try {
+      await deleteInvitation(invId);
+      if (partner) {
+        const updated = await listInvitations(partner.id);
+        setInvitations(updated);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Törlés nem sikerült.');
+    }
+  };
+
+  const handleOpenEditInvitation = (inv: PartnerInvitation) => {
+    setEditingInvitation(inv);
+    setEditInviteEmail(inv.email);
+    setEditInviteExpiresAt(inv.expires_at ? inv.expires_at.split('T')[0] : '');
+    setEditInviteStatus(inv.status);
+  };
+
+  const handleSaveEditedInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInvitation || !partner) return;
+    setSavingEditInvite(true);
+    try {
+      const formattedExpires = editInviteExpiresAt ? new Date(editInviteExpiresAt).toISOString() : editingInvitation.expires_at;
+      await updateInvitation(editingInvitation.id, {
+        email: editInviteEmail.trim(),
+        status: editInviteStatus,
+        expires_at: formattedExpires,
+      });
+
+      const updated = await listInvitations(partner.id);
+      setInvitations(updated);
+      setEditingInvitation(null);
+    } catch (err: any) {
+      alert(err.message || 'Meghívó frissítése nem sikerült.');
+    } finally {
+      setSavingEditInvite(false);
     }
   };
 
@@ -293,6 +406,35 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       setAddingTrade(false);
     }
   };
+
+  function renderInvitationStatusBadge(status: 'active' | 'used' | 'revoked' | 'expired') {
+    switch (status) {
+      case 'active':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1 w-fit">
+            <Clock className="w-3.5 h-3.5" /> Aktív (Még nem aktiválta)
+          </span>
+        );
+      case 'used':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 w-fit">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Aktiválva / Regisztrált
+          </span>
+        );
+      case 'revoked':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 flex items-center gap-1 w-fit">
+            <AlertCircle className="w-3.5 h-3.5" /> Visszavonva
+          </span>
+        );
+      case 'expired':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-400 border border-slate-500/30 flex items-center gap-1 w-fit">
+            <Clock className="w-3.5 h-3.5" /> Lejárt
+          </span>
+        );
+    }
+  }
 
   if (loading) {
     return (
@@ -324,148 +466,144 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
             <button
               onClick={() => {
                 if (onNavigate) onNavigate('teacher');
-                else window.location.hash = '#teacher';
               }}
-              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-xl text-xs sm:text-sm transition-all shadow-lg flex items-center gap-2"
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/10"
             >
               <GraduationCap className="w-4 h-4" />
               Tanári Vezérlőpult Megnyitása
             </button>
           </div>
         </div>
-
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-3 mt-8 border-b border-slate-800">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`pb-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 flex items-center gap-2 ${
-              activeTab === 'profile'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            Iskola &amp; Kapcsolattartói Adatok
-          </button>
-          <button
-            onClick={() => setActiveTab('instructors')}
-            className={`pb-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 flex items-center gap-2 ${
-              activeTab === 'instructors'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <UserPlus className="w-4 h-4" />
-            Oktatók &amp; Tanárok Kezelése ({instructors.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`pb-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 flex items-center gap-2 ${
-              activeTab === 'overview'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            Iskolai Áttekintés &amp; Statisztika
-          </button>
-        </div>
       </div>
 
-      {/* SUCCESS / ERROR NOTIFICATIONS */}
+      {/* SUCCESS / ERROR ALERTS */}
       {successMsg && (
-        <div className="p-4 bg-emerald-950/80 border border-emerald-500/30 rounded-2xl text-emerald-300 text-sm font-semibold flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <span>{successMsg}</span>
-          </div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-400 hover:text-white text-sm">✕</button>
+        <div className="p-4 bg-emerald-950/80 border border-emerald-500/30 rounded-2xl text-emerald-300 text-xs font-bold flex items-center justify-between shadow-md">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {successMsg}
+          </span>
+          <button onClick={() => setSuccessMsg(null)} className="text-xs text-emerald-400 hover:text-white">✕</button>
         </div>
       )}
       {errorMsg && (
-        <div className="p-4 bg-red-950/80 border border-red-500/30 rounded-2xl text-red-300 text-sm font-semibold flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <span>{errorMsg}</span>
-          </div>
-          <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-white text-sm">✕</button>
+        <div className="p-4 bg-red-950/80 border border-red-500/30 rounded-2xl text-red-300 text-xs font-bold flex items-center justify-between shadow-md">
+          <span className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400" />
+            {errorMsg}
+          </span>
+          <button onClick={() => setErrorMsg(null)} className="text-xs text-red-400 hover:text-white">✕</button>
         </div>
       )}
 
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'profile'
+              ? 'bg-blue-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          Iskolai Alapadatok &amp; Szerkesztés
+        </button>
+
+        <button
+          onClick={() => setActiveTab('instructors')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'instructors'
+              ? 'bg-blue-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <UserPlus className="w-4 h-4" />
+          Oktatók &amp; Meghívók Kezelése ({instructors.length + invitations.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'overview'
+              ? 'bg-blue-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Szervezeti Áttekintés &amp; Statisztikák
+        </button>
+      </div>
+
       {/* TAB 1: SCHOOL PROFILE FORM */}
       {activeTab === 'profile' && (
-        <form onSubmit={handleSaveProfile} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
-          <div className="border-b border-slate-800 pb-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        <form onSubmit={handleSaveProfile} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl space-y-6">
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-blue-400" />
-              Oktatási Intézmény &amp; Kapcsolattartói Adatlap
-            </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Szerkessze az iskola hivatalos adatait, elérhetőségeit és a kapcsolattartó információit.
-            </p>
-          </div>
+              Intézményi Alapadatok
+            </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Intézmény Neve *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Iskola Megnevezése *
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Hivatalos Megnevezés / Hivatalos Cégnév
-              </label>
-              <input
-                type="text"
-                placeholder="pl. Budapesti Szakképzési Centrum..."
-                value={officialName}
-                onChange={(e) => setOfficialName(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Hivatalos Megnevezés (pl. Kft. / OM Azonosító)
+                </label>
+                <input
+                  type="text"
+                  value={officialName}
+                  onChange={(e) => setOfficialName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Intézmény Típusa
-              </label>
-              <input
-                type="text"
-                placeholder="pl. Szakképző Iskola, Gimnázium..."
-                value={partnerType}
-                onChange={(e) => setPartnerType(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Szervezet Típusa
+                </label>
+                <input
+                  type="text"
+                  value={partnerType}
+                  onChange={(e) => setPartnerType(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Weboldal URL
-              </label>
-              <input
-                type="url"
-                placeholder="https://..."
-                value={websiteUrl}
-                onChange={(e) => setWebsiteUrl(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
-              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Weboldal URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://iskola.hu"
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
             </div>
           </div>
 
           <div className="pt-4 border-t border-slate-800">
             <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
               <Mail className="w-4 h-4 text-blue-400" />
-              Kapcsolattartói Adatok
+              Kapcsolattartó Elérhetőségek
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Kapcsolattartó Neve *
@@ -481,11 +619,11 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Kapcsolattartó Beosztása
+                  Kapcsolattartó Titulusa / Beosztása
                 </label>
                 <input
                   type="text"
-                  placeholder="pl. Igazgatóhelyettes, Képzési vezető..."
+                  placeholder="pl. Igazgatóhelyettes / Szakmai Vezető"
                   value={contactPersonTitle}
                   onChange={(e) => setContactPersonTitle(e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm"
@@ -585,10 +723,10 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
         </form>
       )}
 
-      {/* TAB 2: INSTRUCTORS MANAGEMENT */}
+      {/* TAB 2: INSTRUCTORS & INVITATIONS MANAGEMENT */}
       {activeTab === 'instructors' && (
         <div className="space-y-8">
-          {/* Invite New Instructor Box */}
+          {/* Invite New Instructor Form */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-400" />
@@ -662,6 +800,111 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* Kiküldött Meghívók Listája */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-amber-400" />
+                  Kiküldött Oktatói Meghívók ({invitations.length})
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  A kiküldött meghívók státusza, egyedi kódja, másolása és szerkesztése.
+                </p>
+              </div>
+            </div>
+
+            {invitations.length === 0 ? (
+              <div className="text-center py-6 text-slate-400 text-sm">
+                Még nincs kiküldött meghívó a szervezetben.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="bg-slate-800/80 text-slate-400 uppercase text-xs">
+                    <tr>
+                      <th className="py-3 px-4 rounded-l-lg">Címzett E-mail</th>
+                      <th className="py-3 px-4">Meghívókód</th>
+                      <th className="py-3 px-4">Státusz</th>
+                      <th className="py-3 px-4">Kiküldve / Lejár</th>
+                      <th className="py-3 px-4 text-right rounded-r-lg">Műveletek</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {invitations.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-slate-800/40">
+                        <td className="py-3.5 px-4 font-semibold text-white">
+                          {inv.email}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2 font-mono text-xs">
+                            <span className="bg-slate-800 px-2 py-1 rounded text-amber-300 border border-slate-700 font-bold">
+                              {inv.code}
+                            </span>
+                            <button
+                              onClick={() => handleCopyInviteCode(inv.code)}
+                              className="p-1 text-slate-400 hover:text-white transition-colors"
+                              title="Kód másolása"
+                            >
+                              {copiedCode === inv.code ? (
+                                <Check className="w-4 h-4 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {renderInvitationStatusBadge(inv.status)}
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-slate-400">
+                          <div>{new Date(inv.created_at).toLocaleDateString('hu-HU')}</div>
+                          <div className="text-[11px] text-slate-500">
+                            Lejár: {new Date(inv.expires_at).toLocaleDateString('hu-HU')}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleResendInvitation(inv)}
+                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg border border-slate-700 transition-colors"
+                              title="Meghívó e-mail újraküldése"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditInvitation(inv)}
+                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg border border-slate-700 transition-colors"
+                              title="Meghívó szerkesztése"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            {inv.status === 'active' && (
+                              <button
+                                onClick={() => handleRevokeInvitation(inv.id)}
+                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-orange-400 rounded-lg border border-slate-700 transition-colors"
+                                title="Visszavonás"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteInvitation(inv.id)}
+                              className="p-1.5 bg-slate-800 hover:bg-rose-950/60 text-rose-400 rounded-lg border border-slate-700 hover:border-rose-800/40 transition-colors"
+                              title="Törlés"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Registered Instructors List */}
@@ -753,10 +996,90 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
                 <UserPlus className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-3xl font-extrabold text-white">{instructors.length}</span>
-                <p className="text-xs text-slate-400">Regisztrált Oktató</p>
+                <span className="text-3xl font-extrabold text-white">{instructors.length + invitations.length}</span>
+                <p className="text-xs text-slate-400">Összes Oktató / Meghívó</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT INVITATION MODAL */}
+      {editingInvitation && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-amber-400" />
+                Meghívó Szerkesztése
+              </h3>
+              <button
+                onClick={() => setEditingInvitation(null)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedInvitation} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Címzett E-mail Cím *
+                </label>
+                <input
+                  type="email"
+                  value={editInviteEmail}
+                  onChange={(e) => setEditInviteEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Meghívó Státusza
+                </label>
+                <select
+                  value={editInviteStatus}
+                  onChange={(e) => setEditInviteStatus(e.target.value as any)}
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+                >
+                  <option value="active">Aktív (Még nem aktiválta)</option>
+                  <option value="used">Aktiválva / Regisztrált</option>
+                  <option value="revoked">Visszavonva</option>
+                  <option value="expired">Lejárt</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Lejárati Dátum
+                </label>
+                <input
+                  type="date"
+                  value={editInviteExpiresAt}
+                  onChange={(e) => setEditInviteExpiresAt(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingInvitation(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                >
+                  Mégse
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEditInvite}
+                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5"
+                >
+                  {savingEditInvite ? 'Mentés...' : 'Mentés'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

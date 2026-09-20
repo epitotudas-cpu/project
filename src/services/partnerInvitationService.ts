@@ -282,7 +282,7 @@ export async function revokeInvitation(invitationId: string): Promise<boolean> {
 
 export async function updateInvitation(
   invitationId: string,
-  payload: { email?: string; organization_name?: string; organization_category?: string; expires_at?: string; status?: 'active' | 'revoked' }
+  payload: { email?: string; organization_name?: string; organization_category?: string; expires_at?: string; status?: 'active' | 'used' | 'revoked' | 'expired' }
 ): Promise<PartnerInvitation> {
   const { data, error } = await supabase
     .from('partner_invitations')
