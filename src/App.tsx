@@ -259,6 +259,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
   const { user } = useAuth();
   const [partnerView, setPartnerView] = useState<any>('dashboard');
   const [memberRole, setMemberRole] = useState<string | null>(null);
+  const [isSchoolCategory, setIsSchoolCategory] = useState(false);
   const [loadingRole, setLoadingRole] = useState(true);
 
   useEffect(() => {
@@ -268,16 +269,20 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
     }
     async function fetchMemberRole() {
       try {
-        // 1. Query partner_users table first
+        // 1. Query partner_users table first with partner category
         const { data: puData } = await supabase
           .from('partner_users')
-          .select('member_role')
+          .select('member_role, partner:partner_id(category, partner_type)')
           .eq('user_id', user!.id)
           .limit(1)
           .maybeSingle();
 
-        if (puData && puData.member_role) {
+        if (puData) {
           setMemberRole(puData.member_role);
+          const partnerObj = puData.partner as any;
+          if (partnerObj && (partnerObj.category === 'iskola' || partnerObj.partner_type === 'iskola')) {
+            setIsSchoolCategory(true);
+          }
           return;
         }
 
@@ -292,6 +297,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
 
           if (partnerByEmail && (partnerByEmail.category === 'iskola' || partnerByEmail.partner_type === 'iskola')) {
             setMemberRole('owner');
+            setIsSchoolCategory(true);
             return;
           }
         }
@@ -305,7 +311,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
   }, [user]);
 
   const isTeacher = memberRole === 'instructor';
-  const isSchoolAdmin = memberRole === 'owner' || memberRole === 'admin';
+  const isSchoolAdmin = (memberRole === 'owner' || memberRole === 'admin') && isSchoolCategory;
 
   if (loadingRole) {
     return (
@@ -316,7 +322,13 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
   }
 
   return (
-    <PartnerLayout onNavigate={onNavigate} activeView={partnerView} onNavigateView={setPartnerView} memberRole={memberRole}>
+    <PartnerLayout
+      onNavigate={onNavigate}
+      activeView={partnerView}
+      onNavigateView={setPartnerView}
+      memberRole={memberRole}
+      isSchoolCategory={isSchoolCategory}
+    >
       {partnerView === 'dashboard' && (
         isTeacher ? (
           <TeacherDashboardPage onNavigate={onNavigate} />

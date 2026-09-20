@@ -125,6 +125,10 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
     }
     return item;
   }).filter((item) => {
+    if (isTeacher || isSchoolAdmin) {
+      // Iskola / Tanar panels only display institution dashboard & profile
+      return item.id === 'dashboard' || item.id === 'partner_profile';
+    }
     if (item.id === 'dashboard') return true;
     return canRoleAccessModule(role, item.moduleId);
   });
@@ -238,7 +242,7 @@ export default function PartnerLayout({ onNavigate, activeView, onNavigateView, 
               <Menu className="w-5 h-5" />
             </button>
             <div className="min-w-0">
-              <span className="font-extrabold text-white text-xs sm:text-sm block truncate">Tanár panel</span>
+              <span className="font-extrabold text-white text-xs sm:text-sm block truncate">{sidebarTitle}</span>
               <span className="text-[10px] text-blue-400 font-bold block truncate">
                 {availableNavItems.find((i) => i.id === activeView)?.label || 'Vezérlőpult'}
               </span>
