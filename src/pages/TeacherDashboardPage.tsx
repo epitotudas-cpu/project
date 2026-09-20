@@ -792,9 +792,9 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
               </h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-white text-lg font-bold"
+                className="text-gray-400 hover:text-white p-1 rounded-lg transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -886,6 +886,8 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
             </form>
           </div>
         </div>
+      )}
+
       {/* EDIT CLASS MODAL */}
       {editingClass && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -897,9 +899,9 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
               </h3>
               <button
                 onClick={() => setEditingClass(null)}
-                className="text-gray-400 hover:text-white text-lg font-bold"
+                className="text-gray-400 hover:text-white p-1 rounded-lg transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
