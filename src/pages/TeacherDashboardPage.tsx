@@ -82,7 +82,7 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
       // 1. Find school partner_id where user is instructor or staff
       const { data: partnerUserData, error: puError } = await supabase
         .from('partner_users')
-        .select('partner_id, role, member_role, partner:partner_id(id, name)')
+        .select('partner_id, member_role, partner:partner_id(id, name)')
         .eq('user_id', user!.id)
         .limit(1)
         .maybeSingle();
