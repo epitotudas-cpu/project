@@ -242,7 +242,7 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
   const strength = passwordStrength(password);
 
   return (
-    <div className="min-h-screen bg-[#081B35] flex flex-col justify-between items-center px-4 py-10 text-white selection:bg-[#4165b4] selection:text-white">
+    <div className="min-h-screen bg-[#081B35] flex flex-col justify-between items-center px-3 sm:px-4 py-6 sm:py-10 text-white selection:bg-[#4165b4] selection:text-white max-w-full overflow-x-hidden">
       {/* Top Bar / Back button */}
       <div className="w-full max-w-lg flex items-center justify-between">
         <button
@@ -261,8 +261,8 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
       </div>
 
       {/* Centered Auth Card */}
-      <div className="w-full max-w-lg my-auto py-6">
-        <div className="bg-[#0C213E]/90 backdrop-blur-md border border-[#1E3A64] rounded-3xl p-6 md:p-10 shadow-2xl space-y-6">
+      <div className="w-full max-w-lg my-auto py-4 sm:py-6 overflow-hidden min-w-0">
+        <div className="bg-[#0C213E]/90 backdrop-blur-md border border-[#1E3A64] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 shadow-2xl space-y-6 overflow-hidden min-w-0">
           {/* Brand Logo & Header */}
           <div className="text-center space-y-3">
             <button
@@ -368,10 +368,10 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
                 <button
                   type="button"
                   onClick={() => setStep('invite_code_form')}
-                  className="inline-flex items-center gap-2 text-xs font-bold text-[#4165b4] hover:text-blue-300 transition-colors cursor-pointer bg-[#4165b4]/10 hover:bg-[#4165b4]/20 border border-[#4165b4]/30 px-4 py-2.5 rounded-xl w-full justify-center"
+                  className="inline-flex items-center gap-2 text-xs font-bold text-[#4165b4] hover:text-blue-300 transition-colors cursor-pointer bg-[#4165b4]/10 hover:bg-[#4165b4]/20 border border-[#4165b4]/30 px-3 sm:px-4 py-2.5 rounded-xl w-full justify-center text-center leading-normal"
                 >
-                  <Building2 size={16} />
-                  <span>Partner vagy iskola meghívással? (Meghívókóddal regisztrálok)</span>
+                  <Building2 size={16} className="shrink-0" />
+                  <span className="break-words">Partner vagy iskola meghívással? (Meghívókóddal regisztrálok)</span>
                 </button>
               </div>
             </div>
@@ -379,59 +379,59 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
 
           {/* STEP: INVITE CODE FORM */}
           {step === 'invite_code_form' && (
-            <div className="space-y-5">
-              <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-3">
+            <div className="space-y-5 min-w-0">
+              <div className="p-3.5 sm:p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-3 min-w-0">
                 <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                  <KeyRound size={16} className="text-[#4165b4]" />
-                  Adja meg a kapott meghívókódot:
+                  <KeyRound size={16} className="text-[#4165b4] shrink-0" />
+                  <span>Adja meg a kapott meghívókódot:</span>
                 </h3>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2.5 w-full">
                   <input
                     type="text"
                     value={inviteCodeInput}
                     onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
                     placeholder="pl. ET-INV-8K92X"
-                    className="flex-1 bg-[#0C213E] border border-[#1E3A64] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-sm text-white font-mono placeholder-gray-500 uppercase tracking-widest focus:outline-none"
+                    className="w-full sm:flex-1 min-w-0 bg-[#0C213E] border border-[#1E3A64] focus:border-[#4165b4] rounded-xl px-3.5 sm:px-4 py-2.5 text-sm text-white font-mono placeholder-gray-500 uppercase tracking-widest focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => handleVerifyInviteCode()}
                     disabled={inviteLoading || !inviteCodeInput.trim()}
-                    className="px-4 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-colors cursor-pointer shrink-0"
+                    className="w-full sm:w-auto px-4 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-colors cursor-pointer shrink-0 whitespace-nowrap text-center"
                   >
                     {inviteLoading ? 'Ellenőrzés...' : 'Kód ellenőrzése'}
                   </button>
                 </div>
 
                 {inviteError && (
-                  <p className="text-xs text-red-400 flex items-center gap-1 font-medium pt-1">
+                  <p className="text-xs text-red-400 flex items-center gap-1 font-medium pt-1 break-words">
                     <AlertCircle size={14} className="shrink-0" />
                     <span>{inviteError}</span>
                   </p>
                 )}
 
                 {validatedInvite?.valid && (
-                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2 text-xs">
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2 text-xs min-w-0">
                     <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                      <CheckCircle size={16} />
+                      <CheckCircle size={16} className="shrink-0" />
                       <span>Érvényes meghívó!</span>
                     </div>
-                    <div className="text-gray-300">
+                    <div className="text-gray-300 break-words">
                       Szervezet: <span className="text-white font-bold">{validatedInvite.partner_name}</span> ({validatedInvite.partner_category})
                     </div>
 
-                    <div className="pt-2 border-t border-emerald-500/20 flex flex-col gap-2">
+                    <div className="pt-2 border-t border-emerald-500/20 flex flex-col gap-2.5 w-full">
                       <button
                         type="button"
                         onClick={() => setStep('standard_form')}
-                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer text-center"
+                        className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs sm:text-sm transition-colors cursor-pointer text-center leading-snug break-words"
                       >
-                        Új fiók létrehozása ehhez a szervezethet ➔
+                        Új fiók létrehozása ehhez a szervezethez ➔
                       </button>
                       <button
                         type="button"
                         onClick={() => onNavigate('login')}
-                        className="w-full py-2 bg-[#1E3A64] hover:bg-[#284c80] text-gray-200 font-semibold rounded-lg text-xs transition-colors cursor-pointer text-center"
+                        className="w-full py-2.5 px-3 bg-[#1E3A64] hover:bg-[#284c80] text-gray-200 font-semibold rounded-lg text-xs sm:text-sm transition-colors cursor-pointer text-center leading-snug break-words"
                       >
                         Már van fiókom ➔ Bejelentkezés &amp; Meghívó Elfogadása
                       </button>
