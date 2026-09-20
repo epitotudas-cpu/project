@@ -14,6 +14,7 @@ import {
 import { fetchHeroStateFromCloud } from './services/heroImageService';
 import { fetchImpressumDataFromCloud } from './services/impressumService';
 import { supabase } from './lib/supabase';
+import { acceptInvitation } from './services/partnerInvitationService';
 
 // Dynamic Code Splitting (Lazy Load Subpages to Drastically Reduce Initial Bundle Size)
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
@@ -308,8 +309,41 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
           return;
         }
 
-        // 2. Fallback check: query partners table by contact_email matching user.email
+        // 2. Fallback check: query active partner_invitations by user email
         if (user?.email) {
+          const { data: invByEmail } = await supabase
+            .from('partner_invitations')
+            .select('code, partner_id, organization_category')
+            .ilike('email', user.email.trim())
+            .eq('status', 'active')
+            .gt('expires_at', new Date().toISOString())
+            .limit(1)
+            .maybeSingle();
+
+          if (invByEmail?.code) {
+            try {
+              const res = await acceptInvitation(invByEmail.code);
+              if (res?.partner_id) {
+                const { data: pRec } = await supabase
+                  .from('partners')
+                  .select('category, partner_type')
+                  .eq('id', res.partner_id)
+                  .maybeSingle();
+
+                setMemberRole(res.assigned_role || 'instructor');
+                if (pRec && isEdu(pRec.category, pRec.partner_type)) {
+                  setIsSchoolCategory(true);
+                } else if (isEdu(invByEmail.organization_category, null)) {
+                  setIsSchoolCategory(true);
+                }
+                return;
+              }
+            } catch (err) {
+              console.warn('Auto accept invitation notice:', err);
+            }
+          }
+
+          // 3. Fallback check: query partners table by contact_email matching user.email
           const { data: partnerByEmail } = await supabase
             .from('partners')
             .select('category, partner_type')
@@ -323,7 +357,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
             return;
           }
 
-          // 3. Fallback check: query partner_applications by email
+          // 4. Fallback check: query partner_applications by email
           const { data: appByEmail } = await supabase
             .from('partner_applications')
             .select('category')

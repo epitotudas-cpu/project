@@ -3,7 +3,7 @@ import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import * as authClient from '../lib/authClient';
 import * as userService from '../services/userService';
 import { acceptInvitation } from '../services/partnerInvitationService';
-import type { Profile } from '../lib/supabase';
+import { supabase, type Profile } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         if (session?.user) {
           loadProfile(session.user.id, session.user).finally(() => setLoading(false));
-          checkPendingInvitation();
+          checkPendingInvitation(session.user);
         } else {
           setLoading(false);
         }
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           if (session?.user) {
             await loadProfile(session.user.id, session.user);
-            await checkPendingInvitation();
+            await checkPendingInvitation(session.user);
           } else {
             setProfile(null);
           }
@@ -106,12 +106,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function checkPendingInvitation() {
+  async function checkPendingInvitation(userObj?: User | null) {
     try {
       const pendingCode = sessionStorage.getItem('pending_invite_code');
       if (pendingCode) {
         sessionStorage.removeItem('pending_invite_code');
         await acceptInvitation(pendingCode);
+      }
+
+      const activeEmail = userObj?.email || user?.email;
+      if (activeEmail) {
+        const { data: activeInv } = await supabase
+          .from('partner_invitations')
+          .select('code')
+          .ilike('email', activeEmail.trim())
+          .eq('status', 'active')
+          .gt('expires_at', new Date().toISOString())
+          .limit(1)
+          .maybeSingle();
+
+        if (activeInv?.code) {
+          await acceptInvitation(activeInv.code);
+        }
       }
     } catch (err) {
       console.warn('Pending invitation accept info:', err);
