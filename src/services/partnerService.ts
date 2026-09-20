@@ -1116,3 +1116,83 @@ export async function removeClassMaterial(
   return true;
 }
 
+/**
+ * O) Updates a school class (name, grade, active state).
+ */
+export async function updateSchoolClass(
+  classId: string,
+  payload: { name?: string; grade?: number | null; is_active?: boolean }
+): Promise<SchoolClass> {
+  const updateData: Record<string, any> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.name !== undefined) updateData.name = payload.name.trim();
+  if (payload.grade !== undefined) updateData.grade = payload.grade;
+  if (payload.is_active !== undefined) updateData.is_active = payload.is_active;
+
+  const { data, error } = await supabase
+    .from('school_classes')
+    .update(updateData)
+    .eq('id', classId)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'Osztály frissítése nem sikerült.');
+  }
+
+  return data as SchoolClass;
+}
+
+/**
+ * P) Deletes a school class.
+ */
+export async function deleteSchoolClass(classId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('school_classes')
+    .delete()
+    .eq('id', classId);
+
+  if (error) {
+    throw new Error(error.message || 'Osztály törlése nem sikerült.');
+  }
+
+  return true;
+}
+
+/**
+ * Q) Removes a student from a specific class (un-assigns student, preserves user account).
+ */
+export async function removeStudentFromClass(studentId: string, classId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('school_students')
+    .delete()
+    .eq('student_id', studentId)
+    .eq('class_id', classId);
+
+  if (error) {
+    throw new Error(error.message || 'Tanuló eltávolítása az osztályból nem sikerült.');
+  }
+
+  return true;
+}
+
+/**
+ * R) Removes a teacher membership from a school (deletes partner_users link, preserves user account).
+ */
+export async function removeTeacherFromSchool(partnerId: string, userId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('partner_users')
+    .delete()
+    .eq('partner_id', partnerId)
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(error.message || 'Oktató eltávolítása az iskolából nem sikerült.');
+  }
+
+  return true;
+}
+
+

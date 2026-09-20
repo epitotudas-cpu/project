@@ -33,7 +33,15 @@ export function isModerator(profile: Profile | null | undefined): boolean {
 }
 
 export function isIskola(profile: Profile | null | undefined): boolean {
-  return profile?.role === 'admin';
+  return profile?.role === 'admin' || profile?.role === 'school';
+}
+
+export function isTeacher(profile: Profile | null | undefined): boolean {
+  return profile?.role === 'admin' || profile?.role === 'teacher';
+}
+
+export function isTanar(profile: Profile | null | undefined): boolean {
+  return isTeacher(profile);
 }
 
 export function isSzakember(target?: any): boolean {

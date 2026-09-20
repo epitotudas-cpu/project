@@ -7,6 +7,7 @@ import {
   listSchoolInstructors,
   listStudentInvitationCodes,
   listSchoolStudents,
+  removeTeacherFromSchool,
   type ExtendedPartner,
   type StudentInvitationCode,
   type SchoolStudent,
@@ -404,6 +405,28 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
       alert(err.message || 'Szakma hozzárendelése nem sikerült.');
     } finally {
       setAddingTrade(false);
+    }
+  };
+
+  const handleRemoveInstructor = async (userId: string, fullName?: string | null) => {
+    if (!partner) return;
+    if (
+      !confirm(
+        `Biztosan el szeretné távolítani ${
+          fullName || 'az oktatót'
+        } az iskolai szervezetből?\n\nEz a művelet csak az iskolai tagságot szünteti meg, a felhasználó fiókját nem törli.`
+      )
+    )
+      return;
+
+    try {
+      await removeTeacherFromSchool(partner.id, userId);
+      const updatedInstructors = await listSchoolInstructors(partner.id);
+      setInstructors(updatedInstructors);
+      setSuccessMsg('Az oktató sikeresen el lett távolítva az iskolai szervezetből.');
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Oktató eltávolítása nem sikerült.');
     }
   };
 
@@ -946,12 +969,21 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={() => setSelectedInstructorForTrade(ins)}
-                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg border border-slate-700 transition-colors inline-flex items-center gap-1"
-                          >
-                            <Plus className="w-3.5 h-3.5" /> Új Szakma Hozzáadása
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setSelectedInstructorForTrade(ins)}
+                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg border border-slate-700 transition-colors inline-flex items-center gap-1"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> Új Szakma Hozzáadása
+                            </button>
+                            <button
+                              onClick={() => handleRemoveInstructor(ins.user_id, ins.full_name)}
+                              className="p-1.5 bg-slate-800 hover:bg-rose-950/60 text-rose-400 rounded-lg border border-slate-700 hover:border-rose-800/40 transition-colors"
+                              title="Oktató eltávolítása az iskolából"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

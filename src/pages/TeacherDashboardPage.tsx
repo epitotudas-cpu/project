@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase';
 import {
   listInstructorClasses,
   createSchoolClass,
+  updateSchoolClass,
+  deleteSchoolClass,
+  removeStudentFromClass,
   generateStudentInvitationCode,
   listSchoolStudents,
   listClassMaterials,
@@ -31,6 +34,9 @@ import {
   CheckSquare,
   Square,
   AlertCircle,
+  Edit3,
+  Trash2,
+  X,
 } from 'lucide-react';
 
 export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
@@ -58,12 +64,93 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
   const [generatingCode, setGeneratingCode] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
+  // Edit Class Form State
+  const [editingClass, setEditingClass] = useState<SchoolClass | null>(null);
+  const [editClassName, setEditClassName] = useState('');
+  const [editClassGrade, setEditClassGrade] = useState<number | ''>('');
+  const [savingEditClass, setSavingEditClass] = useState(false);
+  const [editClassError, setEditClassError] = useState<string | null>(null);
+
   // Material Management State
   const [activeTab, setActiveTab] = useState<'students' | 'materials'>('students');
   const [materialSearch, setMaterialSearch] = useState('');
   const [assignedMaterialIds, setAssignedMaterialIds] = useState<Set<string>>(new Set());
   const [savingMaterials, setSavingMaterials] = useState(false);
   const [materialSaveSuccess, setMaterialSaveSuccess] = useState(false);
+
+  const handleOpenEditClass = (cls: SchoolClass) => {
+    setEditingClass(cls);
+    setEditClassName(cls.name);
+    setEditClassGrade(cls.grade ?? '');
+    setEditClassError(null);
+  };
+
+  const handleSaveEditedClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClass) return;
+    if (!editClassName.trim()) {
+      setEditClassError('Kérjük, adja meg az osztály nevét!');
+      return;
+    }
+
+    setSavingEditClass(true);
+    setEditClassError(null);
+    try {
+      const updated = await updateSchoolClass(editingClass.id, {
+        name: editClassName.trim(),
+        grade: typeof editClassGrade === 'number' ? editClassGrade : null,
+      });
+
+      setClasses(classes.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+      if (selectedClass?.id === updated.id) {
+        setSelectedClass({ ...selectedClass, ...updated });
+      }
+      setEditingClass(null);
+    } catch (err: any) {
+      setEditClassError(err.message || 'Osztály frissítése nem sikerült.');
+    } finally {
+      setSavingEditClass(false);
+    }
+  };
+
+  const handleDeleteClass = async (classId: string, className: string) => {
+    if (!confirm(`Biztosan törölni szeretné a(z) "${className}" osztályt? A törlés nem vonható vissza.`)) return;
+
+    try {
+      await deleteSchoolClass(classId);
+      setClasses(classes.filter((c) => c.id !== classId));
+      if (selectedClassId === classId) {
+        setSelectedClassId(null);
+        setSelectedClass(null);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Osztály törlése nem sikerült.');
+    }
+  };
+
+  const handleRemoveStudentFromClass = async (studentId: string, fullName?: string | null) => {
+    if (!selectedClass) return;
+    if (
+      !confirm(
+        `Biztosan el szeretné távolítani ${
+          fullName || 'a tanulót'
+        } az osztályból?\n\nEz a művelet nem törli a diák fiókját, csak az erről az osztályról való beiratkozást szünteti meg.`
+      )
+    )
+      return;
+
+    try {
+      await removeStudentFromClass(studentId, selectedClass.id);
+      setClassStudents(classStudents.filter((st) => st.student_id !== studentId));
+      setClasses(
+        classes.map((c) =>
+          c.id === selectedClass.id ? { ...c, students_count: Math.max(0, (c.students_count || 1) - 1) } : c
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || 'Tanuló eltávolítása nem sikerült.');
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -411,13 +498,27 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-[#1F1F1F] flex items-center justify-between">
+                    <div className="pt-4 border-t border-[#1F1F1F] flex items-center gap-2">
                       <button
                         onClick={() => setSelectedClassId(cls.id)}
-                        className="w-full py-2.5 bg-[#1F1F1F] hover:bg-amber-500 hover:text-black text-gray-200 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+                        className="flex-1 py-2.5 bg-[#1F1F1F] hover:bg-amber-500 hover:text-black text-gray-200 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                       >
                         <BookOpen className="w-4 h-4" />
                         Osztály Megnyitása & Kezelése
+                      </button>
+                      <button
+                        onClick={() => handleOpenEditClass(cls)}
+                        className="p-2.5 bg-[#1F1F1F] hover:bg-[#262626] text-amber-400 rounded-xl transition-colors"
+                        title="Osztály szerkesztése"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClass(cls.id, cls.name)}
+                        className="p-2.5 bg-[#1F1F1F] hover:bg-rose-950/60 text-rose-400 rounded-xl transition-colors"
+                        title="Osztály törlése"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -450,7 +551,23 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
                         Szakma: {selectedClass.trade_id}
                       </span>
                     </div>
-                    <h2 className="text-3xl font-extrabold text-white">{selectedClass.name} Osztály</h2>
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-3xl font-extrabold text-white">{selectedClass.name} Osztály</h2>
+                      <button
+                        onClick={() => handleOpenEditClass(selectedClass)}
+                        className="p-2 bg-[#1F1F1F] hover:bg-[#262626] text-amber-400 rounded-lg transition-colors"
+                        title="Osztály szerkesztése"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClass(selectedClass.id, selectedClass.name)}
+                        className="p-2 bg-[#1F1F1F] hover:bg-rose-950/60 text-rose-400 rounded-lg transition-colors"
+                        title="Osztály törlése"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Active Code Box */}
@@ -539,7 +656,8 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
                           <th className="py-3 px-4 rounded-l-lg">Tanuló Neve</th>
                           <th className="py-3 px-4">E-mail Cím</th>
                           <th className="py-3 px-4">Csatlakozott</th>
-                          <th className="py-3 px-4 rounded-r-lg">Státusz</th>
+                          <th className="py-3 px-4">Státusz</th>
+                          <th className="py-3 px-4 text-right rounded-r-lg">Műveletek</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#1F1F1F]">
@@ -556,6 +674,15 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
                               <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md">
                                 Aktív
                               </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <button
+                                onClick={() => handleRemoveStudentFromClass(st.student_id, st.profiles?.full_name)}
+                                className="p-1.5 bg-[#1F1F1F] hover:bg-rose-950/60 text-rose-400 rounded-lg border border-[#262626] transition-colors"
+                                title="Tanuló eltávolítása az osztályból"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -753,6 +880,78 @@ export const TeacherDashboardPage: React.FC<{ onNavigate?: (page: string) => voi
                       <Plus className="w-5 h-5" />
                       Létrehozás & Kód Generálása
                     </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      {/* EDIT CLASS MODAL */}
+      {editingClass && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-amber-500" />
+                Osztály Adatainak Módosítása
+              </h3>
+              <button
+                onClick={() => setEditingClass(null)}
+                className="text-gray-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {editClassError && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl">
+                {editClassError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEditedClass} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                  Osztály Neve *
+                </label>
+                <input
+                  type="text"
+                  value={editClassName}
+                  onChange={(e) => setEditClassName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                  Évfolyam
+                </label>
+                <input
+                  type="number"
+                  value={editClassGrade}
+                  onChange={(e) => setEditClassGrade(e.target.value ? parseInt(e.target.value) : '')}
+                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-sm"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingClass(null)}
+                  className="px-4 py-2.5 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Mégse
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEditClass}
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-xl transition-all flex items-center gap-2"
+                >
+                  {savingEditClass ? (
+                    <div className="w-5 h-5 border-2 border-black border-r-transparent animate-spin rounded-full" />
+                  ) : (
+                    'Mentés'
                   )}
                 </button>
               </div>
