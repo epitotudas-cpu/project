@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { getInvitationInfo, type InvitationInfoResult } from '../services/partnerInvitationService';
+import { getStudentCodeInfo } from '../services/partnerService';
 import { checkEmailExists } from '../services/userService';
 
 interface RegisterPageProps {
@@ -142,16 +143,40 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
     setInviteError(null);
 
     try {
+      // 1. Try student class invitation code first (get_student_code_info)
+      const studentRes = await getStudentCodeInfo(code);
+      if (studentRes.valid) {
+        const info: InvitationInfoResult = {
+          valid: true,
+          code: studentRes.code || code,
+          partner_name: studentRes.school_name || 'Oktatási Intézmény',
+          partner_category: studentRes.class_name
+            ? `${studentRes.class_name} osztály (${studentRes.trade_id || 'Képzés'})`
+            : `Oktató: ${studentRes.instructor_name || 'Oktató'} (${studentRes.trade_id || 'Képzés'})`,
+        };
+        setValidatedInvite(info);
+        setUserType('tanulo');
+        try {
+          sessionStorage.setItem('pending_student_invite_code', studentRes.code || code);
+          sessionStorage.setItem('pending_invite_code', studentRes.code || code);
+        } catch {}
+        return;
+      }
+
+      // 2. Fallback to partner / staff invitation code (get_partner_invitation_info)
       const result = await getInvitationInfo(code);
       if (!result.valid) {
-        setInviteError(result.error || 'Érvénytelen vagy lejárt meghívókód.');
+        setInviteError(
+          studentRes.error && !studentRes.error.includes('Érvénytelen')
+            ? studentRes.error
+            : result.error || 'Érvénytelen vagy lejárt meghívókód.'
+        );
         setValidatedInvite(null);
       } else {
         setValidatedInvite(result);
         setUserType('tanulo');
         try {
           sessionStorage.setItem('pending_invite_code', result.code || code);
-          sessionStorage.setItem('pending_student_invite_code', result.code || code);
         } catch {}
       }
     } catch (err) {

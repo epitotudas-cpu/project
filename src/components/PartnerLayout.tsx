@@ -17,10 +17,25 @@ import {
   Menu,
   CheckCircle2,
   GraduationCap,
+  Users,
+  BookOpen,
+  Layers,
+  CheckSquare,
+  FileCheck,
+  TrendingUp,
+  User,
 } from 'lucide-react';
 
 export type PartnerView =
   | 'dashboard'
+  | 'classes'
+  | 'students'
+  | 'materials'
+  | 'package_builder'
+  | 'assigned_materials'
+  | 'tests'
+  | 'progress'
+  | 'settings'
   | 'partner_profile'
   | 'partner_offers'
   | 'partner_products'
@@ -116,34 +131,43 @@ export default function PartnerLayout({
     ? 'Iskolai Adminisztrátor'
     : 'Partner';
 
+  const teacherNavItems: Array<{ id: PartnerView; moduleId: string; label: string; icon: any }> = [
+    { id: 'dashboard', moduleId: 'partner_profile', label: 'Áttekintés', icon: LayoutDashboard },
+    { id: 'classes', moduleId: 'partner_profile', label: 'Osztályaim', icon: GraduationCap },
+    { id: 'students', moduleId: 'partner_profile', label: 'Tanulóim', icon: Users },
+    { id: 'materials', moduleId: 'learning', label: 'Tananyagok', icon: BookOpen },
+    { id: 'package_builder', moduleId: 'learning', label: 'Tananyag összeállítása', icon: Layers },
+    { id: 'assigned_materials', moduleId: 'learning', label: 'Kiosztott tananyagok', icon: CheckSquare },
+    { id: 'tests', moduleId: 'learning', label: 'Tesztek', icon: FileCheck },
+    { id: 'progress', moduleId: 'partner_stats', label: 'Előrehaladás', icon: TrendingUp },
+    { id: 'settings', moduleId: 'partner_profile', label: 'Saját beállítások', icon: User },
+  ];
+
   // Filter nav items based on role
-  const availableNavItems = PARTNER_NAV_ITEMS.map((item) => {
-    if (item.id === 'dashboard') {
-      return {
-        ...item,
-        label: isTeacher ? 'Osztályok & Tananyagok' : isSchoolAdmin ? 'Iskolai Áttekintés' : 'Partner Áttekintés',
-        icon: isTeacher ? GraduationCap : isSchoolAdmin ? LayoutDashboard : Building2,
-      };
-    }
-    if (item.id === 'partner_profile' && isSchoolAdmin) {
-      return {
-        ...item,
-        label: 'Iskola Adatai & Tanárok',
-      };
-    }
-    return item;
-  }).filter((item) => {
-    if (isTeacher) {
-      // Teacher panel only uses dashboard (TeacherDashboardPage for classes, students & materials)
-      return item.id === 'dashboard';
-    }
-    if (isSchoolAdmin) {
-      // School Admin panel uses dashboard & partner_profile (school details, teachers, invitations)
-      return item.id === 'dashboard' || item.id === 'partner_profile';
-    }
-    if (item.id === 'dashboard') return true;
-    return canRoleAccessModule(role, item.moduleId);
-  });
+  const availableNavItems = isTeacher
+    ? teacherNavItems
+    : PARTNER_NAV_ITEMS.map((item) => {
+        if (item.id === 'dashboard') {
+          return {
+            ...item,
+            label: isSchoolAdmin ? 'Iskolai Áttekintés' : 'Partner Áttekintés',
+            icon: isSchoolAdmin ? LayoutDashboard : Building2,
+          };
+        }
+        if (item.id === 'partner_profile' && isSchoolAdmin) {
+          return {
+            ...item,
+            label: 'Iskola Adatai & Tanárok',
+          };
+        }
+        return item;
+      }).filter((item) => {
+        if (isSchoolAdmin) {
+          return item.id === 'dashboard' || item.id === 'partner_profile';
+        }
+        if (item.id === 'dashboard') return true;
+        return canRoleAccessModule(role, item.moduleId);
+      });
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
@@ -194,7 +218,11 @@ export default function PartnerLayout({
               <button
                 key={item.id}
                 onClick={() => {
-                  onNavigateView(item.id);
+                  if (item.id === 'settings') {
+                    onNavigate('profile');
+                  } else {
+                    onNavigateView(item.id);
+                  }
                   setMobileOpen(false);
                 }}
                 className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold transition-all ${

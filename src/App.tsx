@@ -391,6 +391,24 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
     );
   }
 
+  if (isTeacher) {
+    return (
+      <PartnerLayout
+        onNavigate={onNavigate}
+        activeView={partnerView}
+        onNavigateView={setPartnerView}
+        memberRole={memberRole}
+        isSchoolCategory={isSchoolCategory}
+      >
+        <TeacherDashboardPage
+          activeView={partnerView}
+          onNavigateView={setPartnerView}
+          onNavigate={onNavigate}
+        />
+      </PartnerLayout>
+    );
+  }
+
   return (
     <PartnerLayout
       onNavigate={onNavigate}
@@ -400,18 +418,14 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
       isSchoolCategory={isSchoolCategory}
     >
       {partnerView === 'dashboard' && (
-        isTeacher ? (
-          <TeacherDashboardPage onNavigate={onNavigate} />
-        ) : isSchoolAdmin ? (
+        isSchoolAdmin ? (
           <PartnerSchoolProfilePage initialTab="overview" onNavigateView={setPartnerView} onNavigate={onNavigate} />
         ) : (
           <PartnerDashboardPage onNavigateView={setPartnerView} />
         )
       )}
       {partnerView === 'partner_profile' && (
-        isTeacher ? (
-          <TeacherDashboardPage onNavigate={onNavigate} />
-        ) : isSchoolAdmin ? (
+        isSchoolAdmin ? (
           <PartnerSchoolProfilePage initialTab="profile" onNavigateView={setPartnerView} onNavigate={onNavigate} />
         ) : (
           <PartnerDashboardPage onNavigateView={setPartnerView} />
