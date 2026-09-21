@@ -108,7 +108,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     onNavigate('home');
   };
 
-  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Fiók';
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Fiók';
   const isAdmin = profile?.role === 'admin';
   const isEditor = profile?.role === 'editor';
   const userType = user?.user_metadata?.user_type;

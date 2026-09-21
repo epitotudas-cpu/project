@@ -11,7 +11,7 @@ interface CommunityCommentsSectionProps {
 }
 
 export default function CommunityCommentsSection({ contentType, contentId, altContentId, title }: CommunityCommentsSectionProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [guestName, setGuestName] = useState('');
   const [newComment, setNewComment] = useState('');
@@ -49,7 +49,7 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
     if (!newComment.trim()) return;
 
     const userName = user
-      ? user.user_metadata?.full_name || user.email?.split('@')[0] || 'Szakmai Felhasználó'
+      ? profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Szakmai Felhasználó'
       : guestName.trim() || 'Vendég Látogató';
     const userId = user?.id || 'guest';
 

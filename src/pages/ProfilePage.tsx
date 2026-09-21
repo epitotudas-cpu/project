@@ -105,7 +105,7 @@ const INTEREST_TOPICS = [
 ];
 
 export default function ProfilePage({ onNavigate }: ProfilePageProps) {
-  const { user, signOut, updatePassword } = useAuth();
+  const { user, profile: authProfile, signOut, updatePassword, updateProfile } = useAuth();
   const [profile, setProfile] = useState<UserDetailedProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -392,9 +392,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       try {
         setLoading(true);
         const userType = user.user_metadata?.user_type;
-        const data = await getUserDetailedProfile(user.id, user.email, user.user_metadata?.full_name, 'user', userType);
+        const initialName = authProfile?.full_name || user.user_metadata?.full_name;
+        const data = await getUserDetailedProfile(user.id, user.email, initialName, 'user', userType);
         setProfile(data);
-        setFullName(data.fullName || '');
+        setFullName(data.fullName || initialName || '');
         const isPartnerOrOktato = isPartnerContact || userType === 'partner' || userType === 'oktato' || userType === 'iskola';
         const effectiveSpecialization = isPartnerOrOktato
           ? (data.specialization === 'Tanuló' ? '' : (data.specialization || ''))
@@ -425,7 +426,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       }
     }
     loadData();
-  }, [user]);
+  }, [user, authProfile]);
 
   // Profile Completion Percentage Calculation (Section 22)
   // Profile Completion Calculation (Subtle status badge)
@@ -451,8 +452,19 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         ? 'Tanuló'
         : specialization;
 
+      const trimmedName = fullName.trim();
+
+      // 1. Update AuthContext, Supabase profiles table, and Supabase Auth user_metadata
+      if (trimmedName && trimmedName !== (authProfile?.full_name || '')) {
+        const authRes = await updateProfile({ full_name: trimmedName });
+        if (authRes.error) {
+          console.warn('Hiba az auth profil frissítésekor:', authRes.error);
+        }
+      }
+
+      // 2. Update detailed profile in userProfileService
       const updated = await updateUserDetailedProfile(user.id, {
-        fullName,
+        fullName: trimmedName,
         specialization: targetSpecialization,
         companyName,
         bio,

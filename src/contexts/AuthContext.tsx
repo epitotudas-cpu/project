@@ -299,8 +299,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (data: { full_name?: string }) => {
     if (!user) return { error: 'Nincs bejelentkezett felhasználó.' };
     try {
-      await userService.updateProfile(user.id, { full_name: data.full_name });
-      await loadProfile(user.id);
+      if (data.full_name !== undefined) {
+        await userService.updateProfile(user.id, { full_name: data.full_name });
+        const { data: updatedAuthUser, error: authErr } = await authClient.updateUser({ data: { full_name: data.full_name } });
+        if (!authErr && updatedAuthUser?.user) {
+          setUser(updatedAuthUser.user);
+        }
+      }
+      await loadProfile(user.id, user);
       return {};
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Profil frissítése sikertelen.';

@@ -27,6 +27,9 @@ export async function getUserDetailedProfile(
 ): Promise<UserDetailedProfile> {
   if (IN_MEMORY_DETAILED_PROFILES.has(userId)) {
     const cached = IN_MEMORY_DETAILED_PROFILES.get(userId)!;
+    if (fullName && fullName.trim() !== '' && fullName !== cached.fullName) {
+      cached.fullName = fullName;
+    }
     const effectiveType = userType || cached.userType;
     if (effectiveType) {
       cached.userType = effectiveType;

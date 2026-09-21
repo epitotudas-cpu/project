@@ -29,7 +29,7 @@ export async function resetPasswordForEmail(email: string, options: { redirectTo
   return supabase.auth.resetPasswordForEmail(email, options);
 }
 
-export async function updateUser(payload: { password?: string }) {
+export async function updateUser(payload: { password?: string; data?: Record<string, unknown> }) {
   return supabase.auth.updateUser(payload);
 }
 
