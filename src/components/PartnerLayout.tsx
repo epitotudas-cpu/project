@@ -122,7 +122,7 @@ export default function PartnerLayout({
       return {
         ...item,
         label: isTeacher ? 'Osztályok & Tananyagok' : isSchoolAdmin ? 'Iskolai Áttekintés' : 'Partner Áttekintés',
-        icon: isTeacher ? GraduationCap : Building2,
+        icon: isTeacher ? GraduationCap : isSchoolAdmin ? LayoutDashboard : Building2,
       };
     }
     if (item.id === 'partner_profile' && isSchoolAdmin) {

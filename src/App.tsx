@@ -403,7 +403,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
         isTeacher ? (
           <TeacherDashboardPage onNavigate={onNavigate} />
         ) : isSchoolAdmin ? (
-          <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />
+          <PartnerSchoolProfilePage initialTab="overview" onNavigateView={setPartnerView} onNavigate={onNavigate} />
         ) : (
           <PartnerDashboardPage onNavigateView={setPartnerView} />
         )
@@ -412,7 +412,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
         isTeacher ? (
           <TeacherDashboardPage onNavigate={onNavigate} />
         ) : isSchoolAdmin ? (
-          <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />
+          <PartnerSchoolProfilePage initialTab="profile" onNavigateView={setPartnerView} onNavigate={onNavigate} />
         ) : (
           <PartnerDashboardPage onNavigateView={setPartnerView} />
         )

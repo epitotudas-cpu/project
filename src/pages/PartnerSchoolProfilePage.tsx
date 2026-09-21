@@ -45,11 +45,12 @@ import {
 } from 'lucide-react';
 
 interface PartnerSchoolProfilePageProps {
+  initialTab?: 'profile' | 'instructors' | 'overview';
   onNavigateView?: (view: any) => void;
   onNavigate?: (page: string) => void;
 }
 
-export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: PartnerSchoolProfilePageProps) {
+export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateView, onNavigate }: PartnerSchoolProfilePageProps) {
   void onNavigateView;
   const { user, profile: userProfile } = useAuth();
 
@@ -60,7 +61,13 @@ export function PartnerSchoolProfilePage({ onNavigateView, onNavigate }: Partner
 
   // Partner / School State
   const [partner, setPartner] = useState<ExtendedPartner | null>(null);
-  const [activeTab, setActiveTab] = useState<'profile' | 'instructors' | 'overview'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'instructors' | 'overview'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // School Profile Form Fields
   const [name, setName] = useState('');
