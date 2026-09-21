@@ -371,14 +371,6 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
             return;
           }
         }
-
-        // 4. Fallback check: check user_metadata.user_type
-        const userType = user?.user_metadata?.user_type;
-        if (userType === 'iskola' || userType === 'oktato') {
-          setMemberRole('owner');
-          setIsSchoolCategory(true);
-          return;
-        }
       } catch (err) {
         console.warn('Error fetching member role in App.tsx:', err);
       } finally {
@@ -388,7 +380,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
     fetchMemberRole();
   }, [user]);
 
-  const isTeacher = memberRole === 'instructor' || memberRole === 'member' || memberRole === 'teacher';
+  const isTeacher = memberRole === 'instructor';
   const isSchoolAdmin = isSchoolCategory && (memberRole === 'owner' || memberRole === 'admin');
 
   if (loadingRole) {
@@ -417,7 +409,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
         )
       )}
       {partnerView === 'partner_profile' && (
-        isSchoolAdmin || isTeacher ? (
+        isTeacher ? (
+          <TeacherDashboardPage onNavigate={onNavigate} />
+        ) : isSchoolAdmin ? (
           <PartnerSchoolProfilePage onNavigateView={setPartnerView} onNavigate={onNavigate} />
         ) : (
           <PartnerDashboardPage onNavigateView={setPartnerView} />

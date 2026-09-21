@@ -112,23 +112,15 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const isAdmin = profile?.role === 'admin';
   const isEditor = profile?.role === 'editor';
   const userType = user?.user_metadata?.user_type;
-  const fullNameLower = (profile?.full_name || '').toLowerCase();
   const isPartner =
     profile?.role === 'partner' ||
+    profile?.role === 'school' ||
+    profile?.role === 'teacher' ||
     userType === 'partner' ||
     userType === 'iskola' ||
     userType === 'oktato' ||
-    fullNameLower.includes('tanár') ||
-    fullNameLower.includes('oktató') ||
-    fullNameLower.includes('kapcsolattartó') ||
-    fullNameLower.includes('teszt') ||
-    Boolean(user?.email?.includes('partner'));
-  const isTeacher =
-    userType === 'oktato' ||
-    fullNameLower.includes('tanár') ||
-    fullNameLower.includes('oktató') ||
-    fullNameLower.includes('teszt') ||
-    isPartner;
+    Boolean(user);
+  const isTeacher = profile?.role === 'teacher' || userType === 'oktato';
 
   const isSubItemActive = (subPage: string, pageState: string, loc: { pathname: string; search: string; hash: string }): boolean => {
     const { pathname, search, hash } = loc;

@@ -99,7 +99,7 @@ export default function PartnerLayout({
   }
 
   const role = profile?.role || 'partner';
-  const isTeacher = memberRole === 'instructor' || memberRole === 'member' || memberRole === 'teacher';
+  const isTeacher = memberRole === 'instructor';
   const isSchoolAdmin = Boolean(isSchoolCategory) && (memberRole === 'owner' || memberRole === 'admin');
 
   const sidebarTitle = isTeacher
@@ -116,7 +116,7 @@ export default function PartnerLayout({
     ? 'Iskolai Adminisztrátor'
     : 'Partner';
 
-  // Filter nav items based on admin permissions assigned to Partner
+  // Filter nav items based on role
   const availableNavItems = PARTNER_NAV_ITEMS.map((item) => {
     if (item.id === 'dashboard') {
       return {
@@ -125,16 +125,20 @@ export default function PartnerLayout({
         icon: isTeacher ? GraduationCap : Building2,
       };
     }
-    if (item.id === 'partner_profile' && (isTeacher || isSchoolAdmin)) {
+    if (item.id === 'partner_profile' && isSchoolAdmin) {
       return {
         ...item,
-        label: isTeacher ? 'Profil Beállítások' : 'Iskola Adatai & Tanárok',
+        label: 'Iskola Adatai & Tanárok',
       };
     }
     return item;
   }).filter((item) => {
-    if (isTeacher || isSchoolAdmin) {
-      // Iskola / Tanar panels only display institution dashboard & profile
+    if (isTeacher) {
+      // Teacher panel only uses dashboard (TeacherDashboardPage for classes, students & materials)
+      return item.id === 'dashboard';
+    }
+    if (isSchoolAdmin) {
+      // School Admin panel uses dashboard & partner_profile (school details, teachers, invitations)
       return item.id === 'dashboard' || item.id === 'partner_profile';
     }
     if (item.id === 'dashboard') return true;
