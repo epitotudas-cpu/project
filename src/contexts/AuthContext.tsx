@@ -253,6 +253,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data?.session || (data?.user && !data.user.email_confirmed_at)) {
       await authClient.signOut();
     }
+
+    // Trigger Resend Edge Function delivery to ensure confirmation email reaches user's inbox
+    authClient.sendVerificationEmailViaResend(trimmedEmail, fullName).catch((err) => {
+      console.warn('Resend verification email dispatch notice:', err);
+    });
+
     return {};
   };
 
