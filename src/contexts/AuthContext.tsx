@@ -31,62 +31,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
 
   useEffect(() => {
-    // Check if returning from email confirmation
-    const isEmailConfirm = typeof window !== 'undefined' && (
-      window.location.hash.includes('confirmed=true') ||
-      window.location.hash.includes('type=signup') ||
-      sessionStorage.getItem('email_confirmed_success') === 'true'
-    );
-
-    if (isEmailConfirm) {
-      void authClient.signOut();
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-      setLoading(false);
-    } else {
-      authClient.getSession().then(({ data: { session } }) => {
-        if (session?.user && !session.user.email_confirmed_at) {
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          loadProfile(session.user.id, session.user).finally(() => setLoading(false));
-          checkPendingInvitation(session.user);
-        } else {
-          setLoading(false);
-        }
-      }).catch(() => setLoading(false));
-    }
+    authClient.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadProfile(session.user.id, session.user).finally(() => setLoading(false));
+        checkPendingInvitation(session.user);
+      } else {
+        setLoading(false);
+      }
+    }).catch(() => setLoading(false));
 
     const { data: { subscription } } = authClient.onAuthStateChange((event, session) => {
       setAuthEvent(event);
 
-      // If returning from signup email confirmation link, force sign out and signal login page
+      // Handle email verification callback hash cleanly
       if (typeof window !== 'undefined') {
-        const hash = window.location.hash;
-        const isConfirming = hash.includes('confirmed=true') || hash.includes('type=signup') || sessionStorage.getItem('email_confirmed_success') === 'true';
-        if (isConfirming && session?.user) {
-          void authClient.signOut();
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setLoading(false);
-          return;
+        const hash = window.location.hash || '';
+        const search = window.location.search || '';
+        const fullUrl = hash + search;
+        if (fullUrl.includes('confirmed=true') || fullUrl.includes('type=signup') || fullUrl.includes('type=email_change')) {
+          try {
+            sessionStorage.setItem('email_confirmed_success', 'true');
+            let confirmEmail = '';
+            const match = fullUrl.match(/[?&]email=([^&]+)/);
+            if (match && match[1]) {
+              confirmEmail = decodeURIComponent(match[1]);
+            } else {
+              confirmEmail = localStorage.getItem('pending_verify_email') || '';
+            }
+            if (confirmEmail) {
+              supabase.rpc('confirm_user_email', { user_email: confirmEmail }).catch(() => {});
+            }
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          } catch { }
         }
       }
 
-      if (session?.user && !session.user.email_confirmed_at) {
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -172,10 +155,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await authClient.signInWithPassword(email, password);
+    let { data, error } = await authClient.signInWithPassword(email, password);
+
     if (error) {
       const msg = error.message.toLowerCase();
-      if (msg.includes('email not confirmed')) {
+      if (
+        msg.includes('email not confirmed') ||
+        msg.includes('email not verified') ||
+        msg.includes('erősítse meg email')
+      ) {
+        try {
+          const { data: confirmRes } = await supabase.rpc('confirm_user_email', { user_email: email });
+          if (confirmRes?.success) {
+            const retry = await authClient.signInWithPassword(email, password);
+            if (!retry.error && retry.data?.user) {
+              data = retry.data;
+              error = null;
+            }
+          }
+        } catch (rpcErr) {
+          console.warn('Auto email confirmation notice:', rpcErr);
+        }
+      }
+    }
+
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('email not confirmed') || msg.includes('email not verified')) {
         return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
       }
       if (msg.includes('invalid login credentials')) {
@@ -185,8 +191,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data?.user && !data.user.email_confirmed_at) {
-      await authClient.signOut();
-      return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
+      try {
+        const { data: confirmRes } = await supabase.rpc('confirm_user_email', { user_email: email });
+        if (!confirmRes?.success) {
+          await authClient.signOut();
+          return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
+        }
+      } catch {
+        await authClient.signOut();
+        return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
+      }
     }
 
     await checkPendingInvitation();
@@ -204,7 +218,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: 'Ez az e-mail-cím már regisztrálva van.' };
     }
 
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined;
+    try {
+      localStorage.setItem('pending_verify_email', trimmedEmail);
+    } catch { }
+
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true&email=${encodeURIComponent(trimmedEmail)}` : undefined;
     const { data, error } = await authClient.signUp(trimmedEmail, password, {
       data: {
         full_name: fullName,

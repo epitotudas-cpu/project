@@ -35,7 +35,7 @@ export async function updateUser(payload: { password?: string; data?: Record<str
 
 export async function sendVerificationEmailViaResend(email: string, fullName?: string) {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://epitotudas.hu';
-  const confirmUrl = `${origin}/#confirmed=true`;
+  const confirmUrl = `${origin}/#confirmed=true&email=${encodeURIComponent(email)}`;
   const subject = 'ÉpítőTudás – E-mail cím megerősítése';
 
   const html = `
@@ -87,7 +87,7 @@ export async function resendVerificationEmail(email: string, fullName?: string) 
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined,
+      emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true&email=${encodeURIComponent(email)}` : undefined,
     },
   });
 
