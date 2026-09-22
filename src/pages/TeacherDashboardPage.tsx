@@ -94,8 +94,10 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   // New Class Form State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newClassName, setNewClassName] = useState('');
-  const [newClassGrade, setNewClassGrade] = useState<number | ''>(10);
   const [newClassTrade, setNewClassTrade] = useState('');
+  const [userRole, setUserRole] = useState<string>('instructor');
+  const [schoolInstructors, setSchoolInstructors] = useState<{ id: string; full_name: string }[]>([]);
+  const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [submittingClass, setSubmittingClass] = useState(false);
 
@@ -116,7 +118,6 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   // Edit Class Form State
   const [editingClass, setEditingClass] = useState<SchoolClass | null>(null);
   const [editClassName, setEditClassName] = useState('');
-  const [editClassGrade, setEditClassGrade] = useState<number | ''>('');
   const [savingEditClass, setSavingEditClass] = useState(false);
   const [editClassError, setEditClassError] = useState<string | null>(null);
 
@@ -169,6 +170,9 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       }
 
       const partnerId = partnerUserData.partner_id;
+      setUserRole(partnerUserData.member_role || 'instructor');
+      setSelectedInstructorId(user!.id);
+
       let partnerName = 'Iskola / Szervezet';
       if (partnerId) {
         const { data: pRec } = await supabase
@@ -181,6 +185,23 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         }
       }
       setSchoolInfo({ id: partnerId, name: partnerName });
+
+      // Fetch active instructors if user is school admin/contact
+      if (partnerUserData.member_role === 'school_admin' || partnerUserData.member_role === 'owner' || partnerUserData.member_role === 'partner_admin') {
+        const { data: instData } = await supabase
+          .from('partner_users')
+          .select('user_id, profiles:user_id(id, full_name)')
+          .eq('partner_id', partnerId);
+        if (instData) {
+          const mapped = instData
+            .map((i: any) => ({
+              id: i.user_id,
+              full_name: i.profiles?.full_name || i.user_id,
+            }))
+            .filter((i: any) => i.id);
+          setSchoolInstructors(mapped);
+        }
+      }
 
       // 2. Fetch instructor trades
       const { data: tradesData } = await supabase
@@ -232,7 +253,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     e.preventDefault();
     if (!schoolInfo || !user) return;
     if (!newClassName.trim()) {
-      setCreateError('Kérjük, adja meg az osztály nevét (pl. 10.A)!');
+      setCreateError('Kérjük, adja meg az osztály megnevezését (pl. 10.A)!');
       return;
     }
     if (!newClassTrade) {
@@ -243,20 +264,22 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     setSubmittingClass(true);
     setCreateError(null);
     try {
+      const targetInstructorId = (userRole !== 'instructor' && selectedInstructorId) ? selectedInstructorId : user.id;
+
       // 1. Create Class
       const newClass = await createSchoolClass({
         schoolId: schoolInfo.id,
-        instructorId: user.id,
+        instructorId: targetInstructorId,
         tradeId: newClassTrade,
         name: newClassName.trim(),
-        grade: typeof newClassGrade === 'number' ? newClassGrade : null,
+        grade: null,
       });
 
       // 2. Automatically generate invitation code valid for 90 days
       const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
       const code = await generateStudentInvitationCode({
         schoolId: schoolInfo.id,
-        instructorId: user.id,
+        instructorId: targetInstructorId,
         tradeId: newClassTrade,
         classId: newClass.id,
         expiresAt,
@@ -279,7 +302,6 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const handleOpenEditClass = (cls: SchoolClass) => {
     setEditingClass(cls);
     setEditClassName(cls.name);
-    setEditClassGrade(cls.grade ?? '');
     setEditClassError(null);
   };
 
@@ -287,7 +309,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     e.preventDefault();
     if (!editingClass) return;
     if (!editClassName.trim()) {
-      setEditClassError('Kérjük, adja meg az osztály nevét!');
+      setEditClassError('Kérjük, adja meg az osztály megnevezését!');
       return;
     }
 
@@ -296,7 +318,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     try {
       const updated = await updateSchoolClass(editingClass.id, {
         name: editClassName.trim(),
-        grade: typeof editClassGrade === 'number' ? editClassGrade : null,
+        grade: null,
       });
 
       setClasses(classes.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
@@ -1597,28 +1619,15 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             <form onSubmit={handleCreateClass} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Osztály Neve *
+                  Osztály megnevezése *
                 </label>
                 <input
                   type="text"
-                  placeholder="pl. 10.A vagy Kőműves I. Csoport"
+                  placeholder="pl. 10.A, 11.ÁCS, vagy 9.Kőműves"
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
                   className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 text-xs"
                   required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Évfolyam
-                </label>
-                <input
-                  type="number"
-                  placeholder="pl. 10"
-                  value={newClassGrade}
-                  onChange={(e) => setNewClassGrade(e.target.value ? parseInt(e.target.value) : '')}
-                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 text-xs"
                 />
               </div>
 
@@ -1649,6 +1658,25 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   </select>
                 )}
               </div>
+
+              {userRole !== 'instructor' && schoolInstructors.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                    Oktató
+                  </label>
+                  <select
+                    value={selectedInstructorId}
+                    onChange={(e) => setSelectedInstructorId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-xs"
+                  >
+                    {schoolInstructors.map((inst) => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="pt-4 flex items-center justify-end gap-3">
                 <button
@@ -1704,7 +1732,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             <form onSubmit={handleSaveEditedClass} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Osztály Neve *
+                  Osztály megnevezése *
                 </label>
                 <input
                   type="text"
@@ -1712,18 +1740,6 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   onChange={(e) => setEditClassName(e.target.value)}
                   className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-xs"
                   required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Évfolyam
-                </label>
-                <input
-                  type="number"
-                  value={editClassGrade}
-                  onChange={(e) => setEditClassGrade(e.target.value ? parseInt(e.target.value) : '')}
-                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-xs"
                 />
               </div>
 

@@ -3,6 +3,7 @@ import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import * as authClient from '../lib/authClient';
 import * as userService from '../services/userService';
 import { acceptInvitation } from '../services/partnerInvitationService';
+import { redeemStudentInvitationCode } from '../services/partnerService';
 import { supabase, type Profile } from '../lib/supabase';
 
 interface AuthContextType {
@@ -108,6 +109,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function checkPendingInvitation(userObj?: User | null) {
     try {
+      // 1. Check for pending student class invitation code
+      const pendingStudentCode = sessionStorage.getItem('pending_student_invite_code');
+      if (pendingStudentCode) {
+        sessionStorage.removeItem('pending_student_invite_code');
+        sessionStorage.removeItem('pending_invite_code');
+        try {
+          await redeemStudentInvitationCode(pendingStudentCode);
+        } catch (sErr) {
+          console.warn('Pending student code redemption notice:', sErr);
+        }
+      }
+
+      // 2. Check for pending partner staff invitation code
       const pendingCode = sessionStorage.getItem('pending_invite_code');
       if (pendingCode) {
         sessionStorage.removeItem('pending_invite_code');

@@ -217,6 +217,33 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [classCodeInput, setClassCodeInput] = useState('');
   const [redeemingCode, setRedeemingCode] = useState(false);
   const [classCodeMsg, setClassCodeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [studentEnrollments, setStudentEnrollments] = useState<any[]>([]);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+
+  const loadStudentEnrollments = async () => {
+    if (!user?.id) return;
+    setLoadingEnrollments(true);
+    try {
+      const { data, error } = await supabase
+        .from('school_students')
+        .select('id, status, joined_at, trade_id, school:school_id(id, name), instructor:instructor_id(id, full_name), school_class:class_id(id, name, grade)')
+        .eq('student_id', user.id)
+        .order('joined_at', { ascending: false });
+      if (!error && data) {
+        setStudentEnrollments(data);
+      }
+    } catch (err) {
+      console.warn('Error loading student enrollments:', err);
+    } finally {
+      setLoadingEnrollments(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id && activeMainSection === 'settings' && activeSettingsTab === 'school_link') {
+      loadStudentEnrollments();
+    }
+  }, [user?.id, activeMainSection, activeSettingsTab]);
 
   const handleRedeemClassCode = async () => {
     if (!classCodeInput.trim()) return;
@@ -229,6 +256,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         : `Sikeresen csatlakoztál a(z) ${res.class_name || 'kiválasztott'} osztályhoz!`);
       setClassCodeMsg({ type: 'success', text: msg });
       setClassCodeInput('');
+      await loadStudentEnrollments();
     } catch (err: any) {
       setClassCodeMsg({ type: 'error', text: err.message || 'A csatlakozás nem sikerült. Ellenőrizze az osztálykódot!' });
     } finally {
@@ -1508,6 +1536,62 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     }`}>
                       {classCodeMsg.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
                       <span>{classCodeMsg.text}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* AKTÍV ISKOLAI KAPCSOLAT KÁRTYÁK */}
+                <div className="space-y-4 pt-2">
+                  <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <School size={16} className="text-accent" /> Aktív Iskolai Kapcsolatok ({studentEnrollments.length})
+                  </h3>
+
+                  {loadingEnrollments ? (
+                    <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl text-xs text-gray-400">
+                      Betöltés...
+                    </div>
+                  ) : studentEnrollments.length === 0 ? (
+                    <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl text-xs text-gray-400 italic">
+                      Még nem csatlakoztál egyetlen iskolához vagy osztályhoz sem. Add meg a tanárodtól kapott osztálykódot a csatlakozáshoz!
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {studentEnrollments.map((enr) => (
+                        <div key={enr.id} className="p-5 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-3">
+                          <div className="flex items-center justify-between border-b border-[#1E3A64]/60 pb-3">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-5 h-5 text-amber-500" />
+                              <span className="text-sm font-bold text-white">
+                                {enr.school?.name || 'Oktatási Intézmény'}
+                              </span>
+                            </div>
+                            <span className="px-2.5 py-1 text-[11px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg">
+                              {enr.status === 'active' ? 'Aktív' : enr.status}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div>
+                              <span className="text-gray-400 block mb-0.5">Osztály:</span>
+                              <span className="font-semibold text-white">
+                                {enr.school_class?.name || 'Osztály'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 block mb-0.5">Oktató:</span>
+                              <span className="font-semibold text-white">
+                                {enr.instructor?.full_name || 'Oktató'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 block mb-0.5">Szakma:</span>
+                              <span className="font-semibold text-white">
+                                {enr.trade_id || 'Képzés'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
