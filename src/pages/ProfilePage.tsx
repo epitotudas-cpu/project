@@ -655,6 +655,21 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     return studentEnrollments.length > 0 ? studentEnrollments[0] : null;
   }, [studentEnrollments]);
 
+  const isStudent = useMemo(() => {
+    if (!user) return false;
+    const ut = user.user_metadata?.user_type || profile?.userType;
+    const r = profile?.role;
+    if (ut === 'tanulo' || r === 'student' || r === 'tanulo') return true;
+    if (ut === 'szakember' || r === 'partner' || r === 'school' || r === 'teacher' || r === 'admin' || r === 'editor' || r === 'szakember' || isPartnerContact || isInstructor) return false;
+    return ut === 'tanulo';
+  }, [user, profile, isPartnerContact, isInstructor]);
+
+  useEffect(() => {
+    if (!isStudent && ['my-class', 'tests', 'school-link'].includes(activeMainSection)) {
+      setActiveMainSection('overview');
+    }
+  }, [isStudent, activeMainSection]);
+
   if (loading || !profile) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center text-gray-400">
@@ -672,13 +687,13 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <div>
               <div className="flex items-center gap-2 text-[#60a5fa] font-medium text-sm mb-1">
                 <School className="w-4 h-4 text-[#60a5fa]" />
-                <span>{activeEnrollment?.school?.name || 'Oktatási Rendszer'}</span>
+                <span>{activeEnrollment?.school?.name || (isStudent ? 'Oktatási Rendszer' : 'ÉpítőTudás Fiók')}</span>
                 <span className="text-gray-600">•</span>
-                <span className="text-gray-400">Tanuló panel</span>
+                <span className="text-gray-400">{isStudent ? 'Tanuló panel' : 'Fiókom'}</span>
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                <GraduationCap className="w-8 h-8 text-[#60a5fa]" />
-                {activeMainSection === 'overview' && 'Tanulói Vezérlőpult'}
+                {isStudent ? <GraduationCap className="w-8 h-8 text-[#60a5fa]" /> : <User className="w-8 h-8 text-[#60a5fa]" />}
+                {activeMainSection === 'overview' && (isStudent ? 'Tanulói Vezérlőpult' : 'Saját Fiók Vezérlőpult')}
                 {activeMainSection === 'materials' && 'Tananyagaink Könyvtára'}
                 {activeMainSection === 'my-class' && 'Saját Osztályom'}
                 {activeMainSection === 'progress' && 'Tanulási Haladásom'}
@@ -745,15 +760,17 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <BookOpen size={15} /> Tananyagaink
           </button>
 
-          <button
-            onClick={() => setActiveMainSection('my-class')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'my-class'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
-              }`}
-          >
-            <Users size={15} /> Osztályom
-          </button>
+          {isStudent && (
+            <button
+              onClick={() => setActiveMainSection('my-class')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'my-class'
+                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                }`}
+            >
+              <Users size={15} /> Osztályom
+            </button>
+          )}
 
           <button
             onClick={() => setActiveMainSection('progress')}
@@ -765,25 +782,29 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <TrendingUp size={15} /> Haladásom
           </button>
 
-          <button
-            onClick={() => setActiveMainSection('tests')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'tests'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
-              }`}
-          >
-            <CheckSquare size={15} /> Tesztek
-          </button>
+          {isStudent && (
+            <button
+              onClick={() => setActiveMainSection('tests')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'tests'
+                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                }`}
+            >
+              <CheckSquare size={15} /> Tesztek
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveMainSection('school-link')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'school-link'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
-              }`}
-          >
-            <School size={15} /> Iskolai kapcsolat
-          </button>
+          {isStudent && (
+            <button
+              onClick={() => setActiveMainSection('school-link')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'school-link'
+                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                }`}
+            >
+              <School size={15} /> Iskolai kapcsolat
+            </button>
+          )}
 
           <button
             onClick={() => setActiveMainSection('settings')}
@@ -895,48 +916,53 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 </div>
 
                 {/* Tile 5: Kitöltött Tesztek */}
-                <div
-                  onClick={() => setActiveMainSection('tests')}
-                  className="bg-[#141414] border border-[#262626] hover:border-rose-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kitöltött Tesztek</span>
-                    <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                      <FileCheck className="w-5 h-5" />
+                {isStudent && (
+                  <div
+                    onClick={() => setActiveMainSection('tests')}
+                    className="bg-[#141414] border border-[#262626] hover:border-rose-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kitöltött Tesztek</span>
+                      <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+                        <FileCheck className="w-5 h-5" />
+                      </div>
                     </div>
+                    <div className="text-3xl font-black text-white group-hover:text-rose-400 transition-colors">
+                      0
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Sikeresen megírt teszt</p>
                   </div>
-                  <div className="text-3xl font-black text-white group-hover:text-rose-400 transition-colors">
-                    0
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">Sikeresen megírt teszt</p>
-                </div>
+                )}
 
                 {/* Tile 6: Iskolai Osztály */}
-                <div
-                  onClick={() => setActiveMainSection('school-link')}
-                  className="bg-[#141414] border border-[#262626] hover:border-[#4165b4]/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Iskolai Osztály</span>
-                    <div className="p-2.5 bg-[#4165b4]/20 border border-[#4165b4]/40 rounded-xl text-[#60a5fa] group-hover:bg-[#4165b4] group-hover:text-white transition-colors">
-                      <School className="w-5 h-5" />
+                {isStudent && (
+                  <div
+                    onClick={() => setActiveMainSection('school-link')}
+                    className="bg-[#141414] border border-[#262626] hover:border-[#4165b4]/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Iskolai Osztály</span>
+                      <div className="p-2.5 bg-[#4165b4]/20 border border-[#4165b4]/40 rounded-xl text-[#60a5fa] group-hover:bg-[#4165b4] group-hover:text-white transition-colors">
+                        <School className="w-5 h-5" />
+                      </div>
                     </div>
+                    <div className="text-xl font-bold text-white group-hover:text-[#60a5fa] transition-colors truncate">
+                      {activeEnrollment?.school_class?.name || 'Még nincs'}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {activeEnrollment ? `${activeEnrollment.school?.name}` : 'Kattints az osztálykód megadásához'}
+                    </p>
                   </div>
-                  <div className="text-xl font-bold text-white group-hover:text-[#60a5fa] transition-colors truncate">
-                    {activeEnrollment?.school_class?.name || 'Még nincs'}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">
-                    {activeEnrollment ? `${activeEnrollment.school?.name}` : 'Kattints az osztálykód megadásához'}
-                  </p>
-                </div>
+                )}
               </div>
             </div>
 
             {/* AKTUÁLIS TANULÁSI ÁLLAPOT */}
-            <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <GraduationCap className="text-[#60a5fa]" size={20} /> Aktuális Tanulási Állapot
-              </h3>
+            {isStudent && (
+              <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <GraduationCap className="text-[#60a5fa]" size={20} /> Aktuális Tanulási Állapot
+                </h3>
 
               {activeEnrollment ? (
                 <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-4">
@@ -985,6 +1011,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 </div>
               )}
             </div>
+            )}
 
             {/* LEGUTÓBBI AKTIVITÁS */}
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-4 shadow-lg">

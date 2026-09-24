@@ -57,15 +57,19 @@ export function isSzakember(target?: any): boolean {
 }
 
 export function isTanulo(target?: any): boolean {
-  if (!target) return true;
+  if (!target) return false;
   if (typeof target === 'string') {
-    return target === 'tanulo';
+    return target === 'tanulo' || target === 'student';
   }
   const userType = target?.user_metadata?.user_type || target?.user_type || target?.userType;
   if (userType) {
-    return userType === 'tanulo';
+    return userType === 'tanulo' || userType === 'student';
   }
-  return true;
+  const role = target?.role || target?.user_metadata?.role;
+  if (role) {
+    return role === 'student' || role === 'tanulo';
+  }
+  return false;
 }
 
 export function canAccessAdminPanel(profile: Profile | null | undefined): boolean {
