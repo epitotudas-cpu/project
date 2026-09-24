@@ -112,14 +112,15 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const isAdmin = profile?.role === 'admin';
   const isEditor = profile?.role === 'editor';
   const userType = user?.user_metadata?.user_type;
+  const isStudent = userType === 'tanulo' || profile?.userType === 'tanulo' || (!userType && profile?.role !== 'partner' && profile?.role !== 'school' && profile?.role !== 'teacher' && profile?.role !== 'admin' && profile?.role !== 'editor');
   const isPartner =
-    profile?.role === 'partner' ||
-    profile?.role === 'school' ||
-    profile?.role === 'teacher' ||
-    userType === 'partner' ||
-    userType === 'iskola' ||
-    userType === 'oktato' ||
-    Boolean(user);
+    !isStudent &&
+    (profile?.role === 'partner' ||
+      profile?.role === 'school' ||
+      profile?.role === 'teacher' ||
+      userType === 'partner' ||
+      userType === 'iskola' ||
+      userType === 'oktato');
   const isTeacher = profile?.role === 'teacher' || userType === 'oktato';
 
   const isSubItemActive = (subPage: string, pageState: string, loc: { pathname: string; search: string; hash: string }): boolean => {
@@ -393,6 +394,16 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               </button>
             )}
 
+            {isStudent && (
+              <button
+                onClick={() => onNavigate('profile?tab=overview')}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs cursor-pointer"
+              >
+                <GraduationCap size={14} />
+                Tanuló panel
+              </button>
+            )}
+
             {isPartner && (
               <button
                 onClick={() => onNavigate('partner')}
@@ -433,7 +444,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                         className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
                       >
                         <User size={14} className="text-accent shrink-0" />
-                        Fiókom
+                        {isStudent ? 'Tanuló panel' : 'Fiókom'}
                       </button>
 
                       <button
@@ -743,6 +754,15 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     className="w-full py-3 border border-purple-500/40 text-purple-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-purple-500/10"
                   >
                     Szerkesztői panel
+                  </button>
+                )}
+                {isStudent && (
+                  <button
+                    onClick={() => { onNavigate('profile?tab=overview'); setMobileOpen(false); }}
+                    className="w-full py-3 border border-[#4165b4]/40 bg-[#4165b4]/20 text-[#60a5fa] font-bold text-sm rounded-xl min-h-[48px] active:bg-[#4165b4]/30 flex items-center justify-center gap-2"
+                  >
+                    <GraduationCap size={16} />
+                    Tanuló panel
                   </button>
                 )}
                 {isPartner && (

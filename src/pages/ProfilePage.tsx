@@ -32,6 +32,14 @@ import {
   School,
   KeyRound,
   AlertCircle,
+  Users,
+  BarChart2,
+  CheckSquare,
+  Award,
+  TrendingUp,
+  FileText,
+  Play,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -43,7 +51,7 @@ import { glossaryJsonService, type GlossaryTermFromJson } from '../lib/glossaryJ
 import TermDetailModal from '../components/TermDetailModal';
 import { useBooks, type BookItem } from '../services/bookService';
 import BookCoverImage from '../components/BookCoverImage';
-import { redeemStudentInvitationCode } from '../services/partnerService';
+import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
 
 function getMatchingBook(item: SavedItem, allBooks: BookItem[]): BookItem {
   const found = allBooks.find((b) => b.id === item.itemId || b.id === item.slug || b.title === item.title);
@@ -78,8 +86,8 @@ interface ProfilePageProps {
   onNavigate?: (page: string, params?: { articleSlug?: string }) => void;
 }
 
-type MainSection = 'overview' | 'learning' | 'saved' | 'history' | 'settings' | 'help';
-type SettingsSubTab = 'profile_data' | 'trade_profile' | 'school_link' | 'notifications' | 'security' | 'appearance' | 'privacy';
+type MainSection = 'overview' | 'materials' | 'my-class' | 'progress' | 'tests' | 'school-link' | 'settings';
+type SettingsSubTab = 'profile_data' | 'trade_profile' | 'notifications' | 'security' | 'appearance' | 'privacy';
 
 const EXPERIENCE_LEVELS = [
   { id: 'beginner', label: 'Kezdő', desc: 'Pályakezdő vagy alapszintű ismeretek' },
@@ -132,7 +140,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           );
         };
 
-        // 1. Check partner_users
         const { data: puData } = await supabase
           .from('partner_users')
           .select('partner_id, member_role')
@@ -156,13 +163,11 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           }
         }
 
-        // 2. Check partners table by contact email
         const { data: partnerData } = await supabase
           .from('partners')
           .select('id, category, partner_type')
           .eq('contact_email', user.email);
 
-        // 3. Check partner_applications by email
         const { data: appData } = await supabase
           .from('partner_applications')
           .select('id, category')
@@ -188,37 +193,51 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           userRole === 'partner' ||
           userRole === 'admin';
 
-        if (isInstructorRole) {
-          setIsInstructor(true);
-        }
-        if (isSchoolAdminRole || isCommercialPartner) {
-          setIsPartnerContact(true);
-        }
+        if (isInstructorRole) setIsInstructor(true);
+        if (isSchoolAdminRole || isCommercialPartner) setIsPartnerContact(true);
       } catch { }
     }
     checkPartnerContact();
   }, [user]);
 
-  // Tab State
+  // Tab State Management
   const [activeMainSection, setActiveMainSection] = useState<MainSection>(() => {
     try {
       const hash = window.location.hash;
       if (hash.includes('tab=')) {
         const tab = hash.split('tab=')[1].split('&')[0];
-        if (['overview', 'learning', 'saved', 'history', 'settings', 'help'].includes(tab)) {
+        if (['overview', 'materials', 'my-class', 'progress', 'tests', 'school-link', 'settings'].includes(tab)) {
           return tab as MainSection;
         }
+        if (tab === 'learning' || tab === 'saved') return 'materials';
+        if (tab === 'history') return 'progress';
+        if (tab === 'school_link' || tab === 'school-link') return 'school-link';
       }
     } catch { }
     return 'overview';
   });
 
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubTab>('profile_data');
+
+  // School Link & Class Code State
   const [classCodeInput, setClassCodeInput] = useState('');
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [verifiedCodeInfo, setVerifiedCodeInfo] = useState<any | null>(null);
   const [redeemingCode, setRedeemingCode] = useState(false);
   const [classCodeMsg, setClassCodeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [studentEnrollments, setStudentEnrollments] = useState<any[]>([]);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+
+  // Classmates & Class Materials State
+  const [classmates, setClassmates] = useState<any[]>([]);
+  const [loadingClassmates, setLoadingClassmates] = useState(false);
+  const [classMaterials, setClassMaterials] = useState<any[]>([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+
+  // Filters State
+  const [materialsFilter, setMaterialsFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
+  const [materialsSearch, setMaterialsSearch] = useState('');
+  const [testsFilter, setTestsFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all');
 
   const loadStudentEnrollments = async () => {
     if (!user?.id) return;
@@ -226,11 +245,16 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     try {
       const { data, error } = await supabase
         .from('school_students')
-        .select('id, status, joined_at, trade_id, school:school_id(id, name), instructor:instructor_id(id, full_name), school_class:class_id(id, name, grade)')
+        .select('id, status, joined_at, trade_id, class_id, school:school_id(id, name), instructor:instructor_id(id, full_name), school_class:class_id(id, name, grade)')
         .eq('student_id', user.id)
         .order('joined_at', { ascending: false });
+
       if (!error && data) {
         setStudentEnrollments(data);
+        if (data.length > 0 && data[0].class_id) {
+          loadClassmates(data[0].class_id);
+          loadClassMaterials(data[0].class_id);
+        }
       }
     } catch (err) {
       console.warn('Error loading student enrollments:', err);
@@ -239,11 +263,66 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     }
   };
 
+  const loadClassmates = async (classId: string) => {
+    if (!classId) return;
+    setLoadingClassmates(true);
+    try {
+      const { data } = await supabase
+        .from('school_students')
+        .select('id, joined_at, status, student_id, student:student_id(id, full_name)')
+        .eq('class_id', classId)
+        .eq('status', 'active')
+        .order('joined_at', { ascending: false });
+
+      if (data) setClassmates(data);
+    } catch (err) {
+      console.warn('Error loading classmates:', err);
+    } finally {
+      setLoadingClassmates(false);
+    }
+  };
+
+  const loadClassMaterials = async (classId: string) => {
+    if (!classId) return;
+    setLoadingMaterials(true);
+    try {
+      const { data } = await supabase
+        .from('class_materials')
+        .select('id, created_at, material_id, material:material_id(id, title, description, category, type)')
+        .eq('class_id', classId);
+
+      if (data) setClassMaterials(data);
+    } catch (err) {
+      console.warn('Error loading class materials:', err);
+    } finally {
+      setLoadingMaterials(false);
+    }
+  };
+
   useEffect(() => {
-    if (user?.id && activeMainSection === 'settings' && activeSettingsTab === 'school_link') {
+    if (user?.id) {
       loadStudentEnrollments();
     }
-  }, [user?.id, activeMainSection, activeSettingsTab]);
+  }, [user?.id]);
+
+  const handleVerifyClassCode = async () => {
+    if (!classCodeInput.trim()) return;
+    setVerifyingCode(true);
+    setClassCodeMsg(null);
+    setVerifiedCodeInfo(null);
+    try {
+      const info = await getStudentCodeInfo(classCodeInput.trim());
+      if (info.valid) {
+        setVerifiedCodeInfo(info);
+      } else {
+        setClassCodeMsg({ type: 'error', text: info.error || 'A megadott osztálykód érvénytelen vagy lejárt.' });
+      }
+    } catch (err: any) {
+      setClassCodeMsg({ type: 'error', text: err.message || 'Hiba történt a kód ellenőrzésekor.' });
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
 
   const handleRedeemClassCode = async () => {
     if (!classCodeInput.trim()) return;
@@ -256,6 +335,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         : `Sikeresen csatlakoztál a(z) ${res.class_name || 'kiválasztott'} osztályhoz!`);
       setClassCodeMsg({ type: 'success', text: msg });
       setClassCodeInput('');
+      setVerifiedCodeInfo(null);
       await loadStudentEnrollments();
     } catch (err: any) {
       setClassCodeMsg({ type: 'error', text: err.message || 'A csatlakozás nem sikerült. Ellenőrizze az osztálykódot!' });
@@ -264,16 +344,22 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     }
   };
 
-  // Sync tab state dynamically on hashchange / popstate navigation
+  // Sync tab state dynamically on hashchange / popstate
   useEffect(() => {
     function handleTabSync() {
       try {
         const hash = window.location.hash;
         if (hash.includes('tab=')) {
           const tab = hash.split('tab=')[1].split('&')[0];
-          if (['overview', 'learning', 'saved', 'history', 'settings', 'help'].includes(tab)) {
+          if (['overview', 'materials', 'my-class', 'progress', 'tests', 'school-link', 'settings'].includes(tab)) {
             setActiveMainSection(tab as MainSection);
-          } else if (['profile_data', 'trade_profile', 'school_link', 'notifications', 'security', 'appearance', 'privacy'].includes(tab)) {
+          } else if (tab === 'learning' || tab === 'saved') {
+            setActiveMainSection('materials');
+          } else if (tab === 'history') {
+            setActiveMainSection('progress');
+          } else if (tab === 'school_link' || tab === 'school-link') {
+            setActiveMainSection('school-link');
+          } else if (['profile_data', 'trade_profile', 'notifications', 'security', 'appearance', 'privacy'].includes(tab)) {
             setActiveMainSection('settings');
             setActiveSettingsTab(tab as SettingsSubTab);
           }
@@ -294,7 +380,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const allBooks = useBooks();
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
   const [savedFilter, setSavedFilter] = useState<'all' | 'article' | 'glossary' | 'book'>('all');
-  const [savedViewMode, setSavedViewMode] = useState<'grid' | 'list'>('grid');
   const [savedSearchQuery, setSavedSearchQuery] = useState('');
   const [selectedSavedTerm, setSelectedSavedTerm] = useState<GlossaryTermFromJson | null>(null);
   const [savedTermModalOpen, setSavedTermModalOpen] = useState(false);
@@ -336,17 +421,11 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           setSelectedSavedTerm(found);
           setSavedTermModalOpen(true);
         } else {
-          if (onNavigate) {
-            onNavigate('glossary');
-            window.location.hash = `#glossary?q=${encodeURIComponent(item.title)}`;
-          } else {
-            window.location.hash = `#glossary?q=${encodeURIComponent(item.title)}`;
-          }
+          if (onNavigate) onNavigate('glossary');
+          window.location.hash = `#glossary?q=${encodeURIComponent(item.title)}`;
         }
       } catch {
-        if (onNavigate) {
-          onNavigate('glossary');
-        }
+        if (onNavigate) onNavigate('glossary');
       }
     } else if (item.itemType === 'book') {
       const bookObj = getMatchingBook(item, allBooks);
@@ -362,25 +441,22 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [companyName, setCompanyName] = useState('');
   const [bio, setBio] = useState('');
 
-  // Password reset modal inside Security
+  // Password reset modal state
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Notifications toggles state
+  // Notifications state
   const [notifications, setNotifications] = useState({
-    systemMessages: true, // Non-toggleable
+    systemMessages: true,
     learningReminders: true,
     newArticles: true,
     newCourses: false,
     newsletters: true,
   });
 
-  // Appearance state
-  const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>('dark');
-
-  // Delete account confirmation modal & process state
+  // Delete account state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
@@ -404,7 +480,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     }
   }
 
-  // Available Trades List from existing system
+  // Available Trades List
   const availableTrades = useMemo(() => {
     try {
       const items = getTradeItems();
@@ -424,6 +500,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         const data = await getUserDetailedProfile(user.id, user.email, initialName, 'user', userType);
         setProfile(data);
         setFullName(data.fullName || initialName || '');
+
         const isPartnerOrOktato = isPartnerContact || userType === 'partner' || userType === 'oktato' || userType === 'iskola';
         const effectiveSpecialization = isPartnerOrOktato
           ? (data.specialization === 'Tanuló' ? '' : (data.specialization || ''))
@@ -432,12 +509,12 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             : (data.specialization || '');
         setSpecialization(effectiveSpecialization);
         setCompanyName(data.companyName || '');
+
         const effectiveBio = (userType === 'tanulo' && (!data.bio || data.bio === 'Elhivatott építőipari szakember és a hazai tudásmegosztás aktív támogatója.'))
-          ? 'Tanulni és fejlődni vágyó felhasználó.'
+          ? 'Tanulni és fejlődni vágyó diák.'
           : (data.bio || '');
         setBio(effectiveBio);
 
-        // Load stored local preferences if available
         try {
           const storedPref = localStorage.getItem(`epitotudas_user_pref_${user.id}`);
           if (storedPref) {
@@ -456,8 +533,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     loadData();
   }, [user, authProfile]);
 
-  // Profile Completion Percentage Calculation (Section 22)
-  // Profile Completion Calculation (Subtle status badge)
   const missingCount = useMemo(() => {
     let missing = 0;
     if (!fullName.trim()) missing++;
@@ -482,7 +557,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
       const trimmedName = fullName.trim();
 
-      // 1. Update AuthContext, Supabase profiles table, and Supabase Auth user_metadata
       if (trimmedName && trimmedName !== (authProfile?.full_name || '')) {
         const authRes = await updateProfile({ full_name: trimmedName });
         if (authRes.error) {
@@ -490,7 +564,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         }
       }
 
-      // 2. Update detailed profile in userProfileService
       const updated = await updateUserDetailedProfile(user.id, {
         fullName: trimmedName,
         specialization: targetSpecialization,
@@ -499,7 +572,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         userType,
       });
 
-      // Save additional preferences to localStorage safely
       const prefData = {
         experienceLevel,
         selectedInterests,
@@ -510,10 +582,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       setProfile(updated);
       setSpecialization(updated.specialization || targetSpecialization);
       if (updated.bio) setBio(updated.bio);
-      setSuccessMsg('A profil beállítások sikeresen mentve lettek!');
+      setSuccessMsg('A beállítások sikeresen mentve lettek!');
       setTimeout(() => setSuccessMsg(null), 3500);
     } catch (err) {
-      setErrorMsg('Nem sikerült a profil mentése.');
+      setErrorMsg('Nem sikerült a beállítások mentése.');
     } finally {
       setSaving(false);
     }
@@ -563,7 +635,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       interests: selectedInterests,
       company: companyName,
       bio,
-      trust_score: profile.trustProfile?.trustScore,
       created_at: profile.createdAt,
       exported_at: new Date().toISOString(),
     };
@@ -572,10 +643,14 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `epitotudas_profil_adatok_${user.id.substring(0, 8)}.json`;
+    a.download = `epitotudas_tanulo_adatok_${user.id.substring(0, 8)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  const activeEnrollment = useMemo(() => {
+    return studentEnrollments.length > 0 ? studentEnrollments[0] : null;
+  }, [studentEnrollments]);
 
   if (loading || !profile) {
     return (
@@ -587,36 +662,20 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* 4. FIÓKOM – PROFIL FEJLÉC & KÁRTYA */}
+      {/* TANULÓ PANEL FEJLÉC */}
       <div className="bg-[#0C213E]/90 backdrop-blur-md border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 rounded-2xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent font-black text-2xl shadow-inner shrink-0">
-              {(profile.fullName || user?.email || 'F').charAt(0).toUpperCase()}
+              {(profile.fullName || user?.email || 'T').charAt(0).toUpperCase()}
             </div>
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-black text-white truncate">{profile.fullName}</h1>
-                {profile.role === 'admin' ? (
-                  <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
-                    Adminisztrátor
-                  </span>
-                ) : profile.role === 'editor' ? (
-                  <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
-                    Szerkesztő
-                  </span>
-                ) : isPartnerContact || user?.user_metadata?.user_type === 'partner' || user?.user_metadata?.user_type === 'iskola' || user?.user_metadata?.user_type === 'oktato' || profile?.userType === 'partner' ? (
-                  /* No title badge rendered for school contact person / partner user as requested! */
-                  null
-                ) : (
-                  <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
-                    {user?.user_metadata?.user_type === 'tanulo' || profile?.userType === 'tanulo'
-                      ? 'Tanuló'
-                      : 'Építőipari Szakember'}
-                  </span>
-                )}
+                <h1 className="text-2xl font-black text-white truncate">Tanuló Panel</h1>
+                <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-lg bg-[#4165b4]/20 text-[#60a5fa] border border-[#4165b4]/40 flex items-center gap-1.5">
+                  <GraduationCap size={13} /> Tanuló
+                </span>
 
-                {/* Visszafogott 1-soros profil státusz */}
                 {missingCount === 0 ? (
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
                     <CheckCircle2 size={13} /> Profil kész
@@ -634,53 +693,32 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 )}
               </div>
 
-              <p className="text-sm text-gray-400 font-mono truncate">{profile.email}</p>
+              <p className="text-sm text-gray-300 font-bold">{profile.fullName}</p>
+              <p className="text-xs text-gray-400 font-mono truncate">{profile.email}</p>
 
-              {/* Szakma + Tapasztalat tag */}
-              <div className="pt-1 flex items-center gap-2 flex-wrap text-xs text-gray-300">
-                {specialization ? (
-                  <span className="px-2.5 py-0.5 rounded-md bg-[#162C4E] border border-[#234678] font-semibold text-blue-200">
-                    {specialization} {experienceLevel ? `· ${EXPERIENCE_LEVELS.find((l) => l.id === experienceLevel)?.label || experienceLevel}` : ''}
+              {activeEnrollment && (
+                <div className="pt-1 flex items-center gap-2 flex-wrap text-xs text-gray-300">
+                  <span className="px-2.5 py-0.5 rounded-md bg-[#162C4E] border border-[#234678] font-semibold text-blue-200 flex items-center gap-1.5">
+                    <School size={12} className="text-accent" />
+                    {activeEnrollment.school?.name || 'Iskola'} · {activeEnrollment.school_class?.name || 'Osztály'}
                   </span>
-                ) : !(isPartnerContact || user?.user_metadata?.user_type === 'partner' || user?.user_metadata?.user_type === 'iskola' || user?.user_metadata?.user_type === 'oktato') ? (
-                  <button
-                    onClick={() => {
-                      setActiveMainSection('settings');
-                      setActiveSettingsTab('trade_profile');
-                    }}
-                    className="text-xs text-amber-400 hover:underline font-bold flex items-center gap-1"
-                  >
-                    ⚠️ Állítsd be a szakmádat a személyre szabott tartalomhoz!
-                  </button>
-                ) : null}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
             {isPartnerContact && (
               <button
-                onClick={() => {
-                  if (onNavigate) {
-                    onNavigate('partner');
-                  } else {
-                    window.location.hash = '#partner';
-                  }
-                }}
+                onClick={() => onNavigate?.('partner')}
                 className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-blue-500/20"
               >
-                <Building2 size={16} /> Szervezeti / Iskolai Vezérlőpult
+                <Building2 size={16} /> Szervezeti Vezérlőpult
               </button>
             )}
             {isInstructor && (
               <button
-                onClick={() => {
-                  if (onNavigate) {
-                    onNavigate('teacher');
-                  } else {
-                    window.location.hash = '#teacher';
-                  }
-                }}
+                onClick={() => onNavigate?.('teacher')}
                 className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-500/10"
               >
                 <GraduationCap size={16} /> Tanári Vezérlőpult
@@ -693,13 +731,13 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               }}
               className="px-4 py-2.5 bg-[#162C4E] border border-[#234678] hover:border-accent/40 text-gray-200 font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-sm"
             >
-              <Edit size={14} className="text-accent" /> Profil szerkesztése
+              <Sliders size={14} className="text-accent" /> Beállítások
             </button>
           </div>
         </div>
       </div>
 
-      {/* SUCCESS / ERROR ALERTS */}
+      {/* SUCCESS / ERROR NOTICES */}
       {successMsg && (
         <div className="p-4 bg-emerald-950/60 border border-emerald-500/30 rounded-2xl text-emerald-300 text-xs font-bold flex items-center justify-between shadow-md">
           <span>✓ {successMsg}</span>
@@ -713,999 +751,765 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         </div>
       )}
 
-      {/* 20. PROFIL MENÜ FŐ KATEGÓRIÁK / STRUKTÚRA */}
+      {/* TANULÓ PANEL FŐ NAVIGÁCIÓ (7 DEDIKÁLT MENÜPONT) */}
       <div className="flex items-center gap-2 p-1.5 bg-[#0C213E] border border-[#1E3A64] rounded-2xl overflow-x-auto">
         <button
           onClick={() => setActiveMainSection('overview')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'overview'
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'overview'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
             }`}
         >
-          <User size={15} /> Áttekintés
+          <LayoutGrid size={15} /> Áttekintés
         </button>
 
         <button
-          onClick={() => setActiveMainSection('learning')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'learning'
+          onClick={() => setActiveMainSection('materials')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'materials'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
             }`}
         >
-          <GraduationCap size={15} /> Tanulásom
+          <BookOpen size={15} /> Tananyagaink
         </button>
 
         <button
-          onClick={() => setActiveMainSection('saved')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'saved'
+          onClick={() => setActiveMainSection('my-class')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'my-class'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
             }`}
         >
-          <Bookmark size={15} /> Mentéseim
+          <Users size={15} /> Osztályom
         </button>
 
         <button
-          onClick={() => setActiveMainSection('history')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'history'
+          onClick={() => setActiveMainSection('progress')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'progress'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
             }`}
         >
-          <Clock size={15} /> Előzményeim
+          <TrendingUp size={15} /> Haladásom
+        </button>
+
+        <button
+          onClick={() => setActiveMainSection('tests')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'tests'
+              ? 'bg-accent text-black shadow-md'
+              : 'text-gray-300 hover:text-white hover:bg-white/5'
+            }`}
+        >
+          <CheckSquare size={15} /> Tesztek
+        </button>
+
+        <button
+          onClick={() => setActiveMainSection('school-link')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'school-link'
+              ? 'bg-accent text-black shadow-md'
+              : 'text-gray-300 hover:text-white hover:bg-white/5'
+            }`}
+        >
+          <School size={15} /> Iskolai kapcsolat
         </button>
 
         <button
           onClick={() => setActiveMainSection('settings')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'settings'
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'settings'
               ? 'bg-accent text-black shadow-md'
               : 'text-gray-300 hover:text-white hover:bg-white/5'
             }`}
         >
           <Sliders size={15} /> Beállítások
         </button>
-
-        <button
-          onClick={() => setActiveMainSection('help')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'help'
-              ? 'bg-accent text-black shadow-md'
-              : 'text-gray-300 hover:text-white hover:bg-white/5'
-            }`}
-        >
-          <HelpCircle size={15} /> Segítség
-        </button>
       </div>
 
-      {/* SECTION CONTENT SWITCHER */}
+      {/* 1. ÁTTEKINTÉS */}
       {activeMainSection === 'overview' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* STATISZTIKAI CSEMPÉK */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="bg-[#0C213E]/80 border border-[#1E3A64] p-5 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Szakma</span>
-              <span className="text-lg font-black text-white block">
-                {specialization || 'Nincs beállítva'}
-              </span>
+              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Kiosztott Tananyag</span>
+              <span className="text-2xl font-black text-white block">{classMaterials.length || 0}</span>
             </div>
 
             <div className="bg-[#0C213E]/80 border border-[#1E3A64] p-5 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Tapasztalati Szint</span>
-              <span className="text-lg font-black text-accent block">
-                {EXPERIENCE_LEVELS.find((l) => l.id === experienceLevel)?.label || 'Nincs kiválasztva'}
-              </span>
+              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Folyamatban</span>
+              <span className="text-2xl font-black text-amber-400 block">{classMaterials.length > 0 ? 1 : 0}</span>
             </div>
 
             <div className="bg-[#0C213E]/80 border border-[#1E3A64] p-5 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Fiók Státusz</span>
-              <span className="text-lg font-black text-emerald-400 block flex items-center gap-1.5">
-                <CheckCircle2 size={18} /> Aktív Tag
-              </span>
+              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Befejezett</span>
+              <span className="text-2xl font-black text-emerald-400 block">0</span>
+            </div>
+
+            <div className="bg-[#0C213E]/80 border border-[#1E3A64] p-5 rounded-2xl space-y-2">
+              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Előrehaladás</span>
+              <span className="text-2xl font-black text-accent block">{classMaterials.length > 0 ? '15%' : '0%'}</span>
+            </div>
+
+            <div className="bg-[#0C213E]/80 border border-[#1E3A64] p-5 rounded-2xl col-span-2 md:col-span-1 space-y-2">
+              <span className="text-xs font-bold text-gray-400 block uppercase tracking-wider">Kitöltött Tesztek</span>
+              <span className="text-2xl font-black text-blue-400 block">0</span>
             </div>
           </div>
 
-          {!specialization && (
-            <div className="p-6 bg-[#0E2443] border border-amber-500/30 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Sparkles size={18} className="text-amber-400" /> Állítsd be a szakmádat!
-                </h3>
-                <p className="text-xs text-gray-300">
-                  Segíts az ÉpítőTudásnak, hogy a te szakterületednek megfelelő releváns szakmai tartalmakat tudjon mutatni.
-                </p>
+          {/* AKTUÁLIS TANULÁSI ÁLLAPOT */}
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <GraduationCap className="text-accent" size={20} /> Aktuális Tanulási Állapot
+            </h3>
+
+            {activeEnrollment ? (
+              <div className="bg-[#081528] border border-[#1E3A64] p-6 rounded-2xl space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-semibold text-accent uppercase tracking-wider">Aktív Osztály</span>
+                    <h4 className="text-lg font-bold text-white">{activeEnrollment.school?.name || 'Iskola'}</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Osztály: {activeEnrollment.school_class?.name || 'Nincs név'} ({activeEnrollment.school_class?.grade || '-'}. évfolyam) · Oktató: {activeEnrollment.instructor?.full_name || 'Nincs megadva'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActiveMainSection('materials')}
+                    className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 self-start md:self-auto"
+                  >
+                    <Play size={14} /> Tananyagok Megnyitása
+                  </button>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-[#1E3A64]/60">
+                  <div className="flex justify-between text-xs text-gray-300">
+                    <span>Általános előrehaladás:</span>
+                    <span className="font-bold text-accent">15%</span>
+                  </div>
+                  <div className="w-full bg-[#162C4E] rounded-full h-2.5">
+                    <div className="bg-accent h-2.5 rounded-full" style={{ width: '15%' }} />
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={() => {
-                  setActiveMainSection('settings');
-                  setActiveSettingsTab('trade_profile');
-                }}
-                className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap"
-              >
-                Szakma Beállítása
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 5. FIÓKOM – TANULÁSOM */}
-      {activeMainSection === 'learning' && (
-        <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-8 text-center space-y-4">
-          <GraduationCap size={48} className="mx-auto text-blue-400 opacity-60" />
-          <div className="space-y-1 max-w-md mx-auto">
-            <h3 className="text-lg font-bold text-white">Még nincs megkezdett tananyagod</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Böngéssz az ÉpítőTudás szakmai kurzusai és oktatási segédanyagai között a tudásod elmélyítéséhez.
-            </p>
+            ) : (
+              <div className="p-6 bg-[#081528] border border-amber-500/30 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <School className="text-amber-400" size={16} /> Még nem csatlakoztál iskolai osztályhoz
+                  </h4>
+                  <p className="text-xs text-gray-400">
+                    Adja meg az oktatójától kapott osztálykódot a tananyagokhoz és feladatokhoz való hozzáféréshez.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveMainSection('school-link')}
+                  className="px-4 py-2.5 bg-accent hover:bg-amber-400 text-black font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Osztálykód Megadása
+                </button>
+              </div>
+            )}
           </div>
-          <button
-            onClick={() => onNavigate?.('courses')}
-            className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
-          >
-            <Search size={14} /> Keress tananyagot
-          </button>
+
+          {/* LEGUTÓBBI AKTIVITÁS */}
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Clock className="text-blue-400" size={20} /> Legutóbbi Aktivitások
+            </h3>
+
+            <div className="space-y-3">
+              {activeEnrollment ? (
+                <div className="flex items-center gap-3 p-3.5 bg-[#081528] border border-[#1E3A64] rounded-xl text-xs">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <div className="grow min-w-0">
+                    <p className="text-white font-semibold">Sikeres iskolai csatlakozás</p>
+                    <p className="text-gray-400 text-[11px]">{activeEnrollment.school?.name} · {activeEnrollment.school_class?.name}</p>
+                  </div>
+                  <span className="text-gray-500 text-[11px] shrink-0">
+                    {new Date(activeEnrollment.joined_at || Date.now()).toLocaleDateString('hu-HU')}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3.5 bg-[#081528] border border-[#1E3A64] rounded-xl text-xs text-gray-400">
+                  <Clock size={16} className="text-gray-500 shrink-0" />
+                  <span>Még nincs rögzített tanulási aktivitásod.</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* 6. MENTÉSEIM (FULL MANAGEMENT DASHBOARD) */}
-      {activeMainSection === 'saved' && (
+      {/* 2. TANANYAGAINK */}
+      {activeMainSection === 'materials' && (
         <div className="space-y-6">
-          {/* Header & Controls Bar */}
-          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 space-y-4">
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                  <Bookmark className="text-accent" size={22} />
-                  <span>Mentett Tartalmaim</span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent/20 border border-accent/40 text-accent font-bold">
-                    {filteredSavedItems.length} elem
-                  </span>
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  <BookOpen className="text-accent" size={22} /> Tananyagaink Könyvtára
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">
-                  Itt éred el az elmentett szakmai cikkeket és fogalomtári kifejezéseket.
+                  Az osztályodhoz és képzésedhez kiosztott tananyagok, modulok és segédanyagok.
                 </p>
               </div>
 
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-1 bg-[#142C4E] p-1 rounded-xl border border-[#234775] self-start md:self-auto">
+              {/* Szűrők */}
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => setSavedViewMode('grid')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${savedViewMode === 'grid'
-                      ? 'bg-accent text-black font-extrabold shadow-sm'
-                      : 'text-gray-400 hover:text-white'
-                    }`}
-                  title="Csempe nézet"
+                  onClick={() => setMaterialsFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'all' ? 'bg-accent text-black' : 'bg-[#162C4E] text-gray-300 hover:text-white'}`}
                 >
-                  <LayoutGrid size={15} />
-                  <span>Csempék</span>
+                  Összes
                 </button>
-
                 <button
-                  onClick={() => setSavedViewMode('list')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${savedViewMode === 'list'
-                      ? 'bg-accent text-black font-extrabold shadow-sm'
-                      : 'text-gray-400 hover:text-white'
-                    }`}
-                  title="Lista nézet"
+                  onClick={() => setMaterialsFilter('in_progress')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'in_progress' ? 'bg-accent text-black' : 'bg-[#162C4E] text-gray-300 hover:text-white'}`}
                 >
-                  <LayoutList size={15} />
-                  <span>Lista</span>
+                  Folyamatban
+                </button>
+                <button
+                  onClick={() => setMaterialsFilter('completed')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'completed' ? 'bg-accent text-black' : 'bg-[#162C4E] text-gray-300 hover:text-white'}`}
+                >
+                  Befejezett
                 </button>
               </div>
             </div>
 
-            {/* Filter Tabs & Search */}
-            <div className="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-[#1E3A64]">
-              {/* Tabs */}
-              <div className="flex items-center gap-1 w-full md:w-auto overflow-x-auto">
+            {/* Kereső */}
+            <div className="relative">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                value={materialsSearch}
+                onChange={(e) => setMaterialsSearch(e.target.value)}
+                placeholder="Tananyag keresése cím vagy témakör alapján..."
+                className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-accent"
+              />
+            </div>
+
+            {/* Tananyag kártyák */}
+            {classMaterials.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {classMaterials.map((cm) => (
+                  <div key={cm.id} className="bg-[#081528] border border-[#1E3A64] hover:border-accent/40 rounded-2xl p-5 space-y-4 transition-all">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
+                          {cm.material?.category || 'Szakmai tananyag'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-1.5">{cm.material?.title || 'Cím nélkül'}</h4>
+                      </div>
+                      <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0">
+                        Folyamatban
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-gray-400 line-clamp-2">{cm.material?.description || 'Nincs leírás.'}</p>
+
+                    <div className="pt-2 border-t border-[#1E3A64] flex items-center justify-between text-xs">
+                      <span className="text-gray-500">Iskola: {activeEnrollment?.school?.name || 'Iskolámból'}</span>
+                      <button
+                        onClick={() => onNavigate?.('courses')}
+                        className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold rounded-lg transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+                      >
+                        <Play size={12} /> Megnyitás
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 space-y-3 bg-[#081528] rounded-2xl border border-[#1E3A64]">
+                <BookOpen size={40} className="mx-auto text-gray-500 opacity-60" />
+                <h4 className="text-sm font-bold text-white">Még nincs kiosztott tananyagod</h4>
+                <p className="text-xs text-gray-400 max-w-sm mx-auto">
+                  Amint az oktatód tananyagot rendel az osztályodhoz, azok azonnal megjelennének itt.
+                </p>
                 <button
-                  onClick={() => setSavedFilter('all')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${savedFilter === 'all'
-                      ? 'bg-[#4165b4] text-white'
-                      : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
-                    }`}
+                  onClick={() => onNavigate?.('courses')}
+                  className="px-4 py-2 bg-accent hover:bg-amber-400 text-black font-bold text-xs rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer mt-2"
                 >
-                  Összes mentés ({savedItems.length})
+                  <Search size={14} /> Nyilvános Kurzusok Böngészése
                 </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3. OSZTÁLYOM */}
+      {activeMainSection === 'my-class' && (
+        <div className="space-y-6">
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <Users className="text-accent" size={22} /> Saját Osztályom
+            </h3>
+
+            {activeEnrollment ? (
+              <div className="space-y-6">
+                {/* Osztály info kártya */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-[#081528] border border-[#1E3A64] p-6 rounded-2xl space-y-3">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Iskola & Osztály</span>
+                    <h4 className="text-lg font-bold text-white">{activeEnrollment.school?.name}</h4>
+                    <div className="space-y-1 text-xs text-gray-300">
+                      <p><strong>Osztály:</strong> {activeEnrollment.school_class?.name}</p>
+                      <p><strong>Évfolyam:</strong> {activeEnrollment.school_class?.grade || '-'}. évfolyam</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#081528] border border-[#1E3A64] p-6 rounded-2xl space-y-3">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Oktató</span>
+                    <h4 className="text-lg font-bold text-white">{activeEnrollment.instructor?.full_name || 'Nincs megadva'}</h4>
+                    <p className="text-xs text-gray-400">Felelős szaktanár / oktató</p>
+                  </div>
+                </div>
+
+                {/* Osztálytársak listája */}
+                <div className="space-y-3 pt-4 border-t border-[#1E3A64]">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Users size={16} className="text-blue-400" /> Osztálytársak ({classmates.length})
+                  </h4>
+
+                  {classmates.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {classmates.map((c) => (
+                        <div key={c.id} className="p-3 bg-[#081528] border border-[#1E3A64] rounded-xl flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/20 text-accent font-bold text-xs flex items-center justify-center shrink-0">
+                            {(c.student?.full_name || 'D').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-white truncate">{c.student?.full_name || 'Tanuló'}</p>
+                            <p className="text-[10px] text-gray-500">Csatlakozott: {new Date(c.joined_at).toLocaleDateString('hu-HU')}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 bg-[#081528] p-4 rounded-xl border border-[#1E3A64]">
+                      Még nem csatlakoztak más tanulók ehhez az osztályhoz.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 space-y-4 bg-[#081528] rounded-2xl border border-[#1E3A64] p-6">
+                <School size={48} className="mx-auto text-amber-400 opacity-80" />
+                <div className="space-y-1 max-w-md mx-auto">
+                  <h4 className="text-base font-bold text-white">Még nem csatlakoztál osztályhoz</h4>
+                  <p className="text-xs text-gray-400">
+                    A tanárodtól kapott 6 jegyű osztálykóddal tudsz csatlakozni az osztályodhoz az Iskolai kapcsolat menüpontban.
+                  </p>
+                </div>
                 <button
-                  onClick={() => setSavedFilter('book')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${savedFilter === 'book'
-                      ? 'bg-amber-500 text-black font-extrabold shadow-sm'
-                      : 'bg-[#142C4E] text-amber-300 border border-amber-500/30 hover:bg-[#1E3A64]'
-                    }`}
+                  onClick={() => setActiveMainSection('school-link')}
+                  className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
                 >
-                  📚 Könyvek ({savedItems.filter((i) => i.itemType === 'book').length})
+                  <School size={15} /> Csatlakozás Osztálykóddal
                 </button>
-                <button
-                  onClick={() => setSavedFilter('article')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${savedFilter === 'article'
-                      ? 'bg-[#4165b4] text-white'
-                      : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
-                    }`}
-                >
-                  📄 Cikkek ({savedItems.filter((i) => i.itemType === 'article').length})
-                </button>
-                <button
-                  onClick={() => setSavedFilter('glossary')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${savedFilter === 'glossary'
-                      ? 'bg-[#4165b4] text-white'
-                      : 'bg-[#142C4E] text-gray-300 hover:bg-[#1E3A64]'
-                    }`}
-                >
-                  📘 Fogalmak ({savedItems.filter((i) => i.itemType === 'glossary').length})
-                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 4. HALADÁSOM */}
+      {activeMainSection === 'progress' && (
+        <div className="space-y-6">
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <TrendingUp className="text-accent" size={22} /> Tanulási Haladásom
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-[#081528] border border-[#1E3A64] p-6 rounded-2xl space-y-3">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Teljesítési Százalék</span>
+                <div className="text-3xl font-black text-accent">{classMaterials.length > 0 ? '15%' : '0%'}</div>
+                <div className="w-full bg-[#162C4E] rounded-full h-2">
+                  <div className="bg-accent h-2 rounded-full" style={{ width: classMaterials.length > 0 ? '15%' : '0%' }} />
+                </div>
               </div>
 
-              {/* Search input */}
-              <div className="relative flex-1 w-full">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Keresés a mentett elemek között..."
-                  value={savedSearchQuery}
-                  onChange={(e) => setSavedSearchQuery(e.target.value)}
-                  className="w-full bg-[#142C4E] border border-[#234775] text-white rounded-xl pl-9 pr-8 py-1.5 text-xs placeholder-gray-400 focus:outline-none focus:border-accent"
-                />
-                {savedSearchQuery && (
-                  <button
-                    onClick={() => setSavedSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
+              <div className="bg-[#081528] border border-[#1E3A64] p-6 rounded-2xl space-y-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Befejezett Modulok</span>
+                <span className="text-2xl font-black text-white block">0 / {classMaterials.length || 0}</span>
+                <p className="text-xs text-gray-400">Modulzárók teljesítve</p>
               </div>
+
+              <div className="bg-[#081528] border border-[#1E3A64] p-6 rounded-2xl space-y-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Teszt Átlageredmény</span>
+                <span className="text-2xl font-black text-emerald-400 block">-</span>
+                <p className="text-xs text-gray-400">Kitöltött tesztek átlaga</p>
+              </div>
+            </div>
+
+            {/* Tananyagonkénti haladás */}
+            <div className="space-y-3 pt-4 border-t border-[#1E3A64]">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <BarChart2 size={16} className="text-blue-400" /> Tananyagonkénti Részletek
+              </h4>
+
+              {classMaterials.length > 0 ? (
+                <div className="space-y-3">
+                  {classMaterials.map((cm) => (
+                    <div key={cm.id} className="p-4 bg-[#081528] border border-[#1E3A64] rounded-xl space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-white">{cm.material?.title || 'Tananyag'}</span>
+                        <span className="text-accent font-bold">15%</span>
+                      </div>
+                      <div className="w-full bg-[#162C4E] rounded-full h-2">
+                        <div className="bg-accent h-2 rounded-full" style={{ width: '15%' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 bg-[#081528] rounded-xl border border-[#1E3A64] text-center text-xs text-gray-400">
+                  Nincs megjeleníthető tananyag haladás.
+                </div>
+              )}
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Saved Items Content */}
-          {filteredSavedItems.length === 0 ? (
-            <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-12 text-center space-y-4">
-              <Bookmark size={48} className="mx-auto text-purple-400 opacity-60" />
+      {/* 5. TESZTEK */}
+      {activeMainSection === 'tests' && (
+        <div className="space-y-6">
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <CheckSquare className="text-accent" size={22} /> Tesztek és Kvízek
+            </h3>
+
+            <div className="text-center py-12 space-y-4 bg-[#081528] rounded-2xl border border-[#1E3A64] p-6">
+              <Award size={48} className="mx-auto text-blue-400 opacity-60" />
               <div className="space-y-1 max-w-md mx-auto">
-                <h3 className="text-lg font-bold text-white">
-                  {savedItems.length === 0
-                    ? 'Még nem mentettél el tartalmat'
-                    : 'Nincs a szűrésnek megfelelő mentett elem'}
-                </h3>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  {savedItems.length === 0
-                    ? 'Szakkönyvek, cikkek és fogalmak böngészése közben a mentés ikonra kattintva eltárolhatod a kedvenceidet a gyors eléréshez.'
-                    : 'Próbáld meg törölni a keresőt vagy válts másik szűrő fülre.'}
+                <h4 className="text-base font-bold text-white">Még nincs aktív teszted</h4>
+                <p className="text-xs text-gray-400">
+                  Az oktatód által kiosztott és a modulokhoz tartozó önellenőrző tesztek itt fognak megjelenni.
                 </p>
               </div>
               <button
-                onClick={() => onNavigate?.('books')}
-                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+                onClick={() => onNavigate?.('courses')}
+                className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
               >
-                <BookOpen size={14} /> Könyvtár böngészése
+                <Search size={14} /> Keresés a Tananyagok Között
               </button>
             </div>
-          ) : savedViewMode === 'grid' ? (
-            /* CSEMPE (GRID) NÉZET */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredSavedItems.map((item) => {
-                if (item.itemType === 'book') {
-                  const matchingBook = getMatchingBook(item, allBooks);
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => handleOpenSavedItem(item)}
-                      className="bg-[#0C213E]/90 border border-amber-500/30 hover:border-amber-400 rounded-3xl p-4 flex flex-col justify-between space-y-4 transition-all group cursor-pointer shadow-lg hover:shadow-amber-500/10 relative overflow-hidden"
-                    >
-                      <div className="space-y-3">
-                        {/* Cover Image Header & Badge */}
-                        <div className="relative aspect-[2/3] w-full max-h-60 rounded-2xl overflow-hidden shadow-md bg-black/40 flex items-center justify-center group-hover:scale-[1.02] transition-transform">
-                          <BookCoverImage
-                            book={matchingBook}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-70 group-hover:opacity-50 transition-opacity" />
-                          <span className="absolute top-2 left-2 text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-500 text-black border border-amber-300 shadow-sm flex items-center gap-1">
-                            📚 Könyv / Kiadvány
-                          </span>
-                          <div className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/80 backdrop-blur-xs text-amber-300 text-[10px] font-extrabold rounded-lg flex items-center gap-1 border border-amber-500/30 shadow-md">
-                            <Eye size={12} className="text-amber-400" /> Részletes panel
-                          </div>
-                        </div>
-
-                        {/* Book Metadata */}
-                        <div>
-                          <span className="text-[11px] font-bold text-amber-400 block mb-1">
-                            {item.subtitle || 'Digitális Szakkönyv'}
-                          </span>
-                          <h4 className="text-base font-extrabold text-white group-hover:text-accent transition-colors line-clamp-2 leading-snug">
-                            {item.title}
-                          </h4>
-                          {item.description && (
-                            <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed mt-1.5 font-normal">
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions Footer */}
-                      <div className="pt-3 border-t border-[#1E3A64] flex items-center justify-between gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleOpenSavedItem(item)}
-                          className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                        >
-                          <BookOpen size={14} />
-                          <span>Részletes panel</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleRemoveSaved(item)}
-                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                          title="Törlés a mentések közül"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => handleOpenSavedItem(item)}
-                    className="bg-[#0C213E]/90 border border-[#1E3A64] hover:border-accent/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition-all group cursor-pointer"
-                  >
-                    <div className="space-y-3">
-                      {/* Header Badges */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${item.itemType === 'article'
-                              ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                            }`}
-                        >
-                          {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
-                        </span>
-                        {item.subtitle && (
-                          <span className="text-[10px] text-gray-400 font-medium truncate max-w-[150px]">
-                            {item.subtitle}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors line-clamp-2">
-                        {item.title}
-                      </h4>
-
-                      {/* Description Excerpt */}
-                      {item.description && (
-                        <p className="text-xs text-gray-300 line-clamp-3 leading-relaxed">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Footer Action buttons */}
-                    <div className="pt-3 border-t border-[#1E3A64] flex items-center justify-between gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleOpenSavedItem(item)}
-                        className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <span>Megtekintés</span>
-                        <ExternalLink size={13} />
-                      </button>
-
-                      <button
-                        onClick={() => handleRemoveSaved(item)}
-                        className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                        title="Törlés a mentések közül"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* LISTA (LIST) NÉZET */
-            <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl divide-y divide-[#1E3A64] overflow-hidden">
-              {filteredSavedItems.map((item) => {
-                if (item.itemType === 'book') {
-                  const matchingBook = getMatchingBook(item, allBooks);
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => handleOpenSavedItem(item)}
-                      className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        {/* Cover Image Thumbnail */}
-                        <div className="w-12 aspect-[2/3] rounded-xl overflow-hidden bg-black shrink-0 border border-amber-500/30 shadow-md">
-                          <BookCoverImage
-                            book={matchingBook}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-
-                        <div className="space-y-1 flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                              📚 Szakkönyv
-                            </span>
-                            {item.subtitle && (
-                              <span className="text-xs text-gray-400 font-medium">
-                                • {item.subtitle}
-                              </span>
-                            )}
-                          </div>
-
-                          <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors">
-                            {item.title}
-                          </h4>
-
-                          {item.description && (
-                            <p className="text-xs text-gray-300 line-clamp-1 leading-relaxed">
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleOpenSavedItem(item)}
-                          className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-extrabold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                        >
-                          <BookOpen size={13} />
-                          <span>Részletes panel</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleRemoveSaved(item)}
-                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                          title="Törlés a mentések közül"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => handleOpenSavedItem(item)}
-                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors cursor-pointer group"
-                  >
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${item.itemType === 'article'
-                              ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                            }`}
-                        >
-                          {item.itemType === 'article' ? '📄 Cikk' : '📘 Fogalom'}
-                        </span>
-                        {item.subtitle && (
-                          <span className="text-xs text-gray-400 font-medium">
-                            • {item.subtitle}
-                          </span>
-                        )}
-                      </div>
-
-                      <h4 className="text-base font-bold text-white group-hover:text-accent transition-colors">
-                        {item.title}
-                      </h4>
-
-                      {item.description && (
-                        <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleOpenSavedItem(item)}
-                        className="px-3.5 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <span>Megnyitás</span>
-                        <ExternalLink size={13} />
-                      </button>
-
-                      <button
-                        onClick={() => handleRemoveSaved(item)}
-                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                        title="Törlés a mentések közül"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 7. ELŐZMÉNYEIM */}
-      {activeMainSection === 'history' && (
-        <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-8 text-center space-y-4">
-          <Clock size={48} className="mx-auto text-amber-400 opacity-60" />
-          <div className="space-y-1 max-w-md mx-auto">
-            <h3 className="text-lg font-bold text-white">Még nincsenek megtekintési előzményeid</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Az általad legutóbb megnyitott szakmai cikkek és tananyagok itt fognak megjelenni a gyors folytatáshoz.
-            </p>
           </div>
         </div>
       )}
 
-      {/* 19. BEÁLLÍTÁSOK (DESKTOP 2-COLUMN LIST-DETAIL LAYOUT) */}
-      {activeMainSection === 'settings' && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* LEFT SIDEBAR NAVIGATION */}
-          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-3 space-y-1 h-fit">
-            <button
-              onClick={() => setActiveSettingsTab('profile_data')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'profile_data'
-                  ? 'bg-accent text-black font-extrabold shadow-md'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <span>Profiladatok</span>
-              <ChevronRight size={14} />
-            </button>
+      {/* 6. ISKOLAI KAPCSOLAT */}
+      {activeMainSection === 'school-link' && (
+        <div className="space-y-6">
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
+            <div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <School className="text-accent" size={22} /> Iskolai Kapcsolat és Osztálykód
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                Kezeld az iskolai és tanulói kapcsolataidat, vagy csatlakozz új osztályhoz kód segítségével.
+              </p>
+            </div>
 
-            <button
-              onClick={() => setActiveSettingsTab('trade_profile')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'trade_profile'
-                  ? 'bg-accent text-black font-extrabold shadow-md'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <span>Szakmai profil</span>
-              <ChevronRight size={14} />
-            </button>
-
-            <button
-              onClick={() => setActiveSettingsTab('school_link')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'school_link'
-                  ? 'bg-accent text-black font-extrabold shadow-md'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <span>Iskolai / Tanári kapcsolat</span>
-              <ChevronRight size={14} />
-            </button>
-
-            <button
-              onClick={() => setActiveSettingsTab('notifications')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'notifications'
-                  ? 'bg-accent text-black font-extrabold shadow-md'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <span>Értesítések</span>
-              <ChevronRight size={14} />
-            </button>
-
-            <button
-              onClick={() => setActiveSettingsTab('security')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'security'
-                  ? 'bg-accent text-black font-extrabold shadow-md'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <span>Biztonság</span>
-              <ChevronRight size={14} />
-            </button>
-
-            <button
-              onClick={() => setActiveSettingsTab('appearance')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'appearance'
-                  ? 'bg-accent text-black font-extrabold shadow-md'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <span>Megjelenés</span>
-              <ChevronRight size={14} />
-            </button>
-
-            <button
-              onClick={() => setActiveSettingsTab('privacy')}
-              className={`w-full px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer ${activeSettingsTab === 'privacy'
-                  ? 'bg-accent text-black font-extrabold shadow-md'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <span>Adatvédelem</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
-
-          {/* RIGHT DETAILS PANEL */}
-          <div className="lg:col-span-3 bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
-            {/* 12. PROFILADATOK */}
-            {activeSettingsTab === 'profile_data' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-black text-white">Profiladatok</h2>
-                  <p className="text-xs text-gray-400 mt-1">Személyes azonosító adatok és megjelenítés.</p>
+            {/* AKTUÁLIS KAPCSOLAT */}
+            {activeEnrollment && (
+              <div className="p-6 bg-[#081528] border border-emerald-500/30 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 size={14} /> Aktív Iskolai Kapcsolat
+                  </span>
+                  <span className="text-[11px] text-gray-500">
+                    Csatlakozva: {new Date(activeEnrollment.joined_at).toLocaleDateString('hu-HU')}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1.5">Megjelenítési Név</label>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
-                    />
+                    <span className="text-gray-400 block">Iskola:</span>
+                    <strong className="text-white text-sm block mt-0.5">{activeEnrollment.school?.name}</strong>
                   </div>
-
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1.5">E-mail Cím (Hitelesített)</label>
-                    <input
-                      type="email"
-                      disabled
-                      value={user?.email || ''}
-                      className="w-full bg-[#081528]/60 border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed font-mono"
-                    />
+                    <span className="text-gray-400 block">Osztály:</span>
+                    <strong className="text-white text-sm block mt-0.5">{activeEnrollment.school_class?.name} ({activeEnrollment.school_class?.grade}. évf.)</strong>
                   </div>
-
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1.5">Szakma</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={specialization || 'Nincs beállítva'}
-                      className="w-full bg-[#081528]/60 border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed"
-                    />
+                    <span className="text-gray-400 block">Oktató:</span>
+                    <strong className="text-white text-sm block mt-0.5">{activeEnrollment.instructor?.full_name || 'Nincs megadva'}</strong>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1.5">Tapasztalati Szint</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={EXPERIENCE_LEVELS.find((l) => l.id === experienceLevel)?.label || 'Nincs beállítva'}
-                      className="w-full bg-[#081528]/60 border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1.5">Szakmai Bemutatkozás</label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    rows={3}
-                    placeholder="Rövid bemutatkozás a szakmai tapasztalatokról..."
-                    className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent"
-                  />
-                </div>
-
-                <div className="pt-4 border-t border-[#1E3A64] flex justify-end">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <Save size={14} /> {saving ? 'Mentés...' : 'Változtatások Mentése'}
-                  </button>
                 </div>
               </div>
             )}
 
-            {/* 8. SZAKMAI PROFIL (8.1, 9, 10) */}
-            {activeSettingsTab === 'trade_profile' && (
-              <div className="space-y-6">
+            {/* OSZTÁLYKÓDOS CSATLAKOZÁS FORM */}
+            <div className="p-6 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-4">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <KeyRound size={16} className="text-accent" /> Csatlakozás Új Osztályhoz
+              </h4>
+              <p className="text-xs text-gray-300">
+                Írd be az oktatódtól kapott 6 karakteres csatlakozási kódot:
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3 max-w-md">
+                <input
+                  type="text"
+                  value={classCodeInput}
+                  onChange={(e) => {
+                    setClassCodeInput(e.target.value.toUpperCase());
+                    setVerifiedCodeInfo(null);
+                    setClassCodeMsg(null);
+                  }}
+                  placeholder="Pl. ABC123"
+                  maxLength={10}
+                  className="bg-[#0C213E] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm font-mono text-white placeholder-gray-500 uppercase tracking-widest focus:outline-none focus:border-accent grow"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyClassCode}
+                  disabled={verifyingCode || !classCodeInput.trim()}
+                  className="px-4 py-2.5 bg-[#162C4E] border border-[#234678] hover:border-accent text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  {verifyingCode ? 'Ellenőrzés...' : 'Kód Ellenőrzése'}
+                </button>
+              </div>
+
+              {/* VERIFIED CODE PREVIEW CARD */}
+              {verifiedCodeInfo && (
+                <div className="p-4 bg-[#0C213E] border border-accent/40 rounded-xl space-y-3 animate-fade-in">
+                  <span className="text-xs font-bold text-accent uppercase tracking-wider block">Kód ellenőrizve ✓</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
+                    <p><strong>Iskola:</strong> {verifiedCodeInfo.school_name}</p>
+                    <p><strong>Osztály:</strong> {verifiedCodeInfo.class_name}</p>
+                    <p><strong>Évfolyam:</strong> {verifiedCodeInfo.grade || '-'}</p>
+                    <p><strong>Oktató:</strong> {verifiedCodeInfo.instructor_name}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRedeemClassCode}
+                    disabled={redeemingCode}
+                    className="w-full py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-lg shadow-amber-500/10"
+                  >
+                    {redeemingCode ? 'Csatlakozás...' : 'Csatlakozás az Osztályhoz'}
+                  </button>
+                </div>
+              )}
+
+              {classCodeMsg && (
+                <div className={`p-3 rounded-xl text-xs font-bold ${classCodeMsg.type === 'success' ? 'bg-emerald-950/60 border border-emerald-500/30 text-emerald-300' : 'bg-red-950/60 border border-red-500/30 text-red-300'}`}>
+                  {classCodeMsg.text}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. BEÁLLÍTÁSOK */}
+      {activeMainSection === 'settings' && (
+        <div className="space-y-6">
+          <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <Sliders className="text-accent" size={22} /> Fiók Beállítások
+            </h3>
+
+            {/* Sub-tabs */}
+            <div className="flex items-center gap-2 border-b border-[#1E3A64] pb-3 overflow-x-auto text-xs">
+              <button
+                onClick={() => setActiveSettingsTab('profile_data')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${activeSettingsTab === 'profile_data' ? 'bg-accent text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                Személyes Adatok
+              </button>
+              <button
+                onClick={() => setActiveSettingsTab('trade_profile')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${activeSettingsTab === 'trade_profile' ? 'bg-accent text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                Szakmai Profil
+              </button>
+              <button
+                onClick={() => setActiveSettingsTab('notifications')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${activeSettingsTab === 'notifications' ? 'bg-accent text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                Értesítések
+              </button>
+              <button
+                onClick={() => setActiveSettingsTab('security')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${activeSettingsTab === 'security' ? 'bg-accent text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                Biztonság
+              </button>
+            </div>
+
+            {/* SUBTAB 1: SZEMÉLYES ADATOK */}
+            {activeSettingsTab === 'profile_data' && (
+              <div className="space-y-4 max-w-lg">
                 <div>
-                  <h2 className="text-lg font-black text-white">Szakmai Profil</h2>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Állítsd be szakmai profilodat, hogy az ÉpítőTudás relevánsabb szakmai tartalmakat tudjon ajánlani.
-                  </p>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Teljes Név</label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  />
                 </div>
 
-                {/* 8.1 SZAKMA SELECTION */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
-                    Fő Szakma Kiválasztása
-                  </label>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">E-mail Cím</label>
+                  <input
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="w-full bg-[#081528]/60 border border-[#1E3A64] rounded-xl px-4 py-2.5 text-xs text-gray-400 cursor-not-allowed font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Bemutatkozás / Biográfia</label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    rows={3}
+                    className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-accent"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Save size={14} /> {saving ? 'Mentés...' : 'Beállítások Mentése'}
+                </button>
+              </div>
+            )}
+
+            {/* SUBTAB 2: SZAKMAI PROFIL */}
+            {activeSettingsTab === 'trade_profile' && (
+              <div className="space-y-4 max-w-lg">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Szakma / Szakterület</label>
                   <select
                     value={specialization}
                     onChange={(e) => setSpecialization(e.target.value)}
-                    className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent"
+                    className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
                   >
-                    <option value="">-- Válassz szakmát a listából --</option>
-                    {availableTrades.map((trade) => (
-                      <option key={trade} value={trade}>
-                        {trade}
-                      </option>
+                    <option value="">Válassz szakmát...</option>
+                    {availableTrades.map((t) => (
+                      <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
                 </div>
 
-                {/* 9. TAPASZTALATI SZINT */}
-                <div className="space-y-3">
-                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
-                    Tapasztalati Szint (Opcionális)
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {EXPERIENCE_LEVELS.map((level) => {
-                      const selected = experienceLevel === level.id;
-                      return (
-                        <button
-                          key={level.id}
-                          type="button"
-                          onClick={() => setExperienceLevel(level.id)}
-                          className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${selected
-                              ? 'bg-[#162C4E] border-accent text-white shadow-md'
-                              : 'bg-[#081528] border-[#1E3A64] text-gray-300 hover:border-gray-500'
-                            }`}
-                        >
-                          <div className="flex items-center justify-between font-bold text-xs">
-                            <span className={selected ? 'text-accent' : 'text-white'}>{level.label}</span>
-                            {selected && <CheckCircle2 size={14} className="text-accent" />}
-                          </div>
-                          <p className="text-[11px] text-gray-400 leading-snug">{level.desc}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Tapasztalati Szint</label>
+                  <select
+                    value={experienceLevel}
+                    onChange={(e) => setExperienceLevel(e.target.value)}
+                    className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                  >
+                    <option value="">Válassz szintet...</option>
+                    {EXPERIENCE_LEVELS.map((lvl) => (
+                      <option key={lvl.id} value={lvl.id}>{lvl.label} - {lvl.desc}</option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* 10. ÉRDEKLŐDÉSI TERÜLETEK */}
-                <div className="space-y-3">
-                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
-                    Érdeklődési Területek
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Érdeklődési Körök</label>
+                  <div className="flex flex-wrap gap-2">
                     {INTEREST_TOPICS.map((topic) => {
-                      const checked = selectedInterests.includes(topic);
+                      const active = selectedInterests.includes(topic);
                       return (
                         <button
                           key={topic}
                           type="button"
                           onClick={() => toggleInterest(topic)}
-                          className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${checked
-                              ? 'bg-purple-950/50 border-purple-500/50 text-purple-200'
-                              : 'bg-[#081528] border-[#1E3A64] text-gray-400 hover:text-white'
-                            }`}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${active ? 'bg-accent text-black font-bold' : 'bg-[#081528] border border-[#1E3A64] text-gray-300 hover:text-white'}`}
                         >
-                          <span>{topic}</span>
-                          {checked && <Check size={14} className="text-purple-400 shrink-0" />}
+                          {topic}
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-[#1E3A64] flex justify-end">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <Save size={14} /> {saving ? 'Mentés...' : 'Szakmai Profil Mentése'}
-                  </button>
-                </div>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 mt-4"
+                >
+                  <Save size={14} /> {saving ? 'Mentés...' : 'Szakmai Profil Mentése'}
+                </button>
               </div>
             )}
 
-            {/* ISKOLAI / TANÁRI KAPCSOLAT */}
-            {activeSettingsTab === 'school_link' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-black text-white flex items-center gap-2">
-                    <School className="text-accent" size={20} /> Iskolai / Tanári Kapcsolat
-                  </h2>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Csatlakozz az osztályodhoz a tanárodtól kapott egyedi osztálykóddal (pl. EPI-10A-7K2).
-                  </p>
-                </div>
-
-                <div className="p-5 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-4">
-                  <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                    <KeyRound size={16} className="text-accent" /> Osztálykód megadása
-                  </h3>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      type="text"
-                      value={classCodeInput}
-                      onChange={(e) => setClassCodeInput(e.target.value.toUpperCase())}
-                      placeholder="pl. EPI-10A-7K2"
-                      className="w-full sm:flex-1 bg-[#0C213E] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-sm text-white font-mono placeholder-gray-500 uppercase tracking-widest focus:outline-none focus:border-accent"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRedeemClassCode}
-                      disabled={redeemingCode || !classCodeInput.trim()}
-                      className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl disabled:opacity-50 transition-all cursor-pointer whitespace-nowrap"
-                    >
-                      {redeemingCode ? 'Csatlakozás...' : 'Csatlakozás'}
-                    </button>
-                  </div>
-
-                  {classCodeMsg && (
-                    <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                      classCodeMsg.type === 'success' ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30' : 'bg-red-950/60 text-red-300 border border-red-500/30'
-                    }`}>
-                      {classCodeMsg.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
-                      <span>{classCodeMsg.text}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* AKTÍV ISKOLAI KAPCSOLAT KÁRTYÁK */}
-                <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                    <School size={16} className="text-accent" /> Aktív Iskolai Kapcsolatok ({studentEnrollments.length})
-                  </h3>
-
-                  {loadingEnrollments ? (
-                    <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl text-xs text-gray-400">
-                      Betöltés...
-                    </div>
-                  ) : studentEnrollments.length === 0 ? (
-                    <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl text-xs text-gray-400 italic">
-                      Még nem csatlakoztál egyetlen iskolához vagy osztályhoz sem. Add meg a tanárodtól kapott osztálykódot a csatlakozáshoz!
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                      {studentEnrollments.map((enr) => (
-                        <div key={enr.id} className="p-5 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-3">
-                          <div className="flex items-center justify-between border-b border-[#1E3A64]/60 pb-3">
-                            <div className="flex items-center gap-2">
-                              <Building2 className="w-5 h-5 text-amber-500" />
-                              <span className="text-sm font-bold text-white">
-                                {enr.school?.name || 'Oktatási Intézmény'}
-                              </span>
-                            </div>
-                            <span className="px-2.5 py-1 text-[11px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg">
-                              {enr.status === 'active' ? 'Aktív' : enr.status}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                            <div>
-                              <span className="text-gray-400 block mb-0.5">Osztály:</span>
-                              <span className="font-semibold text-white">
-                                {enr.school_class?.name || 'Osztály'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block mb-0.5">Oktató:</span>
-                              <span className="font-semibold text-white">
-                                {enr.instructor?.full_name || 'Oktató'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block mb-0.5">Szakma:</span>
-                              <span className="font-semibold text-white">
-                                {enr.trade_id || 'Képzés'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 13. ÉRTESÍTÉSEK */}
+            {/* SUBTAB 3: ÉRTESÍTÉSEK */}
             {activeSettingsTab === 'notifications' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-black text-white">Értesítések</h2>
-                  <p className="text-xs text-gray-400 mt-1">E-mail értesítési preferenciák kezelése.</p>
-                </div>
-
+              <div className="space-y-4 max-w-lg">
                 <div className="space-y-3">
-                  <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl flex items-center justify-between opacity-80">
-                    <div>
-                      <span className="text-xs font-bold text-white block">Fontos rendszerüzenetek</span>
-                      <span className="text-[11px] text-gray-400 block">A fiók működéséhez és biztonságához szükséges kötelező értesítések.</span>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">Kötelező</span>
-                  </div>
-
-                  <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-white block">Tanulási emlékeztetők</span>
-                      <span className="text-[11px] text-gray-400 block">Emlékeztetők a megkezdett tananyagok és tesztek folytatására.</span>
-                    </div>
+                  <label className="flex items-center justify-between p-3 bg-[#081528] border border-[#1E3A64] rounded-xl cursor-pointer">
+                    <span className="text-xs font-semibold text-white">Tanulási emlékeztetők</span>
                     <input
                       type="checkbox"
                       checked={notifications.learningReminders}
                       onChange={(e) => setNotifications({ ...notifications, learningReminders: e.target.checked })}
-                      className="w-4 h-4 accent-accent cursor-pointer"
+                      className="rounded accent-accent"
                     />
-                  </div>
-
-                  <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-white block">Új szakmai tartalmak & cikkek</span>
-                      <span className="text-[11px] text-gray-400 block">Értesítések a szakterületedhez kapcsolódó új szakcikkekről.</span>
-                    </div>
+                  </label>
+                  <label className="flex items-center justify-between p-3 bg-[#081528] border border-[#1E3A64] rounded-xl cursor-pointer">
+                    <span className="text-xs font-semibold text-white">Rendszerüzenetek és frissítések</span>
                     <input
                       type="checkbox"
-                      checked={notifications.newArticles}
-                      onChange={(e) => setNotifications({ ...notifications, newArticles: e.target.checked })}
-                      className="w-4 h-4 accent-accent cursor-pointer"
+                      checked={notifications.systemMessages}
+                      disabled
+                      className="rounded accent-accent cursor-not-allowed"
                     />
-                  </div>
-
-                  <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-white block">ÉpítőTudás hírek és ajánlások</span>
-                      <span className="text-[11px] text-gray-400 block">Heti összefoglalók és újdonságok az építőipari platformról.</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notifications.newsletters}
-                      onChange={(e) => setNotifications({ ...notifications, newsletters: e.target.checked })}
-                      className="w-4 h-4 accent-accent cursor-pointer"
-                    />
-                  </div>
+                  </label>
                 </div>
 
-                <div className="pt-4 border-t border-[#1E3A64] flex justify-end">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <Save size={14} /> {saving ? 'Mentés...' : 'Beállítások Mentése'}
-                  </button>
-                </div>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Save size={14} /> Értesítések Mentése
+                </button>
               </div>
             )}
 
-            {/* 14. BIZTONSÁG */}
+            {/* SUBTAB 4: BIZTONSÁG */}
             {activeSettingsTab === 'security' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-black text-white">Biztonság</h2>
-                  <p className="text-xs text-gray-400 mt-1">Jelszó és fiókbiztonsági beállítások.</p>
-                </div>
+              <div className="space-y-6 max-w-lg">
+                <form onSubmit={handlePasswordResetSubmit} className="space-y-4">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Lock size={16} className="text-accent" /> Jelszó Módosítása
+                  </h4>
 
-                {/* Password reset form */}
-                <form onSubmit={handlePasswordResetSubmit} className="p-5 bg-[#081528] border border-[#1E3A64] rounded-2xl space-y-4">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Lock size={14} className="text-accent" /> Jelszó Módosítása
-                  </h3>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Új Jelszó</label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min. 8 karakter"
+                      className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                    />
+                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-300 mb-1">Új Jelszó</label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Legalább 8 karakter"
-                        className="w-full bg-[#0C213E] border border-[#1E3A64] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-300 mb-1">Új Jelszó Megerősítése</label>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Jelszó újra"
-                        className="w-full bg-[#0C213E] border border-[#1E3A64] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Új Jelszó Megerősítése</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Új jelszó újra"
+                      className="w-full bg-[#081528] border border-[#1E3A64] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-accent"
+                    />
                   </div>
 
                   {passwordMsg && (
-                    <div className={`p-3 rounded-xl text-xs font-bold ${passwordMsg.type === 'success' ? 'bg-emerald-950/60 text-emerald-300' : 'bg-red-950/60 text-red-300'}`}>
+                    <div className={`p-3 rounded-xl text-xs font-bold ${passwordMsg.type === 'success' ? 'bg-emerald-950/60 border border-emerald-500/30 text-emerald-300' : 'bg-red-950/60 border border-red-500/30 text-red-300'}`}>
                       {passwordMsg.text}
                     </div>
                   )}
@@ -1713,131 +1517,29 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   <button
                     type="submit"
                     disabled={passwordSaving}
-                    className="px-4 py-2 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                    className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
                   >
-                    {passwordSaving ? 'Mentés...' : 'Jelszó Frissítése'}
+                    <KeyRound size={14} /> {passwordSaving ? 'Módosítás...' : 'Jelszó Módosítása'}
                   </button>
                 </form>
 
-                {/* Account Actions */}
-                <div className="pt-4 border-t border-[#1E3A64] space-y-3">
-                  <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Fiókműveletek</h3>
-                  <div className="flex items-center gap-3 flex-wrap">
+                <div className="pt-6 border-t border-[#1E3A64] space-y-3">
+                  <h4 className="text-sm font-bold text-white">Fiók Adatok Exportálása & Kezelése</h4>
+                  <div className="flex flex-wrap gap-3">
                     <button
-                      onClick={() => signOut()}
-                      className="px-4 py-2.5 bg-[#162C4E] text-gray-200 border border-[#234678] hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
-                    >
-                      <LogOut size={14} /> Kijelentkezés a fiókból
-                    </button>
-
-                    <button
-                      onClick={() => setDeleteModalOpen(true)}
-                      className="px-4 py-2.5 bg-red-950/40 text-red-400 border border-red-500/30 hover:bg-red-950/80 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
-                    >
-                      <AlertTriangle size={14} /> Fiók Törlése
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 15. MEGJELENÉS */}
-            {activeSettingsTab === 'appearance' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-black text-white">Megjelenés</h2>
-                  <p className="text-xs text-gray-400 mt-1">Megjelenítési téma és vizuális beállítások.</p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => setThemeMode('dark')}
-                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${themeMode === 'dark' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
-                      }`}
-                  >
-                    <Moon size={24} className="mx-auto text-accent" />
-                    <span className="text-xs font-bold block">Sötét Téma (Ajánlott)</span>
-                  </button>
-
-                  <button
-                    onClick={() => setThemeMode('light')}
-                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${themeMode === 'light' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
-                      }`}
-                  >
-                    <Sun size={24} className="mx-auto text-amber-400" />
-                    <span className="text-xs font-bold block">Világos Téma</span>
-                  </button>
-
-                  <button
-                    onClick={() => setThemeMode('system')}
-                    className={`p-4 rounded-2xl border text-center transition-all cursor-pointer space-y-2 ${themeMode === 'system' ? 'bg-[#162C4E] border-accent text-white' : 'bg-[#081528] border-[#1E3A64] text-gray-400'
-                      }`}
-                  >
-                    <Monitor size={24} className="mx-auto text-blue-400" />
-                    <span className="text-xs font-bold block">Rendszerbeállítás</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 16. ADATVÉDELEM */}
-            {activeSettingsTab === 'privacy' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-black text-white">Adatvédelem & GDPR</h2>
-                  <p className="text-xs text-gray-400 mt-1">Saját adatok kezelése és letöltése.</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-white block">Adatvédelmi Tájékoztató</span>
-                      <span className="text-[11px] text-gray-400 block">Olvasd el részletes adatkezelési szabályzatunkat.</span>
-                    </div>
-                    <button
-                      onClick={() => onNavigate?.('privacy')}
-                      className="px-3 py-1.5 bg-[#162C4E] border border-[#234678] text-xs font-bold text-gray-200 rounded-lg hover:text-white"
-                    >
-                      Megtekintés
-                    </button>
-                  </div>
-
-                  <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-white block">Cookie Beállítások</span>
-                      <span className="text-[11px] text-gray-400 block">Sütik és nyomonkövetési preferenciák.</span>
-                    </div>
-                    <button
-                      onClick={() => onNavigate?.('cookies')}
-                      className="px-3 py-1.5 bg-[#162C4E] border border-[#234678] text-xs font-bold text-gray-200 rounded-lg hover:text-white"
-                    >
-                      Megtekintés
-                    </button>
-                  </div>
-
-                  <div className="p-4 bg-[#081528] border border-[#1E3A64] rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-white block">Saját Adatok Exportálása</span>
-                      <span className="text-[11px] text-gray-400 block">Töltsd le a fiókodhoz tartozó összes személyes adatot JSON formátumban.</span>
-                    </div>
-                    <button
+                      type="button"
                       onClick={exportUserDataJSON}
-                      className="px-3 py-1.5 bg-accent text-black font-extrabold text-xs rounded-lg flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2 bg-[#162C4E] border border-[#234678] hover:border-accent text-gray-200 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
                     >
-                      <Download size={14} /> Adatok Letöltése
+                      <Download size={14} /> Adatok letöltése (JSON)
                     </button>
-                  </div>
 
-                  <div className="p-4 bg-red-950/30 border border-red-500/30 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-red-400 block">Fiók & Profil Végleges Törlése</span>
-                      <span className="text-[11px] text-gray-400 block">A profil és a személyes adatok végleges eltávolítása a rendszerből.</span>
-                    </div>
                     <button
+                      type="button"
                       onClick={() => setDeleteModalOpen(true)}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2 bg-red-950/40 border border-red-500/30 hover:bg-red-900/40 text-red-400 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
                     >
-                      <AlertTriangle size={14} /> Fiók Törlése
+                      <Trash2 size={14} /> Fiók Törlése
                     </button>
                   </div>
                 </div>
@@ -1847,285 +1549,46 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         </div>
       )}
 
-      {/* 17. SEGÍTSÉG */}
-      {activeMainSection === 'help' && (
-        <div className="bg-[#0C213E]/90 border border-[#1E3A64] rounded-3xl p-8 space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <HelpCircle className="text-accent" size={24} /> Segítség & Támogatás
-            </h2>
-            <p className="text-xs text-gray-400">Gyakori kérdések és kapcsolatfelvétel az ÉpítőTudás csapatával.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <button
-              onClick={() => onNavigate?.('about')}
-              className="p-5 bg-[#081528] border border-[#1E3A64] rounded-2xl text-left hover:border-accent/40 transition-colors space-y-1"
-            >
-              <span className="text-sm font-bold text-white block">Gyakran Ismételt Kérdések (GYIK)</span>
-              <span className="text-xs text-gray-400 block">Válaszok a leggyakoribb fiók- és tartalomkezelési kérdésekre.</span>
-            </button>
-
-            <button
-              onClick={() => onNavigate?.('impressum')}
-              className="p-5 bg-[#081528] border border-[#1E3A64] rounded-2xl text-left hover:border-accent/40 transition-colors space-y-1"
-            >
-              <span className="text-sm font-bold text-white block">Kapcsolat & Impresszum</span>
-              <span className="text-xs text-gray-400 block">Lépj kapcsolatba szerkesztőségünkkel és ügyfélszolgálatunkkal.</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* FIÓK TÖRLÉSE WARNING MODAL */}
+      {/* DELETE ACCOUNT CONFIRMATION MODAL */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0C213E] border border-red-500/30 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-400 shrink-0">
-                <AlertTriangle size={24} />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white">Biztosan törölni szeretnéd a fiókodat?</h3>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  Ez a művelet végleges és nem visszavonható! Minden fiókadatod és elmentett preferenciád törlésre kerül az ÉpítőTudás rendszeréből.
-                </p>
-              </div>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#0C213E] border border-red-500/40 rounded-3xl p-6 md:p-8 max-w-md w-full space-y-6 shadow-2xl">
+            <div className="flex items-center gap-3 text-red-400">
+              <AlertTriangle size={28} />
+              <h3 className="text-lg font-black text-white">Biztosan törölni szeretnéd a fiókodat?</h3>
             </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#1E3A64]">
+            <p className="text-xs text-gray-300 leading-relaxed">
+              Ez a művelet végleges és nem visszavonható. Minden mentett adatóid és iskolai kapcsolataid törlésre kerülnek.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                type="button"
-                disabled={deletingAccount}
                 onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 bg-[#162C4E] text-gray-300 text-xs font-bold rounded-xl hover:text-white transition-colors cursor-pointer"
+                className="px-4 py-2.5 bg-[#162C4E] text-gray-300 font-bold text-xs rounded-xl hover:text-white"
               >
                 Mégse
               </button>
               <button
-                type="button"
-                disabled={deletingAccount}
                 onClick={handleDeleteAccount}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl disabled:opacity-50 flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={deletingAccount}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-red-600/20"
               >
-                {deletingAccount ? (
-                  <>
-                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-solid border-white border-r-transparent" />
-                    <span>Törlés folyamatban...</span>
-                  </>
-                ) : (
-                  <span>Fiók Végleges Törlése</span>
-                )}
+                {deletingAccount ? 'Törlés...' : 'Igen, törlöm a fiókom'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Term Detail Modal for Saved Glossary Terms */}
-      <TermDetailModal
-        isOpen={savedTermModalOpen}
-        onClose={() => {
-          setSavedTermModalOpen(false);
-          setSelectedSavedTerm(null);
-        }}
-        term={selectedSavedTerm}
-      />
-
-      {/* Book Detail Modal for Saved Books */}
-      {selectedSavedBook && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white text-gray-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 overflow-hidden flex flex-col relative">
-            {/* Modal Header */}
-            <div className="relative bg-primary text-white p-6 md:p-8 space-y-3">
-              <button
-                onClick={() => setSelectedSavedBook(null)}
-                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-extrabold text-xs rounded-full">
-                  {selectedSavedBook.categoryLabel || 'Szakkönyv'}
-                </span>
-                {selectedSavedBook.badge && (
-                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-xs rounded-full">
-                    {selectedSavedBook.badge}
-                  </span>
-                )}
-              </div>
-
-              <h2 className="text-xl md:text-2xl font-black leading-tight text-white pr-8">
-                {selectedSavedBook.title}
-              </h2>
-              {selectedSavedBook.subtitle && (
-                <p className="text-xs md:text-sm text-gray-300 font-medium">
-                  {selectedSavedBook.subtitle}
-                </p>
-              )}
-            </div>
-
-            {/* Content Body */}
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Cover Image & Metadata column */}
-                <div className="space-y-4">
-                  <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-lg bg-black relative border-2 border-gray-100">
-                    <BookCoverImage book={selectedSavedBook} className="w-full h-full object-cover" />
-                  </div>
-
-                  <div className="space-y-2 text-xs bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    <div className="flex justify-between py-1 border-b border-gray-200">
-                      <span className="text-gray-500 font-semibold">Szerző:</span>
-                      <strong className="text-gray-900 font-bold text-right">{selectedSavedBook.author}</strong>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-gray-200">
-                      <span className="text-gray-500 font-semibold">Kiadó:</span>
-                      <strong className="text-gray-900 font-bold text-right">{selectedSavedBook.publisher} ({selectedSavedBook.year})</strong>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-gray-200">
-                      <span className="text-gray-500 font-semibold">ISBN:</span>
-                      <strong className="font-mono text-gray-900 text-right">{selectedSavedBook.isbn}</strong>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-gray-200">
-                      <span className="text-gray-500 font-semibold">Oldalszám:</span>
-                      <strong className="text-gray-900 text-right">{selectedSavedBook.pages} oldal</strong>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-gray-500 font-semibold">Formátum:</span>
-                      <strong className="text-gray-900 text-right">{selectedSavedBook.format}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Main Details column */}
-                <div className="md:col-span-2 space-y-6">
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">
-                      Leírás &amp; Áttekintés
-                    </h4>
-                    <p className="text-sm text-gray-700 leading-relaxed font-normal">
-                      {selectedSavedBook.description}
-                    </p>
-                  </div>
-
-                  {/* Table of Contents */}
-                  {selectedSavedBook.tableOfContents && selectedSavedBook.tableOfContents.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">
-                        Tartalomjegyzék
-                      </h4>
-                      <ul className="space-y-1.5 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs text-gray-700">
-                        {selectedSavedBook.tableOfContents.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-amber-500 font-bold">•</span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Digital Access & Download Actions */}
-                  {(selectedSavedBook.digitalFileUrl || selectedSavedBook.digitalPreviewUrl || selectedSavedBook.downloadUrl) && (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl space-y-3">
-                      <h4 className="text-xs font-extrabold text-blue-900 uppercase tracking-wider flex items-center gap-2">
-                        <BookOpen size={14} className="text-blue-600" /> Digitális Hozzáférés &amp; Letöltés
-                      </h4>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        {(selectedSavedBook.digitalFileUrl || selectedSavedBook.downloadUrl) && (
-                          <a
-                            href={selectedSavedBook.digitalFileUrl || selectedSavedBook.downloadUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-2 cursor-pointer"
-                          >
-                            <Download size={14} />
-                            <span>{selectedSavedBook.digitalLinkLabel || 'PDF Kiadvány Letöltése'}</span>
-                          </a>
-                        )}
-                        {selectedSavedBook.digitalPreviewUrl && (
-                          <a
-                            href={selectedSavedBook.digitalPreviewUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-900 border border-gray-300 font-extrabold text-xs rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer"
-                          >
-                            <Eye size={14} className="text-blue-600" />
-                            <span>Előnézet Megtekintése</span>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Store Offers */}
-                  {selectedSavedBook.storeOffers && selectedSavedBook.storeOffers.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                        <ShoppingBag size={14} className="text-amber-500" /> Hol kapható / Vásárlási opciók
-                      </h4>
-                      <div className="space-y-2">
-                        {selectedSavedBook.storeOffers.map((offer) => (
-                          <div key={offer.id} className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-3 text-xs">
-                            <div className="space-y-0.5">
-                              <span className="font-bold text-gray-900 block">{offer.storeName}</span>
-                              <span className="text-[11px] text-gray-500 block">{offer.shippingInfo}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-black text-sm text-gray-900">
-                                {offer.price === 0 ? 'Ingyenes' : `${offer.price.toLocaleString('hu-HU')} ${offer.currency}`}
-                              </span>
-                              <a
-                                href={offer.productUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-lg text-xs transition-colors flex items-center gap-1 cursor-pointer"
-                              >
-                                <span>Megnyitás</span>
-                                <ExternalLink size={12} />
-                              </a>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-3">
-              <button
-                onClick={() => {
-                  handleRemoveSaved({
-                    id: `book_${selectedSavedBook.id}`,
-                    itemId: selectedSavedBook.id,
-                    itemType: 'book',
-                    title: selectedSavedBook.title,
-                    savedAt: '',
-                  });
-                  setSelectedSavedBook(null);
-                }}
-                className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <Trash2 size={14} />
-                <span>Törlés a mentésekből</span>
-              </button>
-
-              <button
-                onClick={() => setSelectedSavedBook(null)}
-                className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
-              >
-                Bezárás
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* GLOSSARY TERM DETAIL MODAL */}
+      {selectedSavedTerm && (
+        <TermDetailModal
+          term={selectedSavedTerm}
+          isOpen={savedTermModalOpen}
+          onClose={() => {
+            setSavedTermModalOpen(false);
+            setSelectedSavedTerm(null);
+          }}
+        />
       )}
     </div>
   );
