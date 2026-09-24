@@ -72,7 +72,7 @@ function getMatchingBook(item: SavedItem, allBooks: BookItem[]): BookItem {
     category: 'szerkezet',
     categoryLabel: item.subtitle || 'Szakkönyv',
     badge: 'Szakkönyv',
-    badgeColor: 'amber',
+    badgeColor: 'blue',
     coverImage: item.imageUrl || '',
     coverImageUrl: item.imageUrl || '',
     downloadUrl: '#',
@@ -658,26 +658,26 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   if (loading || !profile) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center text-gray-400">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent mb-2" />
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#4165b4] border-r-transparent mb-2" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white pb-20 selection:bg-[#4165b4] selection:text-white">
-      {/* TOP BANNER HEADER (MATCHING TEACHER PANEL DESIGN) */}
+      {/* TOP BANNER HEADER (CLEAN BLUE & WHITE DESIGN) */}
       <div className="bg-[#141414] border-b border-[#262626]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-amber-500 font-medium text-sm mb-1">
-                <School className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-[#60a5fa] font-medium text-sm mb-1">
+                <School className="w-4 h-4 text-[#60a5fa]" />
                 <span>{activeEnrollment?.school?.name || 'Oktatási Rendszer'}</span>
                 <span className="text-gray-600">•</span>
                 <span className="text-gray-400">Tanuló panel</span>
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                <GraduationCap className="w-8 h-8 text-amber-500" />
+                <GraduationCap className="w-8 h-8 text-[#60a5fa]" />
                 {activeMainSection === 'overview' && 'Tanulói Vezérlőpult'}
                 {activeMainSection === 'materials' && 'Tananyagaink Könyvtára'}
                 {activeMainSection === 'my-class' && 'Saját Osztályom'}
@@ -703,7 +703,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   onClick={() => onNavigate?.('teacher')}
                   className="px-4 py-2 text-xs font-semibold text-gray-300 hover:text-white bg-[#1F1F1F] hover:bg-[#262626] border border-[#333] rounded-xl transition-colors flex items-center gap-2 cursor-pointer"
                 >
-                  <GraduationCap className="w-4 h-4 text-amber-400" />
+                  <GraduationCap className="w-4 h-4 text-blue-400" />
                   Tanári Vezérlőpult
                 </button>
               )}
@@ -712,7 +712,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   setActiveMainSection('settings');
                   setActiveSettingsTab('profile_data');
                 }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold text-xs rounded-xl transition-all shadow-lg shadow-blue-500/10 cursor-pointer"
               >
                 <Sliders className="w-4 h-4" />
                 Beállítások
@@ -728,7 +728,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('overview')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'overview'
-                ? 'bg-amber-500 text-black shadow-md font-extrabold'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
                 : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
@@ -738,7 +738,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('materials')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'materials'
-                ? 'bg-amber-500 text-black shadow-md font-extrabold'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
                 : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
@@ -748,7 +748,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('my-class')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'my-class'
-                ? 'bg-amber-500 text-black shadow-md font-extrabold'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
                 : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
@@ -758,7 +758,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('progress')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'progress'
-                ? 'bg-amber-500 text-black shadow-md font-extrabold'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
                 : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
@@ -768,7 +768,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('tests')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'tests'
-                ? 'bg-amber-500 text-black shadow-md font-extrabold'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
                 : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
@@ -778,7 +778,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('school-link')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'school-link'
-                ? 'bg-amber-500 text-black shadow-md font-extrabold'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
                 : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
@@ -788,7 +788,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('settings')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'settings'
-                ? 'bg-amber-500 text-black shadow-md font-extrabold'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
                 : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
@@ -818,10 +818,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         {/* VIEW 1: ÁTTEKINTÉS */}
         {activeMainSection === 'overview' && (
           <div className="space-y-8">
-            {/* 6 STATISTICAL SUMMARY TILES (MATCHING TEACHER PANEL) */}
+            {/* 6 STATISTICAL SUMMARY TILES */}
             <div>
               <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-amber-500" />
+                <LayoutDashboard className="w-4 h-4 text-[#60a5fa]" />
                 Áttekintő Statisztikák
               </h2>
 
@@ -829,15 +829,15 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 {/* Tile 1: Kiosztott Tananyagok */}
                 <div
                   onClick={() => setActiveMainSection('materials')}
-                  className="bg-[#141414] border border-[#262626] hover:border-amber-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                  className="bg-[#141414] border border-[#262626] hover:border-[#4165b4]/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kiosztott Tananyagok</span>
-                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                    <div className="p-2.5 bg-[#4165b4]/20 border border-[#4165b4]/40 rounded-xl text-[#60a5fa] group-hover:bg-[#4165b4] group-hover:text-white transition-colors">
                       <BookOpen className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="text-3xl font-black text-white group-hover:text-amber-400 transition-colors">
+                  <div className="text-3xl font-black text-white group-hover:text-[#60a5fa] transition-colors">
                     {classMaterials.length || 0}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Összes elérhető kurzus és segédanyag</p>
@@ -867,7 +867,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Befejezett</span>
-                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
+                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
                   </div>
@@ -914,15 +914,15 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 {/* Tile 6: Iskolai Osztály */}
                 <div
                   onClick={() => setActiveMainSection('school-link')}
-                  className="bg-[#141414] border border-[#262626] hover:border-amber-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                  className="bg-[#141414] border border-[#262626] hover:border-[#4165b4]/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Iskolai Osztály</span>
-                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                    <div className="p-2.5 bg-[#4165b4]/20 border border-[#4165b4]/40 rounded-xl text-[#60a5fa] group-hover:bg-[#4165b4] group-hover:text-white transition-colors">
                       <School className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="text-xl font-bold text-white group-hover:text-amber-400 transition-colors truncate">
+                  <div className="text-xl font-bold text-white group-hover:text-[#60a5fa] transition-colors truncate">
                     {activeEnrollment?.school_class?.name || 'Még nincs'}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">
@@ -935,14 +935,14 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             {/* AKTUÁLIS TANULÁSI ÁLLAPOT */}
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <GraduationCap className="text-amber-500" size={20} /> Aktuális Tanulási Állapot
+                <GraduationCap className="text-[#60a5fa]" size={20} /> Aktuális Tanulási Állapot
               </h3>
 
               {activeEnrollment ? (
                 <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                      <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">Aktív Osztály</span>
+                      <span className="text-xs font-bold text-[#60a5fa] uppercase tracking-wider">Aktív Osztály</span>
                       <h4 className="text-lg font-bold text-white">{activeEnrollment.school?.name}</h4>
                       <p className="text-xs text-gray-400 mt-0.5">
                         Osztály: {activeEnrollment.school_class?.name} ({activeEnrollment.school_class?.grade || '-'}. évfolyam) · Oktató: {activeEnrollment.instructor?.full_name || 'Nincs megadva'}
@@ -950,7 +950,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     </div>
                     <button
                       onClick={() => setActiveMainSection('materials')}
-                      className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 self-start md:self-auto shadow-lg shadow-amber-500/10"
+                      className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 self-start md:self-auto shadow-lg shadow-blue-500/10"
                     >
                       <Play size={14} /> Tananyagok Megnyitása
                     </button>
@@ -959,18 +959,18 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   <div className="space-y-2 pt-2 border-t border-[#333]">
                     <div className="flex justify-between text-xs text-gray-300">
                       <span>Általános előrehaladás:</span>
-                      <span className="font-bold text-amber-400">15%</span>
+                      <span className="font-bold text-[#60a5fa]">15%</span>
                     </div>
                     <div className="w-full bg-[#2A2A2A] rounded-full h-2.5">
-                      <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: '15%' }} />
+                      <div className="bg-[#4165b4] h-2.5 rounded-full" style={{ width: '15%' }} />
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-6 bg-[#1F1F1F] border border-amber-500/30 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="p-6 bg-[#1F1F1F] border border-[#4165b4]/40 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      <School className="text-amber-400" size={16} /> Még nem csatlakoztál iskolai osztályhoz
+                      <School className="text-[#60a5fa]" size={16} /> Még nem csatlakoztál iskolai osztályhoz
                     </h4>
                     <p className="text-xs text-gray-400">
                       Adja meg az oktatójától kapott osztálykódot a tananyagokhoz és feladatokhoz való hozzáféréshez.
@@ -978,7 +978,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   </div>
                   <button
                     onClick={() => setActiveMainSection('school-link')}
-                    className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                    className="px-4 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap"
                   >
                     Osztálykód Megadása
                   </button>
@@ -1022,7 +1022,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-black text-white flex items-center gap-2">
-                    <BookOpen className="text-amber-500" size={22} /> Tananyagaink Könyvtára
+                    <BookOpen className="text-[#60a5fa]" size={22} /> Tananyagaink Könyvtára
                   </h3>
                   <p className="text-xs text-gray-400 mt-1">
                     Az osztályodhoz és képzésedhez kiosztott tananyagok, modulok és segédanyagok.
@@ -1032,19 +1032,19 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => setMaterialsFilter('all')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'all' ? 'bg-amber-500 text-black' : 'bg-[#1F1F1F] text-gray-400 hover:text-white'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'all' ? 'bg-[#4165b4] text-white' : 'bg-[#1F1F1F] text-gray-400 hover:text-white'}`}
                   >
                     Összes
                   </button>
                   <button
                     onClick={() => setMaterialsFilter('in_progress')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'in_progress' ? 'bg-amber-500 text-black' : 'bg-[#1F1F1F] text-gray-400 hover:text-white'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'in_progress' ? 'bg-[#4165b4] text-white' : 'bg-[#1F1F1F] text-gray-400 hover:text-white'}`}
                   >
                     Folyamatban
                   </button>
                   <button
                     onClick={() => setMaterialsFilter('completed')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'completed' ? 'bg-amber-500 text-black' : 'bg-[#1F1F1F] text-gray-400 hover:text-white'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${materialsFilter === 'completed' ? 'bg-[#4165b4] text-white' : 'bg-[#1F1F1F] text-gray-400 hover:text-white'}`}
                   >
                     Befejezett
                   </button>
@@ -1058,22 +1058,22 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   value={materialsSearch}
                   onChange={(e) => setMaterialsSearch(e.target.value)}
                   placeholder="Tananyag keresése cím vagy témakör alapján..."
-                  className="w-full bg-[#1F1F1F] border border-[#333] focus:border-amber-500 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                  className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none"
                 />
               </div>
 
               {classMaterials.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {classMaterials.map((cm) => (
-                    <div key={cm.id} className="bg-[#1F1F1F] border border-[#333] hover:border-amber-500/50 rounded-xl p-5 space-y-4 transition-all">
+                    <div key={cm.id} className="bg-[#1F1F1F] border border-[#333] hover:border-[#4165b4]/50 rounded-xl p-5 space-y-4 transition-all">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-[#4165b4]/20 text-[#60a5fa] border border-[#4165b4]/40">
                             {cm.material?.category || 'Szakmai tananyag'}
                           </span>
                           <h4 className="text-base font-bold text-white mt-1.5">{cm.material?.title || 'Cím nélkül'}</h4>
                         </div>
-                        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0">
+                        <span className="text-xs font-bold text-[#60a5fa] bg-[#4165b4]/20 px-2 py-0.5 rounded border border-[#4165b4]/40 shrink-0">
                           Folyamatban
                         </span>
                       </div>
@@ -1084,7 +1084,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         <span className="text-gray-500">Iskola: {activeEnrollment?.school?.name || 'Iskolámból'}</span>
                         <button
                           onClick={() => onNavigate?.('courses')}
-                          className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold rounded-lg transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+                          className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold rounded-lg transition-all flex items-center gap-1.5 text-xs cursor-pointer"
                         >
                           <Play size={12} /> Megnyitás
                         </button>
@@ -1101,7 +1101,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   </p>
                   <button
                     onClick={() => onNavigate?.('courses')}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer mt-2"
+                    className="px-4 py-2 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer mt-2"
                   >
                     <Search size={14} /> Nyilvános Kurzusok Böngészése
                   </button>
@@ -1116,7 +1116,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
               <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <Users className="text-amber-500" size={22} /> Saját Osztályom
+                <Users className="text-[#60a5fa]" size={22} /> Saját Osztályom
               </h3>
 
               {activeEnrollment ? (
@@ -1147,7 +1147,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {classmates.map((c) => (
                           <div key={c.id} className="p-3.5 bg-[#1F1F1F] border border-[#333] rounded-xl flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-[#4165b4]/20 text-[#60a5fa] font-bold text-xs flex items-center justify-center shrink-0">
                               {(c.student?.full_name || 'D').charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
@@ -1166,7 +1166,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 </div>
               ) : (
                 <div className="text-center py-12 space-y-4 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
-                  <School size={48} className="mx-auto text-amber-400 opacity-80" />
+                  <School size={48} className="mx-auto text-[#60a5fa] opacity-80" />
                   <div className="space-y-1 max-w-md mx-auto">
                     <h4 className="text-base font-bold text-white">Még nem csatlakoztál osztályhoz</h4>
                     <p className="text-xs text-gray-400">
@@ -1175,7 +1175,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   </div>
                   <button
                     onClick={() => setActiveMainSection('school-link')}
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+                    className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
                   >
                     <School size={15} /> Csatlakozás Osztálykóddal
                   </button>
@@ -1190,15 +1190,15 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
               <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <TrendingUp className="text-amber-500" size={22} /> Tanulási Haladásom
+                <TrendingUp className="text-[#60a5fa]" size={22} /> Tanulási Haladásom
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-3">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Teljesítési Százalék</span>
-                  <div className="text-3xl font-black text-amber-400">{classMaterials.length > 0 ? '15%' : '0%'}</div>
+                  <div className="text-3xl font-black text-[#60a5fa]">{classMaterials.length > 0 ? '15%' : '0%'}</div>
                   <div className="w-full bg-[#2A2A2A] rounded-full h-2">
-                    <div className="bg-amber-500 h-2 rounded-full" style={{ width: classMaterials.length > 0 ? '15%' : '0%' }} />
+                    <div className="bg-[#4165b4] h-2 rounded-full" style={{ width: classMaterials.length > 0 ? '15%' : '0%' }} />
                   </div>
                 </div>
 
@@ -1226,10 +1226,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       <div key={cm.id} className="p-4 bg-[#1F1F1F] border border-[#333] rounded-xl space-y-2">
                         <div className="flex justify-between items-center text-xs">
                           <span className="font-bold text-white">{cm.material?.title || 'Tananyag'}</span>
-                          <span className="text-amber-400 font-bold">15%</span>
+                          <span className="text-[#60a5fa] font-bold">15%</span>
                         </div>
                         <div className="w-full bg-[#2A2A2A] rounded-full h-2">
-                          <div className="bg-amber-500 h-2 rounded-full" style={{ width: '15%' }} />
+                          <div className="bg-[#4165b4] h-2 rounded-full" style={{ width: '15%' }} />
                         </div>
                       </div>
                     ))}
@@ -1249,7 +1249,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
               <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <CheckSquare className="text-amber-500" size={22} /> Tesztek és Kvízek
+                <CheckSquare className="text-[#60a5fa]" size={22} /> Tesztek és Kvízek
               </h3>
 
               <div className="text-center py-12 space-y-4 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
@@ -1262,7 +1262,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 </div>
                 <button
                   onClick={() => onNavigate?.('courses')}
-                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+                  className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
                 >
                   <Search size={14} /> Keresés a Tananyagok Között
                 </button>
@@ -1277,7 +1277,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
               <div>
                 <h3 className="text-xl font-black text-white flex items-center gap-2">
-                  <School className="text-amber-500" size={22} /> Iskolai Kapcsolat és Osztálykód
+                  <School className="text-[#60a5fa]" size={22} /> Iskolai Kapcsolat és Osztálykód
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">
                   Kezeld az iskolai és tanulói kapcsolataidat, vagy csatlakozz új osztályhoz kód segítségével.
@@ -1314,7 +1314,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
               <div className="p-6 bg-[#1F1F1F] border border-[#333] rounded-xl space-y-4">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <KeyRound size={16} className="text-amber-500" /> Csatlakozás Új Osztályhoz
+                  <KeyRound size={16} className="text-[#60a5fa]" /> Csatlakozás Új Osztályhoz
                 </h4>
                 <p className="text-xs text-gray-300">
                   Írd be az oktatódtól kapott 6 karakteres csatlakozási kódot:
@@ -1331,21 +1331,21 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     }}
                     placeholder="Pl. ABC123"
                     maxLength={10}
-                    className="bg-[#141414] border border-[#333] focus:border-amber-500 rounded-xl px-4 py-2.5 text-sm font-mono text-white placeholder-gray-500 uppercase tracking-widest focus:outline-none grow"
+                    className="bg-[#141414] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-sm font-mono text-white placeholder-gray-500 uppercase tracking-widest focus:outline-none grow"
                   />
                   <button
                     type="button"
                     onClick={handleVerifyClassCode}
                     disabled={verifyingCode || !classCodeInput.trim()}
-                    className="px-4 py-2.5 bg-[#262626] border border-[#333] hover:border-amber-500 text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-all cursor-pointer whitespace-nowrap"
+                    className="px-4 py-2.5 bg-[#262626] border border-[#333] hover:border-[#4165b4] text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-all cursor-pointer whitespace-nowrap"
                   >
                     {verifyingCode ? 'Ellenőrzés...' : 'Kód Ellenőrzése'}
                   </button>
                 </div>
 
                 {verifiedCodeInfo && (
-                  <div className="p-4 bg-[#141414] border border-amber-500/40 rounded-xl space-y-3">
-                    <span className="text-xs font-bold text-amber-500 uppercase tracking-wider block">Kód ellenőrizve ✓</span>
+                  <div className="p-4 bg-[#141414] border border-[#4165b4]/40 rounded-xl space-y-3">
+                    <span className="text-xs font-bold text-[#60a5fa] uppercase tracking-wider block">Kód ellenőrizve ✓</span>
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
                       <p><strong>Iskola:</strong> {verifiedCodeInfo.school_name}</p>
                       <p><strong>Osztály:</strong> {verifiedCodeInfo.class_name}</p>
@@ -1356,7 +1356,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       type="button"
                       onClick={handleRedeemClassCode}
                       disabled={redeemingCode}
-                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-lg shadow-amber-500/10"
+                      className="w-full py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-500/10"
                     >
                       {redeemingCode ? 'Csatlakozás...' : 'Csatlakozás az Osztályhoz'}
                     </button>
@@ -1378,31 +1378,31 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
               <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <Sliders className="text-amber-500" size={22} /> Fiók Beállítások
+                <Sliders className="text-[#60a5fa]" size={22} /> Fiók Beállítások
               </h3>
 
               <div className="flex items-center gap-2 border-b border-[#262626] pb-3 overflow-x-auto text-xs">
                 <button
                   onClick={() => setActiveSettingsTab('profile_data')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'profile_data' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'profile_data' ? 'bg-[#4165b4] text-white' : 'text-gray-400 hover:text-white'}`}
                 >
                   Személyes Adatok
                 </button>
                 <button
                   onClick={() => setActiveSettingsTab('trade_profile')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'trade_profile' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'trade_profile' ? 'bg-[#4165b4] text-white' : 'text-gray-400 hover:text-white'}`}
                 >
                   Szakmai Profil
                 </button>
                 <button
                   onClick={() => setActiveSettingsTab('notifications')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'notifications' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'notifications' ? 'bg-[#4165b4] text-white' : 'text-gray-400 hover:text-white'}`}
                 >
                   Értesítések
                 </button>
                 <button
                   onClick={() => setActiveSettingsTab('security')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'security' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${activeSettingsTab === 'security' ? 'bg-[#4165b4] text-white' : 'text-gray-400 hover:text-white'}`}
                 >
                   Biztonság
                 </button>
@@ -1416,7 +1416,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-amber-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
                     />
                   </div>
 
@@ -1436,14 +1436,14 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       rows={3}
-                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-amber-500 rounded-xl p-3 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl p-3 text-xs text-white focus:outline-none"
                     />
                   </div>
 
                   <button
                     onClick={handleSaveProfile}
                     disabled={saving}
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                    className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
                   >
                     <Save size={14} /> {saving ? 'Mentés...' : 'Beállítások Mentése'}
                   </button>
@@ -1457,7 +1457,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     <select
                       value={specialization}
                       onChange={(e) => setSpecialization(e.target.value)}
-                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-amber-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
                     >
                       <option value="">Válassz szakmát...</option>
                       {availableTrades.map((t) => (
@@ -1471,7 +1471,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     <select
                       value={experienceLevel}
                       onChange={(e) => setExperienceLevel(e.target.value)}
-                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-amber-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
                     >
                       <option value="">Válassz szintet...</option>
                       {EXPERIENCE_LEVELS.map((lvl) => (
@@ -1490,7 +1490,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                             key={topic}
                             type="button"
                             onClick={() => toggleInterest(topic)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${active ? 'bg-amber-500 text-black font-bold' : 'bg-[#1F1F1F] border border-[#333] text-gray-300 hover:text-white'}`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${active ? 'bg-[#4165b4] text-white font-bold' : 'bg-[#1F1F1F] border border-[#333] text-gray-300 hover:text-white'}`}
                           >
                             {topic}
                           </button>
@@ -1502,7 +1502,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   <button
                     onClick={handleSaveProfile}
                     disabled={saving}
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 mt-4"
+                    className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 mt-4"
                   >
                     <Save size={14} /> {saving ? 'Mentés...' : 'Szakmai Profil Mentése'}
                   </button>
@@ -1518,7 +1518,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         type="checkbox"
                         checked={notifications.learningReminders}
                         onChange={(e) => setNotifications({ ...notifications, learningReminders: e.target.checked })}
-                        className="rounded accent-amber-500"
+                        className="rounded accent-[#4165b4]"
                       />
                     </label>
                     <label className="flex items-center justify-between p-3.5 bg-[#1F1F1F] border border-[#333] rounded-xl cursor-pointer">
@@ -1527,7 +1527,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         type="checkbox"
                         checked={notifications.systemMessages}
                         disabled
-                        className="rounded accent-amber-500 cursor-not-allowed"
+                        className="rounded accent-[#4165b4] cursor-not-allowed"
                       />
                     </label>
                   </div>
@@ -1535,7 +1535,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   <button
                     onClick={handleSaveProfile}
                     disabled={saving}
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                    className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
                   >
                     <Save size={14} /> Értesítések Mentése
                   </button>
@@ -1546,7 +1546,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 <div className="space-y-6 max-w-lg">
                   <form onSubmit={handlePasswordResetSubmit} className="space-y-4">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Lock size={16} className="text-amber-500" /> Jelszó Módosítása
+                      <Lock size={16} className="text-[#60a5fa]" /> Jelszó Módosítása
                     </h4>
 
                     <div>
@@ -1556,7 +1556,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Min. 8 karakter"
-                        className="w-full bg-[#1F1F1F] border border-[#333] focus:border-amber-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                        className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
                       />
                     </div>
 
@@ -1567,7 +1567,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Új jelszó újra"
-                        className="w-full bg-[#1F1F1F] border border-[#333] focus:border-amber-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                        className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
                       />
                     </div>
 
@@ -1580,7 +1580,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     <button
                       type="submit"
                       disabled={passwordSaving}
-                      className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                      className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
                     >
                       <KeyRound size={14} /> {passwordSaving ? 'Módosítás...' : 'Jelszó Módosítása'}
                     </button>
@@ -1592,7 +1592,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       <button
                         type="button"
                         onClick={exportUserDataJSON}
-                        className="px-4 py-2 bg-[#1F1F1F] border border-[#333] hover:border-amber-500 text-gray-200 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                        className="px-4 py-2 bg-[#1F1F1F] border border-[#333] hover:border-[#4165b4] text-gray-200 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2"
                       >
                         <Download size={14} /> Adatok letöltése (JSON)
                       </button>
