@@ -504,7 +504,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#4165b4] border-r-transparent" />
       </div>
     );
   }
@@ -513,14 +513,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     return (
       <div className="min-h-screen bg-[#0A0A0A] text-white p-8 flex items-center justify-center">
         <div className="max-w-md text-center bg-[#141414] p-8 rounded-2xl border border-[#262626]">
-          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <AlertCircle className="w-12 h-12 text-[#60a5fa] mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Nincs Iskolai Tagság</h2>
           <p className="text-gray-400 mb-6">
             Ön jelenleg nem áll kapcsolatban regisztrált oktatási intézménnyel, vagy a fiókja még nem kapott oktatói megbízást.
           </p>
           <button
             onClick={() => onNavigate?.('profile')}
-            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-xl transition-colors"
+            className="px-6 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold rounded-xl transition-colors"
           >
             Vissza a Profilhoz
           </button>
@@ -540,14 +540,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-amber-500 font-medium text-sm mb-1">
+              <div className="flex items-center gap-2 text-[#60a5fa] font-medium text-sm mb-1">
                 <School className="w-4 h-4" />
                 <span>{schoolInfo.name}</span>
                 <span className="text-gray-600">•</span>
                 <span className="text-gray-400">Tanár panel</span>
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                <GraduationCap className="w-8 h-8 text-amber-500" />
+                <GraduationCap className="w-8 h-8 text-[#60a5fa]" />
                 {activeView === 'dashboard' && 'Tanári Vezérlőpult'}
                 {activeView === 'classes' && 'Osztályaim Kezelése'}
                 {activeView === 'students' && 'Tanulóim Összesített Listája'}
@@ -570,7 +570,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               </button>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-xl transition-all shadow-lg shadow-amber-500/10"
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/10"
               >
                 <Plus className="w-5 h-5" />
                 Új Osztály Indítása
@@ -589,7 +589,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             {/* 6 STATISTICAL SUMMARY TILES */}
             <div>
               <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-amber-500" />
+                <LayoutDashboard className="w-4 h-4 text-[#60a5fa]" />
                 Áttekintő Statisztikák
               </h2>
 
@@ -597,15 +597,15 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 {/* Tile 1: Osztályaim */}
                 <div
                   onClick={() => onNavigateView?.('classes')}
-                  className="bg-[#141414] border border-[#262626] hover:border-amber-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                  className="bg-[#141414] border border-[#262626] hover:border-[#4165b4]/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Osztályaim</span>
-                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                    <div className="p-2.5 bg-[#4165b4]/10 border border-[#4165b4]/20 rounded-xl text-[#60a5fa] group-hover:bg-[#4165b4] group-hover:text-white transition-colors">
                       <GraduationCap className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="text-3xl font-black text-white group-hover:text-amber-400 transition-colors">
+                  <div className="text-3xl font-black text-white group-hover:text-[#60a5fa] transition-colors">
                     {classes.length}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Aktívan kezelt osztályok száma</p>
@@ -665,15 +665,15 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 {/* Tile 5: Befejezetlen Tananyagok */}
                 <div
                   onClick={() => onNavigateView?.('progress')}
-                  className="bg-[#141414] border border-[#262626] hover:border-amber-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                  className="bg-[#141414] border border-[#262626] hover:border-blue-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Folyamatban Lévő</span>
-                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                    <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400 group-hover:bg-[#4165b4] group-hover:text-white transition-colors">
                       <Clock className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="text-3xl font-black text-white group-hover:text-amber-400 transition-colors">
+                  <div className="text-3xl font-black text-white group-hover:text-[#60a5fa] transition-colors">
                     {Math.max(0, totalStudentsCount * 2 - 1)}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Teljesítésre váró feladatok</p>
@@ -701,16 +701,16 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             {/* QUICK ACTIONS SECTION */}
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6">
               <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-amber-500" />
+                <Wrench className="w-4 h-4 text-[#60a5fa]" />
                 Gyors Műveletek
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="p-4 bg-[#1F1F1F] hover:bg-amber-500 hover:text-black rounded-xl border border-[#262626] transition-all flex flex-col items-center justify-center text-center gap-2 group"
+                  className="p-4 bg-[#1F1F1F] hover:bg-[#4165b4] hover:text-white rounded-xl border border-[#262626] transition-all flex flex-col items-center justify-center text-center gap-2 group"
                 >
-                  <Plus className="w-6 h-6 text-amber-500 group-hover:text-black" />
+                  <Plus className="w-6 h-6 text-[#60a5fa] group-hover:text-white" />
                   <span className="text-xs font-bold">Új Osztály Létrehozása</span>
                 </button>
 
@@ -740,9 +740,9 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
                 <button
                   onClick={() => onNavigateView?.('assigned_materials')}
-                  className="p-4 bg-[#1F1F1F] hover:bg-amber-500 hover:text-black rounded-xl border border-[#262626] transition-all flex flex-col items-center justify-center text-center gap-2 group"
+                  className="p-4 bg-[#1F1F1F] hover:bg-[#4165b4] hover:text-white rounded-xl border border-[#262626] transition-all flex flex-col items-center justify-center text-center gap-2 group"
                 >
-                  <CheckSquare className="w-6 h-6 text-amber-400 group-hover:text-black" />
+                  <CheckSquare className="w-6 h-6 text-[#60a5fa] group-hover:text-white" />
                   <span className="text-xs font-bold">Kiosztott Tananyagok</span>
                 </button>
 
@@ -760,12 +760,12 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-amber-500" />
+                  <Users className="w-5 h-5 text-[#60a5fa]" />
                   Saját Osztályok ({classes.length})
                 </h2>
                 <button
                   onClick={() => onNavigateView?.('classes')}
-                  className="text-xs text-amber-400 hover:underline font-semibold flex items-center gap-1"
+                  className="text-xs text-[#60a5fa] hover:underline font-semibold flex items-center gap-1"
                 >
                   Összes osztály kezelése ➔
                 </button>
@@ -773,14 +773,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
               {classes.length === 0 ? (
                 <div className="bg-[#141414] border border-[#262626] rounded-2xl p-12 text-center max-w-xl mx-auto">
-                  <GraduationCap className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                  <GraduationCap className="w-12 h-12 text-[#60a5fa] mx-auto mb-3" />
                   <h3 className="text-lg font-bold text-white mb-2">Még nincs rögzített osztály</h3>
                   <p className="text-xs text-gray-400 mb-6">
                     Hozza létre első osztályát (pl. "10.A"), hogy automatikusan egyedi csatlakozási kódot generálhasson és tananyagokat rendelhessen a tanulókhoz.
                   </p>
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-xl transition-all inline-flex items-center gap-2 text-xs"
+                    className="px-6 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold rounded-xl transition-all inline-flex items-center gap-2 text-xs"
                   >
                     <Plus className="w-4 h-4" />
                     Új Osztály Indítása
@@ -791,15 +791,15 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   {classes.map((cls) => (
                     <div
                       key={cls.id}
-                      className="bg-[#141414] border border-[#262626] hover:border-amber-500/40 rounded-2xl p-6 flex flex-col justify-between transition-all group shadow-lg"
+                      className="bg-[#141414] border border-[#262626] hover:border-[#4165b4]/40 rounded-2xl p-6 flex flex-col justify-between transition-all group shadow-lg"
                     >
                       <div>
                         <div className="flex items-start justify-between mb-4">
                           <div>
-                            <span className="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">
+                            <span className="text-xs font-semibold px-2.5 py-1 bg-[#4165b4]/10 text-[#60a5fa] rounded-lg border border-[#4165b4]/20">
                               {cls.grade ? `${cls.grade}. Évfolyam` : 'Képzés'}
                             </span>
-                            <h3 className="text-2xl font-bold text-white mt-2 group-hover:text-amber-400 transition-colors">
+                            <h3 className="text-2xl font-bold text-white mt-2 group-hover:text-[#60a5fa] transition-colors">
                               {cls.name}
                             </h3>
                           </div>
@@ -817,8 +817,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                           </div>
                           {cls.active_code ? (
                             <div className="flex items-center gap-2">
-                              <Key className="w-4 h-4 text-amber-500" />
-                              <span>Kód: <code className="text-amber-400 font-mono font-bold">{cls.active_code.code}</code></span>
+                              <Key className="w-4 h-4 text-[#60a5fa]" />
+                              <span>Kód: <code className="text-[#60a5fa] font-mono font-bold">{cls.active_code.code}</code></span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 text-gray-500">
@@ -835,7 +835,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                             setSelectedClassId(cls.id);
                             onNavigateView?.('classes');
                           }}
-                          className="flex-1 py-2.5 bg-[#1F1F1F] hover:bg-amber-500 hover:text-black text-gray-200 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                          className="flex-1 py-2.5 bg-[#1F1F1F] hover:bg-[#4165b4] hover:text-white text-gray-200 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
                         >
                           <BookOpen className="w-4 h-4" />
                           Osztály Megnyitása
@@ -857,7 +857,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Users className="w-5 h-5 text-amber-500" />
+                    <Users className="w-5 h-5 text-[#60a5fa]" />
                     Saját Osztályok Kezelése ({classes.length})
                   </h2>
                 </div>
@@ -866,15 +866,15 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   {classes.map((cls) => (
                     <div
                       key={cls.id}
-                      className="bg-[#141414] border border-[#262626] hover:border-amber-500/40 rounded-2xl p-6 flex flex-col justify-between transition-all group shadow-lg"
+                      className="bg-[#141414] border border-[#262626] hover:border-[#4165b4]/40 rounded-2xl p-6 flex flex-col justify-between transition-all group shadow-lg"
                     >
                       <div>
                         <div className="flex items-start justify-between mb-4">
                           <div>
-                            <span className="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">
+                            <span className="text-xs font-semibold px-2.5 py-1 bg-[#4165b4]/10 text-[#60a5fa] rounded-lg border border-[#4165b4]/20">
                               {cls.grade ? `${cls.grade}. Évfolyam` : 'Képzés'}
                             </span>
-                            <h3 className="text-2xl font-bold text-white mt-2 group-hover:text-amber-400 transition-colors">
+                            <h3 className="text-2xl font-bold text-white mt-2 group-hover:text-[#60a5fa] transition-colors">
                               {cls.name}
                             </h3>
                           </div>
@@ -892,8 +892,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                           </div>
                           {cls.active_code ? (
                             <div className="flex items-center gap-2">
-                              <Key className="w-4 h-4 text-amber-500" />
-                              <span>Kód: <code className="text-amber-400 font-mono font-bold">{cls.active_code.code}</code></span>
+                              <Key className="w-4 h-4 text-[#60a5fa]" />
+                              <span>Kód: <code className="text-[#60a5fa] font-mono font-bold">{cls.active_code.code}</code></span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 text-gray-500">
@@ -907,14 +907,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <div className="pt-4 border-t border-[#1F1F1F] flex items-center gap-2">
                         <button
                           onClick={() => setSelectedClassId(cls.id)}
-                          className="flex-1 py-2.5 bg-[#1F1F1F] hover:bg-amber-500 hover:text-black text-gray-200 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                          className="flex-1 py-2.5 bg-[#1F1F1F] hover:bg-[#4165b4] hover:text-white text-gray-200 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
                         >
                           <BookOpen className="w-4 h-4" />
                           Osztály Megnyitása
                         </button>
                         <button
                           onClick={() => handleOpenEditClass(cls)}
-                          className="p-2.5 bg-[#1F1F1F] hover:bg-[#262626] text-amber-400 rounded-xl transition-colors"
+                          className="p-2.5 bg-[#1F1F1F] hover:bg-[#262626] text-[#60a5fa] rounded-xl transition-colors"
                           title="Osztály szerkesztése"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -947,7 +947,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">
+                          <span className="text-xs font-semibold px-2.5 py-1 bg-[#4165b4]/10 text-[#60a5fa] rounded-lg border border-[#4165b4]/20">
                             {selectedClass.grade ? `${selectedClass.grade}. Évfolyam` : 'Képzés'}
                           </span>
                           <span className="text-gray-500">•</span>
@@ -959,7 +959,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                           <h2 className="text-3xl font-extrabold text-white">{selectedClass.name} Osztály</h2>
                           <button
                             onClick={() => handleOpenEditClass(selectedClass)}
-                            className="p-2 bg-[#1F1F1F] hover:bg-[#262626] text-amber-400 rounded-lg transition-colors"
+                            className="p-2 bg-[#1F1F1F] hover:bg-[#262626] text-[#60a5fa] rounded-lg transition-colors"
                             title="Osztály szerkesztése"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -972,7 +972,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                         <div>
                           <div className="text-xs text-gray-400 font-medium">Osztálytermi Csatlakozási Kód:</div>
                           {activeCode ? (
-                            <div className="text-2xl font-black text-amber-400 font-mono tracking-wider mt-0.5">
+                            <div className="text-2xl font-black text-[#60a5fa] font-mono tracking-wider mt-0.5">
                               {activeCode.code}
                             </div>
                           ) : (
@@ -994,7 +994,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                           <button
                             onClick={handleGenerateNewCode}
                             disabled={generatingCode}
-                            className="p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-medium"
+                            className="p-2.5 bg-[#4165b4]/10 hover:bg-[#4165b4]/20 text-[#60a5fa] border border-[#4165b4]/30 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-medium"
                             title="Új kód generálása"
                           >
                             <RefreshCw className={`w-4 h-4 ${generatingCode ? 'animate-spin' : ''}`} />
@@ -1009,7 +1009,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <button
                         onClick={() => setClassDetailTab('overview')}
                         className={`pb-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap ${
-                          classDetailTab === 'overview' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'
+                          classDetailTab === 'overview' ? 'border-[#4165b4] text-[#60a5fa]' : 'border-transparent text-gray-400 hover:text-white'
                         }`}
                       >
                         <LayoutDashboard className="w-4 h-4" />
@@ -1018,7 +1018,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <button
                         onClick={() => setClassDetailTab('students')}
                         className={`pb-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap ${
-                          classDetailTab === 'students' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'
+                          classDetailTab === 'students' ? 'border-[#4165b4] text-[#60a5fa]' : 'border-transparent text-gray-400 hover:text-white'
                         }`}
                       >
                         <Users className="w-4 h-4" />
@@ -1027,7 +1027,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <button
                         onClick={() => setClassDetailTab('materials')}
                         className={`pb-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap ${
-                          classDetailTab === 'materials' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'
+                          classDetailTab === 'materials' ? 'border-[#4165b4] text-[#60a5fa]' : 'border-transparent text-gray-400 hover:text-white'
                         }`}
                       >
                         <BookOpen className="w-4 h-4" />
@@ -1036,7 +1036,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <button
                         onClick={() => setClassDetailTab('tests')}
                         className={`pb-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap ${
-                          classDetailTab === 'tests' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'
+                          classDetailTab === 'tests' ? 'border-[#4165b4] text-[#60a5fa]' : 'border-transparent text-gray-400 hover:text-white'
                         }`}
                       >
                         <FileCheck className="w-4 h-4" />
@@ -1045,7 +1045,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <button
                         onClick={() => setClassDetailTab('code')}
                         className={`pb-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap ${
-                          classDetailTab === 'code' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'
+                          classDetailTab === 'code' ? 'border-[#4165b4] text-[#60a5fa]' : 'border-transparent text-gray-400 hover:text-white'
                         }`}
                       >
                         <Key className="w-4 h-4" />
@@ -1064,7 +1064,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     </div>
                     <div className="bg-[#141414] border border-[#262626] p-5 rounded-xl">
                       <span className="text-xs text-gray-400 block font-semibold">Kiosztott Tananyagok</span>
-                      <span className="text-2xl font-bold text-amber-400">{classMaterials.length}</span>
+                      <span className="text-2xl font-bold text-[#60a5fa]">{classMaterials.length}</span>
                     </div>
                     <div className="bg-[#141414] border border-[#262626] p-5 rounded-xl">
                       <span className="text-xs text-gray-400 block font-semibold">Teljesítési Arány</span>
@@ -1150,10 +1150,10 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <button
                         onClick={handleSaveMaterials}
                         disabled={savingMaterials}
-                        className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10"
+                        className="px-5 py-2 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10"
                       >
                         {savingMaterials ? (
-                          <div className="w-4 h-4 border-2 border-black border-r-transparent animate-spin rounded-full" />
+                          <div className="w-4 h-4 border-2 border-white border-r-transparent animate-spin rounded-full" />
                         ) : materialSaveSuccess ? (
                           <>
                             <Check className="w-4 h-4" /> Mentve!
@@ -1176,16 +1176,16 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                             onClick={() => toggleMaterialAssignment('course', course.id)}
                             className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                               isChecked
-                                ? 'bg-amber-500/10 border-amber-500/40 text-white'
+                                ? 'bg-[#4165b4]/10 border-[#4165b4]/40 text-white'
                                 : 'bg-[#1A1A1A] border-[#262626] hover:border-gray-700 text-gray-300'
                             }`}
                           >
                             <div className="flex items-center gap-4">
-                              <div className="text-amber-500">
-                                {isChecked ? <CheckSquare className="w-5 h-5 text-amber-500" /> : <Square className="w-5 h-5 text-gray-600" />}
+                              <div className="text-[#60a5fa]">
+                                {isChecked ? <CheckSquare className="w-5 h-5 text-[#60a5fa]" /> : <Square className="w-5 h-5 text-gray-600" />}
                               </div>
                               <div>
-                                <span className="text-[10px] font-semibold px-2 py-0.5 bg-[#262626] text-amber-400 rounded mr-2">
+                                <span className="text-[10px] font-semibold px-2 py-0.5 bg-[#262626] text-[#60a5fa] rounded mr-2">
                                   Kurzus
                                 </span>
                                 <span className="text-xs text-gray-400">{course.category}</span>
@@ -1201,7 +1201,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
                 {classDetailTab === 'tests' && (
                   <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 text-center py-12">
-                    <FileCheck className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                    <FileCheck className="w-12 h-12 text-[#60a5fa] mx-auto mb-3" />
                     <h3 className="text-base font-bold text-white mb-1">Osztálytermi Tesztek</h3>
                     <p className="text-xs text-gray-400">Az ehhez az osztályhoz rendelt tesztek és eredmények a diákok próbálkozásai után itt jelennek meg.</p>
                   </div>
@@ -1210,11 +1210,11 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 {classDetailTab === 'code' && (
                   <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 max-w-md mx-auto space-y-4">
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Key className="w-5 h-5 text-amber-500" /> Osztálytermi Kód Részletei
+                      <Key className="w-5 h-5 text-[#60a5fa]" /> Osztálytermi Kód Részletei
                     </h3>
                     <div className="p-4 bg-[#1F1F1F] rounded-xl text-center space-y-2">
                       <span className="text-xs text-gray-400 block">Aktív csatlakozási kód:</span>
-                      <span className="text-3xl font-black text-amber-400 font-mono tracking-widest block">
+                      <span className="text-3xl font-black text-[#60a5fa] font-mono tracking-widest block">
                         {activeCode?.code || 'Nincs kód'}
                       </span>
                       <span className="text-[10px] text-gray-500 block">
@@ -1235,7 +1235,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Users className="w-5 h-5 text-amber-500" />
+                    <Users className="w-5 h-5 text-[#60a5fa]" />
                     Összes Tanuló Listája ({allStudents.length})
                   </h2>
                   <p className="text-xs text-gray-400">A saját osztályaihoz tartozó tanulók áttekintése és kezelése.</p>
@@ -1248,7 +1248,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     placeholder="Keresés név vagy e-mail alapján..."
                     value={filterSearch}
                     onChange={(e) => setFilterSearch(e.target.value)}
-                    className="pl-9 pr-4 py-2 bg-[#1F1F1F] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="pl-9 pr-4 py-2 bg-[#1F1F1F] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-[#4165b4]"
                   />
                 </div>
               </div>
@@ -1287,7 +1287,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                               {st.profiles?.full_name || 'Névtelen tanuló'}
                             </td>
                             <td className="py-3.5 px-4 text-gray-400">{st.profiles?.email || '-'}</td>
-                            <td className="py-3.5 px-4 text-amber-400 font-medium">
+                            <td className="py-3.5 px-4 text-[#60a5fa] font-medium">
                               {st.school_class?.name || 'Osztály'} ({st.school_class?.grade ? `${st.school_class.grade}. Évfolyam` : 'Képzés'})
                             </td>
                             <td className="py-3.5 px-4 text-gray-300">{st.trade_id}</td>
@@ -1333,7 +1333,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-amber-500" />
+                    <BookOpen className="w-5 h-5 text-[#60a5fa]" />
                     Tananyag Böngésző & Oktatási Tartalmak
                   </h2>
                   <p className="text-xs text-gray-400">Válasszon oktatási anyagokat és rendelje hozzá az osztályaihoz.</p>
@@ -1346,7 +1346,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     placeholder="Tananyag keresése..."
                     value={materialSearch}
                     onChange={(e) => setMaterialSearch(e.target.value)}
-                    className="pl-9 pr-4 py-2 bg-[#1F1F1F] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="pl-9 pr-4 py-2 bg-[#1F1F1F] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-[#4165b4]"
                   />
                 </div>
               </div>
@@ -1356,7 +1356,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   <div key={course.id} className="bg-[#1F1F1F] border border-[#262626] rounded-xl p-5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-[#4165b4]/10 text-[#60a5fa] border border-[#4165b4]/20 rounded">
                           {course.category}
                         </span>
                         <span className="text-xs text-gray-400">{course.duration_hours} óra</span>
@@ -1371,7 +1371,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                           setAssignModalMaterial({ type: 'course', id: course.id, title: course.title });
                           if (classes.length > 0) setSelectedAssignClassId(classes[0].id);
                         }}
-                        className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs rounded-lg transition-all flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold text-xs rounded-lg transition-all flex items-center gap-1.5"
                       >
                         <Share2 className="w-3.5 h-3.5" />
                         Kiosztás Osztálynak
@@ -1389,14 +1389,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-amber-500" /> Saját Tananyag Összeállítása
+                <Layers className="w-5 h-5 text-[#60a5fa]" /> Saját Tananyag Összeállítása
               </h2>
               <p className="text-xs text-gray-400 mb-6">Állítson össze egyedi moduláris tananyagcsomagot meglévő ÉpítőTudás tartalmakból.</p>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Form */}
                 <div className="space-y-4 bg-[#1F1F1F] p-5 rounded-xl border border-[#262626]">
-                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">1. Tananyagcsomag Adatai</h3>
+                  <h3 className="text-sm font-bold text-[#60a5fa] uppercase tracking-wider">1. Tananyagcsomag Adatai</h3>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1">Csomag Címe *</label>
                     <input
@@ -1404,7 +1404,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       placeholder="pl. Tetőszerkezetek 10. Évfolyam"
                       value={pkgTitle}
                       onChange={(e) => setPkgTitle(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-[#4165b4]"
                     />
                   </div>
 
@@ -1415,7 +1415,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       value={pkgDesc}
                       onChange={(e) => setPkgDesc(e.target.value)}
                       rows={3}
-                      className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-[#4165b4]"
                     />
                   </div>
 
@@ -1425,7 +1425,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <select
                         value={pkgTrade}
                         onChange={(e) => setPkgTrade(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-[#4165b4]"
                       >
                         {instructorTrades.map((t) => (
                           <option key={t} value={t}>{t}</option>
@@ -1440,7 +1440,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                         placeholder="pl. 10.A Osztály"
                         value={pkgTarget}
                         onChange={(e) => setPkgTarget(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3.5 py-2 bg-[#141414] border border-[#262626] rounded-xl text-xs text-white focus:outline-none focus:border-[#4165b4]"
                       />
                     </div>
                   </div>
@@ -1448,14 +1448,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
                 {/* Items Selection */}
                 <div className="space-y-4 bg-[#1F1F1F] p-5 rounded-xl border border-[#262626]">
-                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">2. Tartalmak Hozzáadása ({pkgItems.length})</h3>
+                  <h3 className="text-sm font-bold text-[#60a5fa] uppercase tracking-wider">2. Tartalmak Hozzáadása ({pkgItems.length})</h3>
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     {DEFAULT_COURSES.map((c) => (
                       <div key={c.id} className="p-3 bg-[#141414] rounded-lg flex items-center justify-between text-xs">
                         <span className="font-semibold text-white">{c.title}</span>
                         <button
                           onClick={() => handleAddPackageItem(c)}
-                          className="px-2.5 py-1 bg-amber-500 text-black font-bold rounded hover:bg-amber-600 transition-colors"
+                          className="px-2.5 py-1 bg-[#4165b4] text-white font-bold rounded hover:bg-[#325296] transition-colors"
                         >
                           + Hozzáadás
                         </button>
@@ -1472,7 +1472,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     </button>
                     <button
                       onClick={() => handleSavePackage('compiled')}
-                      className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl transition-colors"
+                      className="px-5 py-2 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-colors"
                     >
                       Csomag Összeállítása
                     </button>
@@ -1488,7 +1488,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-amber-500" /> Kiosztott Tananyagok Áttekintése
+                <CheckSquare className="w-5 h-5 text-[#60a5fa]" /> Kiosztott Tananyagok Áttekintése
               </h2>
 
               <div className="overflow-x-auto">
@@ -1508,7 +1508,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     {DEFAULT_COURSES.slice(0, 4).map((c, idx) => (
                       <tr key={c.id} className="hover:bg-[#1A1A1A]">
                         <td className="py-3.5 px-4 font-semibold text-white">{c.title}</td>
-                        <td className="py-3.5 px-4 text-amber-400 font-bold">{classes[idx % classes.length]?.name || '10.A'}</td>
+                        <td className="py-3.5 px-4 text-[#60a5fa] font-bold">{classes[idx % classes.length]?.name || '10.A'}</td>
                         <td className="py-3.5 px-4 text-gray-400">2026. 09. 15.</td>
                         <td className="py-3.5 px-4 font-bold text-white">24</td>
                         <td className="py-3.5 px-4 text-blue-400 font-semibold">19</td>
@@ -1528,7 +1528,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <FileCheck className="w-5 h-5 text-amber-500" /> Tesztanyagok & Teszteredmények
+                <FileCheck className="w-5 h-5 text-[#60a5fa]" /> Tesztanyagok & Teszteredmények
               </h2>
 
               <div className="overflow-x-auto">
@@ -1548,7 +1548,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                       <tr key={st.id} className="hover:bg-[#1A1A1A]">
                         <td className="py-3.5 px-4 font-semibold text-white">{st.profiles?.full_name || 'Névtelen tanuló'}</td>
                         <td className="py-3.5 px-4 text-gray-300">Monolitikus Beton- és Szerkezetépítés Mesterfogásai Teszt</td>
-                        <td className="py-3.5 px-4 text-amber-400 font-bold">{st.school_class?.name || '10.A'}</td>
+                        <td className="py-3.5 px-4 text-[#60a5fa] font-bold">{st.school_class?.name || '10.A'}</td>
                         <td className="py-3.5 px-4 text-gray-400">1</td>
                         <td className="py-3.5 px-4 font-black text-emerald-400">{80 + idx * 4}%</td>
                         <td className="py-3.5 px-4">
@@ -1570,7 +1570,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-amber-500" /> Osztály és Tanulói Előrehaladás Analitika
+                <TrendingUp className="w-5 h-5 text-[#60a5fa]" /> Osztály és Tanulói Előrehaladás Analitika
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
@@ -1584,7 +1584,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 </div>
                 <div className="bg-[#1F1F1F] p-5 rounded-xl border border-[#262626]">
                   <span className="text-xs text-gray-400 block font-semibold">Elmaradó Tanulók</span>
-                  <span className="text-3xl font-black text-amber-400">2 fő</span>
+                  <span className="text-3xl font-black text-[#60a5fa]">2 fő</span>
                 </div>
               </div>
             </div>
@@ -1599,7 +1599,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <GraduationCap className="w-6 h-6 text-amber-500" />
+                <GraduationCap className="w-6 h-6 text-[#60a5fa]" />
                 Új Osztály Indítása
               </h3>
               <button
@@ -1626,7 +1626,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   placeholder="pl. 10.A, 11.ÁCS, vagy 9.Kőműves"
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 text-xs"
+                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#4165b4] text-xs"
                   required
                 />
               </div>
@@ -1641,14 +1641,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     placeholder="Szakma megadása (pl. Kőműves)"
                     value={newClassTrade}
                     onChange={(e) => setNewClassTrade(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 text-xs"
+                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#4165b4] text-xs"
                     required
                   />
                 ) : (
                   <select
                     value={newClassTrade}
                     onChange={(e) => setNewClassTrade(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-xs"
+                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-[#4165b4] text-xs"
                   >
                     {instructorTrades.map((t) => (
                       <option key={t} value={t}>
@@ -1667,7 +1667,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   <select
                     value={selectedInstructorId}
                     onChange={(e) => setSelectedInstructorId(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-xs"
+                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-[#4165b4] text-xs"
                   >
                     {schoolInstructors.map((inst) => (
                       <option key={inst.id} value={inst.id}>
@@ -1689,10 +1689,10 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 <button
                   type="submit"
                   disabled={submittingClass}
-                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs rounded-xl transition-all flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold text-xs rounded-xl transition-all flex items-center gap-2"
                 >
                   {submittingClass ? (
-                    <div className="w-4 h-4 border-2 border-black border-r-transparent animate-spin rounded-full" />
+                    <div className="w-4 h-4 border-2 border-white border-r-transparent animate-spin rounded-full" />
                   ) : (
                     <>
                       <Plus className="w-4 h-4" />
@@ -1712,7 +1712,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-amber-500" />
+                <Edit3 className="w-5 h-5 text-[#60a5fa]" />
                 Osztály Adatainak Módosítása
               </h3>
               <button
@@ -1738,7 +1738,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   type="text"
                   value={editClassName}
                   onChange={(e) => setEditClassName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-amber-500 text-xs"
+                  className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white focus:outline-none focus:border-[#4165b4] text-xs"
                   required
                 />
               </div>
@@ -1754,10 +1754,10 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 <button
                   type="submit"
                   disabled={savingEditClass}
-                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs rounded-xl transition-all flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-semibold text-xs rounded-xl transition-all flex items-center gap-2"
                 >
                   {savingEditClass ? (
-                    <div className="w-4 h-4 border-2 border-black border-r-transparent animate-spin rounded-full" />
+                    <div className="w-4 h-4 border-2 border-white border-r-transparent animate-spin rounded-full" />
                   ) : (
                     'Mentés'
                   )}
@@ -1782,7 +1782,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               <select
                 value={selectedAssignClassId}
                 onChange={(e) => setSelectedAssignClassId(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white text-xs focus:outline-none focus:border-amber-500"
+                className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white text-xs focus:outline-none focus:border-[#4165b4]"
               >
                 {classes.map((cls) => (
                   <option key={cls.id} value={cls.id}>
@@ -1801,7 +1801,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               </button>
               <button
                 onClick={handleConfirmQuickAssign}
-                className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl transition-colors"
+                className="px-5 py-2 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-colors"
               >
                 Kiosztás Confirm
               </button>
@@ -1816,7 +1816,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5">
             <div className="flex items-center justify-between border-b border-[#262626] pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 font-bold">
+                <div className="w-10 h-10 rounded-full bg-[#4165b4]/10 border border-[#4165b4]/30 flex items-center justify-center text-[#60a5fa] font-bold">
                   {(selectedStudentDetail.profiles?.full_name || 'T').charAt(0)}
                 </div>
                 <div>
@@ -1841,7 +1841,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               </div>
               <div className="p-3 bg-[#1F1F1F] rounded-xl">
                 <span className="text-gray-400 block font-semibold mb-1">Szakma</span>
-                <span className="text-amber-400 font-bold">{selectedStudentDetail.trade_id}</span>
+                <span className="text-[#60a5fa] font-bold">{selectedStudentDetail.trade_id}</span>
               </div>
               <div className="p-3 bg-[#1F1F1F] rounded-xl">
                 <span className="text-gray-400 block font-semibold mb-1">Csatlakozott</span>
@@ -1861,7 +1861,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
               </div>
               <div className="flex items-center justify-between text-gray-400">
                 <span>Energiahatékony Falazási Rendszer</span>
-                <span className="text-amber-400 font-semibold">Folyamatban (70%)</span>
+                <span className="text-[#60a5fa] font-semibold">Folyamatban (70%)</span>
               </div>
             </div>
 
