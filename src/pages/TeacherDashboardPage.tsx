@@ -1101,7 +1101,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                             {classStudents.map((st) => (
                               <tr key={st.id} className="hover:bg-[#1A1A1A]">
                                 <td className="py-3.5 px-4 font-semibold text-white">
-                                  {st.profiles?.full_name || 'Névtelen tanuló'}
+                                  {st.profiles?.full_name || st.profiles?.email || 'Névtelen tanuló'}
                                 </td>
                                 <td className="py-3.5 px-4 text-gray-400">{st.profiles?.email || '-'}</td>
                                 <td className="py-3.5 px-4 text-gray-400">
@@ -1284,7 +1284,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                         .map((st) => (
                           <tr key={`${st.id}-${st.class_id}`} className="hover:bg-[#1A1A1A]">
                             <td className="py-3.5 px-4 font-semibold text-white">
-                              {st.profiles?.full_name || 'Névtelen tanuló'}
+                              {st.profiles?.full_name || st.profiles?.email || 'Névtelen tanuló'}
                             </td>
                             <td className="py-3.5 px-4 text-gray-400">{st.profiles?.email || '-'}</td>
                             <td className="py-3.5 px-4 text-[#60a5fa] font-medium">
@@ -1546,7 +1546,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   <tbody className="divide-y divide-[#1F1F1F]">
                     {allStudents.slice(0, 5).map((st, idx) => (
                       <tr key={st.id} className="hover:bg-[#1A1A1A]">
-                        <td className="py-3.5 px-4 font-semibold text-white">{st.profiles?.full_name || 'Névtelen tanuló'}</td>
+                        <td className="py-3.5 px-4 font-semibold text-white">{st.profiles?.full_name || st.profiles?.email || 'Névtelen tanuló'}</td>
                         <td className="py-3.5 px-4 text-gray-300">Monolitikus Beton- és Szerkezetépítés Mesterfogásai Teszt</td>
                         <td className="py-3.5 px-4 text-[#60a5fa] font-bold">{st.school_class?.name || '10.A'}</td>
                         <td className="py-3.5 px-4 text-gray-400">1</td>
@@ -1817,11 +1817,11 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             <div className="flex items-center justify-between border-b border-[#262626] pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#4165b4]/10 border border-[#4165b4]/30 flex items-center justify-center text-[#60a5fa] font-bold">
-                  {(selectedStudentDetail.profiles?.full_name || 'T').charAt(0)}
+                  {(selectedStudentDetail.profiles?.full_name || selectedStudentDetail.profiles?.email || 'T').charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">
-                    {selectedStudentDetail.profiles?.full_name || 'Névtelen tanuló'}
+                    {selectedStudentDetail.profiles?.full_name || selectedStudentDetail.profiles?.email || 'Névtelen tanuló'}
                   </h3>
                   <p className="text-xs text-gray-400">{selectedStudentDetail.profiles?.email}</p>
                 </div>
