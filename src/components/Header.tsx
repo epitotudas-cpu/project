@@ -153,6 +153,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     profile?.role === 'partner' ||
     profile?.role === 'school' ||
     profile?.role === 'teacher' ||
+    profile?.role === 'contact' ||
+    rawRole === 'contact' ||
     rawUserType === 'partner' ||
     rawUserType === 'iskola' ||
     rawUserType === 'oktato' ||

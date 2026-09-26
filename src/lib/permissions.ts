@@ -13,7 +13,7 @@ export function isEditorOnly(profile: Profile | null | undefined): boolean {
 }
 
 export function isPartner(profile: Profile | null | undefined): boolean {
-  return profile?.role === 'partner';
+  return profile?.role === 'partner' || profile?.role === 'contact';
 }
 
 export function canEdit(profile: Profile | null | undefined): boolean {
@@ -80,13 +80,18 @@ export function canAccessEditorPanel(profile: Profile | null | undefined): boole
   return profile?.role === 'admin' || profile?.role === 'editor';
 }
 
+export function isContact(profile: Profile | null | undefined): boolean {
+  return profile?.role === 'contact';
+}
+
 export function canAccessPartnerPanel(profile: Profile | null | undefined): boolean {
   if (!profile) return false;
   return (
     profile.role === 'admin' ||
     profile.role === 'partner' ||
     profile.role === 'school' ||
-    profile.role === 'teacher'
+    profile.role === 'teacher' ||
+    profile.role === 'contact'
   );
 }
 
