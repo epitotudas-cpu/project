@@ -119,6 +119,11 @@ export async function getUserType(user: any): Promise<'tanulo' | 'szakember'> {
 }
 
 export async function updateProfileRole(userId: string, newRole: string): Promise<boolean> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData?.session) {
+    throw new Error('A bejelentkezési munkamenet lejárt. Kérjük, jelentkezz be újra az Admin felület használatához!');
+  }
+
   const { error } = await supabase.rpc('update_user_platform_role', {
     target_user_id: userId,
     new_role: newRole,
@@ -126,6 +131,10 @@ export async function updateProfileRole(userId: string, newRole: string): Promis
 
   if (error) {
     console.warn('update_user_platform_role RPC error, attempting direct update fallback:', error);
+    if (error.message?.includes('Refresh Token') || error.message?.includes('JWT') || error.status === 400) {
+      console.warn('Potential stale auth session detected:', error.message);
+    }
+
     const { data: updatedRows, error: directErr } = await supabase
       .from('profiles')
       .update({ role: newRole as any })
@@ -133,6 +142,10 @@ export async function updateProfileRole(userId: string, newRole: string): Promis
       .select('id, role');
 
     if (directErr || !updatedRows || updatedRows.length === 0) {
+      if (error?.message?.includes('Refresh Token') || directErr?.message?.includes('Refresh Token')) {
+        throw new Error('A bejelentkezési munkamenet lejárt (Invalid Refresh Token). Kérjük, jelentkezz be újra!');
+      }
+
       throw new Error(
         error?.message ||
         directErr?.message ||
