@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders, Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
 
@@ -108,6 +109,31 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     onNavigate('home');
   };
 
+  const [partnerMemberRole, setPartnerMemberRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setPartnerMemberRole(null);
+      return;
+    }
+    async function checkPartnerRole() {
+      try {
+        const { data } = await supabase
+          .from('partner_users')
+          .select('member_role')
+          .eq('user_id', user!.id)
+          .limit(1)
+          .maybeSingle();
+        if (data?.member_role) {
+          setPartnerMemberRole(data.member_role);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    checkPartnerRole();
+  }, [user]);
+
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Fiók';
   const isAdmin = profile?.role === 'admin';
   const isEditor = profile?.role === 'editor';
@@ -115,31 +141,29 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const rawRole = (profile?.role || user?.user_metadata?.role) as string | undefined;
   const rawUserType = (userType || (profile as any)?.userType || (profile as any)?.user_type) as string | undefined;
 
-  const isStudent =
-    Boolean(user) &&
-    (rawUserType === 'tanulo' ||
-      rawUserType === 'student' ||
-      rawRole === 'student' ||
-      rawRole === 'tanulo' ||
-      (!rawUserType &&
-        profile?.role !== 'partner' &&
-        profile?.role !== 'school' &&
-        profile?.role !== 'teacher' &&
-        profile?.role !== 'admin' &&
-        profile?.role !== 'editor' &&
-        rawRole !== 'szakember' &&
-        rawUserType !== 'szakember'));
+  const isInstructorRole =
+    partnerMemberRole === 'instructor' ||
+    rawUserType === 'oktato' ||
+    rawUserType === 'teacher' ||
+    rawUserType === 'instructor' ||
+    rawRole === 'teacher';
 
-  const isPartner =
-    !isStudent &&
-    (profile?.role === 'partner' ||
-      profile?.role === 'school' ||
-      profile?.role === 'teacher' ||
-      rawUserType === 'partner' ||
-      rawUserType === 'iskola' ||
-      rawUserType === 'oktato');
+  const isPartnerMember =
+    Boolean(partnerMemberRole) ||
+    profile?.role === 'partner' ||
+    profile?.role === 'school' ||
+    profile?.role === 'teacher' ||
+    rawUserType === 'partner' ||
+    rawUserType === 'iskola' ||
+    rawUserType === 'oktato' ||
+    rawUserType === 'teacher' ||
+    rawUserType === 'instructor';
 
-  const isTeacher = profile?.role === 'teacher' || rawUserType === 'oktato';
+  const isTeacher = isInstructorRole;
+
+  const isStudent = Boolean(user) && !isPartnerMember && !isAdmin && !isEditor;
+
+  const isPartner = Boolean(user) && isPartnerMember && !isAdmin;
 
   const isSubItemActive = (subPage: string, pageState: string, loc: { pathname: string; search: string; hash: string }): boolean => {
     const { pathname, search, hash } = loc;
@@ -424,11 +448,11 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
             {isPartner && (
               <button
-                onClick={() => onNavigate('partner')}
+                onClick={() => onNavigate(isTeacher ? 'teacher' : 'partner')}
                 className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
               >
-                <Sliders size={14} />
-                Partner panel
+                {isTeacher ? <GraduationCap size={14} /> : <Sliders size={14} />}
+                {isTeacher ? 'Tanár panel' : 'Partner panel'}
               </button>
             )}
 
@@ -785,10 +809,11 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 )}
                 {isPartner && (
                   <button
-                    onClick={() => { onNavigate('partner'); setMobileOpen(false); }}
-                    className="w-full py-3 border border-blue-500/40 text-blue-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-blue-500/10"
+                    onClick={() => { onNavigate(isTeacher ? 'teacher' : 'partner'); setMobileOpen(false); }}
+                    className="w-full py-3 border border-blue-500/40 text-blue-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-blue-500/10 flex items-center justify-center gap-2"
                   >
-                    Partner panel
+                    {isTeacher ? <GraduationCap size={16} /> : <Sliders size={16} />}
+                    {isTeacher ? 'Tanár panel' : 'Partner panel'}
                   </button>
                 )}
                 <button
