@@ -468,10 +468,15 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                       alert('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
                       return;
                     }
+                    // Optimistic UI update so select dropdown responds instantly
+                    setUsers((prev) =>
+                      prev.map((u) => (u.id === userId ? { ...u, role: newRole as Profile['role'] } : u))
+                    );
                     try {
                       await updateProfileRole(userId, newRole);
-                      loadUsers();
+                      await loadUsers();
                     } catch (err: any) {
+                      await loadUsers(); // Rollback on failure
                       alert(err.message || 'A szerepkör módosítása nem sikerült.');
                     }
                   }

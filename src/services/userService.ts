@@ -125,12 +125,14 @@ export async function updateProfileRole(userId: string, newRole: string): Promis
   });
 
   if (error) {
-    // Fallback direct update if RPC fails
+    console.warn('update_user_platform_role RPC warning, attempting direct update:', error);
     const { error: directErr } = await supabase
       .from('profiles')
-      .update({ role: newRole })
+      .update({ role: newRole as any })
       .eq('id', userId);
-    if (directErr) throw directErr;
+    if (directErr) {
+      throw new Error(error.message || directErr.message || 'A szerepkör módosítása nem sikerült.');
+    }
   }
 
   await logAuditAction(
