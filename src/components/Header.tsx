@@ -111,30 +111,34 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Fiók';
   const isAdmin = profile?.role === 'admin';
   const isEditor = profile?.role === 'editor';
-  const userType = user?.user_metadata?.user_type;
+  const rawRole = (profile?.role || user?.user_metadata?.role) as string | undefined;
+  const rawUserType = (userType || (profile as any)?.userType || (profile as any)?.user_type) as string | undefined;
+
   const isStudent =
     Boolean(user) &&
-    (userType === 'tanulo' ||
-      profile?.userType === 'tanulo' ||
-      profile?.role === 'student' ||
-      profile?.role === 'tanulo' ||
-      (!userType &&
+    (rawUserType === 'tanulo' ||
+      rawUserType === 'student' ||
+      rawRole === 'student' ||
+      rawRole === 'tanulo' ||
+      (!rawUserType &&
         profile?.role !== 'partner' &&
         profile?.role !== 'school' &&
         profile?.role !== 'teacher' &&
         profile?.role !== 'admin' &&
         profile?.role !== 'editor' &&
-        profile?.role !== 'szakember' &&
-        userType !== 'szakember'));
+        rawRole !== 'szakember' &&
+        rawUserType !== 'szakember'));
+
   const isPartner =
     !isStudent &&
     (profile?.role === 'partner' ||
       profile?.role === 'school' ||
       profile?.role === 'teacher' ||
-      userType === 'partner' ||
-      userType === 'iskola' ||
-      userType === 'oktato');
-  const isTeacher = profile?.role === 'teacher' || userType === 'oktato';
+      rawUserType === 'partner' ||
+      rawUserType === 'iskola' ||
+      rawUserType === 'oktato');
+
+  const isTeacher = profile?.role === 'teacher' || rawUserType === 'oktato';
 
   const isSubItemActive = (subPage: string, pageState: string, loc: { pathname: string; search: string; hash: string }): boolean => {
     const { pathname, search, hash } = loc;
