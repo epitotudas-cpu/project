@@ -794,7 +794,11 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
 
             <div className="relative">
               <pre className="p-4 bg-black/90 border border-gray-800 rounded-xl font-mono text-[11px] text-amber-300 overflow-x-auto max-h-60 leading-relaxed">
-{`CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
+{`ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
+  CHECK (role = ANY (ARRAY['user'::text, 'editor'::text, 'partner'::text, 'school'::text, 'teacher'::text, 'contact'::text, 'student'::text, 'moderator'::text, 'admin'::text]));
+
+CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -838,7 +842,11 @@ WITH CHECK (true);`}
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => {
-                  const sqlText = `CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
+                  const sqlText = `ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
+  CHECK (role = ANY (ARRAY['user'::text, 'editor'::text, 'partner'::text, 'school'::text, 'teacher'::text, 'contact'::text, 'student'::text, 'moderator'::text, 'admin'::text]));
+
+CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
