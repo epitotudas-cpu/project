@@ -31,6 +31,8 @@ import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedPro
 import { getTradeItems } from '../services/tradeService';
 import { deleteUser } from '../services/userService';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
+import TermDetailModal from '../components/TermDetailModal';
+import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 
 
 interface ProfilePageProps {
@@ -72,6 +74,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isInstructor, setIsInstructor] = useState(false);
   const [isPartnerContact, setIsPartnerContact] = useState(false);
+  const [selectedSavedTerm, setSelectedSavedTerm] = useState<GlossaryTermFromJson | null>(null);
+  const [savedTermModalOpen, setSavedTermModalOpen] = useState(false);
 
   useEffect(() => {
     async function checkPartnerContact() {
