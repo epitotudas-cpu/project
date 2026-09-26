@@ -88,7 +88,18 @@ export function isContact(profile: Profile | null | undefined): boolean {
   return profile?.role === 'contact';
 }
 
-export function canAccessPartnerPanel(profile: Profile | null | undefined): boolean {
+export function canAccessPartnerPanel(
+  profile: Profile | null | undefined,
+  memberRole?: string | null,
+  userMetadata?: any
+): boolean {
+  if (memberRole && ['owner', 'admin', 'member', 'instructor'].includes(memberRole)) {
+    return true;
+  }
+  const metaType = userMetadata?.user_type || userMetadata?.role;
+  if (metaType && ['oktato', 'teacher', 'instructor', 'partner', 'iskola'].includes(metaType)) {
+    return true;
+  }
   if (!profile) return false;
   return (
     profile.role === 'admin' ||

@@ -258,7 +258,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
 }
 
 function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [partnerView, setPartnerView] = useState<any>('dashboard');
   const [memberRole, setMemberRole] = useState<string | null>(null);
   const [isSchoolCategory, setIsSchoolCategory] = useState(false);
@@ -380,7 +380,12 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string) => voi
     fetchMemberRole();
   }, [user]);
 
-  const isTeacher = memberRole === 'instructor';
+  const isTeacher =
+    memberRole === 'instructor' ||
+    profile?.role === 'teacher' ||
+    user?.user_metadata?.user_type === 'oktato' ||
+    user?.user_metadata?.user_type === 'teacher' ||
+    user?.user_metadata?.user_type === 'instructor';
   const isSchoolAdmin = isSchoolCategory && (memberRole === 'owner' || memberRole === 'admin');
 
   if (loadingRole) {

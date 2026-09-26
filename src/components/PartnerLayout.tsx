@@ -102,7 +102,7 @@ export default function PartnerLayout({
     );
   }
 
-  if (!canAccessPartnerPanel(profile)) {
+  if (!canAccessPartnerPanel(profile, memberRole, user?.user_metadata)) {
     return (
       <AccessDeniedPage
         userEmail={profile?.email || user?.email || null}
