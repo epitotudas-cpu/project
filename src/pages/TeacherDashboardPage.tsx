@@ -17,7 +17,7 @@ import {
   type ClassMaterial,
   type StudentInvitationCode,
 } from '../services/partnerService';
-import { DEFAULT_COURSES, DEFAULT_QUESTIONS, type Course } from '../services/educationService';
+import { DEFAULT_COURSES, type Course } from '../services/educationService';
 import {
   GraduationCap,
   Users,
@@ -43,14 +43,8 @@ import {
   TrendingUp,
   User,
   Share2,
-  ExternalLink,
   Eye,
-  Award,
   Clock,
-  ArrowUp,
-  ArrowDown,
-  Filter,
-  CheckCircle2,
 } from 'lucide-react';
 
 export interface TeacherDashboardPageProps {
@@ -134,12 +128,10 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [pkgTitle, setPkgTitle] = useState('');
   const [pkgDesc, setPkgDesc] = useState('');
   const [pkgTrade, setPkgTrade] = useState('');
-  const [pkgTopic, setPkgTopic] = useState('');
   const [pkgTarget, setPkgTarget] = useState('');
   const [pkgItems, setPkgItems] = useState<CustomPackageItem[]>([]);
 
   // Filter States for Progress & Tests
-  const [filterClassId, setFilterClassId] = useState<string>('all');
   const [filterSearch, setFilterSearch] = useState<string>('');
 
   useEffect(() => {
@@ -531,7 +523,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
   // Calculate aggregated dashboard stats
   const totalStudentsCount = allStudents.length;
-  const totalAssignedMaterials = classes.reduce((sum, c) => sum + 1, 0);
+  const totalAssignedMaterials = classes.length;
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white pb-20">
