@@ -131,7 +131,7 @@ export async function updateProfileRole(userId: string, newRole: string): Promis
 
   if (error) {
     console.warn('update_user_platform_role RPC error, attempting direct update fallback:', error);
-    if (error.message?.includes('Refresh Token') || error.message?.includes('JWT') || error.status === 400) {
+    if (error.message?.includes('Refresh Token') || error.message?.includes('JWT') || (error as any)?.status === 400 || error.code === '400') {
       console.warn('Potential stale auth session detected:', error.message);
     }
 
