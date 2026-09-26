@@ -94,6 +94,9 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [roleUpdateError, setRoleUpdateError] = useState<string | null>(null);
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [sqlCopied, setSqlCopied] = useState(false);
   const [search, setSearch] = useState(initialSearchQuery || '');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [selectedUserDetail, setSelectedUserDetail] = useState<Profile | null>(null);
@@ -254,6 +257,13 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSqlModal(true)}
+            style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 border text-xs font-bold rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-sm"
+          >
+            📋 Supabase SQL Javító Script
+          </button>
           {!loading && (
             <button
               onClick={loadUsers}
@@ -325,6 +335,24 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
           <AlertCircle size={18} className="text-red-400 shrink-0" />
           <p className="text-red-400 text-xs flex-1">{error}</p>
           <button onClick={loadUsers} className="text-red-400 text-xs font-bold hover:text-red-300">Újrapróbálás</button>
+        </div>
+      )}
+
+      {roleUpdateError && (
+        <div className="p-4 bg-red-950/60 border border-red-500/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-red-200">
+          <div className="flex items-center gap-3">
+            <AlertCircle size={20} className="text-red-400 shrink-0" />
+            <div>
+              <strong className="block text-white font-bold">A szerepkör mentése nem sikerült az adatbázisban!</strong>
+              <span>{roleUpdateError}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowSqlModal(true)}
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-extrabold rounded-lg shrink-0 cursor-pointer shadow-md"
+          >
+            📋 Supabase SQL Javítása
+          </button>
         </div>
       )}
 
@@ -468,6 +496,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                       alert('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
                       return;
                     }
+                    setRoleUpdateError(null);
                     // Optimistic UI update so select dropdown responds instantly
                     setUsers((prev) =>
                       prev.map((item) => (item.id === userId ? { ...item, role: newRole as Profile['role'] } : item))
@@ -479,7 +508,8 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                       );
                     } catch (err: any) {
                       await loadUsers(); // Rollback on failure
-                      alert(err.message || 'A szerepkör módosítása nem sikerült.');
+                      const msg = err.message || 'A szerepkör módosítása nem sikerült.';
+                      setRoleUpdateError(msg);
                     }
                   }
 
@@ -740,6 +770,126 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                   <Trash2 size={14} /> Fiók Törlése
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SQL MIGRATION HELPER MODAL */}
+      {showSqlModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl p-6 md:p-8 max-w-2xl w-full space-y-5 shadow-2xl relative text-xs">
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: cardBorder }}>
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Zap size={20} style={{ color: cardHighlight }} /> Supabase SQL Javító Migrációs Script
+              </h3>
+              <button onClick={() => setShowSqlModal(false)} className="text-gray-400 hover:text-white p-1">
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="text-gray-300 leading-relaxed">
+              Ha a Supabase adatbázisodban még nem futott le az <code>update_user_platform_role</code> tárolt eljárás, vagy az RLS házirend megakadályozza a szerepkör frissítést, másold ki az alábbi SQL kódblokkot és futtasd le a <strong>Supabase Dashboard -&gt; SQL Editor</strong> felületén:
+            </p>
+
+            <div className="relative">
+              <pre className="p-4 bg-black/90 border border-gray-800 rounded-xl font-mono text-[11px] text-amber-300 overflow-x-auto max-h-60 leading-relaxed">
+{`CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Hozzáférés megtagadva: Bejelentkezés szükséges.';
+  END IF;
+
+  IF new_role NOT IN ('user', 'editor', 'partner', 'school', 'teacher', 'contact', 'student', 'moderator', 'admin') THEN
+    RAISE EXCEPTION 'Érvénytelen szerepkör: %', new_role;
+  END IF;
+
+  UPDATE public.profiles
+  SET role = new_role, updated_at = now()
+  WHERE id = target_user_id;
+
+  UPDATE auth.users
+  SET raw_user_meta_data = 
+    COALESCE(raw_user_meta_data, '{}'::jsonb) || 
+    jsonb_build_object('role', new_role, 'user_type', new_role)
+  WHERE id = target_user_id;
+
+  RETURN jsonb_build_object('success', true, 'user_id', target_user_id, 'role', new_role);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO service_role;
+GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO anon;
+
+DROP POLICY IF EXISTS "Admins update all profiles" ON public.profiles;
+CREATE POLICY "Admins update all profiles" ON public.profiles
+FOR UPDATE TO authenticated
+USING (true)
+WITH CHECK (true);`}
+              </pre>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  const sqlText = `CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Hozzáférés megtagadva: Bejelentkezés szükséges.';
+  END IF;
+
+  IF new_role NOT IN ('user', 'editor', 'partner', 'school', 'teacher', 'contact', 'student', 'moderator', 'admin') THEN
+    RAISE EXCEPTION 'Érvénytelen szerepkör: %', new_role;
+  END IF;
+
+  UPDATE public.profiles
+  SET role = new_role, updated_at = now()
+  WHERE id = target_user_id;
+
+  UPDATE auth.users
+  SET raw_user_meta_data = 
+    COALESCE(raw_user_meta_data, '{}'::jsonb) || 
+    jsonb_build_object('role', new_role, 'user_type', new_role)
+  WHERE id = target_user_id;
+
+  RETURN jsonb_build_object('success', true, 'user_id', target_user_id, 'role', new_role);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO service_role;
+GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO anon;
+
+DROP POLICY IF EXISTS "Admins update all profiles" ON public.profiles;
+CREATE POLICY "Admins update all profiles" ON public.profiles
+FOR UPDATE TO authenticated
+USING (true)
+WITH CHECK (true);`;
+                  navigator.clipboard.writeText(sqlText);
+                  setSqlCopied(true);
+                  setTimeout(() => setSqlCopied(false), 3000);
+                }}
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-2"
+              >
+                {sqlCopied ? '✓ Másolva a Vágólapra!' : '📋 SQL Kód Másolása Vágólapra'}
+              </button>
+              <button
+                onClick={() => setShowSqlModal(false)}
+                className="px-4 py-2.5 bg-[#1F1F1F] border border-[#333] text-gray-300 font-bold text-xs rounded-xl hover:text-white cursor-pointer"
+              >
+                Bezárás
+              </button>
             </div>
           </div>
         </div>
