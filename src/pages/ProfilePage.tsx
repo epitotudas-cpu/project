@@ -704,7 +704,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
-              {isPartnerContact && (
+              {isPartnerContact && !isInstructor && (
                 <button
                   onClick={() => onNavigate?.('partner')}
                   className="px-4 py-2 text-xs font-semibold text-gray-300 hover:text-white bg-[#1F1F1F] hover:bg-[#262626] border border-[#333] rounded-xl transition-colors flex items-center gap-2 cursor-pointer"

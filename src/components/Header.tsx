@@ -572,13 +572,15 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
                     {isPartner && !isAdmin && (
                       <div className="py-1 space-y-1">
-                        <button
-                          onClick={() => { setUserMenuOpen(false); onNavigate('partner'); }}
-                          className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
-                        >
-                          <Building2 size={14} className="text-blue-400 shrink-0" />
-                          Szervezeti Vezérlőpult
-                        </button>
+                        {!isTeacher && (
+                          <button
+                            onClick={() => { setUserMenuOpen(false); onNavigate('partner'); }}
+                            className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                          >
+                            <Building2 size={14} className="text-blue-400 shrink-0" />
+                            Szervezeti Vezérlőpult
+                          </button>
+                        )}
                         {isTeacher && (
                           <button
                             onClick={() => { setUserMenuOpen(false); onNavigate('teacher'); }}
