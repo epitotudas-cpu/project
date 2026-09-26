@@ -120,6 +120,19 @@ Az additív adatbázis-séma az alábbi rendszerszintű és egyedi szerepkörök
 | Moduláris RBAC mátrix | 🟡 ELFOGADATÓ | LocalStorage függőség szinkronizálandó DB-re |
 
 ===============================================================================
+7. SZEREPKÖR ARCHITEKTÚRA BŐVÍTÉS (TEACHER, SCHOOL, CONTACT, STUDENT)
+===============================================================================
+A platform role-rendszere bővítésre került az alábbi új platform szerepkörökkel:
+- `teacher`: Tanár / Oktató (Iskolai oktatók)
+- `school`: Iskola (Oktatási intézmények tulajdonosai)
+- `contact`: Kapcsolattartó (Partner szervezetek nem-tulajdonos tagjai)
+- `student`: Tanuló (Tanulási platform elsődleges felhasználói)
+
+Mind a Supabase adatbázis RLS és CHECK constraint-ek, mind a frontend komponensek
+(`src/lib/permissions.ts`, `src/lib/supabase.ts`, `Header.tsx`, `AdminUsersPage.tsx`) 
+támogatják és különválasztják az új szerepköröket az általános `user` szerepkörtől.
+
+===============================================================================
 ZÁRÓ MEGÁLLAPÍTÁS
 ===============================================================================
 Az ÉpítőTudás v2 jogosultsági rendszere a kritikus javítás elvégzése után 
