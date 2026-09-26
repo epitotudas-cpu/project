@@ -113,18 +113,19 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const isEditor = profile?.role === 'editor';
   const userType = user?.user_metadata?.user_type;
   const isStudent =
-    userType === 'tanulo' ||
-    profile?.userType === 'tanulo' ||
-    profile?.role === 'student' ||
-    profile?.role === 'tanulo' ||
-    (!userType &&
-      profile?.role !== 'partner' &&
-      profile?.role !== 'school' &&
-      profile?.role !== 'teacher' &&
-      profile?.role !== 'admin' &&
-      profile?.role !== 'editor' &&
-      profile?.role !== 'szakember' &&
-      userType !== 'szakember');
+    Boolean(user) &&
+    (userType === 'tanulo' ||
+      profile?.userType === 'tanulo' ||
+      profile?.role === 'student' ||
+      profile?.role === 'tanulo' ||
+      (!userType &&
+        profile?.role !== 'partner' &&
+        profile?.role !== 'school' &&
+        profile?.role !== 'teacher' &&
+        profile?.role !== 'admin' &&
+        profile?.role !== 'editor' &&
+        profile?.role !== 'szakember' &&
+        userType !== 'szakember'));
   const isPartner =
     !isStudent &&
     (profile?.role === 'partner' ||
