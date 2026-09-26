@@ -30,40 +30,8 @@ import { supabase } from '../lib/supabase';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
 import { getTradeItems } from '../services/tradeService';
 import { deleteUser } from '../services/userService';
-import { getSavedItems, removeSavedItem, type SavedItem } from '../services/bookmarkService';
-import { glossaryJsonService, type GlossaryTermFromJson } from '../lib/glossaryJsonService';
-import TermDetailModal from '../components/TermDetailModal';
-import { useBooks, type BookItem } from '../services/bookService';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
 
-function getMatchingBook(item: SavedItem, allBooks: BookItem[]): BookItem {
-  const found = allBooks.find((b) => b.id === item.itemId || b.id === item.slug || b.title === item.title);
-  if (found) return found;
-
-  return {
-    id: item.itemId,
-    title: item.title,
-    subtitle: item.subtitle || '',
-    author: item.subtitle || 'Szakmai Szerző',
-    publisher: 'Építőipari Kiadó',
-    year: 2026,
-    pages: 350,
-    isbn: '978-963-16-0000-0',
-    category: 'szerkezet',
-    categoryLabel: item.subtitle || 'Szakkönyv',
-    badge: 'Szakkönyv',
-    badgeColor: 'blue',
-    coverImage: item.imageUrl || '',
-    coverImageUrl: item.imageUrl || '',
-    downloadUrl: '#',
-    format: 'Nyomtatott + PDF',
-    description: item.description || '',
-    tableOfContents: [],
-    sampleExcerpt: '',
-    rating: 5.0,
-    reviewsCount: 1,
-  };
-}
 
 interface ProfilePageProps {
   onNavigate?: (page: string, params?: { articleSlug?: string }) => void;
@@ -209,22 +177,17 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [redeemingCode, setRedeemingCode] = useState(false);
   const [classCodeMsg, setClassCodeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [studentEnrollments, setStudentEnrollments] = useState<any[]>([]);
-  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
 
   // Classmates & Class Materials State
   const [classmates, setClassmates] = useState<any[]>([]);
-  const [loadingClassmates, setLoadingClassmates] = useState(false);
   const [classMaterials, setClassMaterials] = useState<any[]>([]);
-  const [loadingMaterials, setLoadingMaterials] = useState(false);
 
   // Filters State
   const [materialsFilter, setMaterialsFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
   const [materialsSearch, setMaterialsSearch] = useState('');
-  const [testsFilter, setTestsFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all');
 
   const loadStudentEnrollments = async () => {
     if (!user?.id) return;
-    setLoadingEnrollments(true);
     try {
       const { data, error } = await supabase
         .from('school_students')
@@ -241,14 +204,11 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       }
     } catch (err) {
       console.warn('Error loading student enrollments:', err);
-    } finally {
-      setLoadingEnrollments(false);
     }
   };
 
   const loadClassmates = async (classId: string) => {
     if (!classId) return;
-    setLoadingClassmates(true);
     try {
       const { data } = await supabase
         .from('school_students')
@@ -260,14 +220,11 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       if (data) setClassmates(data);
     } catch (err) {
       console.warn('Error loading classmates:', err);
-    } finally {
-      setLoadingClassmates(false);
     }
   };
 
   const loadClassMaterials = async (classId: string) => {
     if (!classId) return;
-    setLoadingMaterials(true);
     try {
       const { data } = await supabase
         .from('class_materials')
@@ -277,8 +234,6 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       if (data) setClassMaterials(data);
     } catch (err) {
       console.warn('Error loading class materials:', err);
-    } finally {
-      setLoadingMaterials(false);
     }
   };
 
@@ -359,62 +314,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     };
   }, []);
 
-  // Mentéseim (Saved Items) State
-  const allBooks = useBooks();
-  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
-  const [savedFilter, setSavedFilter] = useState<'all' | 'article' | 'glossary' | 'book'>('all');
-  const [savedSearchQuery, setSavedSearchQuery] = useState('');
-  const [selectedSavedTerm, setSelectedSavedTerm] = useState<GlossaryTermFromJson | null>(null);
-  const [savedTermModalOpen, setSavedTermModalOpen] = useState(false);
-  const [selectedSavedBook, setSelectedSavedBook] = useState<BookItem | null>(null);
 
-  useEffect(() => {
-    setSavedItems(getSavedItems(user?.id));
-  }, [user, activeMainSection]);
-
-  const filteredSavedItems = useMemo(() => {
-    return savedItems.filter((item) => {
-      const matchesFilter = savedFilter === 'all' || item.itemType === savedFilter;
-      const matchesSearch =
-        !savedSearchQuery.trim() ||
-        item.title.toLowerCase().includes(savedSearchQuery.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(savedSearchQuery.toLowerCase())) ||
-        (item.subtitle && item.subtitle.toLowerCase().includes(savedSearchQuery.toLowerCase()));
-      return matchesFilter && matchesSearch;
-    });
-  }, [savedItems, savedFilter, savedSearchQuery]);
-
-  const handleRemoveSaved = (item: SavedItem) => {
-    const updated = removeSavedItem(user?.id, item.itemId, item.itemType);
-    setSavedItems(updated);
-  };
-
-  const handleOpenSavedItem = async (item: SavedItem) => {
-    if (item.itemType === 'article') {
-      if (onNavigate) {
-        onNavigate('article', { articleSlug: item.slug });
-      } else {
-        window.location.hash = `#article?slug=${item.slug}`;
-      }
-    } else if (item.itemType === 'glossary') {
-      try {
-        const terms = await glossaryJsonService.getAllTerms();
-        const found = terms.find((t) => t.id === item.itemId || t.slug === item.slug || t.term === item.title);
-        if (found) {
-          setSelectedSavedTerm(found);
-          setSavedTermModalOpen(true);
-        } else {
-          if (onNavigate) onNavigate('glossary');
-          window.location.hash = `#glossary?q=${encodeURIComponent(item.title)}`;
-        }
-      } catch {
-        if (onNavigate) onNavigate('glossary');
-      }
-    } else if (item.itemType === 'book') {
-      const bookObj = getMatchingBook(item, allBooks);
-      setSelectedSavedBook(bookObj);
-    }
-  };
 
   // Form Fields State
   const [fullName, setFullName] = useState('');
@@ -516,15 +416,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     loadData();
   }, [user, authProfile]);
 
-  const missingCount = useMemo(() => {
-    let missing = 0;
-    if (!fullName.trim()) missing++;
-    if (!user?.email) missing++;
-    if (!specialization.trim()) missing++;
-    if (!experienceLevel) missing++;
-    if (selectedInterests.length === 0) missing++;
-    return missing;
-  }, [fullName, user, specialization, experienceLevel, selectedInterests]);
+
 
   async function handleSaveProfile() {
     if (!user || !profile) return;
