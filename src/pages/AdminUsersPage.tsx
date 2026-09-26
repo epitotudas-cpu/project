@@ -470,11 +470,13 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                     }
                     // Optimistic UI update so select dropdown responds instantly
                     setUsers((prev) =>
-                      prev.map((u) => (u.id === userId ? { ...u, role: newRole as Profile['role'] } : u))
+                      prev.map((item) => (item.id === userId ? { ...item, role: newRole as Profile['role'] } : item))
                     );
                     try {
                       await updateProfileRole(userId, newRole);
-                      await loadUsers();
+                      setUsers((prev) =>
+                        prev.map((item) => (item.id === userId ? { ...item, role: newRole as Profile['role'] } : item))
+                      );
                     } catch (err: any) {
                       await loadUsers(); // Rollback on failure
                       alert(err.message || 'A szerepkör módosítása nem sikerült.');

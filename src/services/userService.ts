@@ -125,13 +125,19 @@ export async function updateProfileRole(userId: string, newRole: string): Promis
   });
 
   if (error) {
-    console.warn('update_user_platform_role RPC warning, attempting direct update:', error);
-    const { error: directErr } = await supabase
+    console.warn('update_user_platform_role RPC error, attempting direct update fallback:', error);
+    const { data: updatedRows, error: directErr } = await supabase
       .from('profiles')
       .update({ role: newRole as any })
-      .eq('id', userId);
-    if (directErr) {
-      throw new Error(error.message || directErr.message || 'A szerepkör módosítása nem sikerült.');
+      .eq('id', userId)
+      .select('id, role');
+
+    if (directErr || !updatedRows || updatedRows.length === 0) {
+      throw new Error(
+        error?.message ||
+        directErr?.message ||
+        'A szerepkör módosítása nem sikerült (hiányzó RPC vagy RLS jogosultság az adatbázisban).'
+      );
     }
   }
 
