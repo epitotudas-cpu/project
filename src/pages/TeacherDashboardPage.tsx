@@ -128,7 +128,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [pkgTitle, setPkgTitle] = useState('');
   const [pkgDesc, setPkgDesc] = useState('');
   const [pkgTrade, setPkgTrade] = useState('');
-  const [pkgTopic, setPkgTopic] = useState('');
+  const [pkgTopic] = useState('');
   const [pkgTarget, setPkgTarget] = useState('');
   const [pkgItems, setPkgItems] = useState<CustomPackageItem[]>([]);
 

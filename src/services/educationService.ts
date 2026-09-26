@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { type Course, type Lesson, type QuizQuestion, type UserCertificate } from '../lib/supabase';
 
 export type { Course, Lesson, QuizQuestion, UserCertificate };
