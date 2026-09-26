@@ -1,0 +1,130 @@
+===============================================================================
+ÉPÍTŐTUDÁS v2 – TELJES JOGOSULTSÁGI RENDSZER ÉS RBAC BIZTONSÁGI AUDIT
+===============================================================================
+Dátum: 2026. szeptember 26.
+Projekt azonosító: ÉpítőTudás v2 (epitotudas-cpu/project)
+Audit Típusa: Teljes Körű Jogosultsági, RLS, Szerepkör és Hozzáférés-vezérlési Audit
+Auditor: Antigravity AI (Google DeepMind)
+Státusz: AUDIT ELVÉGZVE + BIZTONSÁGI JAVÍTÁS ALKALMAZVA
+
+===============================================================================
+1. VEZETŐI ÖSSZEFOGLALÓ (EXECUTIVE SUMMARY)
+===============================================================================
+
+Az ÉpítőTudás v2 platform jogosultsági rendszere egy többrétegű, hibrid védelmi 
+architektúrára épül, amely egyesíti a Supabase adatbázis-szintű Row Level 
+Security (RLS) sémavédelmét a React frontend granuláris RBAC (Role-Based Access 
+Control) és moduláris hozzáférés-vezérlési mátrixával.
+
+Az audit során átvilágításra került:
+1. Az adatbázis-séma, szerepkör sémák (`roles`, `permissions`, `role_permissions`).
+2. A felhasználói profilok és regisztráció (`profiles`, `auth.users`).
+3. A Supabase RLS szabályok, RPC tárolt eljárások és biztonsági funkciók.
+4. A frontend oldali útvonalvédelmi komponensek (`AdminLayout`, `EditorLayout`, `PartnerLayout`).
+5. A központi jogosultságellenőrző szolgáltatások (`permissions.ts`, `permissionService.ts`, `roleService.ts`).
+
+Audit megállapítás: A rendszer jogosultsági architektúrája alapjaiban szilárd és 
+visszafelé kompatibilis. Az audit során azonosítottunk egy kritikus frontend 
+oldali jogosultsági hiányosságot a `canAccessPartnerPanel` függvényben, amelyet az 
+audit keretében azonnal javítottunk.
+
+===============================================================================
+2. SZEREPKÖR ARCHITEKTÚRA ÉS OSZTÁLYOZÁS (ROLE TAXONOMY)
+===============================================================================
+
+A platform három egymásra épülő szinten kezeli a felhasználói jogosultságokat:
+
+2.1 Elsődleges Platform Szerepkörök (`public.profiles.role` CHECK constraint)
+- `admin`: Teljes platformkezelési jogosultság. Hozzáférés az Admin Vezérlőpult 16+ moduljához.
+- `editor`: Tartalomkezelői és szerkesztőségi jogosultság. Hozzáférés a Cikkek, Fogalomtár, Útmutatók, Munkavédelem és Tananyagok szerkesztéséhez.
+- `partner`: Szervezeti/céges és intézményi partneri jogosultság. Hozzáférés a Partner / Iskola Vezérlőpult termék-, ajánlat- és tananyag-kezelő funkcióihoz.
+- `user`: Normál regisztrált felhasználó (tanuló / olvasó). Olvasási, tanulási, tesztkitöltési és közösségi (hozzászólás, kedvencek) jogokkal.
+
+2.2 Granuláris RBAC Adatmodell (`roles`, `permissions`, `role_permissions` táblák)
+Az additív adatbázis-séma az alábbi rendszerszintű és egyedi szerepköröket támogatja:
+- `r-admin` (Adminisztrátor) - System role
+- `r-editor` (Szerkesztő) - System role
+- `r-moderator` (Moderátor) - System role
+- `r-partner` (Céges / Intézményi Partner) - Non-system role
+- `r-iskola` (Oktatási Intézmény) - Non-system role
+- `r-szakember` (Minősített Építőipari Szakember) - Non-system role
+- `r-tanulo` (Tanuló / Diák) - Non-system role
+
+2.3 Szervezeti És Melléktábla Szerepkörök
+- `partner_users.member_role`: Szervezeti jogosultságok (`'owner'` | `'admin'` | `'member'` | `'instructor'`).
+- `contributors`: Bizalmi közreműködői státusz (`trusted_contributor`, `trust_score`), amely automatikus jóváhagyási jogot (auto-approval privilege) biztosít szakmai hozzászólásoknál és javaslatoknál.
+- `school_classes` & `school_class_students`: Iskolai és osztálytermi hozzáférések oktatók és tanulók számára.
+
+===============================================================================
+3. ADATBÁZIS-SZINTŰ BIZTONSÁG ÉS RLS POLICIES (BACKEND PROTECTION)
+===============================================================================
+
+3.1 Profil Szerepkör-Eskaláció Elleni Védelem (`20260815_protect_profile_role_rls.sql`)
+- A `profiles` tábla UPDATE RLS szabálya szigorúan korlátozott:
+  `WITH CHECK (auth.uid() = id AND (role IS NOT DISTINCT FROM (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid()) OR is_admin_role()))`
+- Megállapítás: A normál felhasználó kliensoldali API hívással (`supabase.from('profiles').update({ role: 'admin' })`) NEM tudja módosítani a saját szerepkörét. A próbálkozást a Postgres RLS automatikusan visszautasítja.
+
+3.2 Privilégizált Műveletek RPC Védelme
+- `update_user_platform_role(target_user_id, new_role)`: Kizárólag `role = 'admin'` profillal rendelkező hitelesített felhasználó hajthatja végre.
+- `delete_user_by_admin(target_user_id)`: Biztonsági RPC függvény, kizárólag adminisztrátori ellenőrzés után töröl felhasználót az `auth.users` és `public.profiles` táblákból.
+- `confirm_user_email_rpc(user_id)`: Eljárás az e-mail megerősítési státusz szinkronizálására.
+- `accept_partner_invitation(invitation_code)`: Meghívó kód alapján ellenőrzi és rendel be a felhasználót a `partner_users` táblába a megfelelő szerepkörrel (`instructor` / `member`).
+
+3.3 Végrehajtási Jogok Korlátozása (SECURITY DEFINER Hardening)
+- A biztonsági RPC eljárásokról a nyilvános `PUBLIC` végrehajtási jogok vissza lettek vonva (`REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC`), megelőzve a jogosulatlan funkcióhívásokat.
+
+===============================================================================
+4. KLIENSOLDALI ÚTVONALVÉDELEM ÉS UI GUARDS (FRONTEND PROTECTION)
+===============================================================================
+
+4.1 Layout Szintű Hozzáférés-Vezérlés
+- `AdminLayout.tsx`: Kizárólag `authInfo.hasAdminRole` (`profile.role === 'admin'`) megléte esetén jeleníti meg az adminisztrációs felületet. Ennek hiányában az `AccessDeniedPage` jelenik meg.
+- `EditorLayout.tsx`: A `canAccessEditorPanel(profile)` (`admin` vagy `editor`) függvénnyel védi az útvonalat. Az oldalsáv moduljait a `canRoleAccessModule(role, moduleId)` szűri.
+- `PartnerLayout.tsx`: A `canAccessPartnerPanel(profile)` függvénnyel és a `partner_users` tábla lekérdezésével ellenőrzi a partneri / tanári hozzáférést.
+
+4.2 Navigációs és UI Elemek Dinamikus Szűrése
+- `Header.tsx`: Az `[Admin Vezérlőpult]`, `[Szerkesztői Panel]` és `[Partner Munkatér]` gombok kizárólag a megfelelő profil-szerepkör megléte esetén jelennek meg a menüben.
+
+===============================================================================
+5. AZONOSÍTOTT HIÁNYOSSÁGOK ÉS ALKALMAZOTT JAVÍTÁSOK (FINDINGS & FIXES)
+===============================================================================
+
+5.1 [KRITIKUS - JAVÍTVA] `canAccessPartnerPanel` Hibás Jogosultságellenőrzés
+- **Hiba leírása:** A `src/lib/permissions.ts` fájlban a `canAccessPartnerPanel` függvény az alábbi kódsorral működött:
+  `return profile.role === 'admin' || profile.role === 'partner' || Boolean(profile.id);`
+- **Kockázat:** A `Boolean(profile.id)` kifejezés minden bejelentkezett felhasználónál `true`-ra értékelődött ki. Így egy sima `user` szerepkörű fiók is átment a `canAccessPartnerPanel` ellenőrzésen.
+- **Alkalmazott Javítás:** A `Boolean(profile.id)` feltétel eltávolításra került. A javított függvény szigorúan ellenőrzi az adminisztrátori vagy partneri szerepkört:
+  `return profile.role === 'admin' || profile.role === 'partner';`
+
+5.2 [KÖZEPES - AJÁNLÁS] LocalStorage Alapú Modul-Mátrix Gyorsítótárazás
+- **Megállapítás:** A `permissionService.ts` a `getRoleModulePermissions` függvényben a böngésző `localStorage`-jából (`epitotudas_role_permissions_<role>`) olvassa fel a tesztelhető modul-jogosultsági mátrixot.
+- **Kockázat:** A `localStorage` a böngésző konzoljából módosítható, így a UI elemek megjelenítése manipulálható. Ugyanakkor a tényleges adatbázis-műveleteket a Supabase RLS védi, így adatvédelmi incidens nem alakulhat ki.
+- **Javaslat:** A jövőben a moduláris RBAC mátrixot a `role_permissions` táblából szinkronizálja a rendszer `localStorage` fallback helyett.
+
+5.3 [ALACSONY - DOKUMENTÁCIÓS] Kettős Szerepkör Modell Megfeleltetés
+- **Megállapítás:** A platformon párhuzamosan létezik a `profiles.role` szöveges oszlop (`user`, `editor`, `partner`, `admin`) és a granuláris `roles` tábla (`role_id`).
+- **Javaslat:** Az `AdminRolesPage` és a felhasználókezelő modul folyamatosan tartsa szinkronban a `profiles.role` és `profiles.role_id` értékeket szerepkör-módosításkor.
+
+===============================================================================
+6. AUDIT ÖSSZEGZŐ MÁTRIX ÉS ÉRTÉKELÉS
+===============================================================================
+
+| Auditált Terület | Védettségi Szint | Megjegyzés / Státusz |
+|---|---|---|
+| Adatbázis RLS házirendek | 🟢 KIVÁLÓ | Megfelelő sor- és oszlopszintű védelem |
+| Szerepkör-eskaláció elleni védelem | 🟢 KIVÁLÓ | Profiles UPDATE RLS szigorítva |
+| RPC és Tárolt Eljárások biztonsága | 🟢 KIVÁLÓ | SECURITY DEFINER + EXPLICIT EXECUTE REVOKE |
+| Admin felület útvonalvédelme | 🟢 KIVÁLÓ | AdminLayout szigorú roll-check |
+| Szerkesztői felület útvonalvédelme | 🟢 KIVÁLÓ | EditorLayout szerepkör szűrés |
+| Partner felület útvonalvédelme | 🟢 JAVÍTVA | Szigorítva, Boolean(profile.id) eltávolítva |
+| Moduláris RBAC mátrix | 🟡 ELFOGADATÓ | LocalStorage függőség szinkronizálandó DB-re |
+
+===============================================================================
+ZÁRÓ MEGÁLLAPÍTÁS
+===============================================================================
+Az ÉpítőTudás v2 jogosultsági rendszere a kritikus javítás elvégzése után 
+biztonságos, stabil és éles üzemre felkészített állapotban van.
+
+Auditor: Antigravity AI (Google DeepMind)
+Audit lezárva: 2026. szeptember 26.
+===============================================================================
