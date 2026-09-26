@@ -3,45 +3,26 @@ import {
   User,
   GraduationCap,
   Building2,
-  Bookmark,
   Clock,
   Sliders,
-  HelpCircle,
   CheckCircle2,
-  Edit,
   Save,
   Lock,
-  Moon,
-  Sun,
-  Monitor,
   Download,
   AlertTriangle,
-  LogOut,
-  ChevronRight,
-  Sparkles,
   Search,
-  Check,
   LayoutGrid,
-  LayoutList,
   Trash2,
-  ExternalLink,
-  X,
   BookOpen,
-  ShoppingBag,
-  Eye,
   School,
   KeyRound,
-  AlertCircle,
   Users,
   BarChart2,
   CheckSquare,
   Award,
   TrendingUp,
-  FileText,
   Play,
-  ArrowRight,
   LayoutDashboard,
-  Layers,
   FileCheck,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,7 +34,6 @@ import { getSavedItems, removeSavedItem, type SavedItem } from '../services/book
 import { glossaryJsonService, type GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import TermDetailModal from '../components/TermDetailModal';
 import { useBooks, type BookItem } from '../services/bookService';
-import BookCoverImage from '../components/BookCoverImage';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
 
 function getMatchingBook(item: SavedItem, allBooks: BookItem[]): BookItem {
@@ -657,10 +637,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   const isStudent = useMemo(() => {
     if (!user) return false;
-    const ut = user.user_metadata?.user_type || profile?.userType;
-    const r = profile?.role;
+    const ut = (user.user_metadata?.user_type || profile?.userType) as string | undefined;
+    const r = (profile?.role || (user as any)?.role) as string | undefined;
     if (ut === 'tanulo' || r === 'student' || r === 'tanulo') return true;
-    if (ut === 'szakember' || r === 'partner' || r === 'school' || r === 'teacher' || r === 'admin' || r === 'editor' || r === 'szakember' || isPartnerContact || isInstructor) return false;
+    if (ut === 'szakember' || r === 'partner' || r === 'school' || r === 'teacher' || r === 'admin' || r === 'editor' || r === 'contact' || r === 'szakember' || isPartnerContact || isInstructor) return false;
     return ut === 'tanulo';
   }, [user, profile, isPartnerContact, isInstructor]);
 

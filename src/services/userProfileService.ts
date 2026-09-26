@@ -5,7 +5,7 @@ export interface UserDetailedProfile {
   email: string;
   fullName: string;
   avatarUrl?: string;
-  role: 'admin' | 'editor' | 'user';
+  role: 'admin' | 'editor' | 'partner' | 'school' | 'teacher' | 'contact' | 'student' | 'user';
   userType?: 'tanulo' | 'szakember' | string;
   specialization?: string;
   experienceYears?: number;
@@ -22,7 +22,7 @@ export async function getUserDetailedProfile(
   userId: string,
   email?: string,
   fullName?: string,
-  role: 'admin' | 'editor' | 'user' = 'user',
+  role: 'admin' | 'editor' | 'partner' | 'school' | 'teacher' | 'contact' | 'student' | 'user' = 'user',
   userType?: 'tanulo' | 'szakember' | 'partner' | 'oktato' | string
 ): Promise<UserDetailedProfile> {
   if (IN_MEMORY_DETAILED_PROFILES.has(userId)) {
