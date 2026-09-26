@@ -32,6 +32,7 @@ const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
   contact: { label: 'Kapcsolattartó', class: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' },
   school: { label: 'Iskola', class: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
   teacher: { label: 'Tanár / Oktató', class: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+  student: { label: 'Tanuló', class: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' },
   user: { label: 'Felhasználó', class: 'bg-gray-500/10 text-gray-400 border-gray-500/30' },
 };
 
@@ -511,6 +512,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                               style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
                               className="border text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
                             >
+                              <option value="student">Tanuló (Student)</option>
                               <option value="user">Felhasználó (User)</option>
                               <option value="editor">Szerkesztő (Editor)</option>
                               <option value="partner">Partner Tulajdonos (Partner)</option>

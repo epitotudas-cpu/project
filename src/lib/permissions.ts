@@ -25,7 +25,7 @@ export function canDelete(profile: Profile | null | undefined): boolean {
 }
 
 export function isUser(profile: Profile | null | undefined): boolean {
-  return profile?.role === 'user' || !profile?.role;
+  return profile?.role === 'user' || profile?.role === 'student' || !profile?.role;
 }
 
 export function isModerator(profile: Profile | null | undefined): boolean {
@@ -56,20 +56,24 @@ export function isSzakember(target?: any): boolean {
   return target?.role === 'admin' || target?.role === 'editor';
 }
 
-export function isTanulo(target?: any): boolean {
+export function isStudent(target?: any): boolean {
   if (!target) return false;
   if (typeof target === 'string') {
-    return target === 'tanulo' || target === 'student';
-  }
-  const userType = target?.user_metadata?.user_type || target?.user_type || target?.userType;
-  if (userType) {
-    return userType === 'tanulo' || userType === 'student';
+    return target === 'tanulo' || target === 'student' || target === 'user';
   }
   const role = target?.role || target?.user_metadata?.role;
   if (role) {
-    return role === 'student' || role === 'tanulo';
+    if (role === 'student' || role === 'tanulo' || role === 'user') return true;
+  }
+  const userType = target?.user_metadata?.user_type || target?.user_type || target?.userType;
+  if (userType) {
+    if (userType === 'tanulo' || userType === 'student') return true;
   }
   return false;
+}
+
+export function isTanulo(target?: any): boolean {
+  return isStudent(target);
 }
 
 export function canAccessAdminPanel(profile: Profile | null | undefined): boolean {
