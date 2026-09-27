@@ -158,6 +158,15 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     checkPartnerContact();
   }, [user]);
 
+  const isTeacher =
+    isInstructor ||
+    isPartnerContact ||
+    authProfile?.role === 'teacher' ||
+    authProfile?.role === 'instructor' ||
+    authProfile?.role === 'oktato' ||
+    user?.user_metadata?.user_type === 'oktato' ||
+    user?.user_metadata?.user_type === 'iskola';
+
   // Tab State Management
   const [activeMainSection, setActiveMainSection] = useState<MainSection>(() => {
     try {
@@ -1617,19 +1626,21 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Tapasztalati Szint</label>
-                    <select
-                      value={experienceLevel}
-                      onChange={(e) => setExperienceLevel(e.target.value)}
-                      className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
-                    >
-                      <option value="">Válassz szintet...</option>
-                      {EXPERIENCE_LEVELS.map((lvl) => (
-                        <option key={lvl.id} value={lvl.id}>{lvl.label} - {lvl.desc}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {!isTeacher && (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Tapasztalati Szint</label>
+                      <select
+                        value={experienceLevel}
+                        onChange={(e) => setExperienceLevel(e.target.value)}
+                        className="w-full bg-[#1F1F1F] border border-[#333] focus:border-[#4165b4] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                      >
+                        <option value="">Válassz szintet...</option>
+                        {EXPERIENCE_LEVELS.map((lvl) => (
+                          <option key={lvl.id} value={lvl.id}>{lvl.label} - {lvl.desc}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Érdeklődési Körök</label>
