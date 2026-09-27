@@ -87,17 +87,16 @@ export default function Footer({ onNavigate }: FooterProps) {
   ];
 
   return (
-    <footer className="bg-[#0B1528] text-white border-t border-white/10 relative z-20 py-5 sm:py-6 selection:bg-accent selection:text-black">
+    <footer className="bg-[#0B1528] text-white border-t border-white/10 relative z-20 py-6 selection:bg-accent selection:text-black">
       {/* Optional Ad Banner in Footer Placement */}
       <FooterAdBanner />
 
-      {/* Main Ultra-Compact Footer Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-        {/* Top Header Row: Brand, Bio, Email & Accordion Titles */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          
-          {/* Brand Info & Email (1-Line Compact Layout) */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 shrink-0 max-w-xl">
+      {/* Main Footer Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-6">
+        
+        {/* Brand Info & Contact Header Row */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 min-w-0">
             <button
               onClick={() => handleNavigate('home')}
               className="flex items-center gap-2 group cursor-pointer focus:outline-none shrink-0"
@@ -115,58 +114,59 @@ export default function Footer({ onNavigate }: FooterProps) {
               />
             </button>
 
-            <div className="flex items-center gap-2.5 text-xs text-gray-300">
-              <span className="hidden sm:inline text-gray-500">•</span>
-              <span className="truncate max-w-xs sm:max-w-sm text-[11px] sm:text-xs">
-                {siteSettings.footerDescription?.substring(0, 75) || 'Magyarország legátfogóbb online építőipari tudásbázisa.'}
-              </span>
-              <span className="text-gray-500">•</span>
-              <a
-                href="mailto:info@epitotudas.hu"
-                className="font-mono text-accent hover:underline inline-flex items-center gap-1 font-semibold shrink-0 text-[11px] sm:text-xs"
-              >
-                <Mail size={13} />
-                <span>info@epitotudas.hu</span>
-              </a>
-            </div>
+            <p className="text-xs text-gray-300 max-w-xl leading-relaxed">
+              {siteSettings.footerDescription || 'Magyarország legátfogóbb online építőipari tudásbázisa. Szakembereknek, diákoknak és vállalkozóknak.'}
+            </p>
           </div>
 
-          {/* The 3 Clickable Accordion Titles */}
-          <div className="w-full lg:w-auto grid grid-cols-1 sm:grid-cols-3 gap-2 shrink-0">
-            {footerColumns.map((col) => {
-              const IconComponent = col.icon;
-              const isOpen = openSectionId === col.id;
-              const buttonId = `footer-btn-${col.id}`;
-              const panelId = `footer-panel-${col.id}`;
-
-              return (
-                <div key={col.id} className="w-full">
-                  <button
-                    id={buttonId}
-                    type="button"
-                    onClick={() => toggleSection(col.id)}
-                    aria-expanded={isOpen}
-                    aria-controls={panelId}
-                    className="w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent/40 transition-all cursor-pointer select-none group focus:outline-none focus:ring-1 focus:ring-accent/50 text-xs font-bold text-white"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <IconComponent size={14} className="text-accent shrink-0" />
-                      <span className="truncate group-hover:text-accent transition-colors">{col.title}</span>
-                    </div>
-                    <ChevronDown
-                      size={15}
-                      className={`text-gray-400 transition-transform duration-200 shrink-0 ${
-                        isOpen ? 'rotate-180 text-accent' : 'rotate-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          <a
+            href="mailto:info@epitotudas.hu"
+            className="font-mono text-accent hover:text-white inline-flex items-center gap-2 font-semibold shrink-0 text-xs bg-white/5 hover:bg-white/10 px-3.5 py-2 rounded-xl border border-white/10 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent/50"
+          >
+            <Mail size={14} className="text-accent" />
+            <span>info@epitotudas.hu</span>
+          </a>
         </div>
 
-        {/* Collapsible Link Panels: Hidden when closed, taking 0 vertical height */}
+        {/* 3 Clickable Accordion Header Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {footerColumns.map((col) => {
+            const IconComponent = col.icon;
+            const isOpen = openSectionId === col.id;
+            const buttonId = `footer-btn-${col.id}`;
+            const panelId = `footer-panel-${col.id}`;
+
+            return (
+              <div key={col.id} className="w-full">
+                <button
+                  id={buttonId}
+                  type="button"
+                  onClick={() => toggleSection(col.id)}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  className={`w-full flex items-center justify-between gap-2.5 px-4 py-2.5 rounded-xl border transition-all cursor-pointer select-none group focus:outline-none focus:ring-1 focus:ring-accent/50 text-xs font-bold text-white ${
+                    isOpen
+                      ? 'bg-white/10 border-accent/60 ring-1 ring-accent/40'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-accent/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <IconComponent size={15} className="text-accent shrink-0" />
+                    <span className="truncate group-hover:text-accent transition-colors">{col.title}</span>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transition-transform duration-200 shrink-0 ${
+                      isOpen ? 'rotate-180 text-accent' : 'rotate-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Collapsible Link Panels: Hidden when closed */}
         {footerColumns.map((col) => {
           const isOpen = openSectionId === col.id;
           const buttonId = `footer-btn-${col.id}`;
@@ -180,13 +180,13 @@ export default function Footer({ onNavigate }: FooterProps) {
               id={panelId}
               role="region"
               aria-labelledby={buttonId}
-              className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-fade-in transition-all duration-200"
+              className="bg-white/5 border border-white/10 rounded-2xl p-5 animate-fade-in transition-all duration-200"
             >
               <div className="flex items-center gap-2 text-xs font-extrabold text-accent border-b border-white/10 pb-2 mb-3">
                 <col.icon size={15} />
                 <span>{col.title}</span>
               </div>
-              <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 text-xs">
+              <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 text-xs">
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <button
@@ -207,8 +207,8 @@ export default function Footer({ onNavigate }: FooterProps) {
           );
         })}
 
-        {/* Ultra-Short Bottom Bar / Copyright */}
-        <div className="border-t border-white/10 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] sm:text-xs text-gray-400">
+        {/* Bottom Bar / Copyright */}
+        <div className="border-t border-white/10 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-gray-400">
           <div>
             © 2026 ÉpítőTudás ·{' '}
             <button
@@ -230,6 +230,7 @@ export default function Footer({ onNavigate }: FooterProps) {
             v2.0 • Minden jog fenntartva.
           </div>
         </div>
+
       </div>
     </footer>
   );
