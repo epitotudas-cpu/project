@@ -28,6 +28,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
+import { deleteUser } from '../services/userService';
 import { getTradeItems } from '../services/tradeService';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
 import { fetchStudentAssignedClassMaterials } from '../services/educationService';
