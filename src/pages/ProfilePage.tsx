@@ -161,9 +161,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const isTeacher =
     isInstructor ||
     isPartnerContact ||
-    authProfile?.role === 'teacher' ||
-    authProfile?.role === 'instructor' ||
-    authProfile?.role === 'oktato' ||
+    (authProfile?.role as string) === 'teacher' ||
+    (authProfile?.role as string) === 'instructor' ||
+    (authProfile?.role as string) === 'oktato' ||
     user?.user_metadata?.user_type === 'oktato' ||
     user?.user_metadata?.user_type === 'iskola';
 
