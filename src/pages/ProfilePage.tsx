@@ -37,7 +37,7 @@ import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 
 
 interface ProfilePageProps {
-  onNavigate?: (page: string, params?: { articleSlug?: string }) => void;
+  onNavigate?: (page: string, params?: { articleSlug?: string; slug?: string; quizId?: string; partnerSlug?: string }) => void;
 }
 
 type MainSection = 'overview' | 'materials' | 'my-class' | 'progress' | 'tests' | 'school-link' | 'settings';
