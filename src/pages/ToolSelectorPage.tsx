@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop, Layers, Library } from 'lucide-react';
-import { MOCK_TOOLS, type Tool } from '../services/toolService';
+import { getActiveTools, MOCK_TOOLS, type Tool } from '../services/toolService';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface ToolSelectorPageProps {
@@ -28,9 +28,26 @@ const CATEGORIES_LIST = [
 export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) {
   const [selectedTrade, setSelectedTrade] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [loadedTools, setLoadedTools] = useState<Tool[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getActiveTools();
+        if (data && data.length > 0) {
+          setLoadedTools(data);
+        }
+      } catch {
+        // Fallback to MOCK_TOOLS if error occurs
+      }
+    }
+    load();
+  }, []);
+
+  const activeToolsList = loadedTools.length > 0 ? loadedTools : MOCK_TOOLS;
 
   const filteredTools = useMemo(() => {
-    return MOCK_TOOLS.filter((tool: Tool) => {
+    return activeToolsList.filter((tool: Tool) => {
       if (selectedTrade !== 'all' && !(tool.professions || []).some((p: string) => p.toLowerCase().includes(selectedTrade.toLowerCase()))) {
         return false;
       }
@@ -39,7 +56,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
       }
       return true;
     });
-  }, [selectedTrade, selectedType]);
+  }, [activeToolsList, selectedTrade, selectedType]);
 
   const resetFilters = () => {
     setSelectedTrade('all');
@@ -255,7 +272,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
 
                 <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
                   <button
-                    onClick={() => onNavigate('tool')}
+                    onClick={() => onNavigate(`tool?slug=${tool.slug}`)}
                     className="text-primary hover:underline flex items-center gap-1"
                   >
                     Megtekintés a Katalógusban <ArrowRight size={13} />

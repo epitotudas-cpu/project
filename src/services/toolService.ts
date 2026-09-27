@@ -507,14 +507,8 @@ export async function getActiveTools(options?: {
 }
 
 export async function getToolBySlug(slug: string): Promise<Tool | null> {
-  const { data, error } = await supabase
-    .from('tools')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'active')
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  const tools = await getActiveTools();
+  return tools.find((t) => t.slug === slug) || null;
 }
 
 export async function createTool(payload: Record<string, unknown>): Promise<Tool> {
