@@ -11,6 +11,7 @@ import {
   listSchoolStudents,
   listClassMaterials,
   assignMaterialsToClass,
+  assignMaterialsToStudent,
   removeClassMaterial,
   type SchoolClass,
   type SchoolStudent,
@@ -121,7 +122,13 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [savingMaterials, setSavingMaterials] = useState(false);
   const [materialSaveSuccess, setMaterialSaveSuccess] = useState(false);
   const [assignModalMaterial, setAssignModalMaterial] = useState<{ type: 'course' | 'article'; id: string; title: string } | null>(null);
+  const [assignTargetType, setAssignTargetType] = useState<'class' | 'student'>('class');
   const [selectedAssignClassId, setSelectedAssignClassId] = useState<string>('');
+  const [selectedAssignStudentId, setSelectedAssignStudentId] = useState<string>('');
+
+  // DB Progress State
+  const [dbProgressRecords, setDbProgressRecords] = useState<any[]>([]);
+  const [loadingProgress, setLoadingProgress] = useState(false);
 
   // Custom Package Builder State
   const [customPackages, setCustomPackages] = useState<CustomPackage[]>([]);
@@ -145,6 +152,31 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       loadClassDetails(selectedClassId);
     }
   }, [selectedClassId, schoolInfo]);
+
+  const loadDbProgressData = async () => {
+    if (allStudents.length === 0) return;
+    setLoadingProgress(true);
+    try {
+      const studentIds = Array.from(new Set(allStudents.map((st) => st.student_id)));
+      const { data, error } = await supabase
+        .from('user_course_progress')
+        .select('*')
+        .in('user_id', studentIds);
+      if (!error && data) {
+        setDbProgressRecords(data);
+      }
+    } catch (err) {
+      console.warn('Error loading progress data:', err);
+    } finally {
+      setLoadingProgress(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeView === 'progress' && allStudents.length > 0) {
+      loadDbProgressData();
+    }
+  }, [activeView, allStudents]);
 
   const loadTeacherData = async () => {
     setLoading(true);
@@ -453,12 +485,27 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
   // Quick Assign Modal submit
   const handleConfirmQuickAssign = async () => {
-    if (!assignModalMaterial || !selectedAssignClassId) return;
+    if (!assignModalMaterial) return;
     try {
-      await assignMaterialsToClass(selectedAssignClassId, [
-        { content_type: assignModalMaterial.type, content_id: assignModalMaterial.id },
-      ]);
-      alert(`Sikeresen kiosztva a megadott osztálynak!`);
+      if (assignTargetType === 'class') {
+        if (!selectedAssignClassId) {
+          alert('Kérjük, válasszon egy osztályt!');
+          return;
+        }
+        await assignMaterialsToClass(selectedAssignClassId, [
+          { content_type: assignModalMaterial.type, content_id: assignModalMaterial.id },
+        ]);
+        alert(`Sikeresen kiosztva a megadott osztálynak!`);
+      } else {
+        if (!selectedAssignStudentId) {
+          alert('Kérjük, válasszon egy tanulót!');
+          return;
+        }
+        await assignMaterialsToStudent(selectedAssignStudentId, [
+          { content_type: assignModalMaterial.type, content_id: assignModalMaterial.id },
+        ]);
+        alert(`Sikeresen kiosztva a kiválasztott tanulónak!`);
+      }
       setAssignModalMaterial(null);
     } catch (err: any) {
       alert(err.message || 'Hiba a kiosztás során.');
@@ -1568,17 +1615,87 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
                 <div className="bg-[#1F1F1F] p-5 rounded-xl border border-[#262626]">
-                  <span className="text-xs text-gray-400 block font-semibold">Átlagos Osztályateljesítés</span>
-                  <span className="text-3xl font-black text-emerald-400">82%</span>
+                  <span className="text-xs text-gray-400 block font-semibold">Regisztrált Diákok</span>
+                  <span className="text-3xl font-black text-emerald-400">{allStudents.length} fő</span>
                 </div>
                 <div className="bg-[#1F1F1F] p-5 rounded-xl border border-[#262626]">
-                  <span className="text-xs text-gray-400 block font-semibold">Aktív Tanulók Aránya</span>
-                  <span className="text-3xl font-black text-blue-400">94%</span>
+                  <span className="text-xs text-gray-400 block font-semibold">Adatbázisban Rögzített Kurzus-Haladások</span>
+                  <span className="text-3xl font-black text-blue-400">{dbProgressRecords.length} rekord</span>
                 </div>
                 <div className="bg-[#1F1F1F] p-5 rounded-xl border border-[#262626]">
-                  <span className="text-xs text-gray-400 block font-semibold">Elmaradó Tanulók</span>
-                  <span className="text-3xl font-black text-[#60a5fa]">2 fő</span>
+                  <span className="text-xs text-gray-400 block font-semibold">Osztályok Száma</span>
+                  <span className="text-3xl font-black text-[#60a5fa]">{classes.length}</span>
                 </div>
+              </div>
+
+              {/* REAL STUDENT PROGRESS TABLE */}
+              <div className="overflow-x-auto">
+                <h3 className="text-sm font-bold text-white mb-3">Tanulói Kurzus-Haladás Adatbázis Rekordok</h3>
+                {loadingProgress ? (
+                  <div className="p-8 text-center text-xs text-gray-400">Haladási adatok betöltése az adatbázisból...</div>
+                ) : allStudents.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-gray-400">Nincsenek beiratkozott diákok.</div>
+                ) : (
+                  <table className="w-full text-left text-xs text-gray-300">
+                    <thead className="bg-[#1F1F1F] text-gray-400 uppercase text-[10px]">
+                      <tr>
+                        <th className="py-3 px-4 rounded-l-lg">Tanuló Neve</th>
+                        <th className="py-3 px-4">Osztály</th>
+                        <th className="py-3 px-4">Kurzus / Tananyag</th>
+                        <th className="py-3 px-4">Állapot</th>
+                        <th className="py-3 px-4">Haladás %</th>
+                        <th className="py-3 px-4 rounded-r-lg">Utolsó Aktivitás</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1F1F1F]">
+                      {allStudents.flatMap((st) => {
+                        const studentProg = dbProgressRecords.filter((p) => p.user_id === st.student_id);
+                        if (studentProg.length === 0) {
+                          return [{
+                            key: `no-prog-${st.student_id}`,
+                            studentName: st.profiles?.full_name || st.profiles?.email || 'Névtelen tanuló',
+                            className: st.school_class?.name || 'Osztály',
+                            courseTitle: 'Nem kezdte el a kurzust',
+                            status: 'not_started',
+                            percent: 0,
+                            lastAccessed: st.joined_at,
+                          }];
+                        }
+                        return studentProg.map((p) => {
+                          const courseObj = DEFAULT_COURSES.find((c) => c.id === p.course_id);
+                          return {
+                            key: `prog-${p.id}`,
+                            studentName: st.profiles?.full_name || st.profiles?.email || 'Névtelen tanuló',
+                            className: st.school_class?.name || 'Osztály',
+                            courseTitle: courseObj?.title || p.course_id,
+                            status: p.status,
+                            percent: p.progress_percent,
+                            lastAccessed: p.last_accessed_at,
+                          };
+                        });
+                      }).map((row) => (
+                        <tr key={row.key} className="hover:bg-[#1A1A1A]">
+                          <td className="py-3.5 px-4 font-semibold text-white">{row.studentName}</td>
+                          <td className="py-3.5 px-4 text-[#60a5fa] font-bold">{row.className}</td>
+                          <td className="py-3.5 px-4 text-gray-300 font-medium">{row.courseTitle}</td>
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2.5 py-1 text-[10px] font-bold rounded-md border ${
+                              row.status === 'completed'
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                : row.status === 'in_progress'
+                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                : 'bg-gray-800 text-gray-400 border-gray-700'
+                            }`}>
+                              {row.status === 'completed' ? 'BEFEJEZTE' : row.status === 'in_progress' ? 'FOLYAMATBAN' : 'MEGNYITÁSRA VÁR'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-black text-white">{row.percent}%</td>
+                          <td className="py-3.5 px-4 text-gray-400">{new Date(row.lastAccessed).toLocaleDateString('hu-HU')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           </div>
@@ -1761,28 +1878,75 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         </div>
       )}
 
-      {/* QUICK ASSIGN CONTENT TO CLASS MODAL */}
+      {/* QUICK ASSIGN CONTENT TO CLASS / STUDENT MODAL */}
       {assignModalMaterial && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">Tananyag Kiosztása Osztálynak</h3>
-            <p className="text-xs text-gray-400 mb-4">
+          <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-lg font-bold text-white mb-1">Tananyag Kiosztása</h3>
+            <p className="text-xs text-gray-400">
               Kijelölt tananyag: <strong className="text-white">{assignModalMaterial.title}</strong>
             </p>
 
-            <div className="mb-6">
-              <label className="block text-xs font-semibold text-gray-400 mb-2">Válasszon Osztályt:</label>
-              <select
-                value={selectedAssignClassId}
-                onChange={(e) => setSelectedAssignClassId(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white text-xs focus:outline-none focus:border-[#4165b4]"
-              >
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name} ({cls.trade_id})
-                  </option>
-                ))}
-              </select>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 mb-2">Kiosztás Célja:</label>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setAssignTargetType('class')}
+                  className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all ${
+                    assignTargetType === 'class'
+                      ? 'bg-[#4165b4] text-white border-[#4165b4]'
+                      : 'bg-[#1F1F1F] text-gray-400 border-[#262626] hover:text-white'
+                  }`}
+                >
+                  Osztálynak
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAssignTargetType('student')}
+                  className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all ${
+                    assignTargetType === 'student'
+                      ? 'bg-[#4165b4] text-white border-[#4165b4]'
+                      : 'bg-[#1F1F1F] text-gray-400 border-[#262626] hover:text-white'
+                  }`}
+                >
+                  Egyéni Tanulónak
+                </button>
+              </div>
+
+              {assignTargetType === 'class' ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">Válasszon Osztályt:</label>
+                  <select
+                    value={selectedAssignClassId}
+                    onChange={(e) => setSelectedAssignClassId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white text-xs focus:outline-none focus:border-[#4165b4]"
+                  >
+                    <option value="">-- Válasszon osztályt --</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name} ({cls.trade_id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">Válasszon Tanulót:</label>
+                  <select
+                    value={selectedAssignStudentId}
+                    onChange={(e) => setSelectedAssignStudentId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-[#1F1F1F] border border-[#262626] rounded-xl text-white text-xs focus:outline-none focus:border-[#4165b4]"
+                  >
+                    <option value="">-- Válasszon tanulót --</option>
+                    {allStudents.map((st) => (
+                      <option key={st.student_id} value={st.student_id}>
+                        {st.profiles?.full_name || st.profiles?.email || 'Tanuló'} ({st.school_class?.name || 'Osztály'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-3">

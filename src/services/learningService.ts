@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabase';
 import type {
   LearningCourse,
   Quiz,
@@ -571,6 +572,51 @@ export function getCourseProgress(userId: string = 'anon_guest', courseId: strin
   };
 }
 
+export async function saveCourseProgressSupabase(progress: CourseProgress): Promise<void> {
+  if (!progress.user_id || progress.user_id === 'anon_guest') return;
+  try {
+    await supabase.from('user_course_progress').upsert(
+      {
+        user_id: progress.user_id,
+        course_id: progress.course_id,
+        completed_chapter_ids: progress.completed_chapter_ids,
+        progress_percent: progress.progress_percent,
+        status: progress.status,
+        last_accessed_at: progress.last_accessed_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,course_id' }
+    );
+  } catch (e) {
+    console.warn('Error syncing course progress to Supabase:', e);
+  }
+}
+
+export async function fetchUserCourseProgressSupabase(
+  userId: string,
+  courseId?: string
+): Promise<CourseProgress[]> {
+  try {
+    let query = supabase.from('user_course_progress').select('*').eq('user_id', userId);
+    if (courseId) {
+      query = query.eq('course_id', courseId);
+    }
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return data.map((d: any) => ({
+      id: d.id,
+      user_id: d.user_id,
+      course_id: d.course_id,
+      completed_chapter_ids: d.completed_chapter_ids || [],
+      progress_percent: d.progress_percent || 0,
+      status: d.status || 'not_started',
+      last_accessed_at: d.last_accessed_at || d.updated_at || new Date().toISOString(),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export function toggleChapterCompletion(
   userId: string = 'anon_guest',
   courseId: string,
@@ -601,6 +647,11 @@ export function toggleChapterCompletion(
     window.dispatchEvent(new Event('learning-updated'));
   } catch (e) {
     console.warn('Hiba a haladás mentésekor:', e);
+  }
+
+  // Sync to Supabase in background
+  if (userId && userId !== 'anon_guest') {
+    saveCourseProgressSupabase(updatedProgress);
   }
 
   return updatedProgress;

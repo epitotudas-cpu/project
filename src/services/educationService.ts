@@ -710,7 +710,8 @@ export function saveInteractiveStepsForLesson(lessonId: string, steps: Interacti
 
 export interface StudentClassMaterialItem {
   id: string;
-  class_id: string;
+  class_id?: string | null;
+  student_id?: string | null;
   class_name?: string;
   content_type: 'course' | 'article' | 'book' | 'material' | 'tool';
   content_id: string;
@@ -721,40 +722,56 @@ export interface StudentClassMaterialItem {
 export async function fetchStudentAssignedClassMaterials(
   studentId: string
 ): Promise<StudentClassMaterialItem[]> {
-  const { data: enrollments, error: enrollError } = await supabase
+  const { data: enrollments } = await supabase
     .from('school_students')
     .select('class_id, school_class:class_id(name)')
     .eq('student_id', studentId)
     .not('class_id', 'is', null);
 
-  if (enrollError || !enrollments || enrollments.length === 0) {
-    return [];
-  }
-
   const classMap = new Map<string, string>();
   const classIds: string[] = [];
-  for (const e of enrollments as any[]) {
-    if (e.class_id) {
-      classIds.push(e.class_id);
-      classMap.set(e.class_id, e.school_class?.name || 'Osztály');
+  if (enrollments) {
+    for (const e of enrollments as any[]) {
+      if (e.class_id) {
+        classIds.push(e.class_id);
+        classMap.set(e.class_id, e.school_class?.name || 'Osztály');
+      }
     }
   }
 
-  if (classIds.length === 0) return [];
-
-  const { data: materials, error: matError } = await supabase
-    .from('class_materials')
-    .select('*')
-    .in('class_id', classIds)
-    .order('assigned_at', { ascending: false });
-
-  if (matError || !materials) {
-    return [];
+  // 1. Fetch class-assigned materials
+  let classMaterials: any[] = [];
+  if (classIds.length > 0) {
+    const { data: cData } = await supabase
+      .from('class_materials')
+      .select('*')
+      .in('class_id', classIds)
+      .order('assigned_at', { ascending: false });
+    if (cData) classMaterials = cData;
   }
 
-  return materials.map((m: any) => ({
-    ...m,
-    class_name: classMap.get(m.class_id) || 'Osztály',
-  })) as StudentClassMaterialItem[];
+  // 2. Fetch individually assigned materials
+  let studentMaterials: any[] = [];
+  const { data: sData } = await supabase
+    .from('class_materials')
+    .select('*')
+    .eq('student_id', studentId)
+    .order('assigned_at', { ascending: false });
+  if (sData) studentMaterials = sData;
+
+  const combined = [...classMaterials, ...studentMaterials];
+  const uniqueMap = new Map<string, any>();
+
+  for (const m of combined) {
+    const key = `${m.content_type}_${m.content_id}`;
+    if (!uniqueMap.has(key)) {
+      uniqueMap.set(key, {
+        ...m,
+        class_name: m.class_id ? (classMap.get(m.class_id) || 'Osztály') : 'Egyéni tananyag',
+      });
+    }
+  }
+
+  return Array.from(uniqueMap.values()) as StudentClassMaterialItem[];
 }
 

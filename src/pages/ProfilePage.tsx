@@ -29,8 +29,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedProfile } from '../services/userProfileService';
 import { getTradeItems } from '../services/tradeService';
-import { deleteUser } from '../services/userService';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
+import { fetchStudentAssignedClassMaterials } from '../services/educationService';
 import TermDetailModal from '../components/TermDetailModal';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 
@@ -227,15 +227,11 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     }
   };
 
-  const loadClassMaterials = async (classId: string) => {
-    if (!classId) return;
+  const loadClassMaterials = async (_classId?: string) => {
+    if (!user?.id) return;
     try {
-      const { data } = await supabase
-        .from('class_materials')
-        .select('id, created_at, material_id, material:material_id(id, title, description, category, type)')
-        .eq('class_id', classId);
-
-      if (data) setClassMaterials(data);
+      const items = await fetchStudentAssignedClassMaterials(user.id);
+      setClassMaterials(items);
     } catch (err) {
       console.warn('Error loading class materials:', err);
     }

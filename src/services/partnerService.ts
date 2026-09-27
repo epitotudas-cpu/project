@@ -552,7 +552,8 @@ export interface SchoolClass {
 
 export interface ClassMaterial {
   id: string;
-  class_id: string;
+  class_id?: string | null;
+  student_id?: string | null;
   content_type: 'course' | 'article' | 'book' | 'material' | 'tool';
   content_id: string;
   assigned_by: string;
@@ -1071,6 +1072,62 @@ export async function assignMaterialsToClass(
 
   if (error) {
     throw new Error(error.message || 'Tananyagok osztályhoz rendelése nem sikerült.');
+  }
+
+  return true;
+}
+
+/**
+ * L2) Assigns materials to an individual student.
+ */
+export async function assignMaterialsToStudent(
+  studentId: string,
+  materials: Array<{ content_type: 'course' | 'article' | 'book' | 'material' | 'tool'; content_id: string }>
+): Promise<boolean> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const currentUserId = sessionData.session?.user?.id;
+
+  if (!currentUserId) {
+    throw new Error('Nincs bejelentkezett munkamenet.');
+  }
+
+  if (materials.length === 0) return true;
+
+  const records = materials.map((m) => ({
+    student_id: studentId,
+    content_type: m.content_type,
+    content_id: m.content_id,
+    assigned_by: currentUserId,
+  }));
+
+  const { error } = await supabase
+    .from('class_materials')
+    .upsert(records, { onConflict: 'student_id,content_type,content_id' });
+
+  if (error) {
+    throw new Error(error.message || 'Tananyagok tanulóhoz rendelése nem sikerült.');
+  }
+
+  return true;
+}
+
+/**
+ * N2) Removes a material assignment from an individual student.
+ */
+export async function removeStudentMaterial(
+  studentId: string,
+  contentType: string,
+  contentId: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('class_materials')
+    .delete()
+    .eq('student_id', studentId)
+    .eq('content_type', contentType)
+    .eq('content_id', contentId);
+
+  if (error) {
+    throw new Error(error.message || 'Tananyag eltávolítása nem sikerült.');
   }
 
   return true;
