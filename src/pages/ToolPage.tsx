@@ -22,13 +22,27 @@ import {
   Laptop,
   Library,
 } from 'lucide-react';
-import { getActiveTools } from '../services/toolService';
+import { getActiveTools, getToolBySlug } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
 import { filterTools } from '../services/toolFilterService';
 import type { Tool, AdCampaign } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
+
+function parseQueryParam(key: string): string | null {
+  const searchParams = new URLSearchParams(window.location.search);
+  let val = searchParams.get(key);
+  if (val) return val;
+
+  const hash = window.location.hash;
+  if (hash.includes('?')) {
+    const hashParams = new URLSearchParams(hash.split('?')[1]);
+    val = hashParams.get(key);
+    if (val) return val;
+  }
+  return null;
+}
 
 interface ToolPageProps {
   onNavigate: (page: string) => void;
@@ -388,18 +402,26 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
     getAdsForTool(selectedTool?.id, selectedTool?.type || selectedCategory || undefined).then(setPartnerAds);
   }, [selectedTool, selectedCategory]);
 
-  // 1. Initial State from URL search params
+  // 1. Initial State from URL search params & hash
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get('search');
-    const cat = params.get('category');
-    const sub = params.get('type');
-    const prof = params.get('profession');
+    const q = parseQueryParam('search');
+    const cat = parseQueryParam('category');
+    const sub = parseQueryParam('type');
+    const prof = parseQueryParam('profession');
+    const slug = parseQueryParam('slug');
 
     if (q !== null) setSearchQuery(q);
     if (cat !== null) setSelectedCategory(cat);
     if (sub !== null) setSelectedSubtype(sub);
     if (prof !== null) setSelectedProfession(prof);
+
+    if (slug) {
+      getToolBySlug(slug)
+        .then((tool) => {
+          if (tool) setSelectedTool(tool);
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // 2. Sync state to URL with debounce for search query
@@ -431,6 +453,12 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
         params.delete('profession');
       }
 
+      if (selectedTool?.slug) {
+        params.set('slug', selectedTool.slug);
+      } else {
+        params.delete('slug');
+      }
+
       const newRelativePathQuery =
         window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 
@@ -438,20 +466,32 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCategory, selectedSubtype, selectedProfession]);
+  }, [searchQuery, selectedCategory, selectedSubtype, selectedProfession, selectedTool]);
 
-  // 3. Popstate event listener for browser Back/Forward navigation
+  // 3. Popstate & Hashchange event listener for browser Back/Forward navigation
   useEffect(() => {
     const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      setSearchQuery(params.get('search') || '');
-      setSelectedCategory(params.get('category') || null);
-      setSelectedSubtype(params.get('type') || null);
-      setSelectedProfession(params.get('profession') || null);
+      setSearchQuery(parseQueryParam('search') || '');
+      setSelectedCategory(parseQueryParam('category') || null);
+      setSelectedSubtype(parseQueryParam('type') || null);
+      setSelectedProfession(parseQueryParam('profession') || null);
+
+      const slug = parseQueryParam('slug');
+      if (slug) {
+        getToolBySlug(slug)
+          .then((tool) => {
+            if (tool) setSelectedTool(tool);
+          })
+          .catch(() => {});
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
   }, []);
 
   // Filter tools with accent-insensitive multi-field search
