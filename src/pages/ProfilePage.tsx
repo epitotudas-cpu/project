@@ -33,7 +33,7 @@ import { deleteUser } from '../services/userService';
 import { getTradeItems } from '../services/tradeService';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
 import { fetchStudentAssignedClassMaterials } from '../services/educationService';
-import { getFlashcardsLocal, deleteFlashcard } from '../services/learningService';
+import { getFlashcardsLocal, deleteFlashcard, updateFlashcardMastery } from '../services/learningService';
 import TermDetailModal from '../components/TermDetailModal';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 
@@ -191,6 +191,15 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   // Personal Flashcards State
   const [flashcards, setFlashcards] = useState<any[]>([]);
+  const [practiceModalCard, setPracticeModalCard] = useState<any | null>(null);
+  const [practiceFlipped, setPracticeFlipped] = useState(false);
+
+  const handleGoToPracticeFlashcards = () => {
+    window.location.hash = '#learning?tab=flashcards';
+    if (onNavigate) {
+      onNavigate('learning');
+    }
+  };
 
   useEffect(() => {
     const uId = user?.id || 'anon_guest';
@@ -1105,9 +1114,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 </div>
 
                 <button
-                  onClick={() => {
-                    window.location.hash = '#flashcards';
-                  }}
+                  onClick={handleGoToPracticeFlashcards}
                   className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20 whitespace-nowrap self-start md:self-auto"
                 >
                   <Play size={14} /> Kártyák Gyakorlása az Interaktív Tanulásban
@@ -1155,7 +1162,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         <span>Tudásszint: Level {card.master_level || 0}/5</span>
                         <button
                           onClick={() => {
-                            window.location.hash = '#flashcards';
+                            setPracticeModalCard(card);
+                            setPracticeFlipped(false);
                           }}
                           className="text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
                         >
@@ -1174,6 +1182,82 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* INTERACTIVE FLASHCARD PRACTICE MODAL */}
+        {practiceModalCard && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-[#141414] border border-[#262626] rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl relative">
+              <div className="flex items-center justify-between border-b border-[#262626] pb-3">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Bookmark size={14} /> Kártya Gyakorlása
+                </span>
+                <button
+                  onClick={() => setPracticeModalCard(null)}
+                  className="text-gray-400 hover:text-white text-xs font-bold px-2.5 py-1 bg-[#1F1F1F] hover:bg-[#2A2A2A] rounded-lg border border-[#333] cursor-pointer"
+                >
+                  Bezárás ✕
+                </button>
+              </div>
+
+              <div
+                onClick={() => setPracticeFlipped(!practiceFlipped)}
+                className="bg-[#1F1F1F] border border-amber-500/30 hover:border-amber-500/60 rounded-xl p-8 min-h-[200px] flex flex-col items-center justify-center text-center cursor-pointer transition-all shadow-inner space-y-3"
+              >
+                {!practiceFlipped ? (
+                  <>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                      {practiceModalCard.category || 'Fogalom'}
+                    </span>
+                    <h3 className="text-2xl font-black text-white">{practiceModalCard.term}</h3>
+                    <p className="text-xs text-amber-400/80 font-semibold pt-4 animate-pulse">
+                      💡 Kattints a kártyára a válasz/definíció megfordításához!
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      Definíció & Részletek
+                    </span>
+                    <p className="text-sm font-bold text-white leading-relaxed">{practiceModalCard.definition}</p>
+                    {practiceModalCard.explanation && (
+                      <p className="text-xs text-gray-300 italic bg-[#141414] p-3 rounded-lg border border-[#262626] w-full text-left">
+                        💡 {practiceModalCard.explanation}
+                      </p>
+                    )}
+                    {practiceModalCard.example && (
+                      <p className="text-xs text-amber-300 bg-amber-500/10 p-2.5 rounded border border-amber-500/20 w-full text-left">
+                        Példa: {practiceModalCard.example}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    updateFlashcardMastery(user?.id || 'anon_guest', practiceModalCard.id, false);
+                    setFlashcards(getFlashcardsLocal(user?.id || 'anon_guest'));
+                    setPracticeFlipped(false);
+                  }}
+                  className="flex-1 py-3 bg-red-950/60 border border-red-500/40 hover:bg-red-900 text-red-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Nem tudtam ✗
+                </button>
+                <button
+                  onClick={() => {
+                    updateFlashcardMastery(user?.id || 'anon_guest', practiceModalCard.id, true);
+                    setFlashcards(getFlashcardsLocal(user?.id || 'anon_guest'));
+                    setPracticeModalCard(null);
+                  }}
+                  className="flex-1 py-3 bg-emerald-950/60 border border-emerald-500/40 hover:bg-emerald-900 text-emerald-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Tudtam! ✓
+                </button>
+              </div>
             </div>
           </div>
         )}
