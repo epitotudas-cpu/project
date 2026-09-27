@@ -24,6 +24,7 @@ import {
   Play,
   LayoutDashboard,
   FileCheck,
+  Bookmark,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -32,6 +33,7 @@ import { deleteUser } from '../services/userService';
 import { getTradeItems } from '../services/tradeService';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
 import { fetchStudentAssignedClassMaterials } from '../services/educationService';
+import { getFlashcardsLocal, deleteFlashcard } from '../services/learningService';
 import TermDetailModal from '../components/TermDetailModal';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 
@@ -40,7 +42,7 @@ interface ProfilePageProps {
   onNavigate?: (page: string, params?: { articleSlug?: string; slug?: string; quizId?: string; partnerSlug?: string }) => void;
 }
 
-type MainSection = 'overview' | 'materials' | 'my-class' | 'progress' | 'tests' | 'school-link' | 'settings';
+type MainSection = 'overview' | 'materials' | 'flashcards' | 'my-class' | 'progress' | 'tests' | 'school-link' | 'settings';
 type SettingsSubTab = 'profile_data' | 'trade_profile' | 'notifications' | 'security' | 'appearance' | 'privacy';
 
 const EXPERIENCE_LEVELS = [
@@ -186,6 +188,22 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   // Classmates & Class Materials State
   const [classmates, setClassmates] = useState<any[]>([]);
   const [classMaterials, setClassMaterials] = useState<any[]>([]);
+
+  // Personal Flashcards State
+  const [flashcards, setFlashcards] = useState<any[]>([]);
+
+  useEffect(() => {
+    const uId = user?.id || 'anon_guest';
+    setFlashcards(getFlashcardsLocal(uId));
+
+    const handleLearningUpdate = () => {
+      setFlashcards(getFlashcardsLocal(uId));
+    };
+    window.addEventListener('learning-updated', handleLearningUpdate);
+    return () => {
+      window.removeEventListener('learning-updated', handleLearningUpdate);
+    };
+  }, [user?.id]);
 
   // Filters State
   const [materialsFilter, setMaterialsFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
@@ -633,6 +651,16 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <BookOpen size={15} /> Tananyagaink
           </button>
 
+          <button
+            onClick={() => setActiveMainSection('flashcards')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'flashcards'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+              }`}
+          >
+            <Bookmark size={15} /> Tanulókártyáim ({flashcards.length})
+          </button>
+
           {isStudent && (
             <button
               onClick={() => setActiveMainSection('my-class')}
@@ -735,6 +763,23 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     {classMaterials.length || 0}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Összes elérhető kurzus és segédanyag</p>
+                </div>
+
+                {/* Tile: Mentett Tanulókártyák */}
+                <div
+                  onClick={() => setActiveMainSection('flashcards')}
+                  className="bg-[#141414] border border-[#262626] hover:border-amber-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mentett Tanulókártyák</span>
+                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                      <Bookmark className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="text-3xl font-black text-white group-hover:text-amber-400 transition-colors">
+                    {flashcards.length}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">Mentett szakmai fogalom és kártya</p>
                 </div>
 
                 {/* Tile 2: Folyamatban Lévő */}
@@ -1039,6 +1084,94 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   >
                     <Search size={14} /> Nyilvános Kurzusok Böngészése
                   </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* VIEW: TANULÓKÁRTYÁIM */}
+        {activeMainSection === 'flashcards' && (
+          <div className="space-y-6">
+            <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-black text-white flex items-center gap-2">
+                    <Bookmark className="text-amber-400" size={22} /> Mentett Tanulókártyáim ({flashcards.length})
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Az olvasott leckékből és kurzusokból 1 kattintással mentett szakmai fogalmak és leírások.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    window.location.hash = '#flashcards';
+                  }}
+                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20 whitespace-nowrap self-start md:self-auto"
+                >
+                  <Play size={14} /> Kártyák Gyakorlása az Interaktív Tanulásban
+                </button>
+              </div>
+
+              {flashcards.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {flashcards.map((card) => (
+                    <div key={card.id} className="bg-[#1F1F1F] border border-[#333] hover:border-amber-500/40 rounded-xl p-5 space-y-3 transition-all flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                            {card.category || 'Fogalom'}
+                          </span>
+                          <button
+                            onClick={() => {
+                              deleteFlashcard(user?.id || 'anon_guest', card.id);
+                              setFlashcards(getFlashcardsLocal(user?.id || 'anon_guest'));
+                            }}
+                            title="Kártya törlése"
+                            className="text-gray-500 hover:text-red-400 p-1 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        <h4 className="text-base font-bold text-white">{card.term}</h4>
+                        <p className="text-xs text-gray-300 font-medium leading-relaxed">{card.definition}</p>
+
+                        {card.explanation && (
+                          <p className="text-[11px] text-gray-400 bg-[#141414] p-2.5 rounded-lg border border-[#262626] italic">
+                            💡 {card.explanation}
+                          </p>
+                        )}
+
+                        {card.example && (
+                          <p className="text-[11px] text-amber-300/80 bg-amber-500/5 p-2 rounded border border-amber-500/10">
+                            Példa: {card.example}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-[#2A2A2A] flex items-center justify-between text-[11px] text-gray-400 mt-2">
+                        <span>Tudásszint: Level {card.master_level || 0}/5</span>
+                        <button
+                          onClick={() => {
+                            window.location.hash = '#flashcards';
+                          }}
+                          className="text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          Gyakorlás →
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 space-y-3 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
+                  <Bookmark size={40} className="mx-auto text-amber-400 opacity-60" />
+                  <h4 className="text-sm font-bold text-white">Még nincs mentett tanulókártyád</h4>
+                  <p className="text-xs text-gray-400 max-w-sm mx-auto">
+                    A kurzusok és leckék olvasása közben a "Fontos Fogalmak" résznél 1 kattintással elmentheted a kifejezéseket, és azok itt jelennek meg!
+                  </p>
                 </div>
               )}
             </div>
