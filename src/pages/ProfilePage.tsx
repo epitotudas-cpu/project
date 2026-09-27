@@ -691,15 +691,17 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             </button>
           )}
 
-          <button
-            onClick={() => setActiveMainSection('progress')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'progress'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
-              }`}
-          >
-            <TrendingUp size={15} /> Haladásom
-          </button>
+          {!isTeacher && (
+            <button
+              onClick={() => setActiveMainSection('progress')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'progress'
+                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                }`}
+            >
+              <TrendingUp size={15} /> Haladásom
+            </button>
+          )}
 
           {isStudent && (
             <button
@@ -835,21 +837,23 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 </div>
 
                 {/* Tile 4: Összesített Előrehaladás */}
-                <div
-                  onClick={() => setActiveMainSection('progress')}
-                  className="bg-[#141414] border border-[#262626] hover:border-purple-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Összesített Előrehaladás</span>
-                    <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                      <TrendingUp className="w-5 h-5" />
+                {!isTeacher && (
+                  <div
+                    onClick={() => setActiveMainSection('progress')}
+                    className="bg-[#141414] border border-[#262626] hover:border-purple-500/50 p-6 rounded-2xl transition-all cursor-pointer group shadow-lg"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Összesített Előrehaladás</span>
+                      <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                        <TrendingUp className="w-5 h-5" />
+                      </div>
                     </div>
+                    <div className="text-3xl font-black text-white group-hover:text-purple-400 transition-colors">
+                      {classMaterials.length > 0 ? '15%' : '0%'}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Általános modul teljesítés</p>
                   </div>
-                  <div className="text-3xl font-black text-white group-hover:text-purple-400 transition-colors">
-                    {classMaterials.length > 0 ? '15%' : '0%'}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">Általános modul teljesítés</p>
-                </div>
+                )}
 
                 {/* Tile 5: Kitöltött Tesztek */}
                 {isStudent && (
