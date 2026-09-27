@@ -985,7 +985,18 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         <button
                           onClick={() => {
                             const targetSlug = cm.material?.slug || cm.slug || cm.content_id;
-                            if (cm.content_type === 'course') {
+                            const directUrl = (cm as any).file_url || (cm.material as any)?.file_url;
+                            const isPdfFile =
+                              directUrl ||
+                              targetSlug.toLowerCase().endsWith('.pdf') ||
+                              targetSlug.includes('/docs/') ||
+                              targetSlug.startsWith('http://') ||
+                              targetSlug.startsWith('https://');
+
+                            if (isPdfFile) {
+                              const openUrl = directUrl || (targetSlug.startsWith('http') || targetSlug.startsWith('/') ? targetSlug : '/' + targetSlug);
+                              window.open(openUrl, '_blank');
+                            } else if (cm.content_type === 'course') {
                               if (onNavigate) {
                                 onNavigate('course-detail', { slug: targetSlug });
                               } else {

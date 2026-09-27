@@ -802,8 +802,20 @@ export async function fetchStudentAssignedClassMaterials(
     let description = 'Kiosztott tananyag';
     let category = m.content_type === 'course' ? 'Kurzus' : 'Cikk';
     let slug = m.content_id;
+    let file_url: string | undefined = undefined;
 
-    if (m.content_type === 'course') {
+    const isDirectPdf =
+      m.content_id.toLowerCase().endsWith('.pdf') ||
+      m.content_id.includes('/docs/') ||
+      m.content_id.startsWith('http://') ||
+      m.content_id.startsWith('https://');
+
+    if (isDirectPdf) {
+      title = m.content_id.split('/').pop() || 'Segédlet (PDF)';
+      description = 'Kiosztott szakmai segédlet / PDF dokumentum.';
+      category = 'Segédlet (PDF)';
+      file_url = m.content_id.startsWith('/') || m.content_id.startsWith('http') ? m.content_id : '/' + m.content_id;
+    } else if (m.content_type === 'course') {
       const foundCourse = coursesList.find((c) => c.id === m.content_id || c.slug === m.content_id);
       if (foundCourse) {
         title = foundCourse.title;
@@ -821,7 +833,7 @@ export async function fetchStudentAssignedClassMaterials(
       }
     }
 
-    const materialObj = { title, description, category, slug };
+    const materialObj = { title, description, category, slug, file_url };
 
     return {
       ...m,
@@ -830,6 +842,7 @@ export async function fetchStudentAssignedClassMaterials(
       description,
       category,
       slug,
+      file_url,
       material: materialObj,
     };
   });
