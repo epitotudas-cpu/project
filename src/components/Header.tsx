@@ -146,7 +146,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     rawUserType === 'oktato' ||
     rawUserType === 'teacher' ||
     rawUserType === 'instructor' ||
-    rawRole === 'teacher';
+    rawRole === 'teacher' ||
+    rawRole === 'instructor' ||
+    rawRole === 'oktato';
 
   const isPartnerMember =
     Boolean(partnerMemberRole) ||
@@ -491,13 +493,15 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                         {isStudent ? 'Tanuló panel' : 'Fiókom'}
                       </button>
 
-                      <button
-                        onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=learning'); }}
-                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
-                      >
-                        <GraduationCap size={14} className="text-blue-400 shrink-0" />
-                        Tanulásom
-                      </button>
+                      {!isTeacher && (
+                        <button
+                          onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=learning'); }}
+                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                        >
+                          <GraduationCap size={14} className="text-blue-400 shrink-0" />
+                          Tanulásom
+                        </button>
+                      )}
 
                       <button
                         onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=saved'); }}
@@ -767,12 +771,14 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   >
                     <User size={14} className="text-accent" /> Fiókom
                   </button>
-                  <button
-                    onClick={() => { onNavigate('profile?tab=learning'); setMobileOpen(false); }}
-                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
-                  >
-                    <GraduationCap size={14} className="text-blue-400" /> Tanulásom
-                  </button>
+                  {!isTeacher && (
+                    <button
+                      onClick={() => { onNavigate('profile?tab=learning'); setMobileOpen(false); }}
+                      className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                    >
+                      <GraduationCap size={14} className="text-blue-400" /> Tanulásom
+                    </button>
+                  )}
                   <button
                     onClick={() => { onNavigate('profile?tab=saved'); setMobileOpen(false); }}
                     className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
