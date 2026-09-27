@@ -717,6 +717,15 @@ export interface StudentClassMaterialItem {
   content_id: string;
   assigned_at: string;
   title?: string;
+  description?: string;
+  category?: string;
+  slug?: string;
+  material?: {
+    title: string;
+    description?: string;
+    category?: string;
+    slug?: string;
+  };
 }
 
 export async function fetchStudentAssignedClassMaterials(
@@ -765,13 +774,66 @@ export async function fetchStudentAssignedClassMaterials(
   for (const m of combined) {
     const key = `${m.content_type}_${m.content_id}`;
     if (!uniqueMap.has(key)) {
-      uniqueMap.set(key, {
-        ...m,
-        class_name: m.class_id ? (classMap.get(m.class_id) || 'Osztály') : 'Egyéni tananyag',
-      });
+      uniqueMap.set(key, m);
     }
   }
 
-  return Array.from(uniqueMap.values()) as StudentClassMaterialItem[];
+  const rawList = Array.from(uniqueMap.values());
+  const eduData = getEducationData();
+  const coursesList = eduData.courses || [];
+
+  // Fetch articles if any content_type is 'article'
+  const articlesMap = new Map<string, any>();
+  const articleIds = rawList.filter((m) => m.content_type === 'article').map((m) => m.content_id);
+  if (articleIds.length > 0) {
+    const { data: artData } = await supabase
+      .from('articles')
+      .select('id, title, summary, category, slug')
+      .in('id', articleIds);
+    if (artData) {
+      for (const a of artData) {
+        articlesMap.set(a.id, a);
+      }
+    }
+  }
+
+  const enriched = rawList.map((m) => {
+    let title = 'Cím nélkül';
+    let description = 'Kiosztott tananyag';
+    let category = m.content_type === 'course' ? 'Kurzus' : 'Cikk';
+    let slug = m.content_id;
+
+    if (m.content_type === 'course') {
+      const foundCourse = coursesList.find((c) => c.id === m.content_id || c.slug === m.content_id);
+      if (foundCourse) {
+        title = foundCourse.title;
+        description = foundCourse.description;
+        category = foundCourse.category || 'Kurzus';
+        slug = foundCourse.slug || foundCourse.id;
+      }
+    } else if (m.content_type === 'article') {
+      const foundArt = articlesMap.get(m.content_id);
+      if (foundArt) {
+        title = foundArt.title;
+        description = foundArt.summary || 'Cikk';
+        category = foundArt.category || 'Cikk';
+        slug = foundArt.slug || foundArt.id;
+      }
+    }
+
+    const materialObj = { title, description, category, slug };
+
+    return {
+      ...m,
+      class_name: m.class_id ? classMap.get(m.class_id) || 'Osztály' : 'Egyéni tananyag',
+      title,
+      description,
+      category,
+      slug,
+      material: materialObj,
+    };
+  });
+
+  return enriched as StudentClassMaterialItem[];
 }
 

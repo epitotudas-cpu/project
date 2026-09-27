@@ -983,7 +983,30 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       <div className="pt-2 border-t border-[#2A2A2A] flex items-center justify-between text-xs">
                         <span className="text-gray-500">Iskola: {activeEnrollment?.school?.name || 'Iskolámból'}</span>
                         <button
-                          onClick={() => onNavigate?.('courses')}
+                          onClick={() => {
+                            const targetSlug = cm.material?.slug || cm.slug || cm.content_id;
+                            if (cm.content_type === 'course') {
+                              if (onNavigate) {
+                                onNavigate('course-detail', { slug: targetSlug });
+                              } else {
+                                window.location.hash = `#course-detail?slug=${targetSlug}`;
+                              }
+                            } else if (cm.content_type === 'article') {
+                              if (onNavigate) {
+                                onNavigate('article', { articleSlug: targetSlug });
+                              } else {
+                                window.location.hash = `#article?slug=${targetSlug}`;
+                              }
+                            } else if (cm.content_type === 'book') {
+                              window.location.hash = '#books';
+                            } else if (cm.content_type === 'material') {
+                              window.location.hash = '#materials';
+                            } else if (cm.content_type === 'tool') {
+                              window.location.hash = '#tool';
+                            } else {
+                              window.location.hash = '#courses';
+                            }
+                          }}
                           className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold rounded-lg transition-all flex items-center gap-1.5 text-xs cursor-pointer"
                         >
                           <Play size={12} /> Megnyitás
