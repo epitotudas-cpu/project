@@ -40,6 +40,7 @@ export interface RecommendedProduct {
   test_provided_by_manufacturer?: boolean;
   test_date?: string;
   video_url?: string;
+  related_article_ids?: string[];
 }
 
 export interface Database {

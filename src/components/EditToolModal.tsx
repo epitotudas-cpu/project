@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X, Save, AlertCircle, CheckCircle2, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { slugify } from '../lib/slugify';
-import type { Tool, RecommendedProduct } from '../lib/supabase';
+import type { Tool, RecommendedProduct, Article } from '../lib/supabase';
 import { createTool, updateTool } from '../services/toolService';
+import { getPublishedArticles } from '../services/articleService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 interface EditToolModalProps {
@@ -103,6 +104,8 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
+  const [availableArticles, setAvailableArticles] = useState<Article[]>([]);
+
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
@@ -111,6 +114,12 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   const inputBg = adjustColorBrightness(cardBg, -6);
   const textColor = getContrastTextColor(cardBg);
   const inputTextColor = getContrastTextColor(inputBg);
+
+  useEffect(() => {
+    getPublishedArticles().then((articles) => {
+      if (articles) setAvailableArticles(articles);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (tool) {
@@ -172,6 +181,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         test_cons: [],
         test_provided_by_manufacturer: false,
         test_date: '',
+        related_article_ids: [],
       },
     ]);
   }
@@ -268,6 +278,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
             test_provided_by_manufacturer: p.is_tested ? Boolean(p.test_provided_by_manufacturer) : undefined,
             test_date: p.is_tested ? p.test_date?.trim() || undefined : undefined,
             video_url: p.video_url?.trim() || undefined,
+            related_article_ids: p.related_article_ids && Array.isArray(p.related_article_ids) && p.related_article_ids.length > 0 ? p.related_article_ids.filter(Boolean) : undefined,
           }))
           .filter((p) => p.name.length > 0),
         status: form.status,
@@ -591,6 +602,66 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                         onChange={(e) => updateProduct(idx, { features: parseList(e.target.value) })}
                         placeholder="Mágneses fej, Rezgéscsillapító nyél"
                       />
+                    </div>
+
+                    {/* Related Articles Picker Section */}
+                    <div className="space-y-2 pt-2 border-t border-gray-700/50">
+                      <label style={labelStyle} className={labelClass}>
+                        Kapcsolódó ÉpítőTudás cikkek ({prod.related_article_ids?.length || 0})
+                      </label>
+
+                      {prod.related_article_ids && prod.related_article_ids.length > 0 && (
+                        <div className="space-y-1.5 mb-2">
+                          {prod.related_article_ids.map((artId) => {
+                            const art = availableArticles.find((a) => a.id === artId);
+                            return (
+                              <div
+                                key={artId}
+                                className="flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-800/80 border border-gray-700 rounded-lg text-xs"
+                              >
+                                <span className="text-gray-200 font-medium truncate">
+                                  {art ? `📄 ${art.title}` : `📄 Cikk ID: ${artId}`}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextIds = (prod.related_article_ids || []).filter((id) => id !== artId);
+                                    updateProduct(idx, { related_article_ids: nextIds });
+                                  }}
+                                  className="text-red-400 hover:text-red-300 font-bold shrink-0 text-[11px] cursor-pointer"
+                                >
+                                  Eltávolítás
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <select
+                          style={fieldStyle}
+                          className={`${fieldClass} text-xs`}
+                          value=""
+                          onChange={(e) => {
+                            const selectedId = e.target.value;
+                            if (!selectedId) return;
+                            const currentIds = prod.related_article_ids || [];
+                            if (!currentIds.includes(selectedId)) {
+                              updateProduct(idx, { related_article_ids: [...currentIds, selectedId] });
+                            }
+                          }}
+                        >
+                          <option value="">+ Cikk hozzáadása a termékhez...</option>
+                          {availableArticles
+                            .filter((a) => !(prod.related_article_ids || []).includes(a.id))
+                            .map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {a.title} ({a.article_type || 'cikk'})
+                              </option>
+                            ))}
+                        </select>
+                      </div>
                     </div>
 
                     {/* Badges and Test Checkboxes */}
