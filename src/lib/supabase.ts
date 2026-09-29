@@ -20,6 +20,7 @@ export type Json =
   | Json[];
 
 export interface RecommendedProduct {
+  id?: string;
   name: string;
   brand: string;
   partner_url?: string;
@@ -37,6 +38,7 @@ export interface RecommendedProduct {
   test_pros?: string[];
   test_cons?: string[];
   test_provided_by_manufacturer?: boolean;
+  test_date?: string;
   video_url?: string;
 }
 

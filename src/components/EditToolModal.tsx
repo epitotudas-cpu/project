@@ -152,6 +152,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     setProducts((prev) => [
       ...prev,
       {
+        id: crypto.randomUUID(),
         name: '',
         brand: '',
         description: '',
@@ -170,6 +171,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         test_pros: [],
         test_cons: [],
         test_provided_by_manufacturer: false,
+        test_date: '',
       },
     ]);
   }
@@ -246,6 +248,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         video_url: form.video_url.trim() || null,
         recommended_products: products
           .map((p) => ({
+            id: p.id || undefined,
             name: p.name.trim(),
             brand: p.brand.trim(),
             description: p.description?.trim() || undefined,
@@ -263,6 +266,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
             test_pros: p.is_tested && p.test_pros ? (typeof p.test_pros === 'string' ? parseList(p.test_pros) : p.test_pros) : undefined,
             test_cons: p.is_tested && p.test_cons ? (typeof p.test_cons === 'string' ? parseList(p.test_cons) : p.test_cons) : undefined,
             test_provided_by_manufacturer: p.is_tested ? Boolean(p.test_provided_by_manufacturer) : undefined,
+            test_date: p.is_tested ? p.test_date?.trim() || undefined : undefined,
             video_url: p.video_url?.trim() || undefined,
           }))
           .filter((p) => p.name.length > 0),
@@ -632,7 +636,17 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                             ÉpítőTudás Saját Teszt Részletei
                           </span>
 
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label style={labelStyle} className={labelClass}>Tesztelés dátuma</label>
+                              <input
+                                type="date"
+                                style={fieldStyle}
+                                className={fieldClass}
+                                value={prod.test_date || ''}
+                                onChange={(e) => updateProduct(idx, { test_date: e.target.value })}
+                              />
+                            </div>
                             <div>
                               <label style={labelStyle} className={labelClass}>Tesztelés időszaka</label>
                               <input
