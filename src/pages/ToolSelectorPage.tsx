@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop, Layers, Library } from 'lucide-react';
+import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop, Layers, Library, CheckCircle2 } from 'lucide-react';
 import { getActiveTools, MOCK_TOOLS, type Tool } from '../services/toolService';
+import type { RecommendedProduct } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface ToolSelectorPageProps {
@@ -94,7 +95,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
               Interaktív Eszköz- és Gépválasztó
             </h1>
             <p className="text-gray-300 text-sm md:text-base max-w-3xl leading-relaxed">
-              Válaszd ki a szakmádat és a keresett eszköztípust, mi pedig pontosan ajánljuk a legmegfelelőbb építőipari gépeket és szerszámokat!
+              Válaszd ki a szakmádat és a keresett eszköztípust, mi pedig pontosan ajánljuk a legmegfelelőbb építőipari gépeket, szerszámokat és gyártói termékeket!
             </p>
           </div>
         </div>
@@ -230,56 +231,78 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTools.map((tool: Tool) => (
-              <div
-                key={tool.id}
-                className="bg-white border border-gray-200 hover:border-primary/40 hover:shadow-md rounded-2xl p-5 space-y-4 flex flex-col justify-between transition-all duration-200"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    {tool.type && (
-                      <span className="bg-primary/10 text-primary-900 border border-primary/20 px-2.5 py-0.5 rounded-full font-bold">
-                        {tool.type}
-                      </span>
+            {filteredTools.map((tool: Tool) => {
+              const recProducts = (tool.recommended_products || []) as RecommendedProduct[];
+              const hasTestedProduct = recProducts.some((p) => p.is_tested === true);
+
+              return (
+                <div
+                  key={tool.id}
+                  className="bg-white border border-gray-200 hover:border-primary/40 hover:shadow-md rounded-2xl p-5 space-y-4 flex flex-col justify-between transition-all duration-200"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      {tool.type && (
+                        <span className="bg-primary/10 text-primary-900 border border-primary/20 px-2.5 py-0.5 rounded-full font-bold">
+                          {tool.type}
+                        </span>
+                      )}
+                      {tool.brand && (
+                        <span className="bg-gray-100 text-gray-700 border border-gray-200 px-2 py-0.5 rounded-full font-medium truncate max-w-[120px]">
+                          {tool.brand}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-lg font-black text-gray-900 leading-snug">
+                      {tool.name}
+                    </h3>
+
+                    {tool.description && (
+                      <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                        {tool.description}
+                      </p>
                     )}
-                    {tool.brand && (
-                      <span className="bg-gray-100 text-gray-700 border border-gray-200 px-2 py-0.5 rounded-full font-medium truncate max-w-[120px]">
-                        {tool.brand}
-                      </span>
+
+                    {tool.professions && tool.professions.length > 0 && (
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                        {tool.professions.map((tr: string) => (
+                          <span key={tr} className="text-[10px] bg-accent/10 border border-accent/20 text-black px-2 py-0.5 rounded-md font-semibold">
+                            {tr}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Manufacturer Product Badges */}
+                    {recProducts.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap pt-1.5 border-t border-gray-100">
+                        <span className="text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <Sparkles size={11} className="text-amber-600" />
+                          {recProducts.length} gyártói termék
+                        </span>
+
+                        {hasTestedProduct && (
+                          <span className="text-[10px] font-bold bg-emerald-50 text-emerald-900 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2 size={11} className="text-emerald-600" />
+                            ÉpítőTudás teszt
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  <h3 className="text-lg font-black text-gray-900 leading-snug">
-                    {tool.name}
-                  </h3>
-
-                  {tool.description && (
-                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                      {tool.description}
-                    </p>
-                  )}
-
-                  {tool.professions && tool.professions.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      {tool.professions.map((tr: string) => (
-                        <span key={tr} className="text-[10px] bg-accent/10 border border-accent/20 text-black px-2 py-0.5 rounded-md font-semibold">
-                          {tr}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
+                    <button
+                      onClick={() => onNavigate(`tool?slug=${tool.slug}`)}
+                      className="text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      Megtekintés a Katalógusban <ArrowRight size={13} />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
-                  <button
-                    onClick={() => onNavigate(`tool?slug=${tool.slug}`)}
-                    className="text-primary hover:underline flex items-center gap-1"
-                  >
-                    Megtekintés a Katalógusban <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
