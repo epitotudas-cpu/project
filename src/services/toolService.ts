@@ -1,5 +1,5 @@
-import { supabase, type Tool } from '../lib/supabase';
-export type { Tool };
+import { supabase, type Tool, type RecommendedProduct } from '../lib/supabase';
+export type { Tool, RecommendedProduct };
 
 export const DEFAULT_ENCYCLOPEDIA_TOOLS: Tool[] = [
   {

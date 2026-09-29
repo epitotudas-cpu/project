@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Save, AlertCircle, CheckCircle2, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { slugify } from '../lib/slugify';
-import type { Tool } from '../lib/supabase';
+import type { Tool, RecommendedProduct } from '../lib/supabase';
 import { createTool, updateTool } from '../services/toolService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
@@ -26,6 +26,7 @@ interface FormState {
   currency: string;
   features: string;
   image_url: string;
+  video_url: string;
   status: Tool['status'];
   seo_title: string;
   seo_description: string;
@@ -49,6 +50,7 @@ const EMPTY_FORM: FormState = {
   currency: 'HUF',
   features: '',
   image_url: '',
+  video_url: '',
   status: 'active',
   seo_title: '',
   seo_description: '',
@@ -73,6 +75,7 @@ function formFromTool(t: Tool): FormState {
     currency: t.currency ?? 'HUF',
     features: (t.features ?? []).join(', '),
     image_url: t.image_url ?? '',
+    video_url: t.video_url ?? '',
     status: t.status,
     seo_title: t.seo_title ?? '',
     seo_description: t.seo_description ?? '',
@@ -92,6 +95,9 @@ function parseList(s: string): string[] {
 export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalProps) {
   const isCreate = tool === null;
   const [form, setForm] = useState<FormState>(() => (tool ? formFromTool(tool) : EMPTY_FORM));
+  const [products, setProducts] = useState<RecommendedProduct[]>(() =>
+    tool?.recommended_products ? (JSON.parse(JSON.stringify(tool.recommended_products)) as RecommendedProduct[]) : []
+  );
   const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
@@ -109,9 +115,11 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   useEffect(() => {
     if (tool) {
       setForm(formFromTool(tool));
+      setProducts(tool.recommended_products ? (JSON.parse(JSON.stringify(tool.recommended_products)) as RecommendedProduct[]) : []);
       setSlugTouched(true);
     } else {
       setForm({ ...EMPTY_FORM });
+      setProducts([]);
       setSlugTouched(false);
     }
     setError(null);
@@ -138,6 +146,62 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   function handleSlugChange(value: string) {
     setSlugTouched(true);
     update('slug', slugify(value));
+  }
+
+  function addProduct() {
+    setProducts((prev) => [
+      ...prev,
+      {
+        name: '',
+        brand: '',
+        description: '',
+        image_url: '',
+        product_url: '',
+        partner_url: '',
+        price: '',
+        currency: 'HUF',
+        features: [],
+        video_url: '',
+        is_featured: false,
+        is_tested: false,
+        test_period: '',
+        test_environment: '',
+        test_experience: '',
+        test_pros: [],
+        test_cons: [],
+        test_provided_by_manufacturer: false,
+      },
+    ]);
+  }
+
+  function updateProduct(index: number, patch: Partial<RecommendedProduct>) {
+    setProducts((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  }
+
+  function removeProduct(index: number) {
+    setProducts((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function moveProductUp(index: number) {
+    if (index <= 0) return;
+    setProducts((prev) => {
+      const copy = [...prev];
+      const temp = copy[index - 1];
+      copy[index - 1] = copy[index];
+      copy[index] = temp;
+      return copy;
+    });
+  }
+
+  function moveProductDown(index: number) {
+    setProducts((prev) => {
+      if (index >= prev.length - 1) return prev;
+      const copy = [...prev];
+      const temp = copy[index + 1];
+      copy[index + 1] = copy[index];
+      copy[index] = temp;
+      return copy;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -179,6 +243,29 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         currency: form.currency.trim() || 'HUF',
         features: parseList(form.features),
         image_url: form.image_url.trim() || null,
+        video_url: form.video_url.trim() || null,
+        recommended_products: products
+          .map((p) => ({
+            name: p.name.trim(),
+            brand: p.brand.trim(),
+            description: p.description?.trim() || undefined,
+            image_url: p.image_url?.trim() || undefined,
+            product_url: p.product_url?.trim() || undefined,
+            partner_url: p.partner_url?.trim() || undefined,
+            price: p.price != null && p.price !== '' ? (typeof p.price === 'number' ? p.price : Number(p.price) || p.price) : undefined,
+            currency: p.currency?.trim() || 'HUF',
+            features: typeof p.features === 'string' ? parseList(p.features) : Array.isArray(p.features) ? p.features : [],
+            is_featured: Boolean(p.is_featured),
+            is_tested: Boolean(p.is_tested),
+            test_period: p.is_tested ? p.test_period?.trim() || undefined : undefined,
+            test_environment: p.is_tested ? p.test_environment?.trim() || undefined : undefined,
+            test_experience: p.is_tested ? p.test_experience?.trim() || undefined : undefined,
+            test_pros: p.is_tested && p.test_pros ? (typeof p.test_pros === 'string' ? parseList(p.test_pros) : p.test_pros) : undefined,
+            test_cons: p.is_tested && p.test_cons ? (typeof p.test_cons === 'string' ? parseList(p.test_cons) : p.test_cons) : undefined,
+            test_provided_by_manufacturer: p.is_tested ? Boolean(p.test_provided_by_manufacturer) : undefined,
+            video_url: p.video_url?.trim() || undefined,
+          }))
+          .filter((p) => p.name.length > 0),
         status: form.status,
         seo_title: form.seo_title.trim() || null,
         seo_description: form.seo_description.trim() || null,
@@ -224,7 +311,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => !saving && onClose()}>
       <div
         style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
-        className="border rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10">
@@ -249,7 +336,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
               className={fieldClass}
               value={form.name}
               onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="pl. Akkus fúró"
+              placeholder="pl. Ácskalapács"
               autoFocus={isCreate}
             />
           </div>
@@ -263,11 +350,11 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle} className={labelClass}>Típus / Kategória</label>
-              <input style={fieldStyle} className={fieldClass} value={form.type} onChange={(e) => update('type', e.target.value)} placeholder="pl. Fúró" />
+              <input style={fieldStyle} className={fieldClass} value={form.type} onChange={(e) => update('type', e.target.value)} placeholder="pl. Kéziszerszámok" />
             </div>
             <div>
-              <label style={labelStyle} className={labelClass}>Márka</label>
-              <input style={fieldStyle} className={fieldClass} value={form.brand} onChange={(e) => update('brand', e.target.value)} placeholder="pl. Bosch" />
+              <label style={labelStyle} className={labelClass}>Márka / Gyártók összefoglalása</label>
+              <input style={fieldStyle} className={fieldClass} value={form.brand} onChange={(e) => update('brand', e.target.value)} placeholder="pl. Stanley / Milwaukee" />
             </div>
           </div>
 
@@ -279,13 +366,13 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
               rows={3}
               value={form.description}
               onChange={(e) => update('description', e.target.value)}
-              placeholder="Rövid leírás..."
+              placeholder="Szakmai enciklopédia leírás..."
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label style={labelStyle} className={labelClass}>Ár</label>
+              <label style={labelStyle} className={labelClass}>Ár (ha releváns)</label>
               <input
                 type="number"
                 step="0.01"
@@ -302,9 +389,15 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle} className={labelClass}>Kép URL</label>
-            <input style={fieldStyle} className={fieldClass} value={form.image_url} onChange={(e) => update('image_url', e.target.value)} placeholder="https://..." />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label style={labelStyle} className={labelClass}>Kép URL</label>
+              <input style={fieldStyle} className={fieldClass} value={form.image_url} onChange={(e) => update('image_url', e.target.value)} placeholder="https://..." />
+            </div>
+            <div>
+              <label style={labelStyle} className={labelClass}>Fő Eszközvideó URL (YouTube)</label>
+              <input style={fieldStyle} className={fieldClass} value={form.video_url} onChange={(e) => update('video_url', e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
+            </div>
           </div>
 
           <div>
@@ -318,6 +411,291 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
               <option value="active">Aktív</option>
               <option value="discontinued">Kivezetve</option>
             </select>
+          </div>
+
+          {/* Manufacturer Products & Tests Management Section */}
+          <div style={{ borderColor: cardBorder }} className="pt-4 border-t space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 style={{ color: cardHighlight }} className="text-xs font-black uppercase tracking-wider">
+                Konkrét Gyártói Termékek &amp; Tesztek ({products.length})
+              </h4>
+              <button
+                type="button"
+                onClick={addProduct}
+                style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg hover:opacity-90 transition-colors cursor-pointer"
+              >
+                <Plus size={14} /> + Új gyártói termék
+              </button>
+            </div>
+
+            {products.length === 0 ? (
+              <p className="text-xs text-gray-500 italic">Még nincsenek gyártói termékek rögzítve ehhez az eszközhöz.</p>
+            ) : (
+              <div className="space-y-4">
+                {products.map((prod, idx) => (
+                  <div
+                    key={idx}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder }}
+                    className="border rounded-xl p-4 space-y-3 relative"
+                  >
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-700/50">
+                      <span className="text-xs font-black text-amber-400">
+                        #{idx + 1} Gyártói Termék {prod.name ? `– ${prod.name}` : ''}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveProductUp(idx)}
+                          disabled={idx === 0}
+                          className="p-1 text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                          title="Mozgatás fel"
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveProductDown(idx)}
+                          disabled={idx === products.length - 1}
+                          className="p-1 text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                          title="Mozgatás le"
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeProduct(idx)}
+                          className="p-1 text-red-400 hover:text-red-300 cursor-pointer ml-1"
+                          title="Termék törlése"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Termék neve *</label>
+                        <input
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.name || ''}
+                          onChange={(e) => updateProduct(idx, { name: e.target.value })}
+                          placeholder="pl. STANLEY FatMax 600g"
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Gyártó / Márka *</label>
+                        <input
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.brand || ''}
+                          onChange={(e) => updateProduct(idx, { brand: e.target.value })}
+                          placeholder="pl. Stanley"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={labelStyle} className={labelClass}>Rövid leírás</label>
+                      <textarea
+                        style={fieldStyle}
+                        className={`${fieldClass} resize-none`}
+                        rows={2}
+                        value={prod.description || ''}
+                        onChange={(e) => updateProduct(idx, { description: e.target.value })}
+                        placeholder="Termék ismertetője..."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Kép URL</label>
+                        <input
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.image_url || ''}
+                          onChange={(e) => updateProduct(idx, { image_url: e.target.value })}
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Termék videó URL</label>
+                        <input
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.video_url || ''}
+                          onChange={(e) => updateProduct(idx, { video_url: e.target.value })}
+                          placeholder="https://www.youtube.com/..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Gyártói oldal URL</label>
+                        <input
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.product_url || ''}
+                          onChange={(e) => updateProduct(idx, { product_url: e.target.value })}
+                          placeholder="https://stanley.hu/..."
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Partneri / Vásárlási URL</label>
+                        <input
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.partner_url || ''}
+                          onChange={(e) => updateProduct(idx, { partner_url: e.target.value })}
+                          placeholder="https://webshop.hu/..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Ár</label>
+                        <input
+                          type="number"
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.price != null ? String(prod.price) : ''}
+                          onChange={(e) => updateProduct(idx, { price: e.target.value ? Number(e.target.value) : null })}
+                          placeholder="pl. 14900"
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle} className={labelClass}>Pénznem</label>
+                        <input
+                          style={fieldStyle}
+                          className={fieldClass}
+                          value={prod.currency || 'HUF'}
+                          onChange={(e) => updateProduct(idx, { currency: e.target.value })}
+                          placeholder="HUF"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={labelStyle} className={labelClass}>Főbb jellemzők (vesszővel elválasztva)</label>
+                      <input
+                        style={fieldStyle}
+                        className={fieldClass}
+                        value={Array.isArray(prod.features) ? prod.features.join(', ') : prod.features || ''}
+                        onChange={(e) => updateProduct(idx, { features: parseList(e.target.value) })}
+                        placeholder="Mágneses fej, Rezgéscsillapító nyél"
+                      />
+                    </div>
+
+                    {/* Badges and Test Checkboxes */}
+                    <div className="space-y-2 pt-2 border-t border-gray-700/50">
+                      <div className="flex flex-wrap items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold" style={{ color: textColor }}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(prod.is_featured)}
+                            onChange={(e) => updateProduct(idx, { is_featured: e.target.checked })}
+                            className="w-4 h-4 rounded cursor-pointer"
+                          />
+                          Kiemelt termék
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold" style={{ color: textColor }}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(prod.is_tested)}
+                            onChange={(e) => updateProduct(idx, { is_tested: e.target.checked })}
+                            className="w-4 h-4 rounded cursor-pointer"
+                          />
+                          ÉpítőTudás által tesztelve
+                        </label>
+
+                        {prod.is_tested && (
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold" style={{ color: textColor }}>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(prod.test_provided_by_manufacturer)}
+                              onChange={(e) => updateProduct(idx, { test_provided_by_manufacturer: e.target.checked })}
+                              className="w-4 h-4 rounded cursor-pointer"
+                            />
+                            Gyártó által biztosított teszttermék
+                          </label>
+                        )}
+                      </div>
+
+                      {/* Test Details Fields if is_tested === true */}
+                      {prod.is_tested && (
+                        <div className="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded-lg space-y-3 mt-2">
+                          <span className="text-[11px] font-black text-emerald-400 uppercase tracking-wider block">
+                            ÉpítőTudás Saját Teszt Részletei
+                          </span>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label style={labelStyle} className={labelClass}>Tesztelés időszaka</label>
+                              <input
+                                style={fieldStyle}
+                                className={fieldClass}
+                                value={prod.test_period || ''}
+                                onChange={(e) => updateProduct(idx, { test_period: e.target.value })}
+                                placeholder="pl. 2026.09.01 - 2026.10.15"
+                              />
+                            </div>
+                            <div>
+                              <label style={labelStyle} className={labelClass}>Tesztelés környezete</label>
+                              <input
+                                style={fieldStyle}
+                                className={fieldClass}
+                                value={prod.test_environment || ''}
+                                onChange={(e) => updateProduct(idx, { test_environment: e.target.value })}
+                                placeholder="pl. zsaluzási és szerkezetépítési munkák"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label style={labelStyle} className={labelClass}>Saját tapasztalat / Értékelés</label>
+                            <textarea
+                              style={fieldStyle}
+                              className={`${fieldClass} resize-none`}
+                              rows={2}
+                              value={prod.test_experience || ''}
+                              onChange={(e) => updateProduct(idx, { test_experience: e.target.value })}
+                              placeholder="Részletes szakmai tapasztalatok a tesztelés során..."
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label style={labelStyle} className={labelClass}>Előnyök (vesszővel)</label>
+                              <input
+                                style={fieldStyle}
+                                className={fieldClass}
+                                value={Array.isArray(prod.test_pros) ? prod.test_pros.join(', ') : prod.test_pros || ''}
+                                onChange={(e) => updateProduct(idx, { test_pros: parseList(e.target.value) })}
+                                placeholder="Erős mágnes, Nagyon jó fogás"
+                              />
+                            </div>
+                            <div>
+                              <label style={labelStyle} className={labelClass}>Észrevételek / Korlátok (vesszővel)</label>
+                              <input
+                                style={fieldStyle}
+                                className={fieldClass}
+                                value={Array.isArray(prod.test_cons) ? prod.test_cons.join(', ') : prod.test_cons || ''}
+                                onChange={(e) => updateProduct(idx, { test_cons: parseList(e.target.value) })}
+                                placeholder="Nagyobb súly hosszú munkánál"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* SEO & Meta Data Section */}
