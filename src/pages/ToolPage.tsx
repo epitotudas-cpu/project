@@ -25,10 +25,25 @@ import {
 import { getActiveTools, getToolBySlug } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
 import { filterTools } from '../services/toolFilterService';
-import type { Tool, AdCampaign } from '../lib/supabase';
+import type { Tool, AdCampaign, RecommendedProduct } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
+
+function getEmbedVideoUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== 'string' || !url.trim()) return null;
+  const trimmed = url.trim();
+  if (trimmed.includes('youtube.com/embed/')) return trimmed;
+  if (trimmed.includes('youtube.com/watch?v=')) {
+    const videoId = trimmed.split('v=')[1]?.split('&')[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (trimmed.includes('youtu.be/')) {
+    const videoId = trimmed.split('youtu.be/')[1]?.split('?')[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return trimmed;
+}
 
 function parseQueryParam(key: string): string | null {
   const searchParams = new URLSearchParams(window.location.search);
@@ -804,51 +819,270 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                 </div>
               )}
 
-              {/* Recommended Partner Products & Dynamic Affiliate Campaigns */}
+              {/* Main Tool Video Demonstration */}
+              {selectedTool.video_url && getEmbedVideoUrl(selectedTool.video_url) && (
+                <div className="pt-8 border-t border-gray-200 space-y-3">
+                  <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                    <Sparkles className="text-red-500 shrink-0" size={18} /> Szakmai Bemutató Videó
+                  </h3>
+                  <div className="aspect-video w-full max-w-4xl rounded-3xl overflow-hidden border border-gray-200 bg-black shadow-sm">
+                    <iframe
+                      src={getEmbedVideoUrl(selectedTool.video_url)!}
+                      title={`${selectedTool.name} szakmai videó`}
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Recommended Manufacturer Products & Dynamic Affiliate Campaigns */}
               {((selectedTool.recommended_products && selectedTool.recommended_products.length > 0) || partnerAds.length > 0) && (
                 <div className="pt-8 border-t border-gray-200 space-y-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <h3 className="text-base font-extrabold text-gray-900">A témához kapcsolódó termékek & partneri ajánlatok</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">Kiemelt szponzorok, forgalmazók és affiliate kampányok</p>
+                      <h3 className="text-base font-extrabold text-gray-900">Konkrét Gyártói Termékek & Partneri Ajánlatok</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Gyártói modellek, ÉpítőTudás szakmai teszt adatok és megbízható partneri forgalmazók</p>
                     </div>
                     <span className="text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase tracking-wider">
-                      Partneri & Affiliate Ajánlatok
+                      Gyártói Termékbemutató
                     </span>
                   </div>
 
                   <FeaturedPartnerOffers partnerAds={partnerAds} />
 
                   {selectedTool.recommended_products && selectedTool.recommended_products.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {selectedTool.recommended_products.map((prod, idx) => (
-                        <a
-                          key={idx}
-                          href={prod.partner_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-white border border-gray-200 hover:border-primary rounded-2xl p-4 transition-all flex items-center gap-4 group shadow-xs hover:shadow-sm"
-                        >
-                          {prod.image_url && (
-                            <img
-                              src={prod.image_url}
-                              alt={prod.name}
-                              className="w-14 h-14 object-cover rounded-xl shrink-0 bg-gray-50"
-                            />
-                          )}
-                          <div className="flex-1 space-y-1">
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                              {prod.brand}
-                            </span>
-                            <h4 className="text-xs font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
-                              {prod.name}
-                            </h4>
-                            <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                              Megtekintés partnernél <ExternalLink size={10} />
-                            </span>
+                    <div className="grid grid-cols-1 gap-6">
+                      {(selectedTool.recommended_products as RecommendedProduct[]).map((prod, idx) => {
+                        const hasTest = Boolean(
+                          prod.is_tested === true &&
+                            (prod.test_period ||
+                              prod.test_environment ||
+                              prod.test_experience ||
+                              (prod.test_pros && prod.test_pros.length > 0) ||
+                              (prod.test_cons && prod.test_cons.length > 0))
+                        );
+                        const prodVideoEmbed = getEmbedVideoUrl(prod.video_url);
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`rounded-3xl border p-6 sm:p-8 space-y-6 transition-all duration-200 ${
+                              prod.is_featured
+                                ? 'bg-gradient-to-br from-amber-50/40 via-white to-orange-50/20 border-amber-300 shadow-sm ring-1 ring-amber-400/30'
+                                : 'bg-white border-gray-200 shadow-xs hover:border-gray-300'
+                            }`}
+                          >
+                            {/* Badges & Title */}
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {prod.brand && (
+                                    <span className="px-3 py-0.5 bg-gray-900 text-white text-xs font-black rounded-lg uppercase tracking-wider">
+                                      {prod.brand}
+                                    </span>
+                                  )}
+
+                                  {prod.is_featured && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-400/20 text-amber-900 border border-amber-400/40 text-[11px] font-extrabold rounded-lg">
+                                      <Sparkles size={12} className="text-amber-600" /> Kiemelt termék
+                                    </span>
+                                  )}
+
+                                  {prod.is_tested === true && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-extrabold rounded-lg">
+                                      <CheckCircle2 size={12} className="text-emerald-600" /> ÉpítőTudás által tesztelve
+                                    </span>
+                                  )}
+
+                                  {prod.test_provided_by_manufacturer === true && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-100 text-blue-900 border border-blue-200 text-[11px] font-bold rounded-lg">
+                                      Gyártó által biztosított teszttermék
+                                    </span>
+                                  )}
+                                </div>
+
+                                <h4 className="text-xl font-black text-gray-900 tracking-tight leading-snug">
+                                  {prod.name}
+                                </h4>
+
+                                {prod.description && (
+                                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
+                                    {prod.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              {prod.price != null && (
+                                <div className="shrink-0 text-left sm:text-right bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-2xl">
+                                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tájékoztató ár</span>
+                                  <span className="text-lg font-black text-gray-900">
+                                    {typeof prod.price === 'number' ? prod.price.toLocaleString('hu-HU') : prod.price} {prod.currency || 'HUF'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Product Details Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                              {prod.image_url ? (
+                                <div className="md:col-span-4 h-48 sm:h-52 bg-white rounded-2xl border border-gray-200 overflow-hidden flex items-center justify-center p-3 shadow-xs">
+                                  <img
+                                    src={prod.image_url}
+                                    alt={prod.name}
+                                    className="max-h-full max-w-full object-contain"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="md:col-span-4 h-40 bg-gray-50 rounded-2xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 p-4">
+                                  <Wrench size={32} className="opacity-40 mb-1" />
+                                  <span className="text-xs font-semibold">Kép nem áll rendelkezésre</span>
+                                </div>
+                              )}
+
+                              <div className="md:col-span-8 space-y-4 flex flex-col justify-between h-full">
+                                {prod.features && prod.features.length > 0 && (
+                                  <div className="space-y-2">
+                                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block">Főbb jellemzők:</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {prod.features.map((feat, fIdx) => (
+                                        <div key={fIdx} className="flex items-start gap-2 text-xs text-gray-700 bg-gray-50/80 border border-gray-200/60 px-3 py-2 rounded-xl">
+                                          <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                                          <span className="font-medium">{feat}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="flex flex-wrap items-center gap-3 pt-2">
+                                  {prod.partner_url && (
+                                    <a
+                                      href={prod.partner_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-800 transition-colors shadow-xs"
+                                    >
+                                      Megtekintés / Vásárlás <ExternalLink size={13} />
+                                    </a>
+                                  )}
+
+                                  {prod.product_url && (
+                                    <a
+                                      href={prod.product_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-50 transition-colors"
+                                    >
+                                      Hivatalos gyártói oldal <ExternalLink size={13} />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* ÉPÍTŐTUDÁS TESZT BLOKK - ONLY if hasTest === true */}
+                            {hasTest && (
+                              <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-5 sm:p-6 space-y-4">
+                                <div className="flex items-center justify-between flex-wrap gap-2 border-b border-emerald-200/60 pb-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-emerald-600 text-white rounded-lg">
+                                      <CheckCircle2 size={16} />
+                                    </div>
+                                    <div>
+                                      <h5 className="text-sm font-black text-emerald-950">ÉpítőTudás Teszt & Saját Tapasztalat</h5>
+                                      <p className="text-[11px] text-emerald-800 font-medium">Szakmai független tesztelési értékelés</p>
+                                    </div>
+                                  </div>
+                                  {prod.test_provided_by_manufacturer && (
+                                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-1 rounded-md">
+                                      Teszttermék – a terméket a gyártó az ÉpítőTudás részére tesztelés céljából biztosította.
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                                  {prod.test_period && (
+                                    <div className="bg-white/80 border border-emerald-200/60 p-3 rounded-xl">
+                                      <span className="font-bold text-emerald-900 block uppercase tracking-wider text-[10px]">Tesztelés időszaka:</span>
+                                      <span className="text-gray-800 font-medium">{prod.test_period}</span>
+                                    </div>
+                                  )}
+
+                                  {prod.test_environment && (
+                                    <div className="bg-white/80 border border-emerald-200/60 p-3 rounded-xl">
+                                      <span className="font-bold text-emerald-900 block uppercase tracking-wider text-[10px]">Felhasználási környezet:</span>
+                                      <span className="text-gray-800 font-medium">{prod.test_environment}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {prod.test_experience && (
+                                  <div className="space-y-1">
+                                    <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider block">Saját tapasztalat:</span>
+                                    <p className="text-xs text-gray-700 leading-relaxed bg-white/70 border border-emerald-200/50 p-3.5 rounded-xl font-medium">
+                                      {prod.test_experience}
+                                    </p>
+                                  </div>
+                                )}
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                                  {prod.test_pros && prod.test_pros.length > 0 && (
+                                    <div className="space-y-2">
+                                      <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1">
+                                        <CheckCircle2 size={13} className="text-emerald-600" /> Előnyök
+                                      </span>
+                                      <ul className="space-y-1.5">
+                                        {prod.test_pros.map((pro, pIdx) => (
+                                          <li key={pIdx} className="text-xs text-emerald-950 bg-white/80 border border-emerald-200/60 px-3 py-1.5 rounded-lg flex items-start gap-2">
+                                            <span className="text-emerald-600 font-bold shrink-0">+</span>
+                                            <span>{pro}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+
+                                  {prod.test_cons && prod.test_cons.length > 0 && (
+                                    <div className="space-y-2">
+                                      <span className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                                        <AlertTriangle size={13} className="text-amber-600" /> Észrevételek / Korlátok
+                                      </span>
+                                      <ul className="space-y-1.5">
+                                        {prod.test_cons.map((con, cIdx) => (
+                                          <li key={cIdx} className="text-xs text-amber-950 bg-white/80 border border-amber-200/60 px-3 py-1.5 rounded-lg flex items-start gap-2">
+                                            <span className="text-amber-600 font-bold shrink-0">-</span>
+                                            <span>{con}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Product Specific Video Embed */}
+                            {prodVideoEmbed && (
+                              <div className="space-y-2.5 pt-2">
+                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                                  <Sparkles size={14} className="text-red-500" /> Termék bemutató & teszt videó
+                                </span>
+                                <div className="aspect-video w-full rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-xs">
+                                  <iframe
+                                    src={prodVideoEmbed}
+                                    title={`${prod.name} - Videó`}
+                                    className="w-full h-full border-0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </a>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

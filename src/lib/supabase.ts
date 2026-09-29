@@ -19,6 +19,27 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export interface RecommendedProduct {
+  name: string;
+  brand: string;
+  partner_url?: string;
+  product_url?: string;
+  image_url?: string;
+  description?: string;
+  features?: string[];
+  price?: number | string | null;
+  currency?: string;
+  is_featured?: boolean;
+  is_tested?: boolean;
+  test_period?: string;
+  test_environment?: string;
+  test_experience?: string;
+  test_pros?: string[];
+  test_cons?: string[];
+  test_provided_by_manufacturer?: boolean;
+  video_url?: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -362,7 +383,7 @@ export interface Database {
           common_mistakes: string[];
           technical_specs: Record<string, string>;
           video_url: string | null;
-          recommended_products: Array<{ name: string; brand: string; partner_url: string; image_url?: string }>;
+          recommended_products: RecommendedProduct[];
           seo_title: string | null;
           seo_description: string | null;
           keywords: string[];
@@ -394,7 +415,7 @@ export interface Database {
           common_mistakes?: string[];
           technical_specs?: Record<string, string>;
           video_url?: string | null;
-          recommended_products?: Array<{ name: string; brand: string; partner_url: string; image_url?: string }>;
+          recommended_products?: RecommendedProduct[];
           seo_title?: string | null;
           seo_description?: string | null;
           keywords?: string[];
@@ -426,7 +447,7 @@ export interface Database {
           common_mistakes?: string[];
           technical_specs?: Record<string, string>;
           video_url?: string | null;
-          recommended_products?: Array<{ name: string; brand: string; partner_url: string; image_url?: string }>;
+          recommended_products?: RecommendedProduct[];
           seo_title?: string | null;
           seo_description?: string | null;
           keywords?: string[];
