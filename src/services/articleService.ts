@@ -30,6 +30,7 @@ export const DEFAULT_ARTICLES: Article[] = [
     title: 'Monolit vasbeton szerkezetépítés és zsaluzási technológiák',
     slug: 'monolit-vasbeton-szerkezetepites-es-zsaluzasi-technologiak',
     article_type: 'utmutatok',
+    related_tool_ids: ['tool-1'],
     tags: ['szerkezetépítés', 'vasbeton', 'zsaluzás', 'monolit', 'útmutató', 'munkavédelem'],
     excerpt: 'Átfogó kivitelezési útmutató monolit vasbeton szerkezetek, zsaluzatok, vasalás és betonozás szakszerű megvalósításához.',
     difficulty: 'advanced',
@@ -785,5 +786,71 @@ export async function reorderArticles(orderedArticleIds: string[]): Promise<void
 
   saveArticlesLocal(updatedList);
   void logAuditAction('ARTICLE_REORDER', 'articles', 'Cikkek sorrendje frissítve');
+}
+
+export async function getArticlesForTool(
+  toolId: string,
+  toolSlug?: string,
+  keywords: string[] = [],
+  limit: number = 4
+): Promise<Article[]> {
+  try {
+    const { data, error } = await supabase.from('articles').select('*').eq('status', 'published');
+    if (!error && data && data.length > 0) {
+      const allSupabase = data as Article[];
+      const matched = new Map<string, Article>();
+
+      for (const a of allSupabase) {
+        if (a.related_tool_ids && Array.isArray(a.related_tool_ids) && a.related_tool_ids.includes(toolId)) {
+          matched.set(a.id, a);
+        }
+      }
+
+      const searchTerms = [toolSlug, ...keywords].filter((k): k is string => Boolean(k && k.trim())).map((k) => k.toLowerCase());
+      if (searchTerms.length > 0) {
+        for (const a of allSupabase) {
+          if (!matched.has(a.id)) {
+            const tags = (a.tags || []).map((t) => t.toLowerCase());
+            const title = (a.title || '').toLowerCase();
+            const matchesTagOrTitle = searchTerms.some((term) => tags.some((t) => t.includes(term)) || title.includes(term));
+            if (matchesTagOrTitle) {
+              matched.set(a.id, a);
+            }
+          }
+        }
+      }
+
+      if (matched.size > 0) {
+        return Array.from(matched.values()).slice(0, limit);
+      }
+    }
+  } catch (err) {
+    void err;
+  }
+
+  const allLocal = getArticlesLocal().filter((a) => a.status === 'published' || !a.status);
+  const matched = new Map<string, Article>();
+
+  for (const a of allLocal) {
+    if (a.related_tool_ids && Array.isArray(a.related_tool_ids) && a.related_tool_ids.includes(toolId)) {
+      matched.set(a.id, a);
+    }
+  }
+
+  const searchTerms = [toolSlug, ...keywords].filter((k): k is string => Boolean(k && k.trim())).map((k) => k.toLowerCase());
+  if (searchTerms.length > 0) {
+    for (const a of allLocal) {
+      if (!matched.has(a.id)) {
+        const tags = (a.tags || []).map((t) => t.toLowerCase());
+        const title = (a.title || '').toLowerCase();
+        const matchesTagOrTitle = searchTerms.some((term) => tags.some((t) => t.includes(term)) || title.includes(term));
+        if (matchesTagOrTitle) {
+          matched.set(a.id, a);
+        }
+      }
+    }
+  }
+
+  return Array.from(matched.values()).slice(0, limit);
 }
 

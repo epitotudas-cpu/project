@@ -24,8 +24,9 @@ import {
 } from 'lucide-react';
 import { getActiveTools, getToolBySlug } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
+import { getArticlesForTool } from '../services/articleService';
 import { filterTools } from '../services/toolFilterService';
-import type { Tool, AdCampaign, RecommendedProduct } from '../lib/supabase';
+import type { Tool, AdCampaign, RecommendedProduct, Article } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -351,6 +352,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [activeViewTab, setActiveViewTab] = useState<'catalog' | 'wizard' | 'brands'>('catalog');
   const [partnerAds, setPartnerAds] = useState<AdCampaign[]>([]);
+  const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [pendingToolName, setPendingToolName] = useState<string | undefined>(undefined);
 
@@ -412,9 +414,14 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
     }
   }, [selectedTool]);
 
-  // Load Targeted Partner Ads
+  // Load Targeted Partner Ads & Related Articles
   useEffect(() => {
     getAdsForTool(selectedTool?.id, selectedTool?.type || selectedCategory || undefined).then(setPartnerAds);
+    if (selectedTool) {
+      getArticlesForTool(selectedTool.id, selectedTool.slug, selectedTool.keywords).then(setRelatedArticles);
+    } else {
+      setRelatedArticles([]);
+    }
   }, [selectedTool, selectedCategory]);
 
   // 1. Initial State from URL search params & hash
@@ -1085,6 +1092,78 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                       })}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Related ÉpítőTudás Articles */}
+              {relatedArticles && relatedArticles.length > 0 && (
+                <div className="pt-8 border-t border-gray-200 space-y-6">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                        <BookOpen className="text-primary shrink-0" size={18} /> Kapcsolódó ÉpítőTudás Cikkek ({relatedArticles.length})
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Szakmai útmutatók, cikkek és kapcsolódó olvasnivalók az eszköz használatához</p>
+                    </div>
+                    <span className="text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase tracking-wider">
+                      Szakmai Cikkek
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {relatedArticles.map((art) => (
+                      <div
+                        key={art.id}
+                        className="bg-white border border-gray-200 hover:border-primary/50 rounded-2xl p-5 space-y-3 flex flex-col justify-between transition-all shadow-xs hover:shadow-sm"
+                      >
+                        <div className="space-y-2.5">
+                          {art.featured_image && (
+                            <div className="h-36 w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200/80 mb-3">
+                              <img
+                                src={art.featured_image}
+                                alt={art.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                            {art.subcategory_name && (
+                              <span className="px-2.5 py-0.5 bg-primary/10 text-primary-900 font-bold rounded-md border border-primary/20">
+                                {art.subcategory_name}
+                              </span>
+                            )}
+                            {art.read_time && (
+                              <span className="text-gray-500 font-medium">
+                                {art.read_time} perc olvasás
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-sm font-bold text-gray-900 leading-snug line-clamp-2">
+                            {art.title}
+                          </h4>
+
+                          {art.excerpt && (
+                            <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                              {art.excerpt}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                          <span className="text-[11px] text-gray-400 font-medium">
+                            {art.author || 'ÉpítőTudás Szerkesztőség'}
+                          </span>
+                          <button
+                            onClick={() => onNavigate(`article-detail?slug=${art.slug}`)}
+                            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            Cikk megnyitása <ArrowRight size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
