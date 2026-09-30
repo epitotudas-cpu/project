@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { getActiveTools, getToolBySlug } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
-import { getArticlesForTool } from '../services/articleService';
+import { getArticlesForTool, getPublishedArticles } from '../services/articleService';
 import { filterTools } from '../services/toolFilterService';
 import type { Tool, AdCampaign, RecommendedProduct, Article } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
@@ -353,6 +353,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
   const [activeViewTab, setActiveViewTab] = useState<'catalog' | 'wizard' | 'brands'>('catalog');
   const [partnerAds, setPartnerAds] = useState<AdCampaign[]>([]);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
+  const [allPublishedArticles, setAllPublishedArticles] = useState<Article[]>([]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [pendingToolName, setPendingToolName] = useState<string | undefined>(undefined);
 
@@ -419,8 +420,12 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
     getAdsForTool(selectedTool?.id, selectedTool?.type || selectedCategory || undefined).then(setPartnerAds);
     if (selectedTool) {
       getArticlesForTool(selectedTool.id, selectedTool.slug, selectedTool.keywords).then(setRelatedArticles);
+      getPublishedArticles().then((arts) => {
+        if (arts) setAllPublishedArticles(arts);
+      }).catch(() => {});
     } else {
       setRelatedArticles([]);
+      setAllPublishedArticles([]);
     }
   }, [selectedTool, selectedCategory]);
 
@@ -871,6 +876,9 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                               (prod.test_cons && prod.test_cons.length > 0))
                         );
                         const prodVideoEmbed = getEmbedVideoUrl(prod.video_url);
+                        const prodArticles = (prod.related_article_ids && prod.related_article_ids.length > 0)
+                          ? allPublishedArticles.filter((art) => prod.related_article_ids!.includes(art.id))
+                          : [];
 
                         return (
                           <div
@@ -1074,7 +1082,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                             {prodVideoEmbed && (
                               <div className="space-y-2.5 pt-2">
                                 <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                                  <Sparkles size={14} className="text-red-500" /> Termék bemutató & teszt videó
+                                  <Sparkles size={14} className="text-red-500" /> Termék bemutató &amp; teszt videó
                                 </span>
                                 <div className="aspect-video w-full rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-xs">
                                   <iframe
@@ -1084,6 +1092,65 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                   />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Product Specific Articles Section */}
+                            {prodArticles.length > 0 && (
+                              <div className="bg-blue-50/60 border border-blue-200/80 rounded-2xl p-5 space-y-3">
+                                <div className="flex items-center justify-between flex-wrap gap-2 border-b border-blue-200/60 pb-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-blue-600 text-white rounded-lg">
+                                      <BookOpen size={16} />
+                                    </div>
+                                    <div>
+                                      <h5 className="text-sm font-black text-blue-950">
+                                        Kapcsolódó ÉpítőTudás Cikkek &amp; Tesztek ({prodArticles.length})
+                                      </h5>
+                                      <p className="text-[11px] text-blue-800 font-medium">
+                                        Kifejezetten erről a {prod.brand ? `${prod.brand} ` : ''}{prod.name} termékről szóló szakmai cikkek
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                    Gyártói Termék Cikk
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                  {prodArticles.map((art) => (
+                                    <div
+                                      key={art.id}
+                                      className="bg-white border border-blue-200/70 hover:border-blue-400 rounded-xl p-3.5 space-y-2 flex flex-col justify-between transition-all shadow-2xs hover:shadow-xs"
+                                    >
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-700">
+                                          <span>📄 {art.subcategory_name || 'Szakmai cikk'}</span>
+                                          {art.read_time && <span className="text-gray-400">• {art.read_time} perc</span>}
+                                        </div>
+                                        <h6 className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">
+                                          {art.title}
+                                        </h6>
+                                        {art.excerpt && (
+                                          <p className="text-[11px] text-gray-600 line-clamp-2 leading-relaxed">
+                                            {art.excerpt}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                                        <span className="text-[10px] text-gray-400">
+                                          {art.author || 'ÉpítőTudás'}
+                                        </span>
+                                        <button
+                                          onClick={() => onNavigate(`article-detail?slug=${art.slug}`)}
+                                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                                        >
+                                          Elolvasom <ArrowRight size={12} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             )}
