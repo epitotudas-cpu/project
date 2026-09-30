@@ -182,6 +182,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         test_provided_by_manufacturer: false,
         test_date: '',
         related_article_ids: [],
+        status: 'approved',
       },
     ]);
   }
@@ -259,6 +260,8 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         recommended_products: products
           .map((p) => ({
             id: p.id || undefined,
+            partner_id: p.partner_id?.trim() || undefined,
+            status: p.status || 'approved',
             name: p.name.trim(),
             brand: p.brand.trim(),
             description: p.description?.trim() || undefined,

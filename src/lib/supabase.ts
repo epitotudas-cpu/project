@@ -21,6 +21,8 @@ export type Json =
 
 export interface RecommendedProduct {
   id?: string;
+  partner_id?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
   name: string;
   brand: string;
   partner_url?: string;
