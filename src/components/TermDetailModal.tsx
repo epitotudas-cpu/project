@@ -21,6 +21,7 @@ import { getVideoUrls } from '../lib/glossaryJsonService';
 import { useAuth } from '../contexts/AuthContext';
 import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
 import { useGlossaryLanguages } from '../services/languageService';
+import FormattedText from './FormattedText';
 
 export function getEmbedVideoUrl(url: string | null | undefined): string | null {
   if (!url || !url.trim()) return null;
@@ -228,8 +229,11 @@ export default function TermDetailModal({
                   <h4 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
                     <BookOpen size={16} className="text-primary" /> Részletes Műszaki Magyarázat
                   </h4>
-                  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                    {term.detailed_description}
+                  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
+                    <FormattedText
+                      content={term.detailed_description}
+                      paragraphClassName="text-gray-700 text-sm leading-relaxed mb-3"
+                    />
                   </div>
                 </div>
               )}

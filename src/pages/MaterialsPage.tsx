@@ -19,6 +19,7 @@ import {
   Library,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import FormattedText from '../components/FormattedText';
 import {
   getMaterialsLocal,
   getMaterialCategoriesLocal,
@@ -502,9 +503,10 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
 
                 <div className="space-y-2">
                   <h4 className="font-extrabold text-gray-900 text-sm">Részletes Leírás &amp; Jellemzők:</h4>
-                  <div className="prose max-w-none text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                    {activeItem.full_description}
-                  </div>
+                  <FormattedText
+                    content={activeItem.full_description}
+                    paragraphClassName="text-xs sm:text-sm text-gray-700 leading-relaxed mb-3"
+                  />
                 </div>
 
                 {activeItem.application_area && (

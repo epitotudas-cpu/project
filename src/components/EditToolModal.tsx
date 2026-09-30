@@ -147,6 +147,13 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function insertFormattingSnippet(snippet: string) {
+    setForm((prev) => ({
+      ...prev,
+      description: prev.description ? `${prev.description}\n${snippet}` : snippet,
+    }));
+  }
+
   function handleNameChange(value: string) {
     update('name', value);
     if (!slugTouched) update('slug', slugify(value));
@@ -382,16 +389,65 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle} className={labelClass}>Leírás</label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label style={labelStyle} className={labelClass}>Leírás &amp; Formázott Tartalom</label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mr-1">Gyors beszúrás:</span>
+                <button
+                  type="button"
+                  onClick={() => insertFormattingSnippet('## Címsor neve')}
+                  className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-amber-400 text-[10px] font-bold rounded border border-gray-700 transition-colors cursor-pointer"
+                  title="Címsor 2 beszúrása"
+                >
+                  ## Címsor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormattingSnippet('**Félkövér szöveg**')}
+                  className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-[10px] font-bold rounded border border-gray-700 transition-colors cursor-pointer"
+                  title="Félkövér szöveg"
+                >
+                  **Félkövér**
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormattingSnippet('- Első lista elem\n- Második lista elem')}
+                  className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-[10px] font-bold rounded border border-gray-700 transition-colors cursor-pointer"
+                  title="Felsorolás"
+                >
+                  - Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormattingSnippet('1. Első számozott elem\n2. Második számozott elem')}
+                  className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-[10px] font-bold rounded border border-gray-700 transition-colors cursor-pointer"
+                  title="Számozott lista"
+                >
+                  1. Számozott
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormattingSnippet('> Fontos szakmai megjegyzés vagy idézet')}
+                  className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-amber-300 text-[10px] font-bold rounded border border-gray-700 transition-colors cursor-pointer"
+                  title="Idézet"
+                >
+                  &gt; Idézet
+                </button>
+              </div>
+            </div>
+
             <textarea
               style={fieldStyle}
-              className={`${fieldClass} resize-none`}
-              rows={3}
+              className={`${fieldClass} font-mono text-xs leading-relaxed`}
+              rows={6}
               value={form.description}
               onChange={(e) => update('description', e.target.value)}
-              placeholder="Szakmai enciklopédia leírás..."
+              placeholder="Írd ide a leírást. Több bekezdést, sortörést vagy Markdown elemeket (## Címsor, - Felsorolás, **Félkövér**) egyaránt megadhatsz..."
             />
+            <p className="text-[11px] text-gray-400 leading-tight">
+              💡 <strong>Formázási útmutató:</strong> A leírás támogatja a több bekezdéses sima szöveget és a Markdown elemeket. A publikus oldalon a formázás automatikusan strukturáltan (bekezdések, címsorok, felsorolások) jelenik meg.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

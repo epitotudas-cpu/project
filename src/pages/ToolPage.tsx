@@ -28,6 +28,7 @@ import { getArticlesForTool, getPublishedArticles } from '../services/articleSer
 import { filterTools } from '../services/toolFilterService';
 import type { Tool, AdCampaign, RecommendedProduct, Article } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
+import FormattedText from '../components/FormattedText';
 import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
 
@@ -710,9 +711,11 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                     )}
                   </div>
                   <h2 className="text-3xl font-black text-gray-900">{selectedTool.name}</h2>
-                  <p className="text-gray-600 text-sm leading-relaxed max-w-3xl">
-                    {selectedTool.description}
-                  </p>
+                  <FormattedText
+                    content={selectedTool.description}
+                    className="max-w-3xl"
+                    paragraphClassName="text-gray-600 text-sm sm:text-base leading-relaxed mb-3"
+                  />
                 </div>
 
                 {selectedTool.image_url && (
@@ -924,9 +927,11 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                                 </h4>
 
                                 {prod.description && (
-                                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
-                                    {prod.description}
-                                  </p>
+                                  <FormattedText
+                                    content={prod.description}
+                                    className="max-w-3xl"
+                                    paragraphClassName="text-xs sm:text-sm text-gray-600 leading-relaxed mb-2"
+                                  />
                                 )}
                               </div>
 
@@ -1044,9 +1049,11 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                                 {prod.test_experience && (
                                   <div className="space-y-1">
                                     <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider block">Saját tapasztalat:</span>
-                                    <p className="text-xs text-gray-700 leading-relaxed bg-white/70 border border-emerald-200/50 p-3.5 rounded-xl font-medium">
-                                      {prod.test_experience}
-                                    </p>
+                                    <FormattedText
+                                      content={prod.test_experience}
+                                      className="bg-white/70 border border-emerald-200/50 p-3.5 rounded-xl font-medium"
+                                      paragraphClassName="text-xs text-gray-700 leading-relaxed mb-2"
+                                    />
                                   </div>
                                 )}
 
