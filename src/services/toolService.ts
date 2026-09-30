@@ -479,6 +479,50 @@ export const DEFAULT_ENCYCLOPEDIA_TOOLS: Tool[] = [
   },
 ];
 
+const VALID_TOOL_COLUMNS = new Set([
+  'id',
+  'name',
+  'slug',
+  'type',
+  'brand',
+  'description',
+  'specs',
+  'price',
+  'currency',
+  'features',
+  'rating',
+  'rating_count',
+  'image_url',
+  'status',
+  'created_at',
+  'updated_at',
+]);
+
+function prepareToolForDatabase(payload: Record<string, unknown>): Record<string, unknown> {
+  const dbPayload: Record<string, unknown> = {};
+  const existingSpecs = (typeof payload.specs === 'object' && payload.specs !== null ? payload.specs : {}) as Record<string, unknown>;
+  const extraSpecs: Record<string, unknown> = { ...existingSpecs };
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (VALID_TOOL_COLUMNS.has(key)) {
+      dbPayload[key] = value;
+    } else {
+      extraSpecs[key] = value;
+    }
+  }
+
+  dbPayload.specs = extraSpecs;
+  return dbPayload;
+}
+
+function normalizeToolFromDatabase(row: Record<string, unknown>): Tool {
+  const specs = (typeof row.specs === 'object' && row.specs !== null ? row.specs : {}) as Record<string, unknown>;
+  return {
+    ...specs,
+    ...row,
+  } as Tool;
+}
+
 export async function listTools(options?: {
   status?: 'all' | Tool['status'];
   type?: string;
@@ -492,7 +536,8 @@ export async function listTools(options?: {
   try {
     const { data, error } = await supabase.from('tools').select('*');
     if (!error && data && data.length > 0) {
-      for (const item of data as Tool[]) {
+      for (const raw of data as Record<string, unknown>[]) {
+        const item = normalizeToolFromDatabase(raw);
         toolsMap.set(item.slug, item);
       }
     }
@@ -530,12 +575,14 @@ export async function getToolBySlug(slug: string): Promise<Tool | null> {
 }
 
 export async function createTool(payload: Record<string, unknown>): Promise<Tool> {
-  const res = await supabase.from('tools').insert(payload).select('*').single();
+  const dbPayload = prepareToolForDatabase(payload);
+  const res = await supabase.from('tools').insert(dbPayload).select('*').single();
   if (res.error) throw res.error;
-  return res.data as Tool;
+  return normalizeToolFromDatabase(res.data as Record<string, unknown>);
 }
 
 export async function updateTool(id: string, payload: Record<string, unknown>): Promise<Tool> {
+  const dbPayload = prepareToolForDatabase(payload);
   const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
   if (!isUuid) {
@@ -543,17 +590,17 @@ export async function updateTool(id: string, payload: Record<string, unknown>): 
     if (slug) {
       const { data } = await supabase.from('tools').select('*').eq('slug', slug).maybeSingle();
       if (data) {
-        const res = await supabase.from('tools').update(payload).eq('id', data.id).select('*').single();
+        const res = await supabase.from('tools').update(dbPayload).eq('id', data.id).select('*').single();
         if (res.error) throw res.error;
-        return res.data as Tool;
+        return normalizeToolFromDatabase(res.data as Record<string, unknown>);
       }
     }
     return createTool(payload);
   }
 
-  const res = await supabase.from('tools').update(payload).eq('id', id).select('*').single();
+  const res = await supabase.from('tools').update(dbPayload).eq('id', id).select('*').single();
   if (res.error) throw res.error;
-  return res.data as Tool;
+  return normalizeToolFromDatabase(res.data as Record<string, unknown>);
 }
 
 export async function setToolStatus(id: string, status: Tool['status']): Promise<void> {
