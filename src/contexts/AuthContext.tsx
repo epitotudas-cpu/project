@@ -31,7 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
 
   useEffect(() => {
-    authClient.getSession().then(({ data: { session } }) => {
+    authClient.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        // Clear invalid auth tokens if session recovery fails
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -40,7 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setLoading(false);
       }
-    }).catch(() => setLoading(false));
+    }).catch(() => {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+    });
 
     const { data: { subscription } } = authClient.onAuthStateChange((event, session) => {
       setAuthEvent(event);
