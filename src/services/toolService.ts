@@ -485,22 +485,22 @@ export async function listTools(options?: {
   brand?: string;
   limit?: number;
 }): Promise<Tool[]> {
-  const combined: Tool[] = [...DEFAULT_ENCYCLOPEDIA_TOOLS];
+  const toolsMap = new Map<string, Tool>();
+  for (const t of DEFAULT_ENCYCLOPEDIA_TOOLS) {
+    toolsMap.set(t.slug, t);
+  }
   try {
     const { data, error } = await supabase.from('tools').select('*');
     if (!error && data && data.length > 0) {
-      const existingSlugs = new Set(combined.map((t) => t.slug));
       for (const item of data as Tool[]) {
-        if (!existingSlugs.has(item.slug)) {
-          combined.push(item);
-        }
+        toolsMap.set(item.slug, item);
       }
     }
   } catch (err) {
     void err;
   }
 
-  let filtered = combined;
+  let filtered = Array.from(toolsMap.values());
   if (options?.status && options.status !== 'all') {
     filtered = filtered.filter((t) => t.status === options.status);
   }
@@ -536,12 +536,36 @@ export async function createTool(payload: Record<string, unknown>): Promise<Tool
 }
 
 export async function updateTool(id: string, payload: Record<string, unknown>): Promise<Tool> {
+  const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
+  if (!isUuid) {
+    const slug = (payload.slug as string) || '';
+    if (slug) {
+      const { data } = await supabase.from('tools').select('*').eq('slug', slug).maybeSingle();
+      if (data) {
+        const res = await supabase.from('tools').update(payload).eq('id', data.id).select('*').single();
+        if (res.error) throw res.error;
+        return res.data as Tool;
+      }
+    }
+    return createTool(payload);
+  }
+
   const res = await supabase.from('tools').update(payload).eq('id', id).select('*').single();
   if (res.error) throw res.error;
   return res.data as Tool;
 }
 
 export async function setToolStatus(id: string, status: Tool['status']): Promise<void> {
+  const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+  if (!isUuid) {
+    const defaultTool = DEFAULT_ENCYCLOPEDIA_TOOLS.find((t) => t.id === id);
+    if (defaultTool) {
+      const { id: _oldId, ...rest } = defaultTool;
+      await createTool({ ...rest, status });
+      return;
+    }
+  }
   const { error } = await supabase.from('tools').update({ status }).eq('id', id);
   if (error) throw error;
 }
