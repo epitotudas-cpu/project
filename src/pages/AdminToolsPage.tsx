@@ -111,14 +111,14 @@ export default function AdminToolsPage({ initialSearchQuery }: AdminToolsPagePro
   }
 
   function handleSaved(saved: Tool) {
-    const existed = tools.some((t) => t.id === saved.id);
     setTools((prev) => {
+      const existed = prev.some((t) => t.id === saved.id || (Boolean(saved.slug) && t.slug === saved.slug));
       if (existed) {
-        return prev.map((t) => (t.id === saved.id ? { ...t, ...saved } : t));
+        return prev.map((t) => (t.id === saved.id || (Boolean(saved.slug) && t.slug === saved.slug) ? { ...t, ...saved } : t));
       }
       return [saved, ...prev];
     });
-    toast.success(existed ? 'Eszköz frissítve.' : 'Eszköz létrehozva.');
+    toast.success('Eszköz sikeresen elmentve.');
     closeEditor();
   }
 

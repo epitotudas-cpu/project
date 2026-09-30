@@ -326,11 +326,10 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   const labelClass = 'block text-xs font-bold mb-1.5 uppercase tracking-wide';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => !saving && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div
         style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
         className="border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
       >
         <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10">
           <h2 style={{ color: textColor }} className="text-base font-black">{isCreate ? 'Új eszköz létrehozása' : 'Eszköz szerkesztése'}</h2>
