@@ -1,4 +1,4 @@
-const CACHE_NAME = 'epitotudas-v8';
+const CACHE_NAME = 'epitotudas-v9';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -52,7 +52,7 @@ self.addEventListener('fetch', (event) => {
         if (indexMatch) return indexMatch;
         const rootMatch = await caches.match('/');
         if (rootMatch) return rootMatch;
-        return Response.error();
+        return new Response('Offline or Network Error', { status: 503, headers: { 'Content-Type': 'text/plain' } });
       })
     );
     return;
@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
           const fallbackImage = await caches.match('/article-default.jpg');
           if (fallbackImage) return fallbackImage;
         }
-        return Response.error();
+        return new Response('', { status: 408 });
       });
     })
   );
