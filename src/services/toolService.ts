@@ -505,10 +505,21 @@ function prepareToolForDatabase(payload: Record<string, unknown>): Record<string
 
   for (const [key, value] of Object.entries(payload)) {
     if (VALID_TOOL_COLUMNS.has(key)) {
-      dbPayload[key] = value;
+      if (value !== undefined && value !== null) {
+        dbPayload[key] = value;
+      }
     } else {
       extraSpecs[key] = value;
     }
+  }
+
+  if (typeof dbPayload.id === 'string') {
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(dbPayload.id);
+    if (!isUuid) {
+      delete dbPayload.id;
+    }
+  } else {
+    delete dbPayload.id;
   }
 
   dbPayload.specs = extraSpecs;

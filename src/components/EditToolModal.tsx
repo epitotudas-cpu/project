@@ -299,8 +299,15 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
       }
       setSaveStatus('success');
       onSaved(data);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'A mentés nem sikerült. Próbáld újra.';
+    } catch (err: unknown) {
+      console.error('Hiba az eszköz mentésekor:', err);
+      let msg = 'A mentés nem sikerült. Próbáld újra.';
+      if (err && typeof err === 'object') {
+        const pErr = err as { message?: string; details?: string; hint?: string };
+        msg = pErr.message || pErr.details || pErr.hint || msg;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
       if (/duplicate|unique|23505/i.test(msg)) {
         setError('Ez a slug már foglalt.');
       } else {
