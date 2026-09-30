@@ -869,7 +869,8 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                       {(selectedTool.recommended_products as RecommendedProduct[]).map((prod, idx) => {
                         const hasTest = Boolean(
                           prod.is_tested === true &&
-                            (prod.test_period ||
+                            (prod.test_date ||
+                              prod.test_period ||
                               prod.test_environment ||
                               prod.test_experience ||
                               (prod.test_pros && prod.test_pros.length > 0) ||
@@ -1017,7 +1018,14 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                                   )}
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                                  {prod.test_date && (
+                                    <div className="bg-white/80 border border-emerald-200/60 p-3 rounded-xl">
+                                      <span className="font-bold text-emerald-900 block uppercase tracking-wider text-[10px]">Tesztelés dátuma:</span>
+                                      <span className="text-gray-800 font-medium">{prod.test_date}</span>
+                                    </div>
+                                  )}
+
                                   {prod.test_period && (
                                     <div className="bg-white/80 border border-emerald-200/60 p-3 rounded-xl">
                                       <span className="font-bold text-emerald-900 block uppercase tracking-wider text-[10px]">Tesztelés időszaka:</span>
