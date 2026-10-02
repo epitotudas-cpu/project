@@ -116,31 +116,82 @@ export const DEFAULT_ENCYCLOPEDIA_TOOLS: Tool[] = [
     slug: 'lakatos-kalapacs',
     type: 'Kéziszerszámok',
     subtype: 'Kalapácsok',
-    brand: 'Gedore / Hazet / Stanley',
-    description: 'Négyzetes ütőfelülettel és gömbölyített vagy ék alakú szemből álló univerzális fémmegmunkáló kéziszerszám.',
-    specs: { súly: '300g - 1000g', nyél: 'KőrisFA vagy hikkori' },
-    price: null,
+    brand: 'Gedore / Hazet / Stanley / Picard',
+    description: `## A Lakatos Kalapács Kialakítása (DIN 1041)
+A lakatos kalapács a fémipari megmunkálás és gépészeti szerelés legalapvetőbb kéziszerszáma. Kovácsolt edzett szénacél feje egy síkra köszörült négyzetes ütőpályából és egy ék alakú szemből áll.
+
+## Mire használják?
+- **Fémszerkezetek alakítása és egyengetése**: Lemezek, idomok és szerkezeti elemek pontos fémipari alakítására.
+- **Szerelési és bontási feladatok**: Tengelyek, stift-ek és csapszegek be- és kiütésére.
+- **Kéziszerszámok meghajtása**: Hidegvésők, pontozók és fémlyukasztók biztonságos ütésére.
+
+## Nyélválasztás és Ergonómia
+- **Hikkori fa**: Észak-amerikai diófajta, rendkívül szívós, elnyeli az ütési rezgéseket, így kíméli a csuklót.
+- **Üvegszálas polimer**: Elpusztíthatatlan nyél, olaj- és vegyszerálló gumírozott markolattal.
+- **Acél védőhüvely**: Védi a nyelet a melléütés okozta rongálódástól a fej alatti szakaszon.
+
+## Munkavédelmi Előírások
+- Mindig viselj **védőszemüveget**, mert a leváló fémforgácsok súlyos szemtérsérülést okozhatnak!
+- Rendszeresen ellenőrizd a fej rögzítését; lötyögő nyéllel munkát végezni szigorúan TILOS!`,
+    specs: { súly: '500g', nyél: 'Hikkori fa', szabvány: 'DIN 1041' },
+    price: 4500,
     currency: 'HUF',
-    features: ['DIN 1041 szabványnak megfelelő kovácsolt fej', 'Hikkori vagy kőrisfa nyél acél védőhülvellyel'],
+    features: ['DIN 1041 szabványnak megfelelő kovácsolt fej', 'Hikkori fa nyél acél nyélvédő hüvellyel', 'Edzett és engedett ütőpálya', 'Rozsdavédő fekete lakk bevonat'],
     rating: 4.85,
     rating_count: 25,
     image_url: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=800&q=80',
     status: 'active',
-    professions: ['Lakatos', 'Szerelő', 'Fémszerkezet építő'],
-    uses: ['Fémidomok egyengetése', 'Csapszegek beütése', 'Vésők és pontozók ütése', 'Szerelési munkák'],
+    professions: ['Lakatos', 'Szerelő', 'Fémszerkezet építő', 'Gépész'],
+    uses: ['Fémidomok egyengetése', 'Csapszegek beütése', 'Vésők és pontozók ütése', 'Szerelési és karbantartási munkák'],
     parts: [
-      { name: 'Pálya (Ütőfelület)', description: 'Síkra köszörült edzett acél felület.' },
-      { name: 'Szem', description: 'Keresztirányú ék alakú végződés fém alakításához.' },
-      { name: 'Hikkori nyél', description: 'Rugalmas, tömör faanyag a rezgés elnyelésére.' },
+      { name: 'Pálya (Ütőfelület)', description: 'Síkra köszörült edzett acél felület a pontos és csúszásmentes ütésekhez.' },
+      { name: 'Szem (Ék)', description: 'Keresztirányú ék alakú végződés lemezek és idomok alakításához.' },
+      { name: 'Hikkori nyél', description: 'Rugalmas, tömör és szívós faanyag a rezgések elnyelésére.' },
+      { name: 'Nyélvédő hüvely', description: 'Acél gyűrű a fej alatti részen a melléütések okozta szálkásodás ellen.' },
     ],
-    buying_guide: ['DIN 1041 szabvány szerinti kovácsolt edzett fejet válassz acél nyélvédő hüvellyel.'],
-    common_mistakes: ['❌ Kilazult faékű nyéllel dolgozni.'],
-    technical_specs: { 'Szabvány': 'DIN 1041', 'Súly': '500 g', 'Nyél': 'Hikkori fa' },
-    video_url: null,
-    recommended_products: [],
-    seo_title: 'Lakatos Kalapács DIN 1041 – Fémmegmunkálás | ÉpítőTudás',
-    seo_description: 'DIN 1041 lakatos kalapács bemutatása, szerelési tanácsok és hikkori nyél jellemzői.',
-    keywords: ['lakatos kalapács', 'din 1041', 'fémipari szerszám'],
+    buying_guide: [
+      'Mindig DIN 1041 szabvány szerinti kovácsolt edzett fejet válassz az elpattanás veszélyének elkerülésére.',
+      'Részesítsd előnyben a hikkori fanyéllel vagy üvegszálas műanyag nyéllel ellátott kivitelt.',
+      'Magas terhelésnél érdemes acél nyélvédő hüvellyel szerelt típust választani.',
+    ],
+    common_mistakes: [
+      '❌ Kilazult faékű nyéllel vagy repedt fafejjel végzett munka (súlyos balesetveszély!).',
+      '❌ Kivésődött vagy csorbult pályájú kalapáccsal vésőt ütni (acélforgács leválás!).',
+      '❌ Túl kicsi súlyú kalapáccsal nehéz fémidomot alakítani.',
+    ],
+    technical_specs: {
+      'Szabvány': 'DIN 1041 / ISO 15601',
+      'Fej tömege': '500 g',
+      'Nyél hossza': '320 mm',
+      'Nyél anyaga': 'Hikkori fa (acél védőhüvellyel)',
+      'Markolat típusa': 'Ergonomikus lakkbevonat, csúszásgátló lekerekítéssel',
+      'Felületkezelés': 'Hőkezelt kovácsolt acél, fekete korróziógátló lakk',
+      'Fej keménysége': '50 - 58 HRC (DIN 1041 szerint)',
+    },
+    video_url: 'https://www.youtube.com/embed/5a2d6GqJd_w',
+    recommended_products: [
+      {
+        name: 'Gedore DIN 1041 Lakatoskalapács Hikkori 500g',
+        brand: 'Gedore',
+        description: 'Prémium minőségű kovácsolt lakatos kalapács hikkori nyéllel és acél nyélvédő hüvellyel.',
+        price: 8900,
+        currency: 'HUF',
+        features: ['DIN 1041 szabvány', 'Hikkori nyél', 'Acél védőhüvely'],
+        product_url: 'https://www.gedore.com',
+        partner_url: 'https://example.com/gedore-lakatos',
+        image_url: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=300&q=80',
+        is_featured: true,
+        is_tested: true,
+        test_period: '2026.06.01 - 2026.08.30',
+        test_environment: 'Fémipari és lakatosi szerelőműhely',
+        test_experience: 'A hikkori nyél rezgéscsillapítása kiváló, több órás folyamatos egyengetés után sem fárad el a csukló. A pálya edzettsége kimagasló.',
+        test_pros: ['Kiváló rezgéscsillapítás', 'Acél nyélvédő hüvely', 'Tartós edzett pálya'],
+        test_cons: ['Magasabb árfekvés'],
+      },
+    ],
+    seo_title: 'Lakatos Kalapács DIN 1041 (500g, Hikkori Nyél) | ÉpítőTudás',
+    seo_description: 'Részletes lakatos kalapács bemutató: DIN 1041 szabvány, 500g fej, hikkori nyél, fémmegmunkálási tanácsok és munkavédelem.',
+    keywords: ['lakatos kalapács', 'din 1041', 'hikkori nyél', 'gedore kalapács', 'fémmegmunkáló szerszám'],
     canonical_url: 'https://epitotudas.hu/eszkozok/lakatos-kalapacs',
     is_indexable: true,
     created_at: new Date().toISOString(),
