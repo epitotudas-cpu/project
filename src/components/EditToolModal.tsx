@@ -16,6 +16,8 @@ import {
   Image as ImageIcon,
   Wrench,
   Search,
+  Smartphone,
+  Monitor,
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { Tool, RecommendedProduct, Article } from '../lib/supabase';
@@ -198,8 +200,10 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // Preview & SERP state
+  // Preview & Device Switcher State
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [livePreviewDevice, setLivePreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [descriptionPreviewDevice, setDescriptionPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [contentSubTab, setContentSubTab] = useState<'edit' | 'preview'>('edit');
   const [serpDevice, setSerpDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [availableArticles, setAvailableArticles] = useState<Article[]>([]);
@@ -940,25 +944,50 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                     </button>
                   </div>
 
-                  <div className="flex items-center bg-gray-900 rounded-lg p-0.5 border border-gray-800">
-                    <button
-                      type="button"
-                      onClick={() => setContentSubTab('edit')}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-colors ${
-                        contentSubTab === 'edit' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      Szerkesztés
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setContentSubTab('preview')}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-colors ${
-                        contentSubTab === 'preview' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      Formázott Előnézet
-                    </button>
+                  <div className="flex items-center gap-2">
+                    {contentSubTab === 'preview' && (
+                      <div className="flex items-center bg-gray-900 rounded-lg p-0.5 border border-gray-800 mr-2">
+                        <button
+                          type="button"
+                          onClick={() => setDescriptionPreviewDevice('desktop')}
+                          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+                            descriptionPreviewDevice === 'desktop' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          <Monitor size={12} /> Asztali
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDescriptionPreviewDevice('mobile')}
+                          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+                            descriptionPreviewDevice === 'mobile' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          <Smartphone size={12} /> Mobil (375px)
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center bg-gray-900 rounded-lg p-0.5 border border-gray-800">
+                      <button
+                        type="button"
+                        onClick={() => setContentSubTab('edit')}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-md transition-colors ${
+                          contentSubTab === 'edit' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Szerkesztés
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setContentSubTab('preview')}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-md transition-colors ${
+                          contentSubTab === 'preview' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Formázott Előnézet
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -972,7 +1001,12 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                     placeholder="Írd ide a leírást. Több bekezdést, sortörést vagy Markdown elemeket (## Címsor, - Felsorolás, **Félkövér**) egyaránt megadhatsz..."
                   />
                 ) : (
-                  <div className="p-4 bg-gray-950 border border-gray-800 rounded-xl min-h-[280px]">
+                  <div className={`p-4 bg-gray-950 border border-gray-800 rounded-xl min-h-[280px] transition-all ${
+                    descriptionPreviewDevice === 'mobile' ? 'max-w-[375px] mx-auto border-4 border-gray-800 rounded-[32px] shadow-2xl p-5 relative' : ''
+                  }`}>
+                    {descriptionPreviewDevice === 'mobile' && (
+                      <div className="w-24 h-3 bg-gray-800 rounded-b-lg mx-auto mb-4 -mt-2"></div>
+                    )}
                     <FormattedText
                       content={form.description || '*Még nincs leírás megadva.*'}
                       paragraphClassName="text-gray-200 text-xs leading-relaxed mb-3"
@@ -1641,21 +1675,53 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
       {/* LIVE TOOL PAGE PREVIEW MODAL OVERLAY */}
       {previewModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="bg-gray-950 border border-amber-500/30 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto text-gray-100">
-            <div className="flex items-center justify-between px-6 py-4 bg-gray-900 border-b border-gray-800">
+          <div className={`bg-gray-950 border border-amber-500/30 rounded-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto text-gray-100 transition-all ${
+            livePreviewDevice === 'mobile' ? 'max-w-md' : 'max-w-4xl'
+          }`}>
+            <div className="flex items-center justify-between px-6 py-4 bg-gray-900 border-b border-gray-800 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Eye size={18} className="text-amber-400" />
                 <h3 className="text-sm font-black text-white">Publikus Termékoldal Élő Előnézete</h3>
               </div>
-              <button
-                onClick={() => setPreviewModalOpen(false)}
-                className="px-3 py-1 bg-amber-500 text-black font-bold text-xs rounded-lg hover:bg-amber-400 cursor-pointer"
-              >
-                Bezárás
-              </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-gray-800 rounded-lg p-0.5 border border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => setLivePreviewDevice('desktop')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded transition-colors ${
+                      livePreviewDevice === 'desktop' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Monitor size={14} /> Asztali Nézet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLivePreviewDevice('mobile')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded transition-colors ${
+                      livePreviewDevice === 'mobile' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Smartphone size={14} /> Mobil Nézet (375px)
+                  </button>
+                </div>
+                <button
+                  onClick={() => setPreviewModalOpen(false)}
+                  className="px-3 py-1 bg-amber-500 text-black font-bold text-xs rounded-lg hover:bg-amber-400 cursor-pointer"
+                >
+                  Bezárás
+                </button>
+              </div>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-6 text-xs leading-relaxed">
+            <div className={`overflow-y-auto p-6 space-y-6 text-xs leading-relaxed ${
+              livePreviewDevice === 'mobile'
+                ? 'max-w-[375px] mx-auto border-8 border-gray-800 rounded-[36px] bg-gray-950 my-4 shadow-2xl relative p-5 max-h-[75vh]'
+                : ''
+            }`}>
+              {livePreviewDevice === 'mobile' && (
+                <div className="w-24 h-3 bg-gray-800 rounded-b-lg mx-auto mb-4 -mt-2"></div>
+              )}
+
               <div className="space-y-2 border-b border-gray-800 pb-4">
                 <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-full text-[10px] font-bold uppercase tracking-wider">
                   {form.type} / {form.subtype || 'Szerszám'}
@@ -1667,7 +1733,9 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
               {/* Specs Table Preview */}
               <div className="space-y-2">
                 <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">Műszaki Adatok</h4>
-                <div className="grid grid-cols-2 gap-2 bg-gray-900 border border-gray-800 rounded-xl p-3 text-xs">
+                <div className={`grid gap-2 bg-gray-900 border border-gray-800 rounded-xl p-3 text-xs ${
+                  livePreviewDevice === 'mobile' ? 'grid-cols-1' : 'grid-cols-2'
+                }`}>
                   {form.head_weight && (
                     <div>
                       <span className="text-gray-400">Fej tömege:</span> <span className="font-bold text-white">{form.head_weight}</span>
