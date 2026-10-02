@@ -528,7 +528,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md overflow-y-auto">
       <div
         style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
-        className="border rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto"
+        className="border rounded-2xl w-full max-w-6xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto"
       >
         {/* Modal Header */}
         <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex items-center justify-between px-6 py-4 border-b shrink-0">
@@ -558,7 +558,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         </div>
 
         {/* Tab Navigation */}
-        <div style={{ borderColor: cardBorder, backgroundColor: adjustColorBrightness(cardBg, -2) }} className="flex items-center gap-1 px-4 pt-2 border-b overflow-x-auto shrink-0 scrollbar-none">
+        <div style={{ borderColor: cardBorder, backgroundColor: adjustColorBrightness(cardBg, -2) }} className="flex items-center justify-start sm:justify-between gap-1 px-4 pt-2 border-b overflow-x-auto shrink-0 scrollbar-none">
           {[
             { id: 'basic', label: '1. Alapadatok', icon: Sliders },
             { id: 'specs', label: '2. Műszaki Adatok', icon: Cpu },
@@ -578,7 +578,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                   color: isActive ? cardHighlight : textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
                   borderColor: isActive ? cardHighlight : 'transparent',
                 }}
-                className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer hover:text-amber-400 ${
+                className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer hover:text-amber-400 ${
                   isActive ? 'bg-amber-500/5' : ''
                 }`}
               >
