@@ -254,77 +254,6 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     }));
   }
 
-  function applyTemplate(templateType: 'lakatos' | 'acskalapacs' | 'komuves' | 'gumikalapacs') {
-    if (templateType === 'lakatos') {
-      setForm((prev) => ({
-        ...prev,
-        description: `## A Lakatos Kalapács Kialakítása (DIN 1041)
-A lakatos kalapács a fémipari megmunkálás és gépészeti szerelés legalapvetőbb kéziszerszáma. Kovácsolt edzett szénacél feje egy síkra köszörült négyzetes ütőpályából és egy ék alakú szemből áll.
-
-## Mire használják?
-- **Fémszerkezetek alakítása és egyengetése**: Lemezek, idomok és szerkezeti elemek pontos fémipari alakítására.
-- **Szerelési és bontási feladatok**: Tengelyek, stift-ek és csapszegek be- és kiütésére.
-- **Kéziszerszámok meghajtása**: Hidegvésők, pontozók és fémlyukasztók biztonságos ütésére.
-
-## Nyélválasztás és Ergonómia
-- **Hikkori fa**: Észak-amerikai diófajta, rendkívül szívós, elnyeli az ütési rezgéseket, így kíméli a csuklót.
-- **Üvegszálas polimer**: Elpusztíthatatlan nyél, olaj- és vegyszerálló gumírozott markolattal.
-- **Acél védőhüvely**: Védi a nyelet a melléütés okozta rongálódástól a fej alatti szakaszon.
-
-## Munkavédelmi Előírások
-- Mindig viselj **védőszemüveget**, mert a leváló fémforgácsok súlyos szemtérsérülést okozhatnak!
-- Rendszeresen ellenőrizd a fej rögzítését; lötyögő nyéllel munkát végezni szigorúan TILOS!`,
-        head_weight: '500 g',
-        handle_length: '320 mm',
-        handle_material: 'Hikkori fa (Észak-amerikai dió)',
-        standard_ref: 'DIN 1041 / ISO 15601',
-        professions: 'Lakatos, Szerelő, Fémszerkezet építő, Gépész',
-        uses: 'Fémidomok egyengetése, Csapszegek beütése, Vésők és pontozók ütése, Szerelési és karbantartási munkák',
-      }));
-    } else if (templateType === 'acskalapacs') {
-      setForm((prev) => ({
-        ...prev,
-        description: `## Az Ácskalapács Kialakítása és Használata
-A zsaluzási és tetőfedő munkák elengedhetetlen kéziszerszáma, amely mágneses szegtartó fészekkel és ívelt szegkihúzó körömmel rendelkezik.
-
-## Mire használják?
-- **Magassági szegezés egy kézzel**: Mágneses fészek megtartja a szeget az első ütésnél.
-- **Zsaluzatok építése és bontása**: Pallók, deszkák és zsaluelemek gyors összeillesztése.
-- **Szegek eltávolítása**: Körmös szegkihúzóval a hajlott vagy hibás szegek feszítése.`,
-        head_weight: '600 g',
-        handle_length: '340 mm',
-        handle_material: 'Üvegszálas polimer',
-        standard_ref: 'DIN 7239',
-        professions: 'Ács, Zsaluzó ács, Tetőfedő',
-        uses: 'Szegezés, Zsaluzási munkák, Szegek eltávolítása',
-      }));
-    } else if (templateType === 'komuves') {
-      setForm((prev) => ({
-        ...prev,
-        description: `## A Kőműves Kalapács Jellemzői
-Négyszögletes ütőlappal és lapos, edzett vágóéllel ellátott szerszám téglák és falazóelemek precíz vágásához és igazításához.`,
-        head_weight: '500 g',
-        handle_length: '300 mm',
-        handle_material: 'Kőrisfa',
-        standard_ref: 'DIN 5108',
-        professions: 'Kőműves, Burkoló',
-        uses: 'Tégla igazítása falazáskor, Kő és tégla pattintása',
-      }));
-    } else if (templateType === 'gumikalapacs') {
-      setForm((prev) => ({
-        ...prev,
-        description: `## A Gumikalapács (Kímélő Szerszám)
-Rugalmas gumi ütőfejjel ellátott szerszám, amely nem rongálja az érzékeny burkolatokat. Burkolási munkákhoz kizárólag nyomot nem hagyó fehér gumi kivitel használható!`,
-        head_weight: '450 g',
-        handle_length: '300 mm',
-        handle_material: 'Üvegszálas polimer',
-        standard_ref: 'ISO 2725',
-        professions: 'Burkoló, Térkövező, Asztalos',
-        uses: 'Greslapok igazítása, Térkő ágyazása, Bútoripari szerelés',
-      }));
-    }
-  }
-
   function autoExtractKeywords() {
     if (!form.description) return;
     const words = form.description
@@ -633,7 +562,7 @@ Rugalmas gumi ütőfejjel ellátott szerszám, amely nem rongálja az érzékeny
           {[
             { id: 'basic', label: '1. Alapadatok', icon: Sliders },
             { id: 'specs', label: '2. Műszaki Adatok', icon: Cpu },
-            { id: 'content', label: '3. Leírás & Sablonok', icon: FileText },
+            { id: 'content', label: '3. Leírás', icon: FileText },
             { id: 'media', label: '4. Média & Galéria', icon: ImageIcon },
             { id: 'products', label: `5. Gyártók & Tesztek (${products.length})`, icon: Wrench },
             { id: 'seo', label: '6. SEO & Előnézet', icon: Search },
@@ -965,55 +894,9 @@ Rugalmas gumi ütőfejjel ellátott szerszám, amely nem rongálja az érzékeny
             </div>
           )}
 
-          {/* TAB 3: CONTENT & TEMPLATES */}
+          {/* TAB 3: LEÍRÁS */}
           {activeTab === 'content' && (
             <div className="space-y-5">
-              {/* Template Buttons */}
-              <div className="p-4 bg-gray-900/80 border border-gray-800 rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles size={14} /> Előre Definiált Szerszám Sablonok
-                  </span>
-                  <span className="text-[11px] text-gray-400">Kattints a struktúra betöltéséhez</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => applyTemplate('lakatos')}
-                    className="p-2.5 bg-gray-800 hover:bg-amber-500/20 hover:border-amber-500/50 text-gray-200 hover:text-amber-300 border border-gray-700 rounded-xl text-xs font-bold text-left transition-all cursor-pointer flex flex-col justify-between"
-                  >
-                    <span>🔨 Lakatos Kalapács</span>
-                    <span className="text-[10px] text-gray-400 mt-1">DIN 1041 fémipari</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => applyTemplate('acskalapacs')}
-                    className="p-2.5 bg-gray-800 hover:bg-amber-500/20 hover:border-amber-500/50 text-gray-200 hover:text-amber-300 border border-gray-700 rounded-xl text-xs font-bold text-left transition-all cursor-pointer flex flex-col justify-between"
-                  >
-                    <span>🪓 Ácskalapács</span>
-                    <span className="text-[10px] text-gray-400 mt-1">Mágneses szegtartós</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => applyTemplate('komuves')}
-                    className="p-2.5 bg-gray-800 hover:bg-amber-500/20 hover:border-amber-500/50 text-gray-200 hover:text-amber-300 border border-gray-700 rounded-xl text-xs font-bold text-left transition-all cursor-pointer flex flex-col justify-between"
-                  >
-                    <span>🧱 Kőműves Kalapács</span>
-                    <span className="text-[10px] text-gray-400 mt-1">Tégla pattintó vágóéllel</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => applyTemplate('gumikalapacs')}
-                    className="p-2.5 bg-gray-800 hover:bg-amber-500/20 hover:border-amber-500/50 text-gray-200 hover:text-amber-300 border border-gray-700 rounded-xl text-xs font-bold text-left transition-all cursor-pointer flex flex-col justify-between"
-                  >
-                    <span>⚪ Gumi Kalapács</span>
-                    <span className="text-[10px] text-gray-400 mt-1">Burkoló nyommentes</span>
-                  </button>
-                </div>
-              </div>
 
               {/* Formatting Toolbar */}
               <div className="space-y-2">
