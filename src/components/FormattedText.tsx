@@ -2,21 +2,26 @@ import React from 'react';
 
 interface FormattedTextProps {
   content?: string | null;
+  text?: string | null;
   className?: string;
   paragraphClassName?: string;
   headingClassName?: string;
   listClassName?: string;
+  strongClassName?: string;
 }
 
 export default function FormattedText({
   content,
+  text,
   className = '',
   paragraphClassName = 'text-gray-700 text-sm leading-relaxed mb-3',
   headingClassName = 'text-base font-bold text-gray-900 mt-4 mb-2',
   listClassName = 'list-disc pl-5 text-gray-700 text-sm leading-relaxed my-2 space-y-1',
+  strongClassName = 'font-bold text-inherit',
 }: FormattedTextProps) {
-  if (!content || typeof content !== 'string') return null;
-  const trimmed = content.trim();
+  const rawContent = content ?? text;
+  if (!rawContent || typeof rawContent !== 'string') return null;
+  const trimmed = rawContent.trim();
   if (!trimmed) return null;
 
   // Check if content contains markdown tokens (# , ## , ** , - , * , 1. , > )
@@ -29,7 +34,7 @@ export default function FormattedText({
       <div className={`space-y-3 ${className}`}>
         {paragraphs.map((p, idx) => (
           <p key={idx} className={`${paragraphClassName} whitespace-pre-line`}>
-            {renderInlineMarkdown(p)}
+            {renderInlineMarkdown(p, strongClassName)}
           </p>
         ))}
       </div>
@@ -48,7 +53,7 @@ export default function FormattedText({
     elements.push(
       <ListTag key={`list-${keyPrefix}`} className={listStyleClass}>
         {currentList.items.map((item, iIdx) => (
-          <li key={iIdx}>{renderInlineMarkdown(item)}</li>
+          <li key={iIdx}>{renderInlineMarkdown(item, strongClassName)}</li>
         ))}
       </ListTag>
     );
@@ -68,17 +73,17 @@ export default function FormattedText({
     if (headingMatch) {
       flushList(index);
       const level = headingMatch[1].length;
-      const text = headingMatch[2];
+      const hText = headingMatch[2];
       const customHeadingClass =
         level === 1
-          ? 'text-xl font-black text-gray-900 mt-5 mb-2'
+          ? 'text-xl font-black text-amber-400 mt-5 mb-2'
           : level === 2
-          ? 'text-lg font-extrabold text-gray-900 mt-4 mb-2'
+          ? 'text-lg font-extrabold text-amber-300 mt-4 mb-2'
           : headingClassName;
 
       elements.push(
         <div key={index} className={customHeadingClass}>
-          {renderInlineMarkdown(text)}
+          {renderInlineMarkdown(hText, strongClassName)}
         </div>
       );
       return;
@@ -90,9 +95,9 @@ export default function FormattedText({
       elements.push(
         <blockquote
           key={index}
-          className="border-l-4 border-amber-400 pl-4 py-1.5 my-3 bg-amber-50/60 rounded-r-lg text-amber-950 text-xs sm:text-sm italic"
+          className="border-l-4 border-amber-400 pl-4 py-1.5 my-3 bg-amber-500/10 rounded-r-lg text-amber-200 text-xs sm:text-sm italic"
         >
-          {renderInlineMarkdown(trimmedLine.slice(2))}
+          {renderInlineMarkdown(trimmedLine.slice(2), strongClassName)}
         </blockquote>
       );
       return;
@@ -124,7 +129,7 @@ export default function FormattedText({
     flushList(index);
     elements.push(
       <p key={index} className={`${paragraphClassName} whitespace-pre-line`}>
-        {renderInlineMarkdown(trimmedLine)}
+        {renderInlineMarkdown(trimmedLine, strongClassName)}
       </p>
     );
   });
@@ -137,13 +142,13 @@ export default function FormattedText({
 /**
  * Parses inline markdown: **bold**, *italic*, [link](url)
  */
-function renderInlineMarkdown(text: string): React.ReactNode[] {
+function renderInlineMarkdown(textStr: string, strongClassName: string): React.ReactNode[] {
   const tokenRegex = /(\*\*[^*]+\*\*|_[^_]+_|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
-  const parts = text.split(tokenRegex);
+  const parts = textStr.split(tokenRegex);
 
   return parts.map((part, idx) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={idx} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
+      return <strong key={idx} className={strongClassName}>{part.slice(2, -2)}</strong>;
     }
     if ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) {
       return <em key={idx} className="italic">{part.slice(1, -1)}</em>;
@@ -156,7 +161,7 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
           href={linkMatch[2]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline font-semibold"
+          className="text-amber-400 hover:underline font-semibold"
         >
           {linkMatch[1]}
         </a>

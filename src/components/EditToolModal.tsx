@@ -973,7 +973,12 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                   />
                 ) : (
                   <div className="p-4 bg-gray-950 border border-gray-800 rounded-xl min-h-[280px]">
-                    <FormattedText text={form.description || '*Még nincs leírás megadva.*'} className="text-gray-200 text-xs leading-relaxed" />
+                    <FormattedText
+                      content={form.description || '*Még nincs leírás megadva.*'}
+                      paragraphClassName="text-gray-200 text-xs leading-relaxed mb-3"
+                      headingClassName="text-sm font-bold text-amber-400 mt-4 mb-2"
+                      strongClassName="font-bold text-amber-300"
+                    />
                   </div>
                 )}
               </div>
@@ -1695,7 +1700,12 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
               <div className="space-y-2">
                 <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">Részletes Szerszómbemutató</h4>
                 <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-xl">
-                  <FormattedText text={form.description || 'Nincs leírás.'} />
+                  <FormattedText
+                    content={form.description || 'Nincs leírás.'}
+                    paragraphClassName="text-gray-200 text-xs sm:text-sm leading-relaxed mb-3"
+                    headingClassName="text-sm font-bold text-amber-400 mt-4 mb-2"
+                    strongClassName="font-bold text-amber-300"
+                  />
                 </div>
               </div>
 
