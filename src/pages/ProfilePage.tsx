@@ -25,6 +25,7 @@ import {
   LayoutDashboard,
   FileCheck,
   Bookmark,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -32,10 +33,19 @@ import { getUserDetailedProfile, updateUserDetailedProfile, type UserDetailedPro
 import { deleteUser } from '../services/userService';
 import { getTradeItems } from '../services/tradeService';
 import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/partnerService';
-import { fetchStudentAssignedClassMaterials } from '../services/educationService';
-import { getFlashcardsLocal, deleteFlashcard, updateFlashcardMastery } from '../services/learningService';
+import { fetchStudentAssignedClassMaterials, getUserCertificates } from '../services/educationService';
+import {
+  getFlashcardsLocal,
+  deleteFlashcard,
+  updateFlashcardMastery,
+  getCoursesLocal,
+  getCourseProgress,
+  getQuizAttempts,
+  listQuizzes,
+} from '../services/learningService';
 import TermDetailModal from '../components/TermDetailModal';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
+import type { UserCertificate, CourseProgress, QuizAttempt, LearningCourse, Quiz } from '../lib/supabase';
 
 
 interface ProfilePageProps {
@@ -79,6 +89,12 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [isPartnerContact, setIsPartnerContact] = useState(false);
   const [selectedSavedTerm, setSelectedSavedTerm] = useState<GlossaryTermFromJson | null>(null);
   const [savedTermModalOpen, setSavedTermModalOpen] = useState(false);
+
+  // Dynamic Learning & Certificate States (TSK-P3-03)
+  const [certificates, setCertificates] = useState<UserCertificate[]>([]);
+  const [userCourses, setUserCourses] = useState<Array<{ course: LearningCourse; progress: CourseProgress }>>([]);
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
+  const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
 
   useEffect(() => {
     async function checkPartnerContact() {
@@ -274,11 +290,56 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     }
   };
 
+  const loadLearningData = async () => {
+    if (!user?.id) return;
+    try {
+      const certs = await getUserCertificates(user.id);
+      setCertificates(certs);
+
+      const allCourses = getCoursesLocal();
+      const userCourseList = allCourses.map((c) => ({
+        course: c,
+        progress: getCourseProgress(user.id, c.id),
+      }));
+      setUserCourses(userCourseList);
+
+      const attempts = getQuizAttempts(user.id);
+      setQuizAttempts(attempts);
+
+      const qList = await listQuizzes();
+      setAvailableQuizzes(qList);
+    } catch (err) {
+      console.warn('Error loading learning data:', err);
+    }
+  };
+
   useEffect(() => {
     if (user?.id) {
       loadStudentEnrollments();
+      loadLearningData();
     }
   }, [user?.id]);
+
+  const learningStats = useMemo(() => {
+    const activeOrCompleted = userCourses.filter((uc) => uc.progress.progress_percent > 0);
+    const completedCourses = userCourses.filter((uc) => uc.progress.progress_percent >= 100 || uc.progress.status === 'completed');
+
+    const avgProgress = activeOrCompleted.length > 0
+      ? Math.round(activeOrCompleted.reduce((sum, uc) => sum + uc.progress.progress_percent, 0) / activeOrCompleted.length)
+      : (classMaterials.length > 0 ? 15 : 0);
+
+    const avgQuizScore = quizAttempts.length > 0
+      ? Math.round(quizAttempts.reduce((sum, a) => sum + a.percentage, 0) / quizAttempts.length)
+      : null;
+
+    return {
+      activeCount: activeOrCompleted.length,
+      completedCount: completedCourses.length,
+      avgProgress,
+      avgQuizScore,
+      totalQuizzesAttempted: quizAttempts.length,
+    };
+  }, [userCourses, quizAttempts, classMaterials]);
 
   const handleVerifyClassCode = async () => {
     if (!classCodeInput.trim()) return;
@@ -1359,41 +1420,136 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-3">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Teljesítési Százalék</span>
-                  <div className="text-3xl font-black text-[#60a5fa]">{classMaterials.length > 0 ? '15%' : '0%'}</div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Átlagos Teljesítés</span>
+                  <div className="text-3xl font-black text-[#60a5fa]">{learningStats.avgProgress}%</div>
                   <div className="w-full bg-[#2A2A2A] rounded-full h-2">
-                    <div className="bg-[#4165b4] h-2 rounded-full" style={{ width: classMaterials.length > 0 ? '15%' : '0%' }} />
+                    <div className="bg-[#4165b4] h-2 rounded-full transition-all" style={{ width: `${learningStats.avgProgress}%` }} />
                   </div>
                 </div>
 
                 <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Befejezett Modulok</span>
-                  <span className="text-2xl font-black text-white block">0 / {classMaterials.length || 0}</span>
-                  <p className="text-xs text-gray-400">Modulzárók teljesítve</p>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Befejezett Kurzusok</span>
+                  <span className="text-2xl font-black text-white block">{learningStats.completedCount} / {userCourses.length || classMaterials.length || 0}</span>
+                  <p className="text-xs text-gray-400">Modulok és leckék teljesítve</p>
                 </div>
 
                 <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-2">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Teszt Átlageredmény</span>
-                  <span className="text-2xl font-black text-emerald-400 block">-</span>
-                  <p className="text-xs text-gray-400">Kitöltött tesztek átlaga</p>
+                  <span className="text-2xl font-black text-emerald-400 block">{learningStats.avgQuizScore !== null ? `${learningStats.avgQuizScore}%` : '-'}</span>
+                  <p className="text-xs text-gray-400">{learningStats.totalQuizzesAttempted} kitöltött teszt alapján</p>
                 </div>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-[#262626]">
-                <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <BarChart2 size={16} className="text-blue-400" /> Tananyagonkénti Részletek
+              {/* MEGSZERZETT SZAKMAI OKLEVELEK & TANÚSÍTVÁNYOK */}
+              <div className="space-y-4 pt-6 border-t border-[#262626]">
+                <h4 className="text-sm font-bold text-white flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Award size={18} className="text-[#FFC400]" />
+                    <span>Megszerzett Szakmai Oklevelek &amp; Tanúsítványok ({certificates.length})</span>
+                  </span>
+                  {certificates.length > 0 && (
+                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-900/30 border border-emerald-800 px-2.5 py-0.5 rounded-full">
+                      Hivatalos ÉpítőTudás Oklevél
+                    </span>
+                  )}
                 </h4>
 
-                {classMaterials.length > 0 ? (
-                  <div className="space-y-3">
-                    {classMaterials.map((cm) => (
-                      <div key={cm.id} className="p-4 bg-[#1F1F1F] border border-[#333] rounded-xl space-y-2">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-white">{cm.material?.title || 'Tananyag'}</span>
-                          <span className="text-[#60a5fa] font-bold">15%</span>
+                {certificates.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {certificates.map((cert) => {
+                      const matchedCourse = userCourses.find((uc) => uc.course.id === cert.course_id)?.course;
+                      return (
+                        <div
+                          key={cert.id}
+                          className="bg-gradient-to-br from-[#1C1A14] to-[#161616] border border-[#FFC400]/40 p-5 rounded-2xl space-y-3 shadow-md"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black text-[#FFC400] bg-[#FFC400]/10 border border-[#FFC400]/30 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                              Tanúsítvány: {cert.certificate_code}
+                            </span>
+                            <span className="text-xs font-bold text-emerald-400">
+                              {cert.score_achieved}% eredmény
+                            </span>
+                          </div>
+                          <div>
+                            <h5 className="text-sm font-extrabold text-white">
+                              {matchedCourse?.title || 'Sikeres Szakmai Kurzus'}
+                            </h5>
+                            <p className="text-[11px] text-gray-400 mt-0.5">
+                              Kiállítva: {new Date(cert.issued_at).toLocaleDateString('hu-HU')}
+                            </p>
+                          </div>
+                          <div className="pt-2 border-t border-[#333] flex items-center justify-between text-xs">
+                            <span className="text-gray-400 flex items-center gap-1">
+                              <CheckCircle2 size={13} className="text-emerald-400" /> Érvényes tanúsítvány
+                            </span>
+                            <button
+                              onClick={() => {
+                                alert(`Oklevél azonosító: ${cert.certificate_code}\nEredmény: ${cert.score_achieved}%\nKiállítva: ${new Date(cert.issued_at).toLocaleDateString('hu-HU')}`);
+                              }}
+                              className="text-xs font-bold text-[#FFC400] hover:underline cursor-pointer"
+                            >
+                              Megtekintés &rarr;
+                            </button>
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 bg-[#1F1F1F] rounded-xl border border-[#333] text-center space-y-2">
+                    <p className="text-xs text-gray-400">Még nincs megszerzett szakmai okleveled.</p>
+                    <button
+                      onClick={() => onNavigate?.('courses')}
+                      className="px-4 py-2 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <GraduationCap size={14} />
+                      <span>Kurzusvizsgák böngészése</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* KURZUSOK ÉS TANANYAGOK HALADÁSA */}
+              <div className="space-y-3 pt-6 border-t border-[#262626]">
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <BarChart2 size={16} className="text-blue-400" /> Kurzusok és Tananyagok Haladása
+                </h4>
+
+                {userCourses.length > 0 ? (
+                  <div className="space-y-3">
+                    {userCourses.map((uc) => (
+                      <div key={uc.course.id} className="p-4 bg-[#1F1F1F] border border-[#333] hover:border-[#4165b4]/40 rounded-xl space-y-3 transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-900/30 text-blue-300 border border-blue-800">
+                                {uc.course.subcategory_name || uc.course.category_name || 'Tananyag'}
+                              </span>
+                              <span className="text-xs font-bold text-white">{uc.course.title}</span>
+                            </div>
+                            <span className="text-[11px] text-gray-400 block">
+                              {uc.progress.completed_chapter_ids.length} fejezet elvégezve a(z) {uc.course.chapters?.length || 0}-ból
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-xs font-extrabold text-[#60a5fa]">{uc.progress.progress_percent}%</span>
+                            <button
+                              onClick={() => onNavigate?.('course-detail', { slug: uc.course.slug })}
+                              className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                            >
+                              <span>{uc.progress.progress_percent > 0 ? 'Folytatás' : 'Indítás'}</span>
+                              <ChevronRight size={13} />
+                            </button>
+                          </div>
+                        </div>
+
                         <div className="w-full bg-[#2A2A2A] rounded-full h-2">
-                          <div className="bg-[#4165b4] h-2 rounded-full" style={{ width: '15%' }} />
+                          <div
+                            className="bg-[#4165b4] h-2 rounded-full transition-all"
+                            style={{ width: `${uc.progress.progress_percent}%` }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -1412,25 +1568,110 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         {activeMainSection === 'tests' && (
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <CheckSquare className="text-[#60a5fa]" size={22} /> Tesztek és Kvízek
-              </h3>
-
-              <div className="text-center py-12 space-y-4 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
-                <Award size={48} className="mx-auto text-blue-400 opacity-60" />
-                <div className="space-y-1 max-w-md mx-auto">
-                  <h4 className="text-base font-bold text-white">Még nincs aktív teszted</h4>
-                  <p className="text-xs text-gray-400">
-                    Az oktatód által kiosztott és a modulokhoz tartozó önellenőrző tesztek itt fognak megjelenni.
-                  </p>
-                </div>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  <CheckSquare className="text-[#60a5fa]" size={22} /> Tesztek és Kvízek Eredményei
+                </h3>
                 <button
-                  onClick={() => onNavigate?.('courses')}
-                  className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"
+                  onClick={() => onNavigate?.('learning', { slug: 'quizzes' })}
+                  className="px-4 py-2 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  <Search size={14} /> Keresés a Tananyagok Között
+                  <Search size={14} />
+                  <span>Összes Teszt Felfedezése</span>
                 </button>
               </div>
+
+              {/* Kitöltött tesztek */}
+              {quizAttempts.length > 0 ? (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    Eddigi Tesztkitöltéseid ({quizAttempts.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {quizAttempts.map((attempt) => (
+                      <div
+                        key={attempt.id}
+                        className="p-4 bg-[#1F1F1F] border border-[#333] rounded-xl flex items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                                attempt.passed
+                                  ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50'
+                                  : 'bg-red-900/40 text-red-300 border border-red-700/50'
+                              }`}
+                            >
+                              {attempt.passed ? 'Sikeres' : 'Nem sikerült'}
+                            </span>
+                            <span className="text-xs font-extrabold text-white">
+                              {attempt.percentage}% ({attempt.score}/{attempt.max_score})
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-gray-400 block">
+                            Kitöltve: {new Date(attempt.completed_at).toLocaleDateString('hu-HU')}
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => onNavigate?.('quiz-player', { quizId: attempt.quiz_id })}
+                          className="px-3 py-1.5 bg-[#2A2A2A] hover:bg-[#333] text-gray-200 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0"
+                        >
+                          Újrakitöltés
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-10 space-y-3 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
+                  <Award size={40} className="mx-auto text-blue-400 opacity-60" />
+                  <div className="space-y-1 max-w-md mx-auto">
+                    <h4 className="text-base font-bold text-white">Még nem töltöttél ki önálló kvízt</h4>
+                    <p className="text-xs text-gray-400">
+                      Tedd próbára tudásodat a szakmai kvízekkel és szerezz oklevelet!
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Elérhető tesztek */}
+              {availableQuizzes.length > 0 && (
+                <div className="space-y-3 pt-6 border-t border-[#262626]">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    Ajánlott Szakmai Tesztek
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {availableQuizzes.slice(0, 6).map((q) => (
+                      <div
+                        key={q.id}
+                        className="p-4 bg-[#1F1F1F] border border-[#333] hover:border-[#4165b4]/50 rounded-xl flex flex-col justify-between space-y-3 transition-colors"
+                      >
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-[#60a5fa] uppercase tracking-wider block">
+                            {q.category_name || 'Építőipari Teszt'}
+                          </span>
+                          <h5 className="text-xs font-bold text-white leading-snug">
+                            {q.title}
+                          </h5>
+                          {q.description && (
+                            <p className="text-[11px] text-gray-400 line-clamp-2">
+                              {q.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => onNavigate?.('quiz-player', { quizId: q.id })}
+                          className="w-full py-2 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center"
+                        >
+                          Teszt Kitöltése &rarr;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Loader2, FileText, FolderTree, BookOpen, Wrench, BookMarked, Users, X } from 'lucide-react';
+import { Search, Loader2, FileText, FolderTree, BookOpen, Wrench, BookMarked, Users, X, Calculator, Layers } from 'lucide-react';
 import { searchAll } from '../services/searchService';
 import type { AdminView } from './AdminSidebar';
 
@@ -11,6 +11,7 @@ interface ResultItem {
   id: string;
   label: string;
   sublabel?: string;
+  linkParam?: string;
 }
 
 interface ResultGroup {
@@ -18,6 +19,7 @@ interface ResultGroup {
   title: string;
   icon: typeof FileText;
   items: ResultItem[];
+  customNavigate?: (item: ResultItem) => void;
 }
 
 interface ArticleRow { id: string; title: string; status: string }
@@ -26,6 +28,8 @@ interface GlossaryRow { id: string; term: string; category: string | null }
 interface ToolRow { id: string; name: string; type: string | null }
 interface BookRow { id: string; title: string; author: string | null }
 interface UserRow { id: string; email: string | null; full_name: string | null }
+interface CalculatorRow { id: string; name: string; tab: string; description: string }
+interface MaterialRow { id: string; name: string; brand?: string; category_name?: string }
 
 export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
   const [query, setQuery] = useState('');
@@ -44,9 +48,11 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
   const runSearch = useCallback(async (q: string) => {
     setLoading(true);
     try {
-      const { articles, categories, glossary, tools, books, users } = await searchAll(q, 5);
+      const { articles, categories, glossary, tools, books, users, calculators, materials } = await searchAll(q, 5);
 
       const next: ResultGroup[] = [];
+
+      // 1. Cikkek
       const artsData = articles as ArticleRow[];
       if (artsData.length) {
         next.push({
@@ -56,6 +62,44 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           items: artsData.map((a) => ({ id: a.id, label: a.title, sublabel: a.status })),
         });
       }
+
+      // 2. Kalkulátorok
+      const calcsData = (calculators ?? []) as CalculatorRow[];
+      if (calcsData.length) {
+        next.push({
+          view: 'articles',
+          title: 'Kalkulátorok',
+          icon: Calculator,
+          items: calcsData.map((c) => ({ id: c.id, label: c.name, sublabel: c.description, linkParam: c.tab })),
+          customNavigate: (item) => {
+            window.location.hash = `calculations?mode=interactive&tab=${item.linkParam || 'concrete'}`;
+          },
+        });
+      }
+
+      // 3. Szerszámok & Gépek
+      const toolsData = tools as ToolRow[];
+      if (toolsData.length) {
+        next.push({
+          view: 'tools',
+          title: 'Szerszámok & Gépek',
+          icon: Wrench,
+          items: toolsData.map((t) => ({ id: t.id, label: t.name, sublabel: t.type ?? undefined })),
+        });
+      }
+
+      // 4. Anyagok
+      const matsData = (materials ?? []) as MaterialRow[];
+      if (matsData.length) {
+        next.push({
+          view: 'materials',
+          title: 'Építőanyagok',
+          icon: Layers,
+          items: matsData.map((m) => ({ id: m.id, label: m.name, sublabel: m.brand || m.category_name })),
+        });
+      }
+
+      // 5. Szakkönyvek
       const booksData = books as BookRow[];
       if (booksData.length) {
         next.push({
@@ -65,6 +109,8 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           items: booksData.map((b) => ({ id: b.id, label: b.title, sublabel: b.author ?? undefined })),
         });
       }
+
+      // 6. Kategóriák
       const catsData = categories as CategoryRow[];
       if (catsData.length) {
         next.push({
@@ -74,6 +120,8 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           items: catsData.map((c) => ({ id: c.id, label: c.name })),
         });
       }
+
+      // 7. Fogalmak
       const glossData = glossary as GlossaryRow[];
       if (glossData.length) {
         next.push({
@@ -83,15 +131,8 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           items: glossData.map((g) => ({ id: g.id, label: g.term, sublabel: g.category ?? undefined })),
         });
       }
-      const toolsData = tools as ToolRow[];
-      if (toolsData.length) {
-        next.push({
-          view: 'tools',
-          title: 'Eszközök',
-          icon: Wrench,
-          items: toolsData.map((t) => ({ id: t.id, label: t.name, sublabel: t.type ?? undefined })),
-        });
-      }
+
+      // 8. Felhasználók
       const usersData = users as UserRow[];
       if (usersData.length) {
         next.push({
@@ -101,6 +142,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           items: usersData.map((u) => ({ id: u.id, label: u.full_name || u.email || 'Felhasználó', sublabel: u.email ?? undefined })),
         });
       }
+
       setGroups(next);
     } catch {
       setGroups([]);
@@ -130,8 +172,12 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  function select(view: AdminView, searchParam?: string) {
-    onNavigateView(view, searchParam || debounced);
+  function select(g: ResultGroup, item: ResultItem) {
+    if (g.customNavigate) {
+      g.customNavigate(item);
+    } else {
+      onNavigateView(g.view, item.label || debounced);
+    }
     setOpen(false);
     setQuery('');
     setDebounced('');
@@ -159,7 +205,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
       }
       for (const g of groups) {
         if (idx < g.items.length) {
-          select(g.view, g.items[idx].label);
+          select(g, g.items[idx]);
           return;
         }
         idx -= g.items.length;
@@ -184,7 +230,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Keresés cikkek, könyvek, fogalmak, eszközök..."
+          placeholder="Keresés cikkek, szerszámok, anyagok, kalkulátorok..."
           className="w-full bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg pl-9 pr-9 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#FFC400]/50 transition-colors"
         />
         {loading && (
@@ -222,7 +268,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
 
           {!loading &&
             groups.map((g) => (
-              <div key={g.view} className="border-b border-[#1E1E1E]/60 last:border-b-0">
+              <div key={g.title} className="border-b border-[#1E1E1E]/60 last:border-b-0">
                 <div className="px-4 py-2 flex items-center gap-2 bg-[#0D0D0D] sticky top-0 z-10">
                   <g.icon size={13} className="text-[#FFC400]" />
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{g.title}</span>
@@ -235,7 +281,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
                   return (
                     <button
                       key={`${g.view}-${item.id}`}
-                      onClick={() => select(g.view, item.label)}
+                      onClick={() => select(g, item)}
                       onMouseEnter={() => setActiveIndex(idx)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors cursor-pointer ${
                         active ? 'bg-[#FFC400]/10' : 'hover:bg-[#1E1E1E]/40'
@@ -255,7 +301,7 @@ export default function GlobalSearch({ onNavigateView }: GlobalSearchProps) {
 
           {!loading && flatCount > 0 && (
             <button
-              onClick={() => select(groups[0].view, groups[0].items[0]?.label)}
+              onClick={() => select(groups[0], groups[0].items[0])}
               className="w-full px-4 py-2.5 text-left text-xs text-gray-400 border-t border-[#1E1E1E] hover:text-amber-400 hover:bg-[#1E1E1E]/30 transition-colors cursor-pointer font-bold"
             >
               Enter → Ugrás az első találathoz ({groups[0].items[0]?.label})

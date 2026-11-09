@@ -1,12 +1,36 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, User, LogOut, ChevronDown, Settings, GraduationCap, Bookmark, Clock, HelpCircle, Sliders, Building2 } from 'lucide-react';
+import {
+  Search,
+  Menu,
+  X,
+  User,
+  LogOut,
+  ChevronDown,
+  Settings,
+  GraduationCap,
+  Bookmark,
+  Clock,
+  HelpCircle,
+  Sliders,
+  Building2,
+  Loader2,
+  FileText,
+  BookOpen,
+  Wrench,
+  BookMarked,
+  FolderTree,
+  ArrowRight,
+  Calculator,
+  Layers,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
 import { useNavigationItems, getStructuredNav } from '../services/navigationService';
+import { searchAll, type GlobalSearchAllResult } from '../services/searchService';
 
 interface HeaderProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, params?: { articleSlug?: string; partnerSlug?: string; slug?: string; quizId?: string }) => void;
   currentPage: string;
 }
 
@@ -44,13 +68,45 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<GlobalSearchAllResult | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [expandedMobileSection, setExpandedMobileSection] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const siteSettings = useSiteSettings();
+
+  useEffect(() => {
+    if (!searchOpen) {
+      setSearchQuery('');
+      setSearchResults(null);
+      setSearchLoading(false);
+      return;
+    }
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setSearchResults(null);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await searchAll(trimmed, 4);
+        setSearchResults(res);
+      } catch (err) {
+        console.warn('Search query error in Header:', err);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchOpen]);
 
   useEffect(() => {
     if (mobileOpen) {
@@ -641,33 +697,287 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
       {/* Search bar dropdown */}
       {searchOpen && (
-        <div className="bg-[#0B0F19] border-t border-b border-accent/20 px-4 sm:px-6 lg:px-8 py-3.5 shadow-2xl">
-          <div className="relative max-w-7xl mx-auto flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search
-                size={16}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent"
-              />
-              <input
-                autoFocus
-                type="text"
-                placeholder="Keress cikket, szakkifejezést, szerszámot vagy partnert..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setSearchOpen(false);
-                    onNavigate('glossary');
-                  }
-                }}
-                className="w-full bg-[#141A29] border border-[#222E45] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-accent transition-colors"
-              />
+        <div className="bg-[#0B0F19] border-t border-b border-accent/20 px-4 sm:px-6 lg:px-8 py-3.5 shadow-2xl animate-fadeIn">
+          <div className="relative max-w-7xl mx-auto flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                {searchLoading ? (
+                  <Loader2
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent animate-spin"
+                  />
+                ) : (
+                  <Search
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent"
+                  />
+                )}
+                <input
+                  ref={searchInputRef}
+                  autoFocus
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Keress cikket, szakkifejezést, szerszámot vagy könyvet..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setSearchOpen(false);
+                    } else if (e.key === 'Enter') {
+                      if (searchResults?.articles?.length) {
+                        const art = searchResults.articles[0];
+                        onNavigate('article', { articleSlug: art.slug || art.id });
+                        setSearchOpen(false);
+                      } else if (searchResults?.glossary?.length) {
+                        onNavigate('glossary');
+                        setSearchOpen(false);
+                      } else {
+                        onNavigate('category');
+                        setSearchOpen(false);
+                      }
+                    }
+                  }}
+                  className="w-full bg-[#141A29] border border-[#222E45] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-accent transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setSearchOpen(false)}
+                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                title="Kereső bezárása"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <button
-              onClick={() => setSearchOpen(false)}
-              className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-              title="Kereső bezárása"
-            >
-              <X size={18} />
-            </button>
+
+            {/* Live Search Results Dropdown */}
+            {searchQuery.trim().length >= 2 && (
+              <div className="bg-[#101625] border border-slate-700/80 rounded-2xl p-3 shadow-2xl max-h-[70vh] overflow-y-auto space-y-3">
+                {searchLoading && !searchResults && (
+                  <div className="py-6 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-accent" />
+                    Keresés az ÉpítőTudás adatbázisában...
+                  </div>
+                )}
+
+                {searchResults && (
+                  <>
+                    {/* Articles */}
+                    {searchResults.articles.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 px-2 py-1 flex items-center gap-1.5">
+                          <FileText size={13} /> Cikkek & Útmutatók ({searchResults.articles.length})
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1">
+                          {searchResults.articles.map((art) => (
+                            <button
+                              key={art.id}
+                              onClick={() => {
+                                onNavigate('article', { articleSlug: art.slug || art.id });
+                                setSearchOpen(false);
+                              }}
+                              className="text-left px-3 py-2 rounded-xl bg-slate-900/60 hover:bg-amber-500/10 hover:border-amber-500/30 border border-slate-800 transition-all group flex items-center justify-between gap-2"
+                            >
+                              <span className="text-xs font-semibold text-gray-200 group-hover:text-amber-300 truncate">
+                                {art.title}
+                              </span>
+                              <ArrowRight size={13} className="text-gray-500 group-hover:text-amber-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Glossary Terms */}
+                    {searchResults.glossary.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-teal-400 px-2 py-1 flex items-center gap-1.5">
+                          <BookOpen size={13} /> Szakmai Fogalmak ({searchResults.glossary.length})
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1">
+                          {searchResults.glossary.map((gloss) => (
+                            <button
+                              key={gloss.id}
+                              onClick={() => {
+                                onNavigate('glossary');
+                                setSearchOpen(false);
+                              }}
+                              className="text-left px-3 py-2 rounded-xl bg-slate-900/60 hover:bg-teal-500/10 hover:border-teal-500/30 border border-slate-800 transition-all group flex items-center justify-between gap-2"
+                            >
+                              <div className="truncate">
+                                <span className="text-xs font-semibold text-gray-200 group-hover:text-teal-300 block truncate">
+                                  {gloss.term}
+                                </span>
+                                {gloss.category && (
+                                  <span className="text-[10px] text-gray-400 block truncate">
+                                    {gloss.category}
+                                  </span>
+                                )}
+                              </div>
+                              <ArrowRight size={13} className="text-gray-500 group-hover:text-teal-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Categories */}
+                    {searchResults.categories.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-blue-400 px-2 py-1 flex items-center gap-1.5">
+                          <FolderTree size={13} /> Kategóriák ({searchResults.categories.length})
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {searchResults.categories.map((cat) => (
+                            <button
+                              key={cat.id}
+                              onClick={() => {
+                                onNavigate('category');
+                                setSearchOpen(false);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-blue-500/10 hover:border-blue-500/30 border border-slate-800 text-xs font-medium text-gray-300 hover:text-blue-300 transition-all"
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Calculators */}
+                    {searchResults.calculators && searchResults.calculators.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 px-2 py-1 flex items-center gap-1.5">
+                          <Calculator size={13} /> Építőipari Kalkulátorok ({searchResults.calculators.length})
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1">
+                          {searchResults.calculators.map((calc) => (
+                            <button
+                              key={calc.id}
+                              onClick={() => {
+                                onNavigate(`calculations?mode=interactive&tab=${calc.tab}`);
+                                setSearchOpen(false);
+                              }}
+                              className="text-left px-3 py-2 rounded-xl bg-slate-900/60 hover:bg-emerald-500/10 hover:border-emerald-500/30 border border-slate-800 transition-all group flex items-center justify-between gap-2 cursor-pointer"
+                            >
+                              <div className="truncate">
+                                <span className="text-xs font-semibold text-gray-200 group-hover:text-emerald-300 block truncate">
+                                  {calc.name}
+                                </span>
+                                <span className="text-[10px] text-gray-400 block truncate">
+                                  {calc.description}
+                                </span>
+                              </div>
+                              <ArrowRight size={13} className="text-gray-500 group-hover:text-emerald-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tools */}
+                    {searchResults.tools.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-orange-400 px-2 py-1 flex items-center gap-1.5">
+                          <Wrench size={13} /> Szerszámok & Gépek ({searchResults.tools.length})
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {searchResults.tools.map((tool) => (
+                            <button
+                              key={tool.id}
+                              onClick={() => {
+                                onNavigate(tool.slug ? `tool?slug=${tool.slug}` : 'tools');
+                                setSearchOpen(false);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-orange-500/10 hover:border-orange-500/30 border border-slate-800 text-xs font-medium text-gray-300 hover:text-orange-300 transition-all cursor-pointer"
+                            >
+                              {tool.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Materials */}
+                    {searchResults.materials && searchResults.materials.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-400 px-2 py-1 flex items-center gap-1.5">
+                          <Layers size={13} /> Építőanyagok ({searchResults.materials.length})
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {searchResults.materials.map((mat) => (
+                            <button
+                              key={mat.id}
+                              onClick={() => {
+                                onNavigate('materials');
+                                setSearchOpen(false);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-cyan-500/10 hover:border-cyan-500/30 border border-slate-800 text-xs font-medium text-gray-300 hover:text-cyan-300 transition-all cursor-pointer flex items-center gap-1.5"
+                            >
+                              <span>{mat.name}</span>
+                              {mat.brand && <span className="text-[10px] text-gray-500">({mat.brand})</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Books */}
+                    {searchResults.books.length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-400 px-2 py-1 flex items-center gap-1.5">
+                          <BookMarked size={13} /> Szakkönyvtár ({searchResults.books.length})
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {searchResults.books.map((book) => (
+                            <button
+                              key={book.id}
+                              onClick={() => {
+                                onNavigate('books');
+                                setSearchOpen(false);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-indigo-500/10 hover:border-indigo-500/30 border border-slate-800 text-xs font-medium text-gray-300 hover:text-indigo-300 transition-all cursor-pointer"
+                            >
+                              {book.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No results in any category */}
+                    {searchResults.articles.length === 0 &&
+                      searchResults.glossary.length === 0 &&
+                      searchResults.categories.length === 0 &&
+                      searchResults.tools.length === 0 &&
+                      searchResults.books.length === 0 &&
+                      (!searchResults.calculators || searchResults.calculators.length === 0) &&
+                      (!searchResults.materials || searchResults.materials.length === 0) && (
+                        <div className="py-4 text-center text-xs text-gray-400">
+                          Nincs közvetlen találat erre: <span className="text-white font-bold">„{searchQuery}”</span>.
+                          <div className="mt-2">
+                            <button
+                              onClick={() => {
+                                onNavigate('category');
+                                setSearchOpen(false);
+                              }}
+                              className="px-3 py-1.5 bg-accent/20 hover:bg-accent/30 text-accent font-bold rounded-lg text-xs transition-colors"
+                            >
+                              Keresés a cikkek között &rarr;
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

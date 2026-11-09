@@ -1205,6 +1205,7 @@ export interface JobPosting {
   salary_range?: string | null;
   description: string;
   is_active: boolean;
+  moderation_status?: 'pending' | 'approved' | 'rejected';
   created_at: string;
 }
 

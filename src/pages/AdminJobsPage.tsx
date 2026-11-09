@@ -18,6 +18,8 @@ import {
   updateJobPosting,
   toggleJobPostingActive,
   deleteJobPosting,
+  approveJobPosting,
+  rejectJobPosting,
 } from '../services/careerService';
 import type { JobPosting } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
@@ -58,12 +60,24 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
   async function loadJobs() {
     setLoading(true);
     try {
-      const data = await listJobPostings();
+      const data = await listJobPostings(undefined, undefined, true);
       setJobs([...data]);
     } finally {
       setLoading(false);
     }
   }
+
+  const handleApproveJob = async (id: string) => {
+    await approveJobPosting(id);
+    await loadJobs();
+    triggerSuccessNotify();
+  };
+
+  const handleRejectJob = async (id: string) => {
+    await rejectJobPosting(id);
+    await loadJobs();
+    triggerSuccessNotify();
+  };
 
   const filteredJobs = jobs.filter((j) => {
     const matchType = selectedType === 'all' || j.job_type === selectedType;
@@ -262,19 +276,53 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
                       ? 'Részmunkaidő'
                       : 'Duális Gyakorlat'}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleActive(job.id)}
-                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                      job.is_active
-                        ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                    }`}
-                    title={job.is_active ? 'Aktív' : 'Inaktív'}
-                  >
-                    {job.is_active ? <Eye size={15} /> : <EyeOff size={15} />}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {job.moderation_status === 'pending' && (
+                      <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-[10px] rounded-full">
+                        Jóváhagyásra vár
+                      </span>
+                    )}
+                    {job.moderation_status === 'rejected' && (
+                      <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-[10px] rounded-full">
+                        Elutasítva
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActive(job.id)}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        job.is_active
+                          ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      }`}
+                      title={job.is_active ? 'Aktív' : 'Inaktív'}
+                    >
+                      {job.is_active ? <Eye size={15} /> : <EyeOff size={15} />}
+                    </button>
+                  </div>
                 </div>
+
+                {job.moderation_status === 'pending' && (
+                  <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-amber-400">Moderáció:</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleApproveJob(job.id)}
+                        className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[10px] rounded-lg cursor-pointer"
+                      >
+                        Jóváhagyás
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRejectJob(job.id)}
+                        className="px-2.5 py-1 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white font-bold text-[10px] rounded-lg cursor-pointer"
+                      >
+                        Elutasítás
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <div className="text-xs font-bold text-gray-400 flex items-center gap-1.5 mb-1">

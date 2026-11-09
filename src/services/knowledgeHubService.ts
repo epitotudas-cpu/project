@@ -43,7 +43,7 @@ export interface EducationalContentItem {
 }
 
 const LOCAL_STORAGE_KEY = 'epitotudas_knowledge_hub_items_v1';
-const SUPABASE_SYSTEM_ROW_ID = '00000000-0000-0000-0000-000000000008';
+const SUPABASE_SYSTEM_ROW_ID = '00000000-0000-0000-0000-000000000023';
 
 export const DEFAULT_KNOWLEDGE_ITEMS: EducationalContentItem[] = [
   // ── MUNKAVÉDELEM ITEMS ──

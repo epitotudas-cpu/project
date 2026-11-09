@@ -60,7 +60,7 @@ export interface MaterialItem {
 const LOCAL_STORAGE_ITEMS_KEY = 'epitotudas_materials_items_v1';
 const LOCAL_STORAGE_CATS_KEY = 'epitotudas_materials_categories_v1';
 
-const SUPABASE_SYSTEM_ROW_ID = '00000000-0000-0000-0000-000000000009';
+const SUPABASE_SYSTEM_ROW_ID = '00000000-0000-0000-0000-000000000024';
 const SUPABASE_CATS_ROW_ID = '00000000-0000-0000-0000-000000000010';
 
 export const DEFAULT_MATERIAL_CATEGORIES: MaterialCategory[] = [

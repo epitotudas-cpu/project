@@ -18,9 +18,10 @@ export default {
           900: '#0b1b33',
         },
         accent: {
-          DEFAULT: 'var(--color-accent, #FFC400)',
-          hover: 'var(--color-accent-hover, #e09d28)',
-          light: 'var(--color-accent-light, #fcd56b)',
+          DEFAULT: 'var(--color-accent, #4165b4)',
+          text: 'var(--color-accent-text, #ffffff)',
+          hover: 'var(--color-accent-hover, #355395)',
+          light: 'var(--color-accent-light, #5f80cc)',
         },
         background: {
           DEFAULT: '#f5f5f5',

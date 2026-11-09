@@ -399,7 +399,7 @@ export const DEFAULT_EDUCATION_DATA: EducationData = {
 };
 
 const STORAGE_KEY = 'epitotudas_education_data_v1';
-const SUPABASE_COURSES_ID = '00000000-0000-0000-0000-000000000007';
+const SUPABASE_COURSES_ID = '00000000-0000-0000-0000-000000000022';
 
 declare global {
   interface Window {
@@ -575,6 +575,13 @@ export async function submitQuizAnswers(
     const userCerts = USER_CERTIFICATES_STORE.get(userId) || [];
     userCerts.push(certItem);
     USER_CERTIFICATES_STORE.set(userId, userCerts);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`epitotudas_certificates_${userId}`, JSON.stringify(userCerts));
+      } catch {
+        // ignore
+      }
+    }
   }
 
   return {
@@ -587,6 +594,18 @@ export async function submitQuizAnswers(
 }
 
 export async function getUserCertificates(userId: string): Promise<UserCertificate[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(`epitotudas_certificates_${userId}`);
+      if (raw) {
+        const stored: UserCertificate[] = JSON.parse(raw);
+        USER_CERTIFICATES_STORE.set(userId, stored);
+        return stored;
+      }
+    } catch {
+      // fallback
+    }
+  }
   return USER_CERTIFICATES_STORE.get(userId) || [];
 }
 

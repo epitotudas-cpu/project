@@ -4,6 +4,7 @@
 
 :root {
   --color-accent: #4165b4;
+  --color-accent-text: #ffffff;
   --color-accent-hover: #355395;
   --color-accent-light: #5f80cc;
 
@@ -13,6 +14,16 @@
   --color-admin-card-border: #3c404b;
   --color-admin-card-highlight: #EC4899;
   --color-admin-card-highlight-bg: rgba(236, 72, 153, 0.11);
+}
+
+/* Ensure accessible contrast on accent CTA buttons and badges (WCAG AA min 4.5:1) */
+.bg-accent {
+  color: var(--color-accent-text, #ffffff);
+}
+.bg-accent.text-black,
+.bg-accent.text-primary-950,
+.bg-accent.text-primary {
+  color: var(--color-accent-text, #ffffff);
 }
 
 /* Dynamic Admin Panel, Card, Table & Modal Styling */

@@ -24,6 +24,7 @@ import {
   FileCheck,
   TrendingUp,
   User,
+  FileText,
 } from 'lucide-react';
 
 export type PartnerView =
@@ -39,6 +40,7 @@ export type PartnerView =
   | 'partner_profile'
   | 'partner_offers'
   | 'partner_products'
+  | 'partner_articles'
   | 'catalog'
   | 'partner_stats';
 
@@ -55,7 +57,8 @@ const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: strin
   { id: 'dashboard', moduleId: 'partner_profile', label: 'Partner Áttekintés', icon: LayoutDashboard },
   { id: 'partner_profile', moduleId: 'partner_profile', label: 'Saját Partnerprofil', icon: Building2 },
   { id: 'partner_offers', moduleId: 'partner_offers', label: 'Saját Ajánlatok & Akciók', icon: Tag },
-  { id: 'partner_products', moduleId: 'partner_products', label: 'Termékek & Szolgáltatások', icon: Package },
+  { id: 'partner_products', moduleId: 'partner_products', label: 'Termékek & Anyagok', icon: Package },
+  { id: 'partner_articles', moduleId: 'partner_profile', label: 'Szakmai Cikkek & Útmutatók', icon: FileText },
   { id: 'catalog', moduleId: 'catalog', label: 'Gép & Szerszám Katalógus', icon: Wrench },
   { id: 'partner_stats', moduleId: 'partner_stats', label: 'Statisztikák & Teljesítmény', icon: BarChart3 },
 ];

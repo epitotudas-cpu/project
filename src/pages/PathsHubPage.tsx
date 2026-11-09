@@ -28,15 +28,17 @@ import {
   Cpu,
   ExternalLink,
   Rocket,
+  FileText,
+  Clock,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 import { type TradeDetail } from '../data/tradeDetailsData';
 import { useTrades } from '../services/tradeService';
-import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
 
 interface PathsHubPageProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, params?: { articleSlug?: string; slug?: string }) => void;
 }
 
 const TRADE_CARDS = [
@@ -51,19 +53,24 @@ const TRADE_CARDS = [
 ];
 
 export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
-  const { user } = useAuth();
   const trades = useTrades();
-  const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
+  const [selectedTradeId, setSelectedTradeId] = useState<string | null>(() => {
+    try {
+      const stored = sessionStorage.getItem('epitotudas_selected_trade');
+      if (stored) {
+        sessionStorage.removeItem('epitotudas_selected_trade');
+        return stored;
+      }
+    } catch {
+      // fallback
+    }
+    return null;
+  });
   const [tradeSearch, setTradeSearch] = useState<string>('');
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [pendingTradeName, setPendingTradeName] = useState<string | undefined>(undefined);
+  const pendingTradeName: string | undefined = undefined;
 
-  const handleTradeSelect = (tradeId: string, tradeName: string) => {
-    if (!user) {
-      setPendingTradeName(tradeName);
-      setAuthModalOpen(true);
-      return;
-    }
+  const handleTradeSelect = (tradeId: string, _tradeName: string) => {
     setSelectedTradeId(tradeId);
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
@@ -73,6 +80,62 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
     const found = trades.find((t) => t.id === selectedTradeId && t.isActive !== false);
     return found || null;
   }, [selectedTradeId, trades]);
+
+  const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
+  const [relatedTerms, setRelatedTerms] = useState<any[]>([]);
+
+  useEffect(() => {
+    const trade = activeTrade;
+    if (!trade) {
+      setRelatedArticles([]);
+      setRelatedTerms([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function fetchRelated(currentTrade: TradeDetail) {
+      try {
+        const tradeKeywords = [currentTrade.name.toLowerCase()];
+        if (currentTrade.name.includes('Ács')) tradeKeywords.push('fa', 'tető', 'szerkezet');
+        if (currentTrade.name.includes('Kőműves')) tradeKeywords.push('falaz', 'beton', 'habarcs');
+        if (currentTrade.name.includes('Burkoló')) tradeKeywords.push('csempe', 'fuga', 'járólap');
+        if (currentTrade.name.includes('Villanyszerelő')) tradeKeywords.push('vezeték', 'kábel', 'áram');
+        if (currentTrade.name.includes('Gépész')) tradeKeywords.push('cső', 'fűtés', 'víz');
+        if (currentTrade.name.includes('Tetőfedő')) tradeKeywords.push('cserép', 'bádog', 'tető');
+        if (currentTrade.name.includes('Gipszkarton')) tradeKeywords.push('szárazépítés', 'profil', 'gipszkarton');
+        if (currentTrade.name.includes('Festő')) tradeKeywords.push('festék', 'glett', 'vakolat');
+
+        const primaryWord = tradeKeywords[0].replace(/[^a-záéíóöőúüű]/gi, '');
+
+        const [articlesRes, termsRes] = await Promise.all([
+          supabase
+            .from('articles')
+            .select('id, title, slug, excerpt, read_time, featured_image')
+            .or(`title.ilike.%${primaryWord}%,excerpt.ilike.%${primaryWord}%`)
+            .limit(3),
+          supabase
+            .from('glossary_terms')
+            .select('id, term, slug, definition, category')
+            .or(`term.ilike.%${primaryWord}%,category.ilike.%${primaryWord}%`)
+            .limit(4),
+        ]);
+
+        if (isMounted) {
+          setRelatedArticles(articlesRes.data || []);
+          setRelatedTerms(termsRes.data || []);
+        }
+      } catch (err) {
+        console.warn('Error fetching related content in PathsHubPage:', err);
+      }
+    }
+
+    void fetchRelated(trade);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTrade]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.hash.includes('#')) {
@@ -797,6 +860,106 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                </div>
+              </section>
+
+              {/* KAPCSOLÓDÓ SZAKMAI TARTALMAK & FOGALMAK (P2 TARTALOMHÁLÓ) */}
+              <section className="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
+                  <div>
+                    <span className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles size={14} /> Tartalomháló & Tudásbázis
+                    </span>
+                    <h2 className="text-xl md:text-2xl font-black text-gray-900 mt-1">
+                      Kapcsolódó Cikkek és Szakszavak ({activeTrade.name})
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onNavigate('category?q=' + encodeURIComponent(activeTrade.name))}
+                      className="text-xs font-bold text-primary hover:text-accent transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      Összes cikk a témában <ArrowRight size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Related Articles */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                      <FileText size={14} className="text-accent" /> Szakmai útmutatók & cikkek
+                    </h3>
+                    {relatedArticles.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {relatedArticles.map((art) => (
+                          <div
+                            key={art.id}
+                            onClick={() => onNavigate('article', { articleSlug: art.slug || art.id })}
+                            className="p-3.5 rounded-2xl bg-gray-50 hover:bg-amber-500/10 border border-gray-200 hover:border-amber-500/30 transition-all cursor-pointer group flex items-start gap-3"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
+                                {art.title}
+                              </h4>
+                              {art.excerpt && (
+                                <p className="text-xs text-gray-600 line-clamp-2 mt-1 leading-relaxed">
+                                  {art.excerpt}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
+                                <span className="flex items-center gap-1">
+                                  <Clock size={11} /> {art.read_time || 5} perc olvasás
+                                </span>
+                              </div>
+                            </div>
+                            <ArrowRight size={16} className="text-gray-400 group-hover:text-primary shrink-0 mt-1 transition-transform group-hover:translate-x-0.5" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-xl bg-gray-50 text-xs text-gray-500 italic">
+                        Böngéssz a tudástárban a(z) {activeTrade.name} témájú cikkekért!
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Related Glossary Terms */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                      <BookOpen size={14} className="text-teal-600" /> Szakmai szótár & fogalmak
+                    </h3>
+                    {relatedTerms.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {relatedTerms.map((term) => (
+                          <div
+                            key={term.id}
+                            onClick={() => onNavigate('glossary')}
+                            className="p-3 rounded-2xl bg-gray-50 hover:bg-teal-50 border border-gray-200 hover:border-teal-200 transition-all cursor-pointer group flex flex-col justify-between"
+                          >
+                            <div>
+                              <span className="text-xs font-bold text-gray-900 group-hover:text-teal-800 block truncate">
+                                {term.term}
+                              </span>
+                              {term.definition && (
+                                <p className="text-[11px] text-gray-600 line-clamp-2 mt-1 leading-relaxed">
+                                  {term.definition}
+                                </p>
+                              )}
+                            </div>
+                            <div className="mt-2 pt-1.5 border-t border-gray-100 flex items-center justify-between text-[10px] text-teal-700 font-semibold">
+                              <span>Fogalomtár</span>
+                              <ArrowRight size={11} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-xl bg-gray-50 text-xs text-gray-500 italic">
+                        Ismerd meg az építőipari szakkifejezéseket a fogalomtárban!
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>

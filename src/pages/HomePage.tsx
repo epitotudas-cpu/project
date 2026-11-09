@@ -61,6 +61,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const [adSlots, setAdSlots] = useState<AdvertisementSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [heroSearchQuery, setHeroSearchQuery] = useState('');
 
   // Dynamic Hero Image State & Rotation
   const [heroState, setHeroState] = useState<HeroState>(() => getHeroState());
@@ -207,9 +208,25 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 />
                 <input
                   type="text"
+                  value={heroSearchQuery}
+                  onChange={(e) => setHeroSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && heroSearchQuery.trim()) {
+                      onNavigate('category?q=' + encodeURIComponent(heroSearchQuery.trim()));
+                    }
+                  }}
                   placeholder="Keress cikket, fogalmat vagy szerszámot..."
-                  className="w-full rounded-xl bg-white py-4 pl-12 pr-4 text-sm text-gray-800 placeholder-gray-500 shadow-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-xl bg-white py-4 pl-12 pr-12 text-sm text-gray-800 placeholder-gray-500 shadow-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 />
+                {heroSearchQuery.trim() && (
+                  <button
+                    onClick={() => onNavigate('category?q=' + encodeURIComponent(heroSearchQuery.trim()))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors shadow-sm"
+                    title="Keresés indítása"
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                )}
               </div>
 
               {/* Popular topics */}
@@ -217,7 +234,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 {popularTopics.map((topic) => (
                   <button
                     key={topic}
-                    className="rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm text-white transition-all hover:bg-white/20 hover:border-white/30"
+                    onClick={() => onNavigate('category?q=' + encodeURIComponent(topic))}
+                    className="rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm text-white transition-all hover:bg-accent hover:border-accent hover:text-white cursor-pointer"
                   >
                     {topic}
                   </button>
@@ -308,7 +326,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 return (
                   <div
                     key={category.id}
-                    onClick={() => onNavigate('category')}
+                    onClick={() => onNavigate('category?cat=' + category.id)}
                     className="group bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between hover:border-accent/50"
                   >
                     {/* Cover image header */}
@@ -503,7 +521,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     if (partner.id) recordAdClick(partner.id);
                     if (!isExternal) {
                       e.preventDefault();
-                      onNavigate('partnerDetail', { slug: partner.slug || partner.id });
+                      onNavigate('partner-detail', { slug: partner.slug || partner.id });
                     }
                   }}
                   className="group bg-white border border-gray-200 hover:border-accent rounded-xl p-6 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between cursor-pointer"

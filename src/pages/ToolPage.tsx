@@ -21,6 +21,9 @@ import {
   SearchX,
   Laptop,
   Library,
+  ShieldCheck,
+  ShieldAlert,
+  Calculator,
 } from 'lucide-react';
 import { getActiveTools, getToolBySlug } from '../services/toolService';
 import { getAdsForTool, recordAdClick } from '../services/advertisementService';
@@ -340,6 +343,204 @@ function FeaturedPartnerOffers({ partnerAds }: FeaturedPartnerOffersProps) {
       )}
     </section>
   );
+}
+
+interface SafetyGearItem {
+  name: string;
+  standard?: string;
+  description: string;
+  toolSlug?: string;
+  isMandatory: boolean;
+}
+
+interface MaterialRelation {
+  name: string;
+  description: string;
+  calcTab?: string;
+  calcName?: string;
+}
+
+interface ToolSafetyMaterialConfig {
+  regulations: string[];
+  safetyGear: SafetyGearItem[];
+  materials: MaterialRelation[];
+}
+
+function getToolSafetyAndMaterialInfo(tool: Tool): ToolSafetyMaterialConfig {
+  const name = tool.name.toLowerCase();
+  const slug = tool.slug.toLowerCase();
+
+  if (slug === 'sarokcsiszolo' || name.includes('sarokcsiszoló') || name.includes('flex')) {
+    return {
+      regulations: [
+        'Védőburkolat nélkül a sarokcsiszolót beindítani szigorúan TILOS!',
+        'A vágótárcsa megengedett kerületi sebessége (80 m/s) nem lehet kisebb a gép fordulatszámánál.',
+        'Sérült, repedt, csorbult vagy nedves tárcsát a gépre felhelyezni életveszélyes.',
+        'A vágás irányát úgy kell megválasztani, hogy a szikrák a testtől elfelé és éghető anyagoktól mentes térbe távozzanak.',
+      ],
+      safetyGear: [
+        {
+          name: 'Védőszemüveg / Arcmaszk',
+          standard: 'MSZ EN 166',
+          description: 'A 11 000 ford/perc mellett kirepülő forró szikrák, fém- és kőszilánkok ellen kötelező.',
+          toolSlug: 'munkavedelmi-sisak',
+          isMandatory: true,
+        },
+        {
+          name: 'Zajvédő fültok / füldugó',
+          standard: 'MSZ EN 352',
+          description: 'A sarokcsiszoló zajszintje üresjáratban is meghaladja a 95 dB-t, vágáskor a 105 dB-t.',
+          isMandatory: true,
+        },
+        {
+          name: 'Rezgéscsillapított védőkesztyű',
+          standard: 'MSZ EN 388',
+          description: 'Mechanikai védelem sorjás fémélek ellen és a kéz-kar rezgésterhelés mérséklésére.',
+          isMandatory: true,
+        },
+        {
+          name: 'Pormaszk (FFP2/FFP3)',
+          standard: 'MSZ EN 149',
+          description: 'Beton, csempe és kő vágásakor a finom szilikátpor (szilikózis) belélegzése ellen.',
+          isMandatory: true,
+        },
+      ],
+      materials: [
+        {
+          name: 'Betonacél és zsaluzati vasalás',
+          description: 'Fémvágó koronggal (1,0 - 1,6 mm vastag) sorjamentesen méretre vágható.',
+          calcTab: 'concrete',
+          calcName: 'Beton és Vasalás Kalkulátor',
+        },
+        {
+          name: 'Greslap és csempe',
+          description: 'Finom szemcsés, vékony gyémánt vágótárcsával kagylósodás nélkül vágható.',
+          calcTab: 'tiling',
+          calcName: 'Hidegburkolat Kalkulátor',
+        },
+        {
+          name: 'Zsalukő és falazóelem',
+          description: 'Szegmentált gyémánttárcsával méretre szabható falazás és zsaluzás közben.',
+          calcTab: 'masonry',
+          calcName: 'Falazat & Zsalukő Kalkulátor',
+        },
+      ],
+    };
+  }
+
+  if (slug === 'acskalapacs' || name.includes('ácskalapács')) {
+    return {
+      regulations: [
+        'Kilazult fejjel vagy repedt nyéllel dolgozni szigorúan tilos.',
+        'Magasban végzett ácsmunkáknál a kalapácsot szerszámtartó hevederhez kell rögzíteni a leejtés megelőzésére.',
+        'Mágneses szegtartó használatakor ügyelj arra, hogy a szegfej stabilan üljön a fészekben.',
+      ],
+      safetyGear: [
+        {
+          name: 'Munkavédelmi sisak állszíjjal',
+          standard: 'MSZ EN 397',
+          description: 'Leeső tárgyak és deszkák elleni védelem tetőszerkezet építésekor és magasban végzett munkáknál.',
+          toolSlug: 'munkavedelmi-sisak',
+          isMandatory: true,
+        },
+        {
+          name: 'Átszúrásbiztos talpú munkavédelmi bakancs',
+          standard: 'MSZ EN ISO 20345 S3',
+          description: 'Kiemelt védelem a zsaluzatban és tetőn lévő kiálló szegek átszúrása ellen.',
+          isMandatory: true,
+        },
+        {
+          name: 'Védőszemüveg',
+          standard: 'MSZ EN 166',
+          description: 'Félreütött szeg vagy lepattanó faszilánk szembe csapódása ellen.',
+          toolSlug: 'munkavedelmi-sisak',
+          isMandatory: true,
+        },
+      ],
+      materials: [
+        {
+          name: 'Fenyő fűrészáru & Zsaludeszka',
+          description: 'Szarufák, szelemenek, lécezések és zsaluzatok összeállítása és rögzítése.',
+          calcTab: 'roofing',
+          calcName: 'Tetőfedés & Lécezés Kalkulátor',
+        },
+        {
+          name: 'Bordás és sima építőipari szegek',
+          description: 'Huzalszegek (70-200 mm) és torziós ácskapcsok beverése faszerkezetekbe.',
+        },
+      ],
+    };
+  }
+
+  if (slug === 'komuves-kalapacs' || name.includes('kőműves kalapács')) {
+    return {
+      regulations: [
+        'A kőműves kalapács vágóélével csak téglát és műkövet szabad pattintani; acél vésőt ütni vele tilos!',
+        'Téglafaragáskor a szilánkok kirepülési vonalában más munkavállaló nem tartózkodhat.',
+      ],
+      safetyGear: [
+        {
+          name: 'Oldalvédős védőszemüveg',
+          standard: 'MSZ EN 166',
+          description: 'A téglafaragáskor nagy energiával lepattanó kerámiaszilánkok ellen kötelező.',
+          toolSlug: 'munkavedelmi-sisak',
+          isMandatory: true,
+        },
+        {
+          name: 'Munkavédelmi védőkesztyű',
+          standard: 'MSZ EN 388',
+          description: 'Az éles téglaszélek és a habarcs lúgos kémhatásának bőrkárosító hatása ellen.',
+          isMandatory: true,
+        },
+      ],
+      materials: [
+        {
+          name: 'Falazóelemek és Téglák',
+          description: 'Kisméretű tömör tégla, mészhomok tégla és vázkerámia elemek méretre faragása.',
+          calcTab: 'masonry',
+          calcName: 'Falazat & Téglamennyiség Kalkulátor',
+        },
+      ],
+    };
+  }
+
+  // Általános / egyéb szerszámok
+  return {
+    regulations: [
+      'A munkaterületet tartsd tisztán, szárazon és megfelelően megvilágítva.',
+      'Csak kifogástalan műszaki állapotú, gyári védőberendezésekkel ellátott szerszámot használj.',
+      'Ismerd meg az adott eszköz használati útmutatóját és a vonatkozó munkavédelmi előírásokat.',
+    ],
+    safetyGear: [
+      {
+        name: 'Védőszemüveg',
+        standard: 'MSZ EN 166',
+        description: 'Szemvédelem mechanikai sérülések, szilánkok és por ellen.',
+        toolSlug: 'munkavedelmi-sisak',
+        isMandatory: true,
+      },
+      {
+        name: 'Munkavédelmi lábbeli (S3)',
+        standard: 'MSZ EN ISO 20345',
+        description: 'Lábujjvédő orrmerevítő és átszúrás elleni talplemez minden építési területen.',
+        isMandatory: true,
+      },
+      {
+        name: 'Munkavédelmi védőkesztyű',
+        standard: 'MSZ EN 388',
+        description: 'Kézvédelem vágás, dörzsölés és szilánkok ellen.',
+        isMandatory: false,
+      },
+    ],
+    materials: [
+      {
+        name: 'Kapcsolódó építőipari szakmai anyagok',
+        description: 'Az építőipari munkákhoz szükséges alapanyagok és rétegrendek pontos ismerete elengedhetetlen a minőségi kivitelezéshez.',
+        calcTab: 'interactive',
+        calcName: 'Szakmai Anyagszükséglet Kalkulátorok',
+      },
+    ],
+  };
 }
 
 export default function ToolPage({ onNavigate }: ToolPageProps) {
@@ -834,6 +1035,146 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                 </div>
               )}
 
+              {/* Munkavédelmi előírások & Kötelező védőeszközök (TSK-P2-03) */}
+              {(() => {
+                const info = getToolSafetyAndMaterialInfo(selectedTool);
+                return (
+                  <div className="pt-8 border-t border-gray-200 space-y-6">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                          <ShieldCheck className="text-emerald-600 shrink-0" size={22} />
+                          <span>Munkavédelmi Előírások &amp; Kötelező Védőeszközök</span>
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          A balesetmentes kivitelezéshez előírt egyéni védőeszközök (EVE) és technológiai szabályok
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => onNavigate('safety')}
+                        className="text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-3.5 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <ShieldAlert size={14} />
+                        <span>Munkavédelmi Szabályzat &amp; Útmutatók</span>
+                        <ArrowRight size={13} />
+                      </button>
+                    </div>
+
+                    {/* Előírások lista */}
+                    {info.regulations.length > 0 && (
+                      <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-5 space-y-2.5">
+                        <h4 className="text-xs font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle2 size={14} className="text-emerald-700" />
+                          <span>Kiemelt Biztonsági Szabályok Használat Közben:</span>
+                        </h4>
+                        <ul className="space-y-1.5 text-xs text-emerald-950">
+                          {info.regulations.map((reg, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="text-emerald-600 font-bold shrink-0">•</span>
+                              <span className="font-medium leading-relaxed">{reg}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Védőeszköz kártyák */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
+                        Előírt Egyéni Védőfelszerelések (EVE):
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {info.safetyGear.map((gear, idx) => (
+                          <div
+                            key={idx}
+                            className={`rounded-2xl p-4 border flex flex-col justify-between space-y-3 transition-all ${
+                              gear.toolSlug
+                                ? 'bg-amber-50/40 border-amber-200/80 hover:border-accent hover:shadow-sm'
+                                : 'bg-gray-50 border-gray-200'
+                            }`}
+                          >
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between gap-1">
+                                {gear.standard && (
+                                  <span className="text-[10px] font-black text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-md">
+                                    {gear.standard}
+                                  </span>
+                                )}
+                                {gear.isMandatory && (
+                                  <span className="text-[10px] font-black text-red-700 bg-red-100 border border-red-200 px-2 py-0.5 rounded-md">
+                                    Kötelező
+                                  </span>
+                                )}
+                              </div>
+                              <h5 className="text-xs font-black text-gray-900 leading-snug">
+                                {gear.name}
+                              </h5>
+                              <p className="text-[11px] text-gray-600 leading-relaxed font-medium">
+                                {gear.description}
+                              </p>
+                            </div>
+
+                            {gear.toolSlug && (
+                              <button
+                                onClick={() => {
+                                  const safetyTool = tools.find((t) => t.slug === gear.toolSlug);
+                                  if (safetyTool) {
+                                    setSelectedTool(safetyTool);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  } else {
+                                    onNavigate(`tool?slug=${gear.toolSlug}`);
+                                  }
+                                }}
+                                className="w-full py-2 bg-accent hover:bg-yellow-400 text-primary-950 font-extrabold text-[11px] rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <span>Védőeszköz adatlap</span>
+                                <ArrowRight size={12} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Kapcsolódó Megmunkált Építőanyagok */}
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <Layers size={14} className="text-primary" />
+                          <span>Kapcsolódó Megmunkált Anyagok &amp; Anyagismeret:</span>
+                        </h4>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {info.materials.map((mat, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-white border border-gray-200 hover:border-primary/40 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-xs transition-all"
+                          >
+                            <div className="space-y-1">
+                              <h5 className="text-xs font-black text-gray-900 leading-snug">
+                                {mat.name}
+                              </h5>
+                              <p className="text-[11px] text-gray-600 leading-relaxed font-medium">
+                                {mat.description}
+                              </p>
+                            </div>
+                            {mat.calcTab && (
+                              <button
+                                onClick={() => onNavigate(`calculations?mode=interactive&tab=${mat.calcTab}`)}
+                                className="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary-950 font-bold text-[11px] rounded-xl transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <Calculator size={12} className="text-primary" />
+                                <span>{mat.calcName || 'Anyagszükséglet kalkulátor'}</span>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Main Tool Video Demonstration */}
               {selectedTool.video_url && getEmbedVideoUrl(selectedTool.video_url) && (
                 <div className="pt-8 border-t border-gray-200 space-y-3">
@@ -1158,7 +1499,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                                           {art.author || 'ÉpítőTudás'}
                                         </span>
                                         <button
-                                          onClick={() => onNavigate(`article-detail?slug=${art.slug}`)}
+                                          onClick={() => onNavigate(`article?slug=${art.slug}`)}
                                           className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
                                         >
                                           Elolvasom <ArrowRight size={12} />
@@ -1237,7 +1578,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                             {art.author || 'ÉpítőTudás Szerkesztőség'}
                           </span>
                           <button
-                            onClick={() => onNavigate(`article-detail?slug=${art.slug}`)}
+                            onClick={() => onNavigate(`article?slug=${art.slug}`)}
                             className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                           >
                             Cikk megnyitása <ArrowRight size={13} />

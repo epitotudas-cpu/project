@@ -74,11 +74,12 @@ export default function FormattedText({
       flushList(index);
       const level = headingMatch[1].length;
       const hText = headingMatch[2];
+      const isDark = className.includes('text-white') || className.includes('dark');
       const customHeadingClass =
         level === 1
-          ? 'text-xl font-black text-amber-400 mt-5 mb-2'
+          ? `text-xl font-black ${isDark ? 'text-amber-400' : 'text-gray-900'} mt-5 mb-2`
           : level === 2
-          ? 'text-lg font-extrabold text-amber-300 mt-4 mb-2'
+          ? `text-lg font-extrabold ${isDark ? 'text-amber-300' : 'text-gray-800'} mt-4 mb-2`
           : headingClassName;
 
       elements.push(
@@ -92,10 +93,15 @@ export default function FormattedText({
     // Blockquote (> )
     if (trimmedLine.startsWith('> ')) {
       flushList(index);
+      const isDark = className.includes('text-white') || className.includes('dark');
       elements.push(
         <blockquote
           key={index}
-          className="border-l-4 border-amber-400 pl-4 py-1.5 my-3 bg-amber-500/10 rounded-r-lg text-amber-200 text-xs sm:text-sm italic"
+          className={`border-l-4 border-amber-500 pl-4 py-1.5 my-3 rounded-r-lg text-xs sm:text-sm italic ${
+            isDark
+              ? 'bg-amber-500/10 text-amber-200'
+              : 'bg-amber-50 text-amber-900'
+          }`}
         >
           {renderInlineMarkdown(trimmedLine.slice(2), strongClassName)}
         </blockquote>

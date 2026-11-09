@@ -32,7 +32,7 @@ interface CareersPageProps {
 }
 
 export default function CareersPage({ onNavigate }: CareersPageProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +45,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
   // Modals
   const [applyModalJob, setApplyModalJob] = useState<JobPosting | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [createdNotice, setCreatedNotice] = useState<string | null>(null);
 
   // Application Form state
   const [applicantName, setApplicantName] = useState('');
@@ -114,14 +115,19 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
     e.preventDefault();
     if (!companyName.trim() || !jobTitle.trim() || !jobLocation.trim()) return;
 
-    await createJobPosting({
-      companyName,
-      title: jobTitle,
-      jobType,
-      location: jobLocation,
-      salaryRange,
-      description: jobDescription,
-    });
+    const isPartnerOrAdmin = profile?.role === 'admin' || profile?.role === 'partner';
+
+    await createJobPosting(
+      {
+        companyName,
+        title: jobTitle,
+        jobType,
+        location: jobLocation,
+        salaryRange,
+        description: jobDescription,
+      },
+      isPartnerOrAdmin
+    );
 
     setShowCreateModal(false);
     setCompanyName('');
@@ -129,6 +135,12 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
     setJobLocation('');
     setSalaryRange('');
     setJobDescription('');
+    setCreatedNotice(
+      isPartnerOrAdmin
+        ? 'Álláshirdetésed sikeresen közzétéve az állásbörzén!'
+        : 'Köszönjük a beküldést! Az álláshirdetés jóváhagyásra vár, és az adminisztrátori ellenőrzés után azonnal élessé válik.'
+    );
+    setTimeout(() => setCreatedNotice(null), 8000);
     await loadJobs();
   }
 
@@ -391,6 +403,21 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
 
         {/* JOB POSTINGS GRID */}
         <section className="space-y-6">
+          {createdNotice && (
+            <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-fadeIn">
+              <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold">
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                <span>{createdNotice}</span>
+              </div>
+              <button
+                onClick={() => setCreatedNotice(null)}
+                className="text-emerald-700 hover:text-emerald-900 text-xs font-semibold px-2 py-1"
+              >
+                Bezárás
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
               <Briefcase className="text-accent" size={22} />

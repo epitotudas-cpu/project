@@ -137,9 +137,56 @@ const DEFAULT_JOBS: JobPosting[] = [
   },
 ];
 
-const APPLICATIONS_STORE: JobApplication[] = [];
+const CAREER_JOBS_KEY = 'epitotudas_career_jobs';
+const CAREER_APPLICATIONS_KEY = 'epitotudas_career_applications';
 
-export async function listJobPostings(jobType?: string, locationQuery?: string): Promise<JobPosting[]> {
+function getStoredJobs(): JobPosting[] {
+  try {
+    const raw = localStorage.getItem(CAREER_JOBS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // fallback
+  }
+  return DEFAULT_JOBS.map((j) => ({ ...j, moderation_status: 'approved' as const }));
+}
+
+function saveStoredJobs(jobs: JobPosting[]) {
+  try {
+    localStorage.setItem(CAREER_JOBS_KEY, JSON.stringify(jobs));
+  } catch {
+    // ignore
+  }
+}
+
+export function getStoredApplications(): JobApplication[] {
+  try {
+    const raw = localStorage.getItem(CAREER_APPLICATIONS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // fallback
+  }
+  return [];
+}
+
+function saveStoredApplications(apps: JobApplication[]) {
+  try {
+    localStorage.setItem(CAREER_APPLICATIONS_KEY, JSON.stringify(apps));
+  } catch {
+    // ignore
+  }
+}
+
+export async function listJobPostings(
+  jobType?: string,
+  locationQuery?: string,
+  includePending = false
+): Promise<JobPosting[]> {
   try {
     const { data } = await supabase
       .from('job_postings' as 'articles')
@@ -148,6 +195,11 @@ export async function listJobPostings(jobType?: string, locationQuery?: string):
 
     if (data && data.length > 0) {
       let filtered = data as unknown as JobPosting[];
+      if (!includePending) {
+        filtered = filtered.filter(
+          (j) => j.is_active !== false && j.moderation_status !== 'pending' && j.moderation_status !== 'rejected'
+        );
+      }
       if (jobType && jobType !== 'all') filtered = filtered.filter((j) => j.job_type === jobType);
       if (locationQuery) filtered = filtered.filter((j) => j.location.toLowerCase().includes(locationQuery.toLowerCase()));
       return filtered;
@@ -156,13 +208,22 @@ export async function listJobPostings(jobType?: string, locationQuery?: string):
     void err;
   }
 
-  let filtered = [...DEFAULT_JOBS];
+  const all = getStoredJobs();
+  let filtered = [...all];
+  if (!includePending) {
+    filtered = filtered.filter(
+      (j) => j.is_active !== false && j.moderation_status !== 'pending' && j.moderation_status !== 'rejected'
+    );
+  }
   if (jobType && jobType !== 'all') filtered = filtered.filter((j) => j.job_type === jobType);
   if (locationQuery) filtered = filtered.filter((j) => j.location.toLowerCase().includes(locationQuery.toLowerCase()));
   return filtered;
 }
 
-export async function createJobPosting(payload: CreateJobPostingPayload): Promise<JobPosting> {
+export async function createJobPosting(
+  payload: CreateJobPostingPayload,
+  isDirectApproved = false
+): Promise<JobPosting> {
   const newJob: JobPosting = {
     id: `job-${Date.now()}`,
     company_name: payload.companyName,
@@ -171,12 +232,35 @@ export async function createJobPosting(payload: CreateJobPostingPayload): Promis
     location: payload.location,
     salary_range: payload.salaryRange || null,
     description: payload.description,
-    is_active: true,
+    is_active: isDirectApproved,
+    moderation_status: isDirectApproved ? 'approved' : 'pending',
     created_at: new Date().toISOString(),
   };
 
-  DEFAULT_JOBS.unshift(newJob);
+  const all = getStoredJobs();
+  all.unshift(newJob);
+  saveStoredJobs(all);
   return newJob;
+}
+
+export async function approveJobPosting(id: string): Promise<void> {
+  const all = getStoredJobs();
+  const idx = all.findIndex((j) => j.id === id);
+  if (idx !== -1) {
+    all[idx].moderation_status = 'approved';
+    all[idx].is_active = true;
+    saveStoredJobs(all);
+  }
+}
+
+export async function rejectJobPosting(id: string): Promise<void> {
+  const all = getStoredJobs();
+  const idx = all.findIndex((j) => j.id === id);
+  if (idx !== -1) {
+    all[idx].moderation_status = 'rejected';
+    all[idx].is_active = false;
+    saveStoredJobs(all);
+  }
 }
 
 export async function submitJobApplication(
@@ -196,36 +280,48 @@ export async function submitJobApplication(
     created_at: new Date().toISOString(),
   };
 
-  APPLICATIONS_STORE.push(application);
+  const allApps = getStoredApplications();
+  allApps.push(application);
+  saveStoredApplications(allApps);
   return application;
 }
 
-export async function updateJobPosting(id: string, payload: Partial<CreateJobPostingPayload> & { is_active?: boolean }): Promise<void> {
-  const idx = DEFAULT_JOBS.findIndex((j) => j.id === id);
+export async function updateJobPosting(
+  id: string,
+  payload: Partial<CreateJobPostingPayload> & { is_active?: boolean; moderation_status?: 'pending' | 'approved' | 'rejected' }
+): Promise<void> {
+  const all = getStoredJobs();
+  const idx = all.findIndex((j) => j.id === id);
   if (idx !== -1) {
-    DEFAULT_JOBS[idx] = {
-      ...DEFAULT_JOBS[idx],
-      company_name: payload.companyName ?? DEFAULT_JOBS[idx].company_name,
-      title: payload.title ?? DEFAULT_JOBS[idx].title,
-      job_type: payload.jobType ?? DEFAULT_JOBS[idx].job_type,
-      location: payload.location ?? DEFAULT_JOBS[idx].location,
-      salary_range: payload.salaryRange !== undefined ? payload.salaryRange : DEFAULT_JOBS[idx].salary_range,
-      description: payload.description ?? DEFAULT_JOBS[idx].description,
-      is_active: payload.is_active !== undefined ? payload.is_active : DEFAULT_JOBS[idx].is_active,
+    all[idx] = {
+      ...all[idx],
+      company_name: payload.companyName ?? all[idx].company_name,
+      title: payload.title ?? all[idx].title,
+      job_type: payload.jobType ?? all[idx].job_type,
+      location: payload.location ?? all[idx].location,
+      salary_range: payload.salaryRange !== undefined ? payload.salaryRange : all[idx].salary_range,
+      description: payload.description ?? all[idx].description,
+      is_active: payload.is_active !== undefined ? payload.is_active : all[idx].is_active,
+      moderation_status: payload.moderation_status !== undefined ? payload.moderation_status : all[idx].moderation_status,
     };
+    saveStoredJobs(all);
   }
 }
 
 export async function toggleJobPostingActive(id: string): Promise<void> {
-  const job = DEFAULT_JOBS.find((j) => j.id === id);
+  const all = getStoredJobs();
+  const job = all.find((j) => j.id === id);
   if (job) {
     job.is_active = !job.is_active;
+    saveStoredJobs(all);
   }
 }
 
 export async function deleteJobPosting(id: string): Promise<void> {
-  const idx = DEFAULT_JOBS.findIndex((j) => j.id === id);
+  const all = getStoredJobs();
+  const idx = all.findIndex((j) => j.id === id);
   if (idx !== -1) {
-    DEFAULT_JOBS.splice(idx, 1);
+    all.splice(idx, 1);
+    saveStoredJobs(all);
   }
 }

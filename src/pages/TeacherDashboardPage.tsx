@@ -72,6 +72,28 @@ export interface CustomPackage {
   createdAt: string;
 }
 
+const TEACHER_PACKAGES_STORAGE_KEY = 'epitotudas_teacher_custom_packages_v1';
+
+function getCustomPackagesLocal(): CustomPackage[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(TEACHER_PACKAGES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.warn('Hiba az egyedi csomagok betöltésekor:', err);
+    return [];
+  }
+}
+
+function saveCustomPackagesLocal(packages: CustomPackage[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(TEACHER_PACKAGES_STORAGE_KEY, JSON.stringify(packages));
+  } catch (err) {
+    console.warn('Hiba az egyedi csomagok mentésekor:', err);
+  }
+}
+
 export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   onNavigate,
   activeView = 'dashboard',
@@ -131,7 +153,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [loadingProgress, setLoadingProgress] = useState(false);
 
   // Custom Package Builder State
-  const [customPackages, setCustomPackages] = useState<CustomPackage[]>([]);
+  const [customPackages, setCustomPackages] = useState<CustomPackage[]>(() => getCustomPackagesLocal());
   const [pkgTitle, setPkgTitle] = useState('');
   const [pkgDesc, setPkgDesc] = useState('');
   const [pkgTrade, setPkgTrade] = useState('');
@@ -534,11 +556,20 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       status,
       createdAt: new Date().toISOString(),
     };
-    setCustomPackages([newPkg, ...customPackages]);
+    const updated = [newPkg, ...customPackages];
+    setCustomPackages(updated);
+    saveCustomPackagesLocal(updated);
     setPkgTitle('');
     setPkgDesc('');
     setPkgItems([]);
-    alert(status === 'compiled' ? 'Tananyagcsomag sikeresen összeállítva!' : 'Piszkozat elmentve!');
+    alert(status === 'compiled' ? 'Tananyagcsomag sikeresen összeállítva és elmentve!' : 'Piszkozat sikeresen elmentve!');
+  };
+
+  const handleDeletePackage = (pkgId: string) => {
+    if (!confirm('Biztosan törölni szeretné ezt a tananyagcsomagot?')) return;
+    const updated = customPackages.filter((p) => p.id !== pkgId);
+    setCustomPackages(updated);
+    saveCustomPackagesLocal(updated);
   };
 
   if (loading) {
@@ -1519,6 +1550,85 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Összeállított csomagjaim lista (TSK-P3-02 perzisztens) */}
+              {customPackages.length > 0 && (
+                <div className="space-y-4 pt-6 border-t border-[#262626]">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-[#60a5fa]" />
+                    <span>Mentett Tananyagcsomagjaim ({customPackages.length})</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {customPackages.map((pkg) => (
+                      <div
+                        key={pkg.id}
+                        className="bg-[#1F1F1F] border border-[#262626] rounded-xl p-4 flex flex-col justify-between space-y-3 hover:border-[#4165b4]/50 transition-all"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                pkg.status === 'compiled'
+                                  ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50'
+                                  : 'bg-amber-900/40 text-amber-300 border border-amber-700/50'
+                              }`}
+                            >
+                              {pkg.status === 'compiled' ? 'Összeállítva' : 'Piszkozat'}
+                            </span>
+                            <span className="text-[10px] text-gray-500 font-medium">
+                              {new Date(pkg.createdAt).toLocaleDateString('hu-HU')}
+                            </span>
+                          </div>
+
+                          <h4 className="text-sm font-bold text-white leading-snug">
+                            {pkg.title}
+                          </h4>
+
+                          {pkg.description && (
+                            <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                              {pkg.description}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-400 pt-1">
+                            {pkg.tradeId && (
+                              <span className="bg-[#141414] px-2 py-0.5 rounded border border-[#262626]">
+                                {pkg.tradeId}
+                              </span>
+                            )}
+                            {pkg.targetGroup && (
+                              <span className="bg-[#141414] px-2 py-0.5 rounded border border-[#262626]">
+                                {pkg.targetGroup}
+                              </span>
+                            )}
+                            <span className="bg-[#141414] px-2 py-0.5 rounded border border-[#262626] text-[#60a5fa] font-bold">
+                              {pkg.items.length} tartalom
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-[#262626] flex items-center justify-between">
+                          <button
+                            onClick={() => {
+                              alert(`"${pkg.title}" csomag készen áll az osztályokhoz rendelésre a Kiosztás menüben.`);
+                            }}
+                            className="text-xs font-bold text-[#60a5fa] hover:text-white transition-colors cursor-pointer"
+                          >
+                            Kiosztás osztálynak &rarr;
+                          </button>
+                          <button
+                            onClick={() => handleDeletePackage(pkg.id)}
+                            className="p-1.5 text-gray-500 hover:text-red-400 transition-colors cursor-pointer"
+                            title="Csomag törlése"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

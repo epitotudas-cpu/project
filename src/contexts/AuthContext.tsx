@@ -74,7 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               confirmEmail = localStorage.getItem('pending_verify_email') || '';
             }
             if (confirmEmail) {
-              supabase.rpc('confirm_user_email', { user_email: confirmEmail }).catch(() => {});
+              (async () => {
+                try {
+                  await supabase.rpc('confirm_user_email', { user_email: confirmEmail });
+                } catch {
+                  // Csendes hibakezelés: a háttérbeli RPC megerősítés hibája nem szakíthatja meg az autentikációt
+                }
+              })();
             }
             if (window.history && window.history.replaceState) {
               window.history.replaceState(null, '', window.location.pathname);

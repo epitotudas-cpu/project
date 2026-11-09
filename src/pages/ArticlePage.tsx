@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Home,
   ChevronRight,
+  ArrowRight,
   Clock,
   TrendingUp,
   Star,
@@ -375,6 +376,59 @@ function ArticleContentRenderer({ content }: { content: string }) {
 }
 
 
+interface RelevantCalculator {
+  tab: string;
+  name: string;
+  desc: string;
+}
+
+function getRelevantCalculator(art: Article): RelevantCalculator | null {
+  const text = `${art.title} ${art.slug} ${art.excerpt || ''} ${art.content || ''}`.toLowerCase();
+  if (text.includes('gipszkarton') || text.includes('szárazépítés')) {
+    return {
+      tab: 'drywall',
+      name: 'Gipszkarton Fal- és Mennyezet Kalkulátor',
+      desc: 'Számold ki a szükséges gipszkarton lapok, CW/UW profilok, csavarok és hézagoló anyagok pontos mennyiségét!',
+    };
+  }
+  if (text.includes('beton') || text.includes('alapozás') || text.includes('szerkezetépítés')) {
+    return {
+      tab: 'concrete',
+      name: 'Beton és Alapozási Anyagszükséglet Kalkulátor',
+      desc: 'Számold ki a köbméterben szükséges készbetont vagy a sóder, cement és víz pontos arányait.',
+    };
+  }
+  if (text.includes('burkol') || text.includes('csempe') || text.includes('fuga') || text.includes('járólap')) {
+    return {
+      tab: 'tiling',
+      name: 'Hidegburkolat és Csemperagasztó Kalkulátor',
+      desc: 'Lapmennyiség, vágási ráhagyás, csemperagasztó és fugázóanyag igény gyors kalkulációja.',
+    };
+  }
+  if (text.includes('szigetel') || text.includes('hőszigetel') || text.includes('kőzetgyapot') || text.includes('hungarocell')) {
+    return {
+      tab: 'insulation',
+      name: 'Homlokzati és Födém Hőszigetelés Kalkulátor',
+      desc: 'Szigetelőanyag felület, ragasztótapasz, üvegszövet háló és dűbel darabszám számítás.',
+    };
+  }
+  if (text.includes('tető') || text.includes('cserép') || text.includes('bádog')) {
+    return {
+      tab: 'roofing',
+      name: 'Tetőfedés és Cserépszükséglet Kalkulátor',
+      desc: 'Tetőfelület, cserépdarabszám, tetőléc és fólia anyagszükséglet pontos felmérése.',
+    };
+  }
+  if (text.includes('falaz') || text.includes('tégla') || text.includes('habarcs')) {
+    return {
+      tab: 'masonry',
+      name: 'Falazat és Téglamennyiség Kalkulátor',
+      desc: 'Számold ki a szükséges tégla vagy zsalukő darabszámot és falazóhabarcs igényt.',
+    };
+  }
+  return null;
+}
+
 export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProps) {
   const { user } = useAuth();
   const articleSettings = useArticleSettings();
@@ -384,6 +438,8 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const relevantCalc = useMemo(() => (article ? getRelevantCalculator(article) : null), [article]);
 
   useEffect(() => {
     if (article) {
@@ -877,6 +933,34 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                     );
                   })()}
 
+                  {/* Contextual Embedded Calculator Widget (P2 Tartalomháló) */}
+                  {relevantCalc && (
+                    <div className="border-t border-gray-100 pt-8">
+                      <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-slate-900/40 border border-amber-500/30 shadow-lg space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1.5">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent text-primary-950 shadow-sm">
+                              <Calculator size={13} /> Kapcsolódó Szakmai Kalkulátor
+                            </span>
+                            <h3 className="text-xl font-extrabold text-gray-900">
+                              {relevantCalc.name}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-gray-600 max-w-xl leading-relaxed font-medium">
+                              {relevantCalc.desc}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => onNavigate(`calculations?mode=interactive&tab=${relevantCalc.tab}`)}
+                            className="px-6 py-3.5 bg-accent hover:bg-yellow-400 text-primary-950 font-black text-xs sm:text-sm rounded-2xl shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+                          >
+                            <span>Számítás Indítása</span>
+                            <ArrowRight size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Partner Attribution Card */}
                   {articleSettings.showPartnerBlock && article.partner_name && (
                     <div className="border-t border-gray-100 pt-8">
@@ -986,16 +1070,22 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                     <Calculator size={15} /> Szakmai Számítások
                   </div>
                   <h4 className="text-sm font-extrabold leading-snug">
-                    Építőipari Kalkulátorok
+                    {relevantCalc ? relevantCalc.name : 'Építőipari Kalkulátorok'}
                   </h4>
                   <p className="text-xs text-gray-300 leading-relaxed">
-                    Pontos anyagszükséglet és költségbecslés pár kattintással!
+                    {relevantCalc ? relevantCalc.desc : 'Pontos anyagszükséglet és költségbecslés pár kattintással!'}
                   </p>
                   <button
-                    onClick={() => onNavigate('calculations')}
+                    onClick={() => {
+                      if (relevantCalc) {
+                        onNavigate(`calculations?mode=interactive&tab=${relevantCalc.tab}`);
+                      } else {
+                        onNavigate('calculations');
+                      }
+                    }}
                     className="w-full py-2.5 bg-accent hover:bg-yellow-400 text-primary-950 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <span>Kalkulátor megnyitása</span>
+                    <span>{relevantCalc ? 'Kalkulátor megnyitása' : 'Összes kalkulátor'}</span>
                     <ChevronRight size={14} />
                   </button>
                 </div>

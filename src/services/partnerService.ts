@@ -175,19 +175,183 @@ Vállalkozásunk kiemelt figyelmet fordít a korszerű MSZ és EU szabványok sz
   created_at: new Date().toISOString()
 };
 
-// Helper to filter out legacy demo partners
+export const SAMPLE_ISOTERM: ExtendedPartner = {
+  id: 'p-isoterm',
+  name: 'IsoTerm Szigeteléstechnika Zrt.',
+  official_name: 'IsoTerm Építőanyag-ipari és Szigeteléstechnikai Zrt.',
+  slug: 'isoterm-szigeteles',
+  category: 'gyarto',
+  partner_type: 'Hőszigetelés & Anyaggyártó',
+  description: 'Innovatív homlokzati EPS és szálas kőzetgyapot hőszigetelő rendszerek, lábazati XPS táblák és energiatakarékos építési megoldások gyártója.',
+  detailed_description: `Az IsoTerm Szigeteléstechnika Zrt. Magyarország egyik vezető hőszigetelő rendszer gyártója és fejlesztője. Termékeink megfelelnek a legszigorúbb hazai (MSZ) és uniós épületenergetikai előírásoknak (Követelményérték U=0.20 W/m²K).
+
+Termékkínálatunk gerincét a grafitos homlokzati polisztirol lapok, az A1 tűzvédelmi osztályú vakolható homlokzati kőzetgyapot táblák és a nagy nyomószilárdságú lábazati XPS lapok alkotják. Mérnöki csapatunk rendszergaranciával és beépítési útmutatókkal támogatja a hazai kivitelezőket.`,
+  website_url: 'https://isoterm.hu',
+  logo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400&auto=format&fit=crop&q=80',
+  cover_url: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=1600&auto=format&fit=crop&q=80',
+  logo_bg: 'white',
+  is_verified: true,
+  is_featured: true,
+  status: 'published',
+  contact_person_name: 'Horváth Péter',
+  contact_person_title: 'Műszaki és Értékesítési Vezető',
+  contact_email: 'iroda@isoterm.hu',
+  contact_phone: '+36 1 456 7890',
+  address: 'Ipari Park út 12.',
+  zip_code: '2040',
+  city: 'Budaörs',
+  county: 'Pest vármegye',
+  operating_area: 'national',
+  business_hours: 'Hétfő - Péntek: 07:30 - 16:30',
+  inquiry_email: 'ajanlatkeres@isoterm.hu',
+  services: [
+    { id: 's-iso-1', name: 'Rendszergaranciás hőszigetelés', description: 'Komplett homlokzati hőszigetelő rendszerek ragasztóval, hálóval és vékonyvakolattal', icon_category: 'shield', display_order: 1, is_active: true },
+    { id: 's-iso-2', name: 'Akusztikai & Födémszigetelés', description: 'Lépéshang- és tűzvédelmi kőzetgyapot szigetelések többszintes épületekhez', icon_category: 'building', display_order: 2, is_active: true },
+    { id: 's-iso-3', name: 'Energetikai anyagszámítás', description: 'Hőhídmentes csomóponti kalkuláció és rétegrend-tervezés', icon_category: 'calculator', display_order: 3, is_active: true },
+  ],
+  references: [
+    { id: 'r-iso-1', title: 'Pannon Zöld Lakópark (120 lakás)', location: 'Győr', year: '2025', description: '15 cm vastag IsoTerm Grafitos homlokzati rendszer beépítése prémium szilikon vakolattal.', is_published: true, display_order: 1 },
+    { id: 'r-iso-2', title: 'Nordic Irodaház Kőzetgyapot Szigetelés', location: 'Budapest XIII. kerület', year: '2024', description: 'A1 tűzvédelmi besorolású kőzetgyapot lamellás rendszer 6200 m² homlokzaton.', is_published: true, display_order: 2 },
+  ],
+  certificates: [
+    { id: 'c-iso-1', title: 'ETA (Európai Műszaki Értékelés) Tanúsítvány', issuer: 'ÉMI Nonprofit Kft.', valid_until: '2029-05-31', is_published: true, display_order: 1 },
+    { id: 'c-iso-2', title: 'Környezetbarát Építőanyag Védjegy', issuer: 'Környezetvédelmi Tanács', valid_until: '2028-11-30', is_published: true, display_order: 2 },
+  ],
+  related_content: [
+    { id: 'rc-iso-1', title: 'Homlokzati és Födém Hőszigetelés Kalkulátor', type: 'kalkulator', url: '#calculations', display_order: 1 },
+    { id: 'rc-iso-2', title: 'Hőhídmentes beépítés és szigetelési irányelvek', type: 'cikk', url: '#article?slug=energiahatekony-epites', display_order: 2 },
+  ],
+  seo_title: 'IsoTerm Szigeteléstechnika Zrt. - Prémium Hőszigetelő Rendszerek',
+  seo_description: 'Minősített homlokzati EPS, XPS és kőzetgyapot hőszigetelő rendszerek gyártója.',
+  is_indexable: true,
+  created_at: new Date().toISOString(),
+};
+
+export const SAMPLE_DRYWALLPRO: ExtendedPartner = {
+  id: 'p-drywallpro',
+  name: 'DrywallPro Rendszerek Kft.',
+  official_name: 'DrywallPro Építőipari és Szárazépítési Szakkereskedelmi Kft.',
+  slug: 'drywallpro-rendszerek',
+  category: 'kereskedo',
+  partner_type: 'Szárazépítési Szakkereskedés',
+  description: 'Professzionális gipszkarton lapok, akusztikai és tűzgátló válaszfal-rendszerek, UW/CW horganyzott profilok és beépítési szerszámok forgalmazója.',
+  detailed_description: `A DrywallPro Rendszerek Kft. a modern szárazépítészet specialistája. Raktárkészletről kínálunk normál (RB), impregnált (RBI), tűzgátló (RF) és hanggátló prémium gipszkarton lapokat, horganyzott acélprofilokat, szintezőket és hézagoló anyagokat.
+
+Közvetlen kapcsolatot ápolunk a szakképző intézményekkel és a gyakorló kivitelezőkkel, biztosítva a szakszerű beépítéshez szükséges elméleti és gyakorlati hátteret.`,
+  website_url: 'https://drywallpro.hu',
+  logo_url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400&auto=format&fit=crop&q=80',
+  cover_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186c5f7?w=1600&auto=format&fit=crop&q=80',
+  logo_bg: 'white',
+  is_verified: true,
+  is_featured: true,
+  status: 'published',
+  contact_person_name: 'Varga Tamás',
+  contact_person_title: 'Szárazépítési Szakértő',
+  contact_email: 'kapcsolat@drywallpro.hu',
+  contact_phone: '+36 1 345 6789',
+  address: 'Profilozók útja 5.',
+  zip_code: '1106',
+  city: 'Budapest',
+  county: 'Budapest',
+  operating_area: 'national',
+  business_hours: 'Hétfő - Péntek: 07:00 - 17:00',
+  inquiry_email: 'rendeles@drywallpro.hu',
+  services: [
+    { id: 's-dw-1', name: 'Szárazépítési anyagszámítás', description: 'Komplett lap-, profil-, csavar- és glettszüskéglet számítás alaprajz alapján', icon_category: 'calculator', display_order: 1, is_active: true },
+    { id: 's-dw-2', name: 'Tűzvédelmi minősített rétegrendek', description: 'EI30-EI90 tűzgátló válaszfalak és akusztikai dobozolások', icon_category: 'shield', display_order: 2, is_active: true },
+    { id: 's-dw-3', name: 'Kivitelezői szerszámgép kölcsönzés', description: 'Akkus csavarozók, szalagcsiszolók és lézeres szintezők bérlése', icon_category: 'wrench', display_order: 3, is_active: true },
+  ],
+  references: [
+    { id: 'r-dw-1', title: 'Corvin Technology Park Belsőépítészet', location: 'Budapest', year: '2025', description: '18 000 m² akusztikai álmennyezet és szárazépítési válaszfal rendszer szállítása.', is_published: true, display_order: 1 },
+    { id: 'r-dw-2', title: 'Millenáris Rendezvényközpont Akusztika', location: 'Budapest', year: '2024', description: 'Perforált hangelnyelő gipszkarton panelek beépítése rejtett vázszerkezettel.', is_published: true, display_order: 2 },
+  ],
+  certificates: [
+    { id: 'c-dw-1', title: 'Hivatalos Rendszerforgalmazói Minősítés', issuer: 'Szárazépítők Országos Szövetsége', valid_until: '2028-12-31', is_published: true, display_order: 1 },
+  ],
+  related_content: [
+    { id: 'rc-dw-1', title: 'Gipszkarton és Szárazépítés Kalkulátor', type: 'kalkulator', url: '#calculations', display_order: 1 },
+    { id: 'rc-dw-2', title: 'Gipszkartonozás és szárazépítési alapismeretek kurzus', type: 'kepzes', url: '#course-detail?slug=gipszkartonozas-es-szarazepitesi-alapismeretek', display_order: 2 },
+  ],
+  seo_title: 'DrywallPro Rendszerek Kft. - Szárazépítési Szakkereskedés',
+  seo_description: 'Gipszkarton lapok, fémprofilok és szárazépítési rendszerek megbízható forrásból.',
+  is_indexable: true,
+  created_at: new Date().toISOString(),
+};
+
+export const SAMPLE_MASTERROOF: ExtendedPartner = {
+  id: 'p-masterroof',
+  name: 'MasterRoof Tetőcentrum Kft.',
+  official_name: 'MasterRoof Tetőfedő és Épületbádogos Kivitelező Kft.',
+  slug: 'masterroof-tetocentrum',
+  category: 'kivitelezo',
+  partner_type: 'Tetőfedő & Bádogos Szakcég',
+  description: 'Prémium kerámia- és betoncserép fedések, korcolt lemezfedések, ereszek és szarufás ácsszerkezetek profi kivitelezője.',
+  detailed_description: `A MasterRoof Tetőcentrum Kft. több évtizedes szakmai tapasztalattal vállalja családi házak, társasházak és műemlék jellegű épületek komplett tetőszerkezetének építését, felújítását és bádogozását.
+
+Szakembergárdánk mesterleveles ácsokból és bádogosokból áll. Kiemelt figyelmet fordítunk az alátéthéjazatok páraáteresztő képességére, a szellőzőrések kialakítására és a viharbiztos rögzítési technológiákra.`,
+  website_url: 'https://masterroof.hu',
+  logo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400&auto=format&fit=crop&q=80',
+  cover_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&auto=format&fit=crop&q=80',
+  logo_bg: 'white',
+  is_verified: true,
+  is_featured: true,
+  status: 'published',
+  contact_person_name: 'Kovács Zoltán',
+  contact_person_title: 'Tetőfedő Mester & Vezető Kivitelező',
+  contact_email: 'info@masterroof.hu',
+  contact_phone: '+36 30 987 6543',
+  address: 'Fedélszék fasor 18.',
+  zip_code: '2000',
+  city: 'Szentendre',
+  county: 'Pest vármegye',
+  operating_area: 'county',
+  business_hours: 'Hétfő - Szombat: 07:00 - 18:00',
+  inquiry_email: 'tetofedes@masterroof.hu',
+  services: [
+    { id: 's-mr-1', name: 'Ácsszerkezet és Fedélszék építés', description: 'Hagyományos és modern ragasztott gerendás tetőszerkezetek megépítése', icon_category: 'hammer', display_order: 1, is_active: true },
+    { id: 's-mr-2', name: 'Kerámia és betoncserép fedés', description: 'Viharálló rögzítés, gerincelemek, szellőzőcserepek és hófogók felszerelése', icon_category: 'building', display_order: 2, is_active: true },
+    { id: 's-mr-3', name: 'Korcolt lemez és bádogos munkák', description: 'Ereszcsatornák, vápák, kémegszegélyek és modern korcolt lemezfedések', icon_category: 'wrench', display_order: 3, is_active: true },
+  ],
+  references: [
+    { id: 'r-mr-1', title: 'Szentendrei Műemlék Polgárház Tetőfelújítás', location: 'Szentendre', year: '2025', description: 'Hódfarkú kerámia cserépfedés és vörösréz bádogozás 540 m² tetőfelületen.', is_published: true, display_order: 1 },
+    { id: 'r-mr-2', title: 'Minimalista Családi Ház Korcolt Fémlemez Fedés', location: 'Telki', year: '2024', description: 'Titáncink állókorcos lemezfedés rejtett ereszcsatorna rendszerrel.', is_published: true, display_order: 2 },
+  ],
+  certificates: [
+    { id: 'c-mr-1', title: 'ÉMSZ Mestervizsga Tanúsítvány (Tetőfedő & Bádogos)', issuer: 'Épületszigetelők, Tetőfedők és Bádogosok Magyarországi Szövetsége', valid_until: '2030-12-31', is_published: true, display_order: 1 },
+  ],
+  related_content: [
+    { id: 'rc-mr-1', title: 'Tetőfedés és Cserépszükséglet Kalkulátor', type: 'kalkulator', url: '#calculations', display_order: 1 },
+    { id: 'rc-mr-2', title: 'Tetőfedő és Bádogos szakmai ismeretek', type: 'utmutato', url: '#paths', display_order: 2 },
+  ],
+  seo_title: 'MasterRoof Tetőcentrum Kft. - Szakértő Tetőfedés és Bádogozás',
+  seo_description: 'Magastetők és lapostetők minőségi építése, kerámia és korcolt fémlemez fedések.',
+  is_indexable: true,
+  created_at: new Date().toISOString(),
+};
+
+export const PILOT_PARTNERS: ExtendedPartner[] = [
+  SAMPLE_78AS_EPITOK,
+  SAMPLE_ISOTERM,
+  SAMPLE_DRYWALLPRO,
+  SAMPLE_MASTERROOF,
+];
+
+// Helper to filter out legacy demo partners and ensure pilot partners exist
 function filterDemoPartners(list: Partner[]): Partner[] {
-  if (!Array.isArray(list)) return [SAMPLE_78AS_EPITOK];
+  if (!Array.isArray(list)) return [...PILOT_PARTNERS];
   const demoIds = ['p-1', 'p-2', 'p-3', 'p-4'];
   const demoSlugs = ['leier-hungaria', 'cemex-magyarorszag', 'bme-epito', 'stahlbau-kivitelezo'];
   const filtered = list.filter(
     (p) => p && !demoIds.includes(p.id) && !demoSlugs.includes(p.slug)
   );
 
-  // Ensure 78-as Építők exists in sample list
-  if (!filtered.some((p) => p.slug === '78-as-epitok' || p.id === 'p-78as-epitok')) {
-    filtered.unshift(SAMPLE_78AS_EPITOK);
-  }
+  // Ensure all pilot partners exist in sample list
+  PILOT_PARTNERS.forEach((pilot) => {
+    if (!filtered.some((p) => p.slug === pilot.slug || p.id === pilot.id)) {
+      filtered.push(pilot);
+    }
+  });
+
   return filtered;
 }
 
@@ -217,7 +381,7 @@ function getStoredPartners(): ExtendedPartner[] {
   } catch (err) {
     void err;
   }
-  return [SAMPLE_78AS_EPITOK];
+  return [...PILOT_PARTNERS];
 }
 
 function saveStoredPartners(list: ExtendedPartner[]): void {
@@ -494,9 +658,10 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
   const found = stored.find((p) => p.slug === cleanKey || p.id === cleanKey);
   if (found) return found;
 
-  // Default fallback if requested slug is 78-as-epitok
-  if (cleanKey === '78-as-epitok' || cleanKey === 'p-78as-epitok') {
-    return SAMPLE_78AS_EPITOK;
+  // Default fallback if requested slug is in PILOT_PARTNERS
+  const pilotMatch = PILOT_PARTNERS.find((p) => p.slug === cleanKey || p.id === cleanKey);
+  if (pilotMatch) {
+    return pilotMatch;
   }
 
   // Fallback partner generator
