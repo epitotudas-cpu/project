@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Building2,
   X,
@@ -15,6 +15,9 @@ import {
   CheckCircle2,
   ExternalLink,
   Sparkles,
+  Upload,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import type {
   ExtendedPartner,
@@ -63,6 +66,12 @@ export default function PartnerEditorModal({
   const [activeTab, setActiveTab] = useState<TabKey>('basic');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Logo upload state & ref
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoSuccessMessage, setLogoSuccessMessage] = useState<string | null>(null);
 
   // Form Fields State
   const [name, setName] = useState('');
@@ -195,6 +204,9 @@ export default function PartnerEditorModal({
       setIsIndexable(true);
     }
     setSaveSuccess(false);
+    setSaveError(null);
+    setLogoError(null);
+    setLogoSuccessMessage(null);
   }, [partner, isOpen]);
 
   if (!isOpen) return null;
@@ -208,6 +220,55 @@ export default function PartnerEditorModal({
     setSlug(generated || 'uj-partner');
   }
 
+  function handleLogoFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    setLogoError(null);
+    setLogoSuccessMessage(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Supported formats: PNG, JPG, JPEG, SVG
+    const validMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+    const validExtensions = /\.(png|jpe?g|svg)$/i;
+
+    if (!validMimeTypes.includes(file.type.toLowerCase()) && !validExtensions.test(file.name)) {
+      setLogoError('Nem támogatott fájlformátum. Csak PNG, JPG, JPEG és SVG formátumok engedélyezettek.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Max size: 2 MB
+    const maxSizeBytes = 2 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setLogoError('A feltöltött fájl mérete meghaladja a megengedett 2 MB-os korlátot.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const result = loadEvent.target?.result;
+      if (typeof result === 'string') {
+        setLogoUrl(result);
+        setLogoSuccessMessage('A logó előnézete sikeresen betöltve. A véglegesítéshez kattintson a „Változtatások Mentése & Publikálás” gombra.');
+      }
+    };
+    reader.onerror = () => {
+      setLogoError('Hiba történt a fájl beolvasása során. Kérjük, próbálja újra.');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleRemoveLogo() {
+    if (window.confirm('Biztosan törli a logót?')) {
+      setLogoUrl('');
+      setLogoError(null);
+      setLogoSuccessMessage(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
@@ -215,6 +276,8 @@ export default function PartnerEditorModal({
       return;
     }
     setSaving(true);
+    setSaveError(null);
+    setLogoError(null);
 
     const payload: Partial<ExtendedPartner> = {
       name: name.trim(),
@@ -258,12 +321,14 @@ export default function PartnerEditorModal({
     try {
       await onSave(payload);
       setSaveSuccess(true);
+      setLogoSuccessMessage(null);
       setTimeout(() => {
         setSaveSuccess(false);
       }, 5000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Hiba a partner mentésekor:', err);
-      alert('A partner adatainak mentésekor hiba történt.');
+      const msg = err?.message || 'A partner adatainak mentésekor hiba történt. Kérjük, próbálja újra.';
+      setSaveError(msg);
     } finally {
       setSaving(false);
     }
@@ -524,11 +589,31 @@ export default function PartnerEditorModal({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Logo Settings */}
                     <div className="bg-[#1a1d20] border border-gray-800 rounded-2xl p-5 space-y-4">
-                      <h4 className="text-sm font-bold text-white">Partner Logó</h4>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          <Building2 size={16} className="text-amber-400" />
+                          Partner Logó
+                        </h4>
+                        {logoUrl && (
+                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                            Logó beállítva
+                          </span>
+                        )}
+                      </div>
 
-                      <div className="flex items-center gap-4">
+                      {/* Hidden File Input */}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleLogoFileSelect}
+                        accept="image/png,image/jpeg,image/jpg,image/svg+xml,.png,.jpg,.jpeg,.svg"
+                        className="hidden"
+                      />
+
+                      {/* Preview Container + Actions */}
+                      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                         <div
-                          className={`w-24 h-24 rounded-xl border border-gray-700 p-2 flex items-center justify-center overflow-hidden shrink-0 ${
+                          className={`w-28 h-28 rounded-xl border border-gray-700 p-2.5 flex items-center justify-center overflow-hidden shrink-0 shadow-inner ${
                             logoBg === 'white'
                               ? 'bg-white'
                               : logoBg === 'light_gray'
@@ -537,25 +622,96 @@ export default function PartnerEditorModal({
                           }`}
                         >
                           {logoUrl ? (
-                            <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                            <img
+                              src={logoUrl}
+                              alt="Partner logó előnézet"
+                              className="w-full h-full object-contain"
+                            />
                           ) : (
-                            <span className="text-xs font-bold text-gray-500 uppercase">{name.substring(0, 2) || 'LOGÓ'}</span>
+                            <div className="flex flex-col items-center justify-center text-center p-2">
+                              <Building2 className="w-8 h-8 text-gray-500 mb-1" />
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                {name ? name.substring(0, 2).toUpperCase() : 'NINCS LOGÓ'}
+                              </span>
+                            </div>
                           )}
                         </div>
 
-                        <div className="space-y-2 flex-1">
-                          <input
-                            type="text"
-                            value={logoUrl}
-                            onChange={(e) => setLogoUrl(e.target.value)}
-                            placeholder=""
-                            className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white"
-                          />
-                          <p className="text-[11px] text-gray-400">
-                            Ajánlott méret: minimum 400 × 400 px (`object-fit: contain`)
-                          </p>
+                        <div className="space-y-3 flex-1 w-full text-center sm:text-left">
+                          {!logoUrl ? (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLogoError(null);
+                                  fileInputRef.current?.click();
+                                }}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all shadow-md cursor-pointer"
+                              >
+                                <Upload size={15} />
+                                Logó feltöltése
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLogoError(null);
+                                  fileInputRef.current?.click();
+                                }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs rounded-xl border border-gray-700 transition-colors cursor-pointer"
+                              >
+                                <RefreshCw size={14} />
+                                Logó cseréje
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleRemoveLogo}
+                                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 font-bold text-xs rounded-xl border border-rose-800/60 transition-colors cursor-pointer"
+                              >
+                                <Trash2 size={14} />
+                                Logó törlése
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Direct URL input fallback */}
+                          <div className="pt-1">
+                            <input
+                              type="text"
+                              value={logoUrl}
+                              onChange={(e) => {
+                                setLogoError(null);
+                                setLogoUrl(e.target.value);
+                              }}
+                              placeholder="vagy adja meg a logó közvetlen URL címét (https://...)"
+                              className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500"
+                            />
+                          </div>
+
+                          {/* Error Banner */}
+                          {logoError && (
+                            <div className="p-2.5 bg-rose-950/50 border border-rose-800 text-rose-300 rounded-xl text-xs font-semibold flex items-start gap-2 text-left">
+                              <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                              <span>{logoError}</span>
+                            </div>
+                          )}
+
+                          {/* Pre-save informative hint */}
+                          {logoSuccessMessage && (
+                            <div className="p-2.5 bg-blue-950/50 border border-blue-800 text-blue-300 rounded-xl text-xs font-semibold flex items-start gap-2 text-left">
+                              <CheckCircle2 size={15} className="shrink-0 mt-0.5 text-blue-400" />
+                              <span>{logoSuccessMessage}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
+
+                      {/* Required Guide Text */}
+                      <p className="text-xs text-gray-400 leading-relaxed border-t border-gray-800/60 pt-3">
+                        Töltse fel vállalkozása logóját. Ajánlott méret: minimum 400 × 400 px. Támogatott formátumok: PNG, JPG, SVG. A logó a nyilvános partnerprofilján és a partnerlistában jelenik meg.
+                      </p>
 
                       <div>
                         <label className="block text-xs font-bold text-gray-300 mb-1.5">Logó háttérszíne</label>
@@ -569,10 +725,10 @@ export default function PartnerEditorModal({
                               key={b.id}
                               type="button"
                               onClick={() => setLogoBg(b.id as any)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                                 logoBg === b.id
                                   ? 'bg-amber-400 text-black border-amber-400'
-                                  : 'bg-gray-800 text-gray-300 border-gray-700'
+                                  : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
                               }`}
                             >
                               {b.label}
@@ -1314,10 +1470,17 @@ export default function PartnerEditorModal({
               </button>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                {saveError && (
+                  <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold animate-fade-in">
+                    <AlertCircle size={16} />
+                    <span>{saveError}</span>
+                  </div>
+                )}
+
                 {saveSuccess && (
                   <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold animate-fade-in">
                     <CheckCircle2 size={16} />
-                    <span>Mentés sikeres!</span>
+                    <span>A logó sikeresen frissítve lett.</span>
                   </div>
                 )}
 

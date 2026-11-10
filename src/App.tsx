@@ -507,8 +507,24 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/20 rounded-2xl p-6 md:p-8 shadow-xl">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
-                    <Building2 className="w-7 h-7" />
+                  <div
+                    className={`w-14 h-14 rounded-2xl border border-blue-500/30 p-1 flex items-center justify-center shrink-0 overflow-hidden ${
+                      (effectivePartner as any).logo_bg === 'white'
+                        ? 'bg-white'
+                        : (effectivePartner as any).logo_bg === 'light_gray'
+                        ? 'bg-gray-200'
+                        : 'bg-blue-500/10'
+                    }`}
+                  >
+                    {effectivePartner.logo_url ? (
+                      <img
+                        src={effectivePartner.logo_url}
+                        alt={effectivePartner.name}
+                        className="w-full h-full object-contain rounded-xl"
+                      />
+                    ) : (
+                      <Building2 className="w-7 h-7 text-blue-400" />
+                    )}
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -626,9 +642,12 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                       } else {
                         setCurrentPartner((prev) => ({ ...(prev || effectivePartner), ...data } as Partner));
                       }
-                      setIsEditorOpen(false);
+                      setTimeout(() => {
+                        setIsEditorOpen(false);
+                      }, 1500);
                     } catch (err) {
                       console.error('Save partner error:', err);
+                      throw err;
                     }
                   }}
                 />

@@ -190,17 +190,41 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                     )}
                   </div>
 
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                      {partner.name}
-                    </h2>
+                  <div className="flex items-center gap-3.5">
+                    <div
+                      className={`w-14 h-14 rounded-xl border border-gray-100 p-1 flex items-center justify-center shrink-0 shadow-sm overflow-hidden ${
+                        (partner as any).logo_bg === 'light_gray'
+                          ? 'bg-gray-200'
+                          : (partner as any).logo_bg === 'transparent'
+                          ? 'bg-transparent border-gray-300'
+                          : 'bg-white'
+                      }`}
+                    >
+                      {partner.logo_url ? (
+                        <img
+                          src={partner.logo_url}
+                          alt={partner.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-50 flex items-center justify-center rounded-lg text-primary font-bold text-xs uppercase">
+                          {partner.name ? partner.name.substring(0, 2) : <Building2 size={20} className="text-gray-400" />}
+                        </div>
+                      )}
+                    </div>
 
-                    {partner.description && (
-                      <p className="text-sm text-gray-600 leading-relaxed mt-2 line-clamp-3">
-                        {partner.description}
-                      </p>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
+                        {partner.name}
+                      </h2>
+                    </div>
                   </div>
+
+                  {partner.description && (
+                    <p className="text-sm text-gray-600 leading-relaxed mt-2 line-clamp-3">
+                      {partner.description}
+                    </p>
+                  )}
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
