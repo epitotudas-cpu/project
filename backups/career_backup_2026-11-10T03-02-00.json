@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "project_name": "ÉpítőTudás",
+    "project_id": "olmavxcmkvvcebgqxohe",
+    "endpoint": "https://olmavxcmkvvcebgqxohe.supabase.co",
+    "backup_timestamp": "2026-11-10T03:02:00.000Z",
+    "purpose": "Pre-migration backup for 20261109_001_career_security_and_rls.sql v2.3"
+  },
+  "tables": {
+    "job_postings": {
+      "record_count": 3,
+      "columns": [
+        "id",
+        "partner_id",
+        "company_name",
+        "title",
+        "job_type",
+        "location",
+        "salary_range",
+        "description",
+        "is_active",
+        "created_at"
+      ],
+      "constraints": [
+        {
+          "name": "job_postings_pkey",
+          "type": "PRIMARY KEY",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "job_postings_partner_id_fkey",
+          "type": "FOREIGN KEY",
+          "definition": "FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE SET NULL"
+        }
+      ],
+      "policies": [
+        {
+          "name": "Public read job_postings",
+          "action": "SELECT",
+          "roles": ["anon", "authenticated"],
+          "using": "true",
+          "with_check": null
+        }
+      ],
+      "triggers": [],
+      "data": [
+        {
+          "id": "c625a5b4-e215-429f-9be3-7092321cfb45",
+          "partner_id": null,
+          "company_name": "Strabag Építő Kft.",
+          "title": "Senior Monolit Beton Kőműves Mester",
+          "job_type": "full_time",
+          "location": "Budapest & Pest megye",
+          "salary_range": "Bruttó 650.000 - 850.000 Ft/hó",
+          "description": "Nagy léptékű szerkezetépítési projektek kivitelezése, zsaluzatok szerelése és csoportvezetés.",
+          "is_active": true,
+          "created_at": "2026-09-15T16:16:22.591781+00:00"
+        },
+        {
+          "id": "828dd2fb-a4fd-4be1-8d09-2265e210a2fb",
+          "partner_id": null,
+          "company_name": "Wienerberger Zrt.",
+          "title": "Szerkezetépítő Szakmai Gyakorlati Hely",
+          "job_type": "apprenticeship",
+          "location": "Győr",
+          "salary_range": "Versenyképes ösztöndíj",
+          "description": "Duális szakképzés keretében történő gyakorlati oktatás falazási és kerámia cserepezési szakterületen.",
+          "is_active": true,
+          "created_at": "2026-09-15T16:16:22.591781+00:00"
+        },
+        {
+          "id": "166b0586-2b65-4862-8e6e-faed6d68c001",
+          "partner_id": null,
+          "company_name": "Market Építő Zrt.",
+          "title": "Építésvezető Mérnök Asszisztens",
+          "job_type": "full_time",
+          "location": "Székesfehérvár",
+          "salary_range": "Bruttó 550.000 - 700.000 Ft/hó",
+          "description": "Helyszíni minőségellenőrzés, műszaki dokumentáció vezetés és alvállalkozói koordináció.",
+          "is_active": true,
+          "created_at": "2026-09-15T16:16:22.591781+00:00"
+        }
+      ]
+    },
+    "job_applications": {
+      "record_count": 0,
+      "columns": [
+        "id",
+        "job_id",
+        "user_id",
+        "applicant_name",
+        "applicant_email",
+        "cover_note",
+        "created_at"
+      ],
+      "constraints": [
+        {
+          "name": "job_applications_pkey",
+          "type": "PRIMARY KEY",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "job_applications_job_id_fkey",
+          "type": "FOREIGN KEY",
+          "definition": "FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "job_applications_user_id_fkey",
+          "type": "FOREIGN KEY",
+          "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL"
+        }
+      ],
+      "policies": [
+        {
+          "name": "Public read job_applications",
+          "action": "SELECT",
+          "roles": ["anon", "authenticated"],
+          "using": "true",
+          "with_check": null
+        }
+      ],
+      "triggers": [],
+      "data": []
+    }
+  }
+}
+

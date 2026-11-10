@@ -7,6 +7,7 @@ export interface CreateJobPostingPayload {
   location: string;
   salaryRange?: string;
   description: string;
+  partnerId?: string;
 }
 
 export interface CareerTrajectory {
@@ -224,7 +225,7 @@ export async function createJobPosting(
   payload: CreateJobPostingPayload,
   isDirectApproved = false
 ): Promise<JobPosting> {
-  const newJob: JobPosting = {
+  let newJob: JobPosting = {
     id: `job-${Date.now()}`,
     company_name: payload.companyName,
     title: payload.title,
@@ -237,6 +238,37 @@ export async function createJobPosting(
     created_at: new Date().toISOString(),
   };
 
+  try {
+    const insertPayload: Record<string, any> = {
+      company_name: payload.companyName,
+      title: payload.title,
+      job_type: payload.jobType,
+      location: payload.location,
+      salary_range: payload.salaryRange || null,
+      description: payload.description,
+      is_active: isDirectApproved,
+    };
+    if (payload.partnerId) {
+      insertPayload.partner_id = payload.partnerId;
+    }
+
+    const { data, error } = await supabase
+      .from('job_postings' as any)
+      .insert(insertPayload)
+      .select('*')
+      .maybeSingle();
+
+    if (!error && data) {
+      newJob = {
+        ...newJob,
+        ...data,
+        moderation_status: (data as any).moderation_status || newJob.moderation_status,
+      };
+    }
+  } catch (err) {
+    console.warn('Supabase job_postings insert info:', err);
+  }
+
   const all = getStoredJobs();
   all.unshift(newJob);
   saveStoredJobs(all);
@@ -244,6 +276,18 @@ export async function createJobPosting(
 }
 
 export async function approveJobPosting(id: string): Promise<void> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  if (isUuid) {
+    try {
+      await supabase
+        .from('job_postings' as any)
+        .update({ is_active: true, moderation_status: 'approved' } as any)
+        .eq('id', id);
+    } catch (err) {
+      console.warn('Supabase job approve info:', err);
+    }
+  }
+
   const all = getStoredJobs();
   const idx = all.findIndex((j) => j.id === id);
   if (idx !== -1) {
@@ -254,6 +298,18 @@ export async function approveJobPosting(id: string): Promise<void> {
 }
 
 export async function rejectJobPosting(id: string): Promise<void> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  if (isUuid) {
+    try {
+      await supabase
+        .from('job_postings' as any)
+        .update({ is_active: false, moderation_status: 'rejected' } as any)
+        .eq('id', id);
+    } catch (err) {
+      console.warn('Supabase job reject info:', err);
+    }
+  }
+
   const all = getStoredJobs();
   const idx = all.findIndex((j) => j.id === id);
   if (idx !== -1) {
@@ -270,15 +326,52 @@ export async function submitJobApplication(
   coverNote?: string,
   userId?: string
 ): Promise<JobApplication> {
-  const application: JobApplication = {
+  const cleanName = applicantName.trim();
+  const cleanEmail = applicantEmail.trim();
+  const cleanNote = coverNote?.trim() || null;
+
+  if (cleanName.length < 2 || cleanName.length > 100) {
+    throw new Error('A névnek 2 és 100 karakter között kell lennie.');
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    throw new Error('Kérjük, adjon meg egy érvényes e-mail címet.');
+  }
+  if (cleanNote && cleanNote.length > 2000) {
+    throw new Error('A bemutatkozó levél legfeljebb 2000 karakter lehet.');
+  }
+
+  let application: JobApplication = {
     id: `app-${Date.now()}`,
     job_id: jobId,
     user_id: userId || null,
-    applicant_name: applicantName,
-    applicant_email: applicantEmail,
-    cover_note: coverNote || null,
+    applicant_name: cleanName,
+    applicant_email: cleanEmail,
+    cover_note: cleanNote,
     created_at: new Date().toISOString(),
   };
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId);
+  if (isUuid) {
+    try {
+      const { data, error } = await supabase
+        .from('job_applications' as any)
+        .insert({
+          job_id: jobId,
+          user_id: userId || null,
+          applicant_name: cleanName,
+          applicant_email: cleanEmail,
+          cover_note: cleanNote,
+        })
+        .select('*')
+        .maybeSingle();
+
+      if (!error && data) {
+        application = data as JobApplication;
+      }
+    } catch (err) {
+      console.warn('Supabase job_applications insert info:', err);
+    }
+  }
 
   const allApps = getStoredApplications();
   allApps.push(application);

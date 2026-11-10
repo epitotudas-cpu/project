@@ -52,6 +52,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
   const [applicantEmail, setApplicantEmail] = useState('');
   const [coverNote, setCoverNote] = useState('');
   const [appliedSuccess, setAppliedSuccess] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   // New Job Form State
   const [companyName, setCompanyName] = useState('');
@@ -100,15 +101,42 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
 
   async function handleApplySubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!applyModalJob || !applicantName.trim() || !applicantEmail.trim()) return;
+    setApplyError(null);
 
-    await submitJobApplication(applyModalJob.id, applicantName, applicantEmail, coverNote, user?.id);
-    setAppliedSuccess(true);
-    setTimeout(() => {
-      setAppliedSuccess(false);
-      setApplyModalJob(null);
-      setCoverNote('');
-    }, 2000);
+    const cleanName = applicantName.trim();
+    const cleanEmail = applicantEmail.trim();
+    const cleanNote = coverNote.trim();
+
+    if (!applyModalJob) return;
+
+    if (cleanName.length < 2 || cleanName.length > 100) {
+      setApplyError('A teljes névnek 2 és 100 karakter között kell lennie.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setApplyError('Kérjük, adjon meg egy érvényes e-mail címet.');
+      return;
+    }
+
+    if (cleanNote.length > 2000) {
+      setApplyError('A bemutatkozó levél legfeljebb 2000 karakter lehet.');
+      return;
+    }
+
+    try {
+      await submitJobApplication(applyModalJob.id, cleanName, cleanEmail, cleanNote, user?.id);
+      setAppliedSuccess(true);
+      setTimeout(() => {
+        setAppliedSuccess(false);
+        setApplyModalJob(null);
+        setCoverNote('');
+        setApplyError(null);
+      }, 2000);
+    } catch (err: any) {
+      setApplyError(err?.message || 'Hiba történt a jelentkezés beküldésekor.');
+    }
   }
 
   async function handleCreateJobSubmit(e: React.FormEvent) {
@@ -506,7 +534,10 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
                       )}
 
                       <button
-                        onClick={() => setApplyModalJob(job)}
+                        onClick={() => {
+                          setApplyError(null);
+                          setApplyModalJob(job);
+                        }}
                         className="w-full py-2.5 bg-primary hover:bg-accent hover:text-primary text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 group-hover:shadow-lg"
                       >
                         <span>Állás megtekintése &amp; Jelentkezés</span>
@@ -692,6 +723,11 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
               </div>
             ) : (
               <form onSubmit={handleApplySubmit} className="space-y-3">
+                {applyError && (
+                  <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-600 text-xs font-semibold">
+                    {applyError}
+                  </div>
+                )}
                 <div>
                   <label className="text-xs text-gray-600 font-bold block mb-1">Teljes Név</label>
                   <input
