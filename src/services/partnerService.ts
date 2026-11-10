@@ -117,7 +117,7 @@ export interface CreatePartnerPayload {
   is_indexable?: boolean;
 }
 
-const STORAGE_KEY = 'epitotudas_partners_v1';
+const STORAGE_KEY = 'epitotudas_partners_v2';
 const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000011';
 
 export const SAMPLE_78AS_EPITOK: ExtendedPartner = {
@@ -336,23 +336,20 @@ export const PILOT_PARTNERS: ExtendedPartner[] = [
   SAMPLE_MASTERROOF,
 ];
 
-// Helper to filter out legacy demo partners and ensure pilot partners exist
+// Helper to filter out legacy demo partners
 function filterDemoPartners(list: Partner[]): Partner[] {
-  if (!Array.isArray(list)) return [...PILOT_PARTNERS];
-  const demoIds = ['p-1', 'p-2', 'p-3', 'p-4'];
-  const demoSlugs = ['leier-hungaria', 'cemex-magyarorszag', 'bme-epito', 'stahlbau-kivitelezo'];
-  const filtered = list.filter(
-    (p) => p && !demoIds.includes(p.id) && !demoSlugs.includes(p.slug)
-  );
-
-  // Ensure all pilot partners exist in sample list
-  PILOT_PARTNERS.forEach((pilot) => {
-    if (!filtered.some((p) => p.slug === pilot.slug || p.id === pilot.id)) {
-      filtered.push(pilot);
-    }
-  });
-
-  return filtered;
+  if (!Array.isArray(list)) return [];
+  const demoIds = [
+    'p-1',
+    'p-2',
+    'p-3',
+    'p-4',
+    'p-78as-epitok',
+    'p-isoterm',
+    'p-drywallpro',
+    'p-masterroof',
+  ];
+  return list.filter((p) => p && !demoIds.includes(p.id));
 }
 
 export function getCategoryLabel(cat: string): string {
@@ -381,7 +378,7 @@ function getStoredPartners(): ExtendedPartner[] {
   } catch (err) {
     void err;
   }
-  return [...PILOT_PARTNERS];
+  return [];
 }
 
 function saveStoredPartners(list: ExtendedPartner[]): void {
@@ -390,92 +387,64 @@ function saveStoredPartners(list: ExtendedPartner[]): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanList));
     }
-
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_PARTNERS__',
-          slug: 'system-partners-config',
-          description: JSON.stringify(cleanList),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        void err;
-      }
-    })();
   } catch (err) {
     void err;
   }
 }
 
 export async function listPartners(category?: string): Promise<ExtendedPartner[]> {
-  let listFromSupabase: Partner[] | null = null;
-  try {
-    let query = supabase.from('partners').select('*').order('created_at', { ascending: false });
-    if (category && category !== 'all') {
-      query = query.eq('category', category);
-    }
-    const { data, error } = await query;
-    if (!error && data && data.length > 0) {
-      listFromSupabase = data;
-    }
-  } catch (err) {
-    void err;
+  let query = supabase.from('partners').select('*').order('created_at', { ascending: false });
+  if (category && category !== 'all') {
+    query = query.eq('category', category);
+  }
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Hiba a partnerek lekérdezésekor a Supabase-ből:', error);
+    throw new Error(`Nem sikerült a partnerek betöltése az adatbázisból: ${error.message}`);
   }
 
+  // Supabase sikeres válasz, nulla rekord -> üres tömb, nincs localStorage fallback
+  if (!data || data.length === 0) {
+    saveStoredPartners([]);
+    return [];
+  }
+
+  // Supabase sikeres válasz, több rekord -> tiszta Supabase adatok
+  const cleanSupabase = filterDemoPartners(data);
   const stored = getStoredPartners();
 
-  if (listFromSupabase && listFromSupabase.length > 0) {
-    const cleanSupabase = filterDemoPartners(listFromSupabase);
-    const mergedList = cleanSupabase.map((sp) => {
-      const localExt = stored.find(
-        (p) => p.id === sp.id || p.slug === sp.slug || p.id === sp.slug || p.slug === sp.id
-      );
-      if (!localExt) {
-        return sp as ExtendedPartner;
-      }
-      return {
-        ...sp,
-        ...localExt,
-        id: sp.id || localExt.id,
-        slug: sp.slug || localExt.slug,
-        name: localExt.name || sp.name,
-        category: localExt.category || sp.category,
-        description: localExt.description ?? sp.description,
-        website_url: localExt.website_url ?? sp.website_url,
-        logo_url: localExt.logo_url ?? sp.logo_url,
-        is_verified: localExt.is_verified ?? sp.is_verified,
-        services: localExt.services || [],
-        references: localExt.references || [],
-        certificates: localExt.certificates || [],
-        related_content: localExt.related_content || [],
-      } as ExtendedPartner;
-    });
-
-    const supabaseIds = new Set(cleanSupabase.map((s) => s.id));
-    const supabaseSlugs = new Set(cleanSupabase.map((s) => s.slug));
-    const localOnly = stored.filter(
-      (p) => !supabaseIds.has(p.id) && !supabaseSlugs.has(p.slug) && !supabaseIds.has(p.slug)
+  const mergedList = cleanSupabase.map((sp) => {
+    const localExt = stored.find(
+      (p) => p.id === sp.id || p.slug === sp.slug
     );
-
-    const fullList = [...mergedList, ...localOnly];
-    saveStoredPartners(fullList);
-
-    if (category && category !== 'all') {
-      return fullList.filter((p) => p.category === category);
+    if (!localExt) {
+      return sp as ExtendedPartner;
     }
-    return fullList;
-  }
+    return {
+      ...localExt,
+      ...sp,
+      id: sp.id,
+      slug: sp.slug,
+      name: sp.name,
+      category: sp.category,
+      description: sp.description,
+      website_url: sp.website_url,
+      logo_url: sp.logo_url,
+      is_verified: sp.is_verified,
+      services: localExt.services || [],
+      references: localExt.references || [],
+      certificates: localExt.certificates || [],
+      related_content: localExt.related_content || [],
+    } as ExtendedPartner;
+  });
 
-  // Fallback to local storage / system config
-  let list = getStoredPartners();
+  saveStoredPartners(mergedList);
+
   if (category && category !== 'all') {
-    return list.filter((p) => p.category === category);
+    return mergedList.filter((p) => p.category === category);
   }
-  return list;
+  return mergedList;
 }
 
 export async function createPartner(payload: CreatePartnerPayload): Promise<ExtendedPartner> {
@@ -562,126 +531,95 @@ export async function updatePartner(
   id: string,
   payload: Partial<ExtendedPartner>
 ): Promise<ExtendedPartner> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  if (!isUuid) {
+    throw new Error('Érvénytelen partnerazonosító: a partner mentéséhez valódi adatbázis UUID szükséges.');
+  }
+
   const currentList = getStoredPartners();
-  const index = currentList.findIndex(
-    (p) => p.id === id || p.slug === id || (payload.slug && p.slug === payload.slug)
-  );
+  const index = currentList.findIndex((p) => p.id === id);
   const existing = index !== -1 ? currentList[index] : null;
 
   const updatedSlug = payload.slug
     ? payload.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     : payload.name
     ? payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-    : existing?.slug || id;
+    : existing?.slug;
 
-  const updatedPartner: ExtendedPartner = {
-    ...(existing || {
-      id,
-      name: '',
-      slug: updatedSlug,
-      category: 'ceg',
-      is_verified: true,
-      created_at: new Date().toISOString(),
-    }),
-    ...payload,
-    name: payload.name !== undefined ? payload.name.trim() : existing?.name || '',
-    slug: updatedSlug,
+  const updatePayload: Record<string, any> = {
+    name: payload.name !== undefined ? payload.name.trim() : existing?.name,
+    slug: updatedSlug || existing?.slug,
     category: payload.category !== undefined ? payload.category : existing?.category || 'ceg',
     description: payload.description !== undefined ? (payload.description?.trim() || null) : existing?.description || null,
     website_url: payload.website_url !== undefined ? (payload.website_url?.trim() || null) : existing?.website_url || null,
     logo_url: payload.logo_url !== undefined ? (payload.logo_url?.trim() || null) : existing?.logo_url || null,
     is_verified: payload.is_verified !== undefined ? payload.is_verified : existing?.is_verified ?? true,
+    official_name: payload.official_name !== undefined ? (payload.official_name?.trim() || null) : existing?.official_name || null,
+    partner_type: payload.partner_type !== undefined ? (payload.partner_type?.trim() || null) : existing?.partner_type || null,
+    contact_person_name: payload.contact_person_name !== undefined ? (payload.contact_person_name?.trim() || null) : existing?.contact_person_name || null,
+    contact_person_title: payload.contact_person_title !== undefined ? (payload.contact_person_title?.trim() || null) : existing?.contact_person_title || null,
+    contact_email: payload.contact_email !== undefined ? (payload.contact_email?.trim() || null) : existing?.contact_email || null,
+    contact_phone: payload.contact_phone !== undefined ? (payload.contact_phone?.trim() || null) : existing?.contact_phone || null,
+    address: payload.address !== undefined ? (payload.address?.trim() || null) : existing?.address || null,
+    zip_code: payload.zip_code !== undefined ? (payload.zip_code?.trim() || null) : existing?.zip_code || null,
+    city: payload.city !== undefined ? (payload.city?.trim() || null) : existing?.city || null,
+    county: payload.county !== undefined ? (payload.county?.trim() || null) : existing?.county || null,
+    business_hours: payload.business_hours !== undefined ? (payload.business_hours?.trim() || null) : existing?.business_hours || null,
+    detailed_description: payload.detailed_description !== undefined ? (payload.detailed_description?.trim() || null) : existing?.detailed_description || null,
+    cover_url: payload.cover_url !== undefined ? (payload.cover_url?.trim() || null) : existing?.cover_url || null,
+    inquiry_email: payload.inquiry_email !== undefined ? (payload.inquiry_email?.trim() || null) : existing?.inquiry_email || null,
   };
 
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  try {
-    const updatePayload: Record<string, any> = {
-      name: updatedPartner.name,
-      slug: updatedPartner.slug,
-      category: updatedPartner.category,
-      description: updatedPartner.description,
-      website_url: updatedPartner.website_url,
-      logo_url: updatedPartner.logo_url,
-      is_verified: updatedPartner.is_verified,
-      official_name: updatedPartner.official_name || null,
-      partner_type: updatedPartner.partner_type || null,
-      contact_person_name: updatedPartner.contact_person_name || null,
-      contact_person_title: updatedPartner.contact_person_title || null,
-      contact_email: updatedPartner.contact_email || null,
-      contact_phone: updatedPartner.contact_phone || null,
-      address: updatedPartner.address || null,
-      zip_code: updatedPartner.zip_code || null,
-      city: updatedPartner.city || null,
-      county: updatedPartner.county || null,
-      business_hours: updatedPartner.business_hours || null,
-      detailed_description: updatedPartner.detailed_description || null,
-      cover_url: updatedPartner.cover_url || null,
-      inquiry_email: updatedPartner.inquiry_email || null,
-    };
-
-    let persisted = false;
-
-    // 1. If ID is a valid UUID, attempt update by ID
-    if (isUuid) {
-      const { data: updateRes, error: updateErr } = await supabase
-        .from('partners')
-        .update(updatePayload)
-        .eq('id', id)
-        .select('*');
-      if (!updateErr && updateRes && updateRes.length > 0) {
-        persisted = true;
-      }
+  // Strip keys that are strictly undefined
+  Object.keys(updatePayload).forEach((k) => {
+    if (updatePayload[k] === undefined) {
+      delete updatePayload[k];
     }
+  });
 
-    // 2. If not persisted yet, attempt update by slug
-    if (!persisted && (existing?.slug || updatedSlug)) {
-      const targetSlug = existing?.slug || updatedSlug;
-      const { data: updateSlugRes, error: updateSlugErr } = await supabase
-        .from('partners')
-        .update(updatePayload)
-        .eq('slug', targetSlug)
-        .select('*');
-      if (!updateSlugErr && updateSlugRes && updateSlugRes.length > 0) {
-        persisted = true;
-        updatedPartner.id = updateSlugRes[0].id;
-      }
-    }
+  const { data: updateRes, error: updateErr } = await supabase
+    .from('partners')
+    .update(updatePayload)
+    .eq('id', id)
+    .select('*');
 
-    // 3. If neither updated any row (partner doesn't exist in Supabase yet), INSERT it!
-    if (!persisted) {
-      const { data: insertRes, error: insertErr } = await supabase
-        .from('partners')
-        .insert({
-          ...updatePayload,
-          slug: updatedSlug,
-        })
-        .select('*')
-        .single();
-      if (!insertErr && insertRes) {
-        updatedPartner.id = insertRes.id;
-      } else if (insertErr) {
-        console.warn('Supabase partner insert notice:', insertErr.message);
-      }
-    }
-  } catch (err) {
-    console.error('Supabase partner update warning:', err);
+  if (updateErr) {
+    throw new Error(`A partner mentése sikertelen az adatbázisban: ${updateErr.message}`);
   }
 
+  if (!updateRes || updateRes.length === 0) {
+    throw new Error('A partner mentése sikertelen: az adatbázisban nem található a megadott partnerrekord (0 módosított sor).');
+  }
+
+  const savedRecord = updateRes[0];
+  const updatedPartner: ExtendedPartner = {
+    ...(existing || {}),
+    ...payload,
+    ...savedRecord,
+  };
+
+  // Update local cache ONLY upon verified database update success
   if (index !== -1) {
     currentList[index] = updatedPartner;
   } else {
     currentList.unshift(updatedPartner);
   }
   saveStoredPartners(currentList);
+
   return updatedPartner;
 }
 
 export async function deletePartner(id: string): Promise<void> {
-  try {
-    await supabase.from('partners').delete().eq('id', id);
-  } catch (err) {
-    void err;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  if (!isUuid) {
+    throw new Error('Érvénytelen partnerazonosító: a törléshez valódi adatbázis UUID szükséges.');
   }
+
+  const { error } = await supabase.from('partners').delete().eq('id', id);
+  if (error) {
+    throw new Error(`A partner törlése sikertelen: ${error.message}`);
+  }
+
   const list = getStoredPartners();
   const filtered = list.filter((p) => p.id !== id);
   saveStoredPartners(filtered);
@@ -691,52 +629,51 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
   if (!slugOrId) return null;
   const cleanKey = slugOrId.trim();
 
-  try {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanKey);
-    let query = supabase.from('partners').select('*');
-    if (isUuid) {
-      query = query.or(`slug.eq.${cleanKey},id.eq.${cleanKey}`);
-    } else {
-      query = query.eq('slug', cleanKey);
-    }
-    const { data, error } = await query.maybeSingle();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanKey);
+  let query = supabase.from('partners').select('*');
+  if (isUuid) {
+    query = query.or(`slug.eq.${cleanKey},id.eq.${cleanKey}`);
+  } else {
+    query = query.eq('slug', cleanKey);
+  }
+  const { data, error } = await query.maybeSingle();
 
-    if (!error && data) {
-      const stored = getStoredPartners();
-      const localExt = stored.find((p) => p.slug === cleanKey || p.id === cleanKey);
-      return { ...localExt, ...data };
-    }
-  } catch (err) {
-    void err;
+  if (error) {
+    console.error('Hiba a partner lekérdezésekor a Supabase-ből:', error);
+    throw new Error(`Adatbázishiba a partner lekérdezése közben: ${error.message}`);
   }
 
-  // Fallback to local storage
+  // B) Supabase sikeres válasz, de nincs rekord -> azonnal null, nem vizsgálja a localStorage-t
+  if (!data) {
+    return null;
+  }
+
+  // A) Supabase sikeres válasz és létező rekord -> Supabase rekord az elsődleges
   const stored = getStoredPartners();
-  const found = stored.find((p) => p.slug === cleanKey || p.id === cleanKey);
-  if (found) return found;
+  const localExt = stored.find(
+    (p) => p.slug === cleanKey || p.id === cleanKey || p.id === data.id || p.slug === data.slug
+  );
 
-  // Default fallback if requested slug is in PILOT_PARTNERS
-  const pilotMatch = PILOT_PARTNERS.find((p) => p.slug === cleanKey || p.id === cleanKey);
-  if (pilotMatch) {
-    return pilotMatch;
+  if (!localExt) {
+    return data as ExtendedPartner;
   }
-
-  // Fallback partner generator
-  const readableName = cleanKey
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (l) => l.toUpperCase());
 
   return {
-    id: cleanKey,
-    name: readableName || 'Hivatalos Partner',
-    slug: cleanKey,
-    category: 'ceg',
-    description: `${readableName} az ÉpítőTudás elismert szakmai partnere. Szakterülete a minőségi kivitelezés, szakképzés és szakmai alapanyagok biztosítása.`,
-    website_url: null,
-    logo_url: null,
-    is_verified: true,
-    created_at: new Date().toISOString(),
-  };
+    ...localExt,
+    ...data,
+    id: data.id,
+    slug: data.slug,
+    name: data.name,
+    category: data.category,
+    description: data.description,
+    website_url: data.website_url,
+    logo_url: data.logo_url,
+    is_verified: data.is_verified,
+    services: localExt.services || [],
+    references: localExt.references || [],
+    certificates: localExt.certificates || [],
+    related_content: localExt.related_content || [],
+  } as ExtendedPartner;
 }
 
 // ===============================================================================

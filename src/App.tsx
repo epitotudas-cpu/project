@@ -30,6 +30,7 @@ import {
   TrendingUp,
   Edit2,
   Mail,
+  AlertCircle,
 } from 'lucide-react';
 
 // Dynamic Code Splitting (Lazy Load Subpages to Drastically Reduce Initial Bundle Size)
@@ -442,21 +443,6 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
     user?.user_metadata?.user_type === 'instructor';
   const isSchoolAdmin = isSchoolCategory && (memberRole === 'owner' || memberRole === 'admin');
 
-  const effectivePartner: Partner = currentPartner || {
-    id: user?.id || 'partner-current',
-    name: profile?.full_name || (user?.email ? user.email.split('@')[0] : 'Partner Vállalkozás'),
-    slug: ((profile?.full_name || (user?.email ? user.email.split('@')[0] : 'partner-vallalkozas'))
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')) || 'partner-vallalkozas',
-    category: 'kivitelezo',
-    logo_url: null,
-    website_url: null,
-    description: 'Minősített építőipari partner vállalkozás az ÉpítőTudás platformon.',
-    is_verified: true,
-    created_at: new Date().toISOString(),
-  };
-
   if (loadingRole) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -482,6 +468,41 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
       </PartnerLayout>
     );
   }
+
+  if (!currentPartner) {
+    return (
+      <PartnerLayout
+        onNavigate={onNavigate}
+        activeView={partnerView}
+        onNavigateView={setPartnerView}
+        memberRole={memberRole}
+        isSchoolCategory={isSchoolCategory}
+      >
+        <div className="max-w-2xl mx-auto my-12 bg-slate-900/90 border border-amber-500/30 rounded-2xl p-8 shadow-2xl text-center space-y-4 animate-fadeIn">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-white">Nincs hozzárendelt partneri profil</h2>
+          <p className="text-slate-300 text-sm leading-relaxed">
+            A bejelentkezett felhasználói fiókhoz (<span className="text-white font-mono">{user?.email || 'azonosítatlan'}</span>) jelenleg nem található érvényes partnerkapcsolat az adatbázisban (<code className="text-xs bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">partner_users</code>).
+          </p>
+          <p className="text-slate-400 text-xs">
+            Amennyiben Ön szerződött partnercég képviselője, kérjük, vegye fel a kapcsolatot az ÉpítőTudás adminisztrációval a fiók összerendeléséhez.
+          </p>
+          <div className="pt-4 flex justify-center gap-3">
+            <button
+              onClick={() => onNavigate('home')}
+              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+            >
+              Vissza a főoldalra
+            </button>
+          </div>
+        </div>
+      </PartnerLayout>
+    );
+  }
+
+  const effectivePartner: Partner = currentPartner;
 
   return (
     <PartnerLayout
@@ -635,9 +656,11 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   isOpen={isEditorOpen}
                   onClose={() => setIsEditorOpen(false)}
                   onSave={async (data) => {
+                    if (!effectivePartner?.id) {
+                      throw new Error('Nincs érvényes partnerazonosító a mentéshez.');
+                    }
                     try {
-                      const targetId = currentPartner?.id || effectivePartner?.id || 'new-partner';
-                      const updated = await updatePartner(targetId, {
+                      const updated = await updatePartner(effectivePartner.id, {
                         ...effectivePartner,
                         ...data,
                       } as any);
