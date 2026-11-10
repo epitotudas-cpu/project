@@ -136,6 +136,16 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
   }
 
   const categoryLabel = getCategoryLabel(partner.category);
+  // P0-D15: for explicit company categories, do not display a stale/legacy educational partner_type
+  const isCompanyCategory = ['ceg', 'gyarto', 'kereskedo'].includes(partner.category);
+  const partnerTypeLower = (partner.partner_type || '').toLowerCase();
+  const hasEduPartnerType =
+    partnerTypeLower.includes('iskola') ||
+    partnerTypeLower.includes('oktatá') ||
+    partnerTypeLower.includes('intezmen') ||
+    partnerTypeLower.includes('intézmén');
+  const displayType =
+    isCompanyCategory && hasEduPartnerType ? categoryLabel : partner.partner_type || categoryLabel;
   const activeServices = partner.services?.filter((s) => s.is_active) || [];
   const publishedReferences = partner.references?.filter((r) => r.is_published) || [];
   const publishedCertificates = partner.certificates?.filter((c) => c.is_published) || [];
@@ -232,7 +242,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
               <div className="space-y-2">
                 <div className="flex items-center flex-wrap gap-2">
                   <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-extrabold text-xs rounded-full uppercase tracking-wider">
-                    {partner.partner_type || categoryLabel}
+                    {displayType}
                   </span>
 
                   {partner.is_verified && (

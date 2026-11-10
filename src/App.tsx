@@ -319,6 +319,10 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
       try {
         const isEdu = (category?: string | null, partnerType?: string | null) => {
           const cat = (category || '').toLowerCase();
+          // P0-D15: explicit company categories take precedence over a stale/legacy educational partner_type
+          if (cat === 'ceg' || cat === 'gyarto' || cat === 'kereskedo') {
+            return false;
+          }
           const type = (partnerType || '').toLowerCase();
           return (
             cat === 'iskola' ||
