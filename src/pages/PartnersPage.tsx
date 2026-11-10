@@ -8,6 +8,42 @@ interface PartnersPageProps {
   onNavigate: (page: string, params?: Record<string, any>) => void;
 }
 
+function PartnerCardLogo({ partner }: { partner: Partner }) {
+  const [hasError, setHasError] = useState(false);
+  const logoBg =
+    (partner as any).logo_bg === 'light_gray'
+      ? 'bg-gray-200'
+      : (partner as any).logo_bg === 'transparent'
+      ? 'bg-transparent border-gray-300'
+      : 'bg-white';
+
+  const hasLogo =
+    Boolean(partner.logo_url) &&
+    !hasError &&
+    (partner.logo_url!.startsWith('data:image/') ||
+      /^https?:\/\//i.test(partner.logo_url!) ||
+      partner.logo_url!.startsWith('/'));
+
+  return (
+    <div
+      className={`w-14 h-14 rounded-xl border border-gray-100 p-1 flex items-center justify-center shrink-0 shadow-sm overflow-hidden ${logoBg}`}
+    >
+      {hasLogo ? (
+        <img
+          src={partner.logo_url!}
+          alt={partner.name}
+          onError={() => setHasError(true)}
+          className="w-full h-full object-contain"
+        />
+      ) : (
+        <div className="w-full h-full bg-slate-50 flex items-center justify-center rounded-lg text-primary font-bold text-xs uppercase">
+          {partner.name ? partner.name.substring(0, 2) : <Building2 size={20} className="text-gray-400" />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PartnersPage({ onNavigate }: PartnersPageProps) {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,27 +227,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                   </div>
 
                   <div className="flex items-center gap-3.5">
-                    <div
-                      className={`w-14 h-14 rounded-xl border border-gray-100 p-1 flex items-center justify-center shrink-0 shadow-sm overflow-hidden ${
-                        (partner as any).logo_bg === 'light_gray'
-                          ? 'bg-gray-200'
-                          : (partner as any).logo_bg === 'transparent'
-                          ? 'bg-transparent border-gray-300'
-                          : 'bg-white'
-                      }`}
-                    >
-                      {partner.logo_url ? (
-                        <img
-                          src={partner.logo_url}
-                          alt={partner.name}
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-50 flex items-center justify-center rounded-lg text-primary font-bold text-xs uppercase">
-                          {partner.name ? partner.name.substring(0, 2) : <Building2 size={20} className="text-gray-400" />}
-                        </div>
-                      )}
-                    </div>
+                    <PartnerCardLogo partner={partner} />
 
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">

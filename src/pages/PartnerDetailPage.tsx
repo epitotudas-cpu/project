@@ -26,6 +26,15 @@ interface PartnerDetailPageProps {
   onNavigate: (page: string, params?: Record<string, any>) => void;
 }
 
+function isValidLogoUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('data:image/')) return true;
+  if (/^https?:\/\//i.test(trimmed)) return true;
+  if (trimmed.startsWith('/')) return true;
+  return false;
+}
+
 function getCategorySpecialties(category: string): { title: string; desc: string }[] {
   switch (category) {
     case 'gyarto':
@@ -74,6 +83,7 @@ function getCategorySpecialties(category: string): { title: string; desc: string
 export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDetailPageProps) {
   const [partner, setPartner] = useState<ExtendedPartner | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [imageError, setImageError] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadPartner() {
@@ -93,6 +103,10 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
     }
     loadPartner();
   }, [partnerSlug]);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [partner?.logo_url]);
 
   if (loading) {
     return (
@@ -192,22 +206,26 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
               {/* Partner Logo or Avatar Monogram */}
               <div
-                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white/20 p-2.5 shadow-xl flex items-center justify-center shrink-0 ${logoBgClass}`}
+                className={`w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 max-w-[160px] max-h-[160px] rounded-2xl border-2 border-white/20 p-2.5 shadow-xl flex items-center justify-center shrink-0 ${logoBgClass}`}
               >
-                {partner.logo_url ? (
+                {partner.logo_url && !imageError && isValidLogoUrl(partner.logo_url) ? (
                   <img
                     src={partner.logo_url}
                     alt={partner.name}
+                    onError={() => setImageError(true)}
                     className="w-full h-full object-contain rounded-xl"
                   />
                 ) : partner.category === 'iskola' ? (
-                  <GraduationCap size={44} className="text-primary" />
+                  <GraduationCap className="w-12 h-12 md:w-16 md:h-16 text-primary" />
                 ) : partner.category === 'oktato' ? (
-                  <Briefcase size={44} className="text-primary" />
+                  <Briefcase className="w-12 h-12 md:w-16 md:h-16 text-primary" />
                 ) : (
-                  <span className="text-xl sm:text-2xl font-black text-primary uppercase">
-                    {partner.name.substring(0, 2)}
-                  </span>
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Building2 className="w-8 h-8 md:w-12 md:h-12 text-primary mb-1" />
+                    <span className="text-sm sm:text-base md:text-lg font-black text-primary uppercase">
+                      {partner.name ? partner.name.substring(0, 2) : 'EP'}
+                    </span>
+                  </div>
                 )}
               </div>
 

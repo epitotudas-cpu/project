@@ -595,7 +595,7 @@ export async function updatePartner(
 
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   try {
-    const updatePayload = {
+    const updatePayload: Record<string, any> = {
       name: updatedPartner.name,
       slug: updatedPartner.slug,
       category: updatedPartner.category,
@@ -603,11 +603,65 @@ export async function updatePartner(
       website_url: updatedPartner.website_url,
       logo_url: updatedPartner.logo_url,
       is_verified: updatedPartner.is_verified,
+      official_name: updatedPartner.official_name || null,
+      partner_type: updatedPartner.partner_type || null,
+      contact_person_name: updatedPartner.contact_person_name || null,
+      contact_person_title: updatedPartner.contact_person_title || null,
+      contact_email: updatedPartner.contact_email || null,
+      contact_phone: updatedPartner.contact_phone || null,
+      address: updatedPartner.address || null,
+      zip_code: updatedPartner.zip_code || null,
+      city: updatedPartner.city || null,
+      county: updatedPartner.county || null,
+      business_hours: updatedPartner.business_hours || null,
+      detailed_description: updatedPartner.detailed_description || null,
+      cover_url: updatedPartner.cover_url || null,
+      inquiry_email: updatedPartner.inquiry_email || null,
     };
+
+    let persisted = false;
+
+    // 1. If ID is a valid UUID, attempt update by ID
     if (isUuid) {
-      await supabase.from('partners').update(updatePayload).eq('id', id);
-    } else if (existing?.slug || updatedSlug) {
-      await supabase.from('partners').update(updatePayload).eq('slug', existing?.slug || updatedSlug);
+      const { data: updateRes, error: updateErr } = await supabase
+        .from('partners')
+        .update(updatePayload)
+        .eq('id', id)
+        .select('*');
+      if (!updateErr && updateRes && updateRes.length > 0) {
+        persisted = true;
+      }
+    }
+
+    // 2. If not persisted yet, attempt update by slug
+    if (!persisted && (existing?.slug || updatedSlug)) {
+      const targetSlug = existing?.slug || updatedSlug;
+      const { data: updateSlugRes, error: updateSlugErr } = await supabase
+        .from('partners')
+        .update(updatePayload)
+        .eq('slug', targetSlug)
+        .select('*');
+      if (!updateSlugErr && updateSlugRes && updateSlugRes.length > 0) {
+        persisted = true;
+        updatedPartner.id = updateSlugRes[0].id;
+      }
+    }
+
+    // 3. If neither updated any row (partner doesn't exist in Supabase yet), INSERT it!
+    if (!persisted) {
+      const { data: insertRes, error: insertErr } = await supabase
+        .from('partners')
+        .insert({
+          ...updatePayload,
+          slug: updatedSlug,
+        })
+        .select('*')
+        .single();
+      if (!insertErr && insertRes) {
+        updatedPartner.id = insertRes.id;
+      } else if (insertErr) {
+        console.warn('Supabase partner insert notice:', insertErr.message);
+      }
     }
   } catch (err) {
     console.error('Supabase partner update warning:', err);
@@ -638,11 +692,14 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
   const cleanKey = slugOrId.trim();
 
   try {
-    const { data, error } = await supabase
-      .from('partners')
-      .select('*')
-      .or(`slug.eq.${cleanKey},id.eq.${cleanKey}`)
-      .maybeSingle();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanKey);
+    let query = supabase.from('partners').select('*');
+    if (isUuid) {
+      query = query.or(`slug.eq.${cleanKey},id.eq.${cleanKey}`);
+    } else {
+      query = query.eq('slug', cleanKey);
+    }
+    const { data, error } = await query.maybeSingle();
 
     if (!error && data) {
       const stored = getStoredPartners();

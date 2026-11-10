@@ -636,12 +636,12 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   onClose={() => setIsEditorOpen(false)}
                   onSave={async (data) => {
                     try {
-                      if (currentPartner?.id) {
-                        const updated = await updatePartner(currentPartner.id, data as any);
-                        setCurrentPartner(updated);
-                      } else {
-                        setCurrentPartner((prev) => ({ ...(prev || effectivePartner), ...data } as Partner));
-                      }
+                      const targetId = currentPartner?.id || effectivePartner?.id || 'new-partner';
+                      const updated = await updatePartner(targetId, {
+                        ...effectivePartner,
+                        ...data,
+                      } as any);
+                      setCurrentPartner(updated);
                       setTimeout(() => {
                         setIsEditorOpen(false);
                       }, 1500);
