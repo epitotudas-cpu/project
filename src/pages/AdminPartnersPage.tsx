@@ -1221,6 +1221,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         isOpen={showEditorModal}
         onClose={() => setShowEditorModal(false)}
         onSave={handleSaveRichPartner}
+        isAdmin={true}
       />
 
       {/* CREATE INVITATION MODAL (Pre-creation or Existing) */}

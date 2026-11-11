@@ -19,13 +19,14 @@ import {
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';
-import type {
-  ExtendedPartner,
-  PartnerCategory,
-  ServiceItem,
-  ReferenceItem,
-  CertificateItem,
-  RelatedContentItem,
+import {
+  getCategoryLabel,
+  type ExtendedPartner,
+  type PartnerCategory,
+  type ServiceItem,
+  type ReferenceItem,
+  type CertificateItem,
+  type RelatedContentItem,
 } from '../services/partnerService';
 
 interface PartnerEditorModalProps {
@@ -33,6 +34,7 @@ interface PartnerEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: Partial<ExtendedPartner>) => Promise<void>;
+  isAdmin?: boolean;
 }
 
 type TabKey =
@@ -62,6 +64,7 @@ export default function PartnerEditorModal({
   isOpen,
   onClose,
   onSave,
+  isAdmin = false,
 }: PartnerEditorModalProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('basic');
   const [saving, setSaving] = useState(false);
@@ -78,7 +81,6 @@ export default function PartnerEditorModal({
   const [officialName, setOfficialName] = useState('');
   const [slug, setSlug] = useState('');
   const [category, setCategory] = useState<PartnerCategory>('ceg');
-  const [partnerType, setPartnerType] = useState('');
   const [description, setDescription] = useState('');
   const [detailedDescription, setDetailedDescription] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'inactive'>('published');
@@ -127,7 +129,6 @@ export default function PartnerEditorModal({
       setOfficialName(partner.official_name || '');
       setSlug(partner.slug || '');
       setCategory((partner.category as PartnerCategory) || 'ceg');
-      setPartnerType(partner.partner_type || '');
       setDescription(partner.description || '');
       setDetailedDescription(partner.detailed_description || '');
       setStatus(partner.status || 'published');
@@ -170,7 +171,6 @@ export default function PartnerEditorModal({
       setOfficialName('');
       setSlug('');
       setCategory('ceg');
-      setPartnerType('');
       setDescription('');
       setDetailedDescription('');
       setStatus('published');
@@ -282,14 +282,8 @@ export default function PartnerEditorModal({
     const payload: Partial<ExtendedPartner> = {
       name: name.trim(),
       official_name: officialName.trim() || null,
-      slug: (slug.trim() || name.trim()).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-      category,
-      partner_type: partnerType.trim() || null,
       description: description.trim() || null,
       detailed_description: detailedDescription.trim() || null,
-      status,
-      is_featured: isFeatured,
-      is_verified: isVerified,
       logo_url: logoUrl.trim() || null,
       cover_url: coverUrl.trim() || null,
       logo_bg: logoBg,
@@ -317,6 +311,15 @@ export default function PartnerEditorModal({
       seo_description: seoDescription.trim() || null,
       is_indexable: isIndexable,
     };
+
+    // Platformszintű mezők kizárólag admin módban kerülhetnek a mentési payloadba
+    if (isAdmin) {
+      payload.category = category;
+      payload.slug = (slug.trim() || name.trim()).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      payload.status = status;
+      payload.is_featured = isFeatured;
+      payload.is_verified = isVerified;
+    }
 
     try {
       await onSave(payload);
@@ -366,7 +369,7 @@ export default function PartnerEditorModal({
         {/* Header Bar */}
         <div className="p-4 sm:p-5 border-b border-gray-800 bg-[#1a1d20] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
+            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400">
               <Building2 size={24} />
             </div>
             <div>
@@ -413,7 +416,7 @@ export default function PartnerEditorModal({
                   onClick={() => setActiveTab(t.id)}
                   className={`flex items-center gap-2 px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-xl font-bold text-xs transition-all shrink-0 whitespace-nowrap md:whitespace-normal text-left ${
                     isActive
-                      ? 'bg-amber-500 text-black shadow-md'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -431,13 +434,13 @@ export default function PartnerEditorModal({
               {activeTab === 'basic' && (
                 <div className="space-y-6">
                   <h3 className="text-base font-bold text-white border-b border-gray-800 pb-3 flex items-center gap-2">
-                    <Building2 className="text-amber-400" size={20} /> Szervezet Alapadatai
+                    <Building2 className="text-blue-400" size={20} /> Szervezet Alapadatai
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-bold text-gray-300 mb-1.5">
-                        Szervezet Neve <span className="text-amber-400">*</span>
+                        Szervezet Neve <span className="text-blue-400">*</span>
                       </label>
                       <input
                         type="text"
@@ -445,10 +448,10 @@ export default function PartnerEditorModal({
                         value={name}
                         onChange={(e) => {
                           setName(e.target.value);
-                          if (!slug) generateSlugFromName(e.target.value);
+                          if (!slug && isAdmin) generateSlugFromName(e.target.value);
                         }}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
                       />
                     </div>
 
@@ -459,69 +462,82 @@ export default function PartnerEditorModal({
                         value={officialName}
                         onChange={(e) => setOfficialName(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-gray-300 mb-1.5">Egyedi URL azonosító (slug)</label>
-                      <div className="flex gap-2">
+                    {isAdmin ? (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-300 mb-1.5">Egyedi URL azonosító (slug)</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={slug}
+                            onChange={(e) => setSlug(e.target.value)}
+                            placeholder=""
+                            className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm font-mono text-blue-400 focus:outline-hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => generateSlugFromName(name)}
+                            className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-bold rounded-xl shrink-0 transition-colors"
+                          >
+                            Generálás
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-300 mb-1.5">Egyedi URL azonosító (slug)</label>
                         <input
                           type="text"
                           value={slug}
-                          onChange={(e) => setSlug(e.target.value)}
-                          placeholder=""
-                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm font-mono text-amber-400 focus:outline-hidden"
+                          readOnly
+                          disabled
+                          className="w-full bg-[#15181a] border border-gray-800 rounded-xl px-4 py-3 text-sm font-mono text-gray-400 cursor-not-allowed"
                         />
-                        <button
-                          type="button"
-                          onClick={() => generateSlugFromName(name)}
-                          className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold rounded-xl shrink-0"
-                        >
-                          Generálás
-                        </button>
                       </div>
-                    </div>
+                    )}
 
-                    <div>
-                      <label className="block text-xs font-bold text-gray-300 mb-1.5">Partner Kategória</label>
-                      <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value as PartnerCategory)}
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
-                      >
-                        <option value="gyarto">Gyártó</option>
-                        <option value="kereskedo">Kereskedő</option>
-                        <option value="ceg">Kivitelező Cég</option>
-                        <option value="iskola">Oktatási Intézmény</option>
-                        <option value="oktato">Oktató / Tréner</option>
-                        <option value="tamogato">Támogató</option>
-                      </select>
-                    </div>
+                    {isAdmin ? (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-300 mb-1.5">Partner Kategória</label>
+                        <select
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value as PartnerCategory)}
+                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
+                        >
+                          <option value="gyarto">Gyártó</option>
+                          <option value="kereskedo">Kereskedő</option>
+                          <option value="ceg">Kivitelező Cég</option>
+                          <option value="iskola">Oktatási Intézmény</option>
+                          <option value="oktato">Oktató / Tréner</option>
+                          <option value="tamogato">Támogató</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-300 mb-1.5">Partner Kategória</label>
+                        <div className="w-full bg-[#15181a] border border-gray-800 rounded-xl px-4 py-3 text-sm font-semibold text-blue-400">
+                          {getCategoryLabel(category)}
+                        </div>
+                      </div>
+                    )}
 
-                    <div>
-                      <label className="block text-xs font-bold text-gray-300 mb-1.5">Partner Típusa</label>
-                      <input
-                        type="text"
-                        value={partnerType}
-                        onChange={(e) => setPartnerType(e.target.value)}
-                        placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-gray-300 mb-1.5">Státusz</label>
-                      <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value as any)}
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
-                      >
-                        <option value="published">Publikálva (Nyilvános)</option>
-                        <option value="draft">Piszkozat (Rejtett)</option>
-                        <option value="inactive">Inaktív</option>
-                      </select>
-                    </div>
+                    {isAdmin && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-300 mb-1.5">Státusz</label>
+                        <select
+                          value={status}
+                          onChange={(e) => setStatus(e.target.value as any)}
+                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
+                        >
+                          <option value="published">Publikálva (Nyilvános)</option>
+                          <option value="draft">Piszkozat (Rejtett)</option>
+                          <option value="inactive">Inaktív</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -536,7 +552,7 @@ export default function PartnerEditorModal({
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder=""
-                      className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white focus:outline-hidden"
+                      className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl p-3 text-sm text-white focus:outline-hidden"
                     />
                   </div>
 
@@ -547,35 +563,37 @@ export default function PartnerEditorModal({
                       value={detailedDescription}
                       onChange={(e) => setDetailedDescription(e.target.value)}
                       placeholder=""
-                      className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl p-4 text-sm text-white focus:outline-hidden"
+                      className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl p-4 text-sm text-white focus:outline-hidden"
                     />
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-gray-800">
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isVerified}
-                        onChange={(e) => setIsVerified(e.target.checked)}
-                        className="w-4 h-4 rounded text-amber-400 focus:ring-0"
-                      />
-                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 size={14} /> Minősített Partner (Verified badge)
-                      </span>
-                    </label>
+                  {isAdmin && (
+                    <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-gray-800">
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isVerified}
+                          onChange={(e) => setIsVerified(e.target.checked)}
+                          className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 size={14} /> Minősített Partner (Verified badge)
+                        </span>
+                      </label>
 
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isFeatured}
-                        onChange={(e) => setIsFeatured(e.target.checked)}
-                        className="w-4 h-4 rounded text-amber-400 focus:ring-0"
-                      />
-                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
-                        <Sparkles size={14} /> Kiemelt Partner (Featured listázás)
-                      </span>
-                    </label>
-                  </div>
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isFeatured}
+                          onChange={(e) => setIsFeatured(e.target.checked)}
+                          className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="text-xs font-bold text-blue-400 flex items-center gap-1">
+                          <Sparkles size={14} /> Kiemelt Partner (Featured listázás)
+                        </span>
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -583,7 +601,7 @@ export default function PartnerEditorModal({
               {activeTab === 'media' && (
                 <div className="space-y-6">
                   <h3 className="text-base font-bold text-white border-b border-gray-800 pb-3 flex items-center gap-2">
-                    <ImageIcon className="text-amber-400" size={20} /> Megjelenés & Média
+                    <ImageIcon className="text-blue-400" size={20} /> Megjelenés & Média
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -591,7 +609,7 @@ export default function PartnerEditorModal({
                     <div className="bg-[#1a1d20] border border-gray-800 rounded-2xl p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                          <Building2 size={16} className="text-amber-400" />
+                          <Building2 size={16} className="text-blue-400" />
                           Partner Logó
                         </h4>
                         {logoUrl && (
@@ -646,7 +664,7 @@ export default function PartnerEditorModal({
                                   setLogoError(null);
                                   fileInputRef.current?.click();
                                 }}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all shadow-md cursor-pointer"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 cursor-pointer"
                               >
                                 <Upload size={15} />
                                 Logó feltöltése
@@ -686,7 +704,7 @@ export default function PartnerEditorModal({
                                 setLogoUrl(e.target.value);
                               }}
                               placeholder="vagy adja meg a logó közvetlen URL címét (https://...)"
-                              className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500"
+                              className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500"
                             />
                           </div>
 
@@ -727,7 +745,7 @@ export default function PartnerEditorModal({
                               onClick={() => setLogoBg(b.id as any)}
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                                 logoBg === b.id
-                                  ? 'bg-amber-400 text-black border-amber-400'
+                                  ? 'bg-blue-600 text-white border-blue-500'
                                   : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
                               }`}
                             >
@@ -758,7 +776,7 @@ export default function PartnerEditorModal({
                           value={coverUrl}
                           onChange={(e) => setCoverUrl(e.target.value)}
                           placeholder=""
-                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white"
+                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-white"
                         />
                         <p className="text-[11px] text-gray-400">
                           Ajánlott méret: minimum 1600 × 600 px (nagy felbontású tájkép)
@@ -773,7 +791,7 @@ export default function PartnerEditorModal({
               {activeTab === 'contact' && (
                 <div className="space-y-6">
                   <h3 className="text-base font-bold text-white border-b border-gray-800 pb-3 flex items-center gap-2">
-                    <PhoneCall className="text-amber-400" size={20} /> Elérhetőségek & Cím
+                    <PhoneCall className="text-blue-400" size={20} /> Elérhetőségek & Cím
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -784,7 +802,7 @@ export default function PartnerEditorModal({
                         value={contactPersonName}
                         onChange={(e) => setContactPersonName(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -795,7 +813,7 @@ export default function PartnerEditorModal({
                         value={contactPersonTitle}
                         onChange={(e) => setContactPersonTitle(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -806,7 +824,7 @@ export default function PartnerEditorModal({
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -817,7 +835,7 @@ export default function PartnerEditorModal({
                         value={contactPhone}
                         onChange={(e) => setContactPhone(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -828,7 +846,7 @@ export default function PartnerEditorModal({
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -839,7 +857,7 @@ export default function PartnerEditorModal({
                         value={inquiryEmail}
                         onChange={(e) => setInquiryEmail(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -850,7 +868,7 @@ export default function PartnerEditorModal({
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -862,7 +880,7 @@ export default function PartnerEditorModal({
                           value={zipCode}
                           onChange={(e) => setZipCode(e.target.value)}
                           placeholder=""
-                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-3 text-sm text-white"
+                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-3 text-sm text-white"
                         />
                       </div>
                       <div>
@@ -872,7 +890,7 @@ export default function PartnerEditorModal({
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                           placeholder=""
-                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-3 text-sm text-white"
+                          className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-3 text-sm text-white"
                         />
                       </div>
                     </div>
@@ -884,7 +902,7 @@ export default function PartnerEditorModal({
                         value={county}
                         onChange={(e) => setCounty(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -893,7 +911,7 @@ export default function PartnerEditorModal({
                       <select
                         value={operatingArea}
                         onChange={(e) => setOperatingArea(e.target.value as any)}
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       >
                         <option value="local">Helyi / Városi</option>
                         <option value="county">Vármegyei / Regionális</option>
@@ -908,7 +926,7 @@ export default function PartnerEditorModal({
                         value={businessHours}
                         onChange={(e) => setBusinessHours(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
                   </div>
@@ -919,7 +937,7 @@ export default function PartnerEditorModal({
               {activeTab === 'social' && (
                 <div className="space-y-6">
                   <h3 className="text-base font-bold text-white border-b border-gray-800 pb-3 flex items-center gap-2">
-                    <Share2 className="text-amber-400" size={20} /> Közösségi Média Profilok
+                    <Share2 className="text-blue-400" size={20} /> Közösségi Média Profilok
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -930,7 +948,7 @@ export default function PartnerEditorModal({
                         value={socialFacebook}
                         onChange={(e) => setSocialFacebook(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -941,7 +959,7 @@ export default function PartnerEditorModal({
                         value={socialLinkedin}
                         onChange={(e) => setSocialLinkedin(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -952,7 +970,7 @@ export default function PartnerEditorModal({
                         value={socialInstagram}
                         onChange={(e) => setSocialInstagram(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -963,7 +981,7 @@ export default function PartnerEditorModal({
                         value={socialYoutube}
                         onChange={(e) => setSocialYoutube(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
                   </div>
@@ -975,7 +993,7 @@ export default function PartnerEditorModal({
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Wrench className="text-amber-400" size={20} /> Szolgáltatások & Szakterületek
+                      <Wrench className="text-blue-400" size={20} /> Szolgáltatások & Szakterületek
                     </h3>
                     <button
                       type="button"
@@ -991,7 +1009,7 @@ export default function PartnerEditorModal({
                           },
                         ])
                       }
-                      className="px-3.5 py-1.5 bg-amber-500 text-black text-xs font-bold rounded-xl hover:bg-amber-400 transition-colors flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition-colors flex items-center gap-1.5"
                     >
                       <Plus size={14} /> Szakterület Hozzáadása
                     </button>
@@ -1036,7 +1054,7 @@ export default function PartnerEditorModal({
                                 setServices(next);
                               }}
                               placeholder=""
-                              className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm text-white font-bold"
+                              className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm text-white font-bold"
                             />
 
                             <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 cursor-pointer">
@@ -1071,7 +1089,7 @@ export default function PartnerEditorModal({
                               setServices(next);
                             }}
                             placeholder=""
-                            className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-gray-300"
+                            className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-gray-300"
                           />
                         </div>
                       ))
@@ -1085,7 +1103,7 @@ export default function PartnerEditorModal({
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <FolderGit2 className="text-amber-400" size={20} /> Referencia Projektek
+                      <FolderGit2 className="text-blue-400" size={20} /> Referencia Projektek
                     </h3>
                     <button
                       type="button"
@@ -1104,7 +1122,7 @@ export default function PartnerEditorModal({
                           },
                         ])
                       }
-                      className="px-3.5 py-1.5 bg-amber-500 text-black text-xs font-bold rounded-xl hover:bg-amber-400 transition-colors flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition-colors flex items-center gap-1.5"
                     >
                       <Plus size={14} /> Projekt Hozzáadása
                     </button>
@@ -1131,7 +1149,7 @@ export default function PartnerEditorModal({
                                 setReferences(next);
                               }}
                               placeholder=""
-                              className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm font-bold text-white"
+                              className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm font-bold text-white"
                             />
 
                             <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 cursor-pointer">
@@ -1216,7 +1234,7 @@ export default function PartnerEditorModal({
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <ShieldCheck className="text-amber-400" size={20} /> Tanúsítványok & Minősítések
+                      <ShieldCheck className="text-blue-400" size={20} /> Tanúsítványok & Minősítések
                     </h3>
                     <button
                       type="button"
@@ -1234,7 +1252,7 @@ export default function PartnerEditorModal({
                           },
                         ])
                       }
-                      className="px-3.5 py-1.5 bg-amber-500 text-black text-xs font-bold rounded-xl hover:bg-amber-400 transition-colors flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition-colors flex items-center gap-1.5"
                     >
                       <Plus size={14} /> Tanúsítvány Hozzáadása
                     </button>
@@ -1261,7 +1279,7 @@ export default function PartnerEditorModal({
                                 setCertificates(next);
                               }}
                               placeholder=""
-                              className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm font-bold text-white"
+                              className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm font-bold text-white"
                             />
 
                             <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 cursor-pointer">
@@ -1322,7 +1340,7 @@ export default function PartnerEditorModal({
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <BookOpen className="text-amber-400" size={20} /> Kapcsolódó ÉpítőTudás Tartalmak (Max 6)
+                      <BookOpen className="text-blue-400" size={20} /> Kapcsolódó ÉpítőTudás Tartalmak (Max 6)
                     </h3>
                     <button
                       type="button"
@@ -1342,7 +1360,7 @@ export default function PartnerEditorModal({
                           },
                         ]);
                       }}
-                      className="px-3.5 py-1.5 bg-amber-500 text-black text-xs font-bold rounded-xl hover:bg-amber-400 transition-colors flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition-colors flex items-center gap-1.5"
                     >
                       <Plus size={14} /> Tartalom Csatolása
                     </button>
@@ -1366,7 +1384,7 @@ export default function PartnerEditorModal({
                               next[index].type = e.target.value;
                               setRelatedContent(next);
                             }}
-                            className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-amber-400 font-bold"
+                            className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-blue-400 font-bold"
                           >
                             <option value="cikk">Szakmai Cikk</option>
                             <option value="utmutato">Kivitelezési Útmutató</option>
@@ -1417,7 +1435,7 @@ export default function PartnerEditorModal({
               {activeTab === 'seo' && (
                 <div className="space-y-6">
                   <h3 className="text-base font-bold text-white border-b border-gray-800 pb-3 flex items-center gap-2">
-                    <Globe className="text-amber-400" size={20} /> SEO & Keresőoptimálás
+                    <Globe className="text-blue-400" size={20} /> SEO & Keresőoptimálás
                   </h3>
 
                   <div className="space-y-4">
@@ -1428,7 +1446,7 @@ export default function PartnerEditorModal({
                         value={seoTitle}
                         onChange={(e) => setSeoTitle(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       />
                     </div>
 
@@ -1439,7 +1457,7 @@ export default function PartnerEditorModal({
                         value={seoDescription}
                         onChange={(e) => setSeoDescription(e.target.value)}
                         placeholder=""
-                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white"
+                        className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl p-3 text-sm text-white"
                       />
                     </div>
 
@@ -1448,7 +1466,7 @@ export default function PartnerEditorModal({
                         type="checkbox"
                         checked={isIndexable}
                         onChange={(e) => setIsIndexable(e.target.checked)}
-                        className="w-4 h-4 rounded text-amber-400"
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                       />
                       <span className="text-xs font-bold text-gray-200">
                         Keresőmotorok által indexelhető (Robots: index, follow)
@@ -1480,18 +1498,18 @@ export default function PartnerEditorModal({
                 {saveSuccess && (
                   <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold animate-fade-in">
                     <CheckCircle2 size={16} />
-                    <span>A logó sikeresen frissítve lett.</span>
+                    <span>A partner adatai sikeresen elmentve.</span>
                   </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={saving}
-                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {saving ? (
                     <>
-                      <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-black border-r-transparent" />
+                      <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent" />
                       <span>Mentés folyamatban...</span>
                     </>
                   ) : (
