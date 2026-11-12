@@ -1102,9 +1102,14 @@ export default function PartnerEditorModal({
               {activeTab === 'references' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <FolderGit2 className="text-blue-400" size={20} /> Referencia Projektek
-                    </h3>
+                    <div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <FolderGit2 className="text-blue-400" size={20} /> Referencia Projektek & Galéria
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Adja hozzá elvégzett beruházásait, referenciaépületeit és fotóit.
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={() =>
@@ -1114,6 +1119,7 @@ export default function PartnerEditorModal({
                             id: `r-${Date.now()}`,
                             title: '',
                             image_url: '',
+                            images: [],
                             location: '',
                             year: '',
                             description: '',
@@ -1122,108 +1128,195 @@ export default function PartnerEditorModal({
                           },
                         ])
                       }
-                      className="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition-colors flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-500 transition-colors flex items-center gap-1.5 shadow-sm"
                     >
-                      <Plus size={14} /> Projekt Hozzáadása
+                      <Plus size={14} /> Új Referencia Hozzáadása
                     </button>
                   </div>
 
                   <div className="space-y-4">
                     {references.length === 0 ? (
-                      <div className="p-8 border border-gray-800 rounded-2xl text-center text-xs text-gray-500">
-                        Nincsenek bejegyzett referenciák. Adjon hozzá elvégzett projekteket!
+                      <div className="p-8 border border-gray-800 rounded-2xl text-center text-xs text-gray-500 space-y-2">
+                        <FolderGit2 className="mx-auto text-gray-600" size={32} />
+                        <p>Nincsenek még bejegyzett referenciák. Kattintson az „Új Referencia Hozzáadása” gombra!</p>
                       </div>
                     ) : (
-                      references.map((item, index) => (
-                        <div
-                          key={item.id}
-                          className="bg-[#1a1d20] border border-gray-800 rounded-2xl p-5 space-y-4"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <input
-                              type="text"
-                              value={item.title}
-                              onChange={(e) => {
-                                const next = [...references];
-                                next[index].title = e.target.value;
-                                setReferences(next);
-                              }}
-                              placeholder=""
-                              className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm font-bold text-white"
-                            />
+                      references.map((item, index) => {
+                        const allImgs = [
+                          ...(item.image_url ? [item.image_url] : []),
+                          ...((item.images || []).filter((u) => u !== item.image_url)),
+                        ];
 
-                            <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 cursor-pointer">
+                        return (
+                          <div
+                            key={item.id}
+                            className="bg-[#1a1d20] border border-gray-800 rounded-2xl p-5 space-y-4"
+                          >
+                            <div className="flex items-center justify-between gap-3">
                               <input
-                                type="checkbox"
-                                checked={item.is_published}
+                                type="text"
+                                value={item.title}
                                 onChange={(e) => {
                                   const next = [...references];
-                                  next[index].is_published = e.target.checked;
+                                  next[index].title = e.target.value;
                                   setReferences(next);
                                 }}
-                                className="w-4 h-4 rounded text-emerald-500"
+                                placeholder="Projekt címe (pl. 24 lakásos Társasház kivitelezése)"
+                                className="flex-1 bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm font-bold text-white placeholder-gray-500"
                               />
-                              Publikálva
-                            </label>
 
-                            <button
-                              type="button"
-                              onClick={() => setReferences(references.filter((_, i) => i !== index))}
-                              className="p-2 text-gray-500 hover:text-red-400 transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                              <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={item.is_published}
+                                  onChange={(e) => {
+                                    const next = [...references];
+                                    next[index].is_published = e.target.checked;
+                                    setReferences(next);
+                                  }}
+                                  className="w-4 h-4 rounded text-emerald-500"
+                                />
+                                Publikálva
+                              </label>
+
+                              <button
+                                type="button"
+                                onClick={() => setReferences(references.filter((_, i) => i !== index))}
+                                className="p-2 text-gray-500 hover:text-red-400 transition-colors"
+                                title="Referencia törlése"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <input
+                                type="text"
+                                value={item.location || ''}
+                                onChange={(e) => {
+                                  const next = [...references];
+                                  next[index].location = e.target.value;
+                                  setReferences(next);
+                                }}
+                                placeholder="Helyszín (pl. Budapest XI. kerület vagy Győr)"
+                                className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500"
+                              />
+                              <input
+                                type="text"
+                                value={item.year || ''}
+                                onChange={(e) => {
+                                  const next = [...references];
+                                  next[index].year = e.target.value;
+                                  setReferences(next);
+                                }}
+                                placeholder="Megvalósítás éve (pl. 2024-2025)"
+                                className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500"
+                              />
+                            </div>
+
+                            <textarea
+                              rows={2}
+                              value={item.description || ''}
+                              onChange={(e) => {
+                                const next = [...references];
+                                next[index].description = e.target.value;
+                                setReferences(next);
+                              }}
+                              placeholder="Projekt részletes leírása, főbb műszaki paraméterek és volumen..."
+                              className="w-full bg-[#1e2225] border border-gray-700 rounded-xl p-3 text-xs text-white placeholder-gray-500"
+                            />
+
+                            {/* FOTÓK ÉS KÉPFELTÖLTÉS */}
+                            <div className="pt-2 border-t border-gray-800/80 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
+                                  <ImageIcon size={14} className="text-blue-400" /> Referencia Képek ({allImgs.length} db)
+                                </span>
+                                <label className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg cursor-pointer transition-colors flex items-center gap-1.5">
+                                  <Upload size={12} /> Kép feltöltése
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      const reader = new FileReader();
+                                      reader.onload = (loadEvt) => {
+                                        const res = loadEvt.target?.result;
+                                        if (typeof res === 'string') {
+                                          const next = [...references];
+                                          const currImgs = next[index].images || [];
+                                          next[index].images = [...currImgs, res];
+                                          if (!next[index].image_url) {
+                                            next[index].image_url = res;
+                                          }
+                                          setReferences(next);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }}
+                                  />
+                                </label>
+                              </div>
+
+                              {/* Kép URL közvetlen beillesztése */}
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={item.image_url || ''}
+                                  onChange={(e) => {
+                                    const next = [...references];
+                                    next[index].image_url = e.target.value;
+                                    setReferences(next);
+                                  }}
+                                  placeholder="Közvetlen főkép URL beillesztése (pl. https://images.unsplash.com/...)"
+                                  className="flex-1 bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500"
+                                />
+                              </div>
+
+                              {/* Képek előnézeti sora */}
+                              {allImgs.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {allImgs.map((imgUrl, imgIdx) => (
+                                    <div
+                                      key={imgIdx}
+                                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-700 bg-black group"
+                                    >
+                                      <img
+                                        src={imgUrl}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                      />
+                                      {imgIdx === 0 && (
+                                        <span className="absolute bottom-0 left-0 right-0 bg-blue-600/90 text-white text-[9px] font-bold text-center py-0.5">
+                                          Főkép
+                                        </span>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const next = [...references];
+                                          const filtered = (next[index].images || []).filter((_, i) => i !== imgIdx);
+                                          next[index].images = filtered;
+                                          if (next[index].image_url === imgUrl) {
+                                            next[index].image_url = filtered[0] || '';
+                                          }
+                                          setReferences(next);
+                                        }}
+                                        className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Kép törlése"
+                                      >
+                                        <Trash2 size={10} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <input
-                              type="text"
-                              value={item.location || ''}
-                              onChange={(e) => {
-                                const next = [...references];
-                                next[index].location = e.target.value;
-                                setReferences(next);
-                              }}
-                              placeholder=""
-                              className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
-                            />
-                            <input
-                              type="text"
-                              value={item.year || ''}
-                              onChange={(e) => {
-                                const next = [...references];
-                                next[index].year = e.target.value;
-                                setReferences(next);
-                              }}
-                              placeholder=""
-                              className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
-                            />
-                            <input
-                              type="text"
-                              value={item.image_url || ''}
-                              onChange={(e) => {
-                                const next = [...references];
-                                next[index].image_url = e.target.value;
-                                setReferences(next);
-                              }}
-                              placeholder=""
-                              className="bg-[#1e2225] border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
-                            />
-                          </div>
-
-                          <textarea
-                            rows={2}
-                            value={item.description || ''}
-                            onChange={(e) => {
-                              const next = [...references];
-                              next[index].description = e.target.value;
-                              setReferences(next);
-                            }}
-                            placeholder=""
-                            className="w-full bg-[#1e2225] border border-gray-700 rounded-xl p-3 text-xs text-white"
-                          />
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>

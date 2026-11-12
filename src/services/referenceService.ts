@@ -188,24 +188,30 @@ async function getFallbackReferences(
     }
 
     return items.map((r, idx) => {
-      const images: PartnerReferenceImage[] = r.image_url
-        ? [
-            {
-              id: `img-${r.id || idx}`,
-              reference_id: r.id,
-              partner_id: partner.id,
-              object_key: r.image_url,
-              thumbnail_key: r.image_url,
-              caption: r.title,
-              display_order: 1,
-              is_cover: true,
-              width: 1200,
-              height: 800,
-              size_bytes: 102400,
-              url: r.image_url,
-            },
-          ]
-        : [];
+      const allImageUrls: string[] = [];
+      if (r.image_url) allImageUrls.push(r.image_url);
+      if (Array.isArray(r.images)) {
+        r.images.forEach((imgUrl) => {
+          if (imgUrl && !allImageUrls.includes(imgUrl)) {
+            allImageUrls.push(imgUrl);
+          }
+        });
+      }
+
+      const images: PartnerReferenceImage[] = allImageUrls.map((url, imgIdx) => ({
+        id: `img-${r.id || idx}-${imgIdx}`,
+        reference_id: r.id,
+        partner_id: partner.id,
+        object_key: url,
+        thumbnail_key: url,
+        caption: r.title,
+        display_order: imgIdx + 1,
+        is_cover: imgIdx === 0,
+        width: 1200,
+        height: 800,
+        size_bytes: 102400,
+        url,
+      }));
 
       return {
         id: r.id || `ref-${idx}`,
@@ -297,3 +303,4 @@ export async function deleteReference(referenceId: string): Promise<void> {
     throw new Error(`Referencia törlése sikertelen: ${error.message}`);
   }
 }
+

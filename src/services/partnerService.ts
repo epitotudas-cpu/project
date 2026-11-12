@@ -21,6 +21,7 @@ export interface ReferenceItem {
   id: string;
   title: string;
   image_url?: string;
+  images?: string[];
   location?: string;
   year?: string;
   description?: string;
