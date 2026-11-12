@@ -25,6 +25,7 @@ import {
   resolveReferenceImageUrl,
   type PartnerReference,
 } from '../services/referenceService';
+import FormattedText from '../components/FormattedText';
 
 interface PartnerDetailPageProps {
   partnerSlug: string | null;
@@ -337,8 +338,14 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
               </div>
             </div>
 
-            <div className="text-[#5f6868] leading-relaxed space-y-4 text-sm sm:text-base pt-2 whitespace-pre-line">
-              {partner.detailed_description || partner.description}
+            <div className="pt-2">
+              <FormattedText
+                content={partner.detailed_description || partner.description}
+                paragraphClassName="text-[#5f6868] text-sm sm:text-base leading-relaxed mb-3"
+                headingClassName="text-base sm:text-lg font-bold text-[#202628] mt-4 mb-2"
+                listClassName="list-disc pl-5 text-[#5f6868] text-sm sm:text-base leading-relaxed my-2 space-y-1.5"
+                strongClassName="font-bold text-[#202628]"
+              />
             </div>
           </section>
         )}
@@ -545,7 +552,17 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                       {ref.year && <span className="px-2 py-0.5 bg-accent/20 text-accent-dark font-extrabold text-xs rounded">{ref.year}</span>}
                     </div>
                     {ref.location && <p className="text-xs font-semibold text-gray-500">{ref.location}</p>}
-                    {ref.description && <p className="text-xs text-[#5f6868] leading-relaxed">{ref.description}</p>}
+                    {ref.description && (
+                      <div className="pt-1">
+                        <FormattedText
+                          content={ref.description}
+                          paragraphClassName="text-xs text-[#5f6868] leading-relaxed mb-2"
+                          headingClassName="text-xs font-bold text-gray-900 mt-2.5 mb-1"
+                          listClassName="list-disc pl-4 text-xs text-[#5f6868] leading-relaxed my-1 space-y-0.5"
+                          strongClassName="font-bold text-gray-900"
+                        />
+                      </div>
+                    )}
                   </div>
                 );
               })}

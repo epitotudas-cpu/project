@@ -18,7 +18,17 @@ import {
   Upload,
   RefreshCw,
   AlertCircle,
+  Bold,
+  Italic,
+  Heading,
+  List,
+  ListOrdered,
+  Link2,
+  Quote,
+  Eye,
+  Edit3,
 } from 'lucide-react';
+import FormattedText from './FormattedText';
 import {
   getCategoryLabel,
   type ExtendedPartner,
@@ -63,6 +73,259 @@ const PRESET_SPECIALTIES = [
   'Szerszám- és gépforgalmazás',
   'Építőipari Szakképzés',
 ];
+
+interface MarkdownEditorFieldProps {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  minHeight?: string;
+  rows?: number;
+  helpText?: string;
+}
+
+function MarkdownEditorField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  minHeight = 'min-h-[160px]',
+  rows = 5,
+  helpText,
+}: MarkdownEditorFieldProps) {
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const applyFormat = (type: 'bold' | 'italic' | 'heading' | 'ul' | 'ol' | 'link' | 'quote') => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const currentVal = value || '';
+    const selected = currentVal.substring(start, end);
+
+    let replacement = '';
+    let cursorOffset = 0;
+
+    switch (type) {
+      case 'bold':
+        if (selected) {
+          replacement = `**${selected}**`;
+          cursorOffset = replacement.length;
+        } else {
+          replacement = '**félkövér szöveg**';
+          cursorOffset = replacement.length;
+        }
+        break;
+      case 'italic':
+        if (selected) {
+          replacement = `*${selected}*`;
+          cursorOffset = replacement.length;
+        } else {
+          replacement = '*dőlt szöveg*';
+          cursorOffset = replacement.length;
+        }
+        break;
+      case 'heading': {
+        const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine = currentVal.substring(0, lineStart);
+        const fromLine = currentVal.substring(lineStart);
+        const match = fromLine.match(/^(\#{1,3}\s+)?/);
+        const prefixLen = match ? match[0].length : 0;
+        const restOfLine = fromLine.substring(prefixLen);
+        const newContent = `${beforeLine}### ${restOfLine}`;
+        onChange(newContent);
+        setTimeout(() => {
+          el.focus();
+          const newPos = start - prefixLen + 4;
+          el.setSelectionRange(newPos, newPos);
+        }, 0);
+        return;
+      }
+      case 'ul': {
+        const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine = currentVal.substring(0, lineStart);
+        const fromLine = currentVal.substring(lineStart);
+        const newContent = `${beforeLine}- ${fromLine}`;
+        onChange(newContent);
+        setTimeout(() => {
+          el.focus();
+          el.setSelectionRange(start + 2, end + 2);
+        }, 0);
+        return;
+      }
+      case 'ol': {
+        const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine = currentVal.substring(0, lineStart);
+        const fromLine = currentVal.substring(lineStart);
+        const newContent = `${beforeLine}1. ${fromLine}`;
+        onChange(newContent);
+        setTimeout(() => {
+          el.focus();
+          el.setSelectionRange(start + 3, end + 3);
+        }, 0);
+        return;
+      }
+      case 'quote': {
+        const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine = currentVal.substring(0, lineStart);
+        const fromLine = currentVal.substring(lineStart);
+        const newContent = `${beforeLine}> ${fromLine}`;
+        onChange(newContent);
+        setTimeout(() => {
+          el.focus();
+          el.setSelectionRange(start + 2, end + 2);
+        }, 0);
+        return;
+      }
+      case 'link':
+        if (selected) {
+          replacement = `[${selected}](https://)`;
+          cursorOffset = replacement.length - 1;
+        } else {
+          replacement = '[hivatkozás címe](https://)';
+          cursorOffset = replacement.length - 1;
+        }
+        break;
+    }
+
+    const nextVal = currentVal.substring(0, start) + replacement + currentVal.substring(end);
+    onChange(nextVal);
+
+    setTimeout(() => {
+      el.focus();
+      const newCursor = start + cursorOffset;
+      el.setSelectionRange(newCursor, newCursor);
+    }, 0);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <label className="block text-xs font-bold text-gray-200">{label}</label>
+          {helpText && <p className="text-[11px] text-gray-400 mt-0.5">{helpText}</p>}
+        </div>
+        <div className="flex items-center bg-[#15181a] p-0.5 rounded-xl border border-gray-800">
+          <button
+            type="button"
+            onClick={() => setActiveTab('edit')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'edit'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Edit3 size={12} /> Szerkesztés
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('preview')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'preview'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Eye size={12} /> Előnézet
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'edit' ? (
+        <div className="border border-gray-700 focus-within:border-blue-500 rounded-xl overflow-hidden bg-[#1e2225] transition-colors shadow-inner">
+          {/* Format Toolbar */}
+          <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 bg-[#191c1f] border-b border-gray-800 text-gray-300 select-none">
+            <button
+              type="button"
+              onClick={() => applyFormat('bold')}
+              className="p-1.5 hover:bg-gray-800 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Félkövér (**szöveg**)"
+            >
+              <Bold size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => applyFormat('italic')}
+              className="p-1.5 hover:bg-gray-800 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Dőlt (*szöveg*)"
+            >
+              <Italic size={14} />
+            </button>
+            <div className="w-px h-4 bg-gray-800 mx-1" />
+            <button
+              type="button"
+              onClick={() => applyFormat('heading')}
+              className="p-1.5 hover:bg-gray-800 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Címsor (### Címsor)"
+            >
+              <Heading size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => applyFormat('ul')}
+              className="p-1.5 hover:bg-gray-800 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Felsorolásos lista (- elem)"
+            >
+              <List size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => applyFormat('ol')}
+              className="p-1.5 hover:bg-gray-800 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Számozott lista (1. elem)"
+            >
+              <ListOrdered size={14} />
+            </button>
+            <div className="w-px h-4 bg-gray-800 mx-1" />
+            <button
+              type="button"
+              onClick={() => applyFormat('quote')}
+              className="p-1.5 hover:bg-gray-800 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Kiemelt idézet (> idézet)"
+            >
+              <Quote size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => applyFormat('link')}
+              className="p-1.5 hover:bg-gray-800 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Hivatkozás ([szöveg](url))"
+            >
+              <Link2 size={14} />
+            </button>
+          </div>
+
+          {/* Text Area */}
+          <textarea
+            ref={textareaRef}
+            rows={rows}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={`w-full bg-transparent p-4 text-sm text-white focus:outline-hidden resize-y leading-relaxed font-sans ${minHeight}`}
+          />
+        </div>
+      ) : (
+        <div className={`p-4 bg-[#1a1d20] border border-gray-700 rounded-xl ${minHeight} overflow-y-auto`}>
+          {value && value.trim() ? (
+            <FormattedText
+              content={value}
+              className="text-gray-200"
+              paragraphClassName="text-gray-300 text-sm leading-relaxed mb-3"
+              headingClassName="text-base font-bold text-blue-400 mt-4 mb-2"
+              listClassName="list-disc pl-5 text-gray-300 text-sm leading-relaxed my-2 space-y-1"
+              strongClassName="font-bold text-white"
+            />
+          ) : (
+            <p className="text-xs text-gray-500 italic">Még nincs megadott szöveg. Kattintson a „Szerkesztés” fülre a formázott szöveg beírásához.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PartnerEditorModal({
   partner,
@@ -427,7 +690,7 @@ export default function PartnerEditorModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
-      <div className="w-full max-w-6xl h-[92vh] bg-[#141719] text-white border border-gray-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full max-w-[96vw] xl:max-w-7xl h-[95vh] bg-[#141719] text-white border border-gray-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header Bar */}
         <div className="p-4 sm:p-5 border-b border-gray-800 bg-[#1a1d20] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -604,28 +867,32 @@ export default function PartnerEditorModal({
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-bold text-gray-300">Rövid bemutatkozás (Kártyákhoz)</label>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-200">Rövid bemutatkozás (Kártyákhoz és listákhoz)</label>
+                        <p className="text-[11px] text-gray-400">Tömör, figyelemfelkeltő összefoglaló a keresési találatokhoz és partnerkártyákhoz.</p>
+                      </div>
                       <span className={`text-xs ${description.length > 220 ? 'text-red-400 font-bold' : 'text-gray-400'}`}>
                         {description.length} / 220 karakter
                       </span>
                     </div>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder=""
-                      className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl p-3 text-sm text-white focus:outline-hidden"
+                      placeholder="Rövid, lényegretörő ismertető a partnervállalkozásról..."
+                      className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl p-3.5 text-sm text-white focus:outline-hidden leading-relaxed"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1.5">Részletes bemutatkozás (Publikus adatlapra)</label>
-                    <textarea
-                      rows={6}
+                    <MarkdownEditorField
+                      label="Részletes bemutatkozás (Publikus adatlapra)"
+                      helpText="Ismertesse szervezete történetét, szakterületeit, kapacitásait és értékeit. Használja a formázóeszközöket (félkövér, dőlt, címsor, listák, hivatkozások)."
                       value={detailedDescription}
-                      onChange={(e) => setDetailedDescription(e.target.value)}
-                      placeholder=""
-                      className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl p-4 text-sm text-white focus:outline-hidden"
+                      onChange={setDetailedDescription}
+                      minHeight="min-h-[220px]"
+                      rows={8}
+                      placeholder="Írja le részletesen a szervezet tevékenységét, szakmai hátterét, beépített technológiáit és garanciáit..."
                     />
                   </div>
 
@@ -1281,16 +1548,18 @@ export default function PartnerEditorModal({
                               />
                             </div>
 
-                            <textarea
-                              rows={2}
+                            <MarkdownEditorField
+                              label="Projekt részletes leírása & műszaki paraméterek"
+                              helpText="Részletezze az elvégzett munka fázisait, beépített anyagokat, volumeneket és műszaki eredményeket (támogatja a félkövér, dőlt, címsor, lista és link formázást)."
                               value={item.description || ''}
-                              onChange={(e) => {
+                              onChange={(val) => {
                                 const next = [...references];
-                                next[index].description = e.target.value;
+                                next[index].description = val;
                                 setReferences(next);
                               }}
-                              placeholder="Projekt részletes leírása, főbb műszaki paraméterek és volumen..."
-                              className="w-full bg-[#1e2225] border border-gray-700 rounded-xl p-3 text-xs text-white placeholder-gray-500"
+                              minHeight="min-h-[140px]"
+                              rows={4}
+                              placeholder="Projekt részletes leírása, főbb műszaki paraméterek, beépített technológiák és volumen..."
                             />
 
                             {/* FOTÓK ÉS KÉPFELTÖLTÉS */}
