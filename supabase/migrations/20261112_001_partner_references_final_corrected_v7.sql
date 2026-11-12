@@ -64,18 +64,9 @@ BEGIN
     RAISE EXCEPTION 'A partner_users tábla kötelező oszlopai (partner_id, user_id, member_role) hiányoznak!' USING ERRCODE = '42703';
   END IF;
 
-  -- 0.5. Cél-táblák ütközésellenőrzése (ne létezzenek még)
+  -- 0.5. Tájékoztatás meglévő táblákról (idempotens végrehajtás)
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'partner_references') THEN
-    RAISE EXCEPTION 'A partner_references tábla már létezik az adatbázisban!' USING ERRCODE = '54000';
-  END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'partner_reference_images') THEN
-    RAISE EXCEPTION 'A partner_reference_images tábla már létezik az adatbázisban!' USING ERRCODE = '54000';
-  END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'reference_upload_intents') THEN
-    RAISE EXCEPTION 'A reference_upload_intents tábla már létezik az adatbázisban!' USING ERRCODE = '54000';
-  END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'pending_storage_deletions') THEN
-    RAISE EXCEPTION 'A pending_storage_deletions tábla már létezik az adatbázisban!' USING ERRCODE = '54000';
+    RAISE NOTICE 'A partner_references tábla már létezik, sémafrissítés és index/RPC/RLS szinkronizáció történik.';
   END IF;
 END $$;
 
@@ -84,7 +75,7 @@ END $$;
 -- ----------------------------------------------------------------------------
 
 -- 1.1. Partner referenciák tábla
-CREATE TABLE public.partner_references (
+CREATE TABLE IF NOT EXISTS public.partner_references (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   partner_id uuid NOT NULL REFERENCES public.partners(id) ON DELETE CASCADE,
   title text NOT NULL,
@@ -100,8 +91,26 @@ CREATE TABLE public.partner_references (
   CONSTRAINT partner_references_id_partner_id_key UNIQUE (id, partner_id)
 );
 
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS location text;
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS year text;
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS category text;
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS description text;
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS website_url text;
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT false;
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.partner_references ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'partner_references_id_partner_id_key'
+  ) THEN
+    ALTER TABLE public.partner_references ADD CONSTRAINT partner_references_id_partner_id_key UNIQUE (id, partner_id);
+  END IF;
+END $$;
+
 -- 1.2. Referencia képek tábla (Composite Foreign Key és dimenzió kényszerek)
-CREATE TABLE public.partner_reference_images (
+CREATE TABLE IF NOT EXISTS public.partner_reference_images (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   reference_id uuid NOT NULL,
   partner_id uuid NOT NULL,
@@ -120,8 +129,16 @@ CREATE TABLE public.partner_reference_images (
   CONSTRAINT partner_reference_images_dimensions CHECK (width > 0 AND height > 0 AND size_bytes > 0)
 );
 
+ALTER TABLE public.partner_reference_images ADD COLUMN IF NOT EXISTS caption text;
+ALTER TABLE public.partner_reference_images ADD COLUMN IF NOT EXISTS display_order integer NOT NULL DEFAULT 1;
+ALTER TABLE public.partner_reference_images ADD COLUMN IF NOT EXISTS is_cover boolean NOT NULL DEFAULT false;
+ALTER TABLE public.partner_reference_images ADD COLUMN IF NOT EXISTS width integer NOT NULL DEFAULT 1920;
+ALTER TABLE public.partner_reference_images ADD COLUMN IF NOT EXISTS height integer NOT NULL DEFAULT 1080;
+ALTER TABLE public.partner_reference_images ADD COLUMN IF NOT EXISTS size_bytes bigint NOT NULL DEFAULT 1000;
+ALTER TABLE public.partner_reference_images ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+
 -- 1.3. Kétfázisú feltöltési intentek tábla (Processing Lease támogatással)
-CREATE TABLE public.reference_upload_intents (
+CREATE TABLE IF NOT EXISTS public.reference_upload_intents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   partner_id uuid NOT NULL,
   reference_id uuid NOT NULL,
@@ -144,8 +161,11 @@ CREATE TABLE public.reference_upload_intents (
   CONSTRAINT upload_intents_mime_check CHECK (expected_mime_type IN ('image/jpeg', 'image/png', 'image/webp'))
 );
 
+ALTER TABLE public.reference_upload_intents ADD COLUMN IF NOT EXISTS processing_lease_until timestamptz;
+ALTER TABLE public.reference_upload_intents ADD COLUMN IF NOT EXISTS consumed_at timestamptz;
+
 -- 1.4. Törlési queue tábla (Független storage audit-napló)
-CREATE TABLE public.pending_storage_deletions (
+CREATE TABLE IF NOT EXISTS public.pending_storage_deletions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   object_key text NOT NULL,
   thumb_key text,
@@ -161,25 +181,33 @@ CREATE TABLE public.pending_storage_deletions (
   CONSTRAINT pending_deletions_status_check CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'dead_letter'))
 );
 
+ALTER TABLE public.pending_storage_deletions ADD COLUMN IF NOT EXISTS thumb_key text;
+ALTER TABLE public.pending_storage_deletions ADD COLUMN IF NOT EXISTS retry_count integer NOT NULL DEFAULT 0;
+ALTER TABLE public.pending_storage_deletions ADD COLUMN IF NOT EXISTS next_retry_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.pending_storage_deletions ADD COLUMN IF NOT EXISTS locked_until timestamptz;
+ALTER TABLE public.pending_storage_deletions ADD COLUMN IF NOT EXISTS worker_lock_token uuid;
+ALTER TABLE public.pending_storage_deletions ADD COLUMN IF NOT EXISTS error_message text;
+ALTER TABLE public.pending_storage_deletions ADD COLUMN IF NOT EXISTS completed_at timestamptz;
+
 -- ----------------------------------------------------------------------------
 -- 2. TELJESÍTMÉNY- ÉS KONZISZTENCIA INDEXEK
 -- ----------------------------------------------------------------------------
 
-CREATE INDEX idx_references_partner_id ON public.partner_references(partner_id);
-CREATE INDEX idx_references_published ON public.partner_references(is_published);
-CREATE INDEX idx_ref_images_ref_order ON public.partner_reference_images(reference_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_references_partner_id ON public.partner_references(partner_id);
+CREATE INDEX IF NOT EXISTS idx_references_published ON public.partner_references(is_published);
+CREATE INDEX IF NOT EXISTS idx_ref_images_ref_order ON public.partner_reference_images(reference_id, display_order);
 
 -- Feltételes egyedi index: referenciánként pontosan legfeljebb 1 borítókép
-CREATE UNIQUE INDEX idx_single_cover_per_reference
+CREATE UNIQUE INDEX IF NOT EXISTS idx_single_cover_per_reference
 ON public.partner_reference_images(reference_id)
 WHERE is_cover = true;
 
 -- Queue feladatok claimelését és retry stratégiáját segítő index
-CREATE INDEX idx_storage_deletions_claim
+CREATE INDEX IF NOT EXISTS idx_storage_deletions_claim
 ON public.pending_storage_deletions(status, next_retry_at, locked_until);
 
 -- Intent takarítást és lease lejáratot támogató index
-CREATE INDEX idx_upload_intents_cleanup
+CREATE INDEX IF NOT EXISTS idx_upload_intents_cleanup
 ON public.reference_upload_intents(status, expires_at, processing_lease_until);
 
 -- ----------------------------------------------------------------------------
@@ -330,6 +358,7 @@ $$;
 
 ALTER FUNCTION public.enforce_reference_publication_security() OWNER TO postgres;
 
+DROP TRIGGER IF EXISTS trg_enforce_reference_publication_security ON public.partner_references;
 CREATE TRIGGER trg_enforce_reference_publication_security
 BEFORE INSERT OR UPDATE OR DELETE ON public.partner_references
 FOR EACH ROW EXECUTE FUNCTION public.enforce_reference_publication_security();
@@ -432,6 +461,7 @@ $$;
 
 ALTER FUNCTION public.enforce_reference_images_limits() OWNER TO postgres;
 
+DROP TRIGGER IF EXISTS trg_enforce_reference_images_limits ON public.partner_reference_images;
 CREATE TRIGGER trg_enforce_reference_images_limits
 BEFORE INSERT OR UPDATE OR DELETE ON public.partner_reference_images
 FOR EACH ROW EXECUTE FUNCTION public.enforce_reference_images_limits();
@@ -507,6 +537,7 @@ $$;
 
 ALTER FUNCTION public.handle_reference_image_changes() OWNER TO postgres;
 
+DROP TRIGGER IF EXISTS trg_handle_reference_image_changes ON public.partner_reference_images;
 CREATE TRIGGER trg_handle_reference_image_changes
 AFTER INSERT OR UPDATE OR DELETE ON public.partner_reference_images
 FOR EACH ROW EXECUTE FUNCTION public.handle_reference_image_changes();
@@ -1341,6 +1372,7 @@ ALTER TABLE public.pending_storage_deletions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pending_storage_deletions FORCE ROW LEVEL SECURITY;
 
 -- 5.1. partner_references RLS házirendek
+DROP POLICY IF EXISTS "References select policy" ON public.partner_references;
 CREATE POLICY "References select policy"
 ON public.partner_references FOR SELECT
 USING (
@@ -1349,6 +1381,7 @@ USING (
   OR public.is_partner_admin(partner_id)
 );
 
+DROP POLICY IF EXISTS "References insert policy" ON public.partner_references;
 CREATE POLICY "References insert policy"
 ON public.partner_references FOR INSERT
 TO authenticated
@@ -1357,6 +1390,7 @@ WITH CHECK (
   OR public.is_partner_admin(partner_id)
 );
 
+DROP POLICY IF EXISTS "References update policy" ON public.partner_references;
 CREATE POLICY "References update policy"
 ON public.partner_references FOR UPDATE
 TO authenticated
@@ -1369,6 +1403,7 @@ WITH CHECK (
   OR public.is_partner_admin(partner_id)
 );
 
+DROP POLICY IF EXISTS "References delete policy" ON public.partner_references;
 CREATE POLICY "References delete policy"
 ON public.partner_references FOR DELETE
 TO authenticated
@@ -1378,6 +1413,7 @@ USING (
 );
 
 -- 5.2. partner_reference_images RLS házirendek
+DROP POLICY IF EXISTS "Images select policy" ON public.partner_reference_images;
 CREATE POLICY "Images select policy"
 ON public.partner_reference_images FOR SELECT
 USING (
@@ -1388,6 +1424,7 @@ USING (
   )
 );
 
+DROP POLICY IF EXISTS "Images update policy" ON public.partner_reference_images;
 CREATE POLICY "Images update policy"
 ON public.partner_reference_images FOR UPDATE
 TO authenticated
@@ -1400,6 +1437,7 @@ WITH CHECK (
   OR public.is_partner_admin(partner_id)
 );
 
+DROP POLICY IF EXISTS "Images delete policy" ON public.partner_reference_images;
 CREATE POLICY "Images delete policy"
 ON public.partner_reference_images FOR DELETE
 TO authenticated
