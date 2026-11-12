@@ -159,10 +159,7 @@ Vállalkozásunk kiemelt figyelmet fordít a korszerű MSZ és EU szabványok sz
     { id: 's-3', name: 'Energetikai korszerűsítés', description: 'Homlokzati hőszigetelés és nyílászárók cseréje', icon_category: 'shield', display_order: 3, is_active: true },
     { id: 's-4', name: 'Ipari csarnokok építése', description: 'Acélszerkezetes és prefabricated ipari létesítmények', icon_category: 'warehouse', display_order: 4, is_active: true }
   ],
-  references: [
-    { id: 'r-1', title: 'Buda-Garten 24 lakásos Társasház', location: 'Budapest XI. kerület', year: '2025', description: 'A-kategóriás energetikai besorolású, monolit vasbeton szerkezetű lakópark kulcsrakész kivitelezése.', image_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=80', is_published: true, display_order: 1 },
-    { id: 'r-2', title: 'Logisztikai Központ & Raktárcsarnok', location: 'Biatorbágy', year: '2024', description: '3500 m² alapterületű acélszerkezetes raktárcsarnok és irodaház kivitelezése.', image_url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80', is_published: true, display_order: 2 }
-  ],
+  references: [],
   certificates: [
     { id: 'c-1', title: 'ISO 9001:2015 Minőségirányítási Rendszer', issuer: 'TÜV Rheinland', valid_until: '2028-12-31', doc_url: '', is_published: true, display_order: 1 },
     { id: 'c-2', title: 'ÉVOSZ Minősített Kivitelezői Tanúsítvány', issuer: 'Építési Vállalkozók Országos Szakszövetsége', valid_until: '2027-06-30', doc_url: '', is_published: true, display_order: 2 }

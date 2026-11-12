@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import { getPartnerBySlug } from './partnerService';
 
 export interface PartnerReferenceImage {
   id: string;
@@ -128,16 +127,12 @@ export async function getPartnerReferences(
     const { data, error } = await query;
 
     if (error) {
-      // Ha a tábla még nem létezik (PGRST205), biztonságos fallback a korábbi partnerService mezőkre
-      if (error.code === 'PGRST205' || error.message?.includes('schema cache')) {
-        return await getFallbackReferences(partnerId, onlyPublished);
-      }
       console.warn('Figyelmeztetés a partner referenciák lekérdezésekor:', error.message);
-      return await getFallbackReferences(partnerId, onlyPublished);
+      return [];
     }
 
     if (!data || data.length === 0) {
-      return await getFallbackReferences(partnerId, onlyPublished);
+      return [];
     }
 
     return (data as any[]).map((raw) => {
@@ -165,67 +160,6 @@ export async function getPartnerReferences(
     });
   } catch (err) {
     console.warn('Kivétel a referenciák lekérdezésekor:', err);
-    return await getFallbackReferences(partnerId, onlyPublished);
-  }
-}
-
-/**
- * Fallback mechanizmus a meglévő partnerService.references mezőkhöz.
- */
-async function getFallbackReferences(
-  partnerIdOrSlug: string,
-  onlyPublished: boolean
-): Promise<PartnerReference[]> {
-  try {
-    const partner = await getPartnerBySlug(partnerIdOrSlug);
-    if (!partner || !Array.isArray(partner.references)) {
-      return [];
-    }
-
-    let items = partner.references;
-    if (onlyPublished) {
-      items = items.filter((r) => r.is_published);
-    }
-
-    return items.map((r, idx) => {
-      const allImageUrls: string[] = [];
-      if (r.image_url) allImageUrls.push(r.image_url);
-      if (Array.isArray(r.images)) {
-        r.images.forEach((imgUrl) => {
-          if (imgUrl && !allImageUrls.includes(imgUrl)) {
-            allImageUrls.push(imgUrl);
-          }
-        });
-      }
-
-      const images: PartnerReferenceImage[] = allImageUrls.map((url, imgIdx) => ({
-        id: `img-${r.id || idx}-${imgIdx}`,
-        reference_id: r.id,
-        partner_id: partner.id,
-        object_key: url,
-        thumbnail_key: url,
-        caption: r.title,
-        display_order: imgIdx + 1,
-        is_cover: imgIdx === 0,
-        width: 1200,
-        height: 800,
-        size_bytes: 102400,
-        url,
-      }));
-
-      return {
-        id: r.id || `ref-${idx}`,
-        partner_id: partner.id,
-        title: r.title,
-        location: r.location,
-        year: r.year,
-        description: r.description,
-        is_published: r.is_published,
-        images,
-        cover_image: images[0] || null,
-      };
-    });
-  } catch {
     return [];
   }
 }
