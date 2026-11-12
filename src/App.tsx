@@ -26,8 +26,6 @@ import {
   ArrowRight,
   ExternalLink,
   PlusCircle,
-  Star,
-  TrendingUp,
   Edit2,
   Mail,
   AlertCircle,
@@ -520,7 +518,11 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
         isSchoolAdmin ? (
           <PartnerSchoolProfilePage initialTab="overview" onNavigateView={setPartnerView} onNavigate={onNavigate} />
         ) : (
-          <PartnerDashboardPage onNavigateView={setPartnerView} />
+          <PartnerDashboardPage
+            onNavigateView={setPartnerView}
+            offersCount={offersList.length}
+            servicesCount={(effectivePartner as any).services?.length || 0}
+          />
         )
       )}
 
@@ -835,9 +837,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
               <span className="text-xs text-slate-400 font-medium">Havi Profil Megtekintés</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">1 420</span>
-                <span className="text-xs font-bold text-emerald-400 flex items-center gap-0.5">
-                  <TrendingUp className="w-3.5 h-3.5" /> +18.4%
+                <span className="text-2xl font-bold text-white">0</span>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Az adatgyűjtés még nem aktív
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">Közvetlen látogatók a szakember-keresőből</p>
@@ -846,9 +848,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
               <span className="text-xs text-slate-400 font-medium">Termékkatalógus Kattintások</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">385</span>
-                <span className="text-xs font-bold text-emerald-400 flex items-center gap-0.5">
-                  <TrendingUp className="w-3.5 h-3.5" /> +12.1%
+                <span className="text-2xl font-bold text-white">0</span>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Nincs mérési adat
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">Anyag- és gépkatalógus adatlapokról</p>
@@ -857,9 +859,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
               <span className="text-xs text-slate-400 font-medium">Szakmai Cikk Olvasottság</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">842</span>
-                <span className="text-xs font-bold text-blue-400 flex items-center gap-0.5">
-                  <TrendingUp className="w-3.5 h-3.5" /> +24.0%
+                <span className="text-2xl font-bold text-white">0</span>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Nincs mérési adat
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">Útmutatók és technológiai bejegyzések</p>
@@ -868,9 +870,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
               <span className="text-xs text-slate-400 font-medium">Közvetlen Ajánlatkérések</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">42 db</span>
-                <span className="text-xs font-bold text-amber-400 flex items-center gap-0.5">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" /> 4.9 Értékelés
+                <span className="text-2xl font-bold text-white">0 db</span>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Az adatgyűjtés még nem aktív
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">Kivitelezői és intézményi kapcsolatfelvétel</p>

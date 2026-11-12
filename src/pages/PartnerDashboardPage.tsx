@@ -15,9 +15,15 @@ import type { PartnerView } from '../components/PartnerLayout';
 
 interface PartnerDashboardPageProps {
   onNavigateView: (view: PartnerView) => void;
+  offersCount?: number;
+  servicesCount?: number;
 }
 
-export function PartnerDashboardPage({ onNavigateView }: PartnerDashboardPageProps) {
+export function PartnerDashboardPage({
+  onNavigateView,
+  offersCount = 0,
+  servicesCount = 0,
+}: PartnerDashboardPageProps) {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Welcome Banner */}
@@ -59,7 +65,7 @@ export function PartnerDashboardPage({ onNavigateView }: PartnerDashboardPagePro
               <h3 className="text-xs sm:text-base font-bold text-white leading-snug">Partner Profil Státusz: Aktív &amp; Hitelesített</h3>
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Profilod kitöltöttsége 95% - A cégadatok megjelenése naprakész.</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">A cégadatok megjelenése aktív a platformon.</p>
           </div>
         </div>
 
@@ -78,7 +84,7 @@ export function PartnerDashboardPage({ onNavigateView }: PartnerDashboardPagePro
             <Tag className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">4</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{offersCount}</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Aktív ajánlatok</p>
           </div>
         </div>
@@ -88,7 +94,7 @@ export function PartnerDashboardPage({ onNavigateView }: PartnerDashboardPagePro
             <Package className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">18</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{servicesCount}</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Termékek / Szolgáltatások</p>
           </div>
         </div>
@@ -98,18 +104,20 @@ export function PartnerDashboardPage({ onNavigateView }: PartnerDashboardPagePro
             <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">1,420</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">0</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Profil megtekintések</p>
+            <p className="text-[10px] text-slate-500 truncate">Az adatgyűjtés még nem aktív</p>
           </div>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg flex items-center gap-3.5">
-          <div className="p-2.5 sm:p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl shrink-0">
+          <div className="p-2.5 sm:p-3 bg-slate-800 border border-slate-700 text-slate-400 rounded-xl shrink-0">
             <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">+18.5%</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">--</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Havi növekedés</p>
+            <p className="text-[10px] text-slate-500 truncate">Nincs mérési adat</p>
           </div>
         </div>
       </div>
