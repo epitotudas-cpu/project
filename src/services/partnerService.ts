@@ -118,7 +118,8 @@ export interface CreatePartnerPayload {
 }
 
 const STORAGE_KEY = 'epitotudas_partners_v2';
-const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000011';
+const _SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000011';
+void _SUPABASE_SYSTEM_ID;
 
 export const SAMPLE_78AS_EPITOK: ExtendedPartner = {
   id: 'p-78as-epitok',

@@ -20,6 +20,11 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { getPartnerBySlug, getCategoryLabel, type ExtendedPartner } from '../services/partnerService';
+import {
+  getPartnerReferences,
+  resolveReferenceImageUrl,
+  type PartnerReference,
+} from '../services/referenceService';
 
 interface PartnerDetailPageProps {
   partnerSlug: string | null;
@@ -82,6 +87,7 @@ function getCategorySpecialties(category: string): { title: string; desc: string
 
 export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDetailPageProps) {
   const [partner, setPartner] = useState<ExtendedPartner | null>(null);
+  const [referencesList, setReferencesList] = useState<PartnerReference[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [imageError, setImageError] = useState<boolean>(false);
 
@@ -95,6 +101,12 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
       try {
         const data = await getPartnerBySlug(partnerSlug);
         setPartner(data);
+        if (data?.id) {
+          const refs = await getPartnerReferences(data.id, true);
+          setReferencesList(refs);
+        } else {
+          setReferencesList([]);
+        }
       } catch (err) {
         console.error('Hiba a partner betöltésekor:', err);
       } finally {
@@ -147,7 +159,6 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
   const displayType =
     isCompanyCategory && hasEduPartnerType ? categoryLabel : partner.partner_type || categoryLabel;
   const activeServices = partner.services?.filter((s) => s.is_active) || [];
-  const publishedReferences = partner.references?.filter((r) => r.is_published) || [];
   const publishedCertificates = partner.certificates?.filter((c) => c.is_published) || [];
   const hasRelatedContent = partner.related_content && partner.related_content.length > 0;
 
@@ -492,7 +503,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
         )}
 
         {/* 6. Referenciák Section (ONLY IF PUBLISHED REFERENCES EXIST) */}
-        {publishedReferences.length > 0 && (
+        {referencesList.length > 0 && (
           <section className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             <div className="flex items-center gap-2.5 border-b border-gray-100 pb-4">
               <div className="p-2.5 bg-accent/10 border border-accent/20 rounded-xl text-accent">
@@ -505,21 +516,39 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {publishedReferences.map((ref) => (
-                <div key={ref.id} className="bg-gray-50 border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs space-y-3 p-5">
-                  {ref.image_url && (
-                    <div className="h-40 rounded-xl overflow-hidden bg-gray-200 mb-2">
-                      <img src={ref.image_url} alt={ref.title} className="w-full h-full object-cover" />
+              {referencesList.map((ref) => {
+                const coverUrl = resolveReferenceImageUrl(ref.cover_image || ref.images?.[0]);
+                const otherImages = ref.images?.filter((img) => img.id !== ref.cover_image?.id) || [];
+                return (
+                  <div key={ref.id} className="bg-gray-50 border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs space-y-3 p-5">
+                    {coverUrl && (
+                      <div className="h-44 rounded-xl overflow-hidden bg-gray-200 mb-2 group relative">
+                        <img src={coverUrl} alt={ref.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                    )}
+                    {otherImages.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {otherImages.slice(0, 4).map((subImg) => (
+                          <div key={subImg.id} className="w-14 h-14 rounded-lg overflow-hidden bg-gray-200 shrink-0 border border-gray-300">
+                            <img src={resolveReferenceImageUrl(subImg)} alt={subImg.caption || ref.title} className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                        {otherImages.length > 4 && (
+                          <div className="w-14 h-14 rounded-lg bg-gray-200 shrink-0 border border-gray-300 flex items-center justify-center text-xs font-bold text-gray-600">
+                            +{otherImages.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-extrabold text-gray-900 text-base">{ref.title}</h3>
+                      {ref.year && <span className="px-2 py-0.5 bg-accent/20 text-accent-dark font-extrabold text-xs rounded">{ref.year}</span>}
                     </div>
-                  )}
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-extrabold text-gray-900 text-base">{ref.title}</h3>
-                    {ref.year && <span className="px-2 py-0.5 bg-accent/20 text-accent-dark font-extrabold text-xs rounded">{ref.year}</span>}
+                    {ref.location && <p className="text-xs font-semibold text-gray-500">{ref.location}</p>}
+                    {ref.description && <p className="text-xs text-[#5f6868] leading-relaxed">{ref.description}</p>}
                   </div>
-                  {ref.location && <p className="text-xs font-semibold text-gray-500">{ref.location}</p>}
-                  {ref.description && <p className="text-xs text-[#5f6868] leading-relaxed">{ref.description}</p>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
