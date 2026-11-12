@@ -74,6 +74,46 @@ const PRESET_SPECIALTIES = [
   'Építőipari Szakképzés',
 ];
 
+/**
+ * Kliensoldali intelligens képtömörítő és átméretező segédfüggvény.
+ * A túl nagy (5-20 MB-os kamera/telefon) fotókat gyorsan optimális méretűvé
+ * (max. 1600x1200, ~150-250 KB JPEG) skálázza le, megelőzve a memóriatúlcsordulást
+ * és a böngészőoldali tárolási kvótahibákat.
+ */
+function resizeImageFile(file: File, maxWidth = 1600, maxHeight = 1200, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = typeof e.target?.result === 'string' ? e.target.result : '';
+      if (!dataUrl) return resolve('');
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } else {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
 interface MarkdownEditorFieldProps {
   label: string;
   value: string;
@@ -1568,29 +1608,35 @@ export default function PartnerEditorModal({
                                 <span className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
                                   <ImageIcon size={14} className="text-blue-400" /> Referencia Képek ({allImgs.length} db)
                                 </span>
-                                <label className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg cursor-pointer transition-colors flex items-center gap-1.5">
-                                  <Upload size={12} /> Kép feltöltése
+                                <label className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg cursor-pointer transition-colors flex items-center gap-1.5 shadow-xs">
+                                  <Upload size={12} /> Képek feltöltése (több is választható)
                                   <input
                                     type="file"
+                                    multiple
                                     accept="image/*"
                                     className="hidden"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (!file) return;
-                                      const reader = new FileReader();
-                                      reader.onload = (loadEvt) => {
-                                        const res = loadEvt.target?.result;
-                                        if (typeof res === 'string') {
-                                          const next = [...references];
-                                          const currImgs = next[index].images || [];
-                                          next[index].images = [...currImgs, res];
-                                          if (!next[index].image_url) {
-                                            next[index].image_url = res;
-                                          }
-                                          setReferences(next);
-                                        }
-                                      };
-                                      reader.readAsDataURL(file);
+                                    onChange={async (e) => {
+                                      const files = Array.from(e.target.files || []);
+                                      if (files.length === 0) return;
+
+                                      const currentImgs = references[index].images || [];
+                                      const remainingSlots = Math.max(0, 10 - currentImgs.length);
+                                      const filesToProcess = files.slice(0, remainingSlots);
+
+                                      const resizedList = await Promise.all(
+                                        filesToProcess.map((file) => resizeImageFile(file))
+                                      );
+                                      const validNew = resizedList.filter((u) => typeof u === 'string' && u.length > 0);
+                                      if (validNew.length === 0) return;
+
+                                      const next = [...references];
+                                      const combined = [...currentImgs, ...validNew].slice(0, 10);
+                                      next[index].images = combined;
+                                      if (!next[index].image_url && combined.length > 0) {
+                                        next[index].image_url = combined[0];
+                                      }
+                                      setReferences(next);
+                                      e.target.value = '';
                                     }}
                                   />
                                 </label>

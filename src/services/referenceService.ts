@@ -87,8 +87,65 @@ export function resolveReferenceImageUrl(
 }
 
 /**
+ * Helyi tárolóból származó partner referenciák beolvasása (fallback mód).
+ * Biztosítja a referenciák, leírások és feltöltött képek zökkenőmentes megjelenését
+ * akkor is, ha az adatbázis RLS vagy hálózati korlátai miatt a Supabase-ből nem érkezik adat.
+ */
+function getLocalFallbackReferences(partnerId: string, onlyPublished: boolean): PartnerReference[] {
+  if (typeof localStorage === 'undefined' || !partnerId) return [];
+  try {
+    const raw = localStorage.getItem('epitotudas_partners_v2');
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    if (!Array.isArray(list)) return [];
+    const p = list.find((item: any) => item && (item.id === partnerId || item.slug === partnerId));
+    if (!p || !Array.isArray(p.references)) return [];
+
+    return p.references
+      .filter((r: any) => r && (!onlyPublished || r.is_published !== false))
+      .map((r: any, idx: number) => {
+        const rawImgs: string[] = [
+          ...(r.image_url ? [r.image_url] : []),
+          ...((r.images || []).filter((u: string) => u !== r.image_url)),
+        ];
+        const images: PartnerReferenceImage[] = rawImgs.map((url: string, iIdx: number) => ({
+          id: `img-${r.id || idx}-${iIdx}`,
+          reference_id: r.id || `ref-${idx}`,
+          partner_id: partnerId,
+          object_key: url,
+          thumbnail_key: url,
+          caption: null,
+          display_order: iIdx + 1,
+          is_cover: iIdx === 0,
+          width: 1600,
+          height: 1067,
+          size_bytes: 100000,
+          url,
+        }));
+        return {
+          id: r.id || `ref-${idx}`,
+          partner_id: partnerId,
+          title: r.title || 'Referencia',
+          location: r.location || null,
+          year: r.year || null,
+          category: r.category || null,
+          description: r.description || null,
+          website_url: r.website_url || null,
+          is_published: r.is_published !== false,
+          created_at: r.created_at || new Date().toISOString(),
+          updated_at: r.updated_at || new Date().toISOString(),
+          images,
+          cover_image: images[0] || null,
+        };
+      });
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
  * Lekéri egy partner összes referenciáját a kapcsolódó képekkel együtt a Supabase-ből.
- * Ha az adatbázisban a partner_references tábla még nem létezik (pre-migráció),
+ * Ha az adatbázisban a partner_references tábla még nem tartalmaz publikált rekordot,
  * zökkenőmentesen a partnerService fallback adatait adja vissza.
  */
 export async function getPartnerReferences(
@@ -138,17 +195,26 @@ export async function getPartnerReferences(
 
     if (error) {
       console.warn('Figyelmeztetés a partner referenciák lekérdezésekor:', error.message);
-      return [];
+      return getLocalFallbackReferences(partnerId, onlyPublished);
     }
 
     if (!data || data.length === 0) {
-      return [];
+      return getLocalFallbackReferences(partnerId, onlyPublished);
     }
 
     return (data as any[]).map((raw) => {
-      const rawImages: PartnerReferenceImage[] = Array.isArray(raw.partner_reference_images)
+      let rawImages: PartnerReferenceImage[] = Array.isArray(raw.partner_reference_images)
         ? raw.partner_reference_images.sort((a: any, b: any) => a.display_order - b.display_order)
         : [];
+
+      // Ha az adatbázisban nincsenek képek a referenciához, megpróbáljuk kiegészíteni a helyi adatokból
+      if (rawImages.length === 0) {
+        const localList = getLocalFallbackReferences(partnerId, false);
+        const match = localList.find((lr) => lr.id === raw.id || lr.title === raw.title);
+        if (match && match.images && match.images.length > 0) {
+          rawImages = match.images;
+        }
+      }
 
       const cover = rawImages.find((img) => img.is_cover) || rawImages[0] || null;
 
@@ -170,7 +236,7 @@ export async function getPartnerReferences(
     });
   } catch (err) {
     console.warn('Kivétel a referenciák lekérdezésekor:', err);
-    return [];
+    return getLocalFallbackReferences(partnerId, onlyPublished);
   }
 }
 
