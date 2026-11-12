@@ -28,6 +28,11 @@ import {
   type CertificateItem,
   type RelatedContentItem,
 } from '../services/partnerService';
+import {
+  getPartnerReferences,
+  syncPartnerReferences,
+  resolveReferenceImageUrl,
+} from '../services/referenceService';
 
 interface PartnerEditorModalProps {
   partner: ExtendedPartner | null;
@@ -115,6 +120,8 @@ export default function PartnerEditorModal({
   // Repeatables
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [references, setReferences] = useState<ReferenceItem[]>([]);
+  const [loadingReferences, setLoadingReferences] = useState(false);
+  const initialReferenceIdsRef = useRef<string[]>([]);
   const [certificates, setCertificates] = useState<CertificateItem[]>([]);
   const [relatedContent, setRelatedContent] = useState<RelatedContentItem[]>([]);
 
@@ -158,9 +165,50 @@ export default function PartnerEditorModal({
       setSocialYoutube(partner.social_youtube || '');
 
       setServices(partner.services || []);
-      setReferences(partner.references || []);
       setCertificates(partner.certificates || []);
       setRelatedContent(partner.related_content || []);
+
+      // Referenciák betöltése az adatbázisból (partner_references & partner_reference_images)
+      if (partner.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partner.id)) {
+        setLoadingReferences(true);
+        getPartnerReferences(partner.id, false)
+          .then((dbRefs) => {
+            if (dbRefs && dbRefs.length > 0) {
+              initialReferenceIdsRef.current = dbRefs.map((r) => r.id);
+              const mapped: ReferenceItem[] = dbRefs.map((r, idx) => {
+                const cover = r.cover_image || r.images?.[0];
+                const coverUrl = cover ? resolveReferenceImageUrl(cover) : '';
+                const imgUrls = (r.images || []).map((img) => resolveReferenceImageUrl(img));
+                return {
+                  id: r.id,
+                  title: r.title || '',
+                  image_url: coverUrl,
+                  images: imgUrls.length > 0 ? imgUrls : (coverUrl ? [coverUrl] : []),
+                  location: r.location || '',
+                  year: r.year || '',
+                  description: r.description || '',
+                  is_published: r.is_published ?? false,
+                  display_order: idx + 1,
+                };
+              });
+              setReferences(mapped);
+            } else {
+              initialReferenceIdsRef.current = [];
+              setReferences(partner.references || []);
+            }
+          })
+          .catch((err) => {
+            console.warn('Nem sikerült betölteni a referenciákat az adatbázisból:', err);
+            initialReferenceIdsRef.current = [];
+            setReferences(partner.references || []);
+          })
+          .finally(() => {
+            setLoadingReferences(false);
+          });
+      } else {
+        initialReferenceIdsRef.current = [];
+        setReferences(partner.references || []);
+      }
 
       setSeoTitle(partner.seo_title || '');
       setSeoDescription(partner.seo_description || '');
@@ -197,6 +245,7 @@ export default function PartnerEditorModal({
       setSocialYoutube('');
       setServices([]);
       setReferences([]);
+      initialReferenceIdsRef.current = [];
       setCertificates([]);
       setRelatedContent([]);
       setSeoTitle('');
@@ -323,6 +372,19 @@ export default function PartnerEditorModal({
 
     try {
       await onSave(payload);
+
+      // Referenciák és képeik szinkronizálása a partner_references és partner_reference_images táblákkal
+      if (partner?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partner.id)) {
+        try {
+          const updatedDbRefs = await syncPartnerReferences(partner.id, references, initialReferenceIdsRef.current);
+          if (updatedDbRefs && updatedDbRefs.length > 0) {
+            initialReferenceIdsRef.current = updatedDbRefs.map((r) => r.id);
+          }
+        } catch (syncErr) {
+          console.warn('Figyelmeztetés a referenciák adatbázis-szinkronizálásakor:', syncErr);
+        }
+      }
+
       setSaveSuccess(true);
       setLogoSuccessMessage(null);
       setTimeout(() => {
@@ -1135,7 +1197,12 @@ export default function PartnerEditorModal({
                   </div>
 
                   <div className="space-y-4">
-                    {references.length === 0 ? (
+                    {loadingReferences ? (
+                      <div className="p-8 border border-gray-800 rounded-2xl text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                        <RefreshCw size={16} className="animate-spin text-blue-400" />
+                        <span>Referenciák betöltése az adatbázisból...</span>
+                      </div>
+                    ) : references.length === 0 ? (
                       <div className="p-8 border border-gray-800 rounded-2xl text-center text-xs text-gray-500 space-y-2">
                         <FolderGit2 className="mx-auto text-gray-600" size={32} />
                         <p>Nincsenek még bejegyzett referenciák. Kattintson az „Új Referencia Hozzáadása” gombra!</p>
