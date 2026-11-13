@@ -78,16 +78,16 @@ export function resolveReferenceImageUrl(
     keyOrUrl = imageOrKey;
   } else if (imageOrKey.url) {
     keyOrUrl = imageOrKey.url;
-  } else if (imageOrKey.thumbnail_key) {
-    keyOrUrl = imageOrKey.thumbnail_key;
   } else if (imageOrKey.object_key) {
     keyOrUrl = imageOrKey.object_key;
+  } else if (imageOrKey.thumbnail_key) {
+    keyOrUrl = imageOrKey.thumbnail_key;
   }
 
   if (!keyOrUrl) return '';
 
-  // Belső egyediséget biztosító hash eltávolítása (#ref-...)
-  const cleanKey = keyOrUrl.split('#')[0].trim();
+  // Belső hash és a nem létező /thumbs/ almappa feloldása a valódi képre
+  const cleanKey = keyOrUrl.split('#')[0].trim().replace('/thumbs/', '/');
 
   if (
     cleanKey.startsWith('http://') ||
@@ -103,6 +103,19 @@ export function resolveReferenceImageUrl(
   }
 
   return `https://olmavxcmkvvcebgqxohe.supabase.co/storage/v1/object/public/partner-references/${cleanKey}`;
+}
+
+/**
+ * Segédfüggvény a tárolókulcs normalizálásához összehasonlításokhoz.
+ */
+function extractStorageKey(urlOrKey: string): string {
+  if (!urlOrKey) return '';
+  const clean = urlOrKey.split('#')[0].trim().replace('/thumbs/', '/');
+  const prefix = 'https://olmavxcmkvvcebgqxohe.supabase.co/storage/v1/object/public/partner-references/';
+  if (clean.startsWith(prefix)) {
+    return clean.slice(prefix.length);
+  }
+  return clean;
 }
 
 /**
@@ -401,10 +414,14 @@ export async function uploadReferenceFile(
   targetKey: string,
   fileOrBlob: Blob | File
 ): Promise<void> {
+  const safeMime = ['image/jpeg', 'image/png', 'image/webp'].includes(fileOrBlob.type)
+    ? fileOrBlob.type
+    : 'image/jpeg';
+
   const { error } = await supabase.storage
     .from('partner-references')
     .upload(targetKey, fileOrBlob, {
-      contentType: fileOrBlob.type || 'image/jpeg',
+      contentType: safeMime,
       upsert: false,
     });
 
@@ -538,8 +555,8 @@ export async function syncReferenceImages(
 
     // 2. Törölt képek eltávolítása az adatbázisból
     for (const exImg of existing) {
-      const cleanKey = (exImg.object_key || '').split('#')[0];
-      const isRetained = validUrls.some((u) => u.split('#')[0] === cleanKey);
+      const cleanKey = extractStorageKey(exImg.object_key || '');
+      const isRetained = validUrls.some((u) => extractStorageKey(u) === cleanKey);
       if (!isRetained) {
         try {
           await supabase
@@ -559,24 +576,28 @@ export async function syncReferenceImages(
       const rawUrl = validUrls[i].trim();
       const isCover = i === 0;
 
+      const normKey = extractStorageKey(rawUrl);
       const isAlreadyInDb = existing.some(
-        (img) => (img.object_key || '').split('#')[0] === rawUrl.split('#')[0]
+        (img) => extractStorageKey(img.object_key || '') === normKey
       );
 
-      if (!isAlreadyInDb) {
-        try {
-          const uploaded = await uploadReferenceImageThroughIntent(
-            partnerId,
-            referenceId,
-            rawUrl,
-            isCover
-          );
-          if (uploaded.imageId && !firstCreatedImageId) {
-            firstCreatedImageId = uploaded.imageId;
-          }
-        } catch (uploadErr) {
-          console.warn('Figyelmeztetés a kép intent-alapú feltöltésekor:', uploadErr);
+      // Ha már az adatbázisban van vagy meglévő Supabase tároló URL, nem kell újra feltölteni
+      if (isAlreadyInDb || rawUrl.includes('/storage/v1/object/public/partner-references/')) {
+        continue;
+      }
+
+      try {
+        const uploaded = await uploadReferenceImageThroughIntent(
+          partnerId,
+          referenceId,
+          rawUrl,
+          isCover
+        );
+        if (uploaded.imageId && !firstCreatedImageId) {
+          firstCreatedImageId = uploaded.imageId;
         }
+      } catch (uploadErr) {
+        console.warn('Figyelmeztetés a kép intent-alapú feltöltésekor:', uploadErr);
       }
     }
 

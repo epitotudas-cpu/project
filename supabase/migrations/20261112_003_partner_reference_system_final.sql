@@ -8,10 +8,26 @@
 BEGIN;
 
 -- ----------------------------------------------------------------------------
--- 0. FÜGGŐBEN LÉVŐ BERAGADT INTENTEK AZONNALI TISZTÍTÁSA
+-- 0. FÜGGŐBEN LÉVŐ BERAGADT INTENTEK TISZTÍTÁSA ÉS /thumbs/ ÚTVONALAK KORREKCIÓJA
 -- ----------------------------------------------------------------------------
 DELETE FROM public.reference_upload_intents 
 WHERE status IN ('created', 'validating');
+
+-- A hibás /thumbs/ mappa eltávolítása az eddig beszúrt képekből a valódi fájlokra
+UPDATE public.partner_reference_images
+SET thumbnail_key = REPLACE(thumbnail_key, '/thumbs/', '/'),
+    object_key = REPLACE(object_key, '/thumbs/', '/')
+WHERE thumbnail_key LIKE '%/thumbs/%' OR object_key LIKE '%/thumbs/%';
+
+-- Tranzakciós publikálási feloldás
+SELECT set_config('app.allow_publication', 'true', false);
+
+-- Minden képpel rendelkező referencia élesítése
+UPDATE public.partner_references
+SET is_published = true, updated_at = now()
+WHERE id IN (
+  SELECT reference_id FROM public.partner_reference_images
+);
 
 -- ----------------------------------------------------------------------------
 -- 1. PUBLIKÁLÁSI BIZTONSÁGI TRIGGER FRISSÍTÉSE (PARTNERI PUBLIKÁLÁS TÁMOGATÁSA)
@@ -260,7 +276,7 @@ BEGIN
 
   v_staging := 'staging/uploads/' || v_new_intent_id::text || '.tmp';
   v_allocated_obj := 'partners/' || p_partner_id::text || '/references/' || p_reference_id::text || '/' || v_new_image_id::text || '.' || v_ext;
-  v_allocated_th := 'partners/' || p_partner_id::text || '/references/' || p_reference_id::text || '/thumbs/' || v_new_image_id::text || '.' || v_ext;
+  v_allocated_th := v_allocated_obj;
 
   INSERT INTO public.reference_upload_intents (
     id,
