@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Pencil, XCircle, Plus, BookOpen, HelpCircle, AlertCircle, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { isAdmin } from '../lib/permissions';
 import type { LearningCourse, Quiz, LearningStatus } from '../lib/supabase';
 import {
   listCourses,
@@ -25,7 +26,8 @@ const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
 
 export default function PartnerLearningPage() {
   const { profile } = useAuth();
-  const currentPartnerId = (profile as any)?.partner_id || 'p-1';
+  const currentPartnerId = (profile as any)?.partner_id as string | undefined;
+  const hasPartnerAccess = Boolean(currentPartnerId) || isAdmin(profile);
   const currentPartnerName = profile?.full_name || 'Partner Kft.';
 
   const [activeTab, setActiveTab] = useState<'courses' | 'quizzes'>('courses');
@@ -40,6 +42,11 @@ export default function PartnerLearningPage() {
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
 
   const loadData = useCallback(async () => {
+    if (!currentPartnerId) {
+      setCourses([]);
+      setQuizzes([]);
+      return;
+    }
     try {
       const [cData, qData] = await Promise.all([
         listCourses({ partnerId: currentPartnerId }),
@@ -81,6 +88,20 @@ export default function PartnerLearningPage() {
       loadData();
     }
   };
+
+  if (!hasPartnerAccess) {
+    return (
+      <div className="p-6">
+        <div className="max-w-lg mx-auto bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2 shadow-sm">
+          <AlertCircle className="mx-auto text-amber-500" size={28} />
+          <h2 className="text-lg font-bold text-gray-900">Nincs jogosult partnerfiók</h2>
+          <p className="text-sm text-gray-600">
+            A partner oktatási anyagok eléréséhez érvényes partner-hozzárendelés vagy adminisztrátori jogosultság szükséges.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">

@@ -66,22 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (fullUrl.includes('confirmed=true') || fullUrl.includes('type=signup') || fullUrl.includes('type=email_change')) {
           try {
             sessionStorage.setItem('email_confirmed_success', 'true');
-            let confirmEmail = '';
-            const match = fullUrl.match(/[?&]email=([^&]+)/);
-            if (match && match[1]) {
-              confirmEmail = decodeURIComponent(match[1]);
-            } else {
-              confirmEmail = localStorage.getItem('pending_verify_email') || '';
-            }
-            if (confirmEmail) {
-              (async () => {
-                try {
-                  await supabase.rpc('confirm_user_email', { user_email: confirmEmail });
-                } catch {
-                  // Csendes hibakezelés: a háttérbeli RPC megerősítés hibája nem szakíthatja meg az autentikációt
-                }
-              })();
-            }
             if (window.history && window.history.replaceState) {
               window.history.replaceState(null, '', window.location.pathname);
             }
@@ -174,33 +158,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    let { data, error } = await authClient.signInWithPassword(email, password);
+    const { data, error } = await authClient.signInWithPassword(email, password);
 
     if (error) {
       const msg = error.message.toLowerCase();
-      if (
-        msg.includes('email not confirmed') ||
-        msg.includes('email not verified') ||
-        msg.includes('erősítse meg email')
-      ) {
-        try {
-          const { data: confirmRes } = await supabase.rpc('confirm_user_email', { user_email: email });
-          if (confirmRes?.success) {
-            const retry = await authClient.signInWithPassword(email, password);
-            if (!retry.error && retry.data?.user) {
-              data = retry.data;
-              error = null;
-            }
-          }
-        } catch (rpcErr) {
-          console.warn('Auto email confirmation notice:', rpcErr);
-        }
-      }
-    }
-
-    if (error) {
-      const msg = error.message.toLowerCase();
-      if (msg.includes('email not confirmed') || msg.includes('email not verified')) {
+      if (msg.includes('email not confirmed') || msg.includes('email not verified') || msg.includes('erősítse meg email')) {
         return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
       }
       if (msg.includes('invalid login credentials')) {
@@ -210,16 +172,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data?.user && !data.user.email_confirmed_at) {
-      try {
-        const { data: confirmRes } = await supabase.rpc('confirm_user_email', { user_email: email });
-        if (!confirmRes?.success) {
-          await authClient.signOut();
-          return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
-        }
-      } catch {
-        await authClient.signOut();
-        return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
-      }
+      await authClient.signOut();
+      return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
     }
 
     await checkPendingInvitation();
@@ -241,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('pending_verify_email', trimmedEmail);
     } catch { }
 
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true&email=${encodeURIComponent(trimmedEmail)}` : undefined;
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined;
     const { data, error } = await authClient.signUp(trimmedEmail, password, {
       data: {
         full_name: fullName,
@@ -291,10 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authClient.signOut();
     }
 
-    // Trigger Resend Edge Function delivery to ensure confirmation email reaches user's inbox
-    authClient.sendVerificationEmailViaResend(trimmedEmail, fullName).catch((err) => {
-      console.warn('Resend verification email dispatch notice:', err);
-    });
+    // A megerősítő levelet kizárólag a Supabase Auth tokenes email-megerősítési folyamata küldi ki.
 
     return {};
   };

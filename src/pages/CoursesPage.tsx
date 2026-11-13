@@ -18,6 +18,7 @@ import {
   HardHat,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { isAdmin } from '../lib/permissions';
 import SectionSubNav from '../components/SectionSubNav';
 import InteractiveLessonViewer from '../components/InteractiveLessonViewer';
 import FlashcardViewer from '../components/FlashcardViewer';
@@ -42,7 +43,8 @@ interface CoursesPageProps {
 }
 
 export default function CoursesPage({ onNavigate }: CoursesPageProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const canManageFlashcards = isAdmin(profile);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<DetailedCourse | null>(null);
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
@@ -314,12 +316,14 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
             </button>
           </div>
 
-          <button
-            onClick={() => setShowAdminCardsModal(true)}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shrink-0"
-          >
-            <Layers size={14} className="text-amber-600" /> Admin Kártyakezelő
-          </button>
+          {canManageFlashcards && (
+            <button
+              onClick={() => setShowAdminCardsModal(true)}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+            >
+              <Layers size={14} className="text-amber-600" /> Admin Kártyakezelő
+            </button>
+          )}
         </div>
 
         {/* TOP MAIN TAB CONTENT */}
@@ -870,11 +874,13 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
         </div>
       )}
       {/* ADMIN FLASHCARDS MODAL */}
-      <AdminFlashcardsModal
-        isOpen={showAdminCardsModal}
-        onClose={() => setShowAdminCardsModal(false)}
-        courses={courses}
-      />
+      {canManageFlashcards && (
+        <AdminFlashcardsModal
+          isOpen={showAdminCardsModal}
+          onClose={() => setShowAdminCardsModal(false)}
+          courses={courses}
+        />
+      )}
 
     </div>
   );

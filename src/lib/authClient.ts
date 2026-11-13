@@ -82,17 +82,14 @@ export async function sendVerificationEmailViaResend(email: string, fullName?: s
   }
 }
 
-export async function resendVerificationEmail(email: string, fullName?: string) {
+export async function resendVerificationEmail(email: string, _fullName?: string) {
   const res = await supabase.auth.resend({
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true&email=${encodeURIComponent(email)}` : undefined,
+      emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined,
     },
   });
-
-  // Also trigger Resend Edge Function delivery to ensure inbox placement
-  await sendVerificationEmailViaResend(email, fullName);
 
   return res;
 }

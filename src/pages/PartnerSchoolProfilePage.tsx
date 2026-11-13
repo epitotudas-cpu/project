@@ -123,7 +123,10 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
   const availableTrades = getTradeItems();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     loadSchoolData();
   }, [user]);
 
@@ -164,45 +167,7 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
         }
       }
 
-      if (!currentPartner && userProfile?.full_name) {
-        // Fallback 2: Query partners table by contact_person_name matching user full_name
-        const { data: partnerByName } = await supabase
-          .from('partners')
-          .select('*')
-          .ilike('contact_person_name', `%${userProfile.full_name}%`)
-          .limit(1)
-          .maybeSingle();
-
-        if (partnerByName) {
-          currentPartner = partnerByName as ExtendedPartner;
-        }
-      }
-
-      if (!currentPartner) {
-        // Fallback 3: Query partners table for category = 'iskola'
-        const { data: latestSchool } = await supabase
-          .from('partners')
-          .select('*')
-          .eq('category', 'iskola')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (latestSchool) {
-          currentPartner = latestSchool as ExtendedPartner;
-        } else {
-          // Fallback 4: Any active partner
-          const { data: anyPartner } = await supabase
-            .from('partners')
-            .select('*')
-            .limit(1)
-            .maybeSingle();
-
-          if (anyPartner) {
-            currentPartner = anyPartner as ExtendedPartner;
-          }
-        }
-      }
+      // Csak a felhasználóhoz vagy a partner_users táblához ténylegesen kapcsolt partner profil tölthető be.
 
       if (currentPartner) {
         setPartner(currentPartner);
@@ -477,6 +442,19 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-8">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent" />
+      </div>
+    );
+  }
+
+  if (!partner) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-8">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-3">
+          <h2 className="text-lg font-bold text-white">Nincs összekapcsolt partnerprofil</h2>
+          <p className="text-sm text-slate-400">
+            Ehhez a felhasználói fiókhoz jelenleg nincs jogosult partner- vagy iskola-profil rendelve.
+          </p>
+        </div>
       </div>
     );
   }
