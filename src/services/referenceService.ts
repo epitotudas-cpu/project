@@ -374,7 +374,7 @@ export async function createUploadIntent(
   referenceId: string,
   expectedSizeBytes: number,
   expectedMimeType: string
-): Promise<{ intentId: string; stagingKey: string }> {
+): Promise<{ intentId: string; stagingKey: string; allocatedObjectKey: string }> {
   const { data, error } = await supabase.rpc('create_reference_upload_intent', {
     p_partner_id: partnerId,
     p_reference_id: referenceId,
@@ -387,61 +387,71 @@ export async function createUploadIntent(
   }
 
   const res = Array.isArray(data) ? data[0] : data;
-  return { intentId: res.intent_id, stagingKey: res.staging_key };
+  return {
+    intentId: res.intent_id,
+    stagingKey: res.staging_key,
+    allocatedObjectKey: res.allocated_object_key || res.staging_key,
+  };
 }
 
 /**
- * Fájl feltöltése a privát staging tárhelyre (partner-references-staging).
+ * Fájl feltöltése a Supabase Storage partner-references tárolójába.
  */
-export async function uploadStagingFile(
-  stagingKey: string,
+export async function uploadReferenceFile(
+  targetKey: string,
   fileOrBlob: Blob | File
 ): Promise<void> {
   const { error } = await supabase.storage
-    .from('partner-references-staging')
-    .upload(stagingKey, fileOrBlob, {
+    .from('partner-references')
+    .upload(targetKey, fileOrBlob, {
       contentType: fileOrBlob.type || 'image/jpeg',
       upsert: false,
     });
 
   if (error) {
-    throw new Error(`Staging fájlfeltöltés sikertelen: ${error.message}`);
+    throw new Error(`Tárhely fájlfeltöltés sikertelen: ${error.message}`);
   }
 }
 
 /**
- * Kép megerősítése és véglegesítése a confirm-reference-upload Edge Functionön keresztül.
+ * Kép megerősítése és véglegesítése a szerveroldali finalize_reference_image RPC segítségével.
  */
-export async function confirmUploadIntent(
+export async function finalizeReferenceImageRPC(
   intentId: string,
   caption?: string | null,
-  isCover?: boolean
+  isCover?: boolean,
+  sizeBytes?: number
 ): Promise<{ imageId: string; objectKey: string; publicUrl: string }> {
-  const { data, error } = await supabase.functions.invoke('confirm-reference-upload', {
-    body: {
-      intent_id: intentId,
-      caption: caption || null,
-      is_cover: isCover || false,
-    },
+  const { data, error } = await supabase.rpc('finalize_reference_image', {
+    p_intent_id: intentId,
+    p_caption: caption || null,
+    p_width: 1600,
+    p_height: 1067,
+    p_size_bytes: sizeBytes || 0,
+    p_is_cover: isCover || false,
   });
 
   if (error) {
-    throw new Error(`Edge Function hiba: ${error.message}`);
+    throw new Error(`Kép véglegesítési hiba: ${error.message}`);
   }
 
-  if (!data?.success) {
-    throw new Error(`Véglegesítés sikertelen: ${data?.error || 'Ismeretlen szerverhiba'}`);
+  const res = Array.isArray(data) ? data[0] : data;
+  if (!res || !res.success) {
+    throw new Error(`Kép véglegesítés elutasítva: ${res?.error_code || 'Ismeretlen hiba'}`);
   }
+
+  const objectKey = res.permanent_object_key;
+  const publicUrl = resolveReferenceImageUrl(objectKey);
 
   return {
-    imageId: data.image_id,
-    objectKey: data.object_key,
-    publicUrl: data.public_url,
+    imageId: res.image_id,
+    objectKey,
+    publicUrl,
   };
 }
 
 /**
- * Data URL vagy Fájl feltöltése a biztonságos, 3 lépéses intent-alapú láncon keresztül.
+ * Data URL vagy Fájl feltöltése a biztonságos intent-alapú láncon keresztül (PostgreSQL RPC).
  */
 export async function uploadReferenceImageThroughIntent(
   partnerId: string,
@@ -474,18 +484,19 @@ export async function uploadReferenceImageThroughIntent(
   }
 
   // 1. Lépés: Intent létrehozása
-  const { intentId, stagingKey } = await createUploadIntent(
+  const { intentId, stagingKey, allocatedObjectKey } = await createUploadIntent(
     partnerId,
     referenceId,
     blob.size,
     mime
   );
 
-  // 2. Lépés: Fájl feltöltése a privát staging vödörbe
-  await uploadStagingFile(stagingKey, blob);
+  // 2. Lépés: Fájl feltöltése a tárhelyre
+  const targetKey = allocatedObjectKey || stagingKey;
+  await uploadReferenceFile(targetKey, blob);
 
-  // 3. Lépés: Véglegesítés az Edge Function segítségével
-  return await confirmUploadIntent(intentId, caption, isCover);
+  // 3. Lépés: Véglegesítés az RPC segítségével
+  return await finalizeReferenceImageRPC(intentId, caption, isCover, blob.size);
 }
 
 /**
