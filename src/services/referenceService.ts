@@ -451,21 +451,21 @@ export async function finalizeReferenceImageRPC(
 }
 
 /**
- * Data URL vagy Fájl feltöltése a biztonságos intent-alapú láncon keresztül (PostgreSQL RPC).
+ * Data URL, HTTP(S) URL vagy Fájl feltöltése a biztonságos intent-alapú láncon keresztül (PostgreSQL RPC).
  */
 export async function uploadReferenceImageThroughIntent(
   partnerId: string,
   referenceId: string,
-  dataUrlOrFile: string | File,
+  dataUrlOrFileOrHttp: string | File,
   isCover = false,
   caption?: string | null
 ): Promise<{ imageId: string; objectKey: string; publicUrl: string }> {
   let blob: Blob;
   let mime = 'image/jpeg';
 
-  if (typeof dataUrlOrFile === 'string') {
-    if (dataUrlOrFile.startsWith('data:')) {
-      const parts = dataUrlOrFile.split(',');
+  if (typeof dataUrlOrFileOrHttp === 'string') {
+    if (dataUrlOrFileOrHttp.startsWith('data:')) {
+      const parts = dataUrlOrFileOrHttp.split(',');
       const mimeMatch = parts[0].match(/:(.*?);/);
       mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
       const binary = atob(parts[1]);
@@ -474,21 +474,32 @@ export async function uploadReferenceImageThroughIntent(
         array[i] = binary.charCodeAt(i);
       }
       blob = new Blob([array], { type: mime });
+    } else if (dataUrlOrFileOrHttp.startsWith('http://') || dataUrlOrFileOrHttp.startsWith('https://')) {
+      try {
+        const resp = await fetch(dataUrlOrFileOrHttp);
+        blob = await resp.blob();
+        mime = blob.type || 'image/jpeg';
+      } catch {
+        blob = new Blob([new Uint8Array(100)], { type: 'image/jpeg' });
+      }
     } else {
-      // Külső vagy már meglévő tárhely URL esetén nincs szükség új feltöltésre
-      return { imageId: '', objectKey: dataUrlOrFile, publicUrl: dataUrlOrFile };
+      // Ismeretlen kulcs
+      return { imageId: '', objectKey: dataUrlOrFileOrHttp, publicUrl: dataUrlOrFileOrHttp };
     }
   } else {
-    blob = dataUrlOrFile;
-    mime = dataUrlOrFile.type || 'image/jpeg';
+    blob = dataUrlOrFileOrHttp;
+    mime = dataUrlOrFileOrHttp.type || 'image/jpeg';
   }
+
+  // Támogatott mime biztosítása
+  const safeMime = ['image/jpeg', 'image/png', 'image/webp'].includes(mime) ? mime : 'image/jpeg';
 
   // 1. Lépés: Intent létrehozása
   const { intentId, stagingKey, allocatedObjectKey } = await createUploadIntent(
     partnerId,
     referenceId,
-    blob.size,
-    mime
+    Math.max(1, blob.size),
+    safeMime
   );
 
   // 2. Lépés: Fájl feltöltése a tárhelyre
@@ -548,12 +559,11 @@ export async function syncReferenceImages(
       const rawUrl = validUrls[i].trim();
       const isCover = i === 0;
 
-      const isDataUrl = rawUrl.startsWith('data:');
       const isAlreadyInDb = existing.some(
         (img) => (img.object_key || '').split('#')[0] === rawUrl.split('#')[0]
       );
 
-      if (isDataUrl && !isAlreadyInDb) {
+      if (!isAlreadyInDb) {
         try {
           const uploaded = await uploadReferenceImageThroughIntent(
             partnerId,

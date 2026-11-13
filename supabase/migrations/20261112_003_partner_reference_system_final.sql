@@ -2,7 +2,7 @@
 -- MIGRÁCIÓ: 20261112_003_partner_reference_system_final.sql
 -- ÉpítőTudás Referencia-galéria Végleges Jogosultsági és Storage Rendszer
 -- Cél Supabase projekt: olmavxcmkvvcebgqxohe
--- Üzleti döntés: „A” alternatíva – Partneri önálló publikálás + Biztonságos PostgreSQL RPC véglegesítés (Edge Function mentes)
+-- Üzleti döntés: „A” alternatíva – Partneri önálló publikálás + Biztonságos PostgreSQL RPC
 -- ============================================================================
 
 BEGIN;
@@ -14,7 +14,137 @@ DELETE FROM public.reference_upload_intents
 WHERE status IN ('created', 'validating');
 
 -- ----------------------------------------------------------------------------
--- 1. FELTÖLTÉSI SZÁNDÉK (UPLOAD INTENT) RPC FRISSÍTÉSE
+-- 1. PUBLIKÁLÁSI BIZTONSÁGI TRIGGER FRISSÍTÉSE (PARTNERI PUBLIKÁLÁS TÁMOGATÁSA)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.enforce_reference_publication_security()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_is_editor boolean;
+  v_is_partner_adm boolean;
+BEGIN
+  v_is_editor := public.is_editor_role();
+
+  -- TÖRLÉS (DELETE)
+  IF TG_OP = 'DELETE' THEN
+    IF NOT (current_user = 'service_role' OR auth.role() = 'service_role' OR public.is_partner_admin(OLD.partner_id) OR v_is_editor) THEN
+      RAISE EXCEPTION 'Nincs jogosultsága a referencia törléséhez!' USING ERRCODE = '42501';
+    END IF;
+    RETURN OLD;
+  END IF;
+
+  -- BESZÚRÁS (INSERT)
+  IF TG_OP = 'INSERT' THEN
+    IF NOT (current_user = 'service_role' OR auth.role() = 'service_role' OR public.is_partner_admin(NEW.partner_id) OR v_is_editor) THEN
+      RAISE EXCEPTION 'Nincs jogosultsága referencia létrehozásához ennél a partnernél!' USING ERRCODE = '42501';
+    END IF;
+
+    -- Ha tranzakciós publikálási zászló aktív, átengedi, egyébként piszkozat
+    IF current_setting('app.allow_publication', true) IS DISTINCT FROM 'true' THEN
+      NEW.is_published := false;
+    END IF;
+
+    NEW.created_at := now();
+    NEW.updated_at := now();
+    RETURN NEW;
+  END IF;
+
+  -- MÓDOSÍTÁS (UPDATE)
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.partner_id IS DISTINCT FROM OLD.partner_id THEN
+      RAISE EXCEPTION 'A partner_id abszolút immutábilis mező, módosítása tilos!' USING ERRCODE = '42501';
+    END IF;
+
+    v_is_partner_adm := public.is_partner_admin(OLD.partner_id);
+
+    -- Service_role vagy publish_partner_reference RPC feloldó zászló
+    IF current_user = 'service_role' OR auth.role() = 'service_role' OR current_setting('app.allow_publication', true) = 'true' THEN
+      NEW.created_at := OLD.created_at;
+      NEW.updated_at := now();
+      RETURN NEW;
+    END IF;
+
+    IF NOT (v_is_partner_adm OR v_is_editor) THEN
+      RAISE EXCEPTION 'Nincs jogosultsága a referencia módosításához!' USING ERRCODE = '42501';
+    END IF;
+
+    NEW.created_at := OLD.created_at;
+    NEW.updated_at := now();
+
+    -- Publikálás ellenőrzése
+    IF NEW.is_published = true AND (OLD.is_published = false OR OLD.is_published IS NULL) THEN
+      IF NOT EXISTS (
+        SELECT 1 FROM public.partner_reference_images
+        WHERE reference_id = NEW.id AND is_cover = true
+      ) THEN
+        RAISE EXCEPTION 'A referencia nem publikálható: pontosan egy kijelölt borítóképpel kell rendelkeznie!' USING ERRCODE = 'P0003';
+      END IF;
+    END IF;
+
+    RETURN NEW;
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION public.enforce_reference_publication_security() OWNER TO postgres;
+
+-- ----------------------------------------------------------------------------
+-- 2. PUBLIKÁLÁSI RPC FRISSÍTÉSE: PARTNERI ÖNÁLLÓ PUBLIKÁLÁS
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.publish_partner_reference(p_reference_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_partner_id uuid;
+BEGIN
+  -- 1. Szülő referencia kizárólagos zárolása és partner_id kinyerése
+  SELECT partner_id INTO v_partner_id
+  FROM public.partner_references
+  WHERE id = p_reference_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'A hivatkozott referencia nem található!' USING ERRCODE = 'P0008';
+  END IF;
+
+  -- 2. Jogosultság szigorú ellenőrzése: Editor/Admin VAGY az adott partner adminisztrátora
+  IF NOT (public.is_editor_role() OR public.is_partner_admin(v_partner_id)) THEN
+    RAISE EXCEPTION 'Nincs jogosultsága a partner referenciájának publikálásához!' USING ERRCODE = '42501';
+  END IF;
+
+  -- 3. Borítókép kényszer (P0003) ellenőrzése: pontosan egy borítóképpel kell rendelkeznie
+  IF NOT EXISTS (
+    SELECT 1 FROM public.partner_reference_images
+    WHERE reference_id = p_reference_id AND is_cover = true
+  ) THEN
+    RAISE EXCEPTION 'A referencia nem publikálható: pontosan egy kijelölt borítóképpel kell rendelkeznie!' USING ERRCODE = 'P0003';
+  END IF;
+
+  -- 4. Tranzakciós zászló beállítása a trigger átengedéséhez
+  PERFORM set_config('app.allow_publication', 'true', true);
+
+  -- 5. Publikált állapot élesítése
+  UPDATE public.partner_references
+  SET is_published = true, updated_at = now()
+  WHERE id = p_reference_id;
+
+  RETURN true;
+END;
+$$;
+
+ALTER FUNCTION public.publish_partner_reference(uuid) OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION public.publish_partner_reference(uuid) TO authenticated, service_role;
+
+-- ----------------------------------------------------------------------------
+-- 3. FELTÖLTÉSI SZÁNDÉK (UPLOAD INTENT) RPC
 -- ----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public.create_reference_upload_intent(uuid, uuid, bigint, text, uuid);
 
@@ -45,13 +175,12 @@ DECLARE
   v_intent_count integer;
   v_ext text;
 BEGIN
-  -- Lejárt vagy elhagyott szándékok automatikus takarítása az új igénylések előtt
+  -- Lejárt szándékok automatikus kitisztítása az új igénylések előtt
   DELETE FROM public.reference_upload_intents
   WHERE reference_id = p_reference_id 
     AND expires_at <= now() 
     AND status IN ('created', 'validating');
 
-  -- Jogosultság szigorú ellenőrzése
   IF current_user = 'service_role' OR auth.role() = 'service_role' THEN
     v_effective_user_id := p_user_id;
     IF v_effective_user_id IS NULL THEN
@@ -107,7 +236,6 @@ BEGIN
     RAISE EXCEPTION 'A referencia nem található ennél a partnernél!' USING ERRCODE = 'P0008';
   END IF;
 
-  -- Szülő referencia kizárólagos zárolása
   PERFORM 1 FROM public.partner_references
   WHERE id = p_reference_id
   FOR UPDATE;
@@ -124,7 +252,6 @@ BEGIN
     RAISE EXCEPTION 'A referencia elérte a maximális 10 képet (függő feltöltésekkel együtt)!' USING ERRCODE = 'P0002';
   END IF;
 
-  -- Kiterjesztés meghatározása MIME alapján
   v_ext := CASE p_expected_mime_type
     WHEN 'image/png' THEN 'png'
     WHEN 'image/webp' THEN 'webp'
@@ -171,7 +298,7 @@ ALTER FUNCTION public.create_reference_upload_intent(uuid, uuid, bigint, text, u
 GRANT EXECUTE ON FUNCTION public.create_reference_upload_intent(uuid, uuid, bigint, text, uuid) TO authenticated, service_role;
 
 -- ----------------------------------------------------------------------------
--- 2. KÉP VÉGLEGESÍTŐ RPC FRISSÍTÉSE: AUTHENTICATED PARTNER ADMIN ENGEDÉLYEZÉSE
+-- 4. KÉP VÉGLEGESÍTŐ RPC (PARTNER ADMIN SZÁMÁRA IS)
 -- ----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public.finalize_reference_image(uuid, text, integer, integer, bigint, boolean);
 
@@ -202,7 +329,6 @@ DECLARE
   v_cover boolean := COALESCE(p_is_cover, false);
   v_existing_covers integer;
 BEGIN
-  -- 1. Intent és partner azonosító lekérdezése
   SELECT reference_id, partner_id INTO v_ref_id, v_partner_id
   FROM public.reference_upload_intents
   WHERE id = p_intent_id;
@@ -212,7 +338,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- 2. Jogosultság szigorú ellenőrzése
   IF current_user <> 'service_role' AND auth.role() <> 'service_role' THEN
     IF auth.uid() IS NULL THEN
       RETURN QUERY SELECT false, 'UNAUTHORIZED', NULL::uuid, NULL::text, NULL::text;
@@ -225,12 +350,10 @@ BEGIN
     END IF;
   END IF;
 
-  -- 3. Szülő referencia zárolása holtpontok megelőzésére
   PERFORM 1 FROM public.partner_references
   WHERE id = v_ref_id
   FOR UPDATE;
 
-  -- 4. Intent rekord zárolása és állapotellenőrzése
   SELECT id, partner_id, reference_id, status, expires_at, allocated_image_id, allocated_object_key, allocated_thumb_key
   INTO v_intent
   FROM public.reference_upload_intents
@@ -248,7 +371,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- 5. Képsorrend és meglévő borítókép megállapítása
   SELECT COALESCE(max(display_order), 0) + 1, count(*) FILTER (WHERE is_cover = true)
   INTO v_order, v_existing_covers
   FROM public.partner_reference_images
@@ -264,7 +386,6 @@ BEGIN
     WHERE reference_id = v_intent.reference_id AND is_cover = true;
   END IF;
 
-  -- 6. Beszúrás az allokált végleges azonosítókkal a relációs táblába
   INSERT INTO public.partner_reference_images (
     id,
     reference_id,
@@ -291,7 +412,6 @@ BEGIN
     COALESCE(p_size_bytes, 0)
   );
 
-  -- 7. Intent elhasznált állapotba állítása
   UPDATE public.reference_upload_intents
   SET status = 'consumed', consumed_at = now()
   WHERE id = p_intent_id;
@@ -303,61 +423,11 @@ $$;
 ALTER FUNCTION public.finalize_reference_image(uuid, text, integer, integer, bigint, boolean) OWNER TO postgres;
 GRANT EXECUTE ON FUNCTION public.finalize_reference_image(uuid, text, integer, integer, bigint, boolean) TO authenticated, service_role;
 
--- ----------------------------------------------------------------------------
--- 3. PUBLIKÁLÁSI RPC: PARTNERI ÖNÁLLÓ PUBLIKÁLÁS ENGEDÉLYEZÉSE
--- ----------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.publish_partner_reference(p_reference_id uuid)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_partner_id uuid;
-BEGIN
-  -- 1. Szülő referencia kizárólagos sorzárolása és partner_id kinyerése
-  SELECT partner_id INTO v_partner_id
-  FROM public.partner_references
-  WHERE id = p_reference_id
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'A hivatkozott referencia nem található!' USING ERRCODE = 'P0008';
-  END IF;
-
-  -- 2. Jogosultság szigorú ellenőrzése: Editor/Admin VAGY az adott partner adminisztrátora
-  IF NOT (public.is_editor_role() OR public.is_partner_admin(v_partner_id)) THEN
-    RAISE EXCEPTION 'Nincs jogosultsága a partner referenciájának publikálásához!' USING ERRCODE = '42501';
-  END IF;
-
-  -- 3. Borítókép kényszer (P0003) ellenőrzése: pontosan egy borítóképpel kell rendelkeznie
-  IF NOT EXISTS (
-    SELECT 1 FROM public.partner_reference_images
-    WHERE reference_id = p_reference_id AND is_cover = true
-  ) THEN
-    RAISE EXCEPTION 'A referencia nem publikálható: pontosan egy kijelölt borítóképpel kell rendelkeznie!' USING ERRCODE = 'P0003';
-  END IF;
-
-  -- 4. Publikált állapot élesítése
-  UPDATE public.partner_references
-  SET is_published = true, updated_at = now()
-  WHERE id = p_reference_id;
-
-  RETURN true;
-END;
-$$;
-
-ALTER FUNCTION public.publish_partner_reference(uuid) OWNER TO postgres;
-GRANT EXECUTE ON FUNCTION public.publish_partner_reference(uuid) TO authenticated, service_role;
-
--- Borítókép kijelölési RPC jogosultság
 GRANT EXECUTE ON FUNCTION public.set_reference_cover_image(uuid, uuid) TO authenticated, service_role;
 
 -- ----------------------------------------------------------------------------
--- 4. SUPABASE STORAGE BUCKETEK ÉS BIZTONSÁGI RLS HÁZIRENDEK
+-- 5. SUPABASE STORAGE BUCKETEK ÉS BIZTONSÁGI RLS HÁZIRENDEK
 -- ----------------------------------------------------------------------------
-
--- 4.1. Vödrök létrehozása / frissítése
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES 
   (
@@ -366,20 +436,12 @@ VALUES
     true,
     15728640,
     ARRAY['image/jpeg', 'image/png', 'image/webp']::text[]
-  ),
-  (
-    'partner-references-staging',
-    'partner-references-staging',
-    false,
-    15728640,
-    ARRAY['image/jpeg', 'image/png', 'image/webp']::text[]
   )
 ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- 4.2. partner-references publikus vödör RLS szabályai
 DROP POLICY IF EXISTS "Partner references authenticated insert" ON storage.objects;
 CREATE POLICY "Partner references authenticated insert"
 ON storage.objects FOR INSERT
@@ -407,32 +469,58 @@ USING (
   bucket_id = 'partner-references'
 );
 
--- 4.3. partner-references-staging vödör RLS szabályai
-DROP POLICY IF EXISTS "Staging bucket authenticated insert" ON storage.objects;
-CREATE POLICY "Staging bucket authenticated insert"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'partner-references-staging'
-);
+-- ----------------------------------------------------------------------------
+-- 6. KEZDŐ REFERENCIÁK BESZÚRÁSA (78-AS ÉPÍTŐK KFT. - AZONNALI MEGJELENÉS)
+-- ----------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_pid uuid := 'd876ac79-13a7-4c14-852d-3b5adb282047';
+  v_ref1 uuid;
+  v_ref2 uuid;
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.partners WHERE id = v_pid) THEN
+    PERFORM set_config('app.allow_publication', 'true', true);
 
-DROP POLICY IF EXISTS "Staging bucket authenticated select" ON storage.objects;
-CREATE POLICY "Staging bucket authenticated select"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'partner-references-staging'
-);
+    -- 1. Referencia: Buda-Garten 24 lakásos Társasház
+    IF NOT EXISTS (SELECT 1 FROM public.partner_references WHERE partner_id = v_pid AND title = 'Buda-Garten 24 lakásos Társasház') THEN
+      INSERT INTO public.partner_references (
+        partner_id, title, location, year, category, description, is_published, created_at, updated_at
+      ) VALUES (
+        v_pid, 'Buda-Garten 24 lakásos Társasház', 'Budapest XI. kerület', '2025', 'Társasházépítés',
+        'A-kategóriás energetikai besorolású, monolit vasbeton szerkezetű lakópark kulcsrakész kivitelezése korszerű MSZ szabványok szerint.',
+        true, now(), now()
+      ) RETURNING id INTO v_ref1;
 
-DROP POLICY IF EXISTS "Staging bucket authenticated update" ON storage.objects;
-CREATE POLICY "Staging bucket authenticated update"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING (
-  bucket_id = 'partner-references-staging'
-)
-WITH CHECK (
-  bucket_id = 'partner-references-staging'
-);
+      INSERT INTO public.partner_reference_images (
+        reference_id, partner_id, object_key, thumbnail_key, caption, is_cover, display_order, width, height, size_bytes
+      ) VALUES (
+        v_ref1, v_pid,
+        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=80',
+        'Buda-Garten homlokzat és épületszárny', true, 1, 1600, 1067, 1200000
+      );
+    END IF;
+
+    -- 2. Referencia: Logisztikai Központ & Raktárcsarnok
+    IF NOT EXISTS (SELECT 1 FROM public.partner_references WHERE partner_id = v_pid AND title = 'Logisztikai Központ & Raktárcsarnok') THEN
+      INSERT INTO public.partner_references (
+        partner_id, title, location, year, category, description, is_published, created_at, updated_at
+      ) VALUES (
+        v_pid, 'Logisztikai Központ & Raktárcsarnok', 'Biatorbágy', '2024', 'Ipari építészet',
+        '3500 m² alapterületű acélszerkezetes raktárcsarnok és irodaház kivitelezése legújabb technológiákkal.',
+        true, now(), now()
+      ) RETURNING id INTO v_ref2;
+
+      INSERT INTO public.partner_reference_images (
+        reference_id, partner_id, object_key, thumbnail_key, caption, is_cover, display_order, width, height, size_bytes
+      ) VALUES (
+        v_ref2, v_pid,
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80',
+        'Logisztikai Központ és raktárcsarnok külső tér', true, 1, 1600, 1067, 1400000
+      );
+    END IF;
+  END IF;
+END $$;
 
 COMMIT;
