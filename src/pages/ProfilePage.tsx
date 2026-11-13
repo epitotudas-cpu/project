@@ -515,16 +515,25 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           : (data.bio || '');
         setBio(effectiveBio);
 
-        try {
-          const storedPref = localStorage.getItem(`epitotudas_user_pref_${user.id}`);
-          if (storedPref) {
-            const parsed = JSON.parse(storedPref);
-            if (parsed.experienceLevel) setExperienceLevel(parsed.experienceLevel);
-            if (parsed.selectedInterests) setSelectedInterests(parsed.selectedInterests);
-            if (parsed.notifications) setNotifications((prev) => ({ ...prev, ...parsed.notifications }));
+        const cloudPref = user.user_metadata?.preferences as
+          | { experienceLevel?: string; selectedInterests?: string[]; notifications?: Record<string, boolean> }
+          | undefined;
+        if (cloudPref) {
+          if (cloudPref.experienceLevel) setExperienceLevel(cloudPref.experienceLevel);
+          if (Array.isArray(cloudPref.selectedInterests)) setSelectedInterests(cloudPref.selectedInterests);
+          if (cloudPref.notifications) setNotifications((prev) => ({ ...prev, ...cloudPref.notifications }));
+        } else {
+          try {
+            const storedPref = localStorage.getItem(`epitotudas_user_pref_${user.id}`);
+            if (storedPref) {
+              const parsed = JSON.parse(storedPref);
+              if (parsed.experienceLevel) setExperienceLevel(parsed.experienceLevel);
+              if (parsed.selectedInterests) setSelectedInterests(parsed.selectedInterests);
+              if (parsed.notifications) setNotifications((prev) => ({ ...prev, ...parsed.notifications }));
+            }
+          } catch {
+            // Ignore malformed local preference JSON
           }
-        } catch {
-          // Ignore malformed local preference JSON
         }
       } catch {
         setErrorMsg('Hiba történt a profil adatok betöltésekor.');
@@ -571,6 +580,13 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         selectedInterests,
         notifications,
       };
+      try {
+        await supabase.auth.updateUser({
+          data: { preferences: prefData },
+        });
+      } catch (prefErr) {
+        console.warn('Hiba a felhasználói preferenciák felhőbe mentésekor:', prefErr);
+      }
       localStorage.setItem(`epitotudas_user_pref_${user.id}`, JSON.stringify(prefData));
 
       setProfile(updated);

@@ -21,8 +21,10 @@ import {
   createPartnerOffer,
   updatePartnerOffer,
   deletePartnerOffer,
+  getPartnerAnalytics,
   type ExtendedPartner,
   type PartnerOfferItem,
+  type PartnerAnalyticsSummary,
 } from './services/partnerService';
 import { useToast } from './components/ToastProvider';
 import ConfirmDialog from './components/ConfirmDialog';
@@ -302,8 +304,14 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [loadingRole, setLoadingRole] = useState(true);
 
-  // Offers state (persisted in Supabase `partner_offers`)
+  // Offers & analytics state (persisted in Supabase)
   const [offersList, setOffersList] = useState<PartnerOfferItem[]>([]);
+  const [analytics, setAnalytics] = useState<PartnerAnalyticsSummary>({
+    profileViews: 0,
+    articlesCount: 0,
+    articleViewsSum: 0,
+    referencesCount: 0,
+  });
   const [offersLoading, setOffersLoading] = useState(false);
   const [savingOffer, setSavingOffer] = useState(false);
   const [showNewOfferForm, setShowNewOfferForm] = useState(false);
@@ -316,13 +324,20 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
   useEffect(() => {
     if (!currentPartner?.id) {
       setOffersList([]);
+      setAnalytics({ profileViews: 0, articlesCount: 0, articleViewsSum: 0, referencesCount: 0 });
       return;
     }
     let cancelled = false;
     setOffersLoading(true);
-    getPartnerOffers(currentPartner.id)
-      .then((rows) => {
-        if (!cancelled) setOffersList(rows);
+    Promise.all([
+      getPartnerOffers(currentPartner.id),
+      getPartnerAnalytics(currentPartner.id),
+    ])
+      .then(([rows, stats]) => {
+        if (!cancelled) {
+          setOffersList(rows);
+          setAnalytics(stats);
+        }
       })
       .finally(() => {
         if (!cancelled) setOffersLoading(false);
@@ -544,8 +559,10 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
         ) : (
           <PartnerDashboardPage
             onNavigateView={setPartnerView}
-            offersCount={offersList.length}
+            offersCount={offersList.filter((o) => o.status === 'Aktív').length}
             servicesCount={(effectivePartner as any).services?.length || 0}
+            profileViews={analytics.profileViews}
+            articlesCount={analytics.articlesCount}
           />
         )
       )}
@@ -939,47 +956,49 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
-              <span className="text-xs text-slate-400 font-medium">Havi Profil Megtekintés</span>
+              <span className="text-xs text-slate-400 font-medium">Profil Megtekintések</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">0</span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  Az adatgyűjtés még nem aktív
+                <span className="text-2xl font-bold text-white">{analytics.profileViews}</span>
+                <span className="text-[11px] font-semibold text-emerald-400">
+                  Élő számláló
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">Közvetlen látogatók a szakember-keresőből</p>
+              <p className="text-[11px] text-slate-500">Közvetlen látogatók a partner adatlapon</p>
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
-              <span className="text-xs text-slate-400 font-medium">Termékkatalógus Kattintások</span>
+              <span className="text-xs text-slate-400 font-medium">Aktív Ajánlatok</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">0</span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  Nincs mérési adat
+                <span className="text-2xl font-bold text-white">
+                  {offersList.filter((o) => o.status === 'Aktív').length}
+                </span>
+                <span className="text-[11px] font-semibold text-blue-400">
+                  Összesen: {offersList.length} db
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">Anyag- és gépkatalógus adatlapokról</p>
+              <p className="text-[11px] text-slate-500">Publikált kedvezményes promóciók</p>
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
               <span className="text-xs text-slate-400 font-medium">Szakmai Cikk Olvasottság</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">0</span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  Nincs mérési adat
+                <span className="text-2xl font-bold text-white">{analytics.articleViewsSum}</span>
+                <span className="text-[11px] font-semibold text-amber-400">
+                  {analytics.articlesCount} cikk
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">Útmutatók és technológiai bejegyzések</p>
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
-              <span className="text-xs text-slate-400 font-medium">Közvetlen Ajánlatkérések</span>
+              <span className="text-xs text-slate-400 font-medium">Publikált Referenciák</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-white">0 db</span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  Az adatgyűjtés még nem aktív
+                <span className="text-2xl font-bold text-white">{analytics.referencesCount} db</span>
+                <span className="text-[11px] font-semibold text-emerald-400">
+                  Adatbázisból
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">Kivitelezői és intézményi kapcsolatfelvétel</p>
+              <p className="text-[11px] text-slate-500">Feltöltött projekt referenciák</p>
             </div>
           </div>
         </div>

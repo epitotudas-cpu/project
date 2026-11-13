@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface HeroImage {
   id: string;
@@ -118,22 +118,12 @@ export function saveHeroState(state: HeroState): void {
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(state));
     window.dispatchEvent(new Event('hero-config-changed'));
 
-    void (async () => {
-      const payloadString = JSON.stringify(state);
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_HERO_STATE__',
-          slug: 'system-hero-state-config',
-          description: payloadString,
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase categories hero_state sync info:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_HERO_STATE__', state, {
+      id: SUPABASE_SYSTEM_ID,
+      slug: 'system-hero-state-config',
+    }).catch((err) => {
+      console.warn('Supabase hero_state sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a hero beállítások mentésekor:', err);
   }
@@ -141,14 +131,11 @@ export function saveHeroState(state: HeroState): void {
 
 export async function fetchHeroStateFromCloud(): Promise<HeroState | null> {
   try {
-    const { data: catData, error: catErr } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_SYSTEM_ID)
-      .maybeSingle();
-
-    if (!catErr && catData?.description && catData.description.startsWith('{')) {
-      const parsed = JSON.parse(catData.description);
+    const parsed = await readAppConfig<Partial<HeroState>>(
+      '__SYSTEM_CONFIG_HERO_STATE__',
+      SUPABASE_SYSTEM_ID
+    );
+    if (parsed && typeof parsed === 'object') {
       const state: HeroState = {
         config: { ...DEFAULT_HERO_CONFIG, ...(parsed.config || {}) },
         images: Array.isArray(parsed.images) && parsed.images.length > 0 ? parsed.images : DEFAULT_HERO_IMAGES,

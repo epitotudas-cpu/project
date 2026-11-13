@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface AboutSettings {
   heroTagline: string;
@@ -84,21 +84,12 @@ export function saveAboutSettings(settings: AboutSettings): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     window.dispatchEvent(new Event('about-settings-changed'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_ABOUT_ID,
-          name: '__SYSTEM_CONFIG_ABOUT_SETTINGS__',
-          slug: 'system-about-config',
-          description: JSON.stringify(settings),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase about settings cloud sync info:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_ABOUT_SETTINGS__', settings, {
+      id: SUPABASE_ABOUT_ID,
+      slug: 'system-about-config',
+    }).catch((err) => {
+      console.warn('Supabase about settings cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a Rólunk beállítások mentésekor:', err);
   }
@@ -106,23 +97,18 @@ export function saveAboutSettings(settings: AboutSettings): void {
 
 export async function fetchAboutSettingsFromCloud(): Promise<AboutSettings | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_ABOUT_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('{')) {
-      const parsed = JSON.parse(data.description);
-      if (parsed && parsed.heroTitle) {
-        const merged = { ...DEFAULT_ABOUT_SETTINGS, ...parsed };
-        if (typeof window !== 'undefined') {
-          window.__GLOBAL_ABOUT_SETTINGS__ = merged;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          window.dispatchEvent(new Event('about-settings-changed'));
-        }
-        return merged;
+    const parsed = await readAppConfig<Partial<AboutSettings>>(
+      '__SYSTEM_CONFIG_ABOUT_SETTINGS__',
+      SUPABASE_ABOUT_ID
+    );
+    if (parsed && parsed.heroTitle) {
+      const merged = { ...DEFAULT_ABOUT_SETTINGS, ...parsed };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_ABOUT_SETTINGS__ = merged;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        window.dispatchEvent(new Event('about-settings-changed'));
       }
+      return merged;
     }
   } catch (err) {
     console.warn('Cloud about settings fetch info:', err);

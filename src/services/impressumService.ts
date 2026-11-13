@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface ImpressumData {
   companyName: string;
@@ -80,22 +80,12 @@ export function saveImpressumData(data: ImpressumData): void {
     localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('impressum-data-changed'));
 
-    void (async () => {
-      const payloadString = JSON.stringify(data);
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_IMPRESSUM__',
-          slug: 'system-impressum-config',
-          description: payloadString,
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase categories impressum_data sync info:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_IMPRESSUM__', data, {
+      id: SUPABASE_SYSTEM_ID,
+      slug: 'system-impressum-config',
+    }).catch((err) => {
+      console.warn('Supabase impressum_data sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba az impresszum adatok mentésekor:', err);
   }
@@ -103,14 +93,11 @@ export function saveImpressumData(data: ImpressumData): void {
 
 export async function fetchImpressumDataFromCloud(): Promise<ImpressumData | null> {
   try {
-    const { data: catData, error: catErr } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_SYSTEM_ID)
-      .maybeSingle();
-
-    if (!catErr && catData?.description && catData.description.startsWith('{')) {
-      const parsed = JSON.parse(catData.description);
+    const parsed = await readAppConfig<Partial<ImpressumData>>(
+      '__SYSTEM_CONFIG_IMPRESSUM__',
+      SUPABASE_SYSTEM_ID
+    );
+    if (parsed && typeof parsed === 'object') {
       const impressum: ImpressumData = {
         ...DEFAULT_IMPRESSUM_DATA,
         ...parsed,

@@ -20,7 +20,10 @@ import {
 } from 'lucide-react';
 import {
   getArticlesLocal,
-  saveArticlesLocal,
+  listArticles,
+  createArticle,
+  updateArticle,
+  deleteArticle,
 } from '../services/articleService';
 import { listCategories } from '../services/categoryService';
 import type { Partner, Category, Article } from '../lib/supabase';
@@ -72,13 +75,23 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
   const [docUrlInput, setDocUrlInput] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     function reload() {
       setAllItems(getArticlesLocal());
     }
-    reload();
+    listArticles({ status: 'all', pageSize: 200 })
+      .then((res) => {
+        if (!cancelled) setAllItems(res.rows);
+      })
+      .catch(() => {
+        if (!cancelled) reload();
+      });
     listCategories().then(setCategories).catch(() => {});
     window.addEventListener('articles-updated', reload);
-    return () => window.removeEventListener('articles-updated', reload);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('articles-updated', reload);
+    };
   }, []);
 
   // 🔒 STRICT SECURITY SCOPING: Filter articles belonging ONLY to currentPartner
@@ -147,7 +160,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
     setDeleteArticleId(id);
   };
 
-  const handleSaveForm = (targetStatus: 'draft' | 'pending') => {
+  const handleSaveForm = async (targetStatus: 'draft' | 'pending') => {
     if (!formData.title || !formData.excerpt) {
       toast.error('Kérjük, töltse ki a cikk címét és a rövid összefoglalót!');
       return;
@@ -162,57 +175,66 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
         .replace(/^-|-$/g, '');
 
     const now = new Date().toISOString();
-    let updatedAll: Article[];
 
-    if (editingItem) {
-      updatedAll = allItems.map((i) =>
-        i.id === editingItem.id
-          ? ({
-              ...i,
-              ...formData,
-              partner_id: currentPartner.id, // Force current partner ownership
-              partner_name: currentPartner.name,
-              slug: generatedSlug,
-              status: targetStatus,
-              rejection_note: targetStatus === 'pending' ? null : formData.rejection_note,
-              updated_at: now,
-            } as Article)
-          : i
-      );
-    } else {
-      const newItem: Article = {
-        id: `art-partner-${Date.now()}`,
-        title: formData.title || '',
-        slug: generatedSlug,
-        excerpt: formData.excerpt || '',
-        content: formData.content || '',
-        article_type: (formData.article_type as any) || 'hirek',
-        category_id: formData.category_id || categories[0]?.id || 'cat-1',
-        subcategory_name: formData.subcategory_name || null,
-        tags: formData.tags || [],
-        author: formData.author || currentPartner.name,
-        partner_id: currentPartner.id, // 🔒 Bound strictly to partner
-        partner_name: currentPartner.name,
-        featured_image:
-          formData.featured_image ||
-          'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
-        documents: formData.documents || [],
-        read_time: 5,
-        views: 0,
-        rating: 5.0,
-        rating_count: 1,
-        status: targetStatus,
-        rejection_note: null,
-        featured: false,
-        created_at: now,
-        updated_at: now,
-      };
-      updatedAll = [newItem, ...allItems];
+    try {
+      if (editingItem) {
+        const updatePayload: Record<string, unknown> = {
+          title: formData.title,
+          slug: generatedSlug,
+          excerpt: formData.excerpt,
+          content: formData.content || '',
+          article_type: (formData.article_type as string) || 'hirek',
+          category_id: formData.category_id || categories[0]?.id || 'cat-1',
+          subcategory_name: formData.subcategory_name || null,
+          tags: formData.tags || [],
+          author: formData.author || currentPartner.name,
+          partner_id: currentPartner.id,
+          partner_name: currentPartner.name,
+          featured_image: formData.featured_image || editingItem.featured_image,
+          documents: formData.documents || [],
+          status: targetStatus,
+          rejection_note: targetStatus === 'pending' ? null : (formData.rejection_note ?? null),
+          updated_at: now,
+        };
+        const updated = await updateArticle(editingItem.id, updatePayload);
+        setAllItems((prev) => prev.map((i) => (i.id === editingItem.id ? updated : i)));
+        toast.success(targetStatus === 'pending' ? 'Cikk beküldve jóváhagyásra!' : 'Piszkozat mentve!');
+      } else {
+        const newPayload: Record<string, unknown> = {
+          id: `art-partner-${Date.now()}`,
+          title: formData.title || '',
+          slug: generatedSlug,
+          excerpt: formData.excerpt || '',
+          content: formData.content || '',
+          article_type: (formData.article_type as string) || 'hirek',
+          category_id: formData.category_id || categories[0]?.id || 'cat-1',
+          subcategory_name: formData.subcategory_name || null,
+          tags: formData.tags || [],
+          author: formData.author || currentPartner.name,
+          partner_id: currentPartner.id,
+          partner_name: currentPartner.name,
+          featured_image:
+            formData.featured_image ||
+            'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+          documents: formData.documents || [],
+          read_time: 5,
+          views: 0,
+          rating: 5.0,
+          rating_count: 1,
+          status: targetStatus,
+          rejection_note: null,
+          featured: false,
+          created_at: now,
+          updated_at: now,
+        };
+        const created = await createArticle(newPayload);
+        setAllItems((prev) => [created, ...prev]);
+        toast.success(targetStatus === 'pending' ? 'Új cikk beküldve jóváhagyásra!' : 'Új piszkozat mentve!');
+      }
+      setIsModalOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || 'Hiba történt a cikk mentése során.');
     }
-
-    setAllItems(updatedAll);
-    saveArticlesLocal(updatedAll);
-    setIsModalOpen(false);
   };
 
   const handleAddTag = () => {
@@ -822,11 +844,15 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
         message="Biztosan törölni szeretné ezt a saját cikket?"
         confirmLabel="Törlés"
         destructive
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deleteArticleId) {
-            const updated = allItems.filter((i) => i.id !== deleteArticleId);
-            setAllItems(updated);
-            saveArticlesLocal(updated);
+            try {
+              await deleteArticle(deleteArticleId);
+              setAllItems((prev) => prev.filter((i) => i.id !== deleteArticleId));
+              toast.success('Cikk törölve.');
+            } catch (err: any) {
+              toast.error(err?.message || 'Hiba történt a cikk törlésekor.');
+            }
           }
           setDeleteArticleId(null);
         }}

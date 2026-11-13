@@ -27,6 +27,7 @@ import {
   getPartnerBySlug,
   getCategoryLabel,
   getPartnerOffers,
+  incrementPartnerViews,
   type ExtendedPartner,
   type PartnerOfferItem,
 } from '../services/partnerService';
@@ -378,6 +379,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
         const data = await getPartnerBySlug(partnerSlug);
         setPartner(data);
         if (data?.id) {
+          void incrementPartnerViews(data.id);
           const [refs, offers] = await Promise.all([
             getPartnerReferences(data.id, true),
             getPartnerOffers(data.id, true),

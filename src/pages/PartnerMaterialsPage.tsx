@@ -20,6 +20,7 @@ import {
   getMaterialsLocal,
   saveMaterialsLocal,
   getMaterialCategoriesLocal,
+  fetchMaterialsFromCloud,
   type MaterialItem,
   type MaterialCategory,
   type MaterialSpec,
@@ -78,12 +79,21 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const [docUrlInput, setDocUrlInput] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     function reload() {
       setAllItems(getMaterialsLocal());
     }
     reload();
+    fetchMaterialsFromCloud()
+      .then(({ items }) => {
+        if (!cancelled && items) setAllItems(items);
+      })
+      .catch(() => {});
     window.addEventListener('materials-updated', reload);
-    return () => window.removeEventListener('materials-updated', reload);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('materials-updated', reload);
+    };
   }, []);
 
   // 🔒 STRICT SECURITY SCOPING: Filter items belonging ONLY to currentPartner

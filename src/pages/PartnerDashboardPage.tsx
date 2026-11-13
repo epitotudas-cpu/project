@@ -17,12 +17,16 @@ interface PartnerDashboardPageProps {
   onNavigateView: (view: PartnerView) => void;
   offersCount?: number;
   servicesCount?: number;
+  profileViews?: number;
+  articlesCount?: number;
 }
 
 export function PartnerDashboardPage({
   onNavigateView,
   offersCount = 0,
   servicesCount = 0,
+  profileViews = 0,
+  articlesCount = 0,
 }: PartnerDashboardPageProps) {
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -104,20 +108,20 @@ export function PartnerDashboardPage({
             <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">0</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{profileViews}</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Profil megtekintések</p>
-            <p className="text-[10px] text-slate-500 truncate">Az adatgyűjtés még nem aktív</p>
+            <p className="text-[10px] text-slate-500 truncate">Élő adatbázis számláló</p>
           </div>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg flex items-center gap-3.5">
-          <div className="p-2.5 sm:p-3 bg-slate-800 border border-slate-700 text-slate-400 rounded-xl shrink-0">
+          <div className="p-2.5 sm:p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl shrink-0">
             <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">--</span>
-            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Havi növekedés</p>
-            <p className="text-[10px] text-slate-500 truncate">Nincs mérési adat</p>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{articlesCount}</span>
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Partneri cikkek</p>
+            <p className="text-[10px] text-slate-500 truncate">Publikált és piszkozat cikkek</p>
           </div>
         </div>
       </div>

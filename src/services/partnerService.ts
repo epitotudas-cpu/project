@@ -1510,5 +1510,54 @@ export async function deletePartnerOffer(offerId: string): Promise<boolean> {
   return true;
 }
 
+export interface PartnerAnalyticsSummary {
+  profileViews: number;
+  articlesCount: number;
+  articleViewsSum: number;
+  referencesCount: number;
+}
+
+/**
+ * W) Atomically increments profile_views on a partner record via RPC.
+ */
+export async function incrementPartnerViews(partnerId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('increment_partner_views', {
+      p_partner_id: partnerId,
+    });
+    if (!error && typeof data === 'number') {
+      return data;
+    }
+  } catch (err) {
+    console.warn('Error incrementing partner views:', err);
+  }
+  return 0;
+}
+
+/**
+ * X) Fetches real analytics summary for a partner (profile views, partner articles & views, references).
+ */
+export async function getPartnerAnalytics(partnerId: string): Promise<PartnerAnalyticsSummary> {
+  const [partnerRes, articlesRes, refsRes] = await Promise.all([
+    supabase.from('partners').select('profile_views').eq('id', partnerId).maybeSingle(),
+    supabase.from('articles').select('id, views').eq('partner_id', partnerId),
+    supabase.from('partner_references').select('id', { count: 'exact', head: true }).eq('partner_id', partnerId),
+  ]);
+
+  const profileViews = Number((partnerRes.data as { profile_views?: number } | null)?.profile_views || 0);
+  const articleRows = (articlesRes.data || []) as Array<{ id: string; views?: number | null }>;
+  const articlesCount = articleRows.length;
+  const articleViewsSum = articleRows.reduce((sum, row) => sum + Number(row.views || 0), 0);
+  const referencesCount = Number(refsRes.count || 0);
+
+  return {
+    profileViews,
+    articlesCount,
+    articleViewsSum,
+    referencesCount,
+  };
+}
+
+
 
 

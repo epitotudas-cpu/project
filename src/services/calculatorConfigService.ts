@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface CalculatorConfig {
   concretePricePerM3: number;
@@ -60,22 +60,13 @@ export function saveCalculatorConfig(config: CalculatorConfig): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
     window.dispatchEvent(new Event('calc-config-changed'));
 
-    // Cloud sync to Supabase categories system row
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_CALC_ID,
-          name: '__SYSTEM_CONFIG_CALCULATOR_PRICES__',
-          slug: 'system-calc-prices-config',
-          description: JSON.stringify(config),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase calc config cloud sync info:', err);
-      }
-    })();
+    // Cloud sync to Supabase app_configs (with legacy categories fallback)
+    void writeAppConfig('__SYSTEM_CONFIG_CALCULATOR_PRICES__', config, {
+      id: SUPABASE_CALC_ID,
+      slug: 'system-calc-prices-config',
+    }).catch((err) => {
+      console.warn('Supabase calc config cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a kalkulátor árak mentésekor:', err);
   }
@@ -83,14 +74,11 @@ export function saveCalculatorConfig(config: CalculatorConfig): void {
 
 export async function fetchCalculatorConfigFromCloud(): Promise<CalculatorConfig | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_CALC_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('{')) {
-      const parsed = JSON.parse(data.description);
+    const parsed = await readAppConfig<Partial<CalculatorConfig>>(
+      '__SYSTEM_CONFIG_CALCULATOR_PRICES__',
+      SUPABASE_CALC_ID
+    );
+    if (parsed && typeof parsed === 'object') {
       const config = { ...DEFAULT_CALCULATOR_CONFIG, ...parsed };
       if (typeof window !== 'undefined') {
         window.__GLOBAL_CALC_CONFIG__ = config;

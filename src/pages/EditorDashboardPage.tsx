@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useEditorTheme } from '../services/editorThemeService';
+import { listArticles } from '../services/articleService';
 import {
   FileText,
   BookMarked,
@@ -17,6 +19,26 @@ interface EditorDashboardPageProps {
 
 export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps) {
   const theme = useEditorTheme();
+  const [stats, setStats] = useState({ total: 0, guides: 0, pending: 0, published: 0 });
+
+  useEffect(() => {
+    let cancelled = false;
+    listArticles({ status: 'all', pageSize: 300 })
+      .then((res) => {
+        if (cancelled) return;
+        const list = res.rows;
+        setStats({
+          total: list.length,
+          guides: list.filter((a) => a.article_type === 'utmutatok').length,
+          pending: list.filter((a) => a.status === 'pending').length,
+          published: list.filter((a) => a.status === 'published').length,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -55,8 +77,8 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
             <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">12</span>
-            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Saját cikkek</p>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{stats.total}</span>
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Összes cikk</p>
           </div>
         </div>
 
@@ -65,7 +87,7 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
             <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">5</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{stats.guides}</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Útmutatók</p>
           </div>
         </div>
@@ -75,7 +97,7 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
             <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">3</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{stats.pending}</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Felülvizsgálatra vár</p>
           </div>
         </div>
@@ -85,7 +107,7 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
             <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0">
-            <span className="text-xl sm:text-2xl font-bold text-white block">14</span>
+            <span className="text-xl sm:text-2xl font-bold text-white block">{stats.published}</span>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Publikált tartalmak</p>
           </div>
         </div>

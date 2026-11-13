@@ -44,7 +44,18 @@ export function isTanar(profile: Profile | null | undefined): boolean {
   return isTeacher(profile);
 }
 
-export function isSzakember(target?: any): boolean {
+type RoleTarget =
+  | string
+  | {
+      role?: string | null;
+      user_type?: string;
+      userType?: string;
+      user_metadata?: { user_type?: string; role?: string };
+    }
+  | null
+  | undefined;
+
+export function isSzakember(target?: RoleTarget): boolean {
   if (!target) return false;
   if (typeof target === 'string') {
     return target === 'szakember';
@@ -56,7 +67,7 @@ export function isSzakember(target?: any): boolean {
   return target?.role === 'admin' || target?.role === 'editor';
 }
 
-export function isStudent(target?: any): boolean {
+export function isStudent(target?: RoleTarget): boolean {
   if (!target) return false;
   if (typeof target === 'string') {
     return target === 'tanulo' || target === 'student' || target === 'user';
@@ -72,7 +83,7 @@ export function isStudent(target?: any): boolean {
   return false;
 }
 
-export function isTanulo(target?: any): boolean {
+export function isTanulo(target?: RoleTarget): boolean {
   return isStudent(target);
 }
 
