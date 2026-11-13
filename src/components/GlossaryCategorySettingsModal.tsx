@@ -9,6 +9,7 @@ import {
 } from '../services/glossaryCategorySettingsService';
 import { useToast } from './ToastProvider';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from './ConfirmDialog';
 
 interface GlossaryCategorySettingsModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export default function GlossaryCategorySettingsModal({
   const [settings, setSettings] = useState<GlossaryCategorySettings>(getGlossaryCategorySettings());
   const [searchFilter, setSearchFilter] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteCatName, setDeleteCatName] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
   // Form State for Adding a New Category Icon
@@ -148,21 +150,23 @@ export default function GlossaryCategorySettingsModal({
   }
 
   function handleDeleteCategoryItem(catName: string) {
-    if (window.confirm(`Biztosan törölni szeretnéd a(z) "${catName}" kategória ikon beállítását?`)) {
-      setSettings((prev) => {
-        const nextItems = { ...prev.categoryItems };
-        delete nextItems[catName];
-        const nextDeleted = Array.from(new Set([...(prev.deletedCategories || []), catName]));
-        const newSettings = {
-          ...prev,
-          categoryItems: nextItems,
-          deletedCategories: nextDeleted,
-        };
-        saveGlossaryCategorySettings(newSettings);
-        return newSettings;
-      });
-      toast.info(`"${catName}" kategória beállítása törölve.`);
-    }
+    setDeleteCatName(catName);
+  }
+
+  function confirmDeleteCategoryItem(catName: string) {
+    setSettings((prev) => {
+      const nextItems = { ...prev.categoryItems };
+      delete nextItems[catName];
+      const nextDeleted = Array.from(new Set([...(prev.deletedCategories || []), catName]));
+      const newSettings = {
+        ...prev,
+        categoryItems: nextItems,
+        deletedCategories: nextDeleted,
+      };
+      saveGlossaryCategorySettings(newSettings);
+      return newSettings;
+    });
+    toast.info(`"${catName}" kategória beállítása törölve.`);
   }
 
   function handleAddCategoryItem() {
@@ -658,6 +662,18 @@ export default function GlossaryCategorySettingsModal({
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={Boolean(deleteCatName)}
+        title="Kategória ikon beállítás törlése"
+        message={deleteCatName ? `Biztosan törölni szeretnéd a(z) "${deleteCatName}" kategória ikon beállítását?` : ''}
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          if (deleteCatName) confirmDeleteCategoryItem(deleteCatName);
+          setDeleteCatName(null);
+        }}
+        onCancel={() => setDeleteCatName(null)}
+      />
     </div>
   );
 }

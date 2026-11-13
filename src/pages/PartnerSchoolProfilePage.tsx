@@ -43,6 +43,8 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface PartnerSchoolProfilePageProps {
   initialTab?: 'profile' | 'instructors' | 'overview';
@@ -52,6 +54,14 @@ interface PartnerSchoolProfilePageProps {
 
 export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateView, onNavigate }: PartnerSchoolProfilePageProps) {
   void onNavigateView;
+  const toast = useToast();
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   const { user, profile: userProfile } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -305,39 +315,53 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
     try {
       const res = await sendInvitationEmail(inv);
       if (res.success) {
-        alert(`Meghívó e-mail sikeresen újraküldve a(z) ${inv.email} címre!`);
+        toast.success(`Meghívó e-mail sikeresen újraküldve a(z) ${inv.email} címre!`);
       } else {
-        alert(`E-mail küldési hiba (Resend API): ${res.error || 'Szerveroldali hiba'}.\n\nMeghívó kód: ${inv.code}`);
+        toast.error(`E-mail küldési hiba (Resend API): ${res.error || 'Szerveroldali hiba'}. Meghívó kód: ${inv.code}`);
       }
     } catch (err: any) {
-      alert(`Újraküldés hiba: ${err.message || err}`);
+      toast.error(`Újraküldés hiba: ${err.message || err}`);
     }
   };
 
-  const handleRevokeInvitation = async (invId: string) => {
-    if (!confirm('Biztosan vissza szeretné vonni ezt a meghívót?')) return;
-    try {
-      await revokeInvitation(invId);
-      if (partner) {
-        const updated = await listInvitations(partner.id);
-        setInvitations(updated);
-      }
-    } catch (err: any) {
-      alert(err.message || 'Visszavonás nem sikerült.');
-    }
+  const handleRevokeInvitation = (invId: string) => {
+    setConfirmState({
+      title: 'Meghívó visszavonása',
+      message: 'Biztosan vissza szeretné vonni ezt a meghívót?',
+      confirmLabel: 'Visszavonás',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await revokeInvitation(invId);
+          if (partner) {
+            const updated = await listInvitations(partner.id);
+            setInvitations(updated);
+          }
+        } catch (err: any) {
+          toast.error(err.message || 'Visszavonás nem sikerült.');
+        }
+      },
+    });
   };
 
-  const handleDeleteInvitation = async (invId: string) => {
-    if (!confirm('Biztosan törölni szeretné ezt a meghívót a listából?')) return;
-    try {
-      await deleteInvitation(invId);
-      if (partner) {
-        const updated = await listInvitations(partner.id);
-        setInvitations(updated);
-      }
-    } catch (err: any) {
-      alert(err.message || 'Törlés nem sikerült.');
-    }
+  const handleDeleteInvitation = (invId: string) => {
+    setConfirmState({
+      title: 'Meghívó törlése',
+      message: 'Biztosan törölni szeretné ezt a meghívót a listából?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteInvitation(invId);
+          if (partner) {
+            const updated = await listInvitations(partner.id);
+            setInvitations(updated);
+          }
+        } catch (err: any) {
+          toast.error(err.message || 'Törlés nem sikerült.');
+        }
+      },
+    });
   };
 
   const handleOpenEditInvitation = (inv: PartnerInvitation) => {
@@ -363,7 +387,7 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
       setInvitations(updated);
       setEditingInvitation(null);
     } catch (err: any) {
-      alert(err.message || 'Meghívó frissítése nem sikerült.');
+      toast.error(err.message || 'Meghívó frissítése nem sikerült.');
     } finally {
       setSavingEditInvite(false);
     }
@@ -381,32 +405,33 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
       setSelectedInstructorForTrade(null);
       setAddTradeId('');
     } catch (err: any) {
-      alert(err.message || 'Szakma hozzárendelése nem sikerült.');
+      toast.error(err.message || 'Szakma hozzárendelése nem sikerült.');
     } finally {
       setAddingTrade(false);
     }
   };
 
-  const handleRemoveInstructor = async (userId: string, fullName?: string | null) => {
+  const handleRemoveInstructor = (userId: string, fullName?: string | null) => {
     if (!partner) return;
-    if (
-      !confirm(
-        `Biztosan el szeretné távolítani ${
-          fullName || 'az oktatót'
-        } az iskolai szervezetből?\n\nEz a művelet csak az iskolai tagságot szünteti meg, a felhasználó fiókját nem törli.`
-      )
-    )
-      return;
-
-    try {
-      await removeTeacherFromSchool(partner.id, userId);
-      const updatedInstructors = await listSchoolInstructors(partner.id);
-      setInstructors(updatedInstructors);
-      setSuccessMsg('Az oktató sikeresen el lett távolítva az iskolai szervezetből.');
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Oktató eltávolítása nem sikerült.');
-    }
+    setConfirmState({
+      title: 'Oktató eltávolítása',
+      message: `Biztosan el szeretné távolítani ${
+        fullName || 'az oktatót'
+      } az iskolai szervezetből?\n\nEz a művelet csak az iskolai tagságot szünteti meg, a felhasználó fiókját nem törli.`,
+      confirmLabel: 'Eltávolítás',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await removeTeacherFromSchool(partner.id, userId);
+          const updatedInstructors = await listSchoolInstructors(partner.id);
+          setInstructors(updatedInstructors);
+          setSuccessMsg('Az oktató sikeresen el lett távolítva az iskolai szervezetből.');
+          setTimeout(() => setSuccessMsg(null), 4000);
+        } catch (err: any) {
+          setErrorMsg(err.message || 'Oktató eltávolítása nem sikerült.');
+        }
+      },
+    });
   };
 
   function renderInvitationStatusBadge(status: 'active' | 'used' | 'revoked' | 'expired') {
@@ -1155,6 +1180,23 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

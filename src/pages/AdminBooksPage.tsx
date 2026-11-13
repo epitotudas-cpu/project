@@ -41,12 +41,22 @@ import {
 } from '../services/bookService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import { generateCoverFromPdfUrl, getPdfPageCount } from '../services/pdfCoverGenerator';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface AdminBooksPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPageProps = {}) {
+  const toast = useToast();
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   const books = useBooks();
   const categories = useBookCategories();
 
@@ -157,21 +167,20 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
     if (catId === 'all') return;
     const catObj = editableCategories.find((c) => c.id === catId);
     const bookCount = books.filter((b) => b.category === catId).length;
+    const message =
+      bookCount > 0
+        ? `A(z) "${catObj?.label}" kategóriában jelenleg ${bookCount} szakkönyv található. Biztosan törölni szeretnéd ezt a kategóriát?`
+        : `Biztosan törölni szeretnéd a(z) "${catObj?.label}" kategóriát?`;
 
-    if (bookCount > 0) {
-      if (
-        !window.confirm(
-          `A(z) "${catObj?.label}" kategóriában jelenleg ${bookCount} szakkönyv található. Biztosan törölni szeretnéd ezt a kategóriát?`
-        )
-      ) {
-        return;
-      }
-    } else {
-      if (!window.confirm(`Biztosan törölni szeretnéd a(z) "${catObj?.label}" kategóriát?`)) {
-        return;
-      }
-    }
-    setEditableCategories(editableCategories.filter((c) => c.id !== catId));
+    setConfirmState({
+      title: 'Kategória törlése',
+      message,
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        setEditableCategories(editableCategories.filter((c) => c.id !== catId));
+      },
+    });
   };
 
   const handleAddCategory = (e: React.FormEvent) => {
@@ -188,7 +197,7 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
         .replace(/^-+|-+$/g, '') || `cat-${Date.now()}`;
 
     if (editableCategories.some((c) => c.id === slug || c.label.toLowerCase() === label.toLowerCase())) {
-      alert('Ilyen néven vagy azonosítóval már létezik kategória!');
+      toast.notify('Ilyen néven vagy azonosítóval már létezik kategória!', 'warning');
       return;
     }
 
@@ -203,9 +212,15 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
   };
 
   const handleResetDefaultCategories = () => {
-    if (window.confirm('Biztosan visszaállítod az alapértelmezett kategóriákat és azok sorrendjét?')) {
-      setEditableCategories([...DEFAULT_BOOK_CATEGORIES]);
-    }
+    setConfirmState({
+      title: 'Kategóriák visszaállítása',
+      message: 'Biztosan visszaállítod az alapértelmezett kategóriákat és azok sorrendjét?',
+      confirmLabel: 'Visszaállítás',
+      destructive: true,
+      onConfirm: () => {
+        setEditableCategories([...DEFAULT_BOOK_CATEGORIES]);
+      },
+    });
   };
 
   // ════════════════ STORE OFFERS DYNAMIC HANDLERS ════════════════
@@ -421,11 +436,17 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
   };
 
   const handleDeleteBook = (id: string) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a szakkönyvet?')) {
-      const updated = books.filter((b) => b.id !== id);
-      saveBooks(updated);
-      triggerSuccessNotify('A szakkönyv törölve a könyvtárból!');
-    }
+    setConfirmState({
+      title: 'Szakkönyv törlése',
+      message: 'Biztosan törölni szeretnéd ezt a szakkönyvet?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const updated = books.filter((b) => b.id !== id);
+        saveBooks(updated);
+        triggerSuccessNotify('A szakkönyv törölve a könyvtárból!');
+      },
+    });
   };
 
   const handleSaveBook = (e: React.FormEvent) => {
@@ -608,10 +629,16 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Biztosan visszaállítod az alapszintű könyvkiadványokat a gyári adatokra?')) {
-      saveBooks(DEFAULT_BOOKS);
-      triggerSuccessNotify('Alapértelmezett szakkönyvek visszaállítva!');
-    }
+    setConfirmState({
+      title: 'Könyvkiadványok visszaállítása',
+      message: 'Biztosan visszaállítod az alapszintű könyvkiadványokat a gyári adatokra?',
+      confirmLabel: 'Visszaállítás',
+      destructive: true,
+      onConfirm: () => {
+        saveBooks(DEFAULT_BOOKS);
+        triggerSuccessNotify('Alapértelmezett szakkönyvek visszaállítva!');
+      },
+    });
   };
 
   const triggerSuccessNotify = (msg?: string) => {
@@ -1748,6 +1775,23 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

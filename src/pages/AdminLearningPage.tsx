@@ -12,6 +12,7 @@ import {
 import EditCourseModal from '../components/EditCourseModal';
 import EditQuizModal from '../components/EditQuizModal';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
   draft: { label: 'Piszkozat', class: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
@@ -39,6 +40,11 @@ export default function AdminLearningPage() {
   };
 
   const [activeTab, setActiveTab] = useState<'courses' | 'quizzes'>('courses');
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
   const [courses, setCourses] = useState<LearningCourse[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 
@@ -98,18 +104,26 @@ export default function AdminLearningPage() {
     loadData();
   };
 
-  const handleDeleteCourse = async (id: string) => {
-    if (confirm('Biztosan törölni szeretnéd ezt a tananyagot?')) {
-      await deleteCourse(id);
-      loadData();
-    }
+  const handleDeleteCourse = (id: string) => {
+    setConfirmState({
+      title: 'Tananyag törlése',
+      message: 'Biztosan törölni szeretnéd ezt a tananyagot?',
+      onConfirm: async () => {
+        await deleteCourse(id);
+        loadData();
+      },
+    });
   };
 
-  const handleDeleteQuiz = async (id: string) => {
-    if (confirm('Biztosan törölni szeretnéd ezt a tesztet?')) {
-      await deleteQuiz(id);
-      loadData();
-    }
+  const handleDeleteQuiz = (id: string) => {
+    setConfirmState({
+      title: 'Teszt törlése',
+      message: 'Biztosan törölni szeretnéd ezt a tesztet?',
+      onConfirm: async () => {
+        await deleteQuiz(id);
+        loadData();
+      },
+    });
   };
 
   return (
@@ -439,6 +453,22 @@ export default function AdminLearningPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
+      />
 
     </div>
   );

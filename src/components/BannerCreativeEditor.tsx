@@ -33,6 +33,7 @@ import {
   listFallbackVideoSettings,
   type FallbackVideoSettings,
 } from '../services/bannerCreativeService';
+import ConfirmDialog from './ConfirmDialog';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import type {
   AdCreative,
@@ -45,6 +46,7 @@ import type {
 
 export function BannerCreativeEditor() {
   const [storedCreatives, setStoredCreatives] = useState<AdCreative[]>([]);
+  const [deleteCreativeId, setDeleteCreativeId] = useState<string | null>(null);
   const [fallbackSettings, setFallbackSettings] = useState<FallbackVideoSettings>(() => getFallbackVideoSettings());
   const [showFallbackPanel, setShowFallbackPanel] = useState(false);
   
@@ -152,10 +154,7 @@ export function BannerCreativeEditor() {
   // Delete creative record
   function handleDeleteCreative(creativeId: string, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!window.confirm('Biztosan törölni szeretnéd ezt a hirdetési kreatívot?')) return;
-    const filtered = storedCreatives.filter((c) => c.id !== creativeId);
-    saveStoredCreatives(filtered);
-    refreshCreativesList();
+    setDeleteCreativeId(creativeId);
   }
 
   // Return from editor to selector dashboard
@@ -1374,6 +1373,22 @@ export function BannerCreativeEditor() {
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={Boolean(deleteCreativeId)}
+        title="Hirdetési kreatív törlése"
+        message="Biztosan törölni szeretnéd ezt a hirdetési kreatívot?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          if (deleteCreativeId) {
+            const filtered = storedCreatives.filter((c) => c.id !== deleteCreativeId);
+            saveStoredCreatives(filtered);
+            refreshCreativesList();
+          }
+          setDeleteCreativeId(null);
+        }}
+        onCancel={() => setDeleteCreativeId(null)}
+      />
     </div>
   );
 }

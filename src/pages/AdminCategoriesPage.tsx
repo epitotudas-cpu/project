@@ -29,6 +29,7 @@ import { listCategories, countArticlesForCategories, deleteCategory } from '../s
 import { useToast } from '../components/ToastProvider';
 import EditCategoryModal from '../components/EditCategoryModal';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type CategoryWithCount = Category & { articleCount: number };
 
@@ -63,6 +64,7 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
   const [editing, setEditing] = useState<Category | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CategoryWithCount | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
   useEffect(() => {
@@ -132,13 +134,11 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
     setEditing(null);
   }
 
-  async function handleDelete(category: CategoryWithCount) {
-    const confirmMessage = `Biztosan törölni szeretnéd a(z) "${category.name}" kategóriát?${
-      category.articleCount > 0 ? `\n\nFigyelem: A kategória ${category.articleCount} cikket tartalmaz!` : ''
-    }`;
+  function handleDelete(category: CategoryWithCount) {
+    setDeleteTarget(category);
+  }
 
-    if (!window.confirm(confirmMessage)) return;
-
+  async function confirmDeleteCategory(category: CategoryWithCount) {
     setDeletingId(category.id);
     try {
       await deleteCategory(category.id);
@@ -351,6 +351,26 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
           onSaved={handleSaved}
         />
       )}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Kategória törlése"
+        message={
+          deleteTarget
+            ? `Biztosan törölni szeretnéd a(z) "${deleteTarget.name}" kategóriát?${
+                deleteTarget.articleCount > 0
+                  ? `\n\nFigyelem: A kategória ${deleteTarget.articleCount} cikket tartalmaz!`
+                  : ''
+              }`
+            : ''
+        }
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={async () => {
+          if (deleteTarget) await confirmDeleteCategory(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

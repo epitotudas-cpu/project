@@ -22,6 +22,7 @@ import {
 } from '../services/tradeService';
 import { type TimelineStation, type FutureTechCard } from '../data/tradeDetailsData';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface AdminTradesPageProps {
   initialSearchQuery?: string;
@@ -30,6 +31,13 @@ interface AdminTradesPageProps {
 export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageProps = {}) {
   const trades = useTrades();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
 
   useEffect(() => {
     if (initialSearchQuery !== undefined) {
@@ -173,11 +181,17 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
   };
 
   const handleDeleteTrade = (id: string, tradeName: string) => {
-    if (window.confirm(`Biztosan törölni szeretnéd a(z) "${tradeName}" szakmai karrierútvonalat?`)) {
-      const updated = trades.filter((t) => t.id !== id);
-      saveTradeItems(updated);
-      triggerSuccessNotify();
-    }
+    setConfirmState({
+      title: 'Szakmai karrierútvonal törlése',
+      message: `Biztosan törölni szeretnéd a(z) "${tradeName}" szakmai karrierútvonalat?`,
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const updated = trades.filter((t) => t.id !== id);
+        saveTradeItems(updated);
+        triggerSuccessNotify();
+      },
+    });
   };
 
   const handleSaveTrade = (e: React.FormEvent) => {
@@ -288,10 +302,16 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Biztosan visszaállítod az összes szakma leírást az alapértelmezettre?')) {
-      saveTradeItems(DEFAULT_TRADE_ITEMS);
-      triggerSuccessNotify();
-    }
+    setConfirmState({
+      title: 'Szakma leírások visszaállítása',
+      message: 'Biztosan visszaállítod az összes szakma leírást az alapértelmezettre?',
+      confirmLabel: 'Visszaállítás',
+      destructive: true,
+      onConfirm: () => {
+        saveTradeItems(DEFAULT_TRADE_ITEMS);
+        triggerSuccessNotify();
+      },
+    });
   };
 
   const triggerSuccessNotify = () => {
@@ -949,6 +969,18 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onConfirm={() => {
+          if (confirmState) confirmState.onConfirm();
+          setConfirmState(null);
+        }}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

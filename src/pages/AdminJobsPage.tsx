@@ -23,6 +23,7 @@ import {
 } from '../services/careerService';
 import type { JobPosting } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface AdminJobsPageProps {
   initialSearchQuery?: string;
@@ -34,6 +35,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialSearchQuery !== undefined) {
@@ -133,12 +135,8 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
     triggerSuccessNotify();
   };
 
-  const handleDeleteJob = async (id: string) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt az álláshirdetést?')) {
-      await deleteJobPosting(id);
-      await loadJobs();
-      triggerSuccessNotify();
-    }
+  const handleDeleteJob = (id: string) => {
+    setDeleteJobId(id);
   };
 
   const handleSaveJob = async (e: React.FormEvent) => {
@@ -491,6 +489,22 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteJobId)}
+        title="Álláshirdetés törlése"
+        message="Biztosan törölni szeretnéd ezt az álláshirdetést?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={async () => {
+          if (deleteJobId) {
+            await deleteJobPosting(deleteJobId);
+            await loadJobs();
+            triggerSuccessNotify();
+          }
+          setDeleteJobId(null);
+        }}
+        onCancel={() => setDeleteJobId(null)}
+      />
     </div>
   );
 }

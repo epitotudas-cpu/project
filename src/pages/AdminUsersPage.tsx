@@ -24,6 +24,8 @@ import {
   type UserTrustProfile,
 } from '../services/trustService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import { useToast } from '../components/ToastProvider';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const ROLE_BADGE: Record<Profile['role'], { label: string; class: string }> = {
   admin: { label: 'Adminisztrátor', class: 'bg-[#FFC400]/10 text-[#FFC400] border-[#FFC400]/30' },
@@ -87,6 +89,8 @@ interface AdminUsersPageProps {
 }
 
 export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPageProps = {}) {
+  const toast = useToast();
+  const [deleteUserTarget, setDeleteUserTarget] = useState<Profile | null>(null);
   const { user: currentUser } = useAuth();
   const isAdmin = true; // Admin Users Page is restricted to admins; enable role selector for all users
   const [users, setUsers] = useState<Profile[]>([]);
@@ -148,11 +152,11 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
     }));
   }
 
-  async function handleDeleteUser(userToDelete: Profile) {
-    if (!window.confirm(`Biztosan törölni szeretnéd "${userToDelete.full_name || userToDelete.email}" fiókját? Ez a művelet visszavonhatatlan!`)) {
-      return;
-    }
+  function handleDeleteUser(userToDelete: Profile) {
+    setDeleteUserTarget(userToDelete);
+  }
 
+  async function confirmDeleteUser(userToDelete: Profile) {
     setDeletingId(userToDelete.id);
     try {
       await deleteUser(userToDelete.id);
@@ -493,7 +497,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
 
                   async function handleRoleChange(userId: string, newRole: string) {
                     if (!isAdmin) {
-                      alert('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
+                      toast.error('Kizárólag Adminisztrátor módosíthatja a platform szerepköröket.');
                       return;
                     }
                     setRoleUpdateError(null);
@@ -892,6 +896,22 @@ WITH CHECK (public.is_admin_role());`;
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteUserTarget)}
+        title="Felhasználó törlése"
+        message={
+          deleteUserTarget
+            ? `Biztosan törölni szeretnéd "${deleteUserTarget.full_name || deleteUserTarget.email}" fiókját? Ez a művelet visszavonhatatlan!`
+            : ''
+        }
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={async () => {
+          if (deleteUserTarget) await confirmDeleteUser(deleteUserTarget);
+          setDeleteUserTarget(null);
+        }}
+        onCancel={() => setDeleteUserTarget(null)}
+      />
     </div>
   );
 }

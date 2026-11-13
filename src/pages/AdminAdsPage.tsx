@@ -26,6 +26,8 @@ import {
   AlertTriangle,
   ExternalLink,
 } from 'lucide-react';
+import { useToast } from '../components/ToastProvider';
+import ConfirmDialog from '../components/ConfirmDialog';
 import {
   listAdCampaigns,
   createAdCampaign,
@@ -150,6 +152,8 @@ export const AD_MODULE_CARDS: AdModuleCardDef[] = [
 ];
 
 export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
+  const toast = useToast();
+  const [confirmClearNotifsOpen, setConfirmClearNotifsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<AdCategoryKey>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -412,12 +416,14 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
   // Handlers for Clear All Notifications
   const handleClearAllNotifications = () => {
-    if (window.confirm('Biztosan törölni szeretnéd az összes értesítést?')) {
-      setNotifications([]);
-      saveNotifications([]);
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    }
+    setConfirmClearNotifsOpen(true);
+  };
+
+  const confirmClearAllNotifications = () => {
+    setNotifications([]);
+    saveNotifications([]);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   // Handlers for Advertiser Creation / Edit
@@ -1389,7 +1395,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                 </h2>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => alert('Riport CSV exportálása sikeres!')}
+                    onClick={() => toast.success('Riport CSV exportálása sikeres!')}
                     style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
                     className="px-3.5 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                   >
@@ -1719,6 +1725,18 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmClearNotifsOpen}
+        title="Értesítések törlése"
+        message="Biztosan törölni szeretnéd az összes értesítést?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          confirmClearAllNotifications();
+          setConfirmClearNotifsOpen(false);
+        }}
+        onCancel={() => setConfirmClearNotifsOpen(false)}
+      />
     </div>
   );
 }

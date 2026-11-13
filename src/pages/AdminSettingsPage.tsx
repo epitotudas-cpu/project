@@ -95,6 +95,8 @@ import {
   DEFAULT_ABOUT_SETTINGS,
   type AboutSettings,
 } from '../services/aboutService';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface AdminSettingsPageProps {
   onNavigate?: (page: string) => void;
@@ -248,6 +250,14 @@ export const SETTINGS_CARDS: SettingsCardDef[] = [
 ];
 
 export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
+  const toast = useToast();
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   const [settings, setSettings] = useState<SiteSettings>(() => {
     const s = getSiteSettings();
     return { ...DEFAULT_SITE_SETTINGS, ...s };
@@ -413,17 +423,23 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   };
 
   const handleDeleteLegalSection = (docKey: 'privacyPolicy' | 'terms', index: number) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a szekciót?')) {
-      const doc = legalDocs[docKey];
-      const updatedSections = doc.sections.filter((_, i) => i !== index);
-      setLegalDocs({
-        ...legalDocs,
-        [docKey]: {
-          ...doc,
-          sections: updatedSections,
-        },
-      });
-    }
+    setConfirmState({
+      title: 'Szekció törlése',
+      message: 'Biztosan törölni szeretnéd ezt a szekciót?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const doc = legalDocs[docKey];
+        const updatedSections = doc.sections.filter((_, i) => i !== index);
+        setLegalDocs({
+          ...legalDocs,
+          [docKey]: {
+            ...doc,
+            sections: updatedSections,
+          },
+        });
+      },
+    });
   };
 
   const handleMoveLegalSection = (
@@ -480,10 +496,16 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   };
 
   const handleDeleteNav = (id: string) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a menüpontot? (Főmenü esetén az almenüi is törlődnek!)')) {
-      const updated = navItems.filter((i) => i.id !== id && i.parentId !== id);
-      saveNavItems(updated);
-    }
+    setConfirmState({
+      title: 'Menüpont törlése',
+      message: 'Biztosan törölni szeretnéd ezt a menüpontot? (Főmenü esetén az almenüi is törlődnek!)',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const updated = navItems.filter((i) => i.id !== id && i.parentId !== id);
+        saveNavItems(updated);
+      },
+    });
   };
 
   const handleOpenAddNavModal = (parentId: string | null = null) => {
@@ -542,9 +564,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   };
 
   const handleResetNavTree = () => {
-    if (window.confirm('Biztosan visszaállítod az alapszintű navigációt a gyári elrendezésre?')) {
-      saveNavItems(DEFAULT_NAV_ITEMS);
-    }
+    setConfirmState({
+      title: 'Navigáció visszaállítása',
+      message: 'Biztosan visszaállítod az alapszintű navigációt a gyári elrendezésre?',
+      confirmLabel: 'Visszaállítás',
+      destructive: true,
+      onConfirm: () => {
+        saveNavItems(DEFAULT_NAV_ITEMS);
+      },
+    });
   };
 
   // Form state for new hero image
@@ -675,21 +703,27 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Biztosan visszaállítod az összes beállítást az alapértelmezett értékekre?')) {
-      setSettings({ ...DEFAULT_SITE_SETTINGS });
-      setImpressumData({ ...DEFAULT_IMPRESSUM_DATA });
-      setCalcConfig({ ...DEFAULT_CALCULATOR_CONFIG });
-      setLegalDocs({ ...DEFAULT_LEGAL_DOCS });
-      const defaultHeroState: HeroState = { config: DEFAULT_HERO_CONFIG, images: DEFAULT_HERO_IMAGES };
-      setHeroState(defaultHeroState);
-      saveSiteSettings(DEFAULT_SITE_SETTINGS);
-      saveImpressumData(DEFAULT_IMPRESSUM_DATA);
-      saveHeroState(defaultHeroState);
-      saveCalculatorConfig(DEFAULT_CALCULATOR_CONFIG);
-      saveLegalDocs(DEFAULT_LEGAL_DOCS);
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    }
+    setConfirmState({
+      title: 'Beállítások visszaállítása',
+      message: 'Biztosan visszaállítod az összes beállítást az alapértelmezett értékekre?',
+      confirmLabel: 'Visszaállítás',
+      destructive: true,
+      onConfirm: () => {
+        setSettings({ ...DEFAULT_SITE_SETTINGS });
+        setImpressumData({ ...DEFAULT_IMPRESSUM_DATA });
+        setCalcConfig({ ...DEFAULT_CALCULATOR_CONFIG });
+        setLegalDocs({ ...DEFAULT_LEGAL_DOCS });
+        const defaultHeroState: HeroState = { config: DEFAULT_HERO_CONFIG, images: DEFAULT_HERO_IMAGES };
+        setHeroState(defaultHeroState);
+        saveSiteSettings(DEFAULT_SITE_SETTINGS);
+        saveImpressumData(DEFAULT_IMPRESSUM_DATA);
+        saveHeroState(defaultHeroState);
+        saveCalculatorConfig(DEFAULT_CALCULATOR_CONFIG);
+        saveLegalDocs(DEFAULT_LEGAL_DOCS);
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 3000);
+      },
+    });
   };
 
   const handleAddHeroImage = (e: React.FormEvent) => {
@@ -727,7 +761,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
   const handleDeleteHeroImage = (id: string) => {
     if (heroState.images.length <= 1) {
-      alert('Legalább egy hero képnek léteznie kell!');
+      toast.notify('Legalább egy hero képnek léteznie kell!', 'warning');
       return;
     }
     const updatedImages = heroState.images.filter((img) => img.id !== id);
@@ -4544,6 +4578,23 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

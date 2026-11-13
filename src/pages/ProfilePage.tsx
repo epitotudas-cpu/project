@@ -47,6 +47,7 @@ import {
 import TermDetailModal from '../components/TermDetailModal';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import type { UserCertificate, CourseProgress, QuizAttempt, LearningCourse, Quiz } from '../lib/supabase';
+import { useToast } from '../components/ToastProvider';
 
 
 interface ProfilePageProps {
@@ -80,6 +81,7 @@ const INTEREST_TOPICS = [
 ];
 
 export default function ProfilePage({ onNavigate }: ProfilePageProps) {
+  const toast = useToast();
   const { user, profile: authProfile, signOut, updatePassword, updateProfile } = useAuth();
   const [profile, setProfile] = useState<UserDetailedProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1534,7 +1536,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                             </span>
                             <button
                               onClick={() => {
-                                alert(`Oklevél azonosító: ${cert.certificate_code}\nEredmény: ${cert.score_achieved}%\nKiállítva: ${new Date(cert.issued_at).toLocaleDateString('hu-HU')}`);
+                                toast.info(`Oklevél azonosító: ${cert.certificate_code} | Eredmény: ${cert.score_achieved}% | Kiállítva: ${new Date(cert.issued_at).toLocaleDateString('hu-HU')}`);
                               }}
                               className="text-xs font-bold text-[#FFC400] hover:underline cursor-pointer"
                             >

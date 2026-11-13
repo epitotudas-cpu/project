@@ -11,6 +11,7 @@ import type { Article, Category } from '../lib/supabase';
 import { createArticle, updateArticle } from '../services/articleService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import { addArticleRedirect } from '../services/articleRedirectsService';
+import ConfirmDialog from './ConfirmDialog';
 
 export interface EditArticleModalProps {
   article: Article | null; // null = create mode
@@ -897,6 +898,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
   
   const parsedData = article ? parseBlocksFromContent(article.content || '') : { blocks: [], seo: { ...DEFAULT_SEO }, sources: [] };
   const [blocks, setBlocks] = useState<ContentBlock[]>(parsedData.blocks);
+  const [pendingTemplateKey, setPendingTemplateKey] = useState<string | null>(null);
   const [seo, setSeo] = useState<GuideSEOData>(parsedData.seo);
   const [sources, setSources] = useState<ArticleSource[]>(parsedData.sources || []);
 
@@ -1000,9 +1002,11 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
   function applyTemplate(key: string) {
     const tmpl = STARTER_TEMPLATES[key];
     if (tmpl) {
-      if (blocks.length === 0 || window.confirm('Biztosan betöltöd a sablont? A jelenlegi blokkok felülíródnak.')) {
+      if (blocks.length === 0) {
         setBlocks(tmpl.getBlocks());
         setDirty(true);
+      } else {
+        setPendingTemplateKey(key);
       }
     }
   }
@@ -2843,6 +2847,20 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={Boolean(pendingTemplateKey)}
+        title="Sablon betöltése"
+        message="Biztosan betöltöd a sablont? A jelenlegi blokkok felülíródnak."
+        confirmLabel="Betöltés"
+        onConfirm={() => {
+          if (pendingTemplateKey && STARTER_TEMPLATES[pendingTemplateKey]) {
+            setBlocks(STARTER_TEMPLATES[pendingTemplateKey].getBlocks());
+            setDirty(true);
+          }
+          setPendingTemplateKey(null);
+        }}
+        onCancel={() => setPendingTemplateKey(null)}
+      />
     </div>
   );
 }

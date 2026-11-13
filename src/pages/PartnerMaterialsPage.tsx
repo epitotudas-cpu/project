@@ -26,6 +26,8 @@ import {
   type MaterialDocument,
 } from '../services/materialsService';
 import type { Partner } from '../lib/supabase';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface PartnerMaterialsPageProps {
   currentPartner: Partner;
@@ -33,6 +35,8 @@ interface PartnerMaterialsPageProps {
 }
 
 export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterialsPageProps) {
+  const toast = useToast();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<MaterialItem[]>(() => getMaterialsLocal());
   const [categories] = useState<MaterialCategory[]>(() => getMaterialCategoriesLocal());
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,7 +132,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const handleOpenEditModal = (item: MaterialItem) => {
     // 🔒 SECURITY CHECK: Ensure partner owns item before editing
     if (item.partner_id !== currentPartner.id) {
-      alert('Biztonsági figyelmeztetés: Csak a saját anyagait szerkesztheti!');
+      toast.error('Biztonsági figyelmeztetés: Csak a saját anyagait szerkesztheti!');
       return;
     }
     setEditingItem(item);
@@ -143,20 +147,16 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
     // 🔒 SECURITY CHECK: Ensure partner owns item before deleting
     if (item.partner_id !== currentPartner.id) {
-      alert('Biztonsági figyelmeztetés: Csak a saját anyagait törölheti!');
+      toast.error('Biztonsági figyelmeztetés: Csak a saját anyagait törölheti!');
       return;
     }
 
-    if (window.confirm('Biztosan törölni szeretné ezt a saját anyagot?')) {
-      const updated = allItems.filter((i) => i.id !== id);
-      setAllItems(updated);
-      saveMaterialsLocal(updated);
-    }
+    setConfirmDeleteId(id);
   };
 
   const handleSaveForm = (targetStatus: 'draft' | 'pending_approval') => {
     if (!formData.name || !formData.short_description) {
-      alert('Kérjük, töltse ki az anyag nevét és a rövid leírást!');
+      toast.notify('Kérjük, töltse ki az anyag nevét és a rövid leírást!', 'warning');
       return;
     }
 
@@ -722,6 +722,22 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmDeleteId)}
+        title="Saját anyag törlése"
+        message="Biztosan törölni szeretné ezt a saját anyagot?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          if (!confirmDeleteId) return;
+          const updated = allItems.filter((i) => i.id !== confirmDeleteId);
+          setAllItems(updated);
+          saveMaterialsLocal(updated);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

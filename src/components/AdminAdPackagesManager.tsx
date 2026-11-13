@@ -31,8 +31,10 @@ import {
   type ManagedAdPackage,
 } from '../services/adPackageService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import { useToast } from './ToastProvider';
 
 export function AdminAdPackagesManager() {
+  const toast = useToast();
   const [packages, setPackages] = useState<ManagedAdPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -175,7 +177,7 @@ export function AdminAdPackagesManager() {
   async function handleSavePackage(e: React.FormEvent) {
     e.preventDefault();
     if (!formName.trim()) {
-      alert('Kérlek add meg a csomag nevét!');
+      toast.error('Kérlek add meg a csomag nevét!');
       return;
     }
 
@@ -226,7 +228,7 @@ export function AdminAdPackagesManager() {
       showToast(editingPkg ? 'Csomag sikeresen frissítve!' : 'Új reklámcsomag sikeresen létrehozva!');
     } catch (err) {
       console.error('Hiba a mentéskor:', err);
-      alert('Hiba történt a csomag mentésekor.');
+      toast.error('Hiba történt a csomag mentésekor.');
     } finally {
       setSaving(false);
     }
@@ -239,7 +241,7 @@ export function AdminAdPackagesManager() {
       showToast('Csomag sikeresen lemásolva!');
     } catch (err) {
       console.error('Hiba a másoláskor:', err);
-      alert('Nem sikerült a csomag másolása.');
+      toast.error('Nem sikerült a csomag másolása.');
     }
   }
 
@@ -279,7 +281,7 @@ export function AdminAdPackagesManager() {
       showToast('Csomag sikeresen törölve!');
     } catch (err) {
       console.error('Hiba a törléskor:', err);
-      alert('Nem sikerült a csomag törlése.');
+      toast.error('Nem sikerült a csomag törlése.');
     }
   }
 

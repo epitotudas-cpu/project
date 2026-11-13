@@ -28,6 +28,8 @@ import {
   Eye,
   Edit3,
 } from 'lucide-react';
+import { useToast } from './ToastProvider';
+import ConfirmDialog from './ConfirmDialog';
 import FormattedText from './FormattedText';
 import {
   getCategoryLabel,
@@ -374,6 +376,8 @@ export default function PartnerEditorModal({
   onSave,
   isAdmin = false,
 }: PartnerEditorModalProps) {
+  const toast = useToast();
+  const [confirmRemoveLogoOpen, setConfirmRemoveLogoOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('basic');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -611,20 +615,22 @@ export default function PartnerEditorModal({
   }
 
   function handleRemoveLogo() {
-    if (window.confirm('Biztosan törli a logót?')) {
-      setLogoUrl('');
-      setLogoError(null);
-      setLogoSuccessMessage(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    setConfirmRemoveLogoOpen(true);
+  }
+
+  function confirmRemoveLogo() {
+    setLogoUrl('');
+    setLogoError(null);
+    setLogoSuccessMessage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      alert('Kérjük, adja meg a szervezet nevét!');
+      toast.error('Kérjük, adja meg a szervezet nevét!');
       return;
     }
     setSaving(true);
@@ -1833,7 +1839,7 @@ export default function PartnerEditorModal({
                       type="button"
                       onClick={() => {
                         if (relatedContent.length >= 6) {
-                          alert('Legfeljebb 6 kapcsolódó tartalom jelenhet meg a partner adatlapon.');
+                          toast.notify('Legfeljebb 6 kapcsolódó tartalom jelenhet meg a partner adatlapon.', 'warning');
                           return;
                         }
                         setRelatedContent([
@@ -2011,6 +2017,18 @@ export default function PartnerEditorModal({
           </form>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmRemoveLogoOpen}
+        title="Logó törlése"
+        message="Biztosan törli a logót?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          confirmRemoveLogo();
+          setConfirmRemoveLogoOpen(false);
+        }}
+        onCancel={() => setConfirmRemoveLogoOpen(false)}
+      />
     </div>
   );
 }

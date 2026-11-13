@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, Star, Send, Heart, Edit3, Trash2, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getComments, addComment, updateComment, deleteComment, toggleFavorite, isFavorite, type Comment } from '../services/communityService';
+import ConfirmDialog from './ConfirmDialog';
 
 interface CommunityCommentsSectionProps {
   contentType: 'article' | 'glossary' | 'tool' | 'course';
@@ -23,6 +24,7 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [editCommentRating, setEditCommentRating] = useState(5);
+  const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -84,12 +86,8 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
     }
   };
 
-  const handleDelete = async (commentId: string) => {
-    if (!window.confirm('Biztosan törölni szeretnéd ezt a hozzászólást?')) return;
-    const success = await deleteComment(commentId, user?.id);
-    if (success) {
-      setComments((prev) => prev.filter((item) => item.id !== commentId));
-    }
+  const handleDelete = (commentId: string) => {
+    setDeleteCommentId(commentId);
   };
 
   async function handleToggleFav() {
@@ -287,6 +285,23 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
           );
         })}
       </div>
+      <ConfirmDialog
+        open={Boolean(deleteCommentId)}
+        title="Hozzászólás törlése"
+        message="Biztosan törölni szeretnéd ezt a hozzászólást?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={async () => {
+          if (deleteCommentId) {
+            const success = await deleteComment(deleteCommentId, user?.id);
+            if (success) {
+              setComments((prev) => prev.filter((item) => item.id !== deleteCommentId));
+            }
+          }
+          setDeleteCommentId(null);
+        }}
+        onCancel={() => setDeleteCommentId(null)}
+      />
     </div>
   );
 }

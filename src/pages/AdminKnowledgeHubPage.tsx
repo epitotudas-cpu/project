@@ -21,12 +21,16 @@ import {
   type EducationalDocument,
 } from '../services/knowledgeHubService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface AdminKnowledgeHubPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: AdminKnowledgeHubPageProps) {
+  const toast = useToast();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
@@ -128,17 +132,13 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
   };
 
   const handleDeleteItem = (id: string) => {
-    if (window.confirm('Biztosan törölni szeretné ezt az oktatási tartalmat?')) {
-      const updated = items.filter((i) => i.id !== id);
-      setItems(updated);
-      saveKnowledgeItemsLocal(updated);
-    }
+    setConfirmDeleteId(id);
   };
 
   const handleSaveForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.summary) {
-      alert('Kérjük, töltse ki a címet és a rövid összefoglalót!');
+      toast.notify('Kérjük, töltse ki a címet és a rövid összefoglalót!', 'warning');
       return;
     }
 
@@ -223,7 +223,7 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
 
   const handleAddDocument = () => {
     if (!docNameInput.trim() || !docUrlInput.trim()) {
-      alert('Kérjük, adja meg a dokumentum nevét és a fájl URL-jét!');
+      toast.notify('Kérjük, adja meg a dokumentum nevét és a fájl URL-jét!', 'warning');
       return;
     }
     const newDoc: EducationalDocument = {
@@ -905,6 +905,22 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmDeleteId)}
+        title="Oktatási tartalom törlése"
+        message="Biztosan törölni szeretné ezt az oktatási tartalmat?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          if (!confirmDeleteId) return;
+          const updated = items.filter((i) => i.id !== confirmDeleteId);
+          setItems(updated);
+          saveKnowledgeItemsLocal(updated);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

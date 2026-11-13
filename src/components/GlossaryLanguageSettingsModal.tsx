@@ -11,6 +11,7 @@ import {
 import type { GlossaryLanguage } from '../lib/supabase';
 import { useToast } from './ToastProvider';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from './ConfirmDialog';
 
 interface GlossaryLanguageSettingsModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export default function GlossaryLanguageSettingsModal({
   const [isRtl, setIsRtl] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [deleteLangTarget, setDeleteLangTarget] = useState<GlossaryLanguage | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   function resetForm() {
@@ -87,15 +89,15 @@ export default function GlossaryLanguageSettingsModal({
     }
   }
 
-  async function handleDelete(lang: GlossaryLanguage) {
+  function handleDelete(lang: GlossaryLanguage) {
     if (lang.is_system_protected || lang.iso_code === 'hu') {
       toast.error('Az alapértelmezett magyar (HU) nyelv nem törölhető!');
       return;
     }
-    if (!window.confirm(`Biztosan törölni szeretnéd a(z) ${lang.name_hu} (${lang.short_label}) nyelvet?`)) {
-      return;
-    }
+    setDeleteLangTarget(lang);
+  }
 
+  async function confirmDeleteLanguage(lang: GlossaryLanguage) {
     try {
       await deleteGlossaryLanguage(lang.id);
       toast.success(`${lang.name_hu} sikeresen törölve!`);
@@ -516,6 +518,18 @@ export default function GlossaryLanguageSettingsModal({
           </button>
         </div>
       </div>
+      <ConfirmDialog
+        open={Boolean(deleteLangTarget)}
+        title="Nyelv törlése"
+        message={deleteLangTarget ? `Biztosan törölni szeretnéd a(z) ${deleteLangTarget.name_hu} (${deleteLangTarget.short_label}) nyelvet?` : ''}
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={async () => {
+          if (deleteLangTarget) await confirmDeleteLanguage(deleteLangTarget);
+          setDeleteLangTarget(null);
+        }}
+        onCancel={() => setDeleteLangTarget(null)}
+      />
     </div>
   );
 }

@@ -29,12 +29,16 @@ import {
 import { listPartners } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import { useToast } from '../components/ToastProvider';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface AdminMaterialsPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMaterialsPageProps) {
+  const toast = useToast();
+  const [deleteMaterialId, setDeleteMaterialId] = useState<string | null>(null);
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
@@ -172,11 +176,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
   };
 
   const handleDeleteItem = (id: string) => {
-    if (window.confirm('Biztosan törölni szeretné ezt az építőanyagot?')) {
-      const updated = items.filter((i) => i.id !== id);
-      setItems(updated);
-      saveMaterialsLocal(updated);
-    }
+    setDeleteMaterialId(id);
   };
 
   const handleApprovePublish = (item: MaterialItem) => {
@@ -208,7 +208,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
   const handleSaveForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.short_description) {
-      alert('Kérjük, adja meg az anyag nevét és a rövid leírást!');
+      toast.error('Kérjük, adja meg az anyag nevét és a rövid leírást!');
       return;
     }
 
@@ -1132,6 +1132,22 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteMaterialId)}
+        title="Építőanyag törlése"
+        message="Biztosan törölni szeretné ezt az építőanyagot?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          if (deleteMaterialId) {
+            const updated = items.filter((i) => i.id !== deleteMaterialId);
+            setItems(updated);
+            saveMaterialsLocal(updated);
+          }
+          setDeleteMaterialId(null);
+        }}
+        onCancel={() => setDeleteMaterialId(null)}
+      />
     </div>
   );
 }

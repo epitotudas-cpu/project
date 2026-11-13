@@ -55,6 +55,8 @@ import {
 import { checkEmailExists } from '../services/userService';
 import { supabase, type Partner } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface AdminPartnersPageProps {
   initialSearchQuery?: string;
@@ -73,6 +75,14 @@ interface PartnerStaffMember {
 }
 
 export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersPageProps = {}) {
+  const toast = useToast();
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   const [partners, setPartners] = useState<ExtendedPartner[]>([]);
   const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
   const [applications, setApplications] = useState<PartnerApplication[]>([]);
@@ -211,7 +221,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       setShowAssignTradeModal(false);
       setAssignTradeSelectedId('');
     } catch (err: any) {
-      alert(err.message || 'Szakma hozzárendelése nem sikerült.');
+      toast.error(err.message || 'Szakma hozzárendelése nem sikerült.');
     } finally {
       setAssignTradeSubmitting(false);
     }
@@ -234,7 +244,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       }
       setShowGenerateCodeModal(true);
     } catch (err: any) {
-      alert(err.message || 'Szakmák betöltése nem sikerült.');
+      toast.error(err.message || 'Szakmák betöltése nem sikerült.');
     }
   }
 
@@ -349,19 +359,26 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       }
       await loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Hiba történt a partner mentésekor.');
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a partner mentésekor.');
       throw err;
     }
   }
 
-  async function handleDeletePartner(id: string) {
-    if (!window.confirm('Biztosan törölni szeretnéd ezt a partner szervezetet?')) return;
-    try {
-      await deletePartner(id);
-      loadData();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'A törlés nem sikerült.');
-    }
+  function handleDeletePartner(id: string) {
+    setConfirmState({
+      title: 'Partner szervezet törlése',
+      message: 'Biztosan törölni szeretnéd ezt a partner szervezetet?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deletePartner(id);
+          loadData();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'A törlés nem sikerült.');
+        }
+      },
+    });
   }
 
   // Handle Invitation Creation (Pre-creation or Existing)
@@ -462,14 +479,21 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     }
   }
 
-  async function handleRevokeInvitation(id: string) {
-    if (!window.confirm('Biztosan vissza szeretnéd vonni ezt a meghívót?')) return;
-    try {
-      await revokeInvitation(id);
-      loadData();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'A visszavonás nem sikerült.');
-    }
+  function handleRevokeInvitation(id: string) {
+    setConfirmState({
+      title: 'Meghívó visszavonása',
+      message: 'Biztosan vissza szeretnéd vonni ezt a meghívót?',
+      confirmLabel: 'Visszavonás',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await revokeInvitation(id);
+          loadData();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'A visszavonás nem sikerült.');
+        }
+      },
+    });
   }
 
   // Invitation Resend, Edit, Delete Handlers
@@ -484,7 +508,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     try {
       const emailResult = await sendInvitationEmail(inv);
       if (emailResult.success) {
-        alert(`A(z) ${inv.code} meghívó e-mail sikeresen újraküldve a(z) ${inv.email} címre!`);
+        toast.success(`A(z) ${inv.code} meghívó e-mail sikeresen újraküldve a(z) ${inv.email} címre!`);
       } else {
         const template = generateEmailTemplate(inv.partner_name || 'Szervezet', inv.code, inv.email, inv.expires_at);
         setCreatedInviteCode(inv.code);
@@ -495,7 +519,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         setShowInviteModal(true);
       }
     } catch (err: any) {
-      alert(err.message || 'Az újraküldés sikertelen.');
+      toast.error(err.message || 'Az újraküldés sikertelen.');
     }
   }
 
@@ -524,18 +548,25 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       setShowEditInviteModal(false);
       loadData();
     } catch (err: any) {
-      alert(err.message || 'A meghívó szerkesztése nem sikerült.');
+      toast.error(err.message || 'A meghívó szerkesztése nem sikerült.');
     }
   }
 
-  async function handleDeleteInvitation(id: string) {
-    if (!window.confirm('Biztosan törölni szeretnéd ezt a meghívót az adatbázisból?')) return;
-    try {
-      await deleteInvitation(id);
-      loadData();
-    } catch (err: any) {
-      alert(err.message || 'A meghívó törlése nem sikerült.');
-    }
+  function handleDeleteInvitation(id: string) {
+    setConfirmState({
+      title: 'Meghívó törlése',
+      message: 'Biztosan törölni szeretnéd ezt a meghívót az adatbázisból?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteInvitation(id);
+          loadData();
+        } catch (err: any) {
+          toast.error(err.message || 'A meghívó törlése nem sikerült.');
+        }
+      },
+    });
   }
 
   // Approve / Reject Applications
@@ -545,18 +576,25 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       openCreateInviteModal(app.company_name, app.email, (app.category as PartnerCategory) || 'ceg');
       await loadData();
     } catch (err: any) {
-      alert(err.message || 'A jelentkezés elfogadása nem sikerült.');
+      toast.error(err.message || 'A jelentkezés elfogadása nem sikerült.');
     }
   }
 
-  async function handleRejectApplication(id: string) {
-    if (!window.confirm('Biztosan elutasítod ezt a partneri jelentkezést?')) return;
-    try {
-      await updateApplicationStatus(id, 'rejected');
-      await loadData();
-    } catch (err: any) {
-      alert(err.message || 'Az elutasítás nem sikerült.');
-    }
+  function handleRejectApplication(id: string) {
+    setConfirmState({
+      title: 'Jelentkezés elutasítása',
+      message: 'Biztosan elutasítod ezt a partneri jelentkezést?',
+      confirmLabel: 'Elutasítás',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await updateApplicationStatus(id, 'rejected');
+          await loadData();
+        } catch (err: any) {
+          toast.error(err.message || 'Az elutasítás nem sikerült.');
+        }
+      },
+    });
   }
 
   function handleCopyTemplate() {
@@ -1707,6 +1745,23 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
           <span>{codeCopiedNotice}</span>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

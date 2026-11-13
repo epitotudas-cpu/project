@@ -24,6 +24,8 @@ import {
 } from '../services/articleService';
 import { listCategories } from '../services/categoryService';
 import type { Partner, Category, Article } from '../lib/supabase';
+import { useToast } from '../components/ToastProvider';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface PartnerArticlesPageProps {
   currentPartner: Partner;
@@ -31,6 +33,8 @@ interface PartnerArticlesPageProps {
 }
 
 export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNavigate }: PartnerArticlesPageProps) {
+  const toast = useToast();
+  const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<Article[]>(() => getArticlesLocal());
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,7 +124,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
   const handleOpenEditModal = (item: Article) => {
     // 🔒 SECURITY CHECK: Ensure partner owns item before editing
     if (item.partner_id !== currentPartner.id) {
-      alert('Biztonsági figyelmeztetés: Csak a saját cikkeit szerkesztheti!');
+      toast.error('Biztonsági figyelmeztetés: Csak a saját cikkeit szerkesztheti!');
       return;
     }
     setEditingItem(item);
@@ -135,20 +139,16 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
 
     // 🔒 SECURITY CHECK: Ensure partner owns item before deleting
     if (item.partner_id !== currentPartner.id) {
-      alert('Biztonsági figyelmeztetés: Csak a saját cikkeit törölheti!');
+      toast.error('Biztonsági figyelmeztetés: Csak a saját cikkeit törölheti!');
       return;
     }
 
-    if (window.confirm('Biztosan törölni szeretné ezt a saját cikket?')) {
-      const updated = allItems.filter((i) => i.id !== id);
-      setAllItems(updated);
-      saveArticlesLocal(updated);
-    }
+    setDeleteArticleId(id);
   };
 
   const handleSaveForm = (targetStatus: 'draft' | 'pending') => {
     if (!formData.title || !formData.excerpt) {
-      alert('Kérjük, töltse ki a cikk címét és a rövid összefoglalót!');
+      toast.error('Kérjük, töltse ki a cikk címét és a rövid összefoglalót!');
       return;
     }
 
@@ -815,6 +815,22 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteArticleId)}
+        title="Cikk törlése"
+        message="Biztosan törölni szeretné ezt a saját cikket?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          if (deleteArticleId) {
+            const updated = allItems.filter((i) => i.id !== deleteArticleId);
+            setAllItems(updated);
+            saveArticlesLocal(updated);
+          }
+          setDeleteArticleId(null);
+        }}
+        onCancel={() => setDeleteArticleId(null)}
+      />
     </div>
   );
 }

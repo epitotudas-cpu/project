@@ -20,6 +20,7 @@ import {
 import type { Course, Lesson, QuizQuestion } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import AdminFlashcardsModal from '../components/AdminFlashcardsModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface AdminCoursesPageProps {
   initialSearchQuery?: string;
@@ -27,6 +28,13 @@ interface AdminCoursesPageProps {
 
 export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPageProps = {}) {
   const eduData = useEducationData();
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
   useEffect(() => {
@@ -109,21 +117,27 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
   };
 
   const handleDeleteCourse = (id: string) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a képzést és a hozzá tartozó leckéket?')) {
-      const updatedCourses = eduData.courses.filter((c) => c.id !== id);
-      const updatedLessons = { ...eduData.lessons };
-      delete updatedLessons[id];
-      const updatedQuestions = { ...eduData.questions };
-      delete updatedQuestions[id];
+    setConfirmState({
+      title: 'Képzés törlése',
+      message: 'Biztosan törölni szeretnéd ezt a képzést és a hozzá tartozó leckéket?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const updatedCourses = eduData.courses.filter((c) => c.id !== id);
+        const updatedLessons = { ...eduData.lessons };
+        delete updatedLessons[id];
+        const updatedQuestions = { ...eduData.questions };
+        delete updatedQuestions[id];
 
-      saveEducationData({
-        courses: updatedCourses,
-        lessons: updatedLessons,
-        questions: updatedQuestions,
-      });
-      if (activeCourseId === id) setActiveCourseId(null);
-      triggerSuccessNotify();
-    }
+        saveEducationData({
+          courses: updatedCourses,
+          lessons: updatedLessons,
+          questions: updatedQuestions,
+        });
+        if (activeCourseId === id) setActiveCourseId(null);
+        triggerSuccessNotify();
+      },
+    });
   };
 
   const handleSaveCourse = (e: React.FormEvent) => {
@@ -216,18 +230,24 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
   };
 
   const handleDeleteLesson = (courseId: string, lessonId: string) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a leckét?')) {
-      const currentLessons = eduData.lessons[courseId] || [];
-      const updatedLessons = currentLessons.filter((l) => l.id !== lessonId);
-      saveEducationData({
-        ...eduData,
-        lessons: {
-          ...eduData.lessons,
-          [courseId]: updatedLessons,
-        },
-      });
-      triggerSuccessNotify();
-    }
+    setConfirmState({
+      title: 'Lecke törlése',
+      message: 'Biztosan törölni szeretnéd ezt a leckét?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const currentLessons = eduData.lessons[courseId] || [];
+        const updatedLessons = currentLessons.filter((l) => l.id !== lessonId);
+        saveEducationData({
+          ...eduData,
+          lessons: {
+            ...eduData.lessons,
+            [courseId]: updatedLessons,
+          },
+        });
+        triggerSuccessNotify();
+      },
+    });
   };
 
   // Quiz Handlers
@@ -287,25 +307,37 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
   };
 
   const handleDeleteQuiz = (courseId: string, qId: string) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a tesztkérdést?')) {
-      const currentQuestions = eduData.questions[courseId] || [];
-      const updated = currentQuestions.filter((q) => q.id !== qId);
-      saveEducationData({
-        ...eduData,
-        questions: {
-          ...eduData.questions,
-          [courseId]: updated,
-        },
-      });
-      triggerSuccessNotify();
-    }
+    setConfirmState({
+      title: 'Tesztkérdés törlése',
+      message: 'Biztosan törölni szeretnéd ezt a tesztkérdést?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const currentQuestions = eduData.questions[courseId] || [];
+        const updated = currentQuestions.filter((q) => q.id !== qId);
+        saveEducationData({
+          ...eduData,
+          questions: {
+            ...eduData.questions,
+            [courseId]: updated,
+          },
+        });
+        triggerSuccessNotify();
+      },
+    });
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Biztosan visszaállítod a képzési katalógust az alapértelmezett adatokra?')) {
-      saveEducationData(DEFAULT_EDUCATION_DATA);
-      triggerSuccessNotify();
-    }
+    setConfirmState({
+      title: 'Katalógus visszaállítása',
+      message: 'Biztosan visszaállítod a képzési katalógust az alapértelmezett adatokra?',
+      confirmLabel: 'Visszaállítás',
+      destructive: true,
+      onConfirm: () => {
+        saveEducationData(DEFAULT_EDUCATION_DATA);
+        triggerSuccessNotify();
+      },
+    });
   };
 
   const triggerSuccessNotify = () => {
@@ -780,6 +812,23 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
         isOpen={showFlashcardsModal}
         onClose={() => setShowFlashcardsModal(false)}
         courses={eduData.courses}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
       />
     </div>
   );

@@ -47,6 +47,8 @@ import {
   Eye,
   Clock,
 } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 export interface TeacherDashboardPageProps {
   onNavigate?: (page: string) => void;
@@ -99,6 +101,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   activeView = 'dashboard',
   onNavigateView,
 }) => {
+  const toast = useToast();
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -383,46 +393,53 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     }
   };
 
-  const handleDeleteClass = async (classId: string, className: string) => {
-    if (!confirm(`Biztosan törölni szeretné a(z) "${className}" osztályt? A törlés nem vonható vissza.`)) return;
-
-    try {
-      await deleteSchoolClass(classId);
-      setClasses(classes.filter((c) => c.id !== classId));
-      if (selectedClassId === classId) {
-        setSelectedClassId(null);
-        setSelectedClass(null);
-      }
-    } catch (err: any) {
-      alert(err.message || 'Osztály törlése nem sikerült.');
-    }
+  const handleDeleteClass = (classId: string, className: string) => {
+    setConfirmState({
+      title: 'Osztály törlése',
+      message: `Biztosan törölni szeretné a(z) "${className}" osztályt? A törlés nem vonható vissza.`,
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteSchoolClass(classId);
+          setClasses(classes.filter((c) => c.id !== classId));
+          if (selectedClassId === classId) {
+            setSelectedClassId(null);
+            setSelectedClass(null);
+          }
+        } catch (err: any) {
+          toast.error(err.message || 'Osztály törlése nem sikerült.');
+        }
+      },
+    });
   };
 
-  const handleRemoveStudentFromClass = async (studentId: string, classId: string, fullName?: string | null) => {
-    if (
-      !confirm(
-        `Biztosan el szeretné távolítani ${
-          fullName || 'a tanulót'
-        } az osztályból?\n\nEz a művelet NEM törli a diák saját ÉpítőTudás fiókját, kizárólag az erről az osztályról való beiratkozást szünteti meg.`
-      )
-    )
-      return;
-
-    try {
-      await removeStudentFromClass(studentId, classId);
-      setClassStudents(classStudents.filter((st) => st.student_id !== studentId));
-      setAllStudents(allStudents.filter((st) => !(st.student_id === studentId && st.class_id === classId)));
-      setClasses(
-        classes.map((c) =>
-          c.id === classId ? { ...c, students_count: Math.max(0, (c.students_count || 1) - 1) } : c
-        )
-      );
-      if (selectedStudentDetail?.student_id === studentId) {
-        setSelectedStudentDetail(null);
-      }
-    } catch (err: any) {
-      alert(err.message || 'Tanuló eltávolítása nem sikerült.');
-    }
+  const handleRemoveStudentFromClass = (studentId: string, classId: string, fullName?: string | null) => {
+    setConfirmState({
+      title: 'Tanuló eltávolítása',
+      message: `Biztosan el szeretné távolítani ${
+        fullName || 'a tanulót'
+      } az osztályból?\n\nEz a művelet NEM törli a diák saját ÉpítőTudás fiókját, kizárólag az erről az osztályról való beiratkozást szünteti meg.`,
+      confirmLabel: 'Eltávolítás',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await removeStudentFromClass(studentId, classId);
+          setClassStudents(classStudents.filter((st) => st.student_id !== studentId));
+          setAllStudents(allStudents.filter((st) => !(st.student_id === studentId && st.class_id === classId)));
+          setClasses(
+            classes.map((c) =>
+              c.id === classId ? { ...c, students_count: Math.max(0, (c.students_count || 1) - 1) } : c
+            )
+          );
+          if (selectedStudentDetail?.student_id === studentId) {
+            setSelectedStudentDetail(null);
+          }
+        } catch (err: any) {
+          toast.error(err.message || 'Tanuló eltávolítása nem sikerült.');
+        }
+      },
+    });
   };
 
   const handleGenerateNewCode = async () => {
@@ -442,7 +459,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       setActiveCode(code);
       setClasses(classes.map((c) => (c.id === selectedClass.id ? { ...c, active_code: code } : c)));
     } catch (err: any) {
-      alert(err.message || 'Kód generálása nem sikerült.');
+      toast.error(err.message || 'Kód generálása nem sikerült.');
     } finally {
       setGeneratingCode(false);
     }
@@ -502,7 +519,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       setMaterialSaveSuccess(true);
       setTimeout(() => setMaterialSaveSuccess(false), 3000);
     } catch (err: any) {
-      alert(err.message || 'Tananyagok mentése nem sikerült.');
+      toast.error(err.message || 'Tananyagok mentése nem sikerült.');
     } finally {
       setSavingMaterials(false);
     }
@@ -514,26 +531,26 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     try {
       if (assignTargetType === 'class') {
         if (!selectedAssignClassId) {
-          alert('Kérjük, válasszon egy osztályt!');
+          toast.notify('Kérjük, válasszon egy osztályt!', 'warning');
           return;
         }
         await assignMaterialsToClass(selectedAssignClassId, [
           { content_type: assignModalMaterial.type, content_id: assignModalMaterial.id },
         ]);
-        alert(`Sikeresen kiosztva a megadott osztálynak!`);
+        toast.success(`Sikeresen kiosztva a megadott osztálynak!`);
       } else {
         if (!selectedAssignStudentId) {
-          alert('Kérjük, válasszon egy tanulót!');
+          toast.notify('Kérjük, válasszon egy tanulót!', 'warning');
           return;
         }
         await assignMaterialsToStudent(selectedAssignStudentId, [
           { content_type: assignModalMaterial.type, content_id: assignModalMaterial.id },
         ]);
-        alert(`Sikeresen kiosztva a kiválasztott tanulónak!`);
+        toast.success(`Sikeresen kiosztva a kiválasztott tanulónak!`);
       }
       setAssignModalMaterial(null);
     } catch (err: any) {
-      alert(err.message || 'Hiba a kiosztás során.');
+      toast.error(err.message || 'Hiba a kiosztás során.');
     }
   };
 
@@ -545,7 +562,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
   const handleSavePackage = (status: 'draft' | 'compiled') => {
     if (!pkgTitle.trim()) {
-      alert('Kérjük, adja meg a tananyagcsomag címét!');
+      toast.notify('Kérjük, adja meg a tananyagcsomag címét!', 'warning');
       return;
     }
     const newPkg: CustomPackage = {
@@ -565,14 +582,21 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     setPkgTitle('');
     setPkgDesc('');
     setPkgItems([]);
-    alert(status === 'compiled' ? 'Tananyagcsomag sikeresen összeállítva és elmentve!' : 'Piszkozat sikeresen elmentve!');
+    toast.success(status === 'compiled' ? 'Tananyagcsomag sikeresen összeállítva és elmentve!' : 'Piszkozat sikeresen elmentve!');
   };
 
   const handleDeletePackage = (pkgId: string) => {
-    if (!confirm('Biztosan törölni szeretné ezt a tananyagcsomagot?')) return;
-    const updated = customPackages.filter((p) => p.id !== pkgId);
-    setCustomPackages(updated);
-    saveCustomPackagesLocal(updated);
+    setConfirmState({
+      title: 'Tananyagcsomag törlése',
+      message: 'Biztosan törölni szeretné ezt a tananyagcsomagot?',
+      confirmLabel: 'Törlés',
+      destructive: true,
+      onConfirm: () => {
+        const updated = customPackages.filter((p) => p.id !== pkgId);
+        setCustomPackages(updated);
+        saveCustomPackagesLocal(updated);
+      },
+    });
   };
 
   if (loading) {
@@ -1613,7 +1637,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                         <div className="pt-3 border-t border-[#262626] flex items-center justify-between">
                           <button
                             onClick={() => {
-                              alert(`"${pkg.title}" csomag készen áll az osztályokhoz rendelésre a Kiosztás menüben.`);
+                              toast.info(`"${pkg.title}" csomag készen áll az osztályokhoz rendelésre a Kiosztás menüben.`);
                             }}
                             className="text-xs font-bold text-[#60a5fa] hover:text-white transition-colors cursor-pointer"
                           >
@@ -2159,6 +2183,23 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 };

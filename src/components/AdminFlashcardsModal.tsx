@@ -16,6 +16,7 @@ import {
   deleteFlashcard,
 } from '../services/educationService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from './ConfirmDialog';
 
 interface AdminFlashcardsModalProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export default function AdminFlashcardsModal({
 
   const [selectedCourseId, setSelectedCourseId] = useState<string>(initialCourseId || 'all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteCardId, setDeleteCardId] = useState<string | null>(null);
 
   // Form State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -95,9 +97,7 @@ export default function AdminFlashcardsModal({
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a tanulókártyát?')) {
-      deleteFlashcard(id);
-    }
+    setDeleteCardId(id);
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -389,6 +389,20 @@ export default function AdminFlashcardsModal({
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteCardId)}
+        title="Tanulókártya törlése"
+        message="Biztosan törölni szeretnéd ezt a tanulókártyát?"
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={() => {
+          if (deleteCardId) {
+            deleteFlashcard(deleteCardId);
+          }
+          setDeleteCardId(null);
+        }}
+        onCancel={() => setDeleteCardId(null)}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
 } from '../services/learningService';
 import EditCourseModal from '../components/EditCourseModal';
 import EditQuizModal from '../components/EditQuizModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
   draft: { label: 'Piszkozat', class: 'bg-gray-100 text-gray-700 border-gray-300' },
@@ -33,6 +34,11 @@ export default function PartnerLearningPage() {
   const [activeTab, setActiveTab] = useState<'courses' | 'quizzes'>('courses');
   const [courses, setCourses] = useState<LearningCourse[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
 
   // Modals
   const [courseModalOpen, setCourseModalOpen] = useState(false);
@@ -75,18 +81,26 @@ export default function PartnerLearningPage() {
     loadData();
   };
 
-  const handleDeleteCourse = async (id: string) => {
-    if (confirm('Biztosan törölni szeretnéd ezt a saját tananyagot?')) {
-      await deleteCourse(id);
-      loadData();
-    }
+  const handleDeleteCourse = (id: string) => {
+    setConfirmState({
+      title: 'Tananyag törlése',
+      message: 'Biztosan törölni szeretnéd ezt a saját tananyagot?',
+      onConfirm: async () => {
+        await deleteCourse(id);
+        loadData();
+      },
+    });
   };
 
-  const handleDeleteQuiz = async (id: string) => {
-    if (confirm('Biztosan törölni szeretnéd ezt a saját tesztet?')) {
-      await deleteQuiz(id);
-      loadData();
-    }
+  const handleDeleteQuiz = (id: string) => {
+    setConfirmState({
+      title: 'Teszt törlése',
+      message: 'Biztosan törölni szeretnéd ezt a saját tesztet?',
+      onConfirm: async () => {
+        await deleteQuiz(id);
+        loadData();
+      },
+    });
   };
 
   if (!hasPartnerAccess) {
@@ -341,6 +355,23 @@ export default function PartnerLearningPage() {
         onSaved={loadData}
         partnerId={currentPartnerId}
         partnerName={currentPartnerName}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        message={confirmState?.message || ''}
+        confirmLabel="Törlés"
+        destructive
+        onConfirm={async () => {
+          if (!confirmState) return;
+          try {
+            await confirmState.onConfirm();
+          } finally {
+            setConfirmState(null);
+          }
+        }}
+        onCancel={() => setConfirmState(null)}
       />
 
     </div>
