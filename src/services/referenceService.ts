@@ -52,8 +52,22 @@ export interface UpdateReferencePayload {
   is_published?: boolean;
 }
 
+export interface ReferenceInputItem {
+  id?: string;
+  title: string;
+  location?: string | null;
+  year?: string | null;
+  category?: string | null;
+  description?: string | null;
+  website_url?: string | null;
+  is_published?: boolean;
+  image_url?: string;
+  images?: string[];
+  display_order?: number;
+}
+
 /**
- * Resolves a public URL or CDN path for a reference image object key or URL string.
+ * Feloldja a kép végső megjelenítési URL-jét objektumkulcs vagy külső/adat-URL alapján.
  */
 export function resolveReferenceImageUrl(
   imageOrKey: PartnerReferenceImage | string | null | undefined
@@ -72,8 +86,8 @@ export function resolveReferenceImageUrl(
 
   if (!keyOrUrl) return '';
 
-  // Eltávolítjuk a belső egyediséget biztosító hash-töredéket (#ref-...)
-  const cleanKey = keyOrUrl.split('#')[0];
+  // Belső egyediséget biztosító hash eltávolítása (#ref-...)
+  const cleanKey = keyOrUrl.split('#')[0].trim();
 
   if (
     cleanKey.startsWith('http://') ||
@@ -83,13 +97,16 @@ export function resolveReferenceImageUrl(
     return cleanKey;
   }
 
-  return `https://olmavxcmkvvcebgqxohe.supabase.co/storage/v1/object/public/${cleanKey}`;
+  // Ha már tartalmazza a vödör nevét
+  if (cleanKey.startsWith('partner-references/')) {
+    return `https://olmavxcmkvvcebgqxohe.supabase.co/storage/v1/object/public/${cleanKey}`;
+  }
+
+  return `https://olmavxcmkvvcebgqxohe.supabase.co/storage/v1/object/public/partner-references/${cleanKey}`;
 }
 
 /**
- * Helyi tárolóból származó partner referenciák beolvasása (fallback mód).
- * Biztosítja a referenciák, leírások és feltöltött képek zökkenőmentes megjelenését
- * akkor is, ha az adatbázis RLS vagy hálózati korlátai miatt a Supabase-ből nem érkezik adat.
+ * Helyi tárolóból származó partner referenciák beolvasása (biztonsági fallback mód).
  */
 function getLocalFallbackReferences(partnerId: string, onlyPublished: boolean): PartnerReference[] {
   if (typeof localStorage === 'undefined' || !partnerId) return [];
@@ -138,15 +155,14 @@ function getLocalFallbackReferences(partnerId: string, onlyPublished: boolean): 
           cover_image: images[0] || null,
         };
       });
-  } catch (e) {
+  } catch {
     return [];
   }
 }
 
 /**
- * Lekéri egy partner összes referenciáját a kapcsolódó képekkel együtt a Supabase-ből.
- * Ha az adatbázisban a partner_references tábla még nem tartalmaz publikált rekordot,
- * zökkenőmentesen a partnerService fallback adatait adja vissza.
+ * Lekéri egy partner összes referenciáját a hozzájuk tartozó képekkel a Supabase-ből.
+ * Publikus nézetben (onlyPublished = true) kizárólag a jóváhagyott, publikált munkák jelennek meg.
  */
 export async function getPartnerReferences(
   partnerId: string,
@@ -193,12 +209,7 @@ export async function getPartnerReferences(
 
     const { data, error } = await query;
 
-    if (error) {
-      console.warn('Figyelmeztetés a partner referenciák lekérdezésekor:', error.message);
-      return getLocalFallbackReferences(partnerId, onlyPublished);
-    }
-
-    if (!data || data.length === 0) {
+    if (error || !data || data.length === 0) {
       return getLocalFallbackReferences(partnerId, onlyPublished);
     }
 
@@ -207,7 +218,7 @@ export async function getPartnerReferences(
         ? raw.partner_reference_images.sort((a: any, b: any) => a.display_order - b.display_order)
         : [];
 
-      // Ha az adatbázisban nincsenek képek a referenciához, megpróbáljuk kiegészíteni a helyi adatokból
+      // Kiegészítés a helyi adatokból, ha a relációs képtáblában még nincsenek sorok
       if (rawImages.length === 0) {
         const localList = getLocalFallbackReferences(partnerId, false);
         const match = localList.find((lr) => lr.id === raw.id || lr.title === raw.title);
@@ -241,7 +252,7 @@ export async function getPartnerReferences(
 }
 
 /**
- * Új referencia létrehozása a Supabase-ben.
+ * Új referencia létrehozása a Supabase partner_references táblájában.
  */
 export async function createReference(
   partnerId: string,
@@ -301,7 +312,7 @@ export async function updateReference(
 }
 
 /**
- * Referencia törlése a Supabase-ből (kaszkádolva törli a képrekordokat).
+ * Referencia törlése a Supabase-ből (kaszkádolt törléssel).
  */
 export async function deleteReference(referenceId: string): Promise<void> {
   const { error } = await supabase
@@ -315,28 +326,18 @@ export async function deleteReference(referenceId: string): Promise<void> {
 }
 
 /**
- * Adminisztrátori vagy partneri publikálási művelet a partner_references táblára.
+ * Partneri vagy adminisztrátori publikálási RPC meghívása.
  */
 export async function publishPartnerReference(referenceId: string): Promise<boolean> {
   if (!referenceId) return false;
   try {
-    // 1. Megpróbáljuk a dedikált RPC-t
     const { data, error } = await supabase.rpc('publish_partner_reference', {
       p_reference_id: referenceId,
     });
     if (!error) return !!data;
 
-    // 2. Fallback közvetlen UPDATE-re
-    const { error: updateError } = await supabase
-      .from('partner_references')
-      .update({ is_published: true, updated_at: new Date().toISOString() })
-      .eq('id', referenceId);
-
-    if (updateError) {
-      console.warn('Figyelmeztetés a referencia publikálásakor:', updateError.message);
-      return false;
-    }
-    return true;
+    console.warn('Figyelmeztetés a referencia publikálásakor:', error.message);
+    return false;
   } catch (err) {
     console.warn('Kivétel a referencia publikálásakor:', err);
     return false;
@@ -344,7 +345,154 @@ export async function publishPartnerReference(referenceId: string): Promise<bool
 }
 
 /**
- * Szinkronizálja egy referencia képeit a partner_reference_images táblával.
+ * Borítókép kijelölése a meglévő set_reference_cover_image RPC segítségével.
+ */
+export async function setReferenceCoverImage(
+  referenceId: string,
+  imageId: string
+): Promise<boolean> {
+  if (!referenceId || !imageId) return false;
+  try {
+    const { data, error } = await supabase.rpc('set_reference_cover_image', {
+      p_reference_id: referenceId,
+      p_image_id: imageId,
+    });
+    if (!error) return !!data;
+    console.warn('Borítókép kijelölési figyelmeztetés:', error.message);
+    return false;
+  } catch (err) {
+    console.warn('Borítókép kijelölési kivétel:', err);
+    return false;
+  }
+}
+
+/**
+ * Feltöltési szándék (Upload Intent) létrehozása a Supabase-ben.
+ */
+export async function createUploadIntent(
+  partnerId: string,
+  referenceId: string,
+  expectedSizeBytes: number,
+  expectedMimeType: string
+): Promise<{ intentId: string; stagingKey: string }> {
+  const { data, error } = await supabase.rpc('create_reference_upload_intent', {
+    p_partner_id: partnerId,
+    p_reference_id: referenceId,
+    p_expected_size_bytes: expectedSizeBytes,
+    p_expected_mime_type: expectedMimeType,
+  });
+
+  if (error || !data || (Array.isArray(data) && data.length === 0)) {
+    throw new Error(`Feltöltési szándék elutasítva: ${error?.message || 'Üres válasz'}`);
+  }
+
+  const res = Array.isArray(data) ? data[0] : data;
+  return { intentId: res.intent_id, stagingKey: res.staging_key };
+}
+
+/**
+ * Fájl feltöltése a privát staging tárhelyre (partner-references-staging).
+ */
+export async function uploadStagingFile(
+  stagingKey: string,
+  fileOrBlob: Blob | File
+): Promise<void> {
+  const { error } = await supabase.storage
+    .from('partner-references-staging')
+    .upload(stagingKey, fileOrBlob, {
+      contentType: fileOrBlob.type || 'image/jpeg',
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Staging fájlfeltöltés sikertelen: ${error.message}`);
+  }
+}
+
+/**
+ * Kép megerősítése és véglegesítése a confirm-reference-upload Edge Functionön keresztül.
+ */
+export async function confirmUploadIntent(
+  intentId: string,
+  caption?: string | null,
+  isCover?: boolean
+): Promise<{ imageId: string; objectKey: string; publicUrl: string }> {
+  const { data, error } = await supabase.functions.invoke('confirm-reference-upload', {
+    body: {
+      intent_id: intentId,
+      caption: caption || null,
+      is_cover: isCover || false,
+    },
+  });
+
+  if (error) {
+    throw new Error(`Edge Function hiba: ${error.message}`);
+  }
+
+  if (!data?.success) {
+    throw new Error(`Véglegesítés sikertelen: ${data?.error || 'Ismeretlen szerverhiba'}`);
+  }
+
+  return {
+    imageId: data.image_id,
+    objectKey: data.object_key,
+    publicUrl: data.public_url,
+  };
+}
+
+/**
+ * Data URL vagy Fájl feltöltése a biztonságos, 3 lépéses intent-alapú láncon keresztül.
+ */
+export async function uploadReferenceImageThroughIntent(
+  partnerId: string,
+  referenceId: string,
+  dataUrlOrFile: string | File,
+  isCover = false,
+  caption?: string | null
+): Promise<{ imageId: string; objectKey: string; publicUrl: string }> {
+  let blob: Blob;
+  let mime = 'image/jpeg';
+
+  if (typeof dataUrlOrFile === 'string') {
+    if (dataUrlOrFile.startsWith('data:')) {
+      const parts = dataUrlOrFile.split(',');
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      const binary = atob(parts[1]);
+      const array = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+      }
+      blob = new Blob([array], { type: mime });
+    } else {
+      // Külső vagy már meglévő tárhely URL esetén nincs szükség új feltöltésre
+      return { imageId: '', objectKey: dataUrlOrFile, publicUrl: dataUrlOrFile };
+    }
+  } else {
+    blob = dataUrlOrFile;
+    mime = dataUrlOrFile.type || 'image/jpeg';
+  }
+
+  // 1. Lépés: Intent létrehozása
+  const { intentId, stagingKey } = await createUploadIntent(
+    partnerId,
+    referenceId,
+    blob.size,
+    mime
+  );
+
+  // 2. Lépés: Fájl feltöltése a privát staging vödörbe
+  await uploadStagingFile(stagingKey, blob);
+
+  // 3. Lépés: Véglegesítés az Edge Function segítségével
+  return await confirmUploadIntent(intentId, caption, isCover);
+}
+
+/**
+ * Szinkronizálja egy referencia képeit:
+ * - A privát staging és az Edge Function segítségével biztonságosan véglegesíti az új képeket.
+ * - Törli a felületről eltávolított képeket.
+ * - Rögzíti a kijelölt borítóképet.
  */
 export async function syncReferenceImages(
   referenceId: string,
@@ -354,100 +502,76 @@ export async function syncReferenceImages(
   if (!referenceId || !partnerId) return;
 
   try {
-    // 1. Lekérdezzük a referencia jelenlegi képeit
-    const { data: existingImages, error: fetchErr } = await supabase
+    // 1. Meglévő képek lekérdezése
+    const { data: existingImages } = await supabase
       .from('partner_reference_images')
       .select('id, object_key, thumbnail_key, display_order, is_cover')
       .eq('reference_id', referenceId)
       .order('display_order', { ascending: true });
 
-    if (fetchErr) {
-      console.warn('Figyelmeztetés a képek lekérdezésekor:', fetchErr.message);
-    }
-
     const existing = existingImages || [];
-    // Legfeljebb 10 kép engedélyezett az adatbázis kényszer szerint
     const validUrls = (imageUrls || [])
       .filter((url) => typeof url === 'string' && url.trim().length > 0)
       .slice(0, 10);
 
-    // 2. Töröljük azokat a meglévő képeket, amelyek már nincsenek az új URL listában
+    // 2. Törölt képek eltávolítása az adatbázisból
     for (const exImg of existing) {
       const cleanKey = (exImg.object_key || '').split('#')[0];
       const isRetained = validUrls.some((u) => u.split('#')[0] === cleanKey);
       if (!isRetained) {
-        const { error: delErr } = await supabase
-          .from('partner_reference_images')
-          .delete()
-          .eq('id', exImg.id);
-        if (delErr) {
-          console.warn('Kép törlése sikertelen a partner_reference_images táblából:', delErr.message);
+        try {
+          await supabase
+            .from('partner_reference_images')
+            .delete()
+            .eq('id', exImg.id);
+        } catch {
+          // csendes elnyelés
         }
       }
     }
 
-    // 3. Új képek beszúrása vagy meglévők sorrendjének / borítókép státuszának frissítése
+    let firstCreatedImageId: string | null = null;
+
+    // 3. Új képek feltöltése a biztonságos intent pipeline-on keresztül
     for (let i = 0; i < validUrls.length; i++) {
       const rawUrl = validUrls[i].trim();
-      const cleanUrl = rawUrl.split('#')[0];
-      const order = i + 1; // 1..10
       const isCover = i === 0;
 
-      const existingMatch = existing.find(
-        (img) => (img.object_key || '').split('#')[0] === cleanUrl
+      const isDataUrl = rawUrl.startsWith('data:');
+      const isAlreadyInDb = existing.some(
+        (img) => (img.object_key || '').split('#')[0] === rawUrl.split('#')[0]
       );
 
-      if (existingMatch) {
-        if (existingMatch.display_order !== order || existingMatch.is_cover !== isCover) {
-          await supabase
-            .from('partner_reference_images')
-            .update({ display_order: order, is_cover: isCover })
-            .eq('id', existingMatch.id);
-        }
-      } else {
-        const uniqueKey = `${cleanUrl}#${referenceId}-${order}`;
-        const uniqueThumbKey = `${cleanUrl}#thumb-${referenceId}-${order}`;
-        const { error: insErr } = await supabase
-          .from('partner_reference_images')
-          .insert({
-            reference_id: referenceId,
-            partner_id: partnerId,
-            object_key: uniqueKey,
-            thumbnail_key: uniqueThumbKey,
-            caption: null,
-            display_order: order,
-            is_cover: isCover,
-            width: 1600,
-            height: 1067,
-            size_bytes: 100000,
-          });
-
-        if (insErr) {
-          console.warn('Figyelmeztetés a kép beszúrásakor:', insErr.message);
+      if (isDataUrl && !isAlreadyInDb) {
+        try {
+          const uploaded = await uploadReferenceImageThroughIntent(
+            partnerId,
+            referenceId,
+            rawUrl,
+            isCover
+          );
+          if (uploaded.imageId && !firstCreatedImageId) {
+            firstCreatedImageId = uploaded.imageId;
+          }
+        } catch (uploadErr) {
+          console.warn('Figyelmeztetés a kép intent-alapú feltöltésekor:', uploadErr);
         }
       }
+    }
+
+    // 4. Borítókép kijelölése a set_reference_cover_image RPC segítségével
+    if (firstCreatedImageId) {
+      await setReferenceCoverImage(referenceId, firstCreatedImageId);
+    } else if (existing.length > 0 && !existing.some((img) => img.is_cover)) {
+      await setReferenceCoverImage(referenceId, existing[0].id);
     }
   } catch (err) {
     console.warn('Kivétel a referencia képek szinkronizálásakor:', err);
   }
 }
 
-export interface ReferenceInputItem {
-  id?: string;
-  title: string;
-  location?: string | null;
-  year?: string | null;
-  category?: string | null;
-  description?: string | null;
-  website_url?: string | null;
-  is_published?: boolean;
-  image_url?: string;
-  images?: string[];
-  display_order?: number;
-}
-
 /**
- * Elment vagy frissít egyetlen referenciát és annak képeit a Supabase-ben.
+ * Egyetlen referencia adatainak és képeinek elmentése, majd szabályos publikálása.
  */
 export async function savePartnerReference(
   partnerId: string,
@@ -470,7 +594,7 @@ export async function savePartnerReference(
       is_published: ref.is_published,
     });
   } else {
-    // Létrehozás
+    // Létrehozás (alapértelmezetten piszkozatként jön létre a trigger szerint)
     const created = await createReference(partnerId, {
       title: ref.title || 'Új Referencia',
       location: ref.location,
@@ -483,7 +607,7 @@ export async function savePartnerReference(
     targetId = created.id;
   }
 
-  // Képek összegyűjtése és szinkronizálása
+  // Képek szinkronizálása a relációs táblával
   const allImages: string[] = [
     ...(ref.image_url ? [ref.image_url] : []),
     ...((ref.images || []).filter((u) => u !== ref.image_url)),
@@ -493,8 +617,8 @@ export async function savePartnerReference(
     await syncReferenceImages(targetId, partnerId, allImages);
   }
 
-  // Ha a referencia publikálásra lett jelölve, publikáljuk
-  if (targetId && ref.is_published) {
+  // Szabályos publikálás a partner jogosultságával
+  if (targetId && ref.is_published !== false) {
     await publishPartnerReference(targetId);
   }
 
@@ -502,9 +626,7 @@ export async function savePartnerReference(
 }
 
 /**
- * Szinkronizálja a teljes referencia listát a partner számára a Supabase-ben:
- * - A korábban létező, de törölt referenciákat törli az adatbázisból.
- * - Az új és módosított referenciákat menti / frissíti a hozzájuk tartozó képekkel.
+ * Szinkronizálja a partner összes referenciáját az adatbázissal.
  */
 export async function syncPartnerReferences(
   partnerId: string,
@@ -519,7 +641,7 @@ export async function syncPartnerReferences(
     return [];
   }
 
-  // 1. Törölt referenciák megkeresése és törlése a DB-ből
+  // 1. Törölt referenciák eltávolítása a DB-ből
   const currentUuidSet = new Set(
     currentItems
       .filter((item) => item.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id))
@@ -536,7 +658,7 @@ export async function syncPartnerReferences(
     }
   }
 
-  // 2. Referenciák és képeik mentése / frissítése
+  // 2. Referenciák és képeik mentése
   for (const item of currentItems) {
     if (!item.title || !item.title.trim()) continue;
     try {
@@ -549,5 +671,3 @@ export async function syncPartnerReferences(
   // 3. Visszaolvasás a Supabase-ből
   return await getPartnerReferences(partnerId, false);
 }
-
-

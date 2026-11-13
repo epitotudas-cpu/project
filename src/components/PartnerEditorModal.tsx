@@ -1660,39 +1660,51 @@ export default function PartnerEditorModal({
                               {/* Képek előnézeti sora */}
                               {allImgs.length > 0 && (
                                 <div className="flex flex-wrap gap-2 pt-1">
-                                  {allImgs.map((imgUrl, imgIdx) => (
-                                    <div
-                                      key={imgIdx}
-                                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-700 bg-black group"
-                                    >
-                                      <img
-                                        src={imgUrl}
-                                        alt=""
-                                        className="w-full h-full object-cover"
-                                      />
-                                      {imgIdx === 0 && (
-                                        <span className="absolute bottom-0 left-0 right-0 bg-blue-600/90 text-white text-[9px] font-bold text-center py-0.5">
-                                          Főkép
-                                        </span>
-                                      )}
-                                      <button
-                                        type="button"
+                                  {allImgs.map((imgUrl, imgIdx) => {
+                                    const isThisCover = item.image_url === imgUrl || (!item.image_url && imgIdx === 0);
+                                    return (
+                                      <div
+                                        key={imgIdx}
                                         onClick={() => {
                                           const next = [...references];
-                                          const filtered = (next[index].images || []).filter((_, i) => i !== imgIdx);
-                                          next[index].images = filtered;
-                                          if (next[index].image_url === imgUrl) {
-                                            next[index].image_url = filtered[0] || '';
-                                          }
+                                          next[index].image_url = imgUrl;
                                           setReferences(next);
                                         }}
-                                        className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="Kép törlése"
+                                        className={`relative w-20 h-20 rounded-xl overflow-hidden border cursor-pointer group transition-all ${
+                                          isThisCover ? 'border-amber-400 ring-2 ring-amber-400/30' : 'border-gray-700 hover:border-gray-500'
+                                        }`}
+                                        title={isThisCover ? 'Kijelölt borítókép' : 'Kattintson ide a borítóképnek való kijelöléshez'}
                                       >
-                                        <Trash2 size={10} />
-                                      </button>
-                                    </div>
-                                  ))}
+                                        <img
+                                          src={imgUrl}
+                                          alt=""
+                                          className="w-full h-full object-cover"
+                                        />
+                                        {isThisCover && (
+                                          <span className="absolute bottom-0 left-0 right-0 bg-amber-500 text-black text-[9px] font-bold text-center py-0.5">
+                                            ★ Borítókép
+                                          </span>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const next = [...references];
+                                            const filtered = (next[index].images || []).filter((_, i) => i !== imgIdx);
+                                            next[index].images = filtered;
+                                            if (next[index].image_url === imgUrl) {
+                                              next[index].image_url = filtered[0] || '';
+                                            }
+                                            setReferences(next);
+                                          }}
+                                          className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                          title="Kép törlése"
+                                        >
+                                          <Trash2 size={10} />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
