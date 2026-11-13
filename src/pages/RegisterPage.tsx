@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   User,
   Mail,
@@ -122,26 +122,7 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
   const siteSettings = useSiteSettings();
   const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
-  // Check URL hash for code (e.g. #register?code=ET-INV-XXXXXX)
-  useEffect(() => {
-    try {
-      const hash = window.location.hash || '';
-      if (hash.includes('code=')) {
-        const urlParams = new URLSearchParams(hash.split('?')[1] || '');
-        const codeParam = urlParams.get('code');
-        if (codeParam) {
-          setInviteCodeInput(codeParam);
-          setStep('invite_code_form');
-          handleVerifyInviteCode(codeParam);
-        }
-      }
-    } catch (e) {
-      void e;
-    }
-  }, []);
-
-  async function handleVerifyInviteCode(codeToVerify?: string) {
-    const code = codeToVerify || inviteCodeInput.trim();
+  const verifyInviteCodeValue = useCallback(async (code: string) => {
     if (!code) {
       setInviteError('Kérjük, adja meg a meghívókódot.');
       return;
@@ -197,6 +178,28 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
     } finally {
       setInviteLoading(false);
     }
+  }, []);
+
+  // Check URL hash for code (e.g. #register?code=ET-INV-XXXXXX)
+  useEffect(() => {
+    try {
+      const hash = window.location.hash || '';
+      if (hash.includes('code=')) {
+        const urlParams = new URLSearchParams(hash.split('?')[1] || '');
+        const codeParam = urlParams.get('code');
+        if (codeParam) {
+          setInviteCodeInput(codeParam);
+          setStep('invite_code_form');
+          verifyInviteCodeValue(codeParam);
+        }
+      }
+    } catch (e) {
+      void e;
+    }
+  }, [verifyInviteCodeValue]);
+
+  function handleVerifyInviteCode(codeToVerify?: string) {
+    return verifyInviteCodeValue((codeToVerify || inviteCodeInput).trim());
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

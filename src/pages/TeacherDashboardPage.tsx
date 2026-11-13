@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
@@ -177,46 +177,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   // Filter States for Progress & Tests
   const [filterSearch, setFilterSearch] = useState<string>('');
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    loadTeacherData();
-  }, [user]);
-
-  useEffect(() => {
-    if (selectedClassId && schoolInfo) {
-      loadClassDetails(selectedClassId);
-    }
-  }, [selectedClassId, schoolInfo]);
-
-  const loadDbProgressData = async () => {
-    if (allStudents.length === 0) return;
-    setLoadingProgress(true);
-    try {
-      const studentIds = Array.from(new Set(allStudents.map((st) => st.student_id)));
-      const { data, error } = await supabase
-        .from('user_course_progress')
-        .select('*')
-        .in('user_id', studentIds);
-      if (!error && data) {
-        setDbProgressRecords(data);
-      }
-    } catch (err) {
-      console.warn('Error loading progress data:', err);
-    } finally {
-      setLoadingProgress(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeView === 'progress' && allStudents.length > 0) {
-      loadDbProgressData();
-    }
-  }, [activeView, allStudents]);
-
-  const loadTeacherData = async () => {
+  const loadTeacherData = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Find school partner_id where user is instructor or staff
@@ -292,9 +253,9 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const loadClassDetails = async (classId: string) => {
+  const loadClassDetails = useCallback(async (classId: string) => {
     const cls = classes.find((c) => c.id === classId);
     if (!cls || !schoolInfo) return;
 
@@ -310,7 +271,46 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     setClassMaterials(materials);
     const assignedIds = new Set(materials.map((m) => `${m.content_type}:${m.content_id}`));
     setAssignedMaterialIds(assignedIds);
-  };
+  }, [classes, schoolInfo, user]);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    loadTeacherData();
+  }, [user, loadTeacherData]);
+
+  useEffect(() => {
+    if (selectedClassId && schoolInfo) {
+      loadClassDetails(selectedClassId);
+    }
+  }, [selectedClassId, schoolInfo, loadClassDetails]);
+
+  const loadDbProgressData = useCallback(async () => {
+    if (allStudents.length === 0) return;
+    setLoadingProgress(true);
+    try {
+      const studentIds = Array.from(new Set(allStudents.map((st) => st.student_id)));
+      const { data, error } = await supabase
+        .from('user_course_progress')
+        .select('*')
+        .in('user_id', studentIds);
+      if (!error && data) {
+        setDbProgressRecords(data);
+      }
+    } catch (err) {
+      console.warn('Error loading progress data:', err);
+    } finally {
+      setLoadingProgress(false);
+    }
+  }, [allStudents]);
+
+  useEffect(() => {
+    if (activeView === 'progress' && allStudents.length > 0) {
+      loadDbProgressData();
+    }
+  }, [activeView, allStudents, loadDbProgressData]);
 
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();

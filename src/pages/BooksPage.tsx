@@ -141,7 +141,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
     }
 
     return result;
-  }, [allBooks, selectedCategory, searchQuery, sortBy]);
+  }, [allBooks, selectedCategory, searchQuery, sortBy, categories]);
 
   const [digitalError, setDigitalError] = useState<string | null>(null);
 

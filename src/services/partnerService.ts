@@ -1402,4 +1402,113 @@ export async function removeTeacherFromSchool(partnerId: string, userId: string)
   return true;
 }
 
+export interface PartnerOfferItem {
+  id: string;
+  partner_id: string;
+  title: string;
+  discount: string;
+  description: string;
+  valid_until: string;
+  status: 'Aktív' | 'Szüneteltetve' | 'Lejárt';
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * S) Lists partner offers for a partner (optionally filtered to active offers only).
+ */
+export async function getPartnerOffers(
+  partnerId: string,
+  activeOnly = false
+): Promise<PartnerOfferItem[]> {
+  let query = supabase
+    .from('partner_offers')
+    .select('*')
+    .eq('partner_id', partnerId)
+    .order('created_at', { ascending: false });
+
+  if (activeOnly) {
+    query = query.eq('status', 'Aktív');
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn('Error fetching partner offers:', error.message);
+    return [];
+  }
+  return (data || []) as PartnerOfferItem[];
+}
+
+/**
+ * T) Creates a new partner offer.
+ */
+export async function createPartnerOffer(input: {
+  partner_id: string;
+  title: string;
+  discount?: string;
+  description?: string;
+  valid_until?: string;
+  status?: 'Aktív' | 'Szüneteltetve' | 'Lejárt';
+  created_by?: string | null;
+}): Promise<PartnerOfferItem> {
+  const { data, error } = await supabase
+    .from('partner_offers')
+    .insert({
+      partner_id: input.partner_id,
+      title: input.title.trim(),
+      discount: input.discount?.trim() || 'Kiemelt ajánlat',
+      description: input.description?.trim() || 'Partneri ajánlat.',
+      valid_until: input.valid_until?.trim() || 'Visszavonásig',
+      status: input.status || 'Aktív',
+      created_by: input.created_by ?? null,
+    })
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message || 'Az ajánlat mentése nem sikerült.');
+  }
+  return data as PartnerOfferItem;
+}
+
+/**
+ * U) Updates an existing partner offer (e.g., toggling status or editing fields).
+ */
+export async function updatePartnerOffer(
+  offerId: string,
+  updates: Partial<Pick<PartnerOfferItem, 'title' | 'discount' | 'description' | 'valid_until' | 'status'>>
+): Promise<PartnerOfferItem> {
+  const { data, error } = await supabase
+    .from('partner_offers')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', offerId)
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message || 'Az ajánlat frissítése nem sikerült.');
+  }
+  return data as PartnerOfferItem;
+}
+
+/**
+ * V) Deletes a partner offer.
+ */
+export async function deletePartnerOffer(offerId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('partner_offers')
+    .delete()
+    .eq('id', offerId);
+
+  if (error) {
+    throw new Error(error.message || 'Az ajánlat törlése nem sikerült.');
+  }
+  return true;
+}
+
+
 

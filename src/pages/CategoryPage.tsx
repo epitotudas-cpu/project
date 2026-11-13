@@ -97,6 +97,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const typePageSettings = useMemo(() => {
+    void articleSettings;
     return getArticleSettingsForType(selectedArticleType);
   }, [selectedArticleType, articleSettings]);
 

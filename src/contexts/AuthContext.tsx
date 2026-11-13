@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import * as authClient from '../lib/authClient';
 import * as userService from '../services/userService';
@@ -29,6 +29,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
+
+  const checkPendingInvitation = useCallback(async (userObj?: User | null) => {
+    try {
+      // 1. Check for pending student class invitation code
+      const pendingStudentCode = sessionStorage.getItem('pending_student_invite_code');
+      if (pendingStudentCode) {
+        sessionStorage.removeItem('pending_student_invite_code');
+        sessionStorage.removeItem('pending_invite_code');
+        try {
+          await redeemStudentInvitationCode(pendingStudentCode);
+        } catch (sErr) {
+          console.warn('Pending student code redemption notice:', sErr);
+        }
+      }
+
+      // 2. Check for pending partner staff invitation code
+      const pendingCode = sessionStorage.getItem('pending_invite_code');
+      if (pendingCode) {
+        sessionStorage.removeItem('pending_invite_code');
+        await acceptInvitation(pendingCode);
+      }
+
+      const activeEmail = userObj?.email;
+      if (activeEmail) {
+        const { data: activeInv } = await supabase
+          .from('partner_invitations')
+          .select('code')
+          .ilike('email', activeEmail.trim())
+          .eq('status', 'active')
+          .gt('expires_at', new Date().toISOString())
+          .limit(1)
+          .maybeSingle();
+
+        if (activeInv?.code) {
+          await acceptInvitation(activeInv.code);
+        }
+      }
+    } catch (err) {
+      console.warn('Pending invitation accept info:', err);
+    }
+  }, []);
 
   useEffect(() => {
     authClient.getSession().then(({ data: { session }, error }) => {
@@ -93,48 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  async function checkPendingInvitation(userObj?: User | null) {
-    try {
-      // 1. Check for pending student class invitation code
-      const pendingStudentCode = sessionStorage.getItem('pending_student_invite_code');
-      if (pendingStudentCode) {
-        sessionStorage.removeItem('pending_student_invite_code');
-        sessionStorage.removeItem('pending_invite_code');
-        try {
-          await redeemStudentInvitationCode(pendingStudentCode);
-        } catch (sErr) {
-          console.warn('Pending student code redemption notice:', sErr);
-        }
-      }
-
-      // 2. Check for pending partner staff invitation code
-      const pendingCode = sessionStorage.getItem('pending_invite_code');
-      if (pendingCode) {
-        sessionStorage.removeItem('pending_invite_code');
-        await acceptInvitation(pendingCode);
-      }
-
-      const activeEmail = userObj?.email || user?.email;
-      if (activeEmail) {
-        const { data: activeInv } = await supabase
-          .from('partner_invitations')
-          .select('code')
-          .ilike('email', activeEmail.trim())
-          .eq('status', 'active')
-          .gt('expires_at', new Date().toISOString())
-          .limit(1)
-          .maybeSingle();
-
-        if (activeInv?.code) {
-          await acceptInvitation(activeInv.code);
-        }
-      }
-    } catch (err) {
-      console.warn('Pending invitation accept info:', err);
-    }
-  }
+  }, [checkPendingInvitation]);
 
   async function loadProfile(userId: string, authUser?: User | null) {
     try {
@@ -180,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: 'Kérjük, erősítse meg email-címét a bejelentkezés előtt! Ellenőrizze a fiókjához tartozó bejövő üzeneteket és a Spam mappát.' };
     }
 
-    await checkPendingInvitation();
+    await checkPendingInvitation(data?.user ?? null);
     return {};
   };
 

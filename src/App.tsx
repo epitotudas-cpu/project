@@ -15,7 +15,17 @@ import { fetchHeroStateFromCloud } from './services/heroImageService';
 import { fetchImpressumDataFromCloud } from './services/impressumService';
 import { supabase, type Partner } from './lib/supabase';
 import { acceptInvitation } from './services/partnerInvitationService';
-import { updatePartner, type ExtendedPartner } from './services/partnerService';
+import {
+  updatePartner,
+  getPartnerOffers,
+  createPartnerOffer,
+  updatePartnerOffer,
+  deletePartnerOffer,
+  type ExtendedPartner,
+  type PartnerOfferItem,
+} from './services/partnerService';
+import { useToast } from './components/ToastProvider';
+import ConfirmDialog from './components/ConfirmDialog';
 import {
   Building2,
   Tag,
@@ -29,6 +39,9 @@ import {
   Edit2,
   Mail,
   AlertCircle,
+  Trash2,
+  PauseCircle,
+  PlayCircle,
 } from 'lucide-react';
 
 // Dynamic Code Splitting (Lazy Load Subpages to Drastically Reduce Initial Bundle Size)
@@ -281,6 +294,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
 
 function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params?: { partnerSlug?: string; slug?: string; articleSlug?: string }) => void }) {
   const { user, profile } = useAuth();
+  const toast = useToast();
   const [partnerView, setPartnerView] = useState<any>('dashboard');
   const [memberRole, setMemberRole] = useState<string | null>(null);
   const [isSchoolCategory, setIsSchoolCategory] = useState(false);
@@ -288,29 +302,35 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [loadingRole, setLoadingRole] = useState(true);
 
-  // Offers state
-  const [offersList, setOffersList] = useState([
-    {
-      id: 'off-1',
-      title: '15% Kivitelezői Kedvezmény Termékcsaládokra',
-      discount: '15%',
-      validUntil: '2026.12.31',
-      status: 'Aktív',
-      description: 'Kizárólag regisztrált kivitelezőknek és szakembereknek biztosított kedvezmény.',
-    },
-    {
-      id: 'off-2',
-      title: 'Díjmentes Helyszíni Szaktanácsadás és Anyagszámítás',
-      discount: 'Díjmentes',
-      validUntil: 'Visszavonásig',
-      status: 'Aktív',
-      description: 'Nagyobb beruházásokhoz ingyenes műszaki mérnöki konzultáció és kalkuláció.',
-    },
-  ]);
+  // Offers state (persisted in Supabase `partner_offers`)
+  const [offersList, setOffersList] = useState<PartnerOfferItem[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+  const [savingOffer, setSavingOffer] = useState(false);
   const [showNewOfferForm, setShowNewOfferForm] = useState(false);
   const [newOfferTitle, setNewOfferTitle] = useState('');
   const [newOfferDiscount, setNewOfferDiscount] = useState('');
+  const [newOfferValidUntil, setNewOfferValidUntil] = useState('');
   const [newOfferDesc, setNewOfferDesc] = useState('');
+  const [offerToDelete, setOfferToDelete] = useState<PartnerOfferItem | null>(null);
+
+  useEffect(() => {
+    if (!currentPartner?.id) {
+      setOffersList([]);
+      return;
+    }
+    let cancelled = false;
+    setOffersLoading(true);
+    getPartnerOffers(currentPartner.id)
+      .then((rows) => {
+        if (!cancelled) setOffersList(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setOffersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPartner?.id]);
 
   useEffect(() => {
     if (!user) {
@@ -716,7 +736,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
           {showNewOfferForm && (
             <div className="bg-slate-900 border border-blue-500/30 rounded-2xl p-6 space-y-4">
               <h3 className="text-base font-bold text-white">Új promóciós ajánlat létrehozása</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input
                   type="text"
                   placeholder="Ajánlat címe (pl. 10% Tavaszi Homlokzatszigetelés Akció)"
@@ -729,6 +749,13 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   placeholder="Kedvezmény mértéke (pl. 10% vagy Ajándék szállítás)"
                   value={newOfferDiscount}
                   onChange={(e) => setNewOfferDiscount(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Érvényesség (pl. 2026.12.31 vagy Visszavonásig)"
+                  value={newOfferValidUntil}
+                  onChange={(e) => setNewOfferValidUntil(e.target.value)}
                   className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500"
                 />
               </div>
@@ -746,60 +773,133 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   Mégse
                 </button>
                 <button
-                  onClick={() => {
-                    if (newOfferTitle.trim()) {
-                      setOffersList((prev) => [
-                        ...prev,
-                        {
-                          id: `off-${Date.now()}`,
-                          title: newOfferTitle.trim(),
-                          discount: newOfferDiscount.trim() || 'Kiemelt ajánlat',
-                          validUntil: '2026.12.31',
-                          status: 'Aktív',
-                          description: newOfferDesc.trim() || 'Partneri ajánlat.',
-                        },
-                      ]);
+                  disabled={savingOffer || !newOfferTitle.trim()}
+                  onClick={async () => {
+                    if (!newOfferTitle.trim() || !effectivePartner?.id) return;
+                    setSavingOffer(true);
+                    try {
+                      const created = await createPartnerOffer({
+                        partner_id: effectivePartner.id,
+                        title: newOfferTitle.trim(),
+                        discount: newOfferDiscount.trim() || 'Kiemelt ajánlat',
+                        valid_until: newOfferValidUntil.trim() || 'Visszavonásig',
+                        description: newOfferDesc.trim() || 'Partneri ajánlat.',
+                        status: 'Aktív',
+                        created_by: user?.id ?? null,
+                      });
+                      setOffersList((prev) => [created, ...prev]);
                       setNewOfferTitle('');
                       setNewOfferDiscount('');
+                      setNewOfferValidUntil('');
                       setNewOfferDesc('');
                       setShowNewOfferForm(false);
+                      toast.success('Ajánlat sikeresen mentve és közzétéve!');
+                    } catch (err: any) {
+                      toast.error(err?.message || 'Hiba történt az ajánlat mentése során.');
+                    } finally {
+                      setSavingOffer(false);
                     }
                   }}
-                  className="px-5 py-2 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs rounded-xl cursor-pointer"
+                  className="px-5 py-2 bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl cursor-pointer"
                 >
-                  Ajánlat mentése &amp; közzététele
+                  {savingOffer ? 'Mentés...' : 'Ajánlat mentése & közzététele'}
                 </button>
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {offersList.map((off) => (
-              <div key={off.id} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
-                      {off.discount}
-                    </span>
-                    <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {off.status}
-                    </span>
+          {offersLoading ? (
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-xs text-slate-400">
+              Ajánlatok betöltése...
+            </div>
+          ) : offersList.length === 0 ? (
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center space-y-2">
+              <p className="text-sm font-semibold text-slate-300">Még nincs rögzített partneri ajánlat.</p>
+              <p className="text-xs text-slate-500">
+                Kattints az „Új ajánlat feladása” gombra első kedvezményed vagy promóciód közzétételéhez.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {offersList.map((off) => (
+                <div key={off.id} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
+                        {off.discount}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[11px] font-semibold flex items-center gap-1 ${
+                            off.status === 'Aktív' ? 'text-emerald-400' : 'text-amber-400'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> {off.status}
+                        </span>
+                        <button
+                          type="button"
+                          title={off.status === 'Aktív' ? 'Szüneteltetés' : 'Aktiválás'}
+                          onClick={async () => {
+                            const nextStatus = off.status === 'Aktív' ? 'Szüneteltetve' : 'Aktív';
+                            try {
+                              const updated = await updatePartnerOffer(off.id, { status: nextStatus });
+                              setOffersList((prev) => prev.map((item) => (item.id === off.id ? updated : item)));
+                              toast.success(`Ajánlat állapota frissítve: ${nextStatus}`);
+                            } catch (err: any) {
+                              toast.error(err?.message || 'Hiba történt az állapot módosításakor.');
+                            }
+                          }}
+                          className="p-1 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+                        >
+                          {off.status === 'Aktív' ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          title="Ajánlat törlése"
+                          onClick={() => setOfferToDelete(off)}
+                          className="p-1 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <h4 className="text-base font-bold text-white">{off.title}</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">{off.description}</p>
                   </div>
-                  <h4 className="text-base font-bold text-white">{off.title}</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">{off.description}</p>
+                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span>Érvényes: {off.valid_until}</span>
+                    <button
+                      onClick={() => onNavigate('partner-detail', { slug: effectivePartner.slug })}
+                      className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      Megtekintés az adatlapon <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                  <span>Érvényes: {off.validUntil}</span>
-                  <button
-                    onClick={() => onNavigate('partner-detail', { slug: effectivePartner.slug })}
-                    className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    Megtekintés az adatlapon <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
+
+          <ConfirmDialog
+            open={!!offerToDelete}
+            title="Ajánlat törlése"
+            message={`Biztosan törölni szeretnéd a(z) „${offerToDelete?.title || ''}” ajánlatot?`}
+            confirmLabel="Törlés"
+            destructive
+            onCancel={() => setOfferToDelete(null)}
+            onConfirm={async () => {
+              if (!offerToDelete) return;
+              try {
+                await deletePartnerOffer(offerToDelete.id);
+                setOffersList((prev) => prev.filter((item) => item.id !== offerToDelete.id));
+                toast.success('Ajánlat törölve.');
+              } catch (err: any) {
+                toast.error(err?.message || 'Hiba történt az ajánlat törlése során.');
+              } finally {
+                setOfferToDelete(null);
+              }
+            }}
+          />
         </div>
       )}
 

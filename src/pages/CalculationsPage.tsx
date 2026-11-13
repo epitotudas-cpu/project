@@ -1806,7 +1806,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       beddingM3,
       jointSandKg,
     };
-  }, [pavingArea, pavingPerimeter, pavingThickness, pavingPattern, beddingThickness]);
+  }, [pavingArea, pavingPerimeter, pavingPattern, beddingThickness]);
 
   // 11. FÖLDMUNKA & TÖMÖRÍTÉS STATE & MEMO
   const [earthType, setEarthType] = useState<'pit' | 'trench'>('pit');
@@ -1841,7 +1841,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
       gravelM3: Math.round(gravelLooseM3 * 10) / 10,
       gravelTonnes: Math.round(gravelTonnes * 10) / 10,
     };
-  }, [earthType, earthLength, earthWidth, earthDepth, soilType, gravelBedThickness]);
+  }, [earthLength, earthWidth, earthDepth, soilType, gravelBedThickness]);
 
   // 12. PADLÓFŰTÉS STATE & MEMO
   const [ufArea, setUfArea] = useState<string>('35');

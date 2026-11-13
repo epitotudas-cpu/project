@@ -21,8 +21,15 @@ import {
   BookOpen,
   X,
   Maximize2,
+  Tag,
 } from 'lucide-react';
-import { getPartnerBySlug, getCategoryLabel, type ExtendedPartner } from '../services/partnerService';
+import {
+  getPartnerBySlug,
+  getCategoryLabel,
+  getPartnerOffers,
+  type ExtendedPartner,
+  type PartnerOfferItem,
+} from '../services/partnerService';
 import {
   getPartnerReferences,
   resolveReferenceImageUrl,
@@ -298,6 +305,7 @@ function PartnerReferenceCard({
 export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDetailPageProps) {
   const [partner, setPartner] = useState<ExtendedPartner | null>(null);
   const [referencesList, setReferencesList] = useState<PartnerReference[]>([]);
+  const [offersList, setOffersList] = useState<PartnerOfferItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [imageError, setImageError] = useState<boolean>(false);
   const [activeLightbox, setActiveLightbox] = useState<LightboxState | null>(null);
@@ -370,10 +378,15 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
         const data = await getPartnerBySlug(partnerSlug);
         setPartner(data);
         if (data?.id) {
-          const refs = await getPartnerReferences(data.id, true);
+          const [refs, offers] = await Promise.all([
+            getPartnerReferences(data.id, true),
+            getPartnerOffers(data.id, true),
+          ]);
           setReferencesList(refs);
+          setOffersList(offers);
         } else {
           setReferencesList([]);
+          setOffersList([]);
         }
       } catch (err) {
         console.error('Hiba a partner betöltésekor:', err);
@@ -772,6 +785,58 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                   YouTube csatorna megtekintése <ExternalLink size={12} />
                 </a>
               )}
+            </div>
+          </section>
+        )}
+
+        {/* 5b. Aktuális Ajánlatok & Kedvezmények Section (ONLY IF ACTIVE OFFERS EXIST) */}
+        {offersList.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="flex items-center gap-2.5 border-b border-gray-100 pb-4">
+              <div className="p-2.5 bg-accent/10 border border-accent/20 rounded-xl text-accent">
+                <Tag size={22} />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#202628]">Aktuális Ajánlatok &amp; Kedvezmények</h2>
+                <p className="text-xs text-[#5f6868]">Partnerünk jelenleg érvényes szakmai akciói és kedvezményei.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {offersList.map((offer) => (
+                <div
+                  key={offer.id}
+                  className="bg-gray-50/80 border border-gray-200/80 rounded-2xl p-5 space-y-3 flex flex-col justify-between hover:border-accent/60 hover:bg-white transition-all shadow-2xs"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-block px-3 py-0.5 rounded-full bg-accent/15 border border-accent/30 text-amber-800 text-[11px] font-extrabold uppercase tracking-wider">
+                        {offer.discount}
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                        <CheckCircle2 size={13} /> {offer.status}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-extrabold text-gray-900">{offer.title}</h3>
+                    {offer.description && (
+                      <p className="text-xs text-[#5f6868] leading-relaxed">{offer.description}</p>
+                    )}
+                  </div>
+                  <div className="pt-3 border-t border-gray-200/70 flex items-center justify-between text-xs text-gray-500">
+                    <span>Érvényes: <strong className="text-gray-800">{offer.valid_until}</strong></span>
+                    {(partner.inquiry_email || partner.contact_email) && (
+                      <a
+                        href={`mailto:${partner.inquiry_email || partner.contact_email}?subject=${encodeURIComponent(
+                          `Érdeklődés ajánlatról: ${offer.title} - ${partner.name}`
+                        )}`}
+                        className="text-primary hover:text-accent font-bold flex items-center gap-1 transition-colors"
+                      >
+                        <Mail size={13} /> Érdeklődöm
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}

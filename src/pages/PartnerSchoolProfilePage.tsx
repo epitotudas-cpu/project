@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
@@ -135,15 +135,7 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
   // Trades catalog
   const availableTrades = getTradeItems();
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    loadSchoolData();
-  }, [user]);
-
-  const loadSchoolData = async () => {
+  const loadSchoolData = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Fetch partner user linkage
@@ -222,7 +214,15 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, userProfile?.full_name]);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    loadSchoolData();
+  }, [user, loadSchoolData]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();

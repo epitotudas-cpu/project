@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Search,
   Menu,
@@ -63,7 +63,7 @@ function useLocation() {
 export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const rawNavItems = useNavigationItems();
-  const navStructure = getStructuredNav(rawNavItems, false);
+  const navStructure = useMemo(() => getStructuredNav(rawNavItems, false), [rawNavItems]);
   const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -107,17 +107,6 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
     return () => clearTimeout(timer);
   }, [searchQuery, searchOpen]);
-
-  useEffect(() => {
-    if (mobileOpen) {
-      const activeNav = navStructure.find((item) => isNavItemActive(item.page, item.subItems));
-      if (activeNav && activeNav.subItems?.length) {
-        setExpandedMobileSection(activeNav.page);
-      } else {
-        setExpandedMobileSection(null);
-      }
-    }
-  }, [mobileOpen, currentPage]);
 
   const handleMouseEnter = (pageKey: string) => {
     if (closeTimeoutRef.current) {
@@ -332,7 +321,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     return activeType;
   };
 
-  const isNavItemActive = (itemPage: string, subItems?: Array<{ page: string }>) => {
+  const isNavItemActive = useCallback((itemPage: string, subItems?: Array<{ page: string }>) => {
     const mainItemPage = itemPage.split('?')[0].split('#')[0];
     if (currentPage === mainItemPage) {
       if (mainItemPage === 'category') {
@@ -352,7 +341,18 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     if (mainItemPage === 'paths' && ['courses', 'careers', 'learning-paths'].includes(currentPage)) return true;
     if (subItems?.some((sub) => isSubItemActive(sub.page, currentPage, location))) return true;
     return false;
-  };
+  }, [currentPage, location]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      const activeNav = navStructure.find((item) => isNavItemActive(item.page, item.subItems));
+      if (activeNav && activeNav.subItems?.length) {
+        setExpandedMobileSection(activeNav.page);
+      } else {
+        setExpandedMobileSection(null);
+      }
+    }
+  }, [mobileOpen, currentPage, navStructure, isNavItemActive]);
 
   return (
     <header className="bg-primary border-b border-primary-700 sticky top-0 z-50">

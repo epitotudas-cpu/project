@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   User,
   GraduationCap,
@@ -252,7 +252,34 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [materialsFilter, setMaterialsFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
   const [materialsSearch, setMaterialsSearch] = useState('');
 
-  const loadStudentEnrollments = async () => {
+  const loadClassmates = useCallback(async (classId: string) => {
+    if (!classId) return;
+    try {
+      const { data } = await supabase
+        .from('school_students')
+        .select('id, joined_at, status, student_id, student:student_id(id, full_name)')
+        .eq('class_id', classId)
+        .eq('status', 'active')
+        .order('joined_at', { ascending: false });
+
+      if (data) setClassmates(data);
+    } catch (err) {
+      console.warn('Error loading classmates:', err);
+    }
+  }, []);
+
+  const loadClassMaterials = useCallback(async (_classId?: string) => {
+    void _classId;
+    if (!user?.id) return;
+    try {
+      const items = await fetchStudentAssignedClassMaterials(user.id);
+      setClassMaterials(items);
+    } catch (err) {
+      console.warn('Error loading class materials:', err);
+    }
+  }, [user?.id]);
+
+  const loadStudentEnrollments = useCallback(async () => {
     if (!user?.id) return;
     try {
       const { data, error } = await supabase
@@ -271,36 +298,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     } catch (err) {
       console.warn('Error loading student enrollments:', err);
     }
-  };
+  }, [user?.id, loadClassmates, loadClassMaterials]);
 
-  const loadClassmates = async (classId: string) => {
-    if (!classId) return;
-    try {
-      const { data } = await supabase
-        .from('school_students')
-        .select('id, joined_at, status, student_id, student:student_id(id, full_name)')
-        .eq('class_id', classId)
-        .eq('status', 'active')
-        .order('joined_at', { ascending: false });
-
-      if (data) setClassmates(data);
-    } catch (err) {
-      console.warn('Error loading classmates:', err);
-    }
-  };
-
-  const loadClassMaterials = async (_classId?: string) => {
-    void _classId;
-    if (!user?.id) return;
-    try {
-      const items = await fetchStudentAssignedClassMaterials(user.id);
-      setClassMaterials(items);
-    } catch (err) {
-      console.warn('Error loading class materials:', err);
-    }
-  };
-
-  const loadLearningData = async () => {
+  const loadLearningData = useCallback(async () => {
     if (!user?.id) return;
     try {
       const certs = await getUserCertificates(user.id);
@@ -321,14 +321,14 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     } catch (err) {
       console.warn('Error loading learning data:', err);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
       loadStudentEnrollments();
       loadLearningData();
     }
-  }, [user?.id]);
+  }, [user?.id, loadStudentEnrollments, loadLearningData]);
 
   const learningStats = useMemo(() => {
     const activeOrCompleted = userCourses.filter((uc) => uc.progress.progress_percent > 0);
@@ -533,7 +533,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       }
     }
     loadData();
-  }, [user, authProfile]);
+  }, [user, authProfile, isPartnerContact]);
 
 
 

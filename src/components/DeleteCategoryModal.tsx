@@ -34,14 +34,15 @@ export default function DeleteCategoryModal({
       const count = articles.filter((a) => a.category_id === category.id).length;
       setAffectedArticleCount(count);
 
+      const available = allCategories.filter((c) => c.id !== category.id);
       // Default target category to the first available category
-      if (otherCategories.length > 0) {
-        setTargetCategoryId(otherCategories[0].id);
+      if (available.length > 0) {
+        setTargetCategoryId(available[0].id);
       } else {
         setTargetCategoryId('');
       }
     }
-  }, [isOpen, category]);
+  }, [isOpen, category, allCategories]);
 
   if (!isOpen) return null;
 
