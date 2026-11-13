@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const recipients = Array.isArray(to) ? to : [to];
 
-    let res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
-    let data = await res.json();
+    const data = await res.json();
 
     if (res.ok) {
       return new Response(JSON.stringify({ ok: true, provider: 'Resend', ...data }), {

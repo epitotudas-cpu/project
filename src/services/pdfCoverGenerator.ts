@@ -22,7 +22,7 @@ export function normalizePdfUrl(urlStr: string): string {
   let url = urlStr.trim();
 
   // Convert Google Drive view URL to direct download URL
-  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
   if (driveMatch && driveMatch[1]) {
     url = `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
   }
@@ -35,7 +35,9 @@ export function normalizePdfUrl(urlStr: string): string {
   // Safely encode non-ASCII characters in URL paths (e.g. Wienerberger tetőfedő kisokos)
   try {
     url = encodeURI(decodeURI(url));
-  } catch {}
+  } catch {
+    // Keep original URL if decodeURI fails on malformed percent-encoding
+  }
 
   return url;
 }
@@ -183,14 +185,16 @@ export async function getPdfPageCount(urlStr: string): Promise<number | null> {
       try {
         const textDecoder = new TextDecoder('latin1');
         const pdfText = textDecoder.decode(arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, 500000)));
-        const countMatch = pdfText.match(/\/Type\s*\/Pages[^\/]*\/Count\s+(\d+)/i) || pdfText.match(/\/Count\s+(\d+)/i);
+        const countMatch = pdfText.match(/\/Type\s*\/Pages[^/]*\/Count\s+(\d+)/i) || pdfText.match(/\/Count\s+(\d+)/i);
         if (countMatch && countMatch[1]) {
           const parsed = parseInt(countMatch[1], 10);
           if (parsed > 0 && parsed < 10000) {
             return parsed;
           }
         }
-      } catch {}
+      } catch {
+        // Ignore regex scan errors and fall back to pdfjs-dist
+      }
     }
 
     // Strategy 3: Try pdfjs-dist direct URL load
@@ -200,7 +204,9 @@ export async function getPdfPageCount(urlStr: string): Promise<number | null> {
       if (pdfDoc && pdfDoc.numPages > 0) {
         return pdfDoc.numPages;
       }
-    } catch {}
+    } catch {
+      // Ignore pdfjs-dist fallback errors
+    }
   } catch (err) {
     console.warn('Error reading PDF page count:', err);
   }

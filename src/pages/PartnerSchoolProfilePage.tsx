@@ -45,6 +45,8 @@ import {
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
+import { copyTextToClipboard } from '../lib/clipboard';
+import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
 interface PartnerSchoolProfilePageProps {
   initialTab?: 'profile' | 'instructors' | 'overview';
@@ -55,6 +57,7 @@ interface PartnerSchoolProfilePageProps {
 export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateView, onNavigate }: PartnerSchoolProfilePageProps) {
   void onNavigateView;
   const toast = useToast();
+  const scheduleTimeout = useSafeTimeouts();
   const [confirmState, setConfirmState] = useState<{
     title: string;
     message: string;
@@ -251,7 +254,7 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
 
       setPartner(updated);
       setSuccessMsg('Az iskola és kapcsolattartói adatai sikeresen frissültek!');
-      setTimeout(() => setSuccessMsg(null), 4000);
+      scheduleTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: any) {
       setErrorMsg(err.message || 'Hiba történt az adatok mentésekor.');
     } finally {
@@ -305,10 +308,14 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
     }
   };
 
-  const handleCopyInviteCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2000);
+  const handleCopyInviteCode = async (code: string) => {
+    const ok = await copyTextToClipboard(code);
+    if (ok) {
+      setCopiedCode(code);
+      scheduleTimeout(() => setCopiedCode(null), 2000);
+    } else {
+      toast.error('A meghívókód másolása nem sikerült.');
+    }
   };
 
   const handleResendInvitation = async (inv: PartnerInvitation) => {
@@ -426,7 +433,7 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
           const updatedInstructors = await listSchoolInstructors(partner.id);
           setInstructors(updatedInstructors);
           setSuccessMsg('Az oktató sikeresen el lett távolítva az iskolai szervezetből.');
-          setTimeout(() => setSuccessMsg(null), 4000);
+          scheduleTimeout(() => setSuccessMsg(null), 4000);
         } catch (err: any) {
           setErrorMsg(err.message || 'Oktató eltávolítása nem sikerült.');
         }

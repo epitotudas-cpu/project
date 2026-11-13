@@ -1413,7 +1413,9 @@ export function useBookCategories(): BookCategory[] {
             setCategories(parsed);
           }
         }
-      } catch {}
+      } catch {
+        // Ignore cloud book categories sync error
+      }
     })();
 
     window.addEventListener('book-categories-changed', handleChange);

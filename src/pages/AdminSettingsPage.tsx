@@ -97,6 +97,7 @@ import {
 } from '../services/aboutService';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
+import { copyTextToClipboard } from '../lib/clipboard';
 
 interface AdminSettingsPageProps {
   onNavigate?: (page: string) => void;
@@ -312,10 +313,14 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
   const [smtpTestLoading, setSmtpTestLoading] = useState(false);
   const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; provider?: string } | null>(null);
 
-  const handleCopySmtp = (text: string, fieldName: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedSmtpField(fieldName);
-    setTimeout(() => setCopiedSmtpField(null), 2000);
+  const handleCopySmtp = async (text: string, fieldName: string) => {
+    const ok = await copyTextToClipboard(text);
+    if (ok) {
+      setCopiedSmtpField(fieldName);
+      setTimeout(() => setCopiedSmtpField(null), 2000);
+    } else {
+      toast.error('A másolás nem sikerült. Kérjük, másold ki manuálisan.');
+    }
   };
 
   const handleTestSmtpEmail = async () => {
@@ -1372,11 +1377,15 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         const content = generateRobotsTxt(settings);
-                        navigator.clipboard.writeText(content);
-                        setCopiedSmtpField('robots');
-                        setTimeout(() => setCopiedSmtpField(null), 2000);
+                        const ok = await copyTextToClipboard(content);
+                        if (ok) {
+                          setCopiedSmtpField('robots');
+                          setTimeout(() => setCopiedSmtpField(null), 2000);
+                        } else {
+                          toast.error('A robots.txt másolása nem sikerült.');
+                        }
                       }}
                       className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                     >

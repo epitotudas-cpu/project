@@ -671,6 +671,7 @@ export async function setToolStatus(id: string, status: Tool['status']): Promise
     const defaultTool = DEFAULT_ENCYCLOPEDIA_TOOLS.find((t) => t.id === id);
     if (defaultTool) {
       const { id: _oldId, ...rest } = defaultTool;
+      void _oldId;
       await createTool({ ...rest, status });
       return;
     }

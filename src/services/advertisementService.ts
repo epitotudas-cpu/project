@@ -298,6 +298,8 @@ export async function getAdvertisementSlots(): Promise<AdvertisementSlot[]> {
 }
 
 export async function getAdsForTool(_toolId?: string, _category?: string): Promise<any[]> {
+  void _toolId;
+  void _category;
   return listAdCampaigns();
 }
 

@@ -135,7 +135,7 @@ export async function signOutAdmin(): Promise<void> {
         }
       }
       sessionKeysToRemove.forEach((k) => sessionStorage.removeItem(k));
-    } catch (e) {
+    } catch {
       // ignore storage errors
     }
 

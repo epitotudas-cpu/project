@@ -62,7 +62,7 @@ declare global {
 
 function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
   // Purge any legacy 'Rólunk' (nav-about) & old 'sub-articles' under tudastar
-  let cleanItems = items.filter(
+  const cleanItems = items.filter(
     (item) =>
       item.id !== 'nav-about' &&
       item.parentId !== 'nav-about' &&

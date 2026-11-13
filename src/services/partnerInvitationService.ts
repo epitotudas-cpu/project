@@ -326,7 +326,9 @@ export function generateEmailTemplate(
     try {
       const d = new Date(expiresAtIso);
       expiryFormatted = d.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
-    } catch { }
+    } catch {
+      // Keep default expiry label if date formatting fails
+    }
   }
 
   const greeting = contactName ? `Kedves ${contactName}!` : 'Tisztelt Kapcsolattartó!';

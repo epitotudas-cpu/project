@@ -25,7 +25,7 @@ export default function FormattedText({
   if (!trimmed) return null;
 
   // Check if content contains markdown tokens (# , ## , ** , - , * , 1. , > )
-  const hasMarkdown = /(?:^|\n)(#{1,6}\s|\*|\-|\d+\.|\>)|(\*\*|__|\*|_)/.test(trimmed);
+  const hasMarkdown = /(?:^|\n)(#{1,6}\s|\*|-|\d+\.|>)|(\*\*|__|\*|_)/.test(trimmed);
 
   if (!hasMarkdown) {
     // Simple multi-paragraph / line-break text
@@ -110,7 +110,7 @@ export default function FormattedText({
     }
 
     // Bullet list (- , * , • )
-    const bulletMatch = trimmedLine.match(/^[\-\*\•]\s+(.+)$/);
+    const bulletMatch = trimmedLine.match(/^[-*•]\s+(.+)$/);
     if (bulletMatch) {
       if (!currentList || currentList.type !== 'ul') {
         flushList(index);

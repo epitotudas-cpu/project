@@ -49,6 +49,8 @@ import {
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
+import { copyTextToClipboard } from '../lib/clipboard';
+import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
 export interface TeacherDashboardPageProps {
   onNavigate?: (page: string) => void;
@@ -102,6 +104,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   onNavigateView,
 }) => {
   const toast = useToast();
+  const scheduleTimeout = useSafeTimeouts();
   const [confirmState, setConfirmState] = useState<{
     title: string;
     message: string;
@@ -465,10 +468,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     }
   };
 
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCodeCopied(true);
-    setTimeout(() => setCodeCopied(false), 2000);
+  const handleCopyCode = async (code: string) => {
+    const ok = await copyTextToClipboard(code);
+    if (ok) {
+      setCodeCopied(true);
+      scheduleTimeout(() => setCodeCopied(false), 2000);
+    } else {
+      toast.error('A kód másolása nem sikerült.');
+    }
   };
 
   const toggleMaterialAssignment = (contentType: 'course' | 'article', contentId: string) => {
@@ -517,7 +524,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       const updatedMaterials = await listClassMaterials(selectedClass.id);
       setClassMaterials(updatedMaterials);
       setMaterialSaveSuccess(true);
-      setTimeout(() => setMaterialSaveSuccess(false), 3000);
+      scheduleTimeout(() => setMaterialSaveSuccess(false), 3000);
     } catch (err: any) {
       toast.error(err.message || 'Tananyagok mentése nem sikerült.');
     } finally {

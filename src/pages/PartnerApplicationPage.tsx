@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Building2,
   Send,
@@ -35,7 +35,15 @@ export default function PartnerApplicationPage({ onNavigate }: PartnerApplicatio
   const [emailError, setEmailError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const emailCheckTimeoutRef = useRef<any>(null);
+  const emailCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleEmailChange = (val: string) => {
     setEmail(val);

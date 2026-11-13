@@ -67,7 +67,7 @@ export default function AndroidInstallCta() {
         if (typeof window !== 'undefined') {
           (window as any).__DEFERRED_PWA_PROMPT__ = null;
         }
-      } catch (err) {
+      } catch {
         setShowFallbackInfo(true);
       }
     } else {

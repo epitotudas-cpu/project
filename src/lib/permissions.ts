@@ -91,8 +91,9 @@ export function isContact(profile: Profile | null | undefined): boolean {
 export function canAccessPartnerPanel(
   profile: Profile | null | undefined,
   memberRole?: string | null,
-  _userMetadata?: any
+  _userMetadata?: unknown
 ): boolean {
+  void _userMetadata;
   if (memberRole && ['owner', 'admin', 'member', 'instructor'].includes(memberRole)) {
     return true;
   }

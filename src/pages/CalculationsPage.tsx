@@ -33,6 +33,9 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import { CalculatorInput, safeNum, parseNumberValue } from '../components/CalculatorInput';
+import { useToast } from '../components/ToastProvider';
+import { copyTextToClipboard } from '../lib/clipboard';
+import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 import { useCalculatorConfig } from '../services/calculatorConfigService';
 import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -1127,6 +1130,8 @@ const CALCULATION_ITEMS: CalculationItem[] = [
 ];
 
 export default function CalculationsPage({ onNavigate }: CalculationsPageProps) {
+  const toast = useToast();
+  const scheduleTimeout = useSafeTimeouts();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [pendingCalcTitle, setPendingCalcTitle] = useState<string | undefined>(undefined);
@@ -2046,10 +2051,14 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     return text;
   };
 
-  const handleCopySummary = () => {
-    navigator.clipboard.writeText(getActiveSummaryText());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3500);
+  const handleCopySummary = async () => {
+    const ok = await copyTextToClipboard(getActiveSummaryText());
+    if (ok) {
+      setCopied(true);
+      scheduleTimeout(() => setCopied(false), 3500);
+    } else {
+      toast.error('Az összegzés másolása nem sikerült. Kérjük, másold ki manuálisan.');
+    }
   };
 
   const handlePrint = () => {

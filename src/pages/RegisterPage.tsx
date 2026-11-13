@@ -61,7 +61,15 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
-  const emailCheckTimeoutRef = useRef<any>(null);
+  const emailCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleEmailChange = (val: string) => {
     setEmail(val);
@@ -159,7 +167,9 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
         try {
           sessionStorage.setItem('pending_student_invite_code', studentRes.code || code);
           sessionStorage.setItem('pending_invite_code', studentRes.code || code);
-        } catch {}
+        } catch {
+          // Ignore sessionStorage errors
+        }
         return;
       }
 
@@ -177,7 +187,9 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
         setUserType('tanulo');
         try {
           sessionStorage.setItem('pending_invite_code', result.code || code);
-        } catch {}
+        } catch {
+          // Ignore sessionStorage errors
+        }
       }
     } catch (err) {
       setInviteError(err instanceof Error ? err.message : 'Hiba történt a meghívókód ellenőrzésekor.');

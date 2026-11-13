@@ -83,6 +83,7 @@ export async function sendVerificationEmailViaResend(email: string, fullName?: s
 }
 
 export async function resendVerificationEmail(email: string, _fullName?: string) {
+  void _fullName;
   const res = await supabase.auth.resend({
     type: 'signup',
     email,

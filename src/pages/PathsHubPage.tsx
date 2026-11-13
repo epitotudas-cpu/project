@@ -71,6 +71,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
   const pendingTradeName: string | undefined = undefined;
 
   const handleTradeSelect = (tradeId: string, _tradeName: string) => {
+    void _tradeName;
     setSelectedTradeId(tradeId);
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };

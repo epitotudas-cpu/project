@@ -173,7 +173,7 @@ function MarkdownEditorField({
         const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
         const beforeLine = currentVal.substring(0, lineStart);
         const fromLine = currentVal.substring(lineStart);
-        const match = fromLine.match(/^(\#{1,3}\s+)?/);
+        const match = fromLine.match(/^(#{1,3}\s+)?/);
         const prefixLen = match ? match[0].length : 0;
         const restOfLine = fromLine.substring(prefixLen);
         const newContent = `${beforeLine}### ${restOfLine}`;

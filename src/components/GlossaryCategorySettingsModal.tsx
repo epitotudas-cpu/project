@@ -31,6 +31,7 @@ export default function GlossaryCategorySettingsModal({
   availableCategories = [],
 }: GlossaryCategorySettingsModalProps) {
   const toast = useToast();
+  const siteSettings = useSiteSettings();
   const [settings, setSettings] = useState<GlossaryCategorySettings>(getGlossaryCategorySettings());
   const [searchFilter, setSearchFilter] = useState('');
   const [saving, setSaving] = useState(false);
@@ -239,7 +240,6 @@ export default function GlossaryCategorySettingsModal({
     reader.readAsDataURL(file);
   }
 
-  const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);

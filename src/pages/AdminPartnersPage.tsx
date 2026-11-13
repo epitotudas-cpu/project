@@ -57,6 +57,8 @@ import { supabase, type Partner } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
+import { copyTextToClipboard } from '../lib/clipboard';
+import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
 interface AdminPartnersPageProps {
   initialSearchQuery?: string;
@@ -76,6 +78,7 @@ interface PartnerStaffMember {
 
 export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersPageProps = {}) {
   const toast = useToast();
+  const scheduleTimeout = useSafeTimeouts();
   const [confirmState, setConfirmState] = useState<{
     title: string;
     message: string;
@@ -134,7 +137,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     }
 
     if (isValidFormat) {
-      inviteEmailCheckTimeoutRef.current = setTimeout(async () => {
+      inviteEmailCheckTimeoutRef.current = scheduleTimeout(async () => {
         const exists = await checkEmailExists(trimmed);
         if (exists) {
           setInviteEmailError('Ez az e-mail-cím már regisztrálva van.');
@@ -275,10 +278,14 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     }
   }
 
-  function handleCopyCode(code: string) {
-    navigator.clipboard.writeText(code);
-    setCodeCopiedNotice(`Osztálytermi kód kimásolva: ${code}`);
-    setTimeout(() => setCodeCopiedNotice(null), 3500);
+  async function handleCopyCode(code: string) {
+    const ok = await copyTextToClipboard(code);
+    if (ok) {
+      setCodeCopiedNotice(`Osztálytermi kód kimásolva: ${code}`);
+      scheduleTimeout(() => setCodeCopiedNotice(null), 3500);
+    } else {
+      toast.error('A kód másolása nem sikerült. Kérjük, másold ki manuálisan.');
+    }
   }
 
   useEffect(() => {
@@ -597,12 +604,16 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     });
   }
 
-  function handleCopyTemplate() {
+  async function handleCopyTemplate() {
     if (!createdTemplate) return;
     const textToCopy = `Tárgy: ${createdTemplate.subject}\n\n${createdTemplate.body}`;
-    navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
+    const ok = await copyTextToClipboard(textToCopy);
+    if (ok) {
+      setCopied(true);
+      scheduleTimeout(() => setCopied(false), 3000);
+    } else {
+      toast.error('A sablon másolása nem sikerült. Kérjük, másold ki manuálisan.');
+    }
   }
 
   const siteSettings = useSiteSettings();

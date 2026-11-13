@@ -140,7 +140,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
 
       setRedirects(getArticleRedirects());
       setArticleSettingsState(getArticleSettings());
-    } catch (err) {
+    } catch {
       toast.error('Hiba az adatok betöltésekor.');
     } finally {
       setLoading(false);
@@ -195,7 +195,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
         toast.success(`Cikk sikeresen duplikálva: "${dup.title}"`);
         await loadAllData();
       }
-    } catch (err) {
+    } catch {
       toast.error('Duplikálás sikertelen.');
     }
   };
@@ -210,7 +210,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
           : `"${art.title}" cikk piszkozatba helyezve.`
       );
       await loadAllData();
-    } catch (err) {
+    } catch {
       toast.error('Státuszmódosítás hiba.');
     }
   };
@@ -221,7 +221,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
       await articleService.setArticleStatus(art.id, newStatus);
       toast.success(`Cikk státusza frissítve: ${newStatus === 'archived' ? 'Archivált' : 'Piszkozat'}`);
       await loadAllData();
-    } catch (err) {
+    } catch {
       toast.error('Státuszmódosítás hiba.');
     }
   };
@@ -233,7 +233,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
       toast.success('Cikk sikeresen törölve.');
       setDeletingArticle(null);
       await loadAllData();
-    } catch (err) {
+    } catch {
       toast.error('Törlés hiba.');
     }
   };
@@ -254,7 +254,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
       await articleService.reorderArticles(orderedIds);
       toast.success('Cikkek sorrendje frissítve!');
       await loadAllData();
-    } catch (err) {
+    } catch {
       toast.error('Sorrend módosítása hiba.');
     }
   };

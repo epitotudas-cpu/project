@@ -309,7 +309,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
   // Filtered & Sorted Articles
   const filteredArticles = useMemo(() => {
-    let list = articles.filter((article) => {
+    const list = articles.filter((article) => {
       // 1. Article Type Filter (hirek | ujdonsagok | utmutatok)
       const aType = article.article_type || 'utmutatok';
       const matchType = aType === selectedArticleType;

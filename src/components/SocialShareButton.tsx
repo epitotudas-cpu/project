@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Share2, Copy, Check, X, Mail, Image, Sparkles } from 'lucide-react';
+import { copyTextToClipboard } from '../lib/clipboard';
+import { useToast } from './ToastProvider';
+import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
 interface SocialShareButtonProps {
   title: string;
@@ -48,6 +51,8 @@ export function updateArticleMetaTags(title: string, description: string, image?
 }
 
 export default function SocialShareButton({ title, excerpt, imageUrl, url }: SocialShareButtonProps) {
+  const toast = useToast();
+  const scheduleTimeout = useSafeTimeouts();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showInstaModal, setShowInstaModal] = useState(false);
@@ -79,18 +84,20 @@ export default function SocialShareButton({ title, excerpt, imageUrl, url }: Soc
           url: shareUrl,
         });
         return;
-      } catch (err) {
+      } catch {
         // User cancelled or share failed, fallback to dropdown
       }
     }
     setIsOpen(!isOpen);
   };
 
-  const handleCopyLink = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(shareUrl);
+  const handleCopyLink = async () => {
+    const ok = await copyTextToClipboard(shareUrl);
+    if (ok) {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      scheduleTimeout(() => setCopied(false), 2500);
+    } else {
+      toast.error('A hivatkozás másolása nem sikerült. Kérjük, másold ki manuálisan.');
     }
   };
 
@@ -292,13 +299,17 @@ function InstagramStoryModal({
   url: string;
   onClose: () => void;
 }) {
+  const toast = useToast();
+  const scheduleTimeout = useSafeTimeouts();
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const handleCopyStoryLink = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(url);
+  const handleCopyStoryLink = async () => {
+    const ok = await copyTextToClipboard(url);
+    if (ok) {
       setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2500);
+      scheduleTimeout(() => setCopiedLink(false), 2500);
+    } else {
+      toast.error('A hivatkozás másolása nem sikerült. Kérjük, másold ki manuálisan.');
     }
   };
 

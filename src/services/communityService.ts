@@ -73,7 +73,9 @@ export async function getComments(
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-  } catch {}
+  } catch {
+    // Ignore malformed localStorage comments
+  }
 
   const memKey = `${contentType}-${contentId}`;
   return IN_MEMORY_COMMENTS.get(memKey) || [];
@@ -175,6 +177,7 @@ export async function deleteComment(
   commentId: string,
   _userId: string | null | undefined
 ): Promise<boolean> {
+  void _userId;
   if (!commentId) return false;
 
   try {

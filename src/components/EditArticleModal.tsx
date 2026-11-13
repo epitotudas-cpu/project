@@ -197,7 +197,7 @@ export function parseAndSanitizeVideoInput(input: string | undefined): ParsedVid
       isValid: false,
       errorMessage: 'Kizárólag engedélyezett szolgáltatók (YouTube, Vimeo) videói ágyazhatók be.',
     };
-  } catch (err) {
+  } catch {
     return {
       provider: null,
       embedUrl: null,

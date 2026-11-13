@@ -626,7 +626,9 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
                 } as any);
                 return localParsed;
               }
-            } catch {}
+            } catch {
+              // Ignore malformed local settings backup
+            }
           }
 
           if (typeof window !== 'undefined') {

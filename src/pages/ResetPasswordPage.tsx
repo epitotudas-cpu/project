@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Lock, AlertCircle, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteSettings, getDynamicImageUrl } from '../services/siteSettingsService';
+import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
 interface ResetPasswordPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps) {
+  const scheduleTimeout = useSafeTimeouts();
   const { updatePassword } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,7 +37,7 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
     if (result.error) { setError(result.error); return; }
 
     setSuccess(true);
-    setTimeout(() => onNavigate('home'), 2500);
+    scheduleTimeout(() => onNavigate('home'), 2500);
   };
 
   if (success) {

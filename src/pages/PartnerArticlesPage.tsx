@@ -33,6 +33,7 @@ interface PartnerArticlesPageProps {
 }
 
 export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNavigate }: PartnerArticlesPageProps) {
+  void _onNavigate;
   const toast = useToast();
   const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<Article[]>(() => getArticlesLocal());

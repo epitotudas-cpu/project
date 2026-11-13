@@ -209,9 +209,13 @@ export async function clearAuditLogs(): Promise<void> {
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch {}
+    } catch {
+      // Ignore localStorage error
+    }
   }
   try {
     await supabase.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  } catch {}
+  } catch {
+    // Ignore remote audit_logs cleanup failure
+  }
 }

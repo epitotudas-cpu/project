@@ -187,7 +187,11 @@ function getInitialPage(): PageKey {
     const params = new URLSearchParams(window.location.hash.slice(1));
     if (params.get('type') === 'recovery') return 'reset-password';
     if (window.location.hash.includes('confirmed=true') || params.get('type') === 'signup') {
-      try { sessionStorage.setItem('email_confirmed_success', 'true'); } catch {}
+      try {
+        sessionStorage.setItem('email_confirmed_success', 'true');
+      } catch {
+        // Ignore sessionStorage errors in restricted browser modes
+      }
       return 'login';
     }
 
@@ -237,7 +241,7 @@ function getInitialPartnerSlug(): string | null {
       const slug = params.get('slug') || params.get('partnerSlug') || params.get('id');
       if (slug) return decodeURIComponent(slug);
 
-      const match = hash.match(/^#\/?partnerek\/([^\/?#]+)/);
+      const match = hash.match(/^#\/?partnerek\/([^/?#]+)/);
       if (match && match[1]) return decodeURIComponent(match[1]);
     }
     return sessionStorage.getItem('epitotudas_partner_slug');

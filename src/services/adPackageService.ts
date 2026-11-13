@@ -204,7 +204,9 @@ export async function getAdPackages(): Promise<ManagedAdPackage[]> {
   // Save initial seed packages to localStorage
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_MANAGED_PACKAGES));
-  } catch {}
+  } catch {
+    // Ignore localStorage quota/access error
+  }
 
   return INITIAL_MANAGED_PACKAGES;
 }
@@ -284,7 +286,9 @@ export async function saveAdPackage(pkg: Partial<ManagedAdPackage> & { name: str
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
-  } catch {}
+  } catch {
+    // Ignore localStorage quota/access error
+  }
 
   return target;
 }
@@ -300,7 +304,9 @@ export async function deleteAdPackage(id: string): Promise<void> {
   const filtered = existingList.filter((p) => p.id !== id);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-  } catch {}
+  } catch {
+    // Ignore localStorage quota/access error
+  }
 }
 
 export async function duplicateAdPackage(id: string): Promise<ManagedAdPackage> {
@@ -335,12 +341,16 @@ export async function reorderAdPackages(orderedIds: string[]): Promise<ManagedAd
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
-  } catch {}
+  } catch {
+    // Ignore localStorage quota/access error
+  }
 
   for (const pkg of updatedList) {
     try {
       await supabase.from('ad_packages').update({ sort_order: pkg.sort_order }).eq('id', pkg.id);
-    } catch {}
+    } catch {
+      // Ignore Supabase sync error when reordering locally
+    }
   }
 
   return updatedList;

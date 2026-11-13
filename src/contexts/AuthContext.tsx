@@ -69,7 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (window.history && window.history.replaceState) {
               window.history.replaceState(null, '', window.location.pathname);
             }
-          } catch { }
+          } catch {
+            // Ignore history/sessionStorage errors
+          }
         }
       }
 
@@ -143,7 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const currentSession = await authClient.getSession();
             metaUserType = currentSession?.data?.session?.user?.user_metadata?.user_type;
-          } catch { }
+          } catch {
+            // Ignore history/sessionStorage errors
+          }
         }
         setProfile({
           ...data,
@@ -193,7 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       localStorage.setItem('pending_verify_email', trimmedEmail);
-    } catch { }
+    } catch {
+      // Ignore localStorage errors
+    }
 
     const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/#confirmed=true` : undefined;
     const { data, error } = await authClient.signUp(trimmedEmail, password, {
@@ -276,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
         sessionKeysToRemove.forEach((k) => sessionStorage.removeItem(k));
-      } catch (e) {
+      } catch {
         // ignore storage errors
       }
 

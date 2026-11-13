@@ -48,6 +48,7 @@ import TermDetailModal from '../components/TermDetailModal';
 import type { GlossaryTermFromJson } from '../lib/glossaryJsonService';
 import type { UserCertificate, CourseProgress, QuizAttempt, LearningCourse, Quiz } from '../lib/supabase';
 import { useToast } from '../components/ToastProvider';
+import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
 
 interface ProfilePageProps {
@@ -82,6 +83,7 @@ const INTEREST_TOPICS = [
 
 export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const toast = useToast();
+  const scheduleTimeout = useSafeTimeouts();
   const { user, profile: authProfile, signOut, updatePassword, updateProfile } = useAuth();
   const [profile, setProfile] = useState<UserDetailedProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
         if (isInstructorRole) setIsInstructor(true);
         if (isSchoolAdminRole || isCommercialPartner) setIsPartnerContact(true);
-      } catch { }
+      } catch {
+        // Ignore partner contact check error
+      }
     }
     checkPartnerContact();
   }, [user]);
@@ -199,7 +203,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         if (tab === 'history') return 'progress';
         if (tab === 'school_link' || tab === 'school-link') return 'school-link';
       }
-    } catch { }
+    } catch {
+      // Ignore invalid hash state
+    }
     return 'overview';
   });
 
@@ -284,6 +290,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   };
 
   const loadClassMaterials = async (_classId?: string) => {
+    void _classId;
     if (!user?.id) return;
     try {
       const items = await fetchStudentAssignedClassMaterials(user.id);
@@ -403,7 +410,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             setActiveSettingsTab(tab as SettingsSubTab);
           }
         }
-      } catch { }
+      } catch {
+        // Ignore hash sync error
+      }
     }
 
     handleTabSync();
@@ -453,7 +462,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       await deleteUser(user.id);
       try {
         localStorage.removeItem(`epitotudas_user_pref_${user.id}`);
-      } catch { }
+      } catch {
+        // Ignore localStorage error
+      }
       setDeleteModalOpen(false);
       await signOut();
       if (onNavigate) onNavigate('home');
@@ -512,8 +523,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             if (parsed.selectedInterests) setSelectedInterests(parsed.selectedInterests);
             if (parsed.notifications) setNotifications((prev) => ({ ...prev, ...parsed.notifications }));
           }
-        } catch { }
-      } catch (err) {
+        } catch {
+          // Ignore malformed local preference JSON
+        }
+      } catch {
         setErrorMsg('Hiba történt a profil adatok betöltésekor.');
       } finally {
         setLoading(false);
@@ -564,8 +577,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       setSpecialization(updated.specialization || targetSpecialization);
       if (updated.bio) setBio(updated.bio);
       setSuccessMsg('A beállítások sikeresen mentve lettek!');
-      setTimeout(() => setSuccessMsg(null), 3500);
-    } catch (err) {
+      scheduleTimeout(() => setSuccessMsg(null), 3500);
+    } catch {
       setErrorMsg('Nem sikerült a beállítások mentése.');
     } finally {
       setSaving(false);
