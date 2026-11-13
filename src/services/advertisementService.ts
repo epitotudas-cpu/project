@@ -1,11 +1,11 @@
-import {
-  supabase,
-  type ExtendedAdCampaign,
-  type ContactPerson,
-  type CampaignStatusV2,
-  type PaymentStatus,
-  type ContractType,
-  type PackageTier,
+import { readAppConfig, writeAppConfig } from './appConfigService';
+import type {
+  ExtendedAdCampaign,
+  ContactPerson,
+  CampaignStatusV2,
+  PaymentStatus,
+  ContractType,
+  PackageTier,
 } from '../lib/supabase';
 import { logAuditAction } from './auditLogService';
 import { listPartners } from './partnerService';
@@ -157,21 +157,10 @@ export function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): void {
     localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(sanitized));
     window.dispatchEvent(new Event('ad-campaigns-changed'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_AD_CAMPAIGNS__',
-          slug: 'system-ad-campaigns-config',
-          description: JSON.stringify(sanitized),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        void err;
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_AD_CAMPAIGNS__', sanitized, {
+      id: SUPABASE_SYSTEM_ID,
+      slug: 'system-ad-campaigns-config',
+    }).catch(() => {});
   } catch (err) {
     console.error('Hiba a kampányok mentésekor:', err);
   }
@@ -181,18 +170,13 @@ export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
   let list = getStoredCampaigns();
 
   try {
-    const { data } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_SYSTEM_ID)
-      .maybeSingle();
-
-    if (data?.description && data.description.startsWith('[')) {
-      const cloudList = JSON.parse(data.description);
-      if (Array.isArray(cloudList)) {
-        list = cloudList.filter((c: ExtendedAdCampaign) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
-        try { localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(list)); } catch { /* ignore */ }
-      }
+    const cloudList = await readAppConfig<ExtendedAdCampaign[]>(
+      '__SYSTEM_CONFIG_AD_CAMPAIGNS__',
+      SUPABASE_SYSTEM_ID
+    );
+    if (Array.isArray(cloudList)) {
+      list = cloudList.filter((c: ExtendedAdCampaign) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
+      try { localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(list)); } catch { /* ignore */ }
     }
   } catch (err) {
     void err;

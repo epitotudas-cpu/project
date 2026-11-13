@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface SiteSettings {
   // Branding & Design
@@ -545,24 +545,13 @@ export function saveSiteSettings(settings: SiteSettings): void {
       `Weboldal beállítások frissítve (Cím: "${updatedSettings.siteTitle || 'ÉpítőTudás'}")`
     );
 
-    // Cloud sync to Supabase table 'categories'
-    void (async () => {
-      const payloadString = JSON.stringify(updatedSettings);
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
-          slug: 'system-site-settings-config',
-          description: payloadString,
-          banner_url: updatedSettings.logoUrl || '/logo.png',
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase categories site_settings sync info:', err);
-      }
-    })();
+    // Cloud sync to Supabase app_configs (with legacy categories fallback)
+    void writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', updatedSettings, {
+      id: SUPABASE_SYSTEM_ID,
+      slug: 'system-site-settings-config',
+    }).catch((err) => {
+      console.warn('Supabase site_settings sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);
   }
@@ -589,14 +578,12 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
       const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500));
 
       const fetchPromise = (async () => {
-        const { data: catData, error: catErr } = await supabase
-          .from('categories')
-          .select('description')
-          .eq('id', SUPABASE_SYSTEM_ID)
-          .maybeSingle();
+        const parsed = await readAppConfig<Partial<SiteSettings>>(
+          '__SYSTEM_CONFIG_SITE_SETTINGS__',
+          SUPABASE_SYSTEM_ID
+        );
 
-        if (!catErr && catData?.description && catData.description.startsWith('{')) {
-          const parsed = JSON.parse(catData.description);
+        if (parsed && typeof parsed === 'object') {
           const cloudSettings: SiteSettings = {
             ...DEFAULT_SITE_SETTINGS,
             ...parsed,
@@ -614,16 +601,10 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
               const cloudTime = cloudSettings.iconsUpdatedAt || 0;
 
               if (localTime > cloudTime) {
-                void supabase.from('categories').upsert({
+                void writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', localParsed, {
                   id: SUPABASE_SYSTEM_ID,
-                  name: '__SYSTEM_CONFIG_SITE_SETTINGS__',
                   slug: 'system-site-settings-config',
-                  description: JSON.stringify(localParsed),
-                  banner_url: localParsed.logoUrl || '/logo.png',
-                  article_count: 0,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                } as any);
+                });
                 return localParsed;
               }
             } catch {

@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface MaterialCategory {
   id: string;
@@ -308,21 +308,12 @@ export function saveMaterialCategoriesLocal(cats: MaterialCategory[]): void {
     localStorage.setItem(LOCAL_STORAGE_CATS_KEY, JSON.stringify(cats));
     window.dispatchEvent(new Event('materials-updated'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_CATS_ROW_ID,
-          name: '__SYSTEM_CONFIG_MATERIAL_CATEGORIES__',
-          slug: 'system-material-categories',
-          description: JSON.stringify(cats),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase material categories sync:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_MATERIAL_CATEGORIES__', cats, {
+      id: SUPABASE_CATS_ROW_ID,
+      slug: 'system-material-categories',
+    }).catch((err) => {
+      console.warn('Supabase material categories sync:', err);
+    });
   } catch (err) {
     console.error('Hiba az anyag kategóriák mentésekor:', err);
   }
@@ -350,21 +341,12 @@ export function saveMaterialsLocal(items: MaterialItem[]): void {
     localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(items));
     window.dispatchEvent(new Event('materials-updated'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ROW_ID,
-          name: '__SYSTEM_CONFIG_MATERIALS_ITEMS__',
-          slug: 'system-materials-items-config',
-          description: JSON.stringify(items),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase materials sync:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_MATERIALS_ITEMS__', items, {
+      id: SUPABASE_SYSTEM_ROW_ID,
+      slug: 'system-materials-items-config',
+    }).catch((err) => {
+      console.warn('Supabase materials sync:', err);
+    });
   } catch (err) {
     console.error('Hiba az anyagok mentésekor:', err);
   }
@@ -372,31 +354,25 @@ export function saveMaterialsLocal(items: MaterialItem[]): void {
 
 export async function fetchMaterialsFromCloud(): Promise<{ items: MaterialItem[] | null; categories: MaterialCategory[] | null }> {
   try {
-    const [itemsRes, catsRes] = await Promise.all([
-      supabase.from('categories').select('description').eq('id', SUPABASE_SYSTEM_ROW_ID).maybeSingle(),
-      supabase.from('categories').select('description').eq('id', SUPABASE_CATS_ROW_ID).maybeSingle(),
+    const [parsedItems, parsedCats] = await Promise.all([
+      readAppConfig<MaterialItem[]>('__SYSTEM_CONFIG_MATERIALS_ITEMS__', SUPABASE_SYSTEM_ROW_ID),
+      readAppConfig<MaterialCategory[]>('__SYSTEM_CONFIG_MATERIAL_CATEGORIES__', SUPABASE_CATS_ROW_ID),
     ]);
 
     let loadedItems: MaterialItem[] | null = null;
     let loadedCats: MaterialCategory[] | null = null;
 
-    if (!itemsRes.error && itemsRes.data?.description && itemsRes.data.description.startsWith('[')) {
-      const parsed = JSON.parse(itemsRes.data.description);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        loadedItems = parsed;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(parsed));
-        }
+    if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+      loadedItems = parsedItems;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(parsedItems));
       }
     }
 
-    if (!catsRes.error && catsRes.data?.description && catsRes.data.description.startsWith('[')) {
-      const parsed = JSON.parse(catsRes.data.description);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        loadedCats = parsed;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(LOCAL_STORAGE_CATS_KEY, JSON.stringify(parsed));
-        }
+    if (Array.isArray(parsedCats) && parsedCats.length > 0) {
+      loadedCats = parsedCats;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LOCAL_STORAGE_CATS_KEY, JSON.stringify(parsedCats));
       }
     }
 

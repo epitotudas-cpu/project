@@ -1038,6 +1038,45 @@ function AppContent() {
   }, [authEvent]);
 
   useEffect(() => {
+    const baseTitle = siteSettings.siteTitle || 'ÉpítőTudás';
+    const pageTitleMap: Partial<Record<PageKey, string>> = {
+      home: baseTitle,
+      category: `Tudástár — ${baseTitle}`,
+      article: `Szakmai Cikk — ${baseTitle}`,
+      glossary: `Építőipari Fogalomtár — ${baseTitle}`,
+      tool: `Gép & Szerszám Katalógus — ${baseTitle}`,
+      valaszto: `Eszközválasztó — ${baseTitle}`,
+      materials: `Építőanyagok — ${baseTitle}`,
+      software: `Szoftver Katalógus — ${baseTitle}`,
+      books: `Szakmai Könyvek — ${baseTitle}`,
+      calculations: `Műszaki Kalkulátorok — ${baseTitle}`,
+      safety: `Munkavédelem — ${baseTitle}`,
+      standards: `Szabványok & Előírások — ${baseTitle}`,
+      courses: `Tanfolyamok & Képzések — ${baseTitle}`,
+      'course-detail': `Tanfolyam Részletek — ${baseTitle}`,
+      'quiz-player': `Tudáspróba — ${baseTitle}`,
+      learning: `Tanulási Központ — ${baseTitle}`,
+      'learning-paths': `Tanulási Útvonalak — ${baseTitle}`,
+      paths: `Szakmai Útvonalak — ${baseTitle}`,
+      careers: `Építőipari Karrier — ${baseTitle}`,
+      partners: `Partnerek — ${baseTitle}`,
+      'partner-detail': `Partner Adatlap — ${baseTitle}`,
+      'partner-application': `Partner Jelentkezés — ${baseTitle}`,
+      about: `Rólunk — ${baseTitle}`,
+      impressum: `Impresszum — ${baseTitle}`,
+      privacy: `Adatvédelmi Tájékoztató — ${baseTitle}`,
+      terms: `Felhasználási Feltételek — ${baseTitle}`,
+      cookies: `Süti Tájékoztató — ${baseTitle}`,
+      profile: `Profilom — ${baseTitle}`,
+      login: `Bejelentkezés — ${baseTitle}`,
+      register: `Regisztráció — ${baseTitle}`,
+      admin: `Adminisztráció — ${baseTitle}`,
+      partner: `Partner Panel — ${baseTitle}`,
+    };
+    document.title = pageTitleMap[currentPage] || baseTitle;
+  }, [currentPage, siteSettings.siteTitle]);
+
+  useEffect(() => {
     function handleHashChange() {
       const page = getInitialPage();
       setCurrentPage(page);

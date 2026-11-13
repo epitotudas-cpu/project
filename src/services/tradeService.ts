@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 import { TRADE_DETAILS, type TradeDetail } from '../data/tradeDetailsData';
 
 export interface TradeItem extends TradeDetail {
@@ -55,22 +55,13 @@ export function saveTradeItems(items: TradeItem[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     window.dispatchEvent(new Event('trades-data-changed'));
 
-    // Cloud sync to Supabase categories system row
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_TRADES_ID,
-          name: '__SYSTEM_CONFIG_TRADES__',
-          slug: 'system-trades-config',
-          description: JSON.stringify(items),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase trades cloud sync info:', err);
-      }
-    })();
+    // Cloud sync to Supabase app_configs (with legacy categories fallback)
+    void writeAppConfig('__SYSTEM_CONFIG_TRADES__', items, {
+      id: SUPABASE_TRADES_ID,
+      slug: 'system-trades-config',
+    }).catch((err) => {
+      console.warn('Supabase trades cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a szakmák mentésekor:', err);
   }
@@ -78,15 +69,8 @@ export function saveTradeItems(items: TradeItem[]): void {
 
 export async function fetchTradeItemsFromCloud(): Promise<TradeItem[] | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_TRADES_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('[')) {
-      const parsed = JSON.parse(data.description);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+    const parsed = await readAppConfig<TradeItem[]>('__SYSTEM_CONFIG_TRADES__', SUPABASE_TRADES_ID);
+    if (Array.isArray(parsed) && parsed.length > 0) {
         if (typeof window !== 'undefined') {
           window.__GLOBAL_TRADES_DATA__ = parsed;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
@@ -94,7 +78,6 @@ export async function fetchTradeItemsFromCloud(): Promise<TradeItem[] | null> {
         }
         return parsed;
       }
-    }
   } catch (err) {
     console.warn('Cloud trades fetch info:', err);
   }

@@ -1,4 +1,5 @@
-import { supabase, type AdCreative } from '../lib/supabase';
+import type { AdCreative } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 const CREATIVES_STORAGE_KEY = 'epitotudas_ad_creatives_v1';
 const SUPABASE_SYSTEM_ID = '00000000-0000-0000-0000-000000000013';
@@ -90,21 +91,10 @@ export function saveStoredCreatives(creatives: AdCreative[]): void {
       window.dispatchEvent(new Event('ad-creative-changed'));
     }
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_AD_CREATIVES__',
-          slug: 'system-ad-creatives-config',
-          description: JSON.stringify(sanitized),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        void err;
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_AD_CREATIVES__', sanitized, {
+      id: SUPABASE_SYSTEM_ID,
+      slug: 'system-ad-creatives-config',
+    }).catch(() => {});
   } catch (err) {
     console.error('Hiba a kreatívok mentésekor:', err);
   }
@@ -114,18 +104,13 @@ export async function listBannerCreatives(): Promise<AdCreative[]> {
   let list = getStoredCreatives();
 
   try {
-    const { data } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_SYSTEM_ID)
-      .maybeSingle();
-
-    if (data?.description && data.description.startsWith('[')) {
-      const cloudList = JSON.parse(data.description);
-      if (Array.isArray(cloudList)) {
-        list = cloudList.filter((c: AdCreative) => c.id !== 'creative-top-banner-leier' && !c.partner_name?.includes('Leier'));
-        try { localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
-      }
+    const cloudList = await readAppConfig<AdCreative[]>(
+      '__SYSTEM_CONFIG_AD_CREATIVES__',
+      SUPABASE_SYSTEM_ID
+    );
+    if (Array.isArray(cloudList)) {
+      list = cloudList.filter((c: AdCreative) => c.id !== 'creative-top-banner-leier' && !c.partner_name?.includes('Leier'));
+      try { localStorage.setItem(CREATIVES_STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
     }
   } catch (err) {
     void err;
@@ -258,21 +243,10 @@ export function saveFallbackVideoSettings(settings: FallbackVideoSettings): void
       window.dispatchEvent(new Event('ad-fallback-video-changed'));
     }
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_FALLBACK_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_AD_FALLBACK_VIDEO__',
-          slug: 'system-ad-fallback-video-config',
-          description: JSON.stringify(settings),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        void err;
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_AD_FALLBACK_VIDEO__', settings, {
+      id: SUPABASE_FALLBACK_SYSTEM_ID,
+      slug: 'system-ad-fallback-video-config',
+    }).catch(() => {});
   } catch (err) {
     console.error('Hiba a videó fallback beállítások mentésekor:', err);
   }
@@ -282,18 +256,13 @@ export async function listFallbackVideoSettings(): Promise<FallbackVideoSettings
   let settings = getFallbackVideoSettings();
 
   try {
-    const { data } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_FALLBACK_SYSTEM_ID)
-      .maybeSingle();
-
-    if (data?.description && data.description.startsWith('{')) {
-      const cloudSettings = JSON.parse(data.description);
-      if (cloudSettings && typeof cloudSettings === 'object') {
-        settings = { ...DEFAULT_FALLBACK_VIDEO_SETTINGS, ...cloudSettings };
-        try { localStorage.setItem(FALLBACK_VIDEO_STORAGE_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
-      }
+    const cloudSettings = await readAppConfig<Partial<FallbackVideoSettings>>(
+      '__SYSTEM_CONFIG_AD_FALLBACK_VIDEO__',
+      SUPABASE_FALLBACK_SYSTEM_ID
+    );
+    if (cloudSettings && typeof cloudSettings === 'object') {
+      settings = { ...DEFAULT_FALLBACK_VIDEO_SETTINGS, ...cloudSettings };
+      try { localStorage.setItem(FALLBACK_VIDEO_STORAGE_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
     }
   } catch (err) {
     void err;
@@ -344,21 +313,10 @@ export function saveTileAdSettings(settings: TileAdSettings): void {
       window.dispatchEvent(new Event('ad-tile-settings-changed'));
     }
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_TILE_AD_SYSTEM_ID,
-          name: '__SYSTEM_CONFIG_AD_TILE_SETTINGS__',
-          slug: 'system-ad-tile-settings-config',
-          description: JSON.stringify(settings),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        void err;
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_AD_TILE_SETTINGS__', settings, {
+      id: SUPABASE_TILE_AD_SYSTEM_ID,
+      slug: 'system-ad-tile-settings-config',
+    }).catch(() => {});
   } catch (err) {
     console.error('Hiba a csempe reklám beállítások mentésekor:', err);
   }
@@ -368,18 +326,13 @@ export async function listTileAdSettings(): Promise<TileAdSettings> {
   let settings = getTileAdSettings();
 
   try {
-    const { data } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_TILE_AD_SYSTEM_ID)
-      .maybeSingle();
-
-    if (data?.description && data.description.startsWith('{')) {
-      const cloudSettings = JSON.parse(data.description);
-      if (cloudSettings && typeof cloudSettings === 'object') {
-        settings = { ...DEFAULT_TILE_AD_SETTINGS, ...cloudSettings };
-        try { localStorage.setItem(TILE_AD_STORAGE_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
-      }
+    const cloudSettings = await readAppConfig<Partial<TileAdSettings>>(
+      '__SYSTEM_CONFIG_AD_TILE_SETTINGS__',
+      SUPABASE_TILE_AD_SYSTEM_ID
+    );
+    if (cloudSettings && typeof cloudSettings === 'object') {
+      settings = { ...DEFAULT_TILE_AD_SETTINGS, ...cloudSettings };
+      try { localStorage.setItem(TILE_AD_STORAGE_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
     }
   } catch (err) {
     void err;

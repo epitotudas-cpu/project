@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 import {
   PRIVACY_POLICY_DATA,
   TERMS_DATA,
@@ -72,22 +72,13 @@ export function saveLegalDocs(docs: LegalDocsData): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
     window.dispatchEvent(new Event('legal-docs-changed'));
 
-    // Cloud sync to Supabase categories system row
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_LEGAL_ID,
-          name: '__SYSTEM_CONFIG_LEGAL_DOCS__',
-          slug: 'system-legal-docs-config',
-          description: JSON.stringify(docs),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase legal docs cloud sync info:', err);
-      }
-    })();
+    // Cloud sync to Supabase app_configs (with legacy categories fallback)
+    void writeAppConfig('__SYSTEM_CONFIG_LEGAL_DOCS__', docs, {
+      id: SUPABASE_LEGAL_ID,
+      slug: 'system-legal-docs-config',
+    }).catch((err) => {
+      console.warn('Supabase legal docs cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a jogi dokumentumok mentésekor:', err);
   }
@@ -95,14 +86,11 @@ export function saveLegalDocs(docs: LegalDocsData): void {
 
 export async function fetchLegalDocsFromCloud(): Promise<LegalDocsData | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_LEGAL_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('{')) {
-      const parsed = JSON.parse(data.description);
+    const parsed = await readAppConfig<Partial<LegalDocsData>>(
+      '__SYSTEM_CONFIG_LEGAL_DOCS__',
+      SUPABASE_LEGAL_ID
+    );
+    if (parsed && typeof parsed === 'object') {
       const docs: LegalDocsData = {
         privacyPolicy: { ...DEFAULT_LEGAL_DOCS.privacyPolicy, ...(parsed.privacyPolicy || {}) },
         terms: { ...DEFAULT_LEGAL_DOCS.terms, ...(parsed.terms || {}) },

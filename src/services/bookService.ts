@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export type PublicationType =
   | 'nyomtatott'
@@ -1365,21 +1365,12 @@ export function saveBookCategories(categories: BookCategory[]): void {
     localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
     window.dispatchEvent(new Event('book-categories-changed'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_BOOKS_CATEGORIES_ID,
-          name: '__SYSTEM_CONFIG_BOOK_CATEGORIES__',
-          slug: 'system-book-categories-config',
-          description: JSON.stringify(categories),
-          article_count: categories.length,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase book categories cloud sync info:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_BOOK_CATEGORIES__', categories, {
+      id: SUPABASE_BOOKS_CATEGORIES_ID,
+      slug: 'system-book-categories-config',
+    }).catch((err) => {
+      console.warn('Supabase book categories cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a könyv kategóriák mentésekor:', err);
   }
@@ -1396,22 +1387,17 @@ export function useBookCategories(): BookCategory[] {
 
     void (async () => {
       try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('description')
-          .eq('id', SUPABASE_BOOKS_CATEGORIES_ID)
-          .maybeSingle();
-
-        if (!error && data?.description && data.description.startsWith('[')) {
-          const parsed = JSON.parse(data.description);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            if (typeof window !== 'undefined') {
-              window.__GLOBAL_BOOK_CATEGORIES__ = parsed;
-              localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(parsed));
-              window.dispatchEvent(new Event('book-categories-changed'));
-            }
-            setCategories(parsed);
+        const parsed = await readAppConfig<BookCategory[]>(
+          '__SYSTEM_CONFIG_BOOK_CATEGORIES__',
+          SUPABASE_BOOKS_CATEGORIES_ID
+        );
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (typeof window !== 'undefined') {
+            window.__GLOBAL_BOOK_CATEGORIES__ = parsed;
+            localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(parsed));
+            window.dispatchEvent(new Event('book-categories-changed'));
           }
+          setCategories(parsed);
         }
       } catch {
         // Ignore cloud book categories sync error
@@ -1475,21 +1461,12 @@ export function saveBooks(books: BookItem[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
     window.dispatchEvent(new Event('books-data-changed'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_BOOKS_ID,
-          name: '__SYSTEM_CONFIG_BOOKS__',
-          slug: 'system-books-config',
-          description: JSON.stringify(books),
-          article_count: books.length,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase books cloud sync info:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_BOOKS__', books, {
+      id: SUPABASE_BOOKS_ID,
+      slug: 'system-books-config',
+    }).catch((err) => {
+      console.warn('Supabase books cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a könyvek mentésekor:', err);
   }
@@ -1497,15 +1474,8 @@ export function saveBooks(books: BookItem[]): void {
 
 export async function fetchBooksFromCloud(): Promise<BookItem[] | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_BOOKS_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('[')) {
-      const parsed = JSON.parse(data.description);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+    const parsed = await readAppConfig<BookItem[]>('__SYSTEM_CONFIG_BOOKS__', SUPABASE_BOOKS_ID);
+    if (Array.isArray(parsed) && parsed.length > 0) {
         if (typeof window !== 'undefined') {
           window.__GLOBAL_BOOKS_DATA__ = parsed;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
@@ -1513,7 +1483,6 @@ export async function fetchBooksFromCloud(): Promise<BookItem[] | null> {
         }
         return parsed;
       }
-    }
   } catch (err) {
     console.warn('Cloud books fetch info:', err);
   }

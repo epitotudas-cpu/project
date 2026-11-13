@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface MenuItem {
   id: string;
@@ -215,22 +215,13 @@ export function saveNavItems(items: MenuItem[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     window.dispatchEvent(new Event('nav-structure-changed'));
 
-    // Cloud sync to Supabase categories system row
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_NAV_ID,
-          name: '__SYSTEM_CONFIG_NAV_STRUCTURE__',
-          slug: 'system-nav-structure-config',
-          description: JSON.stringify(items),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase nav structure sync info:', err);
-      }
-    })();
+    // Cloud sync to Supabase app_configs (with legacy categories fallback)
+    void writeAppConfig('__SYSTEM_CONFIG_NAV_STRUCTURE__', items, {
+      id: SUPABASE_NAV_ID,
+      slug: 'system-nav-structure-config',
+    }).catch((err) => {
+      console.warn('Supabase nav structure sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a navigációs elemek mentésekor:', err);
   }
@@ -238,15 +229,11 @@ export function saveNavItems(items: MenuItem[]): void {
 
 export async function fetchNavFromCloud(): Promise<MenuItem[] | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_NAV_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('[')) {
-      const parsed = JSON.parse(data.description);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+    const parsed = await readAppConfig<MenuItem[]>(
+      '__SYSTEM_CONFIG_NAV_STRUCTURE__',
+      SUPABASE_NAV_ID
+    );
+    if (Array.isArray(parsed) && parsed.length > 0) {
         const normalized = normalizeNavLabels(parsed);
         if (typeof window !== 'undefined') {
           window.__GLOBAL_NAV_ITEMS__ = normalized;
@@ -255,7 +242,6 @@ export async function fetchNavFromCloud(): Promise<MenuItem[] | null> {
         }
         return normalized;
       }
-    }
   } catch (err) {
     console.warn('Cloud nav fetch info:', err);
   }

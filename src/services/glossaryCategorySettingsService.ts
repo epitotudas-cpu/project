@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface GlossaryCategorySettingItem {
   categoryName: string;
@@ -152,21 +152,12 @@ export function saveGlossaryCategorySettings(settings: GlossaryCategorySettings)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
     window.dispatchEvent(new Event('glossary-category-settings-changed'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_GLOSSARY_CAT_ID,
-          name: '__SYSTEM_CONFIG_GLOSSARY_CATEGORY_SETTINGS__',
-          slug: 'system-glossary-cat-config',
-          description: JSON.stringify(sanitized),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase glossary category cloud sync info:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_GLOSSARY_CATEGORY_SETTINGS__', sanitized, {
+      id: SUPABASE_GLOSSARY_CAT_ID,
+      slug: 'system-glossary-cat-config',
+    }).catch((err) => {
+      console.warn('Supabase glossary category cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a fogalomtár kategória beállítások mentésekor:', err);
   }
@@ -174,15 +165,11 @@ export function saveGlossaryCategorySettings(settings: GlossaryCategorySettings)
 
 export async function fetchGlossaryCategorySettingsFromCloud(): Promise<GlossaryCategorySettings | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_GLOSSARY_CAT_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('{')) {
-      const parsed = JSON.parse(data.description);
-      if (parsed && parsed.categoryItems) {
+    const parsed = await readAppConfig<Partial<GlossaryCategorySettings>>(
+      '__SYSTEM_CONFIG_GLOSSARY_CATEGORY_SETTINGS__',
+      SUPABASE_GLOSSARY_CAT_ID
+    );
+    if (parsed && parsed.categoryItems) {
         const merged = sanitizeCategorySettings({
           ...DEFAULT_GLOSSARY_CATEGORY_SETTINGS,
           ...parsed,
@@ -198,7 +185,6 @@ export async function fetchGlossaryCategorySettingsFromCloud(): Promise<Glossary
         }
         return merged;
       }
-    }
   } catch (err) {
     console.warn('Cloud glossary category settings fetch info:', err);
   }

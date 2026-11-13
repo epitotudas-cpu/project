@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface EducationalDocument {
   id: string;
@@ -267,22 +267,13 @@ export function saveKnowledgeItemsLocal(items: EducationalContentItem[]): void {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
     window.dispatchEvent(new Event('knowledge-hub-updated'));
 
-    // Sync to Supabase system config row
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_SYSTEM_ROW_ID,
-          name: '__SYSTEM_CONFIG_KNOWLEDGE_HUB_ITEMS__',
-          slug: 'system-knowledge-hub-config',
-          description: JSON.stringify(items),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase knowledge items sync info:', err);
-      }
-    })();
+    // Sync to Supabase app_configs (with legacy categories fallback)
+    void writeAppConfig('__SYSTEM_CONFIG_KNOWLEDGE_HUB_ITEMS__', items, {
+      id: SUPABASE_SYSTEM_ROW_ID,
+      slug: 'system-knowledge-hub-config',
+    }).catch((err) => {
+      console.warn('Supabase knowledge items sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a Tudástár elemek mentésekor:', err);
   }
@@ -290,22 +281,17 @@ export function saveKnowledgeItemsLocal(items: EducationalContentItem[]): void {
 
 export async function fetchKnowledgeItemsFromCloud(): Promise<EducationalContentItem[] | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_SYSTEM_ROW_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('[')) {
-      const parsed = JSON.parse(data.description);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+    const parsed = await readAppConfig<EducationalContentItem[]>(
+      '__SYSTEM_CONFIG_KNOWLEDGE_HUB_ITEMS__',
+      SUPABASE_SYSTEM_ROW_ID
+    );
+    if (Array.isArray(parsed) && parsed.length > 0) {
         if (typeof window !== 'undefined') {
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
           window.dispatchEvent(new Event('knowledge-hub-updated'));
         }
         return parsed;
       }
-    }
   } catch (err) {
     console.warn('Cloud knowledge items fetch info:', err);
   }

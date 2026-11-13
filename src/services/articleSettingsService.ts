@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 
 export interface TypePageSettings {
   articlesPageTitle: string;
@@ -234,21 +234,10 @@ export function saveArticleSettingsForType(
 
 async function syncArticleSettingsToCloud(settings: ArticleSettings): Promise<void> {
   try {
-    const payload = {
+    await writeAppConfig('__SYSTEM_CONFIG_ARTICLE_SETTINGS__', settings, {
       id: SUPABASE_ARTICLE_SETTINGS_ID,
-      name: '__SYSTEM_CONFIG_ARTICLE_SETTINGS__',
       slug: 'system-config-article-settings',
-      description: JSON.stringify(settings),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error } = await supabase
-      .from('categories')
-      .upsert(payload, { onConflict: 'id' });
-
-    if (error && !/RLS/i.test(error.message)) {
-      console.warn('Cloud sync article settings warning:', error.message);
-    }
+    });
   } catch (err) {
     console.warn('Cloud sync article settings error:', err);
   }
@@ -256,14 +245,11 @@ async function syncArticleSettingsToCloud(settings: ArticleSettings): Promise<vo
 
 export async function fetchArticleSettingsFromCloud(): Promise<ArticleSettings | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_ARTICLE_SETTINGS_ID)
-      .maybeSingle();
-
-    if (!error && data?.description) {
-      const parsed = JSON.parse(data.description);
+    const parsed = await readAppConfig<Partial<ArticleSettings>>(
+      '__SYSTEM_CONFIG_ARTICLE_SETTINGS__',
+      SUPABASE_ARTICLE_SETTINGS_ID
+    );
+    if (parsed && typeof parsed === 'object') {
       const sanitized = sanitizeArticleSettings(parsed);
       if (typeof window !== 'undefined') {
         window.__GLOBAL_ARTICLE_SETTINGS__ = sanitized;

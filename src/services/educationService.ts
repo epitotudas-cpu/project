@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 import { type Course, type Lesson, type QuizQuestion, type UserCertificate } from '../lib/supabase';
 
 export type { Course, Lesson, QuizQuestion, UserCertificate };
@@ -443,21 +444,12 @@ export function saveEducationData(data: EducationData): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('education-data-changed'));
 
-    void (async () => {
-      try {
-        await supabase.from('categories').upsert({
-          id: SUPABASE_COURSES_ID,
-          name: '__SYSTEM_CONFIG_COURSES__',
-          slug: 'system-courses-config',
-          description: JSON.stringify(data),
-          article_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any);
-      } catch (err) {
-        console.warn('Supabase courses cloud sync info:', err);
-      }
-    })();
+    void writeAppConfig('__SYSTEM_CONFIG_COURSES__', data, {
+      id: SUPABASE_COURSES_ID,
+      slug: 'system-courses-config',
+    }).catch((err) => {
+      console.warn('Supabase courses cloud sync info:', err);
+    });
   } catch (err) {
     console.error('Hiba a képzési adatok mentésekor:', err);
   }
@@ -465,15 +457,11 @@ export function saveEducationData(data: EducationData): void {
 
 export async function fetchEducationDataFromCloud(): Promise<EducationData | null> {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('description')
-      .eq('id', SUPABASE_COURSES_ID)
-      .maybeSingle();
-
-    if (!error && data?.description && data.description.startsWith('{')) {
-      const parsed = JSON.parse(data.description);
-      if (parsed && Array.isArray(parsed.courses)) {
+    const parsed = await readAppConfig<Partial<EducationData>>(
+      '__SYSTEM_CONFIG_COURSES__',
+      SUPABASE_COURSES_ID
+    );
+    if (parsed && Array.isArray(parsed.courses)) {
         const eduData: EducationData = {
           courses: parsed.courses || DEFAULT_COURSES,
           lessons: { ...DEFAULT_LESSONS, ...(parsed.lessons || {}) },
@@ -488,7 +476,6 @@ export async function fetchEducationDataFromCloud(): Promise<EducationData | nul
         }
         return eduData;
       }
-    }
   } catch (err) {
     console.warn('Cloud education data fetch info:', err);
   }
