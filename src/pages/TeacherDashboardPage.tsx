@@ -165,7 +165,10 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [filterSearch, setFilterSearch] = useState<string>('');
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     loadTeacherData();
   }, [user]);
 

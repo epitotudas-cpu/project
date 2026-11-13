@@ -689,7 +689,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
       }
 
       const newRelativePathQuery =
-        window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.location.pathname + '#tool' + (params.toString() ? '?' + params.toString() : '');
 
       window.history.replaceState(null, '', newRelativePathQuery);
     }, 250);

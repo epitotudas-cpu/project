@@ -17,7 +17,11 @@ import { submitPartnerApplication } from '../services/partnerApplicationService'
 import type { PartnerCategory } from '../services/partnerService';
 import { checkEmailExists } from '../services/userService';
 
-export default function PartnerApplicationPage() {
+interface PartnerApplicationPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function PartnerApplicationPage({ onNavigate }: PartnerApplicationPageProps) {
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
@@ -148,7 +152,13 @@ export default function PartnerApplicationPage() {
         <div className="flex items-center justify-between flex-wrap gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-400">
             <a
-              href="/"
+              href="#home"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('home');
+                }
+              }}
               className="inline-flex items-center gap-1.5 hover:text-[#3B82F6] transition-colors"
             >
               <ArrowLeft size={14} /> Kezdőlap
@@ -158,7 +168,13 @@ export default function PartnerApplicationPage() {
           </div>
 
           <a
-            href="/#partnerek"
+            href="#partners"
+            onClick={(e) => {
+              if (onNavigate) {
+                e.preventDefault();
+                onNavigate('partners');
+              }
+            }}
             className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#3B82F6] bg-[#3B82F6]/10 border border-[#3B82F6]/30 px-3.5 py-1.5 rounded-full hover:bg-[#3B82F6]/20 transition-all"
           >
             <Building2 size={13} /> Meglévő Partnerek Megtekintése
@@ -210,14 +226,26 @@ export default function PartnerApplicationPage() {
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
-                href="/"
+                href="#home"
+                onClick={(e) => {
+                  if (onNavigate) {
+                    e.preventDefault();
+                    onNavigate('home');
+                  }
+                }}
                 style={{ backgroundColor: '#3B82F6', color: '#FFFFFF' }}
                 className="w-full sm:w-auto px-8 py-3.5 hover:bg-[#155CD0] font-black rounded-xl transition-all shadow-lg text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
                 Vissza a Kezdőlapra
               </a>
               <a
-                href="/#partnerek"
+                href="#partners"
+                onClick={(e) => {
+                  if (onNavigate) {
+                    e.preventDefault();
+                    onNavigate('partners');
+                  }
+                }}
                 className="w-full sm:w-auto px-6 py-3.5 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Building2 size={16} /> Partnerek Listája

@@ -189,7 +189,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
                 <HardHat size={14} />
-                Az oldal fejlesztés alatt
+                Építőipari Szakmai Tudásportál
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-white whitespace-pre-line">
@@ -467,7 +467,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                     <span className="flex items-center gap-1 text-[#657736] font-bold">
                       <Star size={14} fill="currentColor" />
-                      {article.rating.toFixed(1)}
+                      {(article.rating ?? 0).toFixed(1)}
                     </span>
                   </div>
                 </button>

@@ -493,37 +493,29 @@ export async function createPartner(payload: CreatePartnerPayload): Promise<Exte
     created_at: new Date().toISOString(),
   };
 
-  try {
-    const { data, error } = await supabase
-      .from('partners')
-      .insert({
-        name: partnerObject.name,
-        slug: partnerObject.slug,
-        category: partnerObject.category,
-        description: partnerObject.description,
-        website_url: partnerObject.website_url,
-        logo_url: partnerObject.logo_url,
-        is_verified: partnerObject.is_verified,
-      })
-      .select('*')
-      .single();
+  const { data, error } = await supabase
+    .from('partners')
+    .insert({
+      name: partnerObject.name,
+      slug: partnerObject.slug,
+      category: partnerObject.category,
+      description: partnerObject.description,
+      website_url: partnerObject.website_url,
+      logo_url: partnerObject.logo_url,
+      is_verified: partnerObject.is_verified,
+    })
+    .select('*')
+    .single();
 
-    if (!error && data) {
-      const merged = { ...partnerObject, ...data };
-      const currentList = getStoredPartners();
-      currentList.unshift(merged);
-      saveStoredPartners(currentList);
-      return merged;
-    }
-  } catch (err) {
-    void err;
+  if (error || !data) {
+    throw new Error(error?.message || 'Partner mentése az adatbázisba sikertelen.');
   }
 
-  // Fallback local save
-  const list = getStoredPartners();
-  list.unshift(partnerObject);
-  saveStoredPartners(list);
-  return partnerObject;
+  const merged = { ...partnerObject, ...data };
+  const currentList = getStoredPartners();
+  currentList.unshift(merged);
+  saveStoredPartners(currentList);
+  return merged;
 }
 
 export async function updatePartner(

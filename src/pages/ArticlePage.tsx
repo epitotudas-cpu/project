@@ -739,7 +739,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                 <span className="flex items-center gap-1.5 font-medium"><Clock size={14} className="text-gray-400" /> {article.read_time || 5} perc olvasás</span>
               )}
               <span className="flex items-center gap-1.5 font-medium"><TrendingUp size={14} className="text-gray-400" /> {formatViews(article.views)} megtekintés</span>
-              <span className="flex items-center gap-1 font-bold text-amber-500"><Star size={14} fill="currentColor" /> {article.rating.toFixed(1)}</span>
+              <span className="flex items-center gap-1 font-bold text-amber-500"><Star size={14} fill="currentColor" /> {(article.rating ?? 0).toFixed(1)}</span>
             </div>
 
             {/* Quick Share & Save */}

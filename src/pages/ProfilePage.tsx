@@ -26,6 +26,7 @@ import {
   FileCheck,
   Bookmark,
   ChevronRight,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -440,24 +441,26 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   // Delete account state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function handleDeleteAccount() {
     if (!user) return;
     try {
       setDeletingAccount(true);
+      setDeleteError(null);
       await deleteUser(user.id);
       try {
         localStorage.removeItem(`epitotudas_user_pref_${user.id}`);
       } catch { }
+      setDeleteModalOpen(false);
       await signOut();
       if (onNavigate) onNavigate('home');
     } catch (err) {
       console.error('Hiba a fiók törlésekor:', err);
-      await signOut();
-      if (onNavigate) onNavigate('home');
+      const msg = err instanceof Error ? err.message : 'A fiók törlése nem sikerült. Kérjük, próbálja újra később.';
+      setDeleteError(msg);
     } finally {
       setDeletingAccount(false);
-      setDeleteModalOpen(false);
     }
   }
 
@@ -473,7 +476,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   useEffect(() => {
     async function loadData() {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const userType = user.user_metadata?.user_type;
@@ -640,10 +646,29 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     }
   }, [isStudent, activeMainSection]);
 
-  if (loading || !profile) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center text-gray-400">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#4165b4] border-r-transparent mb-2" />
+      </div>
+    );
+  }
+
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-6 text-white">
+        <div className="max-w-md w-full bg-[#141414] border border-[#262626] rounded-2xl p-8 text-center space-y-4">
+          <h2 className="text-xl font-bold">Bejelentkezés szükséges</h2>
+          <p className="text-sm text-gray-400">
+            A profil oldal megtekintéséhez kérjük, jelentkezzen be fiókjába.
+          </p>
+          <a
+            href="#login"
+            className="inline-flex items-center justify-center px-5 py-2.5 bg-[#4165b4] hover:bg-[#34549a] text-white text-sm font-bold rounded-xl transition-colors"
+          >
+            Bejelentkezés
+          </a>
+        </div>
       </div>
     );
   }
@@ -701,6 +726,13 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               >
                 <Sliders className="w-4 h-4" />
                 Beállítások
+              </button>
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#1F1F1F] hover:bg-red-950/50 text-gray-300 hover:text-red-300 border border-[#333] hover:border-red-500/40 font-semibold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                Kijelentkezés
               </button>
             </div>
           </div>
@@ -1090,9 +1122,21 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 />
               </div>
 
-              {classMaterials.length > 0 ? (
+              {(() => {
+                const q = materialsSearch.trim().toLowerCase();
+                const filteredMaterials = classMaterials.filter((cm) => {
+                  const isCompleted = (cm as any).status === 'completed' || Boolean((cm as any).completed_at);
+                  if (materialsFilter === 'completed' && !isCompleted) return false;
+                  if (materialsFilter === 'in_progress' && isCompleted) return false;
+                  if (!q) return true;
+                  const title = (cm.material?.title || '').toLowerCase();
+                  const desc = (cm.material?.description || '').toLowerCase();
+                  const cat = (cm.material?.category || '').toLowerCase();
+                  return title.includes(q) || desc.includes(q) || cat.includes(q);
+                });
+                return filteredMaterials.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {classMaterials.map((cm) => (
+                  {filteredMaterials.map((cm) => (
                     <div key={cm.id} className="bg-[#1F1F1F] border border-[#333] hover:border-[#4165b4]/50 rounded-xl p-5 space-y-4 transition-all">
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -1157,9 +1201,13 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               ) : (
                 <div className="text-center py-12 space-y-3 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
                   <BookOpen size={40} className="mx-auto text-gray-500 opacity-60" />
-                  <h4 className="text-sm font-bold text-white">Még nincs kiosztott tananyagod</h4>
+                  <h4 className="text-sm font-bold text-white">
+                    {classMaterials.length > 0 ? 'Nincs a szűrésnek megfelelő tananyag' : 'Még nincs kiosztott tananyagod'}
+                  </h4>
                   <p className="text-xs text-gray-400 max-w-sm mx-auto">
-                    Amint az oktatód tananyagot rendel az osztályodhoz, azok azonnal megjelennének itt.
+                    {classMaterials.length > 0
+                      ? 'Próbálj meg más keresőszót vagy szűrőt választani.'
+                      : 'Amint az oktatód tananyagot rendel az osztályodhoz, azok azonnal megjelennének itt.'}
                   </p>
                   <button
                     onClick={() => onNavigate?.('courses')}
@@ -1168,7 +1216,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     <Search size={14} /> Nyilvános Kurzusok Böngészése
                   </button>
                 </div>
-              )}
+              );
+              })()}
             </div>
           </div>
         )}
@@ -2031,6 +2080,11 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <p className="text-xs text-gray-300 leading-relaxed">
               Ez a művelet végleges és nem visszavonható. Minden mentett adatóid és iskolai kapcsolataid törlésre kerülnek.
             </p>
+            {deleteError && (
+              <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/40 text-xs text-red-300">
+                {deleteError}
+              </div>
+            )}
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setDeleteModalOpen(false)}

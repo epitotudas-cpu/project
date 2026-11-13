@@ -664,15 +664,14 @@ export async function createArticle(payload: Record<string, unknown>): Promise<A
     updated_at: now,
   };
 
+  const { error } = await supabase.from('articles').insert(payload);
+  if (error) {
+    throw new Error(error.message || 'Cikk mentése az adatbázisba sikertelen.');
+  }
+
   const allLocal = getArticlesLocal();
   const updated = [newItem, ...allLocal];
   saveArticlesLocal(updated);
-
-  try {
-    await supabase.from('articles').insert(payload);
-  } catch (err) {
-    console.warn('Supabase article insert info:', err);
-  }
 
   void logAuditAction('ARTICLE_CREATE', 'articles', `Új cikk létrehozva: "${newItem.title}" (${newItem.status})`);
 
@@ -680,6 +679,11 @@ export async function createArticle(payload: Record<string, unknown>): Promise<A
 }
 
 export async function updateArticle(id: string, payload: Record<string, unknown>): Promise<Article> {
+  const { error } = await supabase.from('articles').update(payload).eq('id', id);
+  if (error) {
+    throw new Error(error.message || 'Cikk frissítése az adatbázisban sikertelen.');
+  }
+
   const allLocal = getArticlesLocal();
   let updatedArticle: Article | null = null;
 
@@ -699,12 +703,6 @@ export async function updateArticle(id: string, payload: Record<string, unknown>
     saveArticlesLocal(updatedList);
   }
 
-  try {
-    await supabase.from('articles').update(payload).eq('id', id);
-  } catch (err) {
-    console.warn('Supabase article update info:', err);
-  }
-
   if (updatedArticle) {
     void logAuditAction('ARTICLE_UPDATE', 'articles', `Cikk frissítve: "${(updatedArticle as Article).title}"`);
   }
@@ -713,6 +711,11 @@ export async function updateArticle(id: string, payload: Record<string, unknown>
 }
 
 export async function setArticleStatus(id: string, status: Article['status'], rejectionNote?: string | null): Promise<void> {
+  const { error } = await supabase.from('articles').update({ status, rejection_note: rejectionNote ?? null }).eq('id', id);
+  if (error) {
+    throw new Error(error.message || 'Cikk státuszának frissítése sikertelen.');
+  }
+
   const allLocal = getArticlesLocal();
   let targetTitle = id;
   const updatedList = allLocal.map((a) => {
@@ -723,12 +726,6 @@ export async function setArticleStatus(id: string, status: Article['status'], re
     return a;
   });
   saveArticlesLocal(updatedList);
-
-  try {
-    await supabase.from('articles').update({ status, rejection_note: rejectionNote ?? null }).eq('id', id);
-  } catch (err) {
-    console.warn('Supabase article status update info:', err);
-  }
 
   void logAuditAction('ARTICLE_STATUS_CHANGE', 'articles', `Cikk státusza módosítva (${status}): "${targetTitle}"`);
 }

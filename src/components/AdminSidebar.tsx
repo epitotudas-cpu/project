@@ -82,6 +82,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'PARTNEREK',
     items: [
       { id: 'partners', label: 'Partnerek & Jelentkezések', icon: Building2 },
+      { id: 'partner-learning', label: 'Partneri Tananyagok', icon: BookOpen },
     ],
   },
   {

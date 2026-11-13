@@ -343,7 +343,7 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
                       style={{ backgroundColor: `${accentColor === '#FEB800' || accentColor === '#FFC400' ? '#10B981' : accentColor}30`, borderColor: `${accentColor === '#FEB800' || accentColor === '#FFC400' ? '#10B981' : accentColor}60`, color: accentColor === '#FEB800' || accentColor === '#FFC400' ? '#10B981' : accentColor }}
                       className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg border flex items-center justify-center text-xs font-black shrink-0 shadow-xs"
                     >
-                      {activeCreative.partner_name.charAt(0)}
+                      {(activeCreative.partner_name || 'P').charAt(0)}
                     </span>
                     <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[180px] drop-shadow-xs">
                       {activeCreative.partner_name}
@@ -604,16 +604,18 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
               )}
 
               <div className="pt-2 flex flex-col sm:flex-row flex-wrap items-center gap-3.5">
-                <a
-                  href={activeCreative.cta_url || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => recordAdClick(activeCreative.id)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:scale-[1.02]"
-                >
-                  <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
-                  <ExternalLink size={16} />
-                </a>
+                {activeCreative.cta_url && (
+                  <a
+                    href={/^https?:\/\//i.test(activeCreative.cta_url) ? activeCreative.cta_url : `https://${activeCreative.cta_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => recordAdClick(activeCreative.id)}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:scale-[1.02]"
+                  >
+                    <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
+                    <ExternalLink size={16} />
+                  </a>
+                )}
 
                 {onNavigate && (
                   <button

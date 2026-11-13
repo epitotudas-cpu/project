@@ -922,7 +922,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                   <FileCheck size={16} className="text-emerald-600" /> Hivatalos Jogszabályi Forrás (NJT)
                 </h4>
                 <div className="space-y-2">
-                  {activeCard.legal_sources.map((src, i) => (
+                  {(activeCard.legal_sources ?? []).map((src, i) => (
                     <div
                       key={i}
                       className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
@@ -950,7 +950,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
               <div className="bg-slate-100 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 text-[11px] text-slate-700">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={15} className="text-emerald-600" />
-                  <span>Státusz: <strong className="text-emerald-700 uppercase font-bold">{activeCard.legal_sources[0]?.status || 'hatályos'}</strong></span>
+                  <span>Státusz: <strong className="text-emerald-700 uppercase font-bold">{activeCard.legal_sources?.[0]?.status || 'hatályos'}</strong></span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={15} className="text-slate-500" />

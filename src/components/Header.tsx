@@ -892,7 +892,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                             <button
                               key={tool.id}
                               onClick={() => {
-                                onNavigate(tool.slug ? `tool?slug=${tool.slug}` : 'tools');
+                                onNavigate(tool.slug ? `tool?slug=${tool.slug}` : 'tool');
                                 setSearchOpen(false);
                               }}
                               className="px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-orange-500/10 hover:border-orange-500/30 border border-slate-800 text-xs font-medium text-gray-300 hover:text-orange-300 transition-all cursor-pointer"

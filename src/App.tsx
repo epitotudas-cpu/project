@@ -1104,7 +1104,7 @@ function AppContent() {
     case 'reset-password':
       return <Suspense fallback={<PageFallback />}><ResetPasswordPage onNavigate={navigate} /></Suspense>;
     case 'partner-application':
-      return <Suspense fallback={<PageFallback />}><PartnerApplicationPage /></Suspense>;
+      return <Suspense fallback={<PageFallback />}><PartnerApplicationPage onNavigate={navigate} /></Suspense>;
   }
 
   // Public routes with shared Header/Footer

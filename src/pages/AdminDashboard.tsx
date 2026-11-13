@@ -25,7 +25,7 @@ const STAT_CARDS: {
   { key: 'categories', label: 'Kategóriák', icon: FolderTree, view: 'categories' },
   { key: 'glossary', label: 'Fogalmak', icon: BookOpen, view: 'glossary' },
   { key: 'tools', label: 'Eszközök', icon: Wrench, view: 'tools' },
-  { key: 'users', label: 'Felhasználók', icon: Users, view: 'dashboard' },
+  { key: 'users', label: 'Felhasználók', icon: Users, view: 'users' },
 ];
 
 export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashboardProps) {
