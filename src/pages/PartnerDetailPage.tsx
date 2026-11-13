@@ -3,6 +3,7 @@ import {
   Building2,
   ExternalLink,
   ShieldCheck,
+  ChevronLeft,
   ChevronRight,
   Mail,
   FileText,
@@ -18,12 +19,15 @@ import {
   Sparkles,
   FolderGit2,
   BookOpen,
+  X,
+  Maximize2,
 } from 'lucide-react';
 import { getPartnerBySlug, getCategoryLabel, type ExtendedPartner } from '../services/partnerService';
 import {
   getPartnerReferences,
   resolveReferenceImageUrl,
   type PartnerReference,
+  type PartnerReferenceImage,
 } from '../services/referenceService';
 import FormattedText from '../components/FormattedText';
 
@@ -86,11 +90,274 @@ function getCategorySpecialties(category: string): { title: string; desc: string
   }
 }
 
+interface LightboxGalleryItem {
+  url: string;
+  caption?: string | null;
+  width?: number;
+  height?: number;
+}
+
+interface LightboxState {
+  images: LightboxGalleryItem[];
+  currentIndex: number;
+  title: string;
+  location?: string | null;
+  year?: string | null;
+}
+
+function PartnerReferenceCard({
+  reference,
+  onOpenLightbox,
+}: {
+  reference: PartnerReference;
+  onOpenLightbox: (state: LightboxState) => void;
+}) {
+  // Összegyűjtjük a referencia összes képét megbízható sorrendben (főkép elöl, majd sorrend szerint)
+  const allImages: PartnerReferenceImage[] = [];
+  if (reference.cover_image) {
+    allImages.push(reference.cover_image);
+  }
+  if (reference.images && Array.isArray(reference.images)) {
+    for (const img of reference.images) {
+      if (!allImages.some((existing) => existing.id === img.id)) {
+        allImages.push(img);
+      }
+    }
+  }
+
+  const sortedImages = [...allImages].sort((a, b) => {
+    if (a.is_cover && !b.is_cover) return -1;
+    if (!a.is_cover && b.is_cover) return 1;
+    return (a.display_order ?? 0) - (b.display_order ?? 0);
+  });
+
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const currentImage = sortedImages[activeIdx] || sortedImages[0];
+  const currentUrl = currentImage ? resolveReferenceImageUrl(currentImage) : '';
+
+  const handleOpenLightbox = (indexToOpen: number) => {
+    const lightboxItems: LightboxGalleryItem[] = sortedImages.map((img) => ({
+      url: resolveReferenceImageUrl(img),
+      caption: img.caption,
+      width: img.width,
+      height: img.height,
+    }));
+    onOpenLightbox({
+      images: lightboxItems,
+      currentIndex: indexToOpen,
+      title: reference.title,
+      location: reference.location,
+      year: reference.year,
+    });
+  };
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveIdx((prev) => (prev < sortedImages.length - 1 ? prev + 1 : 0));
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveIdx((prev) => (prev > 0 ? prev - 1 : sortedImages.length - 1));
+  };
+
+  return (
+    <div className="bg-gray-50 border border-gray-200/90 rounded-2xl overflow-hidden shadow-2xs space-y-3 p-5 flex flex-col justify-between">
+      <div className="space-y-3">
+        {/* Fő képkártya / Lapozható előnézet vágás nélkül */}
+        {currentUrl && (
+          <div
+            onClick={() => handleOpenLightbox(activeIdx)}
+            className="aspect-[16/10] sm:aspect-video w-full rounded-2xl overflow-hidden bg-gray-950 relative group cursor-pointer border border-gray-200/80 shadow-inner flex items-center justify-center select-none"
+            title="Kattintson a teljes képernyős nagyításhoz"
+          >
+            {/* Elmosott háttér, hogy a kép arányaitól függetlenül kitöltse a teret fekete csíkok és vágás nélkül */}
+            <img
+              src={currentUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover filter blur-lg opacity-35 scale-110 pointer-events-none transition-all duration-300"
+            />
+
+            {/* Éles fő kép vágás nélkül (object-contain) */}
+            <img
+              src={currentUrl}
+              alt={currentImage.caption || reference.title}
+              className="relative z-10 max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+
+            {/* Nagyítás jelvény a jobb felső sarokban */}
+            <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-black/65 hover:bg-black/85 backdrop-blur-md text-white text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-md group-hover:scale-105 border border-white/10">
+              <Maximize2 size={12} />
+              <span>Nagyítás</span>
+            </div>
+
+            {/* Képszámláló ha több kép van */}
+            {sortedImages.length > 1 && (
+              <div className="absolute bottom-3 left-3 z-20 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1 shadow-md border border-white/10">
+                <span>{activeIdx + 1} / {sortedImages.length} kép</span>
+              </div>
+            )}
+
+            {/* Kártyán belüli lapozó nyilak ha több fotó van */}
+            {sortedImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={prevImage}
+                  aria-label="Előző kép"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-sm transition-all shadow-lg hover:scale-110 opacity-90 sm:opacity-0 group-hover:opacity-100 border border-white/10"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={nextImage}
+                  aria-label="Következő kép"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-sm transition-all shadow-lg hover:scale-110 opacity-90 sm:opacity-0 group-hover:opacity-100 border border-white/10"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Bélyegkép lapozó sor több kép esetén */}
+        {sortedImages.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+            {sortedImages.map((img, idx) => {
+              const isSelected = idx === activeIdx;
+              const thumbUrl = resolveReferenceImageUrl(img);
+              return (
+                <button
+                  key={img.id || idx}
+                  type="button"
+                  onClick={() => setActiveIdx(idx)}
+                  className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
+                    isSelected
+                      ? 'border-accent shadow-md ring-2 ring-accent/40 scale-105'
+                      : 'border-gray-200 opacity-70 hover:opacity-100 hover:border-gray-400'
+                  }`}
+                  title={img.caption || `${idx + 1}. kép`}
+                >
+                  <img src={thumbUrl} alt="" className="w-full h-full object-cover" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Cím és metaadatok */}
+        <div className="flex items-start justify-between gap-2 pt-1">
+          <h3 className="font-extrabold text-gray-900 text-base leading-snug">{reference.title}</h3>
+          {reference.year && (
+            <span className="px-2 py-0.5 bg-accent/20 text-accent-dark font-extrabold text-xs rounded shrink-0">
+              {reference.year}
+            </span>
+          )}
+        </div>
+
+        {reference.location && (
+          <p className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+            <MapPin size={13} className="text-gray-400 shrink-0" />
+            <span>{reference.location}</span>
+          </p>
+        )}
+
+        {reference.description && (
+          <div className="pt-1">
+            <FormattedText
+              content={reference.description}
+              paragraphClassName="text-xs text-[#5f6868] leading-relaxed mb-2"
+              headingClassName="text-xs font-bold text-gray-900 mt-2.5 mb-1"
+              listClassName="list-disc pl-4 text-xs text-[#5f6868] leading-relaxed my-1 space-y-0.5"
+              strongClassName="font-bold text-gray-900"
+            />
+          </div>
+        )}
+      </div>
+
+      {reference.website_url && (
+        <div className="pt-2 border-t border-gray-100">
+          <a
+            href={reference.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-accent-dark hover:underline"
+          >
+            Projekt részletei / weboldala <ExternalLink size={12} />
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDetailPageProps) {
   const [partner, setPartner] = useState<ExtendedPartner | null>(null);
   const [referencesList, setReferencesList] = useState<PartnerReference[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [imageError, setImageError] = useState<boolean>(false);
+  const [activeLightbox, setActiveLightbox] = useState<LightboxState | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!activeLightbox) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveLightbox(null);
+      } else if (e.key === 'ArrowRight') {
+        setActiveLightbox((curr) =>
+          curr ? { ...curr, currentIndex: (curr.currentIndex + 1) % curr.images.length } : null
+        );
+      } else if (e.key === 'ArrowLeft') {
+        setActiveLightbox((curr) =>
+          curr
+            ? { ...curr, currentIndex: (curr.currentIndex - 1 + curr.images.length) % curr.images.length }
+            : null
+        );
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeLightbox]);
+
+  useEffect(() => {
+    if (activeLightbox) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeLightbox]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || !activeLightbox) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX;
+    if (diff > 50) {
+      // Jobbra húzás -> előző kép
+      setActiveLightbox((curr) =>
+        curr
+          ? { ...curr, currentIndex: (curr.currentIndex - 1 + curr.images.length) % curr.images.length }
+          : null
+      );
+    } else if (diff < -50) {
+      // Balra húzás -> következő kép
+      setActiveLightbox((curr) =>
+        curr ? { ...curr, currentIndex: (curr.currentIndex + 1) % curr.images.length } : null
+      );
+    }
+    setTouchStartX(null);
+  };
 
   useEffect(() => {
     async function loadPartner() {
@@ -523,49 +790,13 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {referencesList.map((ref) => {
-                const coverUrl = resolveReferenceImageUrl(ref.cover_image || ref.images?.[0]);
-                const otherImages = ref.images?.filter((img) => img.id !== ref.cover_image?.id) || [];
-                return (
-                  <div key={ref.id} className="bg-gray-50 border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs space-y-3 p-5">
-                    {coverUrl && (
-                      <div className="h-44 rounded-xl overflow-hidden bg-gray-200 mb-2 group relative">
-                        <img src={coverUrl} alt={ref.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      </div>
-                    )}
-                    {otherImages.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto pb-1">
-                        {otherImages.slice(0, 4).map((subImg) => (
-                          <div key={subImg.id} className="w-14 h-14 rounded-lg overflow-hidden bg-gray-200 shrink-0 border border-gray-300">
-                            <img src={resolveReferenceImageUrl(subImg)} alt={subImg.caption || ref.title} className="w-full h-full object-cover" />
-                          </div>
-                        ))}
-                        {otherImages.length > 4 && (
-                          <div className="w-14 h-14 rounded-lg bg-gray-200 shrink-0 border border-gray-300 flex items-center justify-center text-xs font-bold text-gray-600">
-                            +{otherImages.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-extrabold text-gray-900 text-base">{ref.title}</h3>
-                      {ref.year && <span className="px-2 py-0.5 bg-accent/20 text-accent-dark font-extrabold text-xs rounded">{ref.year}</span>}
-                    </div>
-                    {ref.location && <p className="text-xs font-semibold text-gray-500">{ref.location}</p>}
-                    {ref.description && (
-                      <div className="pt-1">
-                        <FormattedText
-                          content={ref.description}
-                          paragraphClassName="text-xs text-[#5f6868] leading-relaxed mb-2"
-                          headingClassName="text-xs font-bold text-gray-900 mt-2.5 mb-1"
-                          listClassName="list-disc pl-4 text-xs text-[#5f6868] leading-relaxed my-1 space-y-0.5"
-                          strongClassName="font-bold text-gray-900"
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {referencesList.map((ref) => (
+                <PartnerReferenceCard
+                  key={ref.id}
+                  reference={ref}
+                  onOpenLightbox={setActiveLightbox}
+                />
+              ))}
             </div>
           </section>
         )}
@@ -651,6 +882,136 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
           </div>
         </div>
       </div>
+
+      {/* Teljes képernyős Lightbox Galéria Modál */}
+      {activeLightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 animate-fadeIn select-none"
+          onClick={() => setActiveLightbox(null)}
+        >
+          {/* Felső fejléc sáv: Cím, infók, képszámláló és Bezárás gomb */}
+          <div
+            className="flex items-center justify-between text-white pb-3 border-b border-white/10 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 max-w-[70vw]">
+              <h3 className="font-extrabold text-base sm:text-lg text-white truncate">
+                {activeLightbox.title}
+              </h3>
+              <div className="flex items-center gap-2 text-xs text-gray-300 shrink-0">
+                {activeLightbox.year && (
+                  <span className="px-2 py-0.5 rounded bg-accent/25 text-accent font-bold">
+                    {activeLightbox.year}
+                  </span>
+                )}
+                {activeLightbox.location && (
+                  <span className="text-gray-400 hidden sm:inline">
+                    • {activeLightbox.location}
+                  </span>
+                )}
+                {activeLightbox.images.length > 1 && (
+                  <span className="bg-white/10 px-2.5 py-0.5 rounded-full font-semibold text-white/90">
+                    {activeLightbox.currentIndex + 1} / {activeLightbox.images.length} kép
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveLightbox(null)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/15 cursor-pointer shrink-0"
+            >
+              <span>Bezárás</span>
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Középső színpad: Fő kép + Előző / Következő navigációs nyilak */}
+          <div
+            className="relative flex-1 flex items-center justify-center p-2 sm:p-4 min-h-0"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {activeLightbox.images.length > 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveLightbox((curr) =>
+                    curr
+                      ? {
+                          ...curr,
+                          currentIndex: (curr.currentIndex - 1 + curr.images.length) % curr.images.length,
+                        }
+                      : null
+                  )
+                }
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md transition-all shadow-xl hover:scale-110 border border-white/15 cursor-pointer"
+                aria-label="Előző kép"
+              >
+                <ChevronLeft size={26} />
+              </button>
+            )}
+
+            <div className="relative max-h-full max-w-full flex items-center justify-center">
+              <img
+                src={activeLightbox.images[activeLightbox.currentIndex]?.url}
+                alt={activeLightbox.title}
+                className="max-h-[70vh] sm:max-h-[75vh] max-w-[92vw] object-contain rounded-2xl shadow-2xl transition-all"
+              />
+            </div>
+
+            {activeLightbox.images.length > 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveLightbox((curr) =>
+                    curr ? { ...curr, currentIndex: (curr.currentIndex + 1) % curr.images.length } : null
+                  )
+                }
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md transition-all shadow-xl hover:scale-110 border border-white/15 cursor-pointer"
+                aria-label="Következő kép"
+              >
+                <ChevronRight size={26} />
+              </button>
+            )}
+          </div>
+
+          {/* Alsó lábléc: Képaláírás és alsó bélyegkép-sor lapozáshoz */}
+          <div
+            className="pt-2 border-t border-white/10 shrink-0 flex flex-col items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {activeLightbox.images[activeLightbox.currentIndex]?.caption && (
+              <p className="text-center text-xs sm:text-sm text-gray-200 font-medium max-w-2xl bg-black/60 px-4 py-1.5 rounded-xl backdrop-blur-sm border border-white/10">
+                {activeLightbox.images[activeLightbox.currentIndex].caption}
+              </p>
+            )}
+
+            {activeLightbox.images.length > 1 && (
+              <div className="flex items-center justify-center gap-2 overflow-x-auto max-w-3xl py-1 px-2 scrollbar-thin">
+                {activeLightbox.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() =>
+                      setActiveLightbox((curr) => (curr ? { ...curr, currentIndex: idx } : null))
+                    }
+                    className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                      idx === activeLightbox.currentIndex
+                        ? 'border-accent ring-2 ring-accent/60 scale-105'
+                        : 'border-white/20 opacity-50 hover:opacity-100 hover:scale-100'
+                    }`}
+                  >
+                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
