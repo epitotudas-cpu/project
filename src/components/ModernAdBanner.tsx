@@ -96,7 +96,7 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
     const encodedPlain = rawVideoUrl.replace(/log[óő]|\/log[óő]\.webm/g, '/logo.webm');
 
     return (
-      <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md">
+      <aside aria-label="Partneri ajánlat csík" className="w-full bg-slate-950 border-b border-slate-800/80 relative z-20 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-2.5 py-2 sm:px-4 md:px-6 md:py-3.5">
           <a
             href={getValidAdUrl(fallbackSettings.target_url)}
@@ -227,7 +227,7 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
       onMouseLeave={() => setIsHovered(false)}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
-      className="w-full bg-slate-950 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md"
+      className="w-full bg-slate-950 border-b border-slate-800/80 relative z-20 backdrop-blur-md"
     >
       <div className="max-w-7xl mx-auto px-2.5 py-2 sm:px-4 md:px-6 md:py-3.5">
         <div className="relative group/banner flex items-center">
@@ -420,10 +420,14 @@ export function TopAdBanner({ slots: _slots }: TopBannerProps) {
                   setCurrentIndex(idx);
                 }}
                 aria-label={`Ugrás a(z) ${idx + 1}. szponzorált ajánlatra: ${c.partner_name}`}
-                className={`h-1.5 rounded-full transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                  idx === currentIndex ? 'w-5 bg-emerald-400' : 'w-1.5 bg-slate-700 hover:bg-slate-500'
-                }`}
-              />
+                className="p-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full"
+              >
+                <span
+                  className={`block h-1.5 rounded-full transition-all ${
+                    idx === currentIndex ? 'w-5 bg-emerald-400' : 'w-1.5 bg-slate-700 hover:bg-slate-500'
+                  }`}
+                />
+              </button>
             ))}
           </div>
         )}
@@ -636,11 +640,17 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
               {creatives.map((c, idx) => (
                 <button
                   key={c.id}
+                  type="button"
+                  aria-label={`Ugrás a(z) ${idx + 1}. ajánlatra`}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`h-2 rounded-full transition-all cursor-pointer ${
-                    idx === currentIndex ? 'w-6 bg-emerald-400' : 'w-2 bg-gray-600'
-                  }`}
-                />
+                  className="p-1.5 cursor-pointer rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <span
+                    className={`block h-2 rounded-full transition-all ${
+                      idx === currentIndex ? 'w-6 bg-emerald-400' : 'w-2 bg-gray-600'
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           )}

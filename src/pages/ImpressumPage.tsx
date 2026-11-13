@@ -150,7 +150,7 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
               <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Weboldal</span>
-              <a href={data.hostingWebsite} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold text-sm truncate block">
+              <a href={/^https?:\/\//i.test(data.hostingWebsite) ? data.hostingWebsite : `https://${data.hostingWebsite}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold text-sm truncate block">
                 {data.hostingWebsite}
               </a>
             </div>
@@ -175,7 +175,9 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
             <div>
               <div className="text-xs text-gray-500 font-bold">Email Elérhetőség</div>
-              <div className="text-sm font-extrabold text-gray-900">{data.email}</div>
+              <a href={`mailto:${data.email}`} className="text-sm font-extrabold text-gray-900 hover:text-blue-600 transition-colors">
+                {data.email}
+              </a>
             </div>
           </div>
           <div className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-3.5 shadow-sm">
@@ -184,7 +186,9 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
             <div>
               <div className="text-xs text-gray-500 font-bold">Telefonos Ügyfélszolgálat</div>
-              <div className="text-sm font-extrabold text-gray-900">{data.phone}</div>
+              <a href={`tel:${data.phone.replace(/[^+\d]/g, '')}`} className="text-sm font-extrabold text-gray-900 hover:text-blue-600 transition-colors">
+                {data.phone}
+              </a>
             </div>
           </div>
           <div className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-3.5 shadow-sm">

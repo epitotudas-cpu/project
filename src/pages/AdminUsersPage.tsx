@@ -794,19 +794,15 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
 
             <div className="relative">
               <pre className="p-4 bg-black/90 border border-gray-800 rounded-xl font-mono text-[11px] text-amber-300 overflow-x-auto max-h-60 leading-relaxed">
-{`ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
-  CHECK (role = ANY (ARRAY['user'::text, 'editor'::text, 'partner'::text, 'school'::text, 'teacher'::text, 'contact'::text, 'student'::text, 'moderator'::text, 'admin'::text]));
-
-CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
+{`CREATE OR REPLACE FUNCTION public.update_user_platform_role(target_user_id uuid, new_role text)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Hozzáférés megtagadva: Bejelentkezés szükséges.';
+  IF auth.role() IS DISTINCT FROM 'service_role' AND NOT public.is_admin_role() THEN
+    RAISE EXCEPTION 'Nincs jogosultság a szerepkör módosításához.' USING ERRCODE = '42501';
   END IF;
 
   IF new_role NOT IN ('user', 'editor', 'partner', 'school', 'teacher', 'contact', 'student', 'moderator', 'admin') THEN
@@ -818,8 +814,8 @@ BEGIN
   WHERE id = target_user_id;
 
   UPDATE auth.users
-  SET raw_user_meta_data = 
-    COALESCE(raw_user_meta_data, '{}'::jsonb) || 
+  SET raw_user_meta_data =
+    COALESCE(raw_user_meta_data, '{}'::jsonb) ||
     jsonb_build_object('role', new_role, 'user_type', new_role)
   WHERE id = target_user_id;
 
@@ -827,34 +823,29 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO authenticated;
-GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO service_role;
-GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO anon;
+REVOKE EXECUTE ON FUNCTION public.update_user_platform_role(uuid, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.update_user_platform_role(uuid, text) TO authenticated, service_role;
 
 DROP POLICY IF EXISTS "Admins update all profiles" ON public.profiles;
 CREATE POLICY "Admins update all profiles" ON public.profiles
 FOR UPDATE TO authenticated
-USING (true)
-WITH CHECK (true);`}
+USING (public.is_admin_role())
+WITH CHECK (public.is_admin_role());`}
               </pre>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => {
-                  const sqlText = `ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
-  CHECK (role = ANY (ARRAY['user'::text, 'editor'::text, 'partner'::text, 'school'::text, 'teacher'::text, 'contact'::text, 'student'::text, 'moderator'::text, 'admin'::text]));
-
-CREATE OR REPLACE FUNCTION update_user_platform_role(target_user_id uuid, new_role text)
+                  const sqlText = `CREATE OR REPLACE FUNCTION public.update_user_platform_role(target_user_id uuid, new_role text)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Hozzáférés megtagadva: Bejelentkezés szükséges.';
+  IF auth.role() IS DISTINCT FROM 'service_role' AND NOT public.is_admin_role() THEN
+    RAISE EXCEPTION 'Nincs jogosultság a szerepkör módosításához.' USING ERRCODE = '42501';
   END IF;
 
   IF new_role NOT IN ('user', 'editor', 'partner', 'school', 'teacher', 'contact', 'student', 'moderator', 'admin') THEN
@@ -866,8 +857,8 @@ BEGIN
   WHERE id = target_user_id;
 
   UPDATE auth.users
-  SET raw_user_meta_data = 
-    COALESCE(raw_user_meta_data, '{}'::jsonb) || 
+  SET raw_user_meta_data =
+    COALESCE(raw_user_meta_data, '{}'::jsonb) ||
     jsonb_build_object('role', new_role, 'user_type', new_role)
   WHERE id = target_user_id;
 
@@ -875,16 +866,15 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO authenticated;
-GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO service_role;
-GRANT EXECUTE ON FUNCTION update_user_platform_role(uuid, text) TO anon;
+REVOKE EXECUTE ON FUNCTION public.update_user_platform_role(uuid, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.update_user_platform_role(uuid, text) TO authenticated, service_role;
 
 DROP POLICY IF EXISTS "Admins update all profiles" ON public.profiles;
 CREATE POLICY "Admins update all profiles" ON public.profiles
 FOR UPDATE TO authenticated
-USING (true)
-WITH CHECK (true);`;
-                  navigator.clipboard.writeText(sqlText);
+USING (public.is_admin_role())
+WITH CHECK (public.is_admin_role());`;
+                  navigator.clipboard.writeText(sqlText).catch(() => {});
                   setSqlCopied(true);
                   setTimeout(() => setSqlCopied(false), 3000);
                 }}

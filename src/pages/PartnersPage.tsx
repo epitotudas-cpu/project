@@ -269,7 +269,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
         {/* Partnership CTA Banner */}
         <div className="bg-primary rounded-2xl p-8 md:p-10 text-white flex flex-col md:flex-row items-center justify-between gap-6 border border-primary-700">
           <div className="space-y-2 text-center md:text-left">
-            <h3 className="text-xl font-bold text-white">Szeretnél Ön is az ÉpítőTudás hivatalos partnerévé válni?</h3>
+            <h3 className="text-xl font-bold text-white">Szeretne Ön is az ÉpítőTudás hivatalos partnerévé válni?</h3>
             <p className="text-sm text-gray-300 max-w-2xl">
               Csatlakozz építőipari gyártóként, forgalmazóként vagy szakképző intézményként a nemzeti tudásplatformhóz!
             </p>

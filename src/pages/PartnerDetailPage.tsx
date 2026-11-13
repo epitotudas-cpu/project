@@ -555,7 +555,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
             <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto shrink-0 pt-2 md:pt-0">
               {partner.website_url && (
                 <a
-                  href={partner.website_url}
+                  href={/^https?:\/\//i.test(partner.website_url) ? partner.website_url : `https://${partner.website_url}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-5 py-3 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
@@ -734,7 +734,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
             <div className="flex flex-wrap gap-3">
               {partner.social_facebook && (
                 <a
-                  href={partner.social_facebook}
+                  href={/^https?:\/\//i.test(partner.social_facebook) ? partner.social_facebook : `https://${partner.social_facebook}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-blue-50 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"
@@ -744,7 +744,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
               )}
               {partner.social_linkedin && (
                 <a
-                  href={partner.social_linkedin}
+                  href={/^https?:\/\//i.test(partner.social_linkedin) ? partner.social_linkedin : `https://${partner.social_linkedin}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 hover:bg-sky-100 transition-colors flex items-center gap-2"
@@ -754,7 +754,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
               )}
               {partner.social_instagram && (
                 <a
-                  href={partner.social_instagram}
+                  href={/^https?:\/\//i.test(partner.social_instagram) ? partner.social_instagram : `https://${partner.social_instagram}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-pink-50 text-pink-700 font-bold text-xs rounded-xl border border-pink-200 hover:bg-pink-100 transition-colors flex items-center gap-2"
@@ -764,7 +764,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
               )}
               {partner.social_youtube && (
                 <a
-                  href={partner.social_youtube}
+                  href={/^https?:\/\//i.test(partner.social_youtube) ? partner.social_youtube : `https://${partner.social_youtube}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-red-50 text-red-700 font-bold text-xs rounded-xl border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-2"
@@ -871,7 +871,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             {partner.website_url && (
               <a
-                href={partner.website_url}
+                href={/^https?:\/\//i.test(partner.website_url) ? partner.website_url : `https://${partner.website_url}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all shadow-sm"

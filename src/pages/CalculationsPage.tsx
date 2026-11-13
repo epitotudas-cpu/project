@@ -2582,7 +2582,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                 <ArrowLeft size={16} /> Vissza a Számítási Tudásbázishoz
               </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-12 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-6 gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
               {[
                 { id: 'concrete', label: 'Beton & Zsaluzat', icon: <Building size={16} /> },
                 { id: 'masonry', label: 'Falazás & Tégla', icon: <Home size={16} /> },
@@ -3929,7 +3929,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                     <Info size={32} className="text-accent opacity-80" />
                     <h4 className="text-sm font-bold text-white">Add meg az adatokat a számításhoz</h4>
                     <p className="text-xs text-gray-300 max-w-xs">
-                      Töltsd ki a szoba méreteit a festék- és glettszüskélet kiszámításához.
+                      Töltsd ki a szoba méreteit a festék- és glettszükséglet kiszámításához.
                     </p>
                   </div>
                 ) : (

@@ -813,7 +813,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                     <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
                       {selectedBook.digitalAccess.previewUrl && (
                         <a
-                          href={selectedBook.digitalAccess.previewUrl}
+                          href={/^https?:\/\//i.test(selectedBook.digitalAccess.previewUrl) ? selectedBook.digitalAccess.previewUrl : `https://${selectedBook.digitalAccess.previewUrl}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-4 py-2 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
@@ -824,7 +824,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
 
                       {selectedBook.digitalAccess.digitalUrl && (
                         <a
-                          href={selectedBook.digitalAccess.digitalUrl}
+                          href={/^https?:\/\//i.test(selectedBook.digitalAccess.digitalUrl) ? selectedBook.digitalAccess.digitalUrl : `https://${selectedBook.digitalAccess.digitalUrl}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-5 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
@@ -932,7 +932,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                             </div>
 
                             <a
-                              href={offer.productUrl}
+                              href={/^https?:\/\//i.test(offer.productUrl) ? offer.productUrl : `https://${offer.productUrl}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"

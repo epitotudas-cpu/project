@@ -879,7 +879,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
               {/* Mit nem szabad? Box */}
               <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 space-y-2">
                 <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wider">
-                  <Ban size={18} className="text-rose-700" /> MIT NEM SZABAD? (TILTAKOZÁSOK &amp; TILTÁSOK)
+                  <Ban size={18} className="text-rose-700" /> MIT NEM SZABAD? (TILTÁSOK &amp; KORLÁTOZÁSOK)
                 </div>
                 <p className="text-xs sm:text-sm text-rose-950 leading-relaxed font-medium">
                   {activeCard.prohibited_action}
@@ -899,7 +899,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
               {/* Mikor alkalmazandó? */}
               {activeCard.when_applicable && (
                 <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs space-y-1">
-                  <span className="font-extrabold text-gray-900 block uppercase text-[10px] tracking-wider text-gray-500">
+                  <span className="font-extrabold block uppercase text-[10px] tracking-wider text-gray-500">
                     MIKOR ALKALMAZANDÓ?
                   </span>
                   <p className="text-gray-800 font-medium">{activeCard.when_applicable}</p>

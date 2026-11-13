@@ -503,7 +503,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
         {partners.length === 0 ? (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center text-gray-500 text-sm">
-            Még nincsenek kiemelt partner szervezetek. Hozzon létre partnereket az Admin felületen.
+            Jelenleg még nincsenek kiemelt partner szervezetek.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
