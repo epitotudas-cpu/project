@@ -401,7 +401,7 @@ export async function uploadStagingFile(
     .from('partner-references-staging')
     .upload(stagingKey, fileOrBlob, {
       contentType: fileOrBlob.type || 'image/jpeg',
-      upsert: true,
+      upsert: false,
     });
 
   if (error) {

@@ -113,7 +113,27 @@ ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'partner-references-staging'
-  AND (name LIKE 'staging/uploads/%.tmp' OR name LIKE 'staging/uploads/%')
+  AND name LIKE 'staging/uploads/%'
+);
+
+DROP POLICY IF EXISTS "Staging bucket authenticated select" ON storage.objects;
+CREATE POLICY "Staging bucket authenticated select"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'partner-references-staging'
+);
+
+DROP POLICY IF EXISTS "Staging bucket authenticated update" ON storage.objects;
+CREATE POLICY "Staging bucket authenticated update"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (
+  bucket_id = 'partner-references-staging'
+)
+WITH CHECK (
+  bucket_id = 'partner-references-staging'
+  AND name LIKE 'staging/uploads/%'
 );
 
 -- 3.3. Végleges vödör RLS szabályok (Publikus vödör)
