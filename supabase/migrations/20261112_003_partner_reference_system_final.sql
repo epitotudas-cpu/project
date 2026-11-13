@@ -8,14 +8,87 @@
 BEGIN;
 
 -- ----------------------------------------------------------------------------
--- 0. FÜGGŐBEN LÉVŐ BERAGADT INTENTEK TISZTÍTÁSA ÉS /thumbs/ ÚTVONALAK KORREKCIÓJA
+-- 0. FÜGGŐBEN LÉVŐ BERAGADT INTENTEK TISZTÍTÁSA ÉS KÉPKULCSOK JAVÍTÁSA
 -- ----------------------------------------------------------------------------
 DELETE FROM public.reference_upload_intents 
 WHERE status IN ('created', 'validating');
 
--- Triggerek ideiglenes felfüggesztése név szerint az adminisztratív adatkorrekció idejére
-ALTER TABLE public.partner_reference_images DISABLE TRIGGER trg_enforce_reference_images_limits;
-ALTER TABLE public.partner_references DISABLE TRIGGER trg_enforce_reference_publication_security;
+-- Képtábla trigger frissítése, hogy adminisztratív zászlóval engedje a kulcsok korrekcióját
+CREATE OR REPLACE FUNCTION public.enforce_reference_images_limits()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_count integer;
+  v_is_editor boolean;
+BEGIN
+  v_is_editor := public.is_editor_role();
+
+  IF TG_OP = 'INSERT' THEN
+    PERFORM 1 FROM public.partner_references
+    WHERE id = NEW.reference_id AND partner_id = NEW.partner_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'A hivatkozott referencia nem létezik ennél a partnernél!' USING ERRCODE = '23503';
+    END IF;
+
+    SELECT count(*) INTO v_count
+    FROM public.partner_reference_images
+    WHERE reference_id = NEW.reference_id;
+
+    IF v_count >= 10 THEN
+      RAISE EXCEPTION 'A referencia elérte a maximális 10 képet!' USING ERRCODE = 'P0002';
+    END IF;
+
+    NEW.created_at := now();
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'UPDATE' THEN
+    IF current_user = 'service_role' OR auth.role() = 'service_role' OR current_setting('app.allow_object_key_repair', true) = 'true' THEN
+      NEW.created_at := OLD.created_at;
+      RETURN NEW;
+    END IF;
+
+    IF NEW.partner_id IS DISTINCT FROM OLD.partner_id THEN
+      RAISE EXCEPTION 'A kép partner_id mezője nem módosítható!' USING ERRCODE = '42501';
+    END IF;
+    IF NEW.reference_id IS DISTINCT FROM OLD.reference_id THEN
+      RAISE EXCEPTION 'A kép reference_id mezője nem módosítható!' USING ERRCODE = '42501';
+    END IF;
+    IF NEW.object_key IS DISTINCT FROM OLD.object_key OR NEW.thumbnail_key IS DISTINCT FROM OLD.thumbnail_key THEN
+      RAISE EXCEPTION 'A kép objektumkulcsai nem módosíthatók!' USING ERRCODE = '42501';
+    END IF;
+
+    IF NEW.is_cover IS DISTINCT FROM OLD.is_cover THEN
+      IF current_setting('app.allow_cover_change', true) IS DISTINCT FROM 'true' THEN
+        RAISE EXCEPTION 'A borítókép közvetlenül nem módosítható, használja a set_reference_cover_image RPC-t!' USING ERRCODE = '42501';
+      END IF;
+    END IF;
+
+    IF NOT (public.is_partner_admin(OLD.partner_id) OR v_is_editor) THEN
+      RAISE EXCEPTION 'Nincs jogosultsága a kép módosításához!' USING ERRCODE = '42501';
+    END IF;
+
+    NEW.created_at := OLD.created_at;
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION public.enforce_reference_images_limits() OWNER TO postgres;
+
+-- Javítási kulcs aktiválása
+SET LOCAL app.allow_object_key_repair = 'true';
 
 -- A hibás /thumbs/ mappa eltávolítása az eddig beszúrt képekből a valódi fájlokra
 UPDATE public.partner_reference_images
@@ -29,10 +102,6 @@ SET is_published = true, updated_at = now()
 WHERE id IN (
   SELECT reference_id FROM public.partner_reference_images
 );
-
--- Triggerek azonnali visszakapcsolása név szerint
-ALTER TABLE public.partner_reference_images ENABLE TRIGGER trg_enforce_reference_images_limits;
-ALTER TABLE public.partner_references ENABLE TRIGGER trg_enforce_reference_publication_security;
 
 -- ----------------------------------------------------------------------------
 -- 1. PUBLIKÁLÁSI BIZTONSÁGI TRIGGER FRISSÍTÉSE (PARTNERI PUBLIKÁLÁS TÁMOGATÁSA)
