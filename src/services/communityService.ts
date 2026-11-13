@@ -195,30 +195,190 @@ export async function deleteComment(
   return false;
 }
 
-export async function toggleFavorite(userId: string, itemType: string, itemId: string): Promise<boolean> {
-  const key = `${userId}:${itemType}:${itemId}`;
-  if (IN_MEMORY_FAVORITES.has(key)) {
-    IN_MEMORY_FAVORITES.delete(key);
-    return false;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function readLocalSet(storageKey: string): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? new Set(parsed.filter((v): v is string => typeof v === 'string')) : new Set();
+  } catch {
+    return new Set();
   }
-  IN_MEMORY_FAVORITES.add(key);
-  return true;
+}
+
+function writeLocalSet(storageKey: string, values: Set<string>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(values)));
+  } catch {
+    // Ignore localStorage quota/access error
+  }
+}
+
+export async function toggleFavorite(userId: string, itemType: string, itemId: string): Promise<boolean> {
+  if (!userId || !itemType || !itemId) return false;
+  const key = `${userId}:${itemType}:${itemId}`;
+  const storageKey = `epitotudas_favorites_${userId}`;
+  const localItemKey = `${itemType}:${itemId}`;
+  const currentlyFav = await isFavorite(userId, itemType, itemId);
+  const nextStatus = !currentlyFav;
+
+  if (UUID_RE.test(userId)) {
+    try {
+      if (currentlyFav) {
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', userId)
+          .eq('content_type', itemType)
+          .eq('content_id', itemId);
+        if (error) {
+          console.warn('Supabase favorite delete fallback:', error.message);
+        }
+      } else {
+        const { error } = await supabase
+          .from('user_favorites')
+          .upsert(
+            { user_id: userId, content_type: itemType, content_id: itemId },
+            { onConflict: 'user_id,content_type,content_id' }
+          );
+        if (error) {
+          console.warn('Supabase favorite insert fallback:', error.message);
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase favorite toggle fallback:', err);
+    }
+  }
+
+  const localSet = readLocalSet(storageKey);
+  if (nextStatus) {
+    IN_MEMORY_FAVORITES.add(key);
+    localSet.add(localItemKey);
+  } else {
+    IN_MEMORY_FAVORITES.delete(key);
+    localSet.delete(localItemKey);
+  }
+  writeLocalSet(storageKey, localSet);
+  return nextStatus;
 }
 
 export async function isFavorite(userId: string, itemType: string, itemId: string): Promise<boolean> {
-  return IN_MEMORY_FAVORITES.has(`${userId}:${itemType}:${itemId}`);
+  if (!userId || !itemType || !itemId) return false;
+  const key = `${userId}:${itemType}:${itemId}`;
+  const storageKey = `epitotudas_favorites_${userId}`;
+  const localItemKey = `${itemType}:${itemId}`;
+
+  if (UUID_RE.test(userId)) {
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('content_id')
+        .eq('user_id', userId)
+        .eq('content_type', itemType)
+        .eq('content_id', itemId)
+        .maybeSingle();
+
+      if (!error) {
+        const exists = Boolean(data);
+        const localSet = readLocalSet(storageKey);
+        if (exists) {
+          IN_MEMORY_FAVORITES.add(key);
+          localSet.add(localItemKey);
+        } else {
+          IN_MEMORY_FAVORITES.delete(key);
+          localSet.delete(localItemKey);
+        }
+        writeLocalSet(storageKey, localSet);
+        return exists;
+      }
+    } catch (err) {
+      console.warn('Supabase favorite read fallback:', err);
+    }
+  }
+
+  return IN_MEMORY_FAVORITES.has(key) || readLocalSet(storageKey).has(localItemKey);
 }
 
 export async function toggleFollowAuthor(userId: string, authorId: string): Promise<boolean> {
+  if (!userId || !authorId) return false;
   const key = `${userId}:${authorId}`;
-  if (IN_MEMORY_FOLLOWS.has(key)) {
-    IN_MEMORY_FOLLOWS.delete(key);
-    return false;
+  const storageKey = `epitotudas_follows_${userId}`;
+  const currentlyFollowing = await isFollowingAuthor(userId, authorId);
+  const nextStatus = !currentlyFollowing;
+
+  if (UUID_RE.test(userId) && UUID_RE.test(authorId)) {
+    try {
+      if (currentlyFollowing) {
+        const { error } = await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', userId)
+          .eq('following_id', authorId);
+        if (error) {
+          console.warn('Supabase follow delete fallback:', error.message);
+        }
+      } else {
+        const { error } = await supabase
+          .from('user_follows')
+          .upsert(
+            { follower_id: userId, following_id: authorId },
+            { onConflict: 'follower_id,following_id' }
+          );
+        if (error) {
+          console.warn('Supabase follow insert fallback:', error.message);
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase follow toggle fallback:', err);
+    }
   }
-  IN_MEMORY_FOLLOWS.add(key);
-  return true;
+
+  const localSet = readLocalSet(storageKey);
+  if (nextStatus) {
+    IN_MEMORY_FOLLOWS.add(key);
+    localSet.add(authorId);
+  } else {
+    IN_MEMORY_FOLLOWS.delete(key);
+    localSet.delete(authorId);
+  }
+  writeLocalSet(storageKey, localSet);
+  return nextStatus;
 }
 
 export async function isFollowingAuthor(userId: string, authorId: string): Promise<boolean> {
-  return IN_MEMORY_FOLLOWS.has(`${userId}:${authorId}`);
+  if (!userId || !authorId) return false;
+  const key = `${userId}:${authorId}`;
+  const storageKey = `epitotudas_follows_${userId}`;
+
+  if (UUID_RE.test(userId) && UUID_RE.test(authorId)) {
+    try {
+      const { data, error } = await supabase
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', userId)
+        .eq('following_id', authorId)
+        .maybeSingle();
+
+      if (!error) {
+        const exists = Boolean(data);
+        const localSet = readLocalSet(storageKey);
+        if (exists) {
+          IN_MEMORY_FOLLOWS.add(key);
+          localSet.add(authorId);
+        } else {
+          IN_MEMORY_FOLLOWS.delete(key);
+          localSet.delete(authorId);
+        }
+        writeLocalSet(storageKey, localSet);
+        return exists;
+      }
+    } catch (err) {
+      console.warn('Supabase follow read fallback:', err);
+    }
+  }
+
+  return IN_MEMORY_FOLLOWS.has(key) || readLocalSet(storageKey).has(authorId);
 }
