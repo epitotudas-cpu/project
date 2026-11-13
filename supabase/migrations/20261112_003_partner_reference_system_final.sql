@@ -13,9 +13,9 @@ BEGIN;
 DELETE FROM public.reference_upload_intents 
 WHERE status IN ('created', 'validating');
 
--- Triggerek ideiglenes felfüggesztése az adminisztratív adatkorrekció idejére
-ALTER TABLE public.partner_reference_images DISABLE TRIGGER ALL;
-ALTER TABLE public.partner_references DISABLE TRIGGER ALL;
+-- Triggerek ideiglenes felfüggesztése név szerint az adminisztratív adatkorrekció idejére
+ALTER TABLE public.partner_reference_images DISABLE TRIGGER trg_enforce_reference_images_limits;
+ALTER TABLE public.partner_references DISABLE TRIGGER trg_enforce_reference_publication_security;
 
 -- A hibás /thumbs/ mappa eltávolítása az eddig beszúrt képekből a valódi fájlokra
 UPDATE public.partner_reference_images
@@ -30,9 +30,9 @@ WHERE id IN (
   SELECT reference_id FROM public.partner_reference_images
 );
 
--- Triggerek azonnali visszakapcsolása
-ALTER TABLE public.partner_reference_images ENABLE TRIGGER ALL;
-ALTER TABLE public.partner_references ENABLE TRIGGER ALL;
+-- Triggerek azonnali visszakapcsolása név szerint
+ALTER TABLE public.partner_reference_images ENABLE TRIGGER trg_enforce_reference_images_limits;
+ALTER TABLE public.partner_references ENABLE TRIGGER trg_enforce_reference_publication_security;
 
 -- ----------------------------------------------------------------------------
 -- 1. PUBLIKÁLÁSI BIZTONSÁGI TRIGGER FRISSÍTÉSE (PARTNERI PUBLIKÁLÁS TÁMOGATÁSA)
