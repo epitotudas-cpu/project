@@ -15,7 +15,7 @@ import {
 } from './services/siteSettingsService';
 import { fetchHeroStateFromCloud } from './services/heroImageService';
 import { fetchImpressumDataFromCloud } from './services/impressumService';
-import { fetchRolePermissionsFromCloud } from './services/permissionService';
+import { fetchRolePermissionsFromCloud, canRoleAccessModule } from './services/permissionService';
 import { supabase, type Partner } from './lib/supabase';
 import { acceptInvitation } from './services/partnerInvitationService';
 import {
@@ -354,20 +354,24 @@ function PageFallback() {
 }
 
 function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const { profile } = useAuth();
   const [editorView, setEditorView] = useState<EditorView>('dashboard');
+  const role = profile?.role;
+  const canView = (moduleId: string) => canRoleAccessModule(role, moduleId);
+
   return (
     <EditorLayout onNavigate={onNavigate} activeView={editorView} onNavigateView={setEditorView}>
       {editorView === 'dashboard' && <EditorDashboardPage onNavigateView={setEditorView} />}
-      {editorView === 'articles' && <AdminArticlesPage onNavigateView={(view) => setEditorView(view as EditorView)} />}
-      {editorView === 'utmutatok' && <AdminGuidesPage />}
-      {editorView === 'learning' && <AdminLearningPage />}
-      {editorView === 'categories' && <AdminCategoriesPage />}
-      {editorView === 'glossary' && <AdminGlossaryPage />}
-      {editorView === 'safety' && <SafetyPage onNavigate={onNavigate} />}
-      {editorView === 'materials' && <AdminMaterialsPage />}
-      {editorView === 'tools' && <AdminToolsPage />}
-      {editorView === 'books' && <AdminBooksPage />}
-      {editorView === 'moderation' && <AdminModerationPage />}
+      {editorView === 'articles' && (canView('articles') ? <AdminArticlesPage onNavigateView={(view) => setEditorView(view as EditorView)} /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'utmutatok' && (canView('guides') ? <AdminGuidesPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'learning' && (canView('learning') ? <AdminLearningPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'categories' && (canView('categories') ? <AdminCategoriesPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'glossary' && (canView('glossary') ? <AdminGlossaryPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'safety' && (canView('safety') ? <AdminKnowledgeHubPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'materials' && (canView('catalog') ? <AdminMaterialsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'tools' && (canView('catalog') ? <AdminToolsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'books' && (canView('catalog') ? <AdminBooksPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'moderation' && (canView('moderation') ? <AdminModerationPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'settings' && <EditorSettingsPage />}
     </EditorLayout>
   );
@@ -1012,7 +1016,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
 
       {partnerView === 'catalog' && (
         <Suspense fallback={<PageFallback />}>
-          <AdminToolsPage initialSearchQuery={effectivePartner.name} />
+          <AdminToolsPage initialSearchQuery={effectivePartner.name} readOnly />
         </Suspense>
       )}
 
@@ -1027,7 +1031,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
 
       {partnerView === 'partner_learning' && (
         <Suspense fallback={<PageFallback />}>
-          <PartnerLearningPage />
+          <PartnerLearningPage partnerId={effectivePartner.id} partnerName={effectivePartner.name} />
         </Suspense>
       )}
 
@@ -1357,7 +1361,7 @@ function AppContent() {
               if (view === 'users') return <AdminUsersPage initialSearchQuery={searchQuery} />;
               if (view === 'roles') return <AdminRolesPage />;
               if (view === 'partners') return <AdminPartnersPage initialSearchQuery={searchQuery} />;
-              if (view === 'ads') return <AdminAdsPage onNavigate={navigate} />;
+              if (view === 'ads') return <AdminAdsPage onNavigate={navigate} onNavigateView={onNavigateView} />;
               if (view === 'knowledge-hub') return <AdminKnowledgeHubPage initialSearchQuery={searchQuery} />;
               if (view === 'materials') return <AdminMaterialsPage initialSearchQuery={searchQuery} />;
               if (view === 'audit') return <AdminAuditPage />;

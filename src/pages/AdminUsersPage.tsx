@@ -137,19 +137,27 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
   }, [loadUsers]);
 
   async function handleToggleTrusted(userId: string, currentStatus: boolean) {
-    const updated = await setTrustedContributorStatus(userId, !currentStatus);
-    setTrustProfiles((prev) => ({
-      ...prev,
-      [userId]: updated,
-    }));
+    try {
+      const updated = await setTrustedContributorStatus(userId, !currentStatus);
+      setTrustProfiles((prev) => ({
+        ...prev,
+        [userId]: updated,
+      }));
+    } catch (err) {
+      console.error('Hiba a megbízható státusz módosításakor:', err);
+    }
   }
 
   async function handleAdjustScore(userId: string, delta: number) {
-    const updated = await incrementTrustScore(userId, delta);
-    setTrustProfiles((prev) => ({
-      ...prev,
-      [userId]: updated,
-    }));
+    try {
+      const updated = await incrementTrustScore(userId, delta);
+      setTrustProfiles((prev) => ({
+        ...prev,
+        [userId]: updated,
+      }));
+    } catch (err) {
+      console.error('Hiba a bizalmi pontszám módosításakor:', err);
+    }
   }
 
   function handleDeleteUser(userToDelete: Profile) {

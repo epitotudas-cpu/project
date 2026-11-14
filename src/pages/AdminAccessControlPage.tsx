@@ -74,17 +74,25 @@ export function AdminAccessControlPage() {
   };
 
   const handleSave = async () => {
-    await saveRoleModulePermissions(selectedRole, permissions);
-    setToastMessage(
-      `A(z) ${ROLE_LABELS[selectedRole]} szerepkör jogosultságai sikeresen elmentve a felhőbe!`
-    );
+    try {
+      await saveRoleModulePermissions(selectedRole, permissions);
+      setToastMessage(
+        `A(z) ${ROLE_LABELS[selectedRole]} szerepkör jogosultságai sikeresen elmentve a felhőbe!`
+      );
+    } catch (err) {
+      setToastMessage(err instanceof Error ? err.message : 'Hiba történt a jogosultságok mentésekor.');
+    }
     setTimeout(() => setToastMessage(null), 4000);
   };
 
   const handleReset = async () => {
-    const defaults = await resetRoleModulePermissions(selectedRole);
-    setPermissions(defaults);
-    setToastMessage(`A(z) ${ROLE_LABELS[selectedRole]} jogosultságok visszaállítva az alapértelmezettekre.`);
+    try {
+      const defaults = await resetRoleModulePermissions(selectedRole);
+      setPermissions(defaults);
+      setToastMessage(`A(z) ${ROLE_LABELS[selectedRole]} jogosultságok visszaállítva az alapértelmezettekre.`);
+    } catch (err) {
+      setToastMessage(err instanceof Error ? err.message : 'Hiba történt a visszaállítás során.');
+    }
     setTimeout(() => setToastMessage(null), 4000);
   };
 

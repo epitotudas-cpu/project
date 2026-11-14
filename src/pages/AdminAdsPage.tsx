@@ -75,6 +75,7 @@ import type {
 
 interface AdminAdsPageProps {
   onNavigate?: (page: string) => void;
+  onNavigateView?: (view: 'partners') => void;
 }
 
 export type AdCategoryKey =
@@ -153,7 +154,7 @@ const AD_MODULE_CARDS: AdModuleCardDef[] = [
   },
 ];
 
-export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
+export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPageProps) {
   const toast = useToast();
   const [confirmClearNotifsOpen, setConfirmClearNotifsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<AdCategoryKey>('overview');
@@ -1072,7 +1073,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                             type="button"
                             onClick={() => {
                               if (onNavigate) {
-                                onNavigate('adminPartners');
+                                if (onNavigateView) { onNavigateView('partners'); } else if (onNavigate) { onNavigate('admin'); };
                               } else {
                                 setActiveTab('advertisers');
                                 setSearchQuery(camp.sponsor_name);
@@ -1128,7 +1129,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                   {onNavigate && (
                     <button
                       type="button"
-                      onClick={() => onNavigate('adminPartners')}
+                      onClick={() => { if (onNavigateView) { onNavigateView('partners'); } else if (onNavigate) { onNavigate('admin'); } }}
                       className="px-3.5 py-2 text-xs font-extrabold rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                       title="Partner & Iskola Szervezetek Kezelője"
                     >
@@ -1180,7 +1181,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                       {onNavigate ? (
                         <button
                           type="button"
-                          onClick={() => onNavigate('adminPartners')}
+                          onClick={() => { if (onNavigateView) { onNavigateView('partners'); } else if (onNavigate) { onNavigate('admin'); } }}
                           className="text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
                           title="Megtekintés a Partner Szervezetek Kezelőjében"
                         >
@@ -1280,7 +1281,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                             type="button"
                             onClick={() => {
                               if (onNavigate) {
-                                onNavigate('adminPartners');
+                                if (onNavigateView) { onNavigateView('partners'); } else if (onNavigate) { onNavigate('admin'); };
                               } else {
                                 setActiveTab('advertisers');
                                 setSearchQuery(c.partnerName);
@@ -1354,7 +1355,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                             type="button"
                             onClick={() => {
                               if (onNavigate) {
-                                onNavigate('adminPartners');
+                                if (onNavigateView) { onNavigateView('partners'); } else if (onNavigate) { onNavigate('admin'); };
                               } else {
                                 setActiveTab('advertisers');
                                 setSearchQuery(p.advertiserName);

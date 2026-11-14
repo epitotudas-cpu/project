@@ -15,9 +15,10 @@ const STATUS_BADGE: Record<Tool['status'], { label: string; class: string }> = {
 
 interface AdminToolsPageProps {
   initialSearchQuery?: string;
+  readOnly?: boolean;
 }
 
-export default function AdminToolsPage({ initialSearchQuery }: AdminToolsPageProps = {}) {
+export default function AdminToolsPage({ initialSearchQuery, readOnly = false }: AdminToolsPageProps = {}) {
   const toast = useToast();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,13 +144,15 @@ export default function AdminToolsPage({ initialSearchQuery }: AdminToolsPagePro
           <p className="text-sm text-gray-400 mt-1">{tools.length} eszköz rögzítve</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={openCreate}
-            style={{ backgroundColor: cardHighlight, color: '#000000' }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 transition-all cursor-pointer shadow-md"
-          >
-            <Plus size={14} /> Új eszköz
-          </button>
+          {!readOnly && (
+            <button
+              onClick={openCreate}
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 transition-all cursor-pointer shadow-md"
+            >
+              <Plus size={14} /> Új eszköz
+            </button>
+          )}
           {!loading && (
             <button
               onClick={loadTools}
@@ -202,7 +205,9 @@ export default function AdminToolsPage({ initialSearchQuery }: AdminToolsPagePro
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Típus</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Leírás</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Státusz</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">Műveletek</th>
+                {!readOnly && (
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">Műveletek</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -245,29 +250,31 @@ export default function AdminToolsPage({ initialSearchQuery }: AdminToolsPagePro
                           {badge.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => openEdit(t)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-md hover:bg-[#1E1E1E] hover:text-white transition-colors"
-                          >
-                            <Pencil size={12} /> Szerkesztés
-                          </button>
-                          <button
-                            onClick={() => toggleStatus(t)}
-                            disabled={togglingId === t.id}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                              isActive
-                                ? 'text-amber-400 border-amber-500/20 hover:bg-amber-500/10'
-                                : 'text-green-400 border-green-500/20 hover:bg-green-500/10'
-                            }`}
-                            title={isActive ? 'Kivezet' : 'Aktivál'}
-                          >
-                            {isActive ? <PowerOff size={12} /> : <Power size={12} />}
-                            {isActive ? 'Kivezet' : 'Aktivál'}
-                          </button>
-                        </div>
-                      </td>
+                      {!readOnly && (
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openEdit(t)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-md hover:bg-[#1E1E1E] hover:text-white transition-colors"
+                            >
+                              <Pencil size={12} /> Szerkesztés
+                            </button>
+                            <button
+                              onClick={() => toggleStatus(t)}
+                              disabled={togglingId === t.id}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                                isActive
+                                  ? 'text-amber-400 border-amber-500/20 hover:bg-amber-500/10'
+                                  : 'text-green-400 border-green-500/20 hover:bg-green-500/10'
+                              }`}
+                              title={isActive ? 'Kivezet' : 'Aktivál'}
+                            >
+                              {isActive ? <PowerOff size={12} /> : <Power size={12} />}
+                              {isActive ? 'Kivezet' : 'Aktivál'}
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

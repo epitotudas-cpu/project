@@ -83,25 +83,37 @@ export default function AdminLearningPage() {
   }, [loadData]);
 
   const handleApproveCourse = async (id: string) => {
-    await setCourseStatus(id, 'published');
-    loadData();
+    try {
+      await setCourseStatus(id, 'published');
+      await loadData();
+    } catch (e) {
+      console.error('Hiba a tananyag jóváhagyásakor:', e);
+    }
   };
 
   const handleApproveQuiz = async (id: string) => {
-    await setQuizStatus(id, 'published');
-    loadData();
+    try {
+      await setQuizStatus(id, 'published');
+      await loadData();
+    } catch (e) {
+      console.error('Hiba a teszt jóváhagyásakor:', e);
+    }
   };
 
   const handleConfirmReject = async () => {
     if (!rejectModalItem || !rejectionNoteInput.trim()) return;
-    if (rejectModalItem.type === 'course') {
-      await setCourseStatus(rejectModalItem.id, 'rejected', rejectionNoteInput.trim());
-    } else {
-      await setQuizStatus(rejectModalItem.id, 'rejected', rejectionNoteInput.trim());
+    try {
+      if (rejectModalItem.type === 'course') {
+        await setCourseStatus(rejectModalItem.id, 'rejected', rejectionNoteInput.trim());
+      } else {
+        await setQuizStatus(rejectModalItem.id, 'rejected', rejectionNoteInput.trim());
+      }
+      setRejectModalItem(null);
+      setRejectionNoteInput('');
+      await loadData();
+    } catch (e) {
+      console.error('Hiba az elutasítás során:', e);
     }
-    setRejectModalItem(null);
-    setRejectionNoteInput('');
-    loadData();
   };
 
   const handleDeleteCourse = (id: string) => {
@@ -109,8 +121,12 @@ export default function AdminLearningPage() {
       title: 'Tananyag törlése',
       message: 'Biztosan törölni szeretnéd ezt a tananyagot?',
       onConfirm: async () => {
-        await deleteCourse(id);
-        loadData();
+        try {
+          await deleteCourse(id);
+          await loadData();
+        } catch (e) {
+          console.error('Hiba a tananyag törlésekor:', e);
+        }
       },
     });
   };
@@ -120,8 +136,12 @@ export default function AdminLearningPage() {
       title: 'Teszt törlése',
       message: 'Biztosan törölni szeretnéd ezt a tesztet?',
       onConfirm: async () => {
-        await deleteQuiz(id);
-        loadData();
+        try {
+          await deleteQuiz(id);
+          await loadData();
+        } catch (e) {
+          console.error('Hiba a teszt törlésekor:', e);
+        }
       },
     });
   };

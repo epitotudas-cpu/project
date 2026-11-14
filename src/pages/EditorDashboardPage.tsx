@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useEditorTheme } from '../services/editorThemeService';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { canRoleAccessModule } from '../services/permissionService';
 import {
   FileText,
   BookMarked,
@@ -18,8 +20,13 @@ interface EditorDashboardPageProps {
 }
 
 export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps) {
+  const { profile } = useAuth();
   const theme = useEditorTheme();
   const [stats, setStats] = useState({ total: 0, guides: 0, pending: 0, published: 0 });
+  const role = profile?.role;
+  const canArticles = canRoleAccessModule(role, 'articles');
+  const canGuides = canRoleAccessModule(role, 'guides');
+  const canModeration = canRoleAccessModule(role, 'moderation');
 
   useEffect(() => {
     let cancelled = false;
@@ -62,15 +69,17 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => onNavigateView('articles')}
-              className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 ${theme.buttonBg} ${theme.buttonHover} ${theme.buttonText} font-bold rounded-xl text-xs sm:text-sm transition-all shadow-lg ${theme.shadow}`}
-            >
-              <PlusCircle className="w-4 h-4" />
-              Új cikk írása
-            </button>
-          </div>
+          {canArticles && (
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => onNavigateView('articles')}
+                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 ${theme.buttonBg} ${theme.buttonHover} ${theme.buttonText} font-bold rounded-xl text-xs sm:text-sm transition-all shadow-lg ${theme.shadow}`}
+              >
+                <PlusCircle className="w-4 h-4" />
+                Új cikk írása
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -119,53 +128,59 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
 
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-4 sm:p-6 transition-all group`}>
-          <div className={`p-2.5 sm:p-3 ${theme.bgSubtle} ${theme.textAccent} w-fit rounded-xl mb-3 sm:mb-4`}>
-            <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+        {canArticles && (
+          <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-4 sm:p-6 transition-all group`}>
+            <div className={`p-2.5 sm:p-3 ${theme.bgSubtle} ${theme.textAccent} w-fit rounded-xl mb-3 sm:mb-4`}>
+              <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">Cikkek és Hírek Szerkesztése</h3>
+            <p className="text-xs text-slate-400 mb-4 sm:mb-6 leading-relaxed">
+              Hozz létre új szakmai cikkeket vagy szerkeszd meglévő piszkozataidat.
+            </p>
+            <button
+              onClick={() => onNavigateView('articles')}
+              className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
+            >
+              Tovább a cikkekhez <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">Cikkek és Hírek Szerkesztése</h3>
-          <p className="text-xs text-slate-400 mb-4 sm:mb-6 leading-relaxed">
-            Hozz létre új szakmai cikkeket vagy szerkeszd meglévő piszkozataidat.
-          </p>
-          <button
-            onClick={() => onNavigateView('articles')}
-            className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
-          >
-            Tovább a cikkekhez <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        )}
 
-        <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-4 sm:p-6 transition-all group`}>
-          <div className="p-2.5 sm:p-3 bg-blue-500/10 text-blue-400 w-fit rounded-xl mb-3 sm:mb-4">
-            <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
+        {canGuides && (
+          <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-4 sm:p-6 transition-all group`}>
+            <div className="p-2.5 sm:p-3 bg-blue-500/10 text-blue-400 w-fit rounded-xl mb-3 sm:mb-4">
+              <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">Kivitelezési Útmutatók</h3>
+            <p className="text-xs text-slate-400 mb-4 sm:mb-6 leading-relaxed">
+              Készíts lépésről lépésre követhető kivitelezési útmutatókat a szakemberek számára.
+            </p>
+            <button
+              onClick={() => onNavigateView('utmutatok')}
+              className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
+            >
+              Tovább az útmutatókhoz <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">Kivitelezési Útmutatók</h3>
-          <p className="text-xs text-slate-400 mb-4 sm:mb-6 leading-relaxed">
-            Készíts lépésről lépésre követhető kivitelezési útmutatókat a szakemberek számára.
-          </p>
-          <button
-            onClick={() => onNavigateView('utmutatok')}
-            className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
-          >
-            Tovább az útmutatókhoz <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        )}
 
-        <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-4 sm:p-6 transition-all group`}>
-          <div className="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-400 w-fit rounded-xl mb-3 sm:mb-4">
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+        {canModeration && (
+          <div className={`bg-slate-900/70 border border-slate-800 hover:${theme.borderStrong} rounded-2xl p-4 sm:p-6 transition-all group`}>
+            <div className="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-400 w-fit rounded-xl mb-3 sm:mb-4">
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">Moderációs Várólista</h3>
+            <p className="text-xs text-slate-400 mb-4 sm:mb-6 leading-relaxed">
+              Tekintsd át a jóváhagyásra beküldött vagy szerkesztésre váró cikkek státuszát.
+            </p>
+            <button
+              onClick={() => onNavigateView('moderation')}
+              className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
+            >
+              Várólista megtekintése <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">Moderációs Várólista</h3>
-          <p className="text-xs text-slate-400 mb-4 sm:mb-6 leading-relaxed">
-            Tekintsd át a jóváhagyásra beküldött vagy szerkesztésre váró cikkek státuszát.
-          </p>
-          <button
-            onClick={() => onNavigateView('moderation')}
-            className={`flex items-center gap-2 text-xs font-bold ${theme.textAccent} group-hover:translate-x-1 transition-transform`}
-          >
-            Várólista megtekintése <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

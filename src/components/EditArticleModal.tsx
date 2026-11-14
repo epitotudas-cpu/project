@@ -1195,12 +1195,12 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
       };
 
       // Check slug change and register URL redirect
-      if (article && article.slug && article.slug !== form.slug.trim()) {
+      if (article?.id && article.slug && article.slug !== form.slug.trim()) {
         addArticleRedirect(article.slug, form.slug.trim(), article.id);
       }
 
       let savedData: Article;
-      if (article) {
+      if (article?.id) {
         savedData = await updateArticle(article.id, payload);
       } else {
         savedData = await createArticle(payload);

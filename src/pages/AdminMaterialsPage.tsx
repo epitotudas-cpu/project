@@ -120,7 +120,9 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
     }
     reload();
 
-    void listPartners().then((p) => setPartners(p));
+    void listPartners()
+      .then((p) => setPartners(p))
+      .catch((err) => console.warn('Hiba a partnerek betöltésekor:', err));
 
     window.addEventListener('materials-updated', reload);
     return () => window.removeEventListener('materials-updated', reload);

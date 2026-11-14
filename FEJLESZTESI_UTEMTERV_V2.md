@@ -25,15 +25,15 @@
 ## Fázis 2 – Törött Alapfolyamatok & Panel Jogosultságok Javítása (P0 + P1 Panelek)
 **Cél:** A hibás létrehozási/hozzáférési folyamatok és a hiányzó `try/catch` hibakezelések pótlása az Admin, Editor és Partner panelekben.
 
-- [ ] **2.1 Kritikus panelhibák (P0)**
+- [x] **2.1 Kritikus panelhibák (P0)**
   - `src/pages/AdminGuidesPage.tsx` (221–238, 650–661. sor) & `src/components/EditArticleModal.tsx` (1202–1207. sor): új sablon-/szakmaalapú útmutatónál ne `{ id: '' }` hamis `article` objektummal hívjon `updateArticle('', ...)`-t, hanem `createArticle(...)` induljon (vagy `initialDraft` prop bevezetése).
   - `src/App.tsx` (1013–1017. sor) & `src/components/PartnerLayout.tsx`: a Partner `catalog` nézetben a teljes `AdminToolsPage` helyett partneri jogosultsághoz kötött, csak saját/olvasási vagy szűrt eszközkezelő nézet jelenjen meg.
-- [ ] **2.2 Editor és Partner hozzáférés-védelem (P1)**
+- [x] **2.2 Editor és Partner hozzáférés-védelem (P1)**
   - `src/App.tsx` (359–372. sor) & `src/pages/EditorDashboardPage.tsx` (66–72, 130–167. sor): `canRoleAccessModule()` ellenőrzés kiterjesztése a gyorsgombokra és a nézetváltásra (`EditorPanelContent`); `safety` nézetben `SafetyPage` helyett `AdminKnowledgeHubPage` (vagy dedikált szerkesztői nézet).
   - `src/pages/PartnerLearningPage.tsx` (29–31, 50–56, 108–120. sor): `profile.partner_id` helyett `partner_users` tagság alapján történő hozzáférés-ellenőrzés és partner-azonosítás.
   - `src/components/EditorLayout.tsx` (71, 101. sor) & `src/components/PartnerLayout.tsx` (82, 112. sor): profil töltődése közben ne villanjon fel az `AccessDeniedPage`.
   - `src/pages/AdminAdsPage.tsx` (1282–1284, 1356–1358. sor): hibás `onNavigate('adminPartners')` javítása az admin partnerek nézetre.
-- [ ] **2.3 Hiányzó `try/catch` és toast visszajelzések pótlása (P1)**
+- [x] **2.3 Hiányzó `try/catch` és toast visszajelzések pótlása (P1)**
   - `src/pages/AdminModerationPage.tsx` (30–38. sor)
   - `src/pages/AdminAuditPage.tsx` (84–85, 116–120. sor)
   - `src/pages/AdminAccessControlPage.tsx` (76–89. sor)

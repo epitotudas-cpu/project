@@ -32,6 +32,8 @@ export default function AdminModerationPage() {
       setLoading(true);
       const data = await listContentByLifecycleStatus(activeFilter === 'all' ? undefined : activeFilter);
       setItems([...data]);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Hiba a moderációs lista betöltésekor.');
     } finally {
       setLoading(false);
     }

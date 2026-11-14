@@ -64,21 +64,31 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
     try {
       const data = await listJobPostings(undefined, undefined, true);
       setJobs([...data]);
+    } catch (err) {
+      console.error('Hiba az álláshirdetések betöltésekor:', err);
     } finally {
       setLoading(false);
     }
   }
 
   const handleApproveJob = async (id: string) => {
-    await approveJobPosting(id);
-    await loadJobs();
-    triggerSuccessNotify();
+    try {
+      await approveJobPosting(id);
+      await loadJobs();
+      triggerSuccessNotify();
+    } catch (err) {
+      console.error('Hiba az állás jóváhagyásakor:', err);
+    }
   };
 
   const handleRejectJob = async (id: string) => {
-    await rejectJobPosting(id);
-    await loadJobs();
-    triggerSuccessNotify();
+    try {
+      await rejectJobPosting(id);
+      await loadJobs();
+      triggerSuccessNotify();
+    } catch (err) {
+      console.error('Hiba az állás elutasításakor:', err);
+    }
   };
 
   const filteredJobs = jobs.filter((j) => {
@@ -130,9 +140,13 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
   };
 
   const handleToggleActive = async (id: string) => {
-    await toggleJobPostingActive(id);
-    await loadJobs();
-    triggerSuccessNotify();
+    try {
+      await toggleJobPostingActive(id);
+      await loadJobs();
+      triggerSuccessNotify();
+    } catch (err) {
+      console.error('Hiba az állás státuszának módosításakor:', err);
+    }
   };
 
   const handleDeleteJob = (id: string) => {
@@ -143,29 +157,33 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
     e.preventDefault();
     if (!title.trim() || !companyName.trim()) return;
 
-    if (editingJob) {
-      await updateJobPosting(editingJob.id, {
-        companyName: companyName.trim(),
-        title: title.trim(),
-        jobType,
-        location: location.trim(),
-        salaryRange: salaryRange.trim(),
-        description: description.trim(),
-      });
-    } else {
-      await createJobPosting({
-        companyName: companyName.trim(),
-        title: title.trim(),
-        jobType,
-        location: location.trim(),
-        salaryRange: salaryRange.trim(),
-        description: description.trim(),
-      });
-    }
+    try {
+      if (editingJob) {
+        await updateJobPosting(editingJob.id, {
+          companyName: companyName.trim(),
+          title: title.trim(),
+          jobType,
+          location: location.trim(),
+          salaryRange: salaryRange.trim(),
+          description: description.trim(),
+        });
+      } else {
+        await createJobPosting({
+          companyName: companyName.trim(),
+          title: title.trim(),
+          jobType,
+          location: location.trim(),
+          salaryRange: salaryRange.trim(),
+          description: description.trim(),
+        });
+      }
 
-    setShowModal(false);
-    await loadJobs();
-    triggerSuccessNotify();
+      setShowModal(false);
+      await loadJobs();
+      triggerSuccessNotify();
+    } catch (err) {
+      console.error('Hiba az álláshirdetés mentésekor:', err);
+    }
   };
 
   const triggerSuccessNotify = () => {
@@ -497,9 +515,13 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
         destructive
         onConfirm={async () => {
           if (deleteJobId) {
-            await deleteJobPosting(deleteJobId);
-            await loadJobs();
-            triggerSuccessNotify();
+            try {
+              await deleteJobPosting(deleteJobId);
+              await loadJobs();
+              triggerSuccessNotify();
+            } catch (err) {
+              console.error('Hiba az álláshirdetés törlésekor:', err);
+            }
           }
           setDeleteJobId(null);
         }}

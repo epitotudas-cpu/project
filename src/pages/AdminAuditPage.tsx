@@ -114,9 +114,14 @@ export default function AdminAuditPage() {
   }, [logs, selectedModule, searchQuery]);
 
   const handleClearLogs = async () => {
-    await clearAuditLogs();
-    setShowClearConfirm(false);
-    loadLogs();
+    try {
+      await clearAuditLogs();
+      setShowClearConfirm(false);
+      await loadLogs();
+    } catch (err) {
+      console.error('Hiba az audit napló ürítésekor:', err);
+      setShowClearConfirm(false);
+    }
   };
 
   return (

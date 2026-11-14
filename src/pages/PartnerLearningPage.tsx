@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Pencil, XCircle, Plus, BookOpen, HelpCircle, AlertCircle, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../lib/permissions';
-import type { LearningCourse, Quiz, LearningStatus } from '../lib/supabase';
+import { supabase, type LearningCourse, type Quiz, type LearningStatus } from '../lib/supabase';
 import {
   listCourses,
   listQuizzes,
@@ -25,11 +25,40 @@ const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
   archived: { label: 'Archivált', class: 'bg-gray-200 text-gray-600 border-gray-300' },
 };
 
-export default function PartnerLearningPage() {
+interface PartnerLearningPageProps {
+  partnerId?: string;
+  partnerName?: string;
+}
+
+export default function PartnerLearningPage({ partnerId: propPartnerId, partnerName }: PartnerLearningPageProps = {}) {
   const { profile } = useAuth();
-  const currentPartnerId = (profile as (typeof profile & { partner_id?: string }) | null)?.partner_id;
+  const profilePartnerId = (profile as (typeof profile & { partner_id?: string }) | null)?.partner_id;
+  const [resolvedPartnerId, setResolvedPartnerId] = useState<string | undefined>(propPartnerId || profilePartnerId);
+  const currentPartnerId = propPartnerId || resolvedPartnerId || profilePartnerId;
   const hasPartnerAccess = Boolean(currentPartnerId) || isAdmin(profile);
-  const currentPartnerName = profile?.full_name || 'Partner Kft.';
+  const currentPartnerName = partnerName || profile?.full_name || 'Partner Kft.';
+
+  useEffect(() => {
+    if (propPartnerId || profilePartnerId || !profile?.id) {
+      setResolvedPartnerId(propPartnerId || profilePartnerId);
+      return;
+    }
+    let active = true;
+    void supabase
+      .from('partner_users')
+      .select('partner_id')
+      .eq('user_id', profile.id)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active && data?.partner_id) {
+          setResolvedPartnerId(data.partner_id);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [propPartnerId, profilePartnerId, profile?.id]);
 
   const [activeTab, setActiveTab] = useState<'courses' | 'quizzes'>('courses');
   const [courses, setCourses] = useState<LearningCourse[]>([]);
@@ -74,13 +103,21 @@ export default function PartnerLearningPage() {
   }, [loadData]);
 
   const handleSubmitForReviewCourse = async (id: string) => {
-    await setCourseStatus(id, 'pending');
-    loadData();
+    try {
+      await setCourseStatus(id, 'pending');
+      await loadData();
+    } catch (e) {
+      console.warn('Hiba a tananyag beküldésekor:', e);
+    }
   };
 
   const handleSubmitForReviewQuiz = async (id: string) => {
-    await setQuizStatus(id, 'pending');
-    loadData();
+    try {
+      await setQuizStatus(id, 'pending');
+      await loadData();
+    } catch (e) {
+      console.warn('Hiba a teszt beküldésekor:', e);
+    }
   };
 
   const handleDeleteCourse = (id: string) => {
@@ -88,8 +125,12 @@ export default function PartnerLearningPage() {
       title: 'Tananyag törlése',
       message: 'Biztosan törölni szeretnéd ezt a saját tananyagot?',
       onConfirm: async () => {
-        await deleteCourse(id);
-        loadData();
+        try {
+          await deleteCourse(id);
+          await loadData();
+        } catch (e) {
+          console.warn('Hiba a tananyag törlésekor:', e);
+        }
       },
     });
   };
@@ -99,8 +140,12 @@ export default function PartnerLearningPage() {
       title: 'Teszt törlése',
       message: 'Biztosan törölni szeretnéd ezt a saját tesztet?',
       onConfirm: async () => {
-        await deleteQuiz(id);
-        loadData();
+        try {
+          await deleteQuiz(id);
+          await loadData();
+        } catch (e) {
+          console.warn('Hiba a teszt törlésekor:', e);
+        }
       },
     });
   };

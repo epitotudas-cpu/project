@@ -63,9 +63,17 @@ const EDITOR_NAV_ITEMS: Array<{ id: EditorView; moduleId: string; label: string;
 ];
 
 export default function EditorLayout({ onNavigate, activeView, onNavigateView, children }: EditorLayoutProps) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useEditorTheme();
+
+  if (loading || (user && !profile)) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+      </div>
+    );
+  }
 
   // Security guard check
   if (!user && !profile) {
