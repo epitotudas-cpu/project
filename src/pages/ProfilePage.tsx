@@ -27,6 +27,7 @@ import {
   Bookmark,
   ChevronRight,
   LogOut,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -55,8 +56,26 @@ interface ProfilePageProps {
   onNavigate?: (page: string, params?: { articleSlug?: string; slug?: string; quizId?: string; partnerSlug?: string }) => void;
 }
 
-type MainSection = 'overview' | 'materials' | 'flashcards' | 'my-class' | 'progress' | 'tests' | 'school-link' | 'settings';
+type MainSection = 'overview' | 'materials' | 'flashcards' | 'my-class' | 'progress' | 'tests' | 'school-link' | 'settings' | 'help';
 type SettingsSubTab = 'profile_data' | 'trade_profile' | 'notifications' | 'security' | 'appearance' | 'privacy';
+
+function parseProfileTabFromHash(): MainSection {
+  try {
+    const hash = window.location.hash;
+    if (hash.includes('tab=')) {
+      const tab = hash.split('tab=')[1].split('&')[0];
+      if (['overview', 'materials', 'flashcards', 'my-class', 'progress', 'tests', 'school-link', 'settings', 'help'].includes(tab)) {
+        return tab as MainSection;
+      }
+      if (tab === 'learning' || tab === 'saved') return 'materials';
+      if (tab === 'history') return 'progress';
+      if (tab === 'school_link' || tab === 'school-link') return 'school-link';
+    }
+  } catch {
+    // Ignore invalid hash state
+  }
+  return 'overview';
+}
 
 const EXPERIENCE_LEVELS = [
   { id: 'beginner', label: 'Kezdő', desc: 'Pályakezdő vagy alapszintű ismeretek' },
@@ -191,23 +210,21 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     user?.user_metadata?.user_type === 'iskola';
 
   // Tab State Management
-  const [activeMainSection, setActiveMainSection] = useState<MainSection>(() => {
-    try {
-      const hash = window.location.hash;
-      if (hash.includes('tab=')) {
-        const tab = hash.split('tab=')[1].split('&')[0];
-        if (['overview', 'materials', 'my-class', 'progress', 'tests', 'school-link', 'settings'].includes(tab)) {
-          return tab as MainSection;
-        }
-        if (tab === 'learning' || tab === 'saved') return 'materials';
-        if (tab === 'history') return 'progress';
-        if (tab === 'school_link' || tab === 'school-link') return 'school-link';
+  const [activeMainSection, setActiveMainSection] = useState<MainSection>(parseProfileTabFromHash);
+
+  useEffect(() => {
+    const syncTab = () => {
+      if (window.location.hash.includes('profile')) {
+        setActiveMainSection(parseProfileTabFromHash());
       }
-    } catch {
-      // Ignore invalid hash state
-    }
-    return 'overview';
-  });
+    };
+    window.addEventListener('hashchange', syncTab);
+    window.addEventListener('popstate', syncTab);
+    return () => {
+      window.removeEventListener('hashchange', syncTab);
+      window.removeEventListener('popstate', syncTab);
+    };
+  }, []);
 
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubTab>('profile_data');
 
@@ -1675,7 +1692,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   <CheckSquare className="text-[#60a5fa]" size={22} /> Tesztek és Kvízek Eredményei
                 </h3>
                 <button
-                  onClick={() => onNavigate?.('learning', { slug: 'quizzes' })}
+                  onClick={() => onNavigate?.('learning?tab=quizzes')}
                   className="px-4 py-2 bg-[#4165b4] hover:bg-[#325296] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
                 >
                   <Search size={14} />
@@ -2117,6 +2134,44 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeMainSection === 'help' && (
+          <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <HelpCircle className="text-sky-400" size={24} />
+              <div>
+                <h3 className="text-xl font-black text-white">Segítség és Támogatás</h3>
+                <p className="text-xs text-gray-400">Gyors elérés a tudástárhoz, dokumentumokhoz és az ügyfélszolgálathoz.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                type="button"
+                onClick={() => onNavigate?.('tudastar')}
+                className="p-4 bg-[#1F1F1F] hover:bg-[#252525] border border-[#333] rounded-xl text-left space-y-1.5 transition-colors cursor-pointer"
+              >
+                <p className="text-sm font-bold text-white">Tudástár &amp; Útmutatók</p>
+                <p className="text-xs text-gray-400">Szakmai cikkek, szabványok és fogalomtár böngészése.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate?.('about')}
+                className="p-4 bg-[#1F1F1F] hover:bg-[#252525] border border-[#333] rounded-xl text-left space-y-1.5 transition-colors cursor-pointer"
+              >
+                <p className="text-sm font-bold text-white">Rólunk &amp; Kapcsolat</p>
+                <p className="text-xs text-gray-400">Platform információk és elérhetőségek megtekintése.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate?.('jogi')}
+                className="p-4 bg-[#1F1F1F] hover:bg-[#252525] border border-[#333] rounded-xl text-left space-y-1.5 transition-colors cursor-pointer"
+              >
+                <p className="text-sm font-bold text-white">Jogi &amp; Adatvédelem</p>
+                <p className="text-xs text-gray-400">Felhasználási feltételek, adatkezelés és süti szabályzat.</p>
+              </button>
             </div>
           </div>
         )}

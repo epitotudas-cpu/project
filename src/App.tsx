@@ -219,19 +219,95 @@ function getInitialPage(): PageKey {
     if (rawHash.startsWith('partnerek/')) {
       return 'partner-detail';
     }
+    if (rawHash.startsWith('course-detail/')) {
+      return 'course-detail';
+    }
+    if (rawHash.startsWith('quiz-player/')) {
+      return 'quiz-player';
+    }
     const mainHash = rawHash.split('?')[0].split('#')[0];
     if (mainHash && ALL_VALID_PAGES.includes(mainHash as PageKey)) {
       return mainHash as PageKey;
     }
 
     const savedSessionPage = sessionStorage.getItem('epitotudas_active_page');
-    if (savedSessionPage && ALL_VALID_PAGES.includes(savedSessionPage as PageKey)) {
+    if (!mainHash && savedSessionPage && ALL_VALID_PAGES.includes(savedSessionPage as PageKey)) {
       return savedSessionPage as PageKey;
     }
   } catch (err) {
     void err;
   }
   return 'home';
+}
+
+function isUnknownHashRoute(): boolean {
+  try {
+    const raw = window.location.hash.replace(/^#\/?/, '');
+    if (!raw) return false;
+    if (
+      raw.includes('type=recovery') ||
+      raw.includes('type=signup') ||
+      raw.includes('confirmed=true') ||
+      raw.includes('access_token=')
+    ) {
+      return false;
+    }
+    let normalized = raw;
+    if (normalized.startsWith('cikkek')) {
+      normalized = normalized.replace(/^cikkek/, 'category');
+    }
+    if (
+      normalized.startsWith('partnerek/') ||
+      normalized.startsWith('course-detail/') ||
+      normalized.startsWith('quiz-player/')
+    ) {
+      return false;
+    }
+    const mainHash = normalized.split('?')[0].split('#')[0];
+    return Boolean(mainHash) && !ALL_VALID_PAGES.includes(mainHash as PageKey);
+  } catch {
+    return false;
+  }
+}
+
+function getInitialCourseSlug(): string {
+  try {
+    const hash = window.location.hash;
+    if (hash.includes('course-detail')) {
+      const queryPart = hash.includes('?') ? hash.split('?')[1] : '';
+      const params = new URLSearchParams(queryPart);
+      const slug = params.get('slug');
+      if (slug) return decodeURIComponent(slug);
+
+      const match = hash.match(/^#\/?course-detail\/([^/?#]+)/);
+      if (match && match[1]) return decodeURIComponent(match[1]);
+    }
+    const saved = sessionStorage.getItem('epitotudas_course_slug');
+    if (saved) return saved;
+  } catch {
+    // ignore
+  }
+  return 'gipszkartonozas-es-szarazepitesi-alapismeretek';
+}
+
+function getInitialQuizId(): string {
+  try {
+    const hash = window.location.hash;
+    if (hash.includes('quiz-player')) {
+      const queryPart = hash.includes('?') ? hash.split('?')[1] : '';
+      const params = new URLSearchParams(queryPart);
+      const quizId = params.get('quizId') || params.get('id');
+      if (quizId) return decodeURIComponent(quizId);
+
+      const match = hash.match(/^#\/?quiz-player\/([^/?#]+)/);
+      if (match && match[1]) return decodeURIComponent(match[1]);
+    }
+    const saved = sessionStorage.getItem('epitotudas_quiz_id');
+    if (saved) return saved;
+  } catch {
+    // ignore
+  }
+  return 'quiz-1';
 }
 
 function getInitialArticleSlug(): string | null {
@@ -281,7 +357,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
   return (
     <EditorLayout onNavigate={onNavigate} activeView={editorView} onNavigateView={setEditorView}>
       {editorView === 'dashboard' && <EditorDashboardPage onNavigateView={setEditorView} />}
-      {editorView === 'articles' && <AdminArticlesPage onNavigateView={() => {}} />}
+      {editorView === 'articles' && <AdminArticlesPage onNavigateView={(view) => setEditorView(view as EditorView)} />}
       {editorView === 'utmutatok' && <AdminGuidesPage />}
       {editorView === 'learning' && <AdminLearningPage />}
       {editorView === 'categories' && <AdminCategoriesPage />}
@@ -565,6 +641,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             servicesCount={(effectivePartner as ExtendedPartner).services?.length || 0}
             profileViews={analytics.profileViews}
             articlesCount={analytics.articlesCount}
+            isActive={effectivePartner.is_active !== false && effectivePartner.status !== 'inactive' && effectivePartner.status !== 'suspended'}
+            isVerified={Boolean(effectivePartner.is_verified)}
           />
         )
       )}
@@ -578,13 +656,12 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-start gap-4">
                   <div
-                    className={`w-14 h-14 rounded-2xl border border-blue-500/30 p-1 flex items-center justify-center shrink-0 overflow-hidden ${
-                      (effectivePartner as ExtendedPartner).logo_bg === 'white'
-                        ? 'bg-white'
-                        : (effectivePartner as ExtendedPartner).logo_bg === 'light_gray'
+                    className={`w-14 h-14 rounded-2xl border border-blue-500/30 p-1 flex items-center justify-center shrink-0 overflow-hidden ${(effectivePartner as ExtendedPartner).logo_bg === 'white'
+                      ? 'bg-white'
+                      : (effectivePartner as ExtendedPartner).logo_bg === 'light_gray'
                         ? 'bg-gray-200'
                         : 'bg-blue-500/10'
-                    }`}
+                      }`}
                   >
                     {effectivePartner.logo_url ? (
                       <img
@@ -652,7 +729,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-400">Státusz:</span>
-                    <span className="font-bold text-emerald-400">Aktív &amp; Megjelenik</span>
+                    <span className={`font-bold ${effectivePartner.is_active === false ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {effectivePartner.is_active === false ? 'Inaktív / Függőben' : effectivePartner.is_verified ? 'Aktív & Hitelesített' : 'Aktív'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -849,9 +928,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                       </span>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-[11px] font-semibold flex items-center gap-1 ${
-                            off.status === 'Aktív' ? 'text-emerald-400' : 'text-amber-400'
-                          }`}
+                          className={`text-[11px] font-semibold flex items-center gap-1 ${off.status === 'Aktív' ? 'text-emerald-400' : 'text-amber-400'
+                            }`}
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" /> {off.status}
                         </span>
@@ -1012,10 +1090,11 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
 function AppContent() {
   const { user, loading, authEvent } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageKey>(getInitialPage);
+  const [notFoundRoute, setNotFoundRoute] = useState<boolean>(isUnknownHashRoute);
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(getInitialArticleSlug);
   const [selectedPartnerSlug, setSelectedPartnerSlug] = useState<string | null>(getInitialPartnerSlug);
-  const [selectedCourseSlug, setSelectedCourseSlug] = useState<string>('gipszkartonozas-es-szarazepitesi-alapismeretek');
-  const [selectedQuizId, setSelectedQuizId] = useState<string>('quiz-1');
+  const [selectedCourseSlug, setSelectedCourseSlug] = useState<string>(getInitialCourseSlug);
+  const [selectedQuizId, setSelectedQuizId] = useState<string>(getInitialQuizId);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getSiteSettings());
 
   useEffect(() => {
@@ -1080,11 +1159,25 @@ function AppContent() {
 
   useEffect(() => {
     function handleHashChange() {
+      const unknown = isUnknownHashRoute();
+      setNotFoundRoute(unknown);
       const page = getInitialPage();
       setCurrentPage(page);
       const slug = getInitialArticleSlug();
       if (slug) {
         setSelectedArticleSlug(slug);
+      }
+      const partnerSlug = getInitialPartnerSlug();
+      if (partnerSlug) {
+        setSelectedPartnerSlug(partnerSlug);
+      }
+      const courseSlug = getInitialCourseSlug();
+      if (courseSlug) {
+        setSelectedCourseSlug(courseSlug);
+      }
+      const quizId = getInitialQuizId();
+      if (quizId) {
+        setSelectedQuizId(quizId);
       }
     }
     window.addEventListener('hashchange', handleHashChange);
@@ -1106,6 +1199,7 @@ function AppContent() {
     const mainPage = rawTarget.split('?')[0].split('#')[0];
     const targetAnchor = rawTarget.includes('#') ? '#' + rawTarget.split('#')[1].split('?')[0] : '';
     const validPage = (ALL_VALID_PAGES.includes(mainPage as PageKey) ? mainPage : 'home') as PageKey;
+    setNotFoundRoute(false);
 
     if (params?.articleSlug) {
       setSelectedArticleSlug(params.articleSlug);
@@ -1128,10 +1222,20 @@ function AppContent() {
 
     if (params?.slug && validPage !== 'partner-detail') {
       setSelectedCourseSlug(params.slug);
+      try {
+        sessionStorage.setItem('epitotudas_course_slug', params.slug);
+      } catch (err) {
+        void err;
+      }
     }
 
     if (params?.quizId) {
       setSelectedQuizId(params.quizId);
+      try {
+        sessionStorage.setItem('epitotudas_quiz_id', params.quizId);
+      } catch (err) {
+        void err;
+      }
     }
 
     setCurrentPage(validPage);
@@ -1143,12 +1247,16 @@ function AppContent() {
           validPage === 'home'
             ? ''
             : validPage === 'partner-detail' && (params?.partnerSlug || params?.slug || selectedPartnerSlug)
-            ? `#partnerek/${params?.partnerSlug || params?.slug || selectedPartnerSlug}`
-            : params?.articleSlug
-            ? `#article?slug=${params.articleSlug}`
-            : rawTarget.includes('?') || rawTarget.includes('#')
-            ? `#${rawTarget}`
-            : `#${validPage}`;
+              ? `#partnerek/${params?.partnerSlug || params?.slug || selectedPartnerSlug}`
+              : validPage === 'course-detail' && (params?.slug || selectedCourseSlug)
+                ? `#course-detail/${params?.slug || selectedCourseSlug}`
+                : validPage === 'quiz-player' && (params?.quizId || selectedQuizId)
+                  ? `#quiz-player/${params?.quizId || selectedQuizId}`
+                  : params?.articleSlug
+                    ? `#article?slug=${params.articleSlug}`
+                    : rawTarget.includes('?') || rawTarget.includes('#')
+                      ? `#${rawTarget}`
+                      : `#${validPage}`;
         if (window.location.hash !== targetHash) {
           window.history.pushState(null, '', targetHash || window.location.pathname);
         }
@@ -1273,6 +1381,26 @@ function AppContent() {
 
   // Public routes with shared Header/Footer
   const renderPage = () => {
+    if (notFoundRoute) {
+      return (
+        <div className="min-h-[60vh] flex items-center justify-center px-4 py-16 bg-background">
+          <div className="max-w-md w-full bg-[#141414] border border-[#262626] rounded-2xl p-8 text-center space-y-5 shadow-xl">
+            <div className="text-4xl font-black text-accent">404</div>
+            <h1 className="text-xl font-bold text-white">Az oldal nem található</h1>
+            <p className="text-sm text-gray-400">
+              A keresett hivatkozás nem létezik vagy megváltozott.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('home')}
+              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-primary font-bold text-sm rounded-xl transition-colors cursor-pointer"
+            >
+              Vissza a főoldalra
+            </button>
+          </div>
+        </div>
+      );
+    }
     switch (currentPage) {
       case 'learning': return <LearningPage onNavigate={navigate} />;
       case 'course-detail': return <CourseDetailPage slug={selectedCourseSlug} onNavigate={navigate} />;
@@ -1301,7 +1429,7 @@ function AppContent() {
       case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;
       case 'terms': return <TermsPage onNavigate={navigate} />;
       case 'cookies': return <CookiePolicyPage onNavigate={navigate} />;
-      case 'profile': return <ProfilePage />;
+      case 'profile': return <ProfilePage onNavigate={navigate} />;
       default: return <HomePage onNavigate={navigate} />;
     }
   };

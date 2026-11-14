@@ -257,12 +257,13 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-              <a
-                href="#allasok"
-                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
+              <button
+                type="button"
+                onClick={() => document.getElementById('allasok')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
               >
                 <Search size={16} /> Állások keresése
-              </a>
+              </button>
               <button
                 onClick={() => onNavigate?.('paths')}
                 className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 flex items-center gap-2"
@@ -314,30 +315,34 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
           <span className="text-xs font-extrabold text-gray-500 uppercase tracking-wider px-2 flex items-center gap-1.5">
             <Compass size={14} className="text-accent" /> Karrieroldal részei:
           </span>
-          <a
-            href="#allasok"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          <button
+            type="button"
+            onClick={() => document.getElementById('allasok')?.scrollIntoView({ behavior: 'smooth' })}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Briefcase size={14} className="text-accent" /> Állásajánlatok
-          </a>
-          <a
-            href="#karrierutak"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          </button>
+          <button
+            type="button"
+            onClick={() => document.getElementById('karrierutak')?.scrollIntoView({ behavior: 'smooth' })}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Compass size={14} className="text-accent" /> Karrierutak
-          </a>
-          <a
-            href="#kepzesek"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          </button>
+          <button
+            type="button"
+            onClick={() => document.getElementById('kepzesek')?.scrollIntoView({ behavior: 'smooth' })}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <GraduationCap size={14} className="text-accent" /> Ajánlott képzések
-          </a>
-          <a
-            href="#munkaadok"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+          </button>
+          <button
+            type="button"
+            onClick={() => document.getElementById('munkaadok')?.scrollIntoView({ behavior: 'smooth' })}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Building size={14} className="text-accent" /> Munkaadóknak
-          </a>
+          </button>
         </div>
 
         {/* SEARCH & FILTERS SECTION */}

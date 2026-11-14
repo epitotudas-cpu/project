@@ -209,12 +209,13 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-              <a
-                href="#katalogus"
-                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
+              <button
+                type="button"
+                onClick={() => document.getElementById('katalogus')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
               >
                 <BookOpen size={16} /> Kurzusok felfedezése
-              </a>
+              </button>
               <button
                 onClick={() => setShowCertificatesModal(true)}
                 className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 flex items-center gap-2"

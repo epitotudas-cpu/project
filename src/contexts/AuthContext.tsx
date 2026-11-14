@@ -235,14 +235,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Supabase Auth behavior when email confirmation is ON and user already exists:
-    // GoTrue returns error = null and data.user. Check identities, timestamps & confirmed status.
+    // GoTrue returns error = null and data.user with empty identities[] or already confirmed timestamps.
     if (data?.user) {
       const identities = data.user.identities;
       const isIdentitiesEmpty = !identities || (Array.isArray(identities) && identities.length === 0);
       const isConfirmed = !!(data.user.email_confirmed_at || data.user.confirmed_at || data.user.last_sign_in_at);
-      const isOldUser = data.user.created_at ? (Date.now() - new Date(data.user.created_at).getTime() > 3000) : false;
 
-      if (isIdentitiesEmpty || isConfirmed || isOldUser) {
+      if (isIdentitiesEmpty || isConfirmed) {
         return { error: 'Ez az e-mail-cím már regisztrálva van.' };
       }
     }

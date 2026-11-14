@@ -19,6 +19,8 @@ interface PartnerDashboardPageProps {
   servicesCount?: number;
   profileViews?: number;
   articlesCount?: number;
+  isActive?: boolean;
+  isVerified?: boolean;
 }
 
 export function PartnerDashboardPage({
@@ -27,6 +29,8 @@ export function PartnerDashboardPage({
   servicesCount = 0,
   profileViews = 0,
   articlesCount = 0,
+  isActive = true,
+  isVerified = false,
 }: PartnerDashboardPageProps) {
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -66,10 +70,17 @@ export function PartnerDashboardPage({
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="text-xs sm:text-base font-bold text-white leading-snug">Partner Profil Státusz: Aktív &amp; Hitelesített</h3>
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <h3 className="text-xs sm:text-base font-bold text-white leading-snug">
+                Partner Profil Státusz:{' '}
+                {!isActive ? 'Inaktív / Függőben' : isVerified ? 'Aktív & Hitelesített' : 'Aktív'}
+              </h3>
+              {isActive && isVerified && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">A cégadatok megjelenése aktív a platformon.</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
+              {isActive
+                ? 'A cégadatok megjelenése aktív a platformon.'
+                : 'A partner profil jelenleg nem aktív a publikus listában.'}
+            </p>
           </div>
         </div>
 
