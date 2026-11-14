@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ChevronRight,
   Laptop,
@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import { readAppConfig } from '../services/appConfigService';
 
 interface SoftwarePageProps {
   onNavigate: (page: string) => void;
@@ -194,10 +195,27 @@ const CATEGORY_TABS: Array<{ id: SoftwareCategory; label: string; icon: typeof L
 export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
   const [selectedCategory, setSelectedCategory] = useState<SoftwareCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [softwareCatalog, setSoftwareCatalog] = useState<SoftwareEntry[]>(SOFTWARE_CATALOG);
+
+  useEffect(() => {
+    let active = true;
+    readAppConfig<SoftwareEntry[]>('__SYSTEM_CONFIG_SOFTWARE_CATALOG__')
+      .then((cloud) => {
+        if (active && Array.isArray(cloud) && cloud.length > 0) {
+          setSoftwareCatalog(cloud);
+        }
+      })
+      .catch(() => {
+        // Fallback to default SOFTWARE_CATALOG
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filteredSoftware = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    return SOFTWARE_CATALOG.filter((item) => {
+    return softwareCatalog.filter((item) => {
       const matchCat = selectedCategory === 'all' || item.category === selectedCategory;
       const matchQuery =
         !q ||
@@ -208,7 +226,7 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
         item.targetRoles.some((r) => r.toLowerCase().includes(q));
       return matchCat && matchQuery;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [softwareCatalog, selectedCategory, searchQuery]);
 
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">

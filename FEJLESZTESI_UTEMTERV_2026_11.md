@@ -65,19 +65,19 @@
 ## Fázis 4 – Közepes Félkész Funkciók, Moderáció és Tanulási Rendszer
 **Cél:** A mockolt admin modulok, tanulási táblák és partner/publikus katalógusok befejezése.
 
-- [ ] **4.1 Valódi Moderációs Várólista (`AdminDashboard` + `AdminModerationPage` + `adminService` + `contentLifecycleService`)**
+- [x] **4.1 Valódi Moderációs Várólista (`AdminDashboard` + `AdminModerationPage` + `adminService` + `contentLifecycleService`)**
   - `src/services/adminService.ts` (37–128. sor) és `src/pages/AdminDashboard.tsx` (168–201. sor): `DEFAULT_MODERATION_ITEMS` kiváltása valódi Supabase lekérdezésre (`articles`, `glossary_terms`, stb. pending/review státuszok) és valós DB frissítésre jóváhagyásnál/elutasításnál.
   - `src/pages/AdminModerationPage.tsx` (141–176. sor) és `src/services/contentLifecycleService.ts` (27–69, 110–204. sorok): `draft` státuszú elemekhez munkafolyamat-gombok hozzáadása, többi tartalomtípus (`fogalom`, `szerszam`, `tananyag`) támogatása, `try/catch` hibakezelés.
-- [ ] **4.2 Tanulási rendszer (`learningService`) DB-szinkronizáció**
+- [x] **4.2 Tanulási rendszer (`learningService`) DB-szinkronizáció**
   - `src/services/learningService.ts` (223–554. sor): a meglévő `courses`, `lessons`, `quizzes`, `quiz_questions` Supabase táblák használata `localStorage` helyett; kvízpróbálkozások (`quiz_attempts`) és tanulókártyák perzisztálása DB-be.
   - `src/components/AdminFlashcardsModal.tsx` (122–134. sor): a fix szöveget beszúró „AI Szakmai Kártyajavaslat” gomb rendes átalakítása (pl. tartalom alapú intelligens sablon/kivonatoló vagy őszinte „Sablon beszúrása” jelölés, ha nincs külső AI API kulcs).
-- [ ] **4.3 További `localStorage` / in-memory service-ek bekötése DB-be**
+- [x] **4.3 További `localStorage` / in-memory service-ek bekötése DB-be**
   - `src/services/userProfileService.ts` (19–125. sor): részletes profilmezők mentése `profiles` / `user_detailed_profiles` táblába.
   - `src/services/trustService.ts` (86–137. sor): `trustScore` és `isTrustedContributor` visszaírása a `contributors` táblába.
   - `src/services/bookmarkService.ts` (14–150. sor): könyvjelzők szinkronizálása Supabase-be bejelentkezett felhasználóknál.
   - `src/services/articleRedirectsService.ts` (9–59. sor): átirányítások tárolása Supabase-ben (`app_configs` vagy `article_redirects`).
   - `src/services/advertisementService.ts` (141–180. sor): meglévő `ad_campaigns` tábla használata vagy tudatos egységesítés.
-- [ ] **4.4 Publikus és Partner katalógus hiányosságok**
+- [x] **4.4 Publikus és Partner katalógus hiányosságok**
   - `src/pages/SoftwarePage.tsx` (39–184. sor): dinamikus/konfigurálható szoftverkatalógus (Supabase/`app_configs`) a statikus tömb helyett.
   - `src/pages/ToolSelectorPage.tsx` (11–48. sor): szakmák és kategóriák betöltése `tradeService` / Supabase-ből, `MOCK_TOOLS` fallback eltávolítása/jelzése.
   - `src/App.tsx` (925–932. sor) és `src/components/PartnerLayout.tsx` (62–64. sor): a Partner „Gép & Szerszám Katalógus” (`catalog`) nézet szétválasztása a `PartnerMaterialsPage`-től.

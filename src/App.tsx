@@ -1001,12 +1001,18 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
         </div>
       )}
 
-      {(partnerView === 'partner_products' || partnerView === 'catalog') && (
+      {partnerView === 'partner_products' && (
         <Suspense fallback={<PageFallback />}>
           <PartnerMaterialsPage
             currentPartner={effectivePartner}
             onNavigateHome={() => setPartnerView('dashboard')}
           />
+        </Suspense>
+      )}
+
+      {partnerView === 'catalog' && (
+        <Suspense fallback={<PageFallback />}>
+          <AdminToolsPage initialSearchQuery={effectivePartner.name} />
         </Suspense>
       )}
 
@@ -1016,6 +1022,12 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             currentPartner={effectivePartner}
             onNavigate={onNavigate}
           />
+        </Suspense>
+      )}
+
+      {partnerView === 'partner_learning' && (
+        <Suspense fallback={<PageFallback />}>
+          <PartnerLearningPage />
         </Suspense>
       )}
 

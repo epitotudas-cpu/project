@@ -83,6 +83,20 @@ export async function getUserTrustProfile(userId: string): Promise<UserTrustProf
   return defaultProfile;
 }
 
+async function persistTrustProfileToDb(userId: string, profile: UserTrustProfile): Promise<void> {
+  try {
+    await supabase
+      .from('contributors')
+      .update({
+        trust_score: profile.trustScore,
+        verified: profile.isTrusted,
+      })
+      .eq('user_id', userId);
+  } catch (err) {
+    console.warn('Trust profile DB sync info:', err);
+  }
+}
+
 export async function incrementTrustScore(userId: string, points: number): Promise<UserTrustProfile> {
   const current = await getUserTrustProfile(userId);
   const newScore = Math.max(0, current.trustScore + points);
@@ -97,6 +111,7 @@ export async function incrementTrustScore(userId: string, points: number): Promi
   const storedMap = getStoredProfiles();
   storedMap[userId] = updated;
   saveStoredProfiles(storedMap);
+  await persistTrustProfileToDb(userId, updated);
   return updated;
 }
 
@@ -115,6 +130,7 @@ export async function setTrustScore(userId: string, newScore: number): Promise<U
   const storedMap = getStoredProfiles();
   storedMap[userId] = updated;
   saveStoredProfiles(storedMap);
+  await persistTrustProfileToDb(userId, updated);
   return updated;
 }
 
@@ -133,6 +149,7 @@ export async function setTrustedContributorStatus(
   const storedMap = getStoredProfiles();
   storedMap[userId] = updated;
   saveStoredProfiles(storedMap);
+  await persistTrustProfileToDb(userId, updated);
   return updated;
 }
 

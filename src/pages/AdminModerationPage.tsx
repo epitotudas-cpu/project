@@ -38,9 +38,13 @@ export default function AdminModerationPage() {
   }
 
   async function handleTransition(id: string, newStatus: ContentLifecycleStatus) {
-    await transitionContentStatus(id, newStatus);
-    setMessage(`Állapot sikeresen módosítva: ${getStatusLabel(newStatus)}`);
-    await loadItems();
+    try {
+      await transitionContentStatus(id, newStatus);
+      setMessage(`Állapot sikeresen módosítva: ${getStatusLabel(newStatus)}`);
+      await loadItems();
+    } catch (err) {
+      setMessage(err instanceof Error ? `Hiba: ${err.message}` : 'Hiba történt az állapot módosításakor.');
+    }
     setTimeout(() => setMessage(null), 3000);
   }
 
@@ -140,6 +144,23 @@ export default function AdminModerationPage() {
 
             {/* Interactive Workflow Controls */}
             <div className="flex items-center gap-2 flex-wrap">
+              {item.status === 'draft' && (
+                <>
+                  <button
+                    onClick={() => handleTransition(item.id, 'submitted')}
+                    className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-amber-500/20"
+                  >
+                    <Eye size={14} /> Beküldés jóváhagyásra
+                  </button>
+                  <button
+                    onClick={() => handleTransition(item.id, 'published')}
+                    style={{ backgroundColor: cardHighlight, color: '#000000' }}
+                    className="px-3 py-1.5 font-bold text-xs rounded-lg flex items-center gap-1.5 cursor-pointer hover:opacity-90 shadow-md"
+                  >
+                    <CheckCircle2 size={14} /> Publikálás
+                  </button>
+                </>
+              )}
               {item.status === 'submitted' && (
                 <button
                   onClick={() => handleTransition(item.id, 'review')}

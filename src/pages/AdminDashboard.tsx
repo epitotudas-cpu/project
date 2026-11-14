@@ -5,6 +5,7 @@ import * as categoryService from '../services/categoryService';
 import * as glossaryService from '../services/glossaryService';
 import * as toolService from '../services/toolService';
 import * as userService from '../services/userService';
+import { getPendingModerationItems, type ModerationItem } from '../services/adminService';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 import type { AdminView } from '../components/AdminSidebar';
 
@@ -36,6 +37,7 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
     tools: null,
     users: null,
   });
+  const [pendingItems, setPendingItems] = useState<ModerationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,17 +59,21 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
         users: userService.countUsers,
       };
       const keys: StatKey[] = ['articles', 'categories', 'glossary', 'tools', 'users'];
-      const results = await Promise.all(
-        keys.map(async (key): Promise<readonly [StatKey, number]> => {
-          const count = await COUNT_FOR[key]();
-          return [key, count] as const;
-        })
-      );
+      const [results, pending] = await Promise.all([
+        Promise.all(
+          keys.map(async (key): Promise<readonly [StatKey, number]> => {
+            const count = await COUNT_FOR[key]();
+            return [key, count] as const;
+          })
+        ),
+        getPendingModerationItems().catch(() => []),
+      ]);
       const next = { ...counts };
       for (const [key, count] of results) {
         next[key] = count;
       }
       setCounts(next);
+      setPendingItems(pending);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Hiba történt a statisztikák betöltésekor.');
     } finally {
@@ -166,38 +172,30 @@ export default function AdminDashboard({ userEmail, onNavigateView }: AdminDashb
           </div>
 
           <div className="space-y-3">
-            <div style={{ backgroundColor: innerCardBg, borderColor: cardBorder }} className="p-3.5 rounded-lg border flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-white">Monolitikus vasbeton szerkezetek zsaluzási technológiái</div>
-                <div className="text-xs text-gray-400">Cikk • Kovács Péter</div>
+            {pendingItems.length === 0 ? (
+              <div style={{ backgroundColor: innerCardBg, borderColor: cardBorder }} className="p-4 rounded-lg border text-xs text-gray-400">
+                Jelenleg nincs jóváhagyásra váró tartalom.
               </div>
-              <span
-                style={{
-                  color: cardHighlight,
-                  backgroundColor: `${cardHighlight}1F`,
-                  borderColor: `${cardHighlight}40`,
-                }}
-                className="text-xs font-bold px-2.5 py-1 rounded border"
-              >
-                Várakozik
-              </span>
-            </div>
-            <div style={{ backgroundColor: innerCardBg, borderColor: cardBorder }} className="p-3.5 rounded-lg border flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-white">Öntömörödő beton (SCC)</div>
-                <div className="text-xs text-gray-400">Fogalom • Tóth Balázs</div>
-              </div>
-              <span
-                style={{
-                  color: cardHighlight,
-                  backgroundColor: `${cardHighlight}1F`,
-                  borderColor: `${cardHighlight}40`,
-                }}
-                className="text-xs font-bold px-2.5 py-1 rounded border"
-              >
-                Várakozik
-              </span>
-            </div>
+            ) : (
+              pendingItems.slice(0, 4).map((item) => (
+                <div key={item.id} style={{ backgroundColor: innerCardBg, borderColor: cardBorder }} className="p-3.5 rounded-lg border flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">{item.title}</div>
+                    <div className="text-xs text-gray-400">{item.type} • {item.author}</div>
+                  </div>
+                  <span
+                    style={{
+                      color: cardHighlight,
+                      backgroundColor: `${cardHighlight}1F`,
+                      borderColor: `${cardHighlight}40`,
+                    }}
+                    className="text-xs font-bold px-2.5 py-1 rounded border shrink-0"
+                  >
+                    Várakozik
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

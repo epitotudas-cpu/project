@@ -48,22 +48,24 @@ export default function PartnerLearningPage() {
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
 
   const loadData = useCallback(async () => {
-    if (!currentPartnerId) {
+    const adminUser = isAdmin(profile);
+    if (!currentPartnerId && !adminUser) {
       setCourses([]);
       setQuizzes([]);
       return;
     }
     try {
+      const filter = currentPartnerId ? { partnerId: currentPartnerId } : {};
       const [cData, qData] = await Promise.all([
-        listCourses({ partnerId: currentPartnerId }),
-        listQuizzes({ partnerId: currentPartnerId }),
+        listCourses(filter),
+        listQuizzes(filter),
       ]);
       setCourses(cData);
       setQuizzes(qData);
     } catch (e) {
       console.warn('Hiba a partner oktatási adatok betöltésekor:', e);
     }
-  }, [currentPartnerId]);
+  }, [currentPartnerId, profile]);
 
   useEffect(() => {
     loadData();
@@ -118,7 +120,7 @@ export default function PartnerLearningPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-white rounded-3xl border border-gray-200 shadow-sm text-gray-900">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

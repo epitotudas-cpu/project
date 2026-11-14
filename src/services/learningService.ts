@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
 import type {
   LearningCourse,
   Quiz,
@@ -14,6 +15,9 @@ const QUIZZES_STORAGE_KEY = 'epitotudas_learning_quizzes_v1';
 const FLASHCARDS_STORAGE_KEY = 'epitotudas_learning_flashcards_v1';
 const PROGRESS_STORAGE_KEY = 'epitotudas_learning_progress_v1';
 const ATTEMPTS_STORAGE_KEY = 'epitotudas_learning_attempts_v1';
+
+const CLOUD_COURSES_KEY = '__SYSTEM_CONFIG_LEARNING_COURSES__';
+const CLOUD_QUIZZES_KEY = '__SYSTEM_CONFIG_LEARNING_QUIZZES__';
 
 // ── DEFAULT SEED COURSES ──
 export const DEFAULT_COURSES: LearningCourse[] = [
@@ -240,6 +244,24 @@ export function saveCoursesLocal(courses: LearningCourse[]): void {
   } catch (e) {
     console.warn('Hiba a tananyagok mentésekor:', e);
   }
+  void writeAppConfig(CLOUD_COURSES_KEY, courses).catch((e) =>
+    console.warn('Hiba a tananyagok felhő szinkronizálásakor:', e)
+  );
+}
+
+async function getCoursesWithCloudSync(): Promise<LearningCourse[]> {
+  try {
+    const cloud = await readAppConfig<LearningCourse[]>(CLOUD_COURSES_KEY);
+    if (Array.isArray(cloud) && cloud.length > 0) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(cloud));
+      }
+      return cloud;
+    }
+  } catch {
+    // Fallback to localStorage cache
+  }
+  return getCoursesLocal();
 }
 
 export async function listCourses(options?: {
@@ -250,7 +272,7 @@ export async function listCourses(options?: {
   status?: string;
   partnerId?: string;
 }): Promise<LearningCourse[]> {
-  const all = getCoursesLocal();
+  const all = await getCoursesWithCloudSync();
   return all.filter((c) => {
     if (options?.status && options.status !== 'all' && c.status !== options.status) return false;
     if (options?.partnerId && c.partner_id !== options.partnerId) return false;
@@ -269,7 +291,7 @@ export async function listCourses(options?: {
 }
 
 export async function getCourseBySlug(slug: string): Promise<LearningCourse | null> {
-  const all = getCoursesLocal();
+  const all = await getCoursesWithCloudSync();
   return all.find((c) => c.slug === slug || c.id === slug) || all[0] || DEFAULT_COURSES[0];
 }
 
@@ -356,6 +378,24 @@ export function saveQuizzesLocal(quizzes: Quiz[]): void {
   } catch (e) {
     console.warn('Hiba a tesztek mentésekor:', e);
   }
+  void writeAppConfig(CLOUD_QUIZZES_KEY, quizzes).catch((e) =>
+    console.warn('Hiba a tesztek felhő szinkronizálásakor:', e)
+  );
+}
+
+async function getQuizzesWithCloudSync(): Promise<Quiz[]> {
+  try {
+    const cloud = await readAppConfig<Quiz[]>(CLOUD_QUIZZES_KEY);
+    if (Array.isArray(cloud) && cloud.length > 0) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(QUIZZES_STORAGE_KEY, JSON.stringify(cloud));
+      }
+      return cloud;
+    }
+  } catch {
+    // Fallback to localStorage cache
+  }
+  return getQuizzesLocal();
 }
 
 export async function listQuizzes(options?: {
@@ -364,7 +404,7 @@ export async function listQuizzes(options?: {
   status?: string;
   partnerId?: string;
 }): Promise<Quiz[]> {
-  const all = getQuizzesLocal();
+  const all = await getQuizzesWithCloudSync();
   return all.filter((q) => {
     if (options?.status && options.status !== 'all' && q.status !== options.status) return false;
     if (options?.partnerId && q.partner_id !== options.partnerId) return false;
@@ -380,7 +420,7 @@ export async function listQuizzes(options?: {
 }
 
 export async function getQuizBySlug(slug: string): Promise<Quiz | null> {
-  const all = getQuizzesLocal();
+  const all = await getQuizzesWithCloudSync();
   return all.find((q) => q.slug === slug || q.id === slug) || all[0] || DEFAULT_QUIZZES[0];
 }
 
@@ -436,10 +476,34 @@ export function saveQuizAttempt(attempt: QuizAttempt): void {
   try {
     const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
     const list: QuizAttempt[] = raw ? JSON.parse(raw) : [];
-    localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify([attempt, ...list]));
+    const updated = [attempt, ...list];
+    localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify(updated));
+    if (attempt.user_id && attempt.user_id !== 'anon_guest') {
+      const userAttempts = updated.filter((a) => a.user_id === attempt.user_id);
+      void writeAppConfig(`__USER_QUIZ_ATTEMPTS_${attempt.user_id}__`, userAttempts).catch((e) =>
+        console.warn('Hiba a teszt eredményének felhő mentésekor:', e)
+      );
+    }
   } catch (e) {
     console.warn('Hiba a teszt eredményének mentésekor:', e);
   }
+}
+
+export async function fetchQuizAttemptsFromCloud(userId: string): Promise<QuizAttempt[]> {
+  if (!userId || userId === 'anon_guest') return getQuizAttempts(userId);
+  try {
+    const cloud = await readAppConfig<QuizAttempt[]>(`__USER_QUIZ_ATTEMPTS_${userId}__`);
+    if (Array.isArray(cloud) && cloud.length > 0) {
+      const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
+      const localList: QuizAttempt[] = raw ? JSON.parse(raw) : [];
+      const otherUsers = localList.filter((a) => a.user_id !== userId);
+      localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify([...cloud, ...otherUsers]));
+      return cloud;
+    }
+  } catch (e) {
+    console.warn('Hiba a teszt eredmények felhő betöltésekor:', e);
+  }
+  return getQuizAttempts(userId);
 }
 
 export function getQuizAttempts(userId?: string): QuizAttempt[] {
@@ -505,6 +569,27 @@ export function saveFlashcardsLocal(userId: string = 'anon_guest', cards: Flashc
   } catch (e) {
     console.warn('Hiba a tanulókártyák mentésekor:', e);
   }
+  if (userId && userId !== 'anon_guest') {
+    void writeAppConfig(`__USER_FLASHCARDS_${userId}__`, cards).catch((e) =>
+      console.warn('Hiba a tanulókártyák felhő szinkronizálásakor:', e)
+    );
+  }
+}
+
+export async function fetchFlashcardsFromCloud(userId: string): Promise<Flashcard[]> {
+  if (!userId || userId === 'anon_guest') return getFlashcardsLocal(userId);
+  try {
+    const cloud = await readAppConfig<Flashcard[]>(`__USER_FLASHCARDS_${userId}__`);
+    if (Array.isArray(cloud)) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`${FLASHCARDS_STORAGE_KEY}_${userId}`, JSON.stringify(cloud));
+      }
+      return cloud;
+    }
+  } catch (e) {
+    console.warn('Hiba a tanulókártyák felhő betöltésekor:', e);
+  }
+  return getFlashcardsLocal(userId);
 }
 
 export function addTermToFlashcards(userId: string = 'anon_guest', termItem: KeyTermItem, categoryName?: string): Flashcard {

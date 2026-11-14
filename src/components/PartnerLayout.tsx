@@ -41,6 +41,7 @@ export type PartnerView =
   | 'partner_offers'
   | 'partner_products'
   | 'partner_articles'
+  | 'partner_learning'
   | 'catalog'
   | 'partner_stats';
 
@@ -61,6 +62,7 @@ const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: strin
   { id: 'partner_offers', moduleId: 'partner_offers', label: 'Saját Ajánlatok & Akciók', icon: Tag },
   { id: 'partner_products', moduleId: 'partner_products', label: 'Termékek & Anyagok', icon: Package },
   { id: 'partner_articles', moduleId: 'partner_profile', label: 'Szakmai Cikkek & Útmutatók', icon: FileText },
+  { id: 'partner_learning', moduleId: 'partner_profile', label: 'Oktatási Anyagok & Tesztek', icon: GraduationCap },
   { id: 'catalog', moduleId: 'catalog', label: 'Gép & Szerszám Katalógus', icon: Wrench },
   { id: 'partner_stats', moduleId: 'partner_stats', label: 'Statisztikák & Teljesítmény', icon: BarChart3 },
 ];

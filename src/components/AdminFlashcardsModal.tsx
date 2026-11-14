@@ -120,14 +120,17 @@ export default function AdminFlashcardsModal({
   };
 
   const handleGenerateAiDraft = () => {
+    const targetCourseId = selectedCourseId !== 'all' ? selectedCourseId : courses[0]?.id || 'course-1';
+    const targetCourse = courses.find((c) => c.id === targetCourseId);
+    const courseTitle = targetCourse?.title || 'Építőipari alapismeretek';
     setAiDraftNotice(
-      '✨ AI Szakmai Kártyajavaslat generálva! Előnézetként betöltve az űrlapra. Kérjük, vizsgáld felül és hagyd jóvá a publikálás előtt.'
+      `Szakmai kártyasablon betöltve a(z) "${courseTitle}" kurzushoz. Kérjük, pontosítsd a kérdést és a választ publikálás előtt.`
     );
     setEditingCard(null);
-    setQuestion('Mekkora a minimálisan elvárt betonfedés kültéri vasbeton szerkezeteknél?');
-    setAnswer('Kültéren, időjárási hatásoknak kitett vasbeton elemeknél a betonfedés legalább 35 mm.');
-    setTopic('Szerkezetépítés & Beton');
-    setCourseId(selectedCourseId !== 'all' ? selectedCourseId : courses[0]?.id || 'course-1');
+    setQuestion(`Mi a legfontosabb műszaki követelmény a(z) "${courseTitle}" témakörben?`);
+    setAnswer(targetCourse?.description || 'A vonatkozó szabványok és kivitelezési előírások maradéktalan betartása.');
+    setTopic(targetCourse?.category || 'Általános');
+    setCourseId(targetCourseId);
     setSequenceOrder(cards.length + 1);
     setIsActive(true);
     setShowEditModal(true);

@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabase';
 import { countArticles } from './articleService';
 import { countGlossaryTerms } from './glossaryService';
 import { countTools } from './toolService';
@@ -34,44 +35,29 @@ export interface AuditLog {
   details?: string;
 }
 
-const DEFAULT_MODERATION_ITEMS: ModerationItem[] = [
-  {
-    id: 'mod-1',
-    type: 'cikk',
-    title: 'Monolitikus vasbeton szerkezetek zsaluzási technológiái',
-    author: 'Kovács Péter (Szakember)',
-    submittedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    status: 'submitted',
-    excerpt: 'Gyakorlati útmutató a zsaluzási rendszerek kiválasztásához és biztonságos szereléséhez.',
-  },
-  {
-    id: 'mod-2',
-    type: 'fogalom',
-    title: 'Öntömörödő beton (SCC)',
-    author: 'Tóth Balázs (Oktató)',
-    submittedAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-    status: 'submitted',
-    excerpt: 'Olyan betonfajta, amely saját súlya alatt tömörödik vibrálás nélkül.',
-  },
-  {
-    id: 'mod-3',
-    type: 'szerszam',
-    title: 'Bosch Professional GBH 18V-26 akkus fúrókalapács',
-    author: 'Molnár Gábor (Partner)',
-    submittedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-    status: 'submitted',
-    excerpt: 'Ipari kategóriás akkumulátoros fúrókalapács SDS-plus szerszámbefogással.',
-  },
-];
-
 export async function getPlatformStats(): Promise<PlatformStats> {
   try {
-    const [totalArticles, totalTerms, totalTools, totalCategories, totalUsers] = await Promise.all([
+    const [
+      totalArticles,
+      totalTerms,
+      totalTools,
+      totalCategories,
+      totalUsers,
+      pendingRes,
+      partnersRes,
+    ] = await Promise.all([
       countArticles().catch(() => 0),
       countGlossaryTerms().catch(() => 0),
       countTools().catch(() => 0),
       countCategories().catch(() => 0),
       countUsers().catch(() => 0),
+      supabase
+        .from('articles')
+        .select('id', { count: 'exact', head: true })
+        .in('status', ['pending', 'review']),
+      supabase
+        .from('partners')
+        .select('id', { count: 'exact', head: true }),
     ]);
 
     return {
@@ -80,8 +66,8 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       totalTools,
       totalCategories,
       totalUsers,
-      pendingModerationCount: DEFAULT_MODERATION_ITEMS.length,
-      totalPartnersCount: 3,
+      pendingModerationCount: pendingRes.count ?? 0,
+      totalPartnersCount: partnersRes.count ?? 0,
     };
   } catch (err) {
     void err;
@@ -91,38 +77,72 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       totalTools: 0,
       totalCategories: 0,
       totalUsers: 0,
-      pendingModerationCount: 3,
-      totalPartnersCount: 3,
+      pendingModerationCount: 0,
+      totalPartnersCount: 0,
     };
   }
 }
 
 export async function getPendingModerationItems(): Promise<ModerationItem[]> {
-  return DEFAULT_MODERATION_ITEMS;
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('id, title, author, partner_name, status, excerpt, updated_at, created_at')
+      .in('status', ['pending', 'review'])
+      .order('updated_at', { ascending: false })
+      .limit(20);
+
+    if (error || !data) return [];
+
+    return (data as Array<{
+      id: string;
+      title?: string | null;
+      author?: string | null;
+      partner_name?: string | null;
+      status?: string | null;
+      excerpt?: string | null;
+      updated_at?: string | null;
+      created_at?: string | null;
+    }>).map((row) => ({
+      id: row.id,
+      type: 'cikk',
+      title: row.title || 'Cím nélkül',
+      author: row.partner_name || row.author || 'Szerkesztőség',
+      submittedAt: row.updated_at || row.created_at || new Date().toISOString(),
+      status: 'submitted',
+      excerpt: row.excerpt || undefined,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function approveModerationItem(id: string): Promise<void> {
-  const index = DEFAULT_MODERATION_ITEMS.findIndex((item) => item.id === id);
-  if (index !== -1) {
-    const item = DEFAULT_MODERATION_ITEMS[index];
-    item.status = 'approved';
+  const { error } = await supabase
+    .from('articles')
+    .update({ status: 'published', updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (!error) {
     await logAuditAction(
       'MODERATION_APPROVE',
       'moderation',
-      `Tartalom jóváhagyva: "${item.title}" (${item.type})`
+      `Tartalom jóváhagyva és publikálva: ${id}`
     );
   }
 }
 
 export async function rejectModerationItem(id: string): Promise<void> {
-  const index = DEFAULT_MODERATION_ITEMS.findIndex((item) => item.id === id);
-  if (index !== -1) {
-    const item = DEFAULT_MODERATION_ITEMS[index];
-    item.status = 'rejected';
+  const { error } = await supabase
+    .from('articles')
+    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (!error) {
     await logAuditAction(
       'MODERATION_REJECT',
       'moderation',
-      `Tartalom elutasítva: "${item.title}" (${item.type})`
+      `Tartalom elutasítva / archiválva: ${id}`
     );
   }
 }

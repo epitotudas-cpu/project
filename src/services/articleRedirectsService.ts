@@ -1,3 +1,5 @@
+import { readAppConfig, writeAppConfig } from './appConfigService';
+
 export interface ArticleRedirect {
   id: string;
   oldSlug: string;
@@ -7,6 +9,7 @@ export interface ArticleRedirect {
 }
 
 const REDIRECTS_STORAGE_KEY = 'epitotudas_article_redirects_v1';
+const REDIRECTS_CONFIG_KEY = '__SYSTEM_CONFIG_ARTICLE_REDIRECTS__';
 
 export function getArticleRedirects(): ArticleRedirect[] {
   if (typeof window === 'undefined') return [];
@@ -23,9 +26,26 @@ export function saveArticleRedirects(redirects: ArticleRedirect[]): void {
   try {
     localStorage.setItem(REDIRECTS_STORAGE_KEY, JSON.stringify(redirects));
     window.dispatchEvent(new Event('article_redirects_updated'));
+    void writeAppConfig(REDIRECTS_CONFIG_KEY, redirects).catch(() => {});
   } catch (err) {
     console.warn('Hiba az átirányítások mentésekor:', err);
   }
+}
+
+export async function fetchArticleRedirectsFromCloud(): Promise<ArticleRedirect[]> {
+  try {
+    const cloud = await readAppConfig<ArticleRedirect[]>(REDIRECTS_CONFIG_KEY);
+    if (Array.isArray(cloud)) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(REDIRECTS_STORAGE_KEY, JSON.stringify(cloud));
+        window.dispatchEvent(new Event('article_redirects_updated'));
+      }
+      return cloud;
+    }
+  } catch {
+    // ignore
+  }
+  return getArticleRedirects();
 }
 
 export function addArticleRedirect(oldSlug: string, newSlug: string, articleId: string): ArticleRedirect | null {

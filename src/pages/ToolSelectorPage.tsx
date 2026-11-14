@@ -30,6 +30,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
   const [selectedTrade, setSelectedTrade] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [loadedTools, setLoadedTools] = useState<Tool[]>([]);
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -37,15 +38,40 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
         const data = await getActiveTools();
         if (data && data.length > 0) {
           setLoadedTools(data);
+          setIsUsingFallback(false);
+        } else {
+          setIsUsingFallback(true);
         }
       } catch {
-        // Fallback to MOCK_TOOLS if error occurs
+        setIsUsingFallback(true);
       }
     }
     load();
   }, []);
 
   const activeToolsList = loadedTools.length > 0 ? loadedTools : MOCK_TOOLS;
+
+  const availableTrades = useMemo(() => {
+    const set = new Set<string>();
+    activeToolsList.forEach((tool: Tool) => {
+      (tool.professions || []).forEach((p: string) => {
+        if (p.trim()) set.add(p.trim());
+      });
+    });
+    return set.size > 0
+      ? Array.from(set).sort((a, b) => a.localeCompare(b, 'hu'))
+      : TRADES_LIST;
+  }, [activeToolsList]);
+
+  const availableTypes = useMemo(() => {
+    const set = new Set<string>();
+    activeToolsList.forEach((tool: Tool) => {
+      if (tool.type && tool.type.trim()) set.add(tool.type.trim());
+    });
+    return set.size > 0
+      ? Array.from(set).sort((a, b) => a.localeCompare(b, 'hu'))
+      : CATEGORIES_LIST;
+  }, [activeToolsList]);
 
   const filteredTools = useMemo(() => {
     return activeToolsList.filter((tool: Tool) => {
@@ -176,7 +202,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 font-medium focus:outline-none focus:border-primary transition-colors"
               >
                 <option value="all">Minden szakma (Összes)</option>
-                {TRADES_LIST.map((t: string) => (
+                {availableTrades.map((t: string) => (
                   <option key={t} value={t}>
                     {t}
                   </option>
@@ -195,7 +221,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 font-medium focus:outline-none focus:border-primary transition-colors"
               >
                 <option value="all">Minden típus (Összes)</option>
-                {CATEGORIES_LIST.map((cat: string) => (
+                {availableTypes.map((cat: string) => (
                   <option key={cat} value={cat}>
                     {cat}
                   </option>
@@ -211,7 +237,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
             <Sparkles size={18} className="text-accent" /> Ajánlott Eszközök &amp; Gépek ({filteredTools.length})
           </h2>
           <span className="text-xs text-gray-500">
-            Szűrés alapján megjelenítve
+            {isUsingFallback ? 'Alapértelmezett katalógus (offline mód)' : 'Élő adatbázis alapján szűrve'}
           </span>
         </div>
 

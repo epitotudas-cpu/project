@@ -24,50 +24,6 @@ export interface ContentLifecycleMetadata {
   excerpt?: string;
 }
 
-const IN_MEMORY_LIFECYCLE_STORE: Map<string, ContentLifecycleMetadata> = new Map([
-  [
-    'item-1',
-    {
-      id: 'item-1',
-      contentType: 'cikk',
-      title: 'Monolitikus vasbeton szerkezetek zsaluzási technológiái',
-      author: 'Kovács Péter (Szakember)',
-      status: 'submitted',
-      version: 1,
-      submittedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-      excerpt: 'Gyakorlati útmutató a zsaluzási rendszerek kiválasztásához és szereléséhez.',
-    },
-  ],
-  [
-    'item-2',
-    {
-      id: 'item-2',
-      contentType: 'fogalom',
-      title: 'Öntömörödő beton (SCC)',
-      author: 'Tóth Balázs (Oktató)',
-      status: 'review',
-      version: 1,
-      submittedAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-      excerpt: 'Olyan betonfajta, amely saját súlya alatt tömörödik vibrálás nélkül.',
-    },
-  ],
-  [
-    'item-3',
-    {
-      id: 'item-3',
-      contentType: 'szerszam',
-      title: 'Bosch Professional GBH 18V-26 akkus fúrókalapács',
-      author: 'Molnár Gábor (Partner)',
-      status: 'approved',
-      approvedBy: 'admin@epitotudas.hu',
-      approvedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-      version: 1,
-      submittedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-      excerpt: 'Ipari kategóriás akkumulátoros fúrókalapács SDS-plus szerszámbefogással.',
-    },
-  ],
-]);
-
 function mapDbStatusToLifecycle(dbStatus: string | null | undefined): ContentLifecycleStatus {
   switch (dbStatus) {
     case 'draft':
@@ -147,11 +103,7 @@ export async function listContentByLifecycleStatus(
     console.warn('Error loading content lifecycle from Supabase:', err);
   }
 
-  const all = Array.from(IN_MEMORY_LIFECYCLE_STORE.values());
-  if (status) {
-    return all.filter((item) => item.status === status);
-  }
-  return all;
+  return [];
 }
 
 export async function transitionContentStatus(
@@ -167,40 +119,28 @@ export async function transitionContentStatus(
     .select('id, title, author, partner_name, status, excerpt, created_at, updated_at')
     .maybeSingle();
 
-  if (!error && updatedRow) {
-    return {
-      id: updatedRow.id,
-      contentType: 'cikk',
-      title: updatedRow.title || 'Cím nélkül',
-      author: updatedRow.partner_name || updatedRow.author || 'Szerkesztőség',
-      status: mapDbStatusToLifecycle(updatedRow.status),
-      approvedBy:
-        newStatus === 'approved' || newStatus === 'published'
-          ? actorUserId || 'admin@epitotudas.hu'
-          : undefined,
-      approvedAt:
-        newStatus === 'approved' || newStatus === 'published'
-          ? new Date().toISOString()
-          : undefined,
-      version: 1,
-      submittedAt: updatedRow.updated_at || updatedRow.created_at || new Date().toISOString(),
-      excerpt: updatedRow.excerpt || undefined,
-    };
+  if (error || !updatedRow) {
+    throw new Error(error?.message || `Tartalom nem található vagy nem módosítható: ${id}`);
   }
 
-  const item = IN_MEMORY_LIFECYCLE_STORE.get(id);
-  if (!item) {
-    throw new Error(error?.message || `Tartalom nem található: ${id}`);
-  }
-
-  item.status = newStatus;
-  if (newStatus === 'approved' || newStatus === 'published') {
-    item.approvedBy = actorUserId || 'admin@epitotudas.hu';
-    item.approvedAt = new Date().toISOString();
-  }
-
-  IN_MEMORY_LIFECYCLE_STORE.set(id, item);
-  return item;
+  return {
+    id: updatedRow.id,
+    contentType: 'cikk',
+    title: updatedRow.title || 'Cím nélkül',
+    author: updatedRow.partner_name || updatedRow.author || 'Szerkesztőség',
+    status: mapDbStatusToLifecycle(updatedRow.status),
+    approvedBy:
+      newStatus === 'approved' || newStatus === 'published'
+        ? actorUserId || 'admin@epitotudas.hu'
+        : undefined,
+    approvedAt:
+      newStatus === 'approved' || newStatus === 'published'
+        ? new Date().toISOString()
+        : undefined,
+    version: 1,
+    submittedAt: updatedRow.updated_at || updatedRow.created_at || new Date().toISOString(),
+    excerpt: updatedRow.excerpt || undefined,
+  };
 }
 
 export function getStatusLabel(status: ContentLifecycleStatus): string {

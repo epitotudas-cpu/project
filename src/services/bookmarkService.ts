@@ -1,3 +1,5 @@
+import { readAppConfig, writeAppConfig } from './appConfigService';
+
 export interface SavedItem {
   id: string; // Composite unique key: e.g. "glossary_term123" or "article_art456"
   itemId: string;
@@ -105,6 +107,9 @@ export function saveItem(
   const updated = [newItem, ...existing];
   try {
     localStorage.setItem(getStorageKey(effectiveId), JSON.stringify(updated));
+    if (userId && !effectiveId.startsWith('guest_')) {
+      void writeAppConfig(`__USER_BOOKMARKS_${effectiveId}__`, updated).catch(() => {});
+    }
   } catch (e) {
     console.error('Failed to save item:', e);
   }
@@ -129,10 +134,27 @@ export function removeSavedItem(
 
   try {
     localStorage.setItem(getStorageKey(effectiveId), JSON.stringify(updated));
+    if (userId && !effectiveId.startsWith('guest_')) {
+      void writeAppConfig(`__USER_BOOKMARKS_${effectiveId}__`, updated).catch(() => {});
+    }
   } catch (e) {
     console.error('Failed to remove saved item:', e);
   }
   return updated;
+}
+
+export async function fetchSavedItemsFromCloud(userId: string): Promise<SavedItem[]> {
+  if (!userId || userId.startsWith('guest_')) return getSavedItems(userId);
+  try {
+    const cloud = await readAppConfig<SavedItem[]>(`__USER_BOOKMARKS_${userId.trim()}__`);
+    if (Array.isArray(cloud)) {
+      localStorage.setItem(getStorageKey(userId), JSON.stringify(cloud));
+      return cloud;
+    }
+  } catch {
+    // ignore
+  }
+  return getSavedItems(userId);
 }
 
 export function toggleSaveItem(
