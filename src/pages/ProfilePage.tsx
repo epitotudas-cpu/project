@@ -38,8 +38,8 @@ import { redeemStudentInvitationCode, getStudentCodeInfo } from '../services/par
 import { fetchStudentAssignedClassMaterials, getUserCertificates } from '../services/educationService';
 import {
   getFlashcardsLocal,
-  deleteFlashcard,
-  updateFlashcardMastery,
+  fetchFlashcardsFromCloud,
+  saveFlashcardsLocal,
   getCoursesLocal,
   getCourseProgress,
   getQuizAttempts,
@@ -263,6 +263,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [flashcards, setFlashcards] = useState<ReturnType<typeof getFlashcardsLocal>>([]);
   const [practiceModalCard, setPracticeModalCard] = useState<ReturnType<typeof getFlashcardsLocal>[number] | null>(null);
   const [practiceFlipped, setPracticeFlipped] = useState(false);
+  const [flashcardSyncing, setFlashcardSyncing] = useState(false);
+  const [flashcardCloudBlocked, setFlashcardCloudBlocked] = useState(false);
 
   const handleGoToPracticeFlashcards = () => {
     if (onNavigate) {
@@ -273,17 +275,88 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   };
 
   useEffect(() => {
+    let active = true;
     const uId = user?.id || 'anon_guest';
-    setFlashcards(getFlashcardsLocal(uId));
+
+    const loadCards = async () => {
+      try {
+        const loaded = await fetchFlashcardsFromCloud(uId);
+        if (active) {
+          setFlashcards(loaded);
+          setFlashcardCloudBlocked(false);
+        }
+      } catch (err) {
+        if (active) {
+          setFlashcardCloudBlocked(true);
+          const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+          toast.error(`A felhőbeli tanulókártyák betöltése sikertelen volt: ${msg}`);
+        }
+      }
+    };
+
+    void loadCards();
 
     const handleLearningUpdate = () => {
       setFlashcards(getFlashcardsLocal(uId));
     };
     window.addEventListener('learning-updated', handleLearningUpdate);
     return () => {
+      active = false;
       window.removeEventListener('learning-updated', handleLearningUpdate);
     };
-  }, [user?.id]);
+  }, [user?.id, toast]);
+
+  const handleDeleteProfileFlashcard = async (cardId: string) => {
+    if (flashcardSyncing || flashcardCloudBlocked) return;
+    const uId = user?.id || 'anon_guest';
+    const previous = flashcards;
+    const nextList = flashcards.filter((c) => c.id !== cardId);
+    setFlashcardSyncing(true);
+    try {
+      await saveFlashcardsLocal(uId, nextList);
+      setFlashcards(nextList);
+    } catch (err) {
+      setFlashcards(previous);
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      toast.error(`A tanulókártya törlése sikertelen volt: ${msg}`);
+    } finally {
+      setFlashcardSyncing(false);
+    }
+  };
+
+  const handlePracticeFlashcardVote = async (cardId: string, knewIt: boolean) => {
+    if (flashcardSyncing || flashcardCloudBlocked) return;
+    const uId = user?.id || 'anon_guest';
+    const previous = flashcards;
+    const nextList = flashcards.map((c) => {
+      if (c.id === cardId) {
+        const nextLevel = knewIt ? Math.min(5, c.master_level + 1) : Math.max(0, c.master_level - 1);
+        return {
+          ...c,
+          master_level: nextLevel,
+          last_reviewed_at: new Date().toISOString(),
+        };
+      }
+      return c;
+    });
+
+    setFlashcardSyncing(true);
+    try {
+      await saveFlashcardsLocal(uId, nextList);
+      setFlashcards(nextList);
+      if (knewIt) {
+        setPracticeModalCard(null);
+      } else {
+        setPracticeFlipped(false);
+      }
+    } catch (err) {
+      setFlashcards(previous);
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      toast.error(`A tanulókártya haladásának mentése sikertelen volt: ${msg}`);
+    } finally {
+      setFlashcardSyncing(false);
+    }
+  };
 
   // Filters State
   const [materialsFilter, setMaterialsFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
@@ -1325,12 +1398,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                             {card.category || 'Fogalom'}
                           </span>
                           <button
-                            onClick={() => {
-                              deleteFlashcard(user?.id || 'anon_guest', card.id);
-                              setFlashcards(getFlashcardsLocal(user?.id || 'anon_guest'));
-                            }}
+                            onClick={() => handleDeleteProfileFlashcard(card.id)}
+                            disabled={flashcardSyncing || flashcardCloudBlocked}
                             title="Kártya törlése"
-                            className="text-gray-500 hover:text-red-400 p-1 transition-colors"
+                            className="text-gray-500 hover:text-red-400 p-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1432,22 +1503,16 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => {
-                    updateFlashcardMastery(user?.id || 'anon_guest', practiceModalCard.id, false);
-                    setFlashcards(getFlashcardsLocal(user?.id || 'anon_guest'));
-                    setPracticeFlipped(false);
-                  }}
-                  className="flex-1 py-3 bg-red-950/60 border border-red-500/40 hover:bg-red-900 text-red-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer text-center"
+                  onClick={() => handlePracticeFlashcardVote(practiceModalCard.id, false)}
+                  disabled={flashcardSyncing || flashcardCloudBlocked}
+                  className="flex-1 py-3 bg-red-950/60 border border-red-500/40 hover:bg-red-900 text-red-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Nem tudtam ✗
                 </button>
                 <button
-                  onClick={() => {
-                    updateFlashcardMastery(user?.id || 'anon_guest', practiceModalCard.id, true);
-                    setFlashcards(getFlashcardsLocal(user?.id || 'anon_guest'));
-                    setPracticeModalCard(null);
-                  }}
-                  className="flex-1 py-3 bg-emerald-950/60 border border-emerald-500/40 hover:bg-emerald-900 text-emerald-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer text-center"
+                  onClick={() => handlePracticeFlashcardVote(practiceModalCard.id, true)}
+                  disabled={flashcardSyncing || flashcardCloudBlocked}
+                  className="flex-1 py-3 bg-emerald-950/60 border border-emerald-500/40 hover:bg-emerald-900 text-emerald-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Tudtam! ✓
                 </button>

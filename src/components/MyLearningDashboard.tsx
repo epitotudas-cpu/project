@@ -15,6 +15,7 @@ import type { Course, UserCertificate } from '../lib/supabase';
 import {
   type UserFlashcardProgressMap,
   getUserFlashcardProgress,
+  fetchUserFlashcardProgressFromCloud,
   getAllFlashcards,
 } from '../services/educationService';
 
@@ -38,14 +39,27 @@ export default function MyLearningDashboard({
   );
 
   useEffect(() => {
+    let active = true;
     function handleProgressChange() {
       if (userId) {
         setFlashcardProgress(getUserFlashcardProgress(userId));
       }
     }
     handleProgressChange();
+    if (userId && userId !== 'anon_guest' && !userId.startsWith('guest_')) {
+      fetchUserFlashcardProgressFromCloud(userId)
+        .then((cloudMap) => {
+          if (active) setFlashcardProgress(cloudMap);
+        })
+        .catch((err) => {
+          console.warn('A tanulókártya-haladás felhőbetöltése sikertelen volt:', err);
+        });
+    }
     window.addEventListener('flashcard-progress-changed', handleProgressChange);
-    return () => window.removeEventListener('flashcard-progress-changed', handleProgressChange);
+    return () => {
+      active = false;
+      window.removeEventListener('flashcard-progress-changed', handleProgressChange);
+    };
   }, [userId]);
 
   const allCards = getAllFlashcards();
