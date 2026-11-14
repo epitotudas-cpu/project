@@ -596,7 +596,10 @@ export async function listTools(options?: {
     toolsMap.set(t.slug, t);
   }
   try {
-    const { data, error } = await supabase.from('tools').select('*');
+    const { data, error } = await supabase
+      .from('tools')
+      .select('*')
+      .limit(options?.limit ?? 200);
     if (!error && data && data.length > 0) {
       for (const raw of data as Record<string, unknown>[]) {
         const item = normalizeToolFromDatabase(raw);
@@ -632,8 +635,22 @@ export async function getActiveTools(options?: {
 }
 
 export async function getToolBySlug(slug: string): Promise<Tool | null> {
-  const tools = await getActiveTools();
-  return tools.find((t) => t.slug === slug) || null;
+  try {
+    const { data, error } = await supabase
+      .from('tools')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!error && data) {
+      return normalizeToolFromDatabase(data as Record<string, unknown>);
+    }
+  } catch (err) {
+    void err;
+  }
+
+  return DEFAULT_ENCYCLOPEDIA_TOOLS.find((t) => t.slug === slug && t.status === 'active') || null;
 }
 
 export async function createTool(payload: Record<string, unknown>): Promise<Tool> {

@@ -136,9 +136,12 @@ export async function logAuditAction(
     if (uuid) {
       dbPayload.id = uuid;
     }
-    await supabase.from('audit_logs').insert([dbPayload]);
-  } catch {
-    // Csendes fallback localStorage-ra
+    const { error } = await supabase.from('audit_logs').insert([dbPayload]);
+    if (error) {
+      console.warn('Supabase audit_logs insert warning:', error.message);
+    }
+  } catch (err) {
+    console.warn('Supabase audit_logs insert exception:', err);
   }
 
   return newLog;
@@ -163,7 +166,7 @@ export async function fetchAuditLogs(filters?: FetchAuditLogsFilters): Promise<A
       .order('created_at', { ascending: false })
       .limit(200);
 
-    if (!error && data && data.length > 0) {
+    if (!error && Array.isArray(data)) {
       allLogs = data.map((row: Record<string, unknown>) => ({
         id: String(row.id),
         actorEmail: String(row.actor_email || row.actorEmail || 'admin@epitotudas.hu'),

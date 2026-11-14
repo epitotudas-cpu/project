@@ -260,7 +260,9 @@ export function saveAdvertisers(advertisers: Advertiser[]): void {
     void writeAppConfig('__SYSTEM_CONFIG_ADVERTISERS__', sanitized, {
       id: SUPABASE_SYSTEM_ID_ADVERTISERS,
       slug: 'system-advertisers-config',
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('Supabase advertisers cloud sync error:', err);
+    });
   } catch (e) {
     console.error('Hiba a hirdetők mentésekor:', e);
   }
@@ -307,7 +309,9 @@ export function savePlacements(placements: AdPlacement[]): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_PLACEMENTS, JSON.stringify(placements));
     }
-    void writeAppConfig('__SYSTEM_CONFIG_AD_PLACEMENTS__', placements).catch(() => {});
+    void writeAppConfig('__SYSTEM_CONFIG_AD_PLACEMENTS__', placements).catch((err) => {
+      console.warn('Supabase ad placements cloud sync error:', err);
+    });
   } catch (e) {
     console.error('Hiba az elhelyezések mentésekor:', e);
   }
@@ -348,7 +352,9 @@ export function savePayments(payments: AdPayment[]): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_PAYMENTS, JSON.stringify(sanitized));
     }
-    void writeAppConfig('__SYSTEM_CONFIG_AD_PAYMENTS__', sanitized).catch(() => {});
+    void writeAppConfig('__SYSTEM_CONFIG_AD_PAYMENTS__', sanitized).catch((err) => {
+      console.warn('Supabase ad payments cloud sync error:', err);
+    });
   } catch (e) {
     console.error('Hiba a fizetések mentésekor:', e);
   }
@@ -390,7 +396,9 @@ export function saveNotifications(notifications: AdNotification[]): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(sanitized));
     }
-    void writeAppConfig('__SYSTEM_CONFIG_AD_NOTIFICATIONS__', sanitized).catch(() => {});
+    void writeAppConfig('__SYSTEM_CONFIG_AD_NOTIFICATIONS__', sanitized).catch((err) => {
+      console.warn('Supabase ad notifications cloud sync error:', err);
+    });
   } catch (e) {
     console.error('Hiba az értesítések mentésekor:', e);
   }

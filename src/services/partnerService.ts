@@ -391,8 +391,12 @@ function saveStoredPartners(list: ExtendedPartner[]): void {
   }
 }
 
-export async function listPartners(category?: string): Promise<ExtendedPartner[]> {
-  let query = supabase.from('partners').select('*').order('created_at', { ascending: false });
+export async function listPartners(category?: string, limit: number = 100): Promise<ExtendedPartner[]> {
+  let query = supabase
+    .from('partners')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
   if (category && category !== 'all') {
     query = query.eq('category', category);
   }
@@ -1131,29 +1135,42 @@ export async function listInstructorClasses(
     instructor_name: row.profiles?.full_name || 'Oktató',
   }));
 
-  for (const cls of classes) {
-    // 1. Active code
-    const { data: codeData } = await supabase
-      .from('student_invitation_codes')
-      .select('*')
-      .eq('class_id', cls.id)
-      .eq('status', 'active')
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+  if (classes.length > 0) {
+    const classIds = classes.map((cls) => cls.id);
+    const nowIso = new Date().toISOString();
 
-    if (codeData) {
-      cls.active_code = codeData as StudentInvitationCode;
+    const [{ data: codesData }, { data: studentsData }] = await Promise.all([
+      supabase
+        .from('student_invitation_codes')
+        .select('*')
+        .in('class_id', classIds)
+        .eq('status', 'active')
+        .gt('expires_at', nowIso)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('school_students')
+        .select('class_id')
+        .in('class_id', classIds),
+    ]);
+
+    const codeByClass = new Map<string, StudentInvitationCode>();
+    for (const codeRow of (codesData || []) as StudentInvitationCode[]) {
+      if (codeRow.class_id && !codeByClass.has(codeRow.class_id)) {
+        codeByClass.set(codeRow.class_id, codeRow);
+      }
     }
 
-    // 2. Count
-    const { count } = await supabase
-      .from('school_students')
-      .select('id', { count: 'exact', head: true })
-      .eq('class_id', cls.id);
+    const studentCountByClass = new Map<string, number>();
+    for (const sRow of (studentsData || []) as Array<{ class_id: string | null }>) {
+      if (sRow.class_id) {
+        studentCountByClass.set(sRow.class_id, (studentCountByClass.get(sRow.class_id) || 0) + 1);
+      }
+    }
 
-    cls.students_count = count || 0;
+    for (const cls of classes) {
+      cls.active_code = codeByClass.get(cls.id);
+      cls.students_count = studentCountByClass.get(cls.id) || 0;
+    }
   }
 
   return classes;

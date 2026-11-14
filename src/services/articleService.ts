@@ -1,4 +1,5 @@
 import { supabase, type Article } from '../lib/supabase';
+import { writeAppConfig } from './appConfigService';
 import { logAuditAction } from './auditLogService';
 
 export interface ArticleWithCategory extends Article {
@@ -516,7 +517,7 @@ export async function listArticles(options: ListArticlesOptions = {}): Promise<L
     query = query.range(from, from + pageSize - 1).order('created_at', { ascending: false });
 
     const { data, count, error } = await query;
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       return {
         rows: (data as unknown as ArticleWithCategory[]) ?? [],
         count: count ?? data.length,
@@ -618,9 +619,34 @@ export async function getPopularArticles(limit: number = 6): Promise<Article[]> 
 export async function incrementArticleViews(articleId: string): Promise<number> {
   if (!articleId) return 0;
   const allLocal = getArticlesLocal();
-  const updated = allLocal.map((a) => (a.id === articleId ? { ...a, views: (a.views || 0) + 1 } : a));
+  const currentLocalViews = allLocal.find((a) => a.id === articleId)?.views || 0;
+  let nextViews = currentLocalViews + 1;
+
+  try {
+    const { data: existing, error: fetchError } = await supabase
+      .from('articles')
+      .select('views')
+      .eq('id', articleId)
+      .maybeSingle();
+
+    if (!fetchError && existing) {
+      const dbViews = (existing as { views?: number | null }).views ?? 0;
+      nextViews = dbViews + 1;
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ views: nextViews } as never)
+        .eq('id', articleId);
+      if (updateError) {
+        console.warn('Supabase article views update warning:', updateError.message);
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase incrementArticleViews error:', err);
+  }
+
+  const updated = allLocal.map((a) => (a.id === articleId ? { ...a, views: nextViews } : a));
   saveArticlesLocal(updated);
-  return (allLocal.find((a) => a.id === articleId)?.views || 0) + 1;
+  return nextViews;
 }
 
 export async function getRelatedArticles(
@@ -628,6 +654,37 @@ export async function getRelatedArticles(
   categoryId?: string | null,
   limit: number = 3
 ): Promise<Article[]> {
+  try {
+    if (categoryId) {
+      const { data: catData, error: catError } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'published')
+        .eq('category_id', categoryId)
+        .neq('id', currentArticleId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (!catError && catData && catData.length > 0) {
+        return catData as unknown as Article[];
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('status', 'published')
+      .neq('id', currentArticleId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (!error && Array.isArray(data)) {
+      return data as unknown as Article[];
+    }
+  } catch (err) {
+    console.warn('Supabase getRelatedArticles fallback:', err);
+  }
+
   const allLocal = getArticlesLocal().filter((a) => a.id !== currentArticleId && a.status === 'published');
   if (categoryId) {
     const matchCat = allLocal.filter((a) => a.category_id === categoryId);
@@ -732,7 +789,21 @@ export async function setArticleStatus(id: string, status: Article['status'], re
 
 export async function duplicateArticle(id: string): Promise<Article | null> {
   const allLocal = getArticlesLocal();
-  const source = allLocal.find((a) => a.id === id);
+  let source = allLocal.find((a) => a.id === id);
+  if (!source) {
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (!error && data) {
+        source = data as unknown as Article;
+      }
+    } catch (err) {
+      console.warn('Supabase duplicateArticle fetch error:', err);
+    }
+  }
   if (!source) return null;
 
   const duplicatedPayload: Record<string, unknown> = {
@@ -752,21 +823,30 @@ export async function duplicateArticle(id: string): Promise<Article | null> {
 }
 
 export async function deleteArticle(id: string): Promise<void> {
+  const { error } = await supabase.from('articles').delete().eq('id', id);
+  if (error) {
+    throw new Error(`Cikk törlése sikertelen az adatbázisból: ${error.message}`);
+  }
+
   const allLocal = getArticlesLocal();
   const target = allLocal.find((a) => a.id === id);
   const updatedList = allLocal.filter((a) => a.id !== id);
   saveArticlesLocal(updatedList);
 
-  try {
-    await supabase.from('articles').delete().eq('id', id);
-  } catch (err) {
-    console.warn('Supabase article delete info:', err);
-  }
-
   void logAuditAction('ARTICLE_DELETE', 'articles', `Cikk törölve: "${target?.title || id}"`);
 }
 
 export async function countArticles(): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('articles')
+      .select('id', { count: 'exact', head: true });
+    if (!error && typeof count === 'number') {
+      return count;
+    }
+  } catch (err) {
+    console.warn('Supabase countArticles fallback:', err);
+  }
   return getArticlesLocal().length;
 }
 
@@ -782,6 +862,11 @@ export async function reorderArticles(orderedArticleIds: string[]): Promise<void
   });
 
   saveArticlesLocal(updatedList);
+  try {
+    await writeAppConfig('__SYSTEM_CONFIG_ARTICLE_ORDER__', orderedArticleIds);
+  } catch (err) {
+    console.warn('A cikksorrend felhőbe mentése nem sikerült, csak helyben került rögzítésre:', err);
+  }
   void logAuditAction('ARTICLE_REORDER', 'articles', 'Cikkek sorrendje frissítve');
 }
 
@@ -792,7 +877,12 @@ export async function getArticlesForTool(
   limit: number = 4
 ): Promise<Article[]> {
   try {
-    const { data, error } = await supabase.from('articles').select('*').eq('status', 'published');
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(100);
     if (!error && data && data.length > 0) {
       const allSupabase = data as Article[];
       const matched = new Map<string, Article>();

@@ -9,6 +9,7 @@ import type {
 } from '../lib/supabase';
 import { logAuditAction } from './auditLogService';
 import { listPartners } from './partnerService';
+import { INITIAL_MANAGED_PACKAGES } from './adPackageService';
 
 export interface AdPackageConfig {
   id: PackageTier;
@@ -18,29 +19,23 @@ export interface AdPackageConfig {
   recommendedPlacement: 'top_banner' | 'sidebar' | 'in_feed';
 }
 
-export const AD_PACKAGES: AdPackageConfig[] = [
-  {
-    id: 'bronze',
-    name: 'Bronze Reklámcsomag',
-    monthlyPriceHuf: 49000,
-    features: ['Oldalsáv banner elhelyezés', 'Havi 5 000 garantált megjelenés', 'Alap partneri profil'],
-    recommendedPlacement: 'sidebar',
-  },
-  {
-    id: 'silver',
-    name: 'Silver Reklámcsomag',
-    monthlyPriceHuf: 99000,
-    features: ['Cikkben beágyazott és Eszköz katalógus banner', 'Kiemelt partneri badge', 'Havi 20 000 garantált megjelenés'],
-    recommendedPlacement: 'in_feed',
-  },
-  {
-    id: 'gold',
-    name: 'Gold Reklámcsomag',
-    monthlyPriceHuf: 249000,
-    features: ['Főoldali fejléc (Top Banner) exkluzív elhelyezés', 'Szponzorált cikk & Szakmai ajánló', 'Kiemelt partner profil', 'Korlátlan megjelenés'],
-    recommendedPlacement: 'top_banner',
-  },
-];
+const PACKAGE_RECOMMENDED_PLACEMENT: Record<PackageTier, 'top_banner' | 'sidebar' | 'in_feed'> = {
+  bronze: 'sidebar',
+  silver: 'in_feed',
+  gold: 'top_banner',
+  custom: 'sidebar',
+};
+
+export const AD_PACKAGES: AdPackageConfig[] = (['bronze', 'silver', 'gold'] as PackageTier[]).map((tier) => {
+  const pkg = INITIAL_MANAGED_PACKAGES.find((p) => p.id === `pkg-${tier}`);
+  return {
+    id: tier,
+    name: pkg?.name || `${tier.charAt(0).toUpperCase()}${tier.slice(1)} Reklámcsomag`,
+    monthlyPriceHuf: pkg?.price_huf ?? (tier === 'bronze' ? 49000 : tier === 'silver' ? 99000 : 249000),
+    features: pkg?.features || [],
+    recommendedPlacement: PACKAGE_RECOMMENDED_PLACEMENT[tier],
+  };
+});
 
 export interface AdvertisementSlot {
   id: string;
@@ -160,7 +155,9 @@ export function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): void {
     void writeAppConfig('__SYSTEM_CONFIG_AD_CAMPAIGNS__', sanitized, {
       id: SUPABASE_SYSTEM_ID,
       slug: 'system-ad-campaigns-config',
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('Supabase ad campaigns cloud sync error:', err);
+    });
   } catch (err) {
     console.error('Hiba a kampányok mentésekor:', err);
   }

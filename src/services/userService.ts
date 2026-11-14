@@ -1,10 +1,11 @@
 import { supabase, type Profile } from '../lib/supabase';
 
-export async function listProfiles(): Promise<Profile[]> {
+export async function listProfiles(limit: number = 200): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return data || [];
 }

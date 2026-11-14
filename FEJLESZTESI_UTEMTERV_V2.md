@@ -48,16 +48,16 @@
 ## Fázis 3 – Adatréteg, Supabase Szinkronizáció & Teljesítmény (P0 + P1 Service-ek)
 **Cél:** A néma `localStorage` fallbackek, adatvesztéses fire-and-forget írások, N+1 lekérdezések és duplikált service-ek rendezése.
 
-- [ ] **3.1 `articleService.ts`, `careerService.ts`, `auditLogService.ts` valós DB-műveletek (P0)**
+- [x] **3.1 `articleService.ts`, `careerService.ts`, `auditLogService.ts` valós DB-műveletek (P0)**
   - `src/services/articleService.ts`: `incrementArticleViews` (valós DB RPC/update), `getRelatedArticles` (Supabase lekérdezés), `duplicateArticle` (DB-ből is), `deleteArticle` (`{ error }` ellenőrzése és továbbdobása), `countArticles` (`count: 'exact'`), `reorderArticles` (DB mentés), `listArticles` (üres 0 soros találatnál ne essen vissza `DEFAULT_ARTICLES`-re).
   - `src/services/careerService.ts` (241–321. sor): DB hiba esetén valódi hiba dobása a néma `localStorage` fallback helyett.
   - `src/services/auditLogService.ts` (128–180. sor): `{ error }` ellenőrzése `logAuditAction`-ben; `fetchAuditLogs` ne töltsön vissza `INITIAL_DEFAULT_LOGS`-ot üres tábla esetén.
-- [ ] **3.2 Felhőmentések megbízhatóvá tétele (await + hibakezelés)**
+- [x] **3.2 Felhőmentések megbízhatóvá tétele (await + hibakezelés)**
   - `materialsService.ts`, `bookService.ts`, `siteSettingsService.ts`, `adService.ts`, `advertisementService.ts`, `learningService.ts`, `educationService.ts`: a `writeAppConfig` hívások megvárása / hibák jelzése; `educationService` tanúsítványok (`USER_CERTIFICATES_STORE`) és kártyahaladás szinkronizálása Supabase-be.
-- [ ] **3.3 N+1 lekérdezések és lapozás/limit pótlása (P1)**
+- [x] **3.3 N+1 lekérdezések és lapozás/limit pótlása (P1)**
   - `src/services/partnerService.ts` (1134–1157. sor – `listInstructorClasses`), `glossaryService.ts` (96–110. sor), `categoryService.ts` (512–520. sor): N+1 ciklusok kiváltása batch/group lekérdezéssel.
   - `toolService.ts` (`getToolBySlug` szűrjön közvetlenül `.eq('slug', slug)`-gal `getActiveTools()` helyett), valamint alapértelmezett `.limit()` / lapozás bevezetése (`listTools`, `getArticlesForTool`, `listGlossaryTerms`, `listPartners`, `listProfiles`, `listJobPostings`, `listPartnerApplications`).
-- [ ] **3.4 Duplikált service-ek összevonási terve / kivezetése**
+- [x] **3.4 Duplikált service-ek összevonási terve / kivezetése**
   - `adPackageService.ts` és `advertisementService.ts` (`AD_PACKAGES`) egységesítése; `educationService.ts` vs `learningService.ts` átfedések tisztázása.
 
 ---

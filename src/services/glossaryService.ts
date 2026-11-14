@@ -1,10 +1,11 @@
 import { supabase, type GlossaryTerm } from '../lib/supabase';
 
-export async function listGlossaryTerms(): Promise<GlossaryTerm[]> {
+export async function listGlossaryTerms(limit: number = 500): Promise<GlossaryTerm[]> {
   const { data, error } = await supabase
     .from('glossary_terms')
     .select('*')
-    .order('term');
+    .order('term')
+    .limit(limit);
   if (error) throw error;
   return data || [];
 }
@@ -94,19 +95,28 @@ export async function countArticlesMentioningTerm(term: string): Promise<number>
 }
 
 export async function countArticlesForTerms(terms: GlossaryTerm[]): Promise<Map<string, number>> {
-  const entries = await Promise.all(
-    terms.map((t) =>
-      supabase
-        .from('articles')
-        .select('*', { count: 'exact', head: true })
-        .or(`title.ilike.%${t.term}%,content.ilike.%${t.term}%`)
-        .then(({ count, error }) => {
-          if (error) throw error;
-          return [t.id, count ?? 0] as const;
-        })
-    )
-  );
-  return new Map(entries);
+  const result = new Map<string, number>();
+  if (terms.length === 0) return result;
+
+  const { data, error } = await supabase
+    .from('articles')
+    .select('title, content')
+    .limit(500);
+
+  if (error) throw error;
+  const articles = (data || []) as Array<{ title?: string | null; content?: string | null }>;
+  const searchable = articles.map((a) => `${a.title || ''}\n${a.content || ''}`.toLowerCase());
+
+  for (const t of terms) {
+    const needle = t.term.toLowerCase();
+    let count = 0;
+    for (const text of searchable) {
+      if (text.includes(needle)) count++;
+    }
+    result.set(t.id, count);
+  }
+
+  return result;
 }
 
 export async function countGlossaryTerms(): Promise<number> {

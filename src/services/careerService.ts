@@ -186,13 +186,15 @@ function saveStoredApplications(apps: JobApplication[]) {
 export async function listJobPostings(
   jobType?: string,
   locationQuery?: string,
-  includePending = false
+  includePending = false,
+  limit: number = 100
 ): Promise<JobPosting[]> {
   try {
     const { data } = await supabase
       .from('job_postings' as 'articles')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (data && data.length > 0) {
       let filtered = data as unknown as JobPosting[];
@@ -258,7 +260,11 @@ export async function createJobPosting(
       .select('*')
       .maybeSingle();
 
-    if (!error && data) {
+    if (error) {
+      throw new Error(`Álláshirdetés mentése sikertelen az adatbázisba: ${error.message}`);
+    }
+
+    if (data) {
       const rowData = data as Partial<JobPosting>;
       newJob = {
         ...newJob,
@@ -267,7 +273,10 @@ export async function createJobPosting(
       };
     }
   } catch (err) {
-    console.warn('Supabase job_postings insert info:', err);
+    if (err instanceof Error && err.message.startsWith('Álláshirdetés mentése sikertelen')) {
+      throw err;
+    }
+    throw new Error(err instanceof Error ? err.message : 'Álláshirdetés mentése sikertelen az adatbázisba.');
   }
 
   const all = getStoredJobs();
@@ -279,13 +288,12 @@ export async function createJobPosting(
 export async function approveJobPosting(id: string): Promise<void> {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   if (isUuid) {
-    try {
-      await supabase
-        .from('job_postings' as never)
-        .update({ is_active: true, moderation_status: 'approved' } as never)
-        .eq('id', id);
-    } catch (err) {
-      console.warn('Supabase job approve info:', err);
+    const { error } = await supabase
+      .from('job_postings' as never)
+      .update({ is_active: true, moderation_status: 'approved' } as never)
+      .eq('id', id);
+    if (error) {
+      throw new Error(`Álláshirdetés jóváhagyása sikertelen: ${error.message}`);
     }
   }
 
@@ -301,13 +309,12 @@ export async function approveJobPosting(id: string): Promise<void> {
 export async function rejectJobPosting(id: string): Promise<void> {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   if (isUuid) {
-    try {
-      await supabase
-        .from('job_postings' as never)
-        .update({ is_active: false, moderation_status: 'rejected' } as never)
-        .eq('id', id);
-    } catch (err) {
-      console.warn('Supabase job reject info:', err);
+    const { error } = await supabase
+      .from('job_postings' as never)
+      .update({ is_active: false, moderation_status: 'rejected' } as never)
+      .eq('id', id);
+    if (error) {
+      throw new Error(`Álláshirdetés elutasítása sikertelen: ${error.message}`);
     }
   }
 

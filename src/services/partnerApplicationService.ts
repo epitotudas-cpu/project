@@ -47,8 +47,15 @@ export async function submitPartnerApplication(payload: CreateApplicationPayload
   return data as PartnerApplication;
 }
 
-export async function listPartnerApplications(statusFilter?: 'pending' | 'approved' | 'rejected'): Promise<PartnerApplication[]> {
-  let query = supabase.from('partner_applications').select('*').order('created_at', { ascending: false });
+export async function listPartnerApplications(
+  statusFilter?: 'pending' | 'approved' | 'rejected',
+  limit: number = 200
+): Promise<PartnerApplication[]> {
+  let query = supabase
+    .from('partner_applications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
   if (statusFilter) {
     query = query.eq('status', statusFilter);

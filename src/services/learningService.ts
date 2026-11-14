@@ -1,3 +1,8 @@
+/**
+ * learningService: Mikrotanulási tananyagok, önálló kvízek/tesztek és egyéni tanulókártyák
+ * kezelése (__USER_QUIZ_ATTEMPTS_<userId>__, __USER_FLASHCARDS_<userId>__).
+ * (A strukturált tanfolyamok, leckék és tanúsítványok az educationService.ts-ben találhatók.)
+ */
 import { supabase } from '../lib/supabase';
 import { readAppConfig, writeAppConfig } from './appConfigService';
 import type {

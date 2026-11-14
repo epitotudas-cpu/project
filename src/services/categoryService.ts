@@ -510,6 +510,30 @@ export async function countCategories(): Promise<number> {
 }
 
 export async function countArticlesForCategories(categoryIds: string[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  for (const id of categoryIds) {
+    counts.set(id, 0);
+  }
+  if (categoryIds.length === 0) return counts;
+
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('category_id')
+      .in('category_id', categoryIds);
+
+    if (!error && Array.isArray(data)) {
+      for (const row of data as Array<{ category_id: string | null }>) {
+        if (row.category_id && counts.has(row.category_id)) {
+          counts.set(row.category_id, (counts.get(row.category_id) || 0) + 1);
+        }
+      }
+      return counts;
+    }
+  } catch (err) {
+    console.warn('Supabase countArticlesForCategories fallback:', err);
+  }
+
   const entries = await Promise.all(
     categoryIds.map(async (id) => {
       const cnt = await countArticlesByCategory(id);
