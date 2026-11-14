@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useEditorTheme } from '../services/editorThemeService';
-import { listArticles } from '../services/articleService';
+import { supabase } from '../lib/supabase';
 import {
   FileText,
   BookMarked,
@@ -23,15 +23,19 @@ export function EditorDashboardPage({ onNavigateView }: EditorDashboardPageProps
 
   useEffect(() => {
     let cancelled = false;
-    listArticles({ status: 'all', pageSize: 300 })
-      .then((res) => {
+    Promise.all([
+      supabase.from('articles').select('id', { count: 'exact', head: true }),
+      supabase.from('articles').select('id', { count: 'exact', head: true }).eq('article_type', 'utmutatok'),
+      supabase.from('articles').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('articles').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+    ])
+      .then(([totalRes, guidesRes, pendingRes, publishedRes]) => {
         if (cancelled) return;
-        const list = res.rows;
         setStats({
-          total: list.length,
-          guides: list.filter((a) => a.article_type === 'utmutatok').length,
-          pending: list.filter((a) => a.status === 'pending').length,
-          published: list.filter((a) => a.status === 'published').length,
+          total: totalRes.count ?? 0,
+          guides: guidesRes.count ?? 0,
+          pending: pendingRes.count ?? 0,
+          published: publishedRes.count ?? 0,
         });
       })
       .catch(() => {});

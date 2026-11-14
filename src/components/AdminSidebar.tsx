@@ -59,7 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'learning', label: 'Tanulási Rendszer & Kvízek', icon: GraduationCap },
       { id: 'categories', label: 'Kategóriák', icon: FolderTree },
       { id: 'glossary', label: 'Szakmai Kislexikon', icon: BookOpen },
-      { id: 'knowledge-hub', label: 'Munkavédelem, Szabványok & Kalkulátorok', icon: ShieldAlert },
+      { id: 'knowledge-hub', label: 'Munkavédelem & Szabványok', icon: ShieldAlert },
       { id: 'materials', label: 'Építőipari Anyagok', icon: Layers },
       { id: 'tools', label: 'Eszközök, Gépek & Szoftverek', icon: Wrench },
       { id: 'books', label: 'Szakmai Könyvek', icon: Library },

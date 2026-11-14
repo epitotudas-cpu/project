@@ -88,13 +88,13 @@
 ## Fázis 5 – Alacsony Prioritású UX Finomítások és Teszt Lefedettség Bővítése
 **Cél:** Címkézési pontatlanságok javítása és a Vitest tesztkészlet bővítése a kritikus service-ekre.
 
-- [ ] **5.1 UX és navigációs apróságok**
+- [x] **5.1 UX és navigációs apróságok**
   - `src/pages/PartnersPage.tsx` (279–284. sor): CTA átirányítása `partner-application` oldalra `mailto:` helyett.
   - `src/components/AdminSidebar.tsx` (62. sor): `knowledge-hub` címke pontosítása („Munkavédelem & Szabványok”, mivel a kalkulátorok az `AdminSettingsPage`-en vannak).
   - `src/pages/AdminAccessControlPage.tsx` (173–190. sor): `/iskola` és `/tanar` badge-ek javítása a valós `partner` és `teacher` route-okra.
   - `src/pages/EditorDashboardPage.tsx` (26–35. sor): cikkszámlálás `count: 'exact'` lekérdezéssel a `pageSize: 300` limit helyett.
   - `src/App.tsx` (1188. sor): kijelentkezéskor `window.location.replace('/')` helyett tiszta SPA `navigate('home')`.
-- [ ] **5.2 Vitest unit tesztek bővítése**
+- [x] **5.2 Vitest unit tesztek bővítése**
   - Új unit tesztek a kritikus service-ekhez (`searchService`, `educationService`, `roleService`, `permissionService`).
   - Teljes regressziós ellenőrzés (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
 

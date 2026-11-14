@@ -179,7 +179,7 @@ export function AdminAccessControlPage() {
           <School className="w-5 h-5 text-emerald-400" />
           <span>Iskola Szerepkör</span>
           <span className="ml-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
-            /iskola
+            /partner
           </span>
         </button>
 
@@ -194,7 +194,7 @@ export function AdminAccessControlPage() {
           <GraduationCap className="w-5 h-5 text-amber-400" />
           <span>Tanár Szerepkör</span>
           <span className="ml-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
-            /tanar
+            /teacher
           </span>
         </button>
       </div>

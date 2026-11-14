@@ -276,12 +276,13 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
             </p>
           </div>
 
-          <a
-            href="mailto:partner@epitotudas.hu"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold text-sm rounded-xl hover:bg-accent-hover transition-colors shrink-0"
+          <button
+            type="button"
+            onClick={() => onNavigate('partner-application')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold text-sm rounded-xl hover:bg-accent-hover transition-colors shrink-0 cursor-pointer"
           >
-            <Mail size={16} /> Kapcsolatfelvétel Partnereknek
-          </a>
+            <Mail size={16} /> Partneri Jelentkezés
+          </button>
         </div>
       </div>
     </div>

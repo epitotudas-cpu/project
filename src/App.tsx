@@ -1307,7 +1307,7 @@ function AppContent() {
       if (protectedPages.includes(currentPage)) {
         setCurrentPage('home');
         if (typeof window !== 'undefined' && window.location.hash) {
-          window.location.replace('/');
+          window.history.replaceState(null, '', '#/');
         }
       }
     }
