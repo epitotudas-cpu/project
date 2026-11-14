@@ -1380,9 +1380,9 @@ function AppContent() {
           window.dispatchEvent(new Event('hashchange'));
         }
 
-        if (targetAnchor) {
+        if (targetAnchor && /^#[A-Za-z0-9_-]+$/.test(targetAnchor)) {
           setTimeout(() => {
-            const el = document.querySelector(targetAnchor);
+            const el = document.getElementById(targetAnchor.slice(1));
             if (el) {
               el.scrollIntoView({ behavior: 'smooth' });
             } else {

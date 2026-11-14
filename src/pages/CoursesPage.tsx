@@ -82,9 +82,9 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
     if (!loading && typeof window !== 'undefined' && window.location.hash.includes('#')) {
       const hash = window.location.hash;
       const anchor = hash.includes('#') ? '#' + hash.split('#').pop()?.split('?')[0] : '';
-      if (anchor) {
+      if (anchor && /^#[A-Za-z0-9_-]+$/.test(anchor)) {
         setTimeout(() => {
-          const el = document.querySelector(anchor);
+          const el = document.getElementById(anchor.slice(1));
           if (el) {
             el.scrollIntoView({ behavior: 'smooth' });
           }
