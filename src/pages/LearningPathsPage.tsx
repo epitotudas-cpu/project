@@ -320,6 +320,9 @@ export default function LearningPathsPage({ onNavigate }: LearningPathsPageProps
   const currentQ = CAREER_QUESTIONS[currentQuestionIndex];
   const recommendation = TRADE_RECOMMENDATIONS[recommendedTradeKey];
   const RecommendedIcon = recommendation.icon;
+  const totalAnswers = Object.values(tradeScores).reduce((sum, val) => sum + val, 0);
+  const recommendedMatchPercentage =
+    totalAnswers > 0 ? Math.round(((tradeScores[recommendedTradeKey] || 0) / totalAnswers) * 100) : 0;
 
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20">
@@ -554,7 +557,7 @@ export default function LearningPathsPage({ onNavigate }: LearningPathsPageProps
 
                   <div className="bg-white/10 border border-white/20 px-4 py-2 rounded-2xl self-start md:self-auto text-right">
                     <span className="text-[10px] text-gray-300 uppercase block font-semibold">Egyezés mértéke</span>
-                    <span className="text-xl font-black text-accent">96%</span>
+                    <span className="text-xl font-black text-accent">{recommendedMatchPercentage}%</span>
                   </div>
                 </div>
 

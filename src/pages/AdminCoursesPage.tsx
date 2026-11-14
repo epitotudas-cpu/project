@@ -186,6 +186,15 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
     setShowLessonModal(true);
   };
 
+  const handleOpenEditLesson = (courseId: string, lesson: Lesson) => {
+    setEditingLesson(lesson);
+    setLessonTitle(lesson.title);
+    setLessonContent(lesson.content || '');
+    setLessonVideoUrl(lesson.video_url || '');
+    setActiveCourseId(courseId);
+    setShowLessonModal(true);
+  };
+
   const handleSaveLesson = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCourseId || !lessonTitle.trim()) return;
@@ -259,6 +268,18 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
     setOpt2('');
     setOpt3('');
     setCorrectOptionIdx(0);
+    setActiveCourseId(courseId);
+    setShowQuizModal(true);
+  };
+
+  const handleOpenEditQuiz = (courseId: string, q: QuizQuestion) => {
+    setEditingQuiz(q);
+    setQuizQuestionText(q.question);
+    setOpt0(q.options_json?.[0] || '');
+    setOpt1(q.options_json?.[1] || '');
+    setOpt2(q.options_json?.[2] || '');
+    setOpt3(q.options_json?.[3] || '');
+    setCorrectOptionIdx(q.correct_option_index ?? 0);
     setActiveCourseId(courseId);
     setShowQuizModal(true);
   };
@@ -498,14 +519,24 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
                             <div className="font-bold text-white">{lesson.title}</div>
                             <div className="text-gray-400 text-[11px] line-clamp-1">{lesson.content}</div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteLesson(course.id, lesson.id)}
-                            className="p-1 text-red-400 hover:text-red-300"
-                            title="Lecke törlése"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditLesson(course.id, lesson)}
+                              className="p-1 text-gray-400 hover:text-white cursor-pointer"
+                              title="Lecke szerkesztése"
+                            >
+                              <Edit3 size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLesson(course.id, lesson.id)}
+                              className="p-1 text-red-400 hover:text-red-300 cursor-pointer"
+                              title="Lecke törlése"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -531,14 +562,24 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
                         <div key={q.id} className="p-3 bg-[#1D1D1D] rounded-xl space-y-1.5 text-xs border border-[#2A2A2A]">
                           <div className="flex items-center justify-between font-bold text-white">
                             <span>❓ {q.question}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteQuiz(course.id, q.id)}
-                              className="p-1 text-red-400 hover:text-red-300"
-                              title="Kérdés törlése"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditQuiz(course.id, q)}
+                                className="p-1 text-gray-400 hover:text-white cursor-pointer"
+                                title="Kérdés szerkesztése"
+                              >
+                                <Edit3 size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteQuiz(course.id, q.id)}
+                                className="p-1 text-red-400 hover:text-red-300 cursor-pointer"
+                                title="Kérdés törlése"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-1.5 text-[11px] text-gray-400">
                             {q.options_json?.map((opt, oIdx) => (

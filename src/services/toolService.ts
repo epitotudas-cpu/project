@@ -697,6 +697,15 @@ export async function setToolStatus(id: string, status: Tool['status']): Promise
   if (error) throw error;
 }
 
+export async function deleteTool(id: string): Promise<void> {
+  const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+  if (!isUuid) {
+    throw new Error('Alapértelmezett (nem adatbázisban tárolt) eszköz nem törölhető, csak kivezethető.');
+  }
+  const { error } = await supabase.from('tools').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function countTools(): Promise<number> {
   const { count, error } = await supabase
     .from('tools')

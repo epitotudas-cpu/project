@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Pencil, AlertCircle, RefreshCw, BookOpen, Plus, Search,
-  FileJson, ListChecks, Tag, Globe, Hash, Sparkles,
+  FileJson, ListChecks, Tag, Globe, Hash, Sparkles, Trash2,
 } from 'lucide-react';
 import type { GlossaryTerm } from '../lib/supabase';
-import { listGlossaryTerms, countArticlesForTerms } from '../services/glossaryService';
+import { listGlossaryTerms, countArticlesForTerms, deleteGlossaryTerm } from '../services/glossaryService';
 import { useToast } from '../components/ToastProvider';
+import ConfirmDialog from '../components/ConfirmDialog';
 import EditGlossaryTermModal from '../components/EditGlossaryTermModal';
 import ImportGlossaryValidationModal from '../components/ImportGlossaryValidationModal';
 import BatchEditGlossaryModal from '../components/BatchEditGlossaryModal';
@@ -43,6 +44,7 @@ export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryP
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<GlossaryTerm | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [termToDelete, setTermToDelete] = useState<GlossaryTermWithCount | null>(null);
   const [query, setQuery] = useState(initialSearchQuery || '');
 
   useEffect(() => {
@@ -458,13 +460,20 @@ export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryP
               </div>
 
               {/* Lábléc */}
-              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end pt-2 border-t">
+              <div style={{ borderColor: cardBorder }} className="flex items-center justify-end gap-2 pt-2 border-t">
                 <button
                   onClick={() => openEdit(t)}
                   style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-all cursor-pointer"
                 >
                   <Pencil size={12} /> Szerkesztés
+                </button>
+                <button
+                  onClick={() => setTermToDelete(t)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/10 transition-all cursor-pointer"
+                  title="Fogalom törlése"
+                >
+                  <Trash2 size={12} /> Törlés
                 </button>
               </div>
             </div>
@@ -510,13 +519,22 @@ export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryP
                     <p className="text-gray-400 text-sm mt-1.5 line-clamp-2">{t.definition}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => openEdit(t)}
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold border rounded-md hover:opacity-80 transition-colors flex-shrink-0 cursor-pointer"
-                >
-                  <Pencil size={12} /> Szerkesztés
-                </button>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => openEdit(t)}
+                    style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold border rounded-md hover:opacity-80 transition-colors cursor-pointer"
+                  >
+                    <Pencil size={12} /> Szerkesztés
+                  </button>
+                  <button
+                    onClick={() => setTermToDelete(t)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Fogalom törlése"
+                  >
+                    <Trash2 size={12} /> Törlés
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -541,6 +559,27 @@ export default function AdminGlossaryPage({ initialSearchQuery }: AdminGlossaryP
         isOpen={catSettingsOpen}
         onClose={() => setCatSettingsOpen(false)}
         availableCategories={availableCategories}
+      />
+
+      <ConfirmDialog
+        open={!!termToDelete}
+        title="Fogalom törlése"
+        message={`Biztosan törölni szeretnéd a(z) „${termToDelete?.term || ''}” fogalmat?`}
+        confirmLabel="Törlés"
+        destructive
+        onCancel={() => setTermToDelete(null)}
+        onConfirm={async () => {
+          if (!termToDelete) return;
+          try {
+            await deleteGlossaryTerm(termToDelete.id);
+            setTerms((prev) => prev.filter((item) => item.id !== termToDelete.id));
+            toast.success('Fogalom sikeresen törölve.');
+          } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Hiba a fogalom törlésekor.');
+          } finally {
+            setTermToDelete(null);
+          }
+        }}
       />
 
       <GlossaryLanguageSettingsModal

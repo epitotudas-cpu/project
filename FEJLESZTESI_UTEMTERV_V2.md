@@ -65,15 +65,15 @@
 ## Fázis 4 – Publikus Routing, Auth Guard, SEO & Hiányzó CRUD-ok (P1 + P2)
 **Cél:** A publikus hash-útvonalak, SEO metaadatok, hiányzó szerkesztés/törlés gombok és a sötét/világos téma kontraszthibáinak javítása.
 
-- [ ] **4.1 Publikus navigáció és Auth Guard (P1)**
+- [x] **4.1 Publikus navigáció és Auth Guard (P1)**
   - `src/pages/ProfilePage.tsx` (267–272. sor) & `src/App.tsx` (1260–1276. sor): a `navigate()` ne törölje ki a `?tab=flashcards` query paramétert.
   - `src/App.tsx` (203–272. sor): `#tanulas`, `#ujdonsagok`, `#utmutatok`, `#quizzes`, `#tesztek`, `#flashcards`, `#tanulokartyak`, `#partnerek` aliasok támogatása `getInitialPage()`-ben és `isUnknownHashRoute()`-ban (ne adjanak hamis 404-et).
   - `src/App.tsx` (429–623. sor): bejelentkezés nélküli `#partner` és `#teacher` elérésnél átirányítás loginra `PartnerLayout` helyett.
   - `src/App.tsx` (1277–1278. sor): dupla `popstate` + `hashchange` eseményküldés megszüntetése.
-- [ ] **4.2 SEO & Meta Tagek javítása (P1)**
+- [x] **4.2 SEO & Meta Tagek javítása (P1)**
   - `index.html` (140, 148–155. sor): abszolút `https://www.epitotudas.hu/...` URL-ek `og:image`/`twitter:image`-hez.
   - `src/App.tsx` (1137–1171. sor) & `src/lib/seoMeta.ts`: hiányzó oldalcímek pótlása (`tudastar`, `jogi`, `verify-email`, `forgot-password`, `reset-password`, `szerkeszto`, `teacher`), dinamikus canonical és alapértelmezett OG/description visszaállítása cikk elhagyásakor, `siteSettingsService.ts` (349. sor) aszinkron `document.title` felülírásának védelme.
-- [ ] **4.3 Hiányzó CRUD műveletek & karrierkvíz (P2)**
+- [x] **4.3 Hiányzó CRUD műveletek & karrierkvíz (P2)**
   - `src/pages/AdminToolsPage.tsx` + `toolService.ts`: eszköz törlése (`deleteTool`).
   - `src/pages/AdminGlossaryPage.tsx` + `glossaryService.ts`: fogalom törlése.
   - `src/pages/AdminCoursesPage.tsx` (495–552. sor): leckék és kvízkérdések **Szerkesztés** gombjának bekötése a már meglévő edit state-hez.

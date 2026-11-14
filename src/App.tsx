@@ -31,6 +31,7 @@ import {
 } from './services/partnerService';
 import { useToast } from './components/ToastProvider';
 import ConfirmDialog from './components/ConfirmDialog';
+import { resetDefaultMetaTags } from './lib/seoMeta';
 import {
   Building2,
   Tag,
@@ -200,6 +201,24 @@ const ALL_VALID_PAGES: PageKey[] = [
   'partner-application',
 ];
 
+function normalizeHashRoute(raw: string): string {
+  const cleaned = raw.replace(/^#\/?/, '');
+  const [pathPart, ...restParts] = cleaned.split('?');
+  const suffix = restParts.length > 0 ? `?${restParts.join('?')}` : '';
+  const lower = pathPart.toLowerCase();
+
+  if (lower.startsWith('cikkek')) {
+    return `${pathPart.replace(/^cikkek/i, 'category')}${suffix}`;
+  }
+  if (lower === 'tanulas') return `learning${suffix}`;
+  if (lower === 'ujdonsagok') return suffix ? `category${suffix}` : 'category?type=ujdonsagok';
+  if (lower === 'utmutatok') return suffix ? `category${suffix}` : 'category?type=utmutatok';
+  if (lower === 'quizzes' || lower === 'tesztek') return suffix ? `learning${suffix}` : 'learning?tab=quizzes';
+  if (lower === 'flashcards' || lower === 'tanulokartyak') return suffix ? `learning${suffix}` : 'learning?tab=flashcards';
+  if (lower === 'partnerek') return `partners${suffix}`;
+  return cleaned;
+}
+
 function getInitialPage(): PageKey {
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
@@ -213,10 +232,7 @@ function getInitialPage(): PageKey {
       return 'login';
     }
 
-    let rawHash = window.location.hash.replace(/^#\/?/, '');
-    if (rawHash.startsWith('cikkek')) {
-      rawHash = rawHash.replace(/^cikkek/, 'category');
-    }
+    const rawHash = normalizeHashRoute(window.location.hash);
     if (rawHash.startsWith('partnerek/')) {
       return 'partner-detail';
     }
@@ -253,10 +269,7 @@ function isUnknownHashRoute(): boolean {
     ) {
       return false;
     }
-    let normalized = raw;
-    if (normalized.startsWith('cikkek')) {
-      normalized = normalized.replace(/^cikkek/, 'category');
-    }
+    const normalized = normalizeHashRoute(raw);
     if (
       normalized.startsWith('partnerek/') ||
       normalized.startsWith('course-detail/') ||
@@ -398,11 +411,18 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
   const [offersLoading, setOffersLoading] = useState(false);
   const [savingOffer, setSavingOffer] = useState(false);
   const [showNewOfferForm, setShowNewOfferForm] = useState(false);
+  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
   const [newOfferTitle, setNewOfferTitle] = useState('');
   const [newOfferDiscount, setNewOfferDiscount] = useState('');
   const [newOfferValidUntil, setNewOfferValidUntil] = useState('');
   const [newOfferDesc, setNewOfferDesc] = useState('');
   const [offerToDelete, setOfferToDelete] = useState<PartnerOfferItem | null>(null);
+
+  useEffect(() => {
+    if (!loadingRole && !user) {
+      onNavigate('login');
+    }
+  }, [loadingRole, user, onNavigate]);
 
   useEffect(() => {
     if (!currentPartner?.id) {
@@ -573,6 +593,10 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
       </div>
     );
+  }
+
+  if (!loadingRole && !user) {
+    return null;
   }
 
   if (isTeacher) {
@@ -828,7 +852,19 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
               </p>
             </div>
             <button
-              onClick={() => setShowNewOfferForm((prev) => !prev)}
+              onClick={() => {
+                if (showNewOfferForm) {
+                  setShowNewOfferForm(false);
+                  setEditingOfferId(null);
+                  setNewOfferTitle('');
+                  setNewOfferDiscount('');
+                  setNewOfferValidUntil('');
+                  setNewOfferDesc('');
+                } else {
+                  setEditingOfferId(null);
+                  setShowNewOfferForm(true);
+                }
+              }}
               className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 cursor-pointer self-start md:self-center"
             >
               <PlusCircle className="w-4 h-4" />
@@ -838,7 +874,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
 
           {showNewOfferForm && (
             <div className="bg-slate-900 border border-blue-500/30 rounded-2xl p-6 space-y-4">
-              <h3 className="text-base font-bold text-white">Új promóciós ajánlat létrehozása</h3>
+              <h3 className="text-base font-bold text-white">
+                {editingOfferId ? 'Promóciós ajánlat szerkesztése' : 'Új promóciós ajánlat létrehozása'}
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input
                   type="text"
@@ -870,7 +908,14 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
               />
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => setShowNewOfferForm(false)}
+                  onClick={() => {
+                    setShowNewOfferForm(false);
+                    setEditingOfferId(null);
+                    setNewOfferTitle('');
+                    setNewOfferDiscount('');
+                    setNewOfferValidUntil('');
+                    setNewOfferDesc('');
+                  }}
                   className="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700 cursor-pointer"
                 >
                   Mégse
@@ -881,22 +926,34 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                     if (!newOfferTitle.trim() || !effectivePartner?.id) return;
                     setSavingOffer(true);
                     try {
-                      const created = await createPartnerOffer({
-                        partner_id: effectivePartner.id,
-                        title: newOfferTitle.trim(),
-                        discount: newOfferDiscount.trim() || 'Kiemelt ajánlat',
-                        valid_until: newOfferValidUntil.trim() || 'Visszavonásig',
-                        description: newOfferDesc.trim() || 'Partneri ajánlat.',
-                        status: 'Aktív',
-                        created_by: user?.id ?? null,
-                      });
-                      setOffersList((prev) => [created, ...prev]);
+                      if (editingOfferId) {
+                        const updated = await updatePartnerOffer(editingOfferId, {
+                          title: newOfferTitle.trim(),
+                          discount: newOfferDiscount.trim() || 'Kiemelt ajánlat',
+                          valid_until: newOfferValidUntil.trim() || 'Visszavonásig',
+                          description: newOfferDesc.trim() || 'Partneri ajánlat.',
+                        });
+                        setOffersList((prev) => prev.map((item) => (item.id === editingOfferId ? updated : item)));
+                        toast.success('Ajánlat sikeresen frissítve!');
+                      } else {
+                        const created = await createPartnerOffer({
+                          partner_id: effectivePartner.id,
+                          title: newOfferTitle.trim(),
+                          discount: newOfferDiscount.trim() || 'Kiemelt ajánlat',
+                          valid_until: newOfferValidUntil.trim() || 'Visszavonásig',
+                          description: newOfferDesc.trim() || 'Partneri ajánlat.',
+                          status: 'Aktív',
+                          created_by: user?.id ?? null,
+                        });
+                        setOffersList((prev) => [created, ...prev]);
+                        toast.success('Ajánlat sikeresen mentve és közzétéve!');
+                      }
                       setNewOfferTitle('');
                       setNewOfferDiscount('');
                       setNewOfferValidUntil('');
                       setNewOfferDesc('');
+                      setEditingOfferId(null);
                       setShowNewOfferForm(false);
-                      toast.success('Ajánlat sikeresen mentve és közzétéve!');
                     } catch (err: unknown) {
                       toast.error(err instanceof Error ? err.message : 'Hiba történt az ajánlat mentése során.');
                     } finally {
@@ -905,7 +962,11 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   }}
                   className="px-5 py-2 bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl cursor-pointer"
                 >
-                  {savingOffer ? 'Mentés...' : 'Ajánlat mentése & közzététele'}
+                  {savingOffer
+                    ? 'Mentés...'
+                    : editingOfferId
+                      ? 'Módosítások mentése'
+                      : 'Ajánlat mentése & közzététele'}
                 </button>
               </div>
             </div>
@@ -954,6 +1015,21 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                           className="p-1 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
                         >
                           {off.status === 'Aktív' ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          title="Ajánlat szerkesztése"
+                          onClick={() => {
+                            setEditingOfferId(off.id);
+                            setNewOfferTitle(off.title);
+                            setNewOfferDiscount(off.discount);
+                            setNewOfferValidUntil(off.valid_until);
+                            setNewOfferDesc(off.description);
+                            setShowNewOfferForm(true);
+                          }}
+                          className="p-1 text-slate-400 hover:text-blue-400 transition-colors cursor-pointer"
+                        >
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
@@ -1140,6 +1216,7 @@ function AppContent() {
     const baseTitle = siteSettings.siteTitle || 'ÉpítőTudás';
     const pageTitleMap: Partial<Record<PageKey, string>> = {
       home: baseTitle,
+      tudastar: `Tudástár — ${baseTitle}`,
       category: `Tudástár — ${baseTitle}`,
       article: `Szakmai Cikk — ${baseTitle}`,
       glossary: `Építőipari Fogalomtár — ${baseTitle}`,
@@ -1162,6 +1239,7 @@ function AppContent() {
       'partner-detail': `Partner Adatlap — ${baseTitle}`,
       'partner-application': `Partner Jelentkezés — ${baseTitle}`,
       about: `Rólunk — ${baseTitle}`,
+      jogi: `Jogi Információk — ${baseTitle}`,
       impressum: `Impresszum — ${baseTitle}`,
       privacy: `Adatvédelmi Tájékoztató — ${baseTitle}`,
       terms: `Felhasználási Feltételek — ${baseTitle}`,
@@ -1169,10 +1247,20 @@ function AppContent() {
       profile: `Profilom — ${baseTitle}`,
       login: `Bejelentkezés — ${baseTitle}`,
       register: `Regisztráció — ${baseTitle}`,
+      'verify-email': `Email Megerősítés — ${baseTitle}`,
+      'forgot-password': `Elfelejtett Jelszó — ${baseTitle}`,
+      'reset-password': `Új Jelszó Beállítása — ${baseTitle}`,
       admin: `Adminisztráció — ${baseTitle}`,
+      szerkeszto: `Szerkesztői Panel — ${baseTitle}`,
       partner: `Partner Panel — ${baseTitle}`,
+      teacher: `Oktatói Panel — ${baseTitle}`,
     };
-    document.title = pageTitleMap[currentPage] || baseTitle;
+    const resolvedTitle = pageTitleMap[currentPage] || baseTitle;
+    if (currentPage !== 'article') {
+      resetDefaultMetaTags(resolvedTitle);
+    } else {
+      document.title = resolvedTitle;
+    }
   }, [currentPage, siteSettings.siteTitle]);
 
   useEffect(() => {
@@ -1210,10 +1298,7 @@ function AppContent() {
     page: string,
     params?: { articleSlug?: string; partnerSlug?: string; slug?: string; quizId?: string }
   ) => {
-    let rawTarget = page.replace(/^#\/?/, '');
-    if (rawTarget.startsWith('cikkek')) {
-      rawTarget = rawTarget.replace(/^cikkek/, 'category');
-    }
+    const rawTarget = normalizeHashRoute(page);
     const mainPage = rawTarget.split('?')[0].split('#')[0];
     const targetAnchor = rawTarget.includes('#') ? '#' + rawTarget.split('#')[1].split('?')[0] : '';
     const validPage = (ALL_VALID_PAGES.includes(mainPage as PageKey) ? mainPage : 'home') as PageKey;
@@ -1277,9 +1362,8 @@ function AppContent() {
                       : `#${validPage}`;
         if (window.location.hash !== targetHash) {
           window.history.pushState(null, '', targetHash || window.location.pathname);
+          window.dispatchEvent(new Event('hashchange'));
         }
-        window.dispatchEvent(new Event('popstate'));
-        window.dispatchEvent(new Event('hashchange'));
 
         if (targetAnchor) {
           setTimeout(() => {

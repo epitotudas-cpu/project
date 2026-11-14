@@ -345,7 +345,8 @@ export function applySiteSettings(settings: SiteSettings): void {
     document.documentElement.style.setProperty('--color-admin-card-highlight', adminCardHighlight);
     document.documentElement.style.setProperty('--color-admin-card-highlight-bg', `${adminCardHighlight}1C`);
 
-    if (settings?.siteTitle) {
+    const activeHash = typeof window !== 'undefined' ? window.location.hash.replace(/^#\/?/, '') : '';
+    if (settings?.siteTitle && (!activeHash || activeHash === 'home')) {
       document.title = `${settings.siteTitle} - ${settings.tagline || 'Építőipari Tudásbázis & Szakmai Enciklopédia'}`;
     }
 

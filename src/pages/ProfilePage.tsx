@@ -265,9 +265,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const [practiceFlipped, setPracticeFlipped] = useState(false);
 
   const handleGoToPracticeFlashcards = () => {
-    window.location.hash = '#learning?tab=flashcards';
     if (onNavigate) {
-      onNavigate('learning');
+      onNavigate('learning?tab=flashcards');
+    } else {
+      window.location.hash = '#learning?tab=flashcards';
     }
   };
 

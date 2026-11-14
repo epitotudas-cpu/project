@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Pencil, AlertCircle, RefreshCw, Wrench, Plus, Search, Power, PowerOff } from 'lucide-react';
+import { Pencil, AlertCircle, RefreshCw, Wrench, Plus, Search, Power, PowerOff, Trash2 } from 'lucide-react';
 import type { Tool } from '../lib/supabase';
-import { listTools, setToolStatus } from '../services/toolService';
+import { listTools, setToolStatus, deleteTool } from '../services/toolService';
 import { useToast } from '../components/ToastProvider';
 import EditToolModal from '../components/EditToolModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 type StatusFilter = 'all' | Tool['status'];
@@ -28,6 +29,7 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
   const [editing, setEditing] = useState<Tool | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toolToDelete, setToolToDelete] = useState<Tool | null>(null);
 
   useEffect(() => {
     if (initialSearchQuery !== undefined) {
@@ -272,6 +274,13 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
                               {isActive ? <PowerOff size={12} /> : <Power size={12} />}
                               {isActive ? 'Kivezet' : 'Aktivál'}
                             </button>
+                            <button
+                              onClick={() => setToolToDelete(t)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/10 transition-colors cursor-pointer"
+                              title="Eszköz törlése"
+                            >
+                              <Trash2 size={12} /> Törlés
+                            </button>
                           </div>
                         </td>
                       )}
@@ -290,6 +299,27 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
           onSaved={handleSaved}
         />
       )}
+
+      <ConfirmDialog
+        open={!!toolToDelete}
+        title="Eszköz törlése"
+        message={`Biztosan törölni szeretnéd a(z) „${toolToDelete?.name || ''}” eszközt?`}
+        confirmLabel="Törlés"
+        destructive
+        onCancel={() => setToolToDelete(null)}
+        onConfirm={async () => {
+          if (!toolToDelete) return;
+          try {
+            await deleteTool(toolToDelete.id);
+            setTools((prev) => prev.filter((item) => item.id !== toolToDelete.id));
+            toast.success('Eszköz sikeresen törölve.');
+          } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Hiba az eszköz törlésekor.');
+          } finally {
+            setToolToDelete(null);
+          }
+        }}
+      />
     </div>
   );
 }
