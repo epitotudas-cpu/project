@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import CookieBanner from './components/CookieBanner';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { GlossaryProvider } from './contexts/GlossaryContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import {
@@ -219,7 +220,7 @@ function normalizeHashRoute(raw: string): string {
   return cleaned;
 }
 
-function getInitialPage(): PageKey {
+function getInitialPage(useSessionFallback = true): PageKey {
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
     if (params.get('type') === 'recovery') return 'reset-password';
@@ -247,8 +248,9 @@ function getInitialPage(): PageKey {
       return mainHash as PageKey;
     }
 
+    const hasExplicitRootHash = window.location.hash === '#/' || window.location.hash === '#';
     const savedSessionPage = sessionStorage.getItem('epitotudas_active_page');
-    if (!mainHash && savedSessionPage && ALL_VALID_PAGES.includes(savedSessionPage as PageKey)) {
+    if (useSessionFallback && !hasExplicitRootHash && !mainHash && savedSessionPage && ALL_VALID_PAGES.includes(savedSessionPage as PageKey)) {
       return savedSessionPage as PageKey;
     }
   } catch (err) {
@@ -1267,7 +1269,7 @@ function AppContent() {
     function handleHashChange() {
       const unknown = isUnknownHashRoute();
       setNotFoundRoute(unknown);
-      const page = getInitialPage();
+      const page = getInitialPage(false);
       setCurrentPage(page);
       const slug = getInitialArticleSlug();
       if (slug) {
@@ -1391,6 +1393,11 @@ function AppContent() {
         setCurrentPage('home');
       }
     } else if (authEvent === 'SIGNED_OUT') {
+      try {
+        sessionStorage.removeItem('epitotudas_active_page');
+      } catch {
+        // ignore
+      }
       const protectedPages: PageKey[] = ['profile', 'admin', 'szerkeszto', 'partner', 'teacher'];
       if (protectedPages.includes(currentPage)) {
         setCurrentPage('home');
@@ -1551,9 +1558,11 @@ function AppContent() {
       )}
       <Header currentPage={currentPage} onNavigate={navigate} />
       <main>
-        <Suspense fallback={<PageFallback />}>
-          {renderPage()}
-        </Suspense>
+        <ErrorBoundary onNavigateHome={() => navigate('home')}>
+          <Suspense fallback={<PageFallback />}>
+            {renderPage()}
+          </Suspense>
+        </ErrorBoundary>
       </main>
       <Footer onNavigate={navigate} />
       <CookieBanner onNavigate={navigate} />

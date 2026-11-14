@@ -146,21 +146,23 @@ export function getStoredCampaigns(): ExtendedAdCampaign[] {
   return DEFAULT_CAMPAIGNS.filter((c) => c.id !== 'camp-101');
 }
 
-export function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): void {
+function saveLocalCampaignsOnly(campaigns: ExtendedAdCampaign[]): ExtendedAdCampaign[] {
+  const sanitized = campaigns.filter((c) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
   try {
-    const sanitized = campaigns.filter((c) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
     localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(sanitized));
     window.dispatchEvent(new Event('ad-campaigns-changed'));
-
-    void writeAppConfig('__SYSTEM_CONFIG_AD_CAMPAIGNS__', sanitized, {
-      id: SUPABASE_SYSTEM_ID,
-      slug: 'system-ad-campaigns-config',
-    }).catch((err) => {
-      console.warn('Supabase ad campaigns cloud sync error:', err);
-    });
   } catch (err) {
-    console.error('Hiba a kampányok mentésekor:', err);
+    console.error('Hiba a kampányok helyi mentésekor:', err);
   }
+  return sanitized;
+}
+
+export async function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): Promise<void> {
+  const sanitized = saveLocalCampaignsOnly(campaigns);
+  await writeAppConfig('__SYSTEM_CONFIG_AD_CAMPAIGNS__', sanitized, {
+    id: SUPABASE_SYSTEM_ID,
+    slug: 'system-ad-campaigns-config',
+  });
 }
 
 export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
@@ -213,7 +215,7 @@ export async function createAdCampaign(payload: CreateAdCampaignPayload): Promis
 
   const campaigns = getStoredCampaigns();
   campaigns.unshift(newCampaign);
-  saveStoredCampaigns(campaigns);
+  await saveStoredCampaigns(campaigns);
 
   void logAuditAction(
     'AD_CAMPAIGN_CREATE',
@@ -233,7 +235,7 @@ export async function updateAdCampaign(id: string, updates: Partial<ExtendedAdCa
       ...campaigns[index],
       ...updates,
     };
-    saveStoredCampaigns(campaigns);
+    await saveStoredCampaigns(campaigns);
 
     void logAuditAction(
       'AD_CAMPAIGN_UPDATE',
@@ -257,7 +259,7 @@ export async function updatePaymentStatus(id: string, paymentStatus: PaymentStat
 
 export async function deleteAdCampaign(id: string): Promise<void> {
   const campaigns = getStoredCampaigns().filter((c) => c.id !== id);
-  saveStoredCampaigns(campaigns);
+  await saveStoredCampaigns(campaigns);
 
   void logAuditAction(
     'AD_CAMPAIGN_DELETE',
@@ -308,7 +310,7 @@ export async function recordAdImpression(campaignId: string): Promise<void> {
   const index = campaigns.findIndex((c) => c.id === campaignId);
   if (index !== -1) {
     campaigns[index].impressions_count = (campaigns[index].impressions_count || 0) + 1;
-    saveStoredCampaigns(campaigns);
+    saveLocalCampaignsOnly(campaigns);
   }
 }
 
@@ -317,7 +319,7 @@ export async function recordAdClick(campaignId: string): Promise<void> {
   const index = campaigns.findIndex((c) => c.id === campaignId);
   if (index !== -1) {
     campaigns[index].clicks_count = (campaigns[index].clicks_count || 0) + 1;
-    saveStoredCampaigns(campaigns);
+    saveLocalCampaignsOnly(campaigns);
   }
 }
 

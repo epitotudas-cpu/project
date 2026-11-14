@@ -26,15 +26,15 @@
 ## 2. Fázis: Kritikus Adatréteg, Mutációk & Navigációs Stabilitás (P0 Data/Routing)
 **Cél:** Adatvesztések, csendes írási hibák, versenyhelyzetek és navigációs összeomlások megszüntetése.
 
-- [ ] **2.1. `careerService.ts` Supabase perzisztencia**
+- [x] **2.1. `careerService.ts` Supabase perzisztencia**
   - `updateJobPosting`, `toggleJobPostingActive`, `deleteJobPosting` és `submitJobApplication` valódi Supabase írással és hibadobással (`localStorage` hamis siker megszüntetése).
-- [ ] **2.2. `appConfigService.ts` & `categoryService.ts` hiba-propagálás**
+- [x] **2.2. `appConfigService.ts` & `categoryService.ts` hiba-propagálás**
   - `appConfigService.ts` legacy `categories` upsert `{ error }` ellenőrzése; `categoryService.ts` mutációknál a Supabase hibák továbbadása.
-- [ ] **2.3. `articleService.ts` mutációk, rendezés és atomi nézettség**
+- [x] **2.3. `articleService.ts` mutációk, rendezés és atomi nézettség**
   - `getPublishedArticles` alkalmazza az `options?.orderBy` mezőt; `createArticle` és `updateArticle` használjon `.select('*').single()`-t (nincs többé `allLocal[0]` vagy szintetikus `art-...` ID); `incrementArticleViews` használjon atomi RPC-t.
-- [ ] **2.4. `advertisementService.ts` versenyhelyzet javítása**
+- [x] **2.4. `advertisementService.ts` versenyhelyzet javítása**
   - `saveStoredCampaigns` `await`-elése, és az impression/click számlálás leválasztása a teljes `__SYSTEM_CONFIG_AD_CAMPAIGNS__` JSON tömb felülírásáról.
-- [ ] **2.5. Böngésző Vissza gomb (`#/`) és React `ErrorBoundary`**
+- [x] **2.5. Böngésző Vissza gomb (`#/`) és React `ErrorBoundary`**
   - `src/App.tsx`: `sessionStorage` fallback eltávolítása explicit `#/` vagy üres hash esetén; `ErrorBoundary` komponens bevezetése a lazy `<Suspense>` köré.
 
 ---

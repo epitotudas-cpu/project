@@ -360,24 +360,23 @@ export async function submitJobApplication(
 
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId);
   if (isUuid) {
-    try {
-      const { data, error } = await supabase
-        .from('job_applications' as never)
-        .insert({
-          job_id: jobId,
-          user_id: userId || null,
-          applicant_name: cleanName,
-          applicant_email: cleanEmail,
-          cover_note: cleanNote,
-        })
-        .select('*')
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from('job_applications' as never)
+      .insert({
+        job_id: jobId,
+        user_id: userId || null,
+        applicant_name: cleanName,
+        applicant_email: cleanEmail,
+        cover_note: cleanNote,
+      })
+      .select('*')
+      .maybeSingle();
 
-      if (!error && data) {
-        application = data as JobApplication;
-      }
-    } catch (err) {
-      console.warn('Supabase job_applications insert info:', err);
+    if (error) {
+      throw new Error(error.message || 'A jelentkezés beküldése sikertelen.');
+    }
+    if (data) {
+      application = data as JobApplication;
     }
   }
 
@@ -391,6 +390,27 @@ export async function updateJobPosting(
   id: string,
   payload: Partial<CreateJobPostingPayload> & { is_active?: boolean; moderation_status?: 'pending' | 'approved' | 'rejected' }
 ): Promise<void> {
+  const dbUpdates: Record<string, unknown> = {};
+  if (payload.companyName !== undefined) dbUpdates.company_name = payload.companyName;
+  if (payload.title !== undefined) dbUpdates.title = payload.title;
+  if (payload.jobType !== undefined) dbUpdates.job_type = payload.jobType;
+  if (payload.location !== undefined) dbUpdates.location = payload.location;
+  if (payload.salaryRange !== undefined) dbUpdates.salary_range = payload.salaryRange;
+  if (payload.description !== undefined) dbUpdates.description = payload.description;
+  if (payload.is_active !== undefined) dbUpdates.is_active = payload.is_active;
+  if (payload.moderation_status !== undefined) dbUpdates.moderation_status = payload.moderation_status;
+
+  if (Object.keys(dbUpdates).length > 0) {
+    const { error } = await supabase
+      .from('job_postings' as never)
+      .update(dbUpdates as never)
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message || 'Az álláshirdetés frissítése sikertelen.');
+    }
+  }
+
   const all = getStoredJobs();
   const idx = all.findIndex((j) => j.id === id);
   if (idx !== -1) {
@@ -412,13 +432,47 @@ export async function updateJobPosting(
 export async function toggleJobPostingActive(id: string): Promise<void> {
   const all = getStoredJobs();
   const job = all.find((j) => j.id === id);
+  let nextActive = job ? !job.is_active : true;
+
+  if (!job) {
+    const { data, error: fetchError } = await supabase
+      .from('job_postings' as never)
+      .select('is_active')
+      .eq('id', id)
+      .maybeSingle();
+    if (fetchError) {
+      throw new Error(fetchError.message || 'Az álláshirdetés lekérdezése sikertelen.');
+    }
+    if (data) {
+      nextActive = !(data as { is_active?: boolean }).is_active;
+    }
+  }
+
+  const { error } = await supabase
+    .from('job_postings' as never)
+    .update({ is_active: nextActive } as never)
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(error.message || 'Az álláshirdetés állapotának módosítása sikertelen.');
+  }
+
   if (job) {
-    job.is_active = !job.is_active;
+    job.is_active = nextActive;
     saveStoredJobs(all);
   }
 }
 
 export async function deleteJobPosting(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('job_postings' as never)
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(error.message || 'Az álláshirdetés törlése sikertelen.');
+  }
+
   const all = getStoredJobs();
   const idx = all.findIndex((j) => j.id === id);
   if (idx !== -1) {

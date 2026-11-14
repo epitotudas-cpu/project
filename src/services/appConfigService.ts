@@ -56,7 +56,7 @@ export async function writeAppConfig<T>(
   if (!error) return;
 
   if (legacyCategory) {
-    await supabase.from('categories').upsert({
+    const { error: legacyErr } = await supabase.from('categories').upsert({
       id: legacyCategory.id,
       name: key,
       slug: legacyCategory.slug,
@@ -65,6 +65,9 @@ export async function writeAppConfig<T>(
       created_at: now,
       updated_at: now,
     } as Record<string, unknown>);
+    if (legacyErr) {
+      throw new Error(legacyErr.message || 'Konfiguráció mentése sikertelen.');
+    }
   } else {
     throw new Error(error.message || 'Konfiguráció mentése sikertelen.');
   }

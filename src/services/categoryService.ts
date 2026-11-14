@@ -363,13 +363,9 @@ export async function listCategories(): Promise<Category[]> {
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  try {
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (error && !/RLS/i.test(error.message)) {
-      console.warn('Supabase deleteCategory warning:', error);
-    }
-  } catch (err) {
-    console.warn('Supabase deleteCategory error:', err);
+  const { error } = await supabase.from('categories').delete().eq('id', id);
+  if (error) {
+    throw new Error(error.message || 'Kategória törlése sikertelen.');
   }
 
   addDeletedCategoryId(id);
@@ -391,102 +387,29 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 }
 
 export async function createCategory(payload: Record<string, unknown>): Promise<Category> {
-  let created: Category | null = null;
-  let supabaseErr: unknown = null;
-
-  try {
-    const res = await supabase.from('categories').insert(payload).select('*').single();
-    if (!res.error && res.data) {
-      created = res.data as Category;
-    } else {
-      supabaseErr = res.error;
-    }
-  } catch (err) {
-    supabaseErr = err;
+  const { data, error } = await supabase.from('categories').insert(payload).select('*').single();
+  if (error || !data) {
+    throw new Error(error?.message || 'Kategória létrehozása sikertelen.');
   }
 
-  if (!created) {
-    // If Supabase failed or blocked RLS, construct local fallback object
-    const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cat-${Date.now()}`;
-    created = {
-      id: newId,
-      name: String(payload.name ?? 'Új kategória'),
-      slug: String(payload.slug ?? `kat-${Date.now()}`),
-      description: (payload.description as string) ?? null,
-      icon_name: (payload.icon_name as string) ?? 'Layers',
-      color: (payload.color as string) ?? '#FFC400',
-      image_url: (payload.image_url as string) ?? null,
-      banner_url: (payload.banner_url as string) ?? null,
-      image_fit: (payload.image_fit as string) ?? 'cover',
-      image_position: (payload.image_position as string) ?? 'center',
-      image_zoom: Number(payload.image_zoom ?? 100),
-      featured: Boolean(payload.featured),
-      sort_order: Number(payload.sort_order ?? 1),
-      seo_title: (payload.seo_title as string) ?? null,
-      seo_description: (payload.seo_description as string) ?? null,
-      article_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    if (supabaseErr && (supabaseErr as { message?: string }).message && !/RLS|duplicate/i.test((supabaseErr as { message: string }).message)) {
-      console.warn('Supabase createCategory warning:', supabaseErr);
-    }
-  }
-
+  const created = data as Category;
   saveLocalCategory(created);
   return created;
 }
 
 export async function updateCategory(id: string, payload: Record<string, unknown>): Promise<Category> {
-  let updated: Category | null = null;
-  let supabaseErr: unknown = null;
+  const { data, error } = await supabase
+    .from('categories')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .single();
 
-  try {
-    const res = await supabase
-      .from('categories')
-      .update(payload)
-      .eq('id', id)
-      .select('*')
-      .single();
-
-    if (!res.error && res.data) {
-      updated = res.data as Category;
-    } else {
-      supabaseErr = res.error;
-    }
-  } catch (err) {
-    supabaseErr = err;
+  if (error || !data) {
+    throw new Error(error?.message || 'Kategória frissítése sikertelen.');
   }
 
-  if (!updated) {
-    // Retrieve existing category from current list and merge updated payload fields
-    const currentList = await listCategories();
-    const existing = currentList.find((c) => c.id === id);
-
-    if (existing) {
-      updated = {
-        ...existing,
-        name: (payload.name as string) ?? existing.name,
-        slug: (payload.slug as string) ?? existing.slug,
-        description: (payload.description as string) ?? existing.description,
-        icon_name: (payload.icon_name as string) ?? existing.icon_name,
-        color: (payload.color as string) ?? existing.color,
-        image_url: (payload.image_url as string) ?? existing.image_url,
-        banner_url: (payload.banner_url as string) ?? existing.banner_url,
-        image_fit: (payload.image_fit as string) ?? existing.image_fit ?? 'cover',
-        image_position: (payload.image_position as string) ?? existing.image_position ?? 'center',
-        image_zoom: payload.image_zoom !== undefined ? Number(payload.image_zoom) : existing.image_zoom ?? 100,
-        featured: payload.featured !== undefined ? Boolean(payload.featured) : existing.featured,
-        sort_order: payload.sort_order !== undefined ? Number(payload.sort_order) : existing.sort_order,
-        seo_title: (payload.seo_title as string) ?? existing.seo_title,
-        seo_description: (payload.seo_description as string) ?? existing.seo_description,
-        updated_at: new Date().toISOString(),
-      };
-    } else {
-      throw supabaseErr || new Error('Kategória nem található.');
-    }
-  }
-
+  const updated = data as Category;
   saveLocalCategory(updated);
   return updated;
 }
@@ -565,20 +488,21 @@ export async function deleteCategoryAndReassignArticles(
   }
 
   // Reassign Supabase articles
-  try {
-    await supabase.from('articles').update({ category_id: targetCategoryId }).eq('category_id', sourceCategoryId);
-  } catch (err) {
-    console.warn('Reassign Supabase articles warning:', err);
+  const { error: reassignError } = await supabase
+    .from('articles')
+    .update({ category_id: targetCategoryId })
+    .eq('category_id', sourceCategoryId);
+  if (reassignError) {
+    throw new Error(reassignError.message || 'Cikkek átsorolása sikertelen.');
+  }
+
+  // Delete from Supabase
+  const { error: deleteError } = await supabase.from('categories').delete().eq('id', sourceCategoryId);
+  if (deleteError) {
+    throw new Error(deleteError.message || 'Kategória törlése sikertelen.');
   }
 
   // Mark category as deleted locally
   addDeletedCategoryId(sourceCategoryId);
-
-  // Delete from Supabase
-  try {
-    await supabase.from('categories').delete().eq('id', sourceCategoryId);
-  } catch (err) {
-    console.warn('Delete category Supabase warning:', err);
-  }
 }
 

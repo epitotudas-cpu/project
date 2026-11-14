@@ -575,7 +575,8 @@ export async function getPublishedArticles(options?: {
     if (options?.limit) {
       query = query.limit(options.limit);
     }
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const orderColumn = options?.orderBy || 'created_at';
+    const { data, error } = await query.order(orderColumn, { ascending: false });
     if (!error && data && data.length > 0) return data as Article[];
   } catch (err) {
     void err;
@@ -589,6 +590,12 @@ export async function getPublishedArticles(options?: {
   }
   if (options?.categoryId) {
     filtered = filtered.filter((a) => a.category_id === options.categoryId);
+  }
+
+  if (options?.orderBy === 'views') {
+    filtered = [...filtered].sort((a, b) => (b.views || 0) - (a.views || 0));
+  } else if (options?.orderBy === 'rating') {
+    filtered = [...filtered].sort((a, b) => (b.rating || 0) - (a.rating || 0));
   }
 
   if (options?.limit) {
@@ -623,22 +630,13 @@ export async function incrementArticleViews(articleId: string): Promise<number> 
   let nextViews = currentLocalViews + 1;
 
   try {
-    const { data: existing, error: fetchError } = await supabase
-      .from('articles')
-      .select('views')
-      .eq('id', articleId)
-      .maybeSingle();
-
-    if (!fetchError && existing) {
-      const dbViews = (existing as { views?: number | null }).views ?? 0;
-      nextViews = dbViews + 1;
-      const { error: updateError } = await supabase
-        .from('articles')
-        .update({ views: nextViews } as never)
-        .eq('id', articleId);
-      if (updateError) {
-        console.warn('Supabase article views update warning:', updateError.message);
-      }
+    const { data, error } = await supabase.rpc('increment_article_views', {
+      article_id_input: articleId,
+    });
+    if (!error && typeof data === 'number') {
+      nextViews = data;
+    } else if (error) {
+      console.warn('Supabase increment_article_views RPC warning:', error.message);
     }
   } catch (err) {
     console.warn('Supabase incrementArticleViews error:', err);
@@ -694,77 +692,37 @@ export async function getRelatedArticles(
 }
 
 export async function createArticle(payload: Record<string, unknown>): Promise<Article> {
-  const now = new Date().toISOString();
-  const newItem: Article = {
-    id: `art-${Date.now()}`,
-    title: (payload.title as string) || 'Cím nélkül',
-    slug: (payload.slug as string) || `cikk-${Date.now()}`,
-    excerpt: (payload.excerpt as string) || null,
-    content: (payload.content as string) || null,
-    article_type: (payload.article_type as Article['article_type']) || 'utmutatok',
-    category_id: (payload.category_id as string) || 'cat-1',
-    subcategory_name: (payload.subcategory_name as string) || null,
-    tags: (payload.tags as string[]) || [],
-    author: (payload.author as string) || 'ÉpítőTudás Szerkesztőség',
-    partner_id: (payload.partner_id as string) || null,
-    partner_name: (payload.partner_name as string) || null,
-    read_time: Number(payload.read_time) || 5,
-    views: 0,
-    rating: 5.0,
-    rating_count: 1,
-    status: (payload.status as Article['status']) || 'draft',
-    rejection_note: (payload.rejection_note as string) || null,
-    featured: Boolean(payload.featured),
-    featured_image: (payload.featured_image as string) || 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
-    documents: (payload.documents as Article['documents']) || [],
-    created_at: now,
-    updated_at: now,
-  };
-
-  const { error } = await supabase.from('articles').insert(payload);
-  if (error) {
-    throw new Error(error.message || 'Cikk mentése az adatbázisba sikertelen.');
+  const { data, error } = await supabase.from('articles').insert(payload).select('*').single();
+  if (error || !data) {
+    throw new Error(error?.message || 'Cikk mentése az adatbázisba sikertelen.');
   }
 
+  const created = data as Article;
   const allLocal = getArticlesLocal();
-  const updated = [newItem, ...allLocal];
-  saveArticlesLocal(updated);
+  saveArticlesLocal([created, ...allLocal.filter((a) => a.id !== created.id)]);
 
-  void logAuditAction('ARTICLE_CREATE', 'articles', `Új cikk létrehozva: "${newItem.title}" (${newItem.status})`);
+  void logAuditAction('ARTICLE_CREATE', 'articles', `Új cikk létrehozva: "${created.title}" (${created.status})`);
 
-  return newItem;
+  return created;
 }
 
 export async function updateArticle(id: string, payload: Record<string, unknown>): Promise<Article> {
-  const { error } = await supabase.from('articles').update(payload).eq('id', id);
-  if (error) {
-    throw new Error(error.message || 'Cikk frissítése az adatbázisban sikertelen.');
+  const { data, error } = await supabase.from('articles').update(payload).eq('id', id).select('*').single();
+  if (error || !data) {
+    throw new Error(error?.message || 'Cikk frissítése az adatbázisban sikertelen.');
   }
 
+  const updatedArticle = data as Article;
   const allLocal = getArticlesLocal();
-  let updatedArticle: Article | null = null;
+  const existsLocally = allLocal.some((a) => a.id === id);
+  const updatedList = existsLocally
+    ? allLocal.map((a) => (a.id === id ? updatedArticle : a))
+    : [updatedArticle, ...allLocal];
 
-  const updatedList = allLocal.map((a) => {
-    if (a.id === id) {
-      updatedArticle = {
-        ...a,
-        ...payload,
-        updated_at: new Date().toISOString(),
-      } as Article;
-      return updatedArticle;
-    }
-    return a;
-  });
+  saveArticlesLocal(updatedList);
+  void logAuditAction('ARTICLE_UPDATE', 'articles', `Cikk frissítve: "${updatedArticle.title}"`);
 
-  if (updatedArticle) {
-    saveArticlesLocal(updatedList);
-  }
-
-  if (updatedArticle) {
-    void logAuditAction('ARTICLE_UPDATE', 'articles', `Cikk frissítve: "${(updatedArticle as Article).title}"`);
-  }
-
-  return updatedArticle || (allLocal[0] as Article);
+  return updatedArticle;
 }
 
 export async function setArticleStatus(id: string, status: Article['status'], rejectionNote?: string | null): Promise<void> {
