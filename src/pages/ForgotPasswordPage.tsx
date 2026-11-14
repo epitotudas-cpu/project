@@ -28,11 +28,15 @@ export default function ForgotPasswordPage({ onNavigate }: ForgotPasswordPagePro
     }
 
     setLoading(true);
-    const result = await requestPasswordReset(email);
-    setLoading(false);
-
-    if (result.error) { setError(result.error); return; }
-    setSuccess(true);
+    try {
+      const result = await requestPasswordReset(email);
+      if (result.error) { setError(result.error); return; }
+      setSuccess(true);
+    } catch {
+      setError('Váratlan hiba történt a jelszó-visszaállítás kérésekor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {

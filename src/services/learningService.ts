@@ -295,7 +295,7 @@ export async function listCourses(options?: {
 
 export async function getCourseBySlug(slug: string): Promise<LearningCourse | null> {
   const all = await getCoursesWithCloudSync();
-  return all.find((c) => c.slug === slug || c.id === slug) || all[0] || DEFAULT_COURSES[0];
+  return all.find((c) => c.slug === slug || c.id === slug) || null;
 }
 
 export async function saveCourse(payload: Partial<LearningCourse>): Promise<LearningCourse> {
@@ -422,7 +422,7 @@ export async function listQuizzes(options?: {
 
 export async function getQuizBySlug(slug: string): Promise<Quiz | null> {
   const all = await getQuizzesWithCloudSync();
-  return all.find((q) => q.slug === slug || q.id === slug) || all[0] || DEFAULT_QUIZZES[0];
+  return all.find((q) => q.slug === slug || q.id === slug) || null;
 }
 
 export async function saveQuiz(payload: Partial<Quiz>): Promise<Quiz> {

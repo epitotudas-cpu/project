@@ -384,7 +384,7 @@ export async function deleteCategory(id: string): Promise<void> {
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const list = await listCategories();
-  return list.find((c) => c.slug === slug) || list[0] || null;
+  return list.find((c) => c.slug === slug) || null;
 }
 
 export async function createCategory(payload: Record<string, unknown>): Promise<Category> {

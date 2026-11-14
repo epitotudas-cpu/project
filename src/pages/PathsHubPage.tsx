@@ -157,7 +157,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
     if (activeTrade) {
       const pageTitle = `${activeTrade.name} szakma – Feladatok, képzés, munkakörülmények | ÉpítőTudás`;
       const pageDesc = `Ismerd meg a ${activeTrade.name.toLowerCase()} szakmát: ${activeTrade.tagline.toLowerCase()}. Mit csinál, milyen eszközökkel dolgozik és milyen szakmai lehetőségek várnak rád.`;
-      const pageUrl = `https://epitotudas.hu/#paths?trade=${activeTrade.id}`;
+      const pageUrl = `https://www.epitotudas.hu/#paths?trade=${activeTrade.id}`;
 
       document.title = pageTitle;
 
@@ -186,7 +186,7 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
       updateMeta('meta[name="description"]', defaultDesc);
       updateMeta('meta[property="og:title"]', 'ÉpítőTudás – Építőipari tudásbázis és szakmai képzések');
       updateMeta('meta[property="og:description"]', defaultDesc);
-      updateMeta('meta[property="og:url"]', 'https://epitotudas.hu');
+      updateMeta('meta[property="og:url"]', 'https://www.epitotudas.hu');
       updateMeta('meta[name="twitter:title"]', 'ÉpítőTudás – Építőipari tudásbázis és szakmai képzések');
       updateMeta('meta[name="twitter:description"]', defaultDesc);
     }

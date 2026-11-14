@@ -62,10 +62,20 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
   const [salaryRange, setSalaryRange] = useState('');
   const [jobDescription, setJobDescription] = useState('');
 
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [debouncedLocation, setDebouncedLocation] = useState(locationSearch);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedLocation(locationSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [locationSearch]);
+
   useEffect(() => {
     loadJobs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedType, locationSearch]);
+  }, [selectedType, debouncedLocation]);
 
   useEffect(() => {
     if (!loading && typeof window !== 'undefined' && window.location.hash.includes('#')) {
@@ -92,8 +102,10 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
   async function loadJobs() {
     try {
       setLoading(true);
-      const data = await listJobPostings(selectedType, locationSearch);
+      const data = await listJobPostings(selectedType, debouncedLocation);
       setJobs(data);
+    } catch (err) {
+      console.warn('Álláshirdetések betöltése sikertelen:', err);
     } finally {
       setLoading(false);
     }
@@ -141,35 +153,40 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
 
   async function handleCreateJobSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setCreateError(null);
     if (!companyName.trim() || !jobTitle.trim() || !jobLocation.trim()) return;
 
     const isPartnerOrAdmin = profile?.role === 'admin' || profile?.role === 'partner';
 
-    await createJobPosting(
-      {
-        companyName,
-        title: jobTitle,
-        jobType,
-        location: jobLocation,
-        salaryRange,
-        description: jobDescription,
-      },
-      isPartnerOrAdmin
-    );
+    try {
+      await createJobPosting(
+        {
+          companyName,
+          title: jobTitle,
+          jobType,
+          location: jobLocation,
+          salaryRange,
+          description: jobDescription,
+        },
+        isPartnerOrAdmin
+      );
 
-    setShowCreateModal(false);
-    setCompanyName('');
-    setJobTitle('');
-    setJobLocation('');
-    setSalaryRange('');
-    setJobDescription('');
-    setCreatedNotice(
-      isPartnerOrAdmin
-        ? 'Álláshirdetésed sikeresen közzétéve az állásbörzén!'
-        : 'Köszönjük a beküldést! Az álláshirdetés jóváhagyásra vár, és az adminisztrátori ellenőrzés után azonnal élessé válik.'
-    );
-    setTimeout(() => setCreatedNotice(null), 8000);
-    await loadJobs();
+      setShowCreateModal(false);
+      setCompanyName('');
+      setJobTitle('');
+      setJobLocation('');
+      setSalaryRange('');
+      setJobDescription('');
+      setCreatedNotice(
+        isPartnerOrAdmin
+          ? 'Álláshirdetésed sikeresen közzétéve az állásbörzén!'
+          : 'Köszönjük a beküldést! Az álláshirdetés jóváhagyásra vár, és az adminisztrátori ellenőrzés után azonnal élessé válik.'
+      );
+      setTimeout(() => setCreatedNotice(null), 8000);
+      await loadJobs();
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : 'Hiba történt az álláshirdetés beküldésekor.');
+    }
   }
 
   const filteredJobs = useMemo(() => {
@@ -799,6 +816,11 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
             </div>
 
             <form onSubmit={handleCreateJobSubmit} className="space-y-3">
+              {createError && (
+                <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                  {createError}
+                </div>
+              )}
               <div>
                 <label className="text-xs text-gray-600 font-bold block mb-1">Cég / Kivitelező Neve</label>
                 <input

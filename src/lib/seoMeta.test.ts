@@ -56,7 +56,7 @@ describe('seoMeta', () => {
       expect(mockDoc.title).toBe('Betonozás | ÉpítőTudás');
       expect(mockDoc._tags.get('meta[property="og:type"]')?.content).toBe('article');
       expect(mockDoc._tags.get('link[rel="canonical"]')?.href).toBe(
-        'https://www.epitotudas.hu/#article?slug=beton'
+        'https://www.epitotudas.hu/'
       );
 
       resetDefaultMetaTags('ÉpítőTudás', undefined, 'https://www.epitotudas.hu/');

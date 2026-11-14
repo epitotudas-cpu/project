@@ -4,14 +4,11 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
   build: {
     target: 'es2020',
     minify: 'esbuild',
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -27,9 +24,6 @@ export default defineConfig({
             }
             if (id.includes('pdfjs-dist')) {
               return 'vendor-pdf';
-            }
-            if (id.includes('recharts')) {
-              return 'vendor-charts';
             }
             return 'vendor';
           }

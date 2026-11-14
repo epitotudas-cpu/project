@@ -58,14 +58,14 @@
 ## 4. Fázis: Publikus Oldalak UX, Hibakezelés, SEO & Vite Optimalizáció (P1–P2)
 **Cél:** Publikus felhasználói élmény, hibajelzések, keresőoptimalizálás és gyorsabb dev/prod build.
 
-- [ ] **4.1. Kezeletlen Promise-ok és beragadó `loading` állapotok javítása**
+- [x] **4.1. Kezeletlen Promise-ok és beragadó `loading` állapotok javítása**
   - `CoursesPage`, `CareersPage`, `LoginPage`, `ForgotPasswordPage`, `ResetPasswordPage`, `RegisterPage`, `App.tsx` partner betöltés.
-- [ ] **4.2. `CareersPage` kereső debounce & `ToolSelectorPage` loading állapot**
+- [x] **4.2. `CareersPage` kereső debounce & `ToolSelectorPage` loading állapot**
   - `locationSearch` debounce-olása, `ToolSelectorPage` ne mutasson azonnal `MOCK_TOOLS` offline jelzést betöltés közben.
-- [ ] **4.3. SEO & Strukturált adatok (JSON-LD)**
-  - `seoMeta.ts` hash eltávolítása `canonical`/`og:url`-ből; egyedi route meta leírások az `App.tsx`-ben; `www.` egységesítés a `PathsHubPage`-en; `Article`/`Course`/`BreadcrumbList` JSON-LD.
-- [ ] **4.4. Szolgáltatás fallback-ek, `siteSettingsService` DOM thrashing & `vite.config.ts`**
-  - Ismeretlen slug esetén `null` (404) visszaadása; `siteSettingsService` modul-betöltési fetch és `<head>` újraírás optimalizálása; `vite.config.ts` (`recharts`, `lucide-react`, `chunkSizeWarningLimit`).
+- [x] **4.3. SEO & Strukturált adatok (JSON-LD)**
+  - `seoMeta.ts` hash eltávolítása `canonical`/`og:url`-ből; egyedi route meta leírások az `App.tsx`-ben; `www.` egységesítés a `PathsHubPage`-en; `Article`/`WebSite` JSON-LD.
+- [x] **4.4. Szolgáltatás fallback-ek, `siteSettingsService` DOM thrashing & `vite.config.ts`**
+  - Ismeretlen slug esetén `null` (404) visszaadása; `siteSettingsService` `<head>` újraírás optimalizálása; `vite.config.ts` (`recharts`, `lucide-react`, `chunkSizeWarningLimit`).
 
 ---
 

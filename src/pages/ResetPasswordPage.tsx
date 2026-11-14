@@ -31,13 +31,17 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
     if (password !== confirmPassword) { setError('A két jelszó nem egyezik.'); return; }
 
     setLoading(true);
-    const result = await updatePassword(password);
-    setLoading(false);
+    try {
+      const result = await updatePassword(password);
+      if (result.error) { setError(result.error); return; }
 
-    if (result.error) { setError(result.error); return; }
-
-    setSuccess(true);
-    scheduleTimeout(() => onNavigate('home'), 2500);
+      setSuccess(true);
+      scheduleTimeout(() => onNavigate('home'), 2500);
+    } catch {
+      setError('Váratlan hiba történt a jelszó frissítésekor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {

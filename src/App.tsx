@@ -444,6 +444,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
           setAnalytics(stats);
         }
       })
+      .catch((err) => {
+        console.warn('Partner adatok betöltése sikertelen:', err);
+      })
       .finally(() => {
         if (!cancelled) setOffersLoading(false);
       });
@@ -1254,9 +1257,20 @@ function AppContent() {
       partner: `Partner Panel — ${baseTitle}`,
       teacher: `Oktatói Panel — ${baseTitle}`,
     };
+    const pageDescMap: Partial<Record<PageKey, string>> = {
+      glossary: 'Építőipari szakmai fogalomtár és szakszótár gyakorlati magyarázatokkal.',
+      calculations: 'Építőipari kalkulátorok: hőszigetelés, falazat, tetőfedés, festés, térkő, padlófűtés és kábelméretezés.',
+      tool: 'Építőipari gépek, szerszámok és berendezések szakmai katalógusa és összehasonlítása.',
+      materials: 'Építőipari alapanyagok, hőszigetelők, habarcsok és szerkezeti anyagok adatbázisa.',
+      courses: 'Építőipari online képzések, tananyagok és szakmai vizsgafelkészítők.',
+      careers: 'Építőipari állásajánlatok, szakmai gyakorlatok és karrierlehetőségek.',
+      partners: 'Minősített építőipari gyártók, kivitelezők és szakmai partnerek.',
+      safety: 'Munkavédelmi előírások, egyéni védőeszközök és biztonságos építkezési útmutatók.',
+      standards: 'Építőipari szabványok, műszaki irányelvek és jogszabályi követelmények.',
+    };
     const resolvedTitle = pageTitleMap[currentPage] || baseTitle;
     if (currentPage !== 'article') {
-      resetDefaultMetaTags(resolvedTitle);
+      resetDefaultMetaTags(resolvedTitle, pageDescMap[currentPage]);
     } else {
       document.title = resolvedTitle;
     }

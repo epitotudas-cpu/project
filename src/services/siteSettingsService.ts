@@ -464,7 +464,6 @@ export function getSiteSettings(): SiteSettings {
     // 1. Check in-memory global window cache first
     if (typeof window !== 'undefined' && window.__GLOBAL_SITE_SETTINGS__) {
       window.__GLOBAL_SITE_SETTINGS__.logoUrl = sanitizeLogoUrl(window.__GLOBAL_SITE_SETTINGS__.logoUrl);
-      applySiteSettings(window.__GLOBAL_SITE_SETTINGS__);
       return window.__GLOBAL_SITE_SETTINGS__;
     }
 

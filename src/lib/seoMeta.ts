@@ -27,11 +27,35 @@ function setCanonicalLink(url: string) {
   canonical.setAttribute('href', url);
 }
 
+function getCleanCanonicalUrl(url?: string): string {
+  const raw = url || window.location.href;
+  return raw.split('#')[0] || raw;
+}
+
+export function setJsonLdSchema(id: string, schema: Record<string, unknown> | null): void {
+  const selector = `script[type="application/ld+json"][data-schema-id="${id}"]`;
+  const existing = document.querySelector(selector);
+  if (!schema) {
+    if (existing && typeof existing.remove === 'function') {
+      existing.remove();
+    }
+    return;
+  }
+  let script = existing as HTMLScriptElement | null;
+  if (!script) {
+    script = document.createElement('script') as HTMLScriptElement;
+    script.setAttribute('type', 'application/ld+json');
+    script.setAttribute('data-schema-id', id);
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(schema);
+}
+
 /**
  * Dynamic document title and Open Graph / Twitter meta tag helpers for article pages.
  */
 export function updateArticleMetaTags(title: string, description: string, image?: string, url?: string) {
-  const currentUrl = url || window.location.href;
+  const currentUrl = getCleanCanonicalUrl(url);
   const pageTitle = `${title} | ÉpítőTudás`;
 
   document.title = pageTitle;
@@ -53,6 +77,20 @@ export function updateArticleMetaTags(title: string, description: string, image?
   setMetaTag('twitter:title', pageTitle, true);
   setMetaTag('twitter:description', description, true);
   if (image) setMetaTag('twitter:image', image, true);
+
+  setJsonLdSchema('page', {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description,
+    url: currentUrl,
+    ...(image ? { image: [image] } : {}),
+    publisher: {
+      '@type': 'Organization',
+      name: 'ÉpítőTudás',
+      url: 'https://www.epitotudas.hu',
+    },
+  });
 }
 
 export function resetDefaultMetaTags(
@@ -60,7 +98,7 @@ export function resetDefaultMetaTags(
   description: string = DEFAULT_SITE_DESCRIPTION,
   url?: string
 ) {
-  const currentUrl = url || window.location.href;
+  const currentUrl = getCleanCanonicalUrl(url);
   document.title = title;
   setCanonicalLink(currentUrl);
 
@@ -75,5 +113,13 @@ export function resetDefaultMetaTags(
   setMetaTag('twitter:title', title, true);
   setMetaTag('twitter:description', description, true);
   setMetaTag('twitter:image', DEFAULT_OG_IMAGE, true);
+
+  setJsonLdSchema('page', {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'ÉpítőTudás',
+    url: 'https://www.epitotudas.hu',
+    description,
+  });
 }
 

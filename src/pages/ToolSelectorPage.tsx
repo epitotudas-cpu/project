@@ -30,10 +30,12 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
   const [selectedTrade, setSelectedTrade] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [loadedTools, setLoadedTools] = useState<Tool[]>([]);
+  const [loadingTools, setLoadingTools] = useState(true);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
 
   useEffect(() => {
     async function load() {
+      setLoadingTools(true);
       try {
         const data = await getActiveTools();
         if (data && data.length > 0) {
@@ -44,12 +46,17 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
         }
       } catch {
         setIsUsingFallback(true);
+      } finally {
+        setLoadingTools(false);
       }
     }
     load();
   }, []);
 
-  const activeToolsList = loadedTools.length > 0 ? loadedTools : MOCK_TOOLS;
+  const activeToolsList = useMemo(
+    () => (loadedTools.length > 0 ? loadedTools : loadingTools ? [] : MOCK_TOOLS),
+    [loadedTools, loadingTools]
+  );
 
   const availableTrades = useMemo(() => {
     const set = new Set<string>();

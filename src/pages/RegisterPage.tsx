@@ -254,31 +254,36 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
       return;
     }
 
-    // Pre-submission availability check
-    const isAlreadyRegistered = await checkEmailExists(email.trim());
-    if (isAlreadyRegistered) {
-      setFieldErrors({ email: 'Ez az e-mail-cím már regisztrálva van.' });
-      setError('Ez az e-mail-cím már regisztrálva van.');
-      emailRef.current?.focus();
-      return;
-    }
-
     setLoading(true);
-    const result = await signUp(email.trim(), password, fullName.trim(), userType);
-    setLoading(false);
-
-    if (result.error) {
-      setError(result.error);
-      const errLower = result.error.toLowerCase();
-      if (errLower.includes('email') || errLower.includes('e-mail')) {
-        setFieldErrors({ email: result.error });
+    try {
+      // Pre-submission availability check
+      const isAlreadyRegistered = await checkEmailExists(email.trim());
+      if (isAlreadyRegistered) {
+        setFieldErrors({ email: 'Ez az e-mail-cím már regisztrálva van.' });
+        setError('Ez az e-mail-cím már regisztrálva van.');
         emailRef.current?.focus();
+        return;
       }
-      return;
-    }
 
-    try { sessionStorage.setItem('pending_verify_email', email); } catch (err) { void err; }
-    onNavigate('verify-email');
+      const result = await signUp(email.trim(), password, fullName.trim(), userType);
+
+      if (result.error) {
+        setError(result.error);
+        const errLower = result.error.toLowerCase();
+        if (errLower.includes('email') || errLower.includes('e-mail')) {
+          setFieldErrors({ email: result.error });
+          emailRef.current?.focus();
+        }
+        return;
+      }
+
+      try { sessionStorage.setItem('pending_verify_email', email); } catch (err) { void err; }
+      onNavigate('verify-email');
+    } catch {
+      setError('Váratlan hiba történt a regisztráció során. Kérjük, próbálja újra.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const strength = passwordStrength(password);

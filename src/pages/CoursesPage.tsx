@@ -102,6 +102,8 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
         const certs = await getUserCertificates(user.id);
         setCertificates(certs);
       }
+    } catch (err) {
+      console.warn('Képzési katalógus betöltése sikertelen:', err);
     } finally {
       setLoading(false);
     }
@@ -117,6 +119,8 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
       setQuizAnswers({});
       setQuizResult(null);
       setActiveTab('lessons');
+    } catch (err) {
+      console.warn('Kurzus részletek betöltése sikertelen:', err);
     } finally {
       setLoading(false);
     }

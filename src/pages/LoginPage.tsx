@@ -39,31 +39,35 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
     if (!password) { setError('A jelszó megadása kötelező.'); return; }
 
     setLoading(true);
-    const result = await signIn(email, password);
-
-    if (result.error) {
-      setError(result.error);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
     try {
-      const returnPage = sessionStorage.getItem('auth_return_page');
-      if (returnPage) {
-        sessionStorage.removeItem('auth_return_page');
-        const returnHash = sessionStorage.getItem('auth_return_hash');
-        if (returnHash) {
-          sessionStorage.removeItem('auth_return_hash');
-          window.location.hash = returnHash;
-        }
-        onNavigate(returnPage);
+      const result = await signIn(email, password);
+
+      if (result.error) {
+        setError(result.error);
         return;
       }
+
+      try {
+        const returnPage = sessionStorage.getItem('auth_return_page');
+        if (returnPage) {
+          sessionStorage.removeItem('auth_return_page');
+          const returnHash = sessionStorage.getItem('auth_return_hash');
+          if (returnHash) {
+            sessionStorage.removeItem('auth_return_hash');
+            window.location.hash = returnHash;
+          }
+          onNavigate(returnPage);
+          return;
+        }
+      } catch {
+        // Storage unavailable fallback
+      }
+      onNavigate('home');
     } catch {
-      // Storage unavailable fallback
+      setError('Váratlan hiba történt a bejelentkezés során. Kérjük, próbálja újra.');
+    } finally {
+      setLoading(false);
     }
-    onNavigate('home');
   };
 
   return (
