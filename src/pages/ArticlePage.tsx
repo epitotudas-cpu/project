@@ -32,6 +32,7 @@ import { useArticleSettings } from '../services/articleSettingsService';
 import { resolveRedirect } from '../services/articleRedirectsService';
 import { getCuratedRelatedArticles } from '../services/articleRecommendationsService';
 import CommunityCommentsSection from '../components/CommunityCommentsSection';
+import { getContentRatingSummary, computeRatingSummary, type RatingSummary } from '../services/communityService';
 import { parseBlocksFromContent, parseAndSanitizeVideoInput, SOURCE_TYPE_MAP } from '../components/EditArticleModal';
 import type { Article, Category } from '../lib/supabase';
 import { TopAdBanner, InFeedAdBanner, SidebarAdBanner } from '../components/ModernAdBanner';
@@ -439,6 +440,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [ratingSummary, setRatingSummary] = useState<RatingSummary>({ average: 0, count: 0 });
 
   const relevantCalc = useMemo(() => (article ? getRelevantCalculator(article) : null), [article]);
 
@@ -511,6 +513,8 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
               setArticle((prev) => (prev ? { ...prev, views: newViews } : prev));
             }
           });
+
+          getContentRatingSummary('article', articleData.id, articleData.slug).then(setRatingSummary);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Hiba történt');
@@ -744,7 +748,9 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                 <span className="flex items-center gap-1.5 font-medium"><Clock size={14} className="text-gray-400" /> {article.read_time || 5} perc olvasás</span>
               )}
               <span className="flex items-center gap-1.5 font-medium"><TrendingUp size={14} className="text-gray-400" /> {formatViews(article.views)} megtekintés</span>
-              <span className="flex items-center gap-1 font-bold text-amber-500"><Star size={14} fill="currentColor" /> {(article.rating ?? 0).toFixed(1)}</span>
+              {ratingSummary.count > 0 && (
+                <span className="flex items-center gap-1 font-bold text-amber-500"><Star size={14} fill="currentColor" /> {ratingSummary.average.toFixed(1)} ({ratingSummary.count})</span>
+              )}
             </div>
 
             {/* Quick Share & Save */}
@@ -1013,6 +1019,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                     contentId={article.id}
                     altContentId={article.slug}
                     title={article.title}
+                    onCommentsChange={(list) => setRatingSummary(computeRatingSummary(list))}
                   />
                 )}
               </div>

@@ -24,6 +24,7 @@ import { getCategories, getPopularArticles } from '../lib/api';
 import type { Category, Article } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getPartnerHighlights, getAdvertisementSlots, recordAdClick, type PartnerHighlight, type AdvertisementSlot } from '../services/advertisementService';
+import { getContentRatingsMap, resolveContentRating, type RatingSummary } from '../services/communityService';
 import { getCategoryLabel } from '../services/partnerService';
 import { TopAdBanner, InFeedAdBanner } from '../components/ModernAdBanner';
 import { useSiteSettings } from '../services/siteSettingsService';
@@ -57,6 +58,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const { session } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [articleRatings, setArticleRatings] = useState<Record<string, RatingSummary>>({});
   const [partners, setPartners] = useState<PartnerHighlight[]>([]);
   const [adSlots, setAdSlots] = useState<AdvertisementSlot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,16 +106,18 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     async function loadData() {
       try {
         setLoading(true);
-        const [categoriesData, articlesData, partnersData, slotsData] = await Promise.all([
+        const [categoriesData, articlesData, partnersData, slotsData, ratingsMap] = await Promise.all([
           getCategories(),
           getPopularArticles(6),
           getPartnerHighlights(),
           getAdvertisementSlots(),
+          getContentRatingsMap('article'),
         ]);
         setCategories(categoriesData);
         setArticles(articlesData);
         setPartners(partnersData);
         setAdSlots(slotsData);
+        setArticleRatings(ratingsMap);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Hiba történt az adatok betöltésekor'
@@ -473,10 +477,16 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         {article.read_time} perc
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-[#657736] font-bold">
-                      <Star size={14} fill="currentColor" />
-                      {(article.rating ?? 0).toFixed(1)}
-                    </span>
+                    {(() => {
+                      const ratingSummary = resolveContentRating(articleRatings, article.id, article.slug);
+                      if (ratingSummary.count === 0) return null;
+                      return (
+                        <span className="flex items-center gap-1 text-[#657736] font-bold">
+                          <Star size={14} fill="currentColor" />
+                          {ratingSummary.average.toFixed(1)} ({ratingSummary.count})
+                        </span>
+                      );
+                    })()}
                   </div>
                 </button>
               ))}

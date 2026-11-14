@@ -43,6 +43,7 @@ import { TopAdBanner, InFeedAdBanner, SidebarAdBanner, InGridTileAd } from '../c
 import { getTileAdSettings, listTileAdSettings, type TileAdSettings } from '../services/bannerCreativeService';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
+import { getContentRatingsMap, resolveContentRating, type RatingSummary } from '../services/communityService';
 import AuthPromptModal from '../components/AuthPromptModal';
 
 interface CategoryPageProps {
@@ -88,6 +89,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
   const articleSettings = useArticleSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [articleRatings, setArticleRatings] = useState<Record<string, RatingSummary>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -224,14 +226,16 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     async function loadData() {
       try {
         setLoading(true);
-        const [categoriesData, articlesData] = await Promise.all([
+        const [categoriesData, articlesData, ratingsMap] = await Promise.all([
           getCategories(),
           getArticles({ limit: 100 }),
+          getContentRatingsMap('article'),
         ]);
 
         const publishedOnly = articlesData.filter((a) => a.status === 'published' || !a.status);
         setCategories(categoriesData);
         setArticles(publishedOnly);
+        setArticleRatings(ratingsMap);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Hiba történt az adatok betöltésekor');
       } finally {
@@ -907,12 +911,16 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                                 </span>
                               )}
 
-                              {articleSettings.showRatings && (article.rating_count || 0) > 0 && (
-                                <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1">
-                                  <Star size={12} className="fill-amber-400 text-amber-400" />
-                                  {article.rating ? article.rating.toFixed(1) : '5.0'}/5 ({article.rating_count})
-                                </span>
-                              )}
+                              {articleSettings.showRatings && (() => {
+                                const ratingSummary = resolveContentRating(articleRatings, article.id, article.slug);
+                                if (ratingSummary.count === 0) return null;
+                                return (
+                                  <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1">
+                                    <Star size={12} className="fill-amber-400 text-amber-400" />
+                                    {ratingSummary.average.toFixed(1)}/5 ({ratingSummary.count})
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </article>
                         );

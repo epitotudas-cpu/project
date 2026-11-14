@@ -1,35 +1,81 @@
 import { supabase, type Comment } from '../lib/supabase';
 export type { Comment };
 
-const IN_MEMORY_COMMENTS: Map<string, Comment[]> = new Map([
-  [
-    'article-art-1',
-    [
-      {
-        id: 'c-1',
-        user_id: 'u-1',
-        user_name: 'Kovács Péter (Kőműves Mester)',
-        content_type: 'article',
-        content_id: 'art-1',
-        comment_text:
-          'Nagyon részletes és hasznos összefoglaló a zsaluzási technológiákról! Különösen a pillérzsaluk szerelési pontjainál lévő tanácsok váltak be a gyakorlatban.',
-        rating: 5,
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        id: 'c-2',
-        user_id: 'u-2',
-        user_name: 'Szabó Tamás (Építőmérnök)',
-        content_type: 'article',
-        content_id: 'art-1',
-        comment_text:
-          'Az Öntömörödő Beton utókezelési párásítását nem lehet elégszer hangsúlyozni. Érdemes kiegészíteni a felületi párazáró szeres permetezéssel.',
-        rating: 5,
-        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-      },
-    ],
-  ],
-]);
+const IN_MEMORY_COMMENTS: Map<string, Comment[]> = new Map();
+
+export interface RatingSummary {
+  average: number;
+  count: number;
+}
+
+export function computeRatingSummary(comments: Array<Pick<Comment, 'rating'>>): RatingSummary {
+  const valid = comments.filter((c) => typeof c.rating === 'number' && c.rating > 0);
+  if (valid.length === 0) return { average: 0, count: 0 };
+  const sum = valid.reduce((acc, c) => acc + c.rating, 0);
+  return {
+    average: Number((sum / valid.length).toFixed(2)),
+    count: valid.length,
+  };
+}
+
+export async function getContentRatingSummary(
+  contentType: string,
+  contentId: string,
+  altContentId?: string
+): Promise<RatingSummary> {
+  const list = await getComments(contentType, contentId, altContentId);
+  return computeRatingSummary(list);
+}
+
+export async function getContentRatingsMap(contentType: string): Promise<Record<string, RatingSummary>> {
+  const buckets = new Map<string, { sum: number; count: number }>();
+
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('content_id, rating')
+      .eq('content_type', contentType);
+
+    if (!error && data) {
+      for (const row of data as Array<{ content_id: string; rating: number }>) {
+        if (!row.content_id || typeof row.rating !== 'number' || row.rating <= 0) continue;
+        const cur = buckets.get(row.content_id) || { sum: 0, count: 0 };
+        cur.sum += row.rating;
+        cur.count += 1;
+        buckets.set(row.content_id, cur);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load content ratings from Supabase:', err);
+  }
+
+  const result: Record<string, RatingSummary> = {};
+  for (const [id, { sum, count }] of buckets.entries()) {
+    result[id] = {
+      average: count > 0 ? Number((sum / count).toFixed(2)) : 0,
+      count,
+    };
+  }
+  return result;
+}
+
+export function resolveContentRating(
+  ratingsMap: Record<string, RatingSummary>,
+  id: string,
+  altId?: string
+): RatingSummary {
+  const primary = ratingsMap[id];
+  const secondary = altId && altId !== id ? ratingsMap[altId] : undefined;
+  if (primary && secondary) {
+    const totalCount = primary.count + secondary.count;
+    const totalSum = primary.average * primary.count + secondary.average * secondary.count;
+    return {
+      average: totalCount > 0 ? Number((totalSum / totalCount).toFixed(2)) : 0,
+      count: totalCount,
+    };
+  }
+  return primary || secondary || { average: 0, count: 0 };
+}
 
 const IN_MEMORY_FAVORITES: Set<string> = new Set();
 const IN_MEMORY_FOLLOWS: Set<string> = new Set();

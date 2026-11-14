@@ -10,9 +10,10 @@ interface CommunityCommentsSectionProps {
   contentId: string;
   altContentId?: string;
   title?: string;
+  onCommentsChange?: (comments: Comment[]) => void;
 }
 
-export default function CommunityCommentsSection({ contentType, contentId, altContentId, title }: CommunityCommentsSectionProps) {
+export default function CommunityCommentsSection({ contentType, contentId, altContentId, title, onCommentsChange }: CommunityCommentsSectionProps) {
   const { user, profile } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [guestName, setGuestName] = useState('');
@@ -39,6 +40,7 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
       setLoading(true);
       const data = await getComments(contentType, contentId, altContentId);
       setComments(data);
+      onCommentsChange?.(data);
 
       if (user) {
         const favStatus = await isFavorite(user.id, contentType, contentId);
@@ -59,7 +61,11 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
     const userId = user?.id || 'guest';
 
     const created = await addComment(userId, userName, contentType, contentId, newComment, rating);
-    setComments((prev) => [created, ...prev.filter((c) => c.id !== created.id)]);
+    setComments((prev) => {
+      const next = [created, ...prev.filter((c) => c.id !== created.id)];
+      onCommentsChange?.(next);
+      return next;
+    });
     setNewComment('');
   }
 
@@ -78,13 +84,15 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
     if (!editCommentText.trim()) return;
     const success = await updateComment(commentId, user?.id, editCommentText, editCommentRating);
     if (success) {
-      setComments((prev) =>
-        prev.map((item) =>
+      setComments((prev) => {
+        const next = prev.map((item) =>
           item.id === commentId
             ? { ...item, comment_text: editCommentText.trim(), rating: editCommentRating }
             : item
-        )
-      );
+        );
+        onCommentsChange?.(next);
+        return next;
+      });
       setEditingCommentId(null);
     }
   };
@@ -311,7 +319,11 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
           if (deleteCommentId) {
             const success = await deleteComment(deleteCommentId, user?.id);
             if (success) {
-              setComments((prev) => prev.filter((item) => item.id !== deleteCommentId));
+              setComments((prev) => {
+                const next = prev.filter((item) => item.id !== deleteCommentId);
+                onCommentsChange?.(next);
+                return next;
+              });
             } else {
               setDeleteError('A hozzászólás törlése sikertelen volt. Ellenőrizd a jogosultságot vagy a hálózati kapcsolatot.');
             }

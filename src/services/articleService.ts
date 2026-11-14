@@ -771,6 +771,8 @@ export async function duplicateArticle(id: string): Promise<Article | null> {
     slug: `${source.slug}-masolat-${Date.now().toString().slice(-4)}`,
     status: 'draft',
     views: 0,
+    rating: 0,
+    rating_count: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
