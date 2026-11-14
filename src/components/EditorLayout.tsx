@@ -55,9 +55,9 @@ const EDITOR_NAV_ITEMS: Array<{ id: EditorView; moduleId: string; label: string;
   { id: 'categories', moduleId: 'categories', label: 'Kategóriák & Címkék', icon: FolderTree },
   { id: 'glossary', moduleId: 'glossary', label: 'Fogalomtár', icon: BookOpen },
   { id: 'safety', moduleId: 'safety', label: 'Munkavédelem', icon: ShieldAlert },
-  { id: 'materials', moduleId: 'materials', label: 'Építőipari Anyagok', icon: Layers },
-  { id: 'tools', moduleId: 'tools', label: 'Eszközök & Szerszámok', icon: Wrench },
-  { id: 'books', moduleId: 'books', label: 'Szakmai Könyvek', icon: Library },
+  { id: 'materials', moduleId: 'catalog', label: 'Építőipari Anyagok', icon: Layers },
+  { id: 'tools', moduleId: 'catalog', label: 'Eszközök & Szerszámok', icon: Wrench },
+  { id: 'books', moduleId: 'catalog', label: 'Szakmai Könyvek', icon: Library },
   { id: 'moderation', moduleId: 'moderation', label: 'Moderáció & Felülvizsgálat', icon: CheckSquare },
   { id: 'settings', moduleId: 'settings', label: 'Téma & Beállítások', icon: Settings },
 ];

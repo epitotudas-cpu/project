@@ -247,7 +247,7 @@ export function getAdvertisers(): Advertiser[] {
   return DEFAULT_ADVERTISERS.filter((a) => a.id !== 'adv-leier');
 }
 
-export function saveAdvertisers(advertisers: Advertiser[]): void {
+export async function saveAdvertisers(advertisers: Advertiser[]): Promise<void> {
   try {
     const sanitized = advertisers.filter((a) => a.id !== 'adv-leier' && !a.name?.includes('Leier'));
     if (typeof localStorage !== 'undefined') {
@@ -257,14 +257,13 @@ export function saveAdvertisers(advertisers: Advertiser[]): void {
       window.dispatchEvent(new Event('advertisers-changed'));
     }
 
-    void writeAppConfig('__SYSTEM_CONFIG_ADVERTISERS__', sanitized, {
+    await writeAppConfig('__SYSTEM_CONFIG_ADVERTISERS__', sanitized, {
       id: SUPABASE_SYSTEM_ID_ADVERTISERS,
       slug: 'system-advertisers-config',
-    }).catch((err) => {
-      console.warn('Supabase advertisers cloud sync error:', err);
     });
   } catch (e) {
     console.error('Hiba a hirdetők mentésekor:', e);
+    throw e;
   }
 }
 
@@ -304,16 +303,15 @@ export function getPlacements(): AdPlacement[] {
   return DEFAULT_PLACEMENTS;
 }
 
-export function savePlacements(placements: AdPlacement[]): void {
+export async function savePlacements(placements: AdPlacement[]): Promise<void> {
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_PLACEMENTS, JSON.stringify(placements));
     }
-    void writeAppConfig('__SYSTEM_CONFIG_AD_PLACEMENTS__', placements).catch((err) => {
-      console.warn('Supabase ad placements cloud sync error:', err);
-    });
+    await writeAppConfig('__SYSTEM_CONFIG_AD_PLACEMENTS__', placements);
   } catch (e) {
     console.error('Hiba az elhelyezések mentésekor:', e);
+    throw e;
   }
 }
 
@@ -346,17 +344,16 @@ export function getPayments(): AdPayment[] {
   return DEFAULT_PAYMENTS.filter((p) => p.id !== 'pay-101');
 }
 
-export function savePayments(payments: AdPayment[]): void {
+export async function savePayments(payments: AdPayment[]): Promise<void> {
   try {
     const sanitized = payments.filter((p) => p.id !== 'pay-101' && !p.advertiserName?.includes('Leier'));
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_PAYMENTS, JSON.stringify(sanitized));
     }
-    void writeAppConfig('__SYSTEM_CONFIG_AD_PAYMENTS__', sanitized).catch((err) => {
-      console.warn('Supabase ad payments cloud sync error:', err);
-    });
+    await writeAppConfig('__SYSTEM_CONFIG_AD_PAYMENTS__', sanitized);
   } catch (e) {
     console.error('Hiba a fizetések mentésekor:', e);
+    throw e;
   }
 }
 
@@ -390,17 +387,16 @@ export function getNotifications(): AdNotification[] {
   return DEFAULT_NOTIFICATIONS.filter((n) => n.id !== 'notif-4');
 }
 
-export function saveNotifications(notifications: AdNotification[]): void {
+export async function saveNotifications(notifications: AdNotification[]): Promise<void> {
   try {
     const sanitized = notifications.filter((n) => n.id !== 'notif-4' && !n.message?.includes('Leier'));
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(sanitized));
     }
-    void writeAppConfig('__SYSTEM_CONFIG_AD_NOTIFICATIONS__', sanitized).catch((err) => {
-      console.warn('Supabase ad notifications cloud sync error:', err);
-    });
+    await writeAppConfig('__SYSTEM_CONFIG_AD_NOTIFICATIONS__', sanitized);
   } catch (e) {
     console.error('Hiba az értesítések mentésekor:', e);
+    throw e;
   }
 }
 

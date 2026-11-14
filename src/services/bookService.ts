@@ -1357,7 +1357,7 @@ export function getBookCategories(): BookCategory[] {
   return DEFAULT_BOOK_CATEGORIES;
 }
 
-export function saveBookCategories(categories: BookCategory[]): void {
+export async function saveBookCategories(categories: BookCategory[]): Promise<void> {
   try {
     if (typeof window !== 'undefined') {
       window.__GLOBAL_BOOK_CATEGORIES__ = categories;
@@ -1365,14 +1365,13 @@ export function saveBookCategories(categories: BookCategory[]): void {
     localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
     window.dispatchEvent(new Event('book-categories-changed'));
 
-    void writeAppConfig('__SYSTEM_CONFIG_BOOK_CATEGORIES__', categories, {
+    await writeAppConfig('__SYSTEM_CONFIG_BOOK_CATEGORIES__', categories, {
       id: SUPABASE_BOOKS_CATEGORIES_ID,
       slug: 'system-book-categories-config',
-    }).catch((err) => {
-      console.warn('Supabase book categories cloud sync info:', err);
     });
   } catch (err) {
     console.error('Hiba a könyv kategóriák mentésekor:', err);
+    throw err;
   }
 }
 
@@ -1453,7 +1452,7 @@ export function getBooks(): BookItem[] {
   return DEFAULT_BOOKS;
 }
 
-export function saveBooks(books: BookItem[]): void {
+export async function saveBooks(books: BookItem[]): Promise<void> {
   try {
     if (typeof window !== 'undefined') {
       window.__GLOBAL_BOOKS_DATA__ = books;
@@ -1461,14 +1460,13 @@ export function saveBooks(books: BookItem[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
     window.dispatchEvent(new Event('books-data-changed'));
 
-    void writeAppConfig('__SYSTEM_CONFIG_BOOKS__', books, {
+    await writeAppConfig('__SYSTEM_CONFIG_BOOKS__', books, {
       id: SUPABASE_BOOKS_ID,
       slug: 'system-books-config',
-    }).catch((err) => {
-      console.warn('Supabase books cloud sync info:', err);
     });
   } catch (err) {
     console.error('Hiba a könyvek mentésekor:', err);
+    throw err;
   }
 }
 

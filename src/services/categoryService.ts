@@ -344,7 +344,8 @@ export async function listCategories(): Promise<Category[]> {
       .select('*')
       .not('name', 'ilike', '__SYSTEM_CONFIG_%')
       .neq('id', '00000000-0000-0000-0000-000000000001')
-      .order('sort_order', { ascending: true });
+      .order('sort_order', { ascending: true })
+      .limit(200);
 
     if (!error && data && data.length > 0) {
       // Merge with local overrides if present and filter system/deleted categories

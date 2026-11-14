@@ -239,15 +239,14 @@ export function getContracts(): AdvertisementContract[] {
   return filledDefaults;
 }
 
-export function saveContracts(contracts: AdvertisementContract[]): void {
+export async function saveContracts(contracts: AdvertisementContract[]): Promise<void> {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
     window.dispatchEvent(new Event('contracts-changed'));
-    void writeAppConfig(CONTRACTS_CONFIG_KEY, contracts).catch((err) => {
-      console.warn('Szerződések felhő szinkron hiba:', err);
-    });
+    await writeAppConfig(CONTRACTS_CONFIG_KEY, contracts);
   } catch (err) {
     console.error('Hiba a szerződések mentésekor:', err);
+    throw err;
   }
 }
 

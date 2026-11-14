@@ -441,7 +441,7 @@ export function getEducationData(): EducationData {
   return DEFAULT_EDUCATION_DATA;
 }
 
-export function saveEducationData(data: EducationData): void {
+export async function saveEducationData(data: EducationData): Promise<void> {
   try {
     if (typeof window !== 'undefined') {
       window.__GLOBAL_EDUCATION_DATA__ = data;
@@ -449,14 +449,13 @@ export function saveEducationData(data: EducationData): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     window.dispatchEvent(new Event('education-data-changed'));
 
-    void writeAppConfig('__SYSTEM_CONFIG_COURSES__', data, {
+    await writeAppConfig('__SYSTEM_CONFIG_COURSES__', data, {
       id: SUPABASE_COURSES_ID,
       slug: 'system-courses-config',
-    }).catch((err) => {
-      console.warn('Supabase courses cloud sync info:', err);
     });
   } catch (err) {
     console.error('Hiba a képzési adatok mentésekor:', err);
+    throw err;
   }
 }
 

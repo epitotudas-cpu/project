@@ -83,11 +83,29 @@ export const PREDEFINED_CALCULATORS: GlobalSearchCalculatorResult[] = [
   { id: 'calc-earthwork', name: 'Földkitermelés & Kavicságyazat Kalkulátor', tab: 'earthwork', description: 'Földmunka térfogat és tömörödési együttható számítás' },
 ];
 
+function sanitizePostgrestTerm(value: string): string {
+  return value.replace(/[(),{}*"'\\]/g, ' ').trim();
+}
+
+let lastBooksFetchAt = 0;
+const BOOKS_SEARCH_CACHE_MS = 60_000;
+
+async function getBooksForSearch() {
+  const now = Date.now();
+  if (now - lastBooksFetchAt > BOOKS_SEARCH_CACHE_MS) {
+    lastBooksFetchAt = now;
+    const cloudBooks = await fetchBooksFromCloud().catch(() => null);
+    if (cloudBooks) return cloudBooks;
+  }
+  return getBooks();
+}
+
 export async function searchAll(query: string, limit = 5): Promise<GlobalSearchAllResult> {
   const qLower = query.toLowerCase().trim();
   const like = `%${query}%`;
+  const safeLike = `%${sanitizePostgrestTerm(query)}%`;
 
-  const [arts, cats, gloss, tools, cloudBooks, users] = await Promise.all([
+  const [arts, cats, gloss, tools, allBooks, users] = await Promise.all([
     supabase
       .from('articles')
       .select('id, title, slug, status')
@@ -112,15 +130,14 @@ export async function searchAll(query: string, limit = 5): Promise<GlobalSearchA
       .ilike('name', like)
       .order('name')
       .limit(limit),
-    fetchBooksFromCloud().catch(() => null),
+    getBooksForSearch(),
     supabase
       .from('profiles')
       .select('id, email, full_name')
-      .or(`email.ilike.${like},full_name.ilike.${like}`)
+      .or(`email.ilike.${safeLike},full_name.ilike.${safeLike}`)
       .limit(limit),
   ]);
 
-  const allBooks = cloudBooks ?? getBooks();
   const matchedBooks: GlobalSearchBookResult[] = allBooks
     .filter(
       (b) =>

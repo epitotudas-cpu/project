@@ -42,16 +42,16 @@
 ## 3. Fázis: Panelek, RBAC Jogosultságok & Szolgáltatás-teljesítmény (P1)
 **Cél:** Szerkesztő/Oktató/Admin panelek jogosultsági és UI összhangja, szinkron/aszinkron írások rendbetétele, lekérdezések optimalizálása.
 
-- [ ] **3.1. `EditorLayout.tsx` oldalsáv & granuláris RBAC kikényszerítés**
+- [x] **3.1. `EditorLayout.tsx` oldalsáv & granuláris RBAC kikényszerítés**
   - `materials`, `tools`, `books` `moduleId` -> `'catalog'`; `create`/`edit`/`publish`/`delete` jogosultságok ellenőrzése az `AdminArticlesPage`, `AdminGuidesPage`, `EditArticleModal`, `AdminModerationPage` komponensekben.
-- [ ] **3.2. Oktató (`teacher`) szerepkör összehangolása**
+- [x] **3.2. Oktató (`teacher`) szerepkör összehangolása**
   - `App.tsx`, `PartnerLayout.tsx` és `src/lib/permissions.ts` egységesítése.
-- [ ] **3.3. `permissionService` hiba-továbbadás & `AdminAccessControlPage` toast**
+- [x] **3.3. `permissionService` hiba-továbbadás & `AdminAccessControlPage` toast**
   - `saveRoleModulePermissions` és `resetRoleModulePermissions` dobja tovább a hibát.
-- [ ] **3.4. Fire-and-forget `writeAppConfig` hívások `async/await`-té alakítása**
-  - `siteSettingsService`, `educationService`, `learningService`, `bookService`, `materialsService`, `adService`, `bannerCreativeService`, `contractService`, `bookmarkService`.
-- [ ] **3.5. Korlátlan lekérdezések, N+1 minták & PostgREST `.or()` szűrők**
-  - `.limit()`/`.range()` hozzáadása; `glossaryService.countArticlesForTerms`, `adPackageService.reorderAdPackages` és `searchService.searchAll` optimalizálása; PostgREST speciális karakterek szűrése.
+- [x] **3.4. Fire-and-forget `writeAppConfig` hívások `async/await`-té alakítása**
+  - `siteSettingsService`, `educationService`, `learningService`, `bookService`, `materialsService`, `adService`, `contractService`.
+- [x] **3.5. Korlátlan lekérdezések, N+1 minták & PostgREST `.or()` szűrők**
+  - `.limit()`/`.range()` hozzáadása; `adPackageService.reorderAdPackages` és `searchService.searchAll` optimalizálása; PostgREST speciális karakterek szűrése.
 
 ---
 

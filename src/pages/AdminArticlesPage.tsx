@@ -49,6 +49,8 @@ import EditArticleModal from '../components/EditArticleModal';
 import EditCategoryModal from '../components/EditCategoryModal';
 import DeleteCategoryModal from '../components/DeleteCategoryModal';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useAuth } from '../contexts/AuthContext';
+import { hasModuleActionPermission } from '../services/permissionService';
 
 import type { AdminView } from '../components/AdminSidebar';
 
@@ -81,7 +83,12 @@ interface AdminArticlesPageProps {
 
 export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }: AdminArticlesPageProps = {}) {
   const toast = useToast();
+  const { profile } = useAuth();
   const siteSettings = useSiteSettings();
+  const canCreateArticle = hasModuleActionPermission(profile?.role, 'articles', 'create');
+  const canEditArticle = hasModuleActionPermission(profile?.role, 'articles', 'edit');
+  const canPublishArticle = hasModuleActionPermission(profile?.role, 'articles', 'publish');
+  const canDeleteArticle = hasModuleActionPermission(profile?.role, 'articles', 'delete');
 
   const [subTab, setSubTab] = useState<ArticleHubSubTab>('overview');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -189,6 +196,10 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
   };
 
   const handleDuplicateArticle = async (articleId: string) => {
+    if (!canCreateArticle) {
+      toast.error('Nincs jogosultsága új cikk létrehozásához.');
+      return;
+    }
     try {
       const dup = await articleService.duplicateArticle(articleId);
       if (dup) {
@@ -201,6 +212,10 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
   };
 
   const handleTogglePublishStatus = async (art: Article) => {
+    if (!canPublishArticle) {
+      toast.error('Nincs jogosultsága cikk közzétételéhez vagy visszavonásához.');
+      return;
+    }
     try {
       const newStatus = art.status === 'published' ? 'draft' : 'published';
       await articleService.setArticleStatus(art.id, newStatus);
@@ -216,6 +231,10 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
   };
 
   const handleToggleArchiveArticle = async (art: Article) => {
+    if (!canEditArticle) {
+      toast.error('Nincs jogosultsága cikk archiválásához.');
+      return;
+    }
     try {
       const newStatus = art.status === 'archived' ? 'draft' : 'archived';
       await articleService.setArticleStatus(art.id, newStatus);
@@ -228,6 +247,11 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
 
   const handleDeleteArticleConfirmed = async () => {
     if (!deletingArticle) return;
+    if (!canDeleteArticle) {
+      toast.error('Nincs jogosultsága cikk törléséhez.');
+      setDeletingArticle(null);
+      return;
+    }
     try {
       await articleService.deleteArticle(deletingArticle.id);
       toast.success('Cikk sikeresen törölve.');

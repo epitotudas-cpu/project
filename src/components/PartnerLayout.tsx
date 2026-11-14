@@ -129,7 +129,7 @@ export default function PartnerLayout({
   }
 
   const role = profile?.role || 'partner';
-  const isTeacher = memberRole === 'instructor';
+  const isTeacher = memberRole === 'instructor' || profile?.role === 'teacher';
   const isSchoolAdmin = Boolean(isSchoolCategory) && (memberRole === 'owner' || memberRole === 'admin');
 
   const sidebarTitle = isTeacher

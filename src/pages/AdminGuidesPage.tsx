@@ -27,6 +27,8 @@ import { useToast } from '../components/ToastProvider';
 import EditArticleModal from '../components/EditArticleModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
+import { useAuth } from '../contexts/AuthContext';
+import { hasModuleActionPermission } from '../services/permissionService';
 
 export type GuidesSubTab = 'list' | 'by-trade' | 'templates' | 'settings';
 
@@ -122,7 +124,11 @@ interface AdminGuidesPageProps {
 
 export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageProps = {}) {
   const toast = useToast();
+  const { profile } = useAuth();
   const siteSettings = useSiteSettings();
+  const canCreateGuide = hasModuleActionPermission(profile?.role, 'guides', 'create');
+  const canPublishGuide = hasModuleActionPermission(profile?.role, 'guides', 'publish');
+  const canDeleteGuide = hasModuleActionPermission(profile?.role, 'guides', 'delete');
 
   const [activeSubTab, setActiveSubTab] = useState<GuidesSubTab>('list');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -219,6 +225,10 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
 
   // Actions
   const handleOpenCreateModal = (template?: typeof PREDEFINED_TEMPLATES[0]) => {
+    if (!canCreateGuide) {
+      toast.error('Nincs jogosultsága új útmutató létrehozásához.');
+      return;
+    }
     if (template) {
       setEditingArticle({
         id: '',
@@ -239,6 +249,10 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
   };
 
   const handleDuplicate = async (artId: string) => {
+    if (!canCreateGuide) {
+      toast.error('Nincs jogosultsága útmutató duplikálásához.');
+      return;
+    }
     try {
       const dup = await articleService.duplicateArticle(artId);
       if (dup) {
@@ -251,6 +265,10 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
   };
 
   const handleTogglePublish = async (art: Article) => {
+    if (!canPublishGuide) {
+      toast.error('Nincs jogosultsága útmutató közzétételéhez.');
+      return;
+    }
     try {
       const newStatus = art.status === 'published' ? 'draft' : 'published';
       await articleService.setArticleStatus(art.id, newStatus);
@@ -267,6 +285,11 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
 
   const handleDeleteConfirmed = async () => {
     if (!deletingArticle) return;
+    if (!canDeleteGuide) {
+      toast.error('Nincs jogosultsága útmutató törléséhez.');
+      setDeletingArticle(null);
+      return;
+    }
     try {
       await articleService.deleteArticle(deletingArticle.id);
       toast.success(`"${deletingArticle.title}" útmutató törölve.`);

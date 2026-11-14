@@ -9,9 +9,12 @@ import {
 } from '../services/contentLifecycleService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import { useToast } from '../components/ToastProvider';
+import { useAuth } from '../contexts/AuthContext';
+import { hasModuleActionPermission } from '../services/permissionService';
 
 export default function AdminModerationPage() {
   const toast = useToast();
+  const { profile } = useAuth();
   const [items, setItems] = useState<ContentLifecycleMetadata[]>([]);
   const [activeFilter, setActiveFilter] = useState<ContentLifecycleStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
@@ -41,6 +44,11 @@ export default function AdminModerationPage() {
   }
 
   async function handleTransition(id: string, newStatus: ContentLifecycleStatus) {
+    const requiredAction = newStatus === 'published' ? 'publish' : 'edit';
+    if (!hasModuleActionPermission(profile?.role, 'moderation', requiredAction)) {
+      toast.error('Nincs jogosultsága ehhez a moderációs művelethez.');
+      return;
+    }
     try {
       await transitionContentStatus(id, newStatus);
       toast.success(`Állapot sikeresen módosítva: ${getStatusLabel(newStatus)}`);

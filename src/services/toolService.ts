@@ -718,7 +718,8 @@ export async function getToolBrands(): Promise<string[]> {
   const { data, error } = await supabase
     .from('tools')
     .select('brand')
-    .neq('brand', null);
+    .neq('brand', null)
+    .limit(500);
   if (error) throw error;
   const brands = [...new Set((data ?? []).map((t) => t.brand).filter((b): b is string => Boolean(b)))];
   return brands.sort();
@@ -728,7 +729,8 @@ export async function getToolTypes(): Promise<string[]> {
   const { data, error } = await supabase
     .from('tools')
     .select('type')
-    .neq('type', null);
+    .neq('type', null)
+    .limit(500);
   if (error) throw error;
   const types = [...new Set((data ?? []).map((t) => t.type).filter((t): t is string => Boolean(t)))];
   return types.sort();

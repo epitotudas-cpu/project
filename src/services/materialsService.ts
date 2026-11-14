@@ -302,20 +302,19 @@ export function getMaterialCategoriesLocal(): MaterialCategory[] {
   return DEFAULT_MATERIAL_CATEGORIES;
 }
 
-export function saveMaterialCategoriesLocal(cats: MaterialCategory[]): void {
+export async function saveMaterialCategoriesLocal(cats: MaterialCategory[]): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(LOCAL_STORAGE_CATS_KEY, JSON.stringify(cats));
     window.dispatchEvent(new Event('materials-updated'));
 
-    void writeAppConfig('__SYSTEM_CONFIG_MATERIAL_CATEGORIES__', cats, {
+    await writeAppConfig('__SYSTEM_CONFIG_MATERIAL_CATEGORIES__', cats, {
       id: SUPABASE_CATS_ROW_ID,
       slug: 'system-material-categories',
-    }).catch((err) => {
-      console.warn('Supabase material categories sync:', err);
     });
   } catch (err) {
     console.error('Hiba az anyag kategóriák mentésekor:', err);
+    throw err;
   }
 }
 
@@ -335,20 +334,19 @@ export function getMaterialsLocal(): MaterialItem[] {
   return DEFAULT_MATERIALS;
 }
 
-export function saveMaterialsLocal(items: MaterialItem[]): void {
+export async function saveMaterialsLocal(items: MaterialItem[]): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(items));
     window.dispatchEvent(new Event('materials-updated'));
 
-    void writeAppConfig('__SYSTEM_CONFIG_MATERIALS_ITEMS__', items, {
+    await writeAppConfig('__SYSTEM_CONFIG_MATERIALS_ITEMS__', items, {
       id: SUPABASE_SYSTEM_ROW_ID,
       slug: 'system-materials-items-config',
-    }).catch((err) => {
-      console.warn('Supabase materials sync:', err);
     });
   } catch (err) {
     console.error('Hiba az anyagok mentésekor:', err);
+    throw err;
   }
 }
 

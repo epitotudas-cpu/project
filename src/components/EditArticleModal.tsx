@@ -11,6 +11,8 @@ import type { Article, Category } from '../lib/supabase';
 import { createArticle, updateArticle } from '../services/articleService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import { addArticleRedirect } from '../services/articleRedirectsService';
+import { useAuth } from '../contexts/AuthContext';
+import { hasModuleActionPermission } from '../services/permissionService';
 import ConfirmDialog from './ConfirmDialog';
 
 export interface EditArticleModalProps {
@@ -913,7 +915,13 @@ const STARTER_TEMPLATES: Record<
 // ----------------------------------------------------------------------
 
 export function EditArticleModal({ article, categories, lockedArticleType, onClose, onSaved }: EditArticleModalProps) {
+  const { profile } = useAuth();
   const isCreate = article === null;
+  const moduleKey = lockedArticleType === 'utmutatok' ? 'guides' : 'articles';
+  const canPublish = hasModuleActionPermission(profile?.role, moduleKey, 'publish');
+  const allowedStatusOptions = canPublish
+    ? STATUS_OPTIONS
+    : STATUS_OPTIONS.filter((s) => s.value !== 'published');
   const [form, setForm] = useState<FormState>(() => {
     if (article) {
       const f = formFromArticle(article);
@@ -1141,6 +1149,18 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    const requiredAction = isCreate ? 'create' : 'edit';
+    if (!hasModuleActionPermission(profile?.role, moduleKey, requiredAction)) {
+      setError('Nincs jogosultsága ehhez a művelethez.');
+      setSaveStatus('error');
+      return;
+    }
+    if (form.status === 'published' && !canPublish) {
+      setError('Nincs jogosultsága a cikk közvetlen publikálásához.');
+      setSaveStatus('error');
+      return;
+    }
 
     if (!form.title.trim()) {
       setError('A cím megadása kötelező.');
@@ -1524,7 +1544,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                       value={form.status}
                       onChange={(e) => updateForm('status', e.target.value as Article['status'])}
                     >
-                      {STATUS_OPTIONS.map((s) => (
+                      {allowedStatusOptions.map((s) => (
                         <option key={s.value} value={s.value}>{s.label}</option>
                       ))}
                     </select>

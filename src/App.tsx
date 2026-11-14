@@ -583,10 +583,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
 
   const isTeacher =
     memberRole === 'instructor' ||
-    profile?.role === 'teacher' ||
-    user?.user_metadata?.user_type === 'oktato' ||
-    user?.user_metadata?.user_type === 'teacher' ||
-    user?.user_metadata?.user_type === 'instructor';
+    profile?.role === 'teacher';
   const isSchoolAdmin = isSchoolCategory && (memberRole === 'owner' || memberRole === 'admin');
 
   if (loadingRole) {

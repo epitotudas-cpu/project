@@ -345,12 +345,14 @@ export async function reorderAdPackages(orderedIds: string[]): Promise<ManagedAd
     // Ignore localStorage quota/access error
   }
 
-  for (const pkg of updatedList) {
-    try {
-      await supabase.from('ad_packages').update({ sort_order: pkg.sort_order }).eq('id', pkg.id);
-    } catch {
-      // Ignore Supabase sync error when reordering locally
-    }
+  const results = await Promise.all(
+    updatedList.map((pkg) =>
+      supabase.from('ad_packages').update({ sort_order: pkg.sort_order }).eq('id', pkg.id)
+    )
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) {
+    throw new Error(failed.error.message || 'Hirdetési csomagok sorrendezése sikertelen.');
   }
 
   return updatedList;

@@ -1,5 +1,9 @@
 import { supabase, type GlossaryTerm } from '../lib/supabase';
 
+function sanitizePostgrestTerm(value: string): string {
+  return value.replace(/[(),{}*"'\\]/g, ' ').trim();
+}
+
 export async function listGlossaryTerms(limit: number = 500): Promise<GlossaryTerm[]> {
   const { data, error } = await supabase
     .from('glossary_terms')
@@ -19,9 +23,7 @@ export async function getGlossaryTerms(options?: {
   if (options?.letter) {
     query = query.eq('letter', options.letter);
   }
-  if (options?.limit) {
-    query = query.limit(options.limit);
-  }
+  query = query.limit(options?.limit ?? 500);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -33,7 +35,8 @@ export async function searchGlossaryTerms(term: string): Promise<GlossaryTerm[]>
     .from('glossary_terms')
     .select('*')
     .ilike('term', `%${term}%`)
-    .order('term');
+    .order('term')
+    .limit(100);
   if (error) throw error;
   return data || [];
 }
@@ -42,7 +45,8 @@ export async function getGlossaryLetters(): Promise<string[]> {
   const { data, error } = await supabase
     .from('glossary_terms')
     .select('letter')
-    .order('letter');
+    .order('letter')
+    .limit(1000);
   if (error) throw error;
   const letters = [...new Set(data?.map((item) => item.letter) || [])];
   return letters;
@@ -86,10 +90,12 @@ export async function upsertGlossaryTermByExternalId(payload: Record<string, unk
 }
 
 export async function countArticlesMentioningTerm(term: string): Promise<number> {
+  const safeTerm = sanitizePostgrestTerm(term);
+  if (!safeTerm) return 0;
   const { count, error } = await supabase
     .from('articles')
     .select('*', { count: 'exact', head: true })
-    .or(`title.ilike.%${term}%,content.ilike.%${term}%`);
+    .or(`title.ilike.%${safeTerm}%,content.ilike.%${safeTerm}%`);
   if (error) throw error;
   return count ?? 0;
 }
@@ -131,7 +137,8 @@ export async function getGlossaryCategories(): Promise<string[]> {
   const { data, error } = await supabase
     .from('glossary_terms')
     .select('category')
-    .neq('category', null);
+    .neq('category', null)
+    .limit(1000);
   if (error) throw error;
   const categories = [...new Set((data ?? []).map((item) => item.category).filter(Boolean))];
   return categories.sort();
@@ -146,7 +153,8 @@ export async function getTechnicalTerms(options?: {
     .from('glossary_terms')
     .select('*')
     .or('entry_type.eq.technical_concept,entry_type.is.null')
-    .order('term');
+    .order('term')
+    .limit(500);
 
   if (options?.category && options.category !== 'all') {
     query = query.eq('category', options.category);
@@ -168,7 +176,8 @@ export async function getIndustryTerms(): Promise<GlossaryTerm[]> {
     .from('glossary_terms')
     .select('*')
     .eq('entry_type', 'industry_term')
-    .order('term');
+    .order('term')
+    .limit(500);
   if (error) throw error;
   return data || [];
 }
@@ -196,7 +205,7 @@ export async function searchGlossary(queryStr: string): Promise<{
   jargonTerms: GlossaryTerm[];
   linkedOfficialTerms: GlossaryTerm[];
 }> {
-  const clean = queryStr.trim().toLowerCase();
+  const clean = sanitizePostgrestTerm(queryStr).toLowerCase();
   if (!clean) {
     return { technicalTerms: [], jargonTerms: [], linkedOfficialTerms: [] };
   }
@@ -205,7 +214,8 @@ export async function searchGlossary(queryStr: string): Promise<{
     .from('glossary_terms')
     .select('*')
     .or(`term.ilike.%${clean}%,definition.ilike.%${clean}%,kulcsszavak.cs.{${clean}}`)
-    .order('term');
+    .order('term')
+    .limit(100);
 
   if (error) throw error;
   const terms = allData || [];

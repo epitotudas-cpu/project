@@ -240,7 +240,7 @@ export function getCoursesLocal(): LearningCourse[] {
   return DEFAULT_COURSES;
 }
 
-export function saveCoursesLocal(courses: LearningCourse[]): void {
+export async function saveCoursesLocal(courses: LearningCourse[]): Promise<void> {
   try {
     if (typeof window !== 'undefined') {
       localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(courses));
@@ -249,9 +249,7 @@ export function saveCoursesLocal(courses: LearningCourse[]): void {
   } catch (e) {
     console.warn('Hiba a tananyagok mentésekor:', e);
   }
-  void writeAppConfig(CLOUD_COURSES_KEY, courses).catch((e) =>
-    console.warn('Hiba a tananyagok felhő szinkronizálásakor:', e)
-  );
+  await writeAppConfig(CLOUD_COURSES_KEY, courses);
 }
 
 async function getCoursesWithCloudSync(): Promise<LearningCourse[]> {
@@ -374,7 +372,7 @@ export function getQuizzesLocal(): Quiz[] {
   return DEFAULT_QUIZZES;
 }
 
-export function saveQuizzesLocal(quizzes: Quiz[]): void {
+export async function saveQuizzesLocal(quizzes: Quiz[]): Promise<void> {
   try {
     if (typeof window !== 'undefined') {
       localStorage.setItem(QUIZZES_STORAGE_KEY, JSON.stringify(quizzes));
@@ -383,9 +381,7 @@ export function saveQuizzesLocal(quizzes: Quiz[]): void {
   } catch (e) {
     console.warn('Hiba a tesztek mentésekor:', e);
   }
-  void writeAppConfig(CLOUD_QUIZZES_KEY, quizzes).catch((e) =>
-    console.warn('Hiba a tesztek felhő szinkronizálásakor:', e)
-  );
+  await writeAppConfig(CLOUD_QUIZZES_KEY, quizzes);
 }
 
 async function getQuizzesWithCloudSync(): Promise<Quiz[]> {

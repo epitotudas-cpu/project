@@ -521,7 +521,7 @@ export function getSiteSettings(): SiteSettings {
 
 import { logAuditAction } from './auditLogService';
 
-export function saveSiteSettings(settings: SiteSettings): void {
+export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
   try {
     const updatedSettings: SiteSettings = {
       ...settings,
@@ -548,14 +548,13 @@ export function saveSiteSettings(settings: SiteSettings): void {
     );
 
     // Cloud sync to Supabase app_configs (with legacy categories fallback)
-    void writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', updatedSettings, {
+    await writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', updatedSettings, {
       id: SUPABASE_SYSTEM_ID,
       slug: 'system-site-settings-config',
-    }).catch((err) => {
-      console.warn('Supabase site_settings sync info:', err);
     });
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);
+    throw err;
   }
 }
 
