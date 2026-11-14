@@ -165,6 +165,9 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<GlossaryTermFromJson | null>(null);
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
+  const [bookmarkError, setBookmarkError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const TERMS_PER_PAGE = 24;
 
   useEffect(() => {
     const items = getSavedItems(user?.id);
@@ -179,6 +182,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
   const handleToggleBookmark = async (e: React.MouseEvent, item: GlossaryTermFromJson) => {
     e.stopPropagation();
+    setBookmarkError(null);
     try {
       const res = await toggleSaveItem(user?.id, {
         itemId: item.id,
@@ -204,6 +208,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     });
     } catch (err) {
       console.warn('A könyvjelző mentése sikertelen volt:', err);
+      setBookmarkError('A könyvjelző mentése sikertelen volt. Kérjük, próbáld újra!');
     }
   };
 
@@ -214,22 +219,21 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     try {
       const hash = window.location.hash || '';
       const queryPart = hash.includes('?') ? hash.split('?')[1] : '';
-      if (!queryPart) return;
+      if (!queryPart) {
+        setSelectedCategories([]);
+        setSearchQuery('');
+        setActiveTab('technical');
+        return;
+      }
 
       const params = new URLSearchParams(queryPart);
       const catParam = params.get('cat');
       const qParam = params.get('q');
       const tabParam = params.get('tab');
 
-      if (catParam) {
-        setSelectedCategories(catParam.split(',').filter(Boolean));
-      }
-      if (qParam) {
-        setSearchQuery(qParam);
-      }
-      if (tabParam === 'industry' || tabParam === 'technical') {
-        setActiveTab(tabParam);
-      }
+      setSelectedCategories(catParam ? catParam.split(',').filter(Boolean) : []);
+      setSearchQuery(qParam || '');
+      setActiveTab(tabParam === 'industry' ? 'industry' : 'technical');
     } catch {
       // ignore parsing errors
     }
@@ -237,6 +241,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
 
   useEffect(() => {
     syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
   }, [syncFromHash]);
 
   const updateUrlParams = useCallback(
@@ -268,11 +274,15 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     else setAuthModalOpen(true);
   }
 
-  function toggleExpand(id: string) {
+  function toggleExpand(item: GlossaryTermFromJson) {
+    if (!user) {
+      handleTermClick(item);
+      return;
+    }
     setExpandedCards((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
       return next;
     });
   }
@@ -373,6 +383,17 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     return res.sort((a, b) => a.term.localeCompare(b.term, 'hu'));
   }, [tabTerms, selectedCategories, searchQuery]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredTerms.length / TERMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, selectedCategories]);
+
+  const paginatedTerms = useMemo(() => {
+    const start = (currentPage - 1) * TERMS_PER_PAGE;
+    return filteredTerms.slice(start, start + TERMS_PER_PAGE);
+  }, [filteredTerms, currentPage]);
+
   const latestTerms = useMemo(
     () => [...glossary.terms].slice(-6).reverse(),
     [glossary.terms],
@@ -457,8 +478,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
               <button
                 onClick={() => handleTabChange('technical')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'technical'
-                    ? 'bg-accent text-black shadow-md'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-accent text-accent-text shadow-md'
+                    : 'text-gray-300 hover:text-white'
                   }`}
               >
                 Szakmai Fogalomtár
@@ -466,8 +487,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
               <button
                 onClick={() => handleTabChange('industry')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'industry'
-                    ? 'bg-accent text-black shadow-md'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-accent text-accent-text shadow-md'
+                    : 'text-gray-300 hover:text-white'
                   }`}
               >
                 Zsargon Szótár
@@ -518,6 +539,18 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
       {/* ═══════════ MAIN CONTENT ═══════════ */}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
+        {bookmarkError && (
+          <div role="alert" className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-red-800 font-semibold">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={16} className="text-red-600 shrink-0" />
+              <span>{bookmarkError}</span>
+            </div>
+            <button onClick={() => setBookmarkError(null)} className="p-1 hover:bg-red-100 rounded-lg" aria-label="Hibaüzenet bezárása">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {/* Linked term bridge */}
         {linkedOfficialTerm && (
           <div className="mb-8 p-5 bg-accent/10 border border-accent/30 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -533,7 +566,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             </div>
             <button
               onClick={() => { handleTabChange('technical'); setSearchQuery(linkedOfficialTerm.term); updateUrlParams([], linkedOfficialTerm.term, 'technical'); }}
-              className="px-4 py-2 bg-accent text-black font-bold text-xs rounded-xl hover:bg-yellow-400 self-start md:self-auto transition-colors"
+              className="px-4 py-2 bg-accent text-accent-text font-bold text-xs rounded-xl hover:bg-accent-hover self-start md:self-auto transition-colors"
             >
               Ugrás a Szakmai Fogalomhoz ➔
             </button>
@@ -548,6 +581,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             <div className="relative flex-1 w-full">
               <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
+                id="glossary-search-input"
+                name="glossary-search"
                 type="text"
                 placeholder={
                   activeTab === 'technical'
@@ -722,7 +757,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             ) : viewMode === 'grid' ? (
               /* ── CSEMPESZERŰ TANULÓ KÁRTYA NÉZET (TILES WITH IMAGE) ── */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 items-stretch">
-                {filteredTerms.map((item) => {
+                {paginatedTerms.map((item) => {
                   const normalizedCat = item.category ? item.category.trim() : null;
                   const imageFailedToLoad = imageLoadErrors.has(item.id);
                   const hasImage = item.image_urls && item.image_urls.length > 0 && !imageFailedToLoad;
@@ -878,7 +913,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
             ) : (
               /* ── LISTA NÉZET (LIST) ── */
               <div className="space-y-4">
-                {filteredTerms.map((item) => {
+                {paginatedTerms.map((item) => {
                   const isExpanded = expandedCards.has(item.id);
                   const imageFailedToLoad = imageLoadErrors.has(item.id);
                   const hasImage = item.image_urls && item.image_urls.length > 0 && !imageFailedToLoad;
@@ -1069,7 +1104,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                             </div>
 
                             <button
-                              onClick={() => toggleExpand(item.id)}
+                              onClick={() => toggleExpand(item)}
                               className="flex items-center gap-1 text-gray-400 hover:text-gray-700 transition-colors font-semibold flex-shrink-0"
                             >
                               {isExpanded
@@ -1086,14 +1121,18 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           {hasImage ? (
                             <>
                               <img
-                                src={item.image_urls![0]}
+                                src={optimizeImageUrl(item.image_urls![0], 300)}
                                 alt=""
                                 aria-hidden="true"
+                                loading="lazy"
+                                decoding="async"
                                 className="absolute inset-0 w-full h-full object-cover blur-sm opacity-35 scale-110 pointer-events-none select-none"
                               />
                               <img
-                                src={item.image_urls![0]}
+                                src={optimizeImageUrl(item.image_urls![0], 300)}
                                 alt={item.term}
+                                loading="lazy"
+                                decoding="async"
                                 className="relative z-10 w-full h-full object-cover object-[center_30%] group-hover:scale-105 transition-transform duration-300"
                                 onError={() =>
                                   setImageLoadErrors((prev) => {
@@ -1121,6 +1160,38 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                     </article>
                   );
                 })}
+              </div>
+            )}
+
+            {filteredTerms.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200/80 flex-wrap">
+                <span className="text-xs font-medium text-gray-500">
+                  {currentPage}. oldal / {totalPages} ({filteredTerms.length} fogalom)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => {
+                      setCurrentPage((p) => Math.max(1, p - 1));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Előző
+                  </button>
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => {
+                      setCurrentPage((p) => Math.min(totalPages, p + 1));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Következő
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1175,8 +1246,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                           key={tr}
                           onClick={() => setSelectedTrade(selectedTrade === tr ? null : tr)}
                           className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all ${selectedTrade === tr
-                              ? 'bg-accent text-black'
-                              : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                              ? 'bg-accent text-accent-text'
+                              : 'bg-white/10 text-gray-200 hover:bg-white/20'
                             }`}
                         >
                           {tr} útvonal
@@ -1229,7 +1300,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                       {!user ? (
                         <button
                           onClick={() => onNavigate('register')}
-                          className="w-full py-2.5 bg-accent text-black font-black text-sm rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+                          className="w-full py-2.5 bg-accent text-accent-text font-black text-sm rounded-xl hover:bg-accent-hover transition-colors flex items-center justify-center gap-2"
                         >
                           Regisztrálok <ArrowRight size={14} />
                         </button>
@@ -1309,6 +1380,7 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
+                        name={`glossary-cat-${catName}`}
                         checked={isChecked}
                         onChange={() => {
                           setModalCategories((prev) =>
