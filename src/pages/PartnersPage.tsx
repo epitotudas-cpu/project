@@ -153,7 +153,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
               onClick={() => setSelectedCategory('all')}
               className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
                 selectedCategory === 'all'
-                  ? 'bg-accent text-black shadow-md'
+                  ? 'bg-accent text-white shadow-md'
                   : 'bg-white border border-gray-200 text-gray-700 hover:border-accent/40'
               }`}
             >
@@ -168,7 +168,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
                     selectedCategory === cat
-                      ? 'bg-accent text-black shadow-md'
+                      ? 'bg-accent text-white shadow-md'
                       : 'bg-white border border-gray-200 text-gray-700 hover:border-accent/40'
                   }`}
                 >
@@ -198,7 +198,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                 setSearchQuery('');
                 setSelectedCategory('all');
               }}
-              className="px-4 py-2 bg-accent text-black text-xs font-bold rounded-xl hover:bg-accent-hover transition-colors"
+              className="px-4 py-2 bg-accent text-white text-xs font-bold rounded-xl hover:bg-accent-hover transition-colors"
             >
               Szűrők törlése
             </button>
@@ -211,7 +211,15 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
             {filteredPartners.map((partner) => (
               <div
                 key={partner.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onNavigate('partner-detail', { partnerSlug: partner.slug || partner.id })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onNavigate('partner-detail', { partnerSlug: partner.slug || partner.id });
+                  }
+                }}
                 className="group bg-white border border-gray-200 hover:border-accent rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between"
               >
                 <div className="space-y-4">
@@ -255,7 +263,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="px-2.5 py-1 bg-gray-100 hover:bg-accent hover:text-black text-gray-600 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
+                      className="px-2.5 py-1 bg-gray-100 hover:bg-accent hover:text-white text-gray-600 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
                       title="Hivatalos weboldal megnyitása"
                     >
                       <ExternalLink size={12} /> Weboldal
@@ -279,7 +287,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
           <button
             type="button"
             onClick={() => onNavigate('partner-application')}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold text-sm rounded-xl hover:bg-accent-hover transition-colors shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-bold text-sm rounded-xl hover:bg-accent-hover transition-colors shrink-0 cursor-pointer"
           >
             <Mail size={16} /> Partneri Jelentkezés
           </button>

@@ -17,6 +17,7 @@ import {
 import type { Profile } from '../lib/supabase';
 import { listProfiles, deleteUser, updateProfileRole } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
+import { isAdmin as isAdminProfile } from '../lib/permissions';
 import {
   getUserTrustProfile,
   setTrustedContributorStatus,
@@ -91,8 +92,8 @@ interface AdminUsersPageProps {
 export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPageProps = {}) {
   const toast = useToast();
   const [deleteUserTarget, setDeleteUserTarget] = useState<Profile | null>(null);
-  const { user: currentUser } = useAuth();
-  const isAdmin = true; // Admin Users Page is restricted to admins; enable role selector for all users
+  const { user: currentUser, profile: currentProfile } = useAuth();
+  const isAdmin = isAdminProfile(currentProfile);
   const [users, setUsers] = useState<Profile[]>([]);
   const [trustProfiles, setTrustProfiles] = useState<Record<string, UserTrustProfile>>({});
   const [loading, setLoading] = useState(true);

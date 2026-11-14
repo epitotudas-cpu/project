@@ -158,7 +158,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
 
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <span className="bg-accent text-black font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+              <span className="bg-accent text-white font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
                 {quiz.category_name || 'Teszt'}
               </span>
               <h1 className="text-2xl md:text-3xl font-black text-white mt-1">{quiz.title}</h1>
@@ -225,7 +225,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
                           <span
                             className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border ${
                               isSelected
-                                ? 'bg-accent text-black border-accent'
+                                ? 'bg-accent text-white border-accent'
                                 : 'bg-white text-gray-600 border-gray-300'
                             }`}
                           >
@@ -261,7 +261,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
               ) : (
                 <button
                   onClick={handleFinishQuiz}
-                  className="px-6 py-3 bg-accent hover:bg-amber-400 text-black font-black text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-black text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Zap size={16} /> Teszt Befejezése &amp; Értékelés
                 </button>
@@ -311,7 +311,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
 
                   <button
                     onClick={() => onNavigate('learning')}
-                    className="px-5 py-2.5 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-amber-400 shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-5 py-2.5 bg-accent text-white font-extrabold text-xs rounded-xl hover:bg-accent-hover shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     Vissza a Tanulás menübe
                   </button>

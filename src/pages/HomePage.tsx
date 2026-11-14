@@ -326,7 +326,15 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 return (
                   <div
                     key={category.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => onNavigate('category?cat=' + category.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onNavigate('category?cat=' + category.id);
+                      }
+                    }}
                     className="group bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between hover:border-accent/50"
                   >
                     {/* Cover image header */}
@@ -495,7 +503,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           </div>
           <button
             onClick={() => onNavigate('partners')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent/10 border border-accent/30 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-black transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent/10 border border-accent/30 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-white transition-all"
           >
             Összes Partner Megtekintése <ArrowRight size={14} />
           </button>
@@ -567,7 +575,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => onNavigate('register')}
-              className="px-6 py-3 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg transition-colors"
+              className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
             >
               Regisztráció
             </button>

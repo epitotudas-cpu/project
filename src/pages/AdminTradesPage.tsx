@@ -3,7 +3,6 @@ import {
   Briefcase,
   Search,
   Edit3,
-  CheckCircle2,
   RotateCcw,
   Eye,
   EyeOff,
@@ -23,12 +22,14 @@ import {
 import { type TimelineStation, type FutureTechCard } from '../data/tradeDetailsData';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface AdminTradesPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageProps = {}) {
+  const toast = useToast();
   const trades = useTrades();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [confirmState, setConfirmState] = useState<{
@@ -44,7 +45,6 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
       setSearchQuery(initialSearchQuery);
     }
   }, [initialSearchQuery]);
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -315,8 +315,7 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
   };
 
   const triggerSuccessNotify = () => {
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    toast.success('A szakmai útmutatók módosításai sikeresen elmentve és alkalmazva a platformon!');
   };
 
   // Timeline station helpers
@@ -405,13 +404,6 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
           </button>
         </div>
       </div>
-
-      {savedSuccess && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold">
-          <CheckCircle2 size={20} />
-          A szakmai útmutatók módosításai sikeresen elmentve és alkalmazva a platformon!
-        </div>
-      )}
 
       {/* Filter */}
       <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border p-4 rounded-2xl max-w-md relative shadow-sm">

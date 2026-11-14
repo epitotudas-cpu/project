@@ -114,7 +114,7 @@ export default function CookiePolicyPage({ onNavigate }: CookiePolicyPageProps) 
                 onClick={() => handleConsentChange(true)}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   consent?.analytics
-                    ? 'bg-accent text-black font-extrabold shadow-xs'
+                    ? 'bg-accent text-white font-extrabold shadow-xs'
                     : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
                 }`}
               >

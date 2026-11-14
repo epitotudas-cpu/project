@@ -388,7 +388,15 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
                   return (
                     <div
                       key={course.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => onNavigate('course-detail', { slug: course.slug })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onNavigate('course-detail', { slug: course.slug });
+                        }
+                      }}
                       className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer"
                     >
                       {/* Course Image */}
@@ -519,7 +527,7 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
 
                         <button
                           onClick={() => onNavigate('quiz-player', { quizId: quiz.id })}
-                          className="px-5 py-2.5 bg-accent hover:bg-amber-400 text-black font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                         >
                           <Zap size={14} /> Teszt Indítása
                         </button>

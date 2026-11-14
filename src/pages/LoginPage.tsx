@@ -166,6 +166,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Jelszó elrejtése' : 'Jelszó megjelenítése'}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

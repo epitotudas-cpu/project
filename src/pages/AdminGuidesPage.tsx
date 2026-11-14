@@ -25,6 +25,7 @@ import {
 } from '../services/articleSettingsService';
 import { useToast } from '../components/ToastProvider';
 import EditArticleModal from '../components/EditArticleModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 
 export type GuidesSubTab = 'list' | 'by-trade' | 'templates' | 'settings';
@@ -827,36 +828,15 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
       )}
 
       {/* DELETE CONFIRMATION MODAL */}
-      {deletingArticle && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#181818] border border-[#333] rounded-3xl w-full max-w-md p-6 space-y-6 text-white shadow-2xl">
-            <div className="space-y-2 text-center">
-              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full w-fit mx-auto">
-                <Trash2 size={24} />
-              </div>
-              <h3 className="text-lg font-black">Biztosan törölni szeretnéd?</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                A(z) <strong className="text-white">"{deletingArticle.title}"</strong> kivitelezési útmutató véglegesen törlődik a rendszerből.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDeletingArticle(null)}
-                className="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl"
-              >
-                Mégse
-              </button>
-              <button
-                onClick={handleDeleteConfirmed}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg"
-              >
-                Végleges Törlés
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!deletingArticle}
+        title="Biztosan törölni szeretnéd?"
+        message={`A(z) „${deletingArticle?.title || ''}” kivitelezési útmutató véglegesen törlődik a rendszerből.`}
+        confirmLabel="Végleges Törlés"
+        destructive
+        onCancel={() => setDeletingArticle(null)}
+        onConfirm={handleDeleteConfirmed}
+      />
     </div>
   );
 }

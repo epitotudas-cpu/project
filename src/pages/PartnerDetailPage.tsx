@@ -422,7 +422,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
         </p>
         <button
           onClick={() => onNavigate('partners')}
-          className="px-5 py-2.5 bg-accent text-black font-bold text-xs rounded-xl hover:bg-accent-hover transition-colors inline-flex items-center gap-2"
+          className="px-5 py-2.5 bg-accent text-white font-bold text-xs rounded-xl hover:bg-accent-hover transition-colors inline-flex items-center gap-2"
         >
           <ArrowLeft size={16} /> Vissza a Partnerek listájához
         </button>
@@ -573,7 +573,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                   href={/^https?:\/\//i.test(partner.website_url) ? partner.website_url : `https://${partner.website_url}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-5 py-3 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                  className="px-5 py-3 bg-accent hover:bg-accent-hover text-white font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                 >
                   <Globe size={16} /> Hivatalos weboldal <ExternalLink size={14} />
                 </a>
@@ -941,7 +941,7 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                 href={/^https?:\/\//i.test(partner.website_url) ? partner.website_url : `https://${partner.website_url}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl transition-all shadow-sm"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-accent hover:bg-accent-hover text-white font-extrabold text-xs rounded-xl transition-all shadow-sm"
               >
                 <Globe size={16} /> Weboldal megnyitása <ExternalLink size={14} />
               </a>

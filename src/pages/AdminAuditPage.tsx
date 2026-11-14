@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { fetchAuditLogs, clearAuditLogs, type AuditLog } from '../services/auditLogService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const MODULE_LABELS: Record<string, string> = {
   all: 'Összes modul',
@@ -263,33 +264,15 @@ export default function AdminAuditPage() {
       )}
 
       {/* Confirmation Modal for Clearing Audit Logs */}
-      {showClearConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3 text-red-400">
-              <ShieldAlert size={28} />
-              <h3 className="text-lg font-bold">Audit napló ürítése</h3>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-              Biztosan törölni szeretnéd az összes rögzített audit napló bejegyzést? Ez a művelet visszavonhatatlan, és törli a helyi biztonsági naplókat.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-200"
-              >
-                Mégse
-              </button>
-              <button
-                onClick={handleClearLogs}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
-              >
-                Igen, törlés
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={showClearConfirm}
+        title="Audit napló ürítése"
+        message="Biztosan törölni szeretnéd az összes rögzített audit napló bejegyzést? Ez a művelet visszavonhatatlan, és törli a helyi biztonsági naplókat."
+        confirmLabel="Igen, törlés"
+        destructive
+        onCancel={() => setShowClearConfirm(false)}
+        onConfirm={handleClearLogs}
+      />
     </div>
   );
 }

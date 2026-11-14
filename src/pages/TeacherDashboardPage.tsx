@@ -687,7 +687,6 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 {activeView === 'assigned_materials' && 'Kiosztott Tananyagok Áttekintése'}
                 {activeView === 'tests' && 'Tesztek & Kvíz Eredmények'}
                 {activeView === 'progress' && 'Osztály és Tanulói Előrehaladás'}
-                {activeView === 'settings' && 'Saját Beállítások'}
               </h1>
             </div>
 

@@ -1,41 +1,32 @@
 import { useState } from 'react';
-import { Palette, Check, Save, RotateCcw, Sparkles, UserCheck, Shield } from 'lucide-react';
+import { Palette, Check, Save, RotateCcw, Sparkles, UserCheck } from 'lucide-react';
 import {
   EDITOR_THEME_PRESETS,
   getStoredEditorThemeId,
   setEditorThemeId,
   getEditorThemePreset,
 } from '../services/editorThemeService';
+import { useToast } from '../components/ToastProvider';
 
 export function EditorSettingsPage() {
+  const toast = useToast();
   const [selectedThemeId, setSelectedThemeId] = useState<string>(getStoredEditorThemeId);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const currentPreset = getEditorThemePreset(selectedThemeId);
 
   const handleSave = () => {
     setEditorThemeId(selectedThemeId);
-    setToastMessage('A Szerkesztői Panel témaszínei sikeresen frissültek!');
-    setTimeout(() => setToastMessage(null), 4000);
+    toast.success('A Szerkesztői Panel témaszínei sikeresen frissültek!');
   };
 
   const handleReset = () => {
     setSelectedThemeId('purple');
     setEditorThemeId('purple');
-    setToastMessage('Szerkesztői téma visszaállítva az alapértelmezett bíbor/lila változatra.');
-    setTimeout(() => setToastMessage(null), 4000);
+    toast.success('Szerkesztői téma visszaállítva az alapértelmezett bíbor/lila változatra.');
   };
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Toast alert */}
-      {toastMessage && (
-        <div className="fixed top-4 sm:top-6 right-4 sm:right-6 z-50 flex items-center gap-3 bg-emerald-900/90 border border-emerald-500/50 text-emerald-100 px-4 sm:px-6 py-3 sm:py-4 rounded-xl shadow-2xl backdrop-blur-md animate-fade-in text-xs sm:text-sm">
-          <Shield className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span className="font-medium">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Header Banner */}
       <div className={`bg-gradient-to-r ${currentPreset.bgGradient} border ${currentPreset.borderSubtle} rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl transition-all duration-300`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">

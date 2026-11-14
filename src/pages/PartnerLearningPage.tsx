@@ -235,7 +235,10 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
             </div>
           ) : (
             courses.map((course) => {
-              const badge = STATUS_BADGE[course.status] || STATUS_BADGE.published;
+              const badge = STATUS_BADGE[course.status] || {
+                label: 'Elbírálás alatt',
+                class: 'bg-amber-100 text-amber-900 border-amber-300',
+              };
 
               return (
                 <div
@@ -316,7 +319,10 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
             </div>
           ) : (
             quizzes.map((quiz) => {
-              const badge = STATUS_BADGE[quiz.status] || STATUS_BADGE.published;
+              const badge = STATUS_BADGE[quiz.status] || {
+                label: 'Elbírálás alatt',
+                class: 'bg-amber-100 text-amber-900 border-amber-300',
+              };
 
               return (
                 <div

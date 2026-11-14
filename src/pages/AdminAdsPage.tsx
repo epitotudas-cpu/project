@@ -1763,19 +1763,15 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center">
-            <AlertTriangle size={32} className="mx-auto text-red-400 animate-bounce" />
-            <h3 className="text-base font-bold text-white">Biztosan törölni szeretnéd a kijelölt elemet?</h3>
-            <p className="text-xs text-gray-400">Ez a művelet nem vonható vissza.</p>
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl text-xs">Mégse</button>
-              <button onClick={handleDeleteItemConfirmed} className="px-5 py-2 bg-red-500 text-white font-extrabold rounded-xl text-xs hover:bg-red-600">Igen, törlés</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        title="Elem törlése"
+        message="Biztosan törölni szeretnéd a kijelölt elemet? Ez a művelet nem vonható vissza."
+        confirmLabel="Igen, törlés"
+        destructive
+        onCancel={() => setDeleteConfirmId(null)}
+        onConfirm={handleDeleteItemConfirmed}
+      />
       <ConfirmDialog
         open={confirmClearNotifsOpen}
         title="Értesítések törlése"

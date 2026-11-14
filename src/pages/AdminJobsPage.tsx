@@ -5,7 +5,6 @@ import {
   Search,
   Trash2,
   Edit3,
-  CheckCircle2,
   MapPin,
   DollarSign,
   Eye,
@@ -24,17 +23,18 @@ import {
 import type { JobPosting } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface AdminJobsPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps = {}) {
+  const toast = useToast();
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [savedSuccess, setSavedSuccess] = useState(false);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -187,8 +187,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
   };
 
   const triggerSuccessNotify = () => {
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    toast.success('Az állásajánlatok sikeresen elmentve és frissítve a platformon!');
   };
 
   const siteSettings = useSiteSettings();
@@ -222,13 +221,6 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
           <Plus size={16} /> Új Álláshirdetés Feladása
         </button>
       </div>
-
-      {savedSuccess && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold">
-          <CheckCircle2 size={20} />
-          Az állásajánlatok sikeresen elmentve és frissítve a platformon!
-        </div>
-      )}
 
       {/* Search & Filter */}
       <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border p-4 rounded-2xl shadow-sm">

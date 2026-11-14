@@ -9,6 +9,7 @@ import {
   type ModuleActionPermissions,
   type ConfigurableRole,
 } from '../services/permissionService';
+import { useToast } from '../components/ToastProvider';
 
 const ROLE_LABELS: Record<ConfigurableRole, string> = {
   editor: 'Szerkesztő',
@@ -18,11 +19,11 @@ const ROLE_LABELS: Record<ConfigurableRole, string> = {
 };
 
 export function AdminAccessControlPage() {
+  const toast = useToast();
   const [selectedRole, setSelectedRole] = useState<ConfigurableRole>('editor');
   const [permissions, setPermissions] = useState<Record<string, ModuleActionPermissions>>(() =>
     getRoleModulePermissions(selectedRole)
   );
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchRolePermissionsFromCloud().then(() => {
@@ -76,38 +77,28 @@ export function AdminAccessControlPage() {
   const handleSave = async () => {
     try {
       await saveRoleModulePermissions(selectedRole, permissions);
-      setToastMessage(
+      toast.success(
         `A(z) ${ROLE_LABELS[selectedRole]} szerepkör jogosultságai sikeresen elmentve a felhőbe!`
       );
     } catch (err) {
-      setToastMessage(err instanceof Error ? err.message : 'Hiba történt a jogosultságok mentésekor.');
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a jogosultságok mentésekor.');
     }
-    setTimeout(() => setToastMessage(null), 4000);
   };
 
   const handleReset = async () => {
     try {
       const defaults = await resetRoleModulePermissions(selectedRole);
       setPermissions(defaults);
-      setToastMessage(`A(z) ${ROLE_LABELS[selectedRole]} jogosultságok visszaállítva az alapértelmezettekre.`);
+      toast.success(`A(z) ${ROLE_LABELS[selectedRole]} jogosultságok visszaállítva az alapértelmezettekre.`);
     } catch (err) {
-      setToastMessage(err instanceof Error ? err.message : 'Hiba történt a visszaállítás során.');
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a visszaállítás során.');
     }
-    setTimeout(() => setToastMessage(null), 4000);
   };
 
   const categories = Array.from(new Set(SYSTEM_MODULES.map((m) => m.category)));
 
   return (
     <div className="space-y-8">
-      {/* Toast alert */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-emerald-900/90 border border-emerald-500/50 text-emerald-100 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md animate-fade-in">
-          <Shield className="w-5 h-5 text-emerald-400" />
-          <span className="text-sm font-medium">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/20 rounded-2xl p-6 md:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

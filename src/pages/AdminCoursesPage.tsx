@@ -5,7 +5,6 @@ import {
   Search,
   Trash2,
   Edit3,
-  CheckCircle2,
   Clock,
   PlayCircle,
   HelpCircle,
@@ -21,12 +20,14 @@ import type { Course, Lesson, QuizQuestion } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import AdminFlashcardsModal from '../components/AdminFlashcardsModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 interface AdminCoursesPageProps {
   initialSearchQuery?: string;
 }
 
 export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPageProps = {}) {
+  const toast = useToast();
   const eduData = useEducationData();
   const [confirmState, setConfirmState] = useState<{
     title: string;
@@ -42,7 +43,6 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
       setSearchQuery(initialSearchQuery);
     }
   }, [initialSearchQuery]);
-  const [savedSuccess, setSavedSuccess] = useState(false);
   const [showFlashcardsModal, setShowFlashcardsModal] = useState(false);
 
   // Active Selected Course for Editing Lessons/Quiz
@@ -362,8 +362,7 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
   };
 
   const triggerSuccessNotify = () => {
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    toast.success('A képzési adatok és tesztkérdések sikeresen elmentve és alkalmazva a platformon!');
   };
 
   const siteSettings = useSiteSettings();
@@ -416,13 +415,6 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
           </button>
         </div>
       </div>
-
-      {savedSuccess && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl flex items-center gap-3 animate-fade-in text-sm font-bold">
-          <CheckCircle2 size={20} />
-          A képzési adatok és tesztkérdések sikeresen elmentve és alkalmazva a platformon!
-        </div>
-      )}
 
       {/* Filter */}
       <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border p-4 rounded-2xl shadow-sm">

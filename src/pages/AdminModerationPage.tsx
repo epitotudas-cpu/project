@@ -8,12 +8,13 @@ import {
   type ContentLifecycleStatus,
 } from '../services/contentLifecycleService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
+import { useToast } from '../components/ToastProvider';
 
 export default function AdminModerationPage() {
+  const toast = useToast();
   const [items, setItems] = useState<ContentLifecycleMetadata[]>([]);
   const [activeFilter, setActiveFilter] = useState<ContentLifecycleStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<string | null>(null);
 
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
@@ -33,7 +34,7 @@ export default function AdminModerationPage() {
       const data = await listContentByLifecycleStatus(activeFilter === 'all' ? undefined : activeFilter);
       setItems([...data]);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Hiba a moderációs lista betöltésekor.');
+      toast.error(err instanceof Error ? err.message : 'Hiba a moderációs lista betöltésekor.');
     } finally {
       setLoading(false);
     }
@@ -42,12 +43,11 @@ export default function AdminModerationPage() {
   async function handleTransition(id: string, newStatus: ContentLifecycleStatus) {
     try {
       await transitionContentStatus(id, newStatus);
-      setMessage(`Állapot sikeresen módosítva: ${getStatusLabel(newStatus)}`);
+      toast.success(`Állapot sikeresen módosítva: ${getStatusLabel(newStatus)}`);
       await loadItems();
     } catch (err) {
-      setMessage(err instanceof Error ? `Hiba: ${err.message}` : 'Hiba történt az állapot módosításakor.');
+      toast.error(err instanceof Error ? `Hiba: ${err.message}` : 'Hiba történt az állapot módosításakor.');
     }
-    setTimeout(() => setMessage(null), 3000);
   }
 
   if (loading) {
@@ -75,12 +75,6 @@ export default function AdminModerationPage() {
           {items.length} Tartalom Folyamatban
         </span>
       </div>
-
-      {message && (
-        <div style={{ backgroundColor: `${cardHighlight}15`, borderColor: `${cardHighlight}30`, color: cardHighlight }} className="p-4 border text-sm rounded-xl font-medium">
-          {message}
-        </div>
-      )}
 
       {/* Workflow Status Filter Bar */}
       <div className="flex flex-wrap gap-2">

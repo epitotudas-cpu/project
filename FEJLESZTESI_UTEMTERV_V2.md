@@ -85,19 +85,19 @@
 ## Fázis 5 – Kontraszt, Akadálymentesség (a11y), UX Konzisztencia & Tesztek (P2 + P3)
 **Cél:** WCAG kontraszt, billentyűzetes akadálymentesség, egységes UI dialógusok/toastok és regressziós tesztek.
 
-- [ ] **5.1 Kontraszt és sötét téma egységesítése (P2)**
+- [x] **5.1 Kontraszt és sötét téma egységesítése (P2)**
   - `bg-accent` gombokon `text-black` -> `text-white` (vagy kontrasztos szöveg) a `HomePage`, `Header`, `KnowledgeHubPage`, `AboutHubPage`, `PartnersPage`, `PartnerDetailPage`, `CourseDetailPage`, `QuizPlayerPage`, `CookiePolicyPage` oldalakon.
   - `PartnerArticlesPage`, `PartnerMaterialsPage`, `PartnerLearningPage`, `AdminKnowledgeHubPage`, `AdminMaterialsPage`, `AdminLearningPage`, `AdminCoursesPage` sötét/világos kártya- és modalkontrasztok javítása.
   - `PartnerLearningPage.tsx` (233, 313. sor): pontos státuszfelirat (`Publikálva` / `Jóváhagyva` / `Elbírálás alatt`).
-- [ ] **5.2 Akadálymentesség (a11y) (P2)**
+- [x] **5.2 Akadálymentesség (a11y) (P2)**
   - Kattintható `<div>` kártyák (`HomePage`, `PartnersPage`, `LearningPage`, `MaterialsPage`) ellátása `role="button"` / `tabIndex={0}` / `onKeyDown` vagy szemantikus `<button>`/`<a>` elemmel.
   - Hiányzó `aria-label` pótlása (`Header.tsx` kereső/bezáró gombok, `LoginPage.tsx` és `ResetPasswordPage.tsx` jelszó-megjelenítés gombok).
-- [ ] **5.3 UI Konzisztencia & Finomítások (P3)**
+- [x] **5.3 UI Konzisztencia & Finomítások (P3)**
   - Inline megerősítő modalok cseréje `ConfirmDialog`-ra (`AdminAuditPage`, `AdminGuidesPage`, `AdminAdsPage`).
   - Lokális banner toastok cseréje `useToast()`-ra (`AdminModerationPage`, `AdminAccessControlPage`, `EditorSettingsPage`, `AdminJobsPage`, `AdminCoursesPage`, `AdminTradesPage`).
   - `AdminKnowledgeHubPage.tsx` (535–650. sor): tab-független validáció HTML5 rejtett `required` helyett.
   - `MaterialsPage.tsx` (154–155. sor) SubNav ikon/címke egységesítése; `TeacherDashboardPage.tsx` (690. sor) felesleges `settings` címág eltávolítása; `AdminUsersPage.tsx` (95. sor) `isAdmin` dinamizálása.
-- [ ] **5.4 Tesztelés & Teljes Ellenőrzés**
+- [x] **5.4 Tesztelés & Teljes Ellenőrzés**
   - Unit tesztek bővítése az új/javított logikára (`articleService`, `careerService`, `seoMeta`, routing aliasok).
   - Teljes ellenőrzés: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
 

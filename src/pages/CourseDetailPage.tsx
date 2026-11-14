@@ -117,7 +117,7 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-3 max-w-4xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="bg-accent text-black font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                <span className="bg-accent text-white font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
                   {course.category_name || 'Tananyag'}
                 </span>
                 <span className="bg-white/10 text-white font-semibold text-xs px-3 py-1 rounded-full border border-white/20">
@@ -198,7 +198,7 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
                         <span
                           className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
                             isActive
-                              ? 'bg-accent text-black'
+                              ? 'bg-accent text-white'
                               : isCompleted
                               ? 'bg-emerald-100 text-emerald-800'
                               : 'bg-gray-200 text-gray-700'
@@ -218,7 +218,7 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
                 <div className="pt-3 border-t border-gray-100">
                   <button
                     onClick={() => onNavigate('quiz-player', { quizId: course.related_quiz_ids![0] })}
-                    className="w-full py-3 bg-accent hover:bg-amber-400 text-black font-black text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 bg-accent hover:bg-accent-hover text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Zap size={16} /> Kapcsolódó Teszt Kitöltése
                   </button>

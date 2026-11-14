@@ -137,8 +137,8 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
 
   const handleSaveForm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.summary) {
-      toast.notify('Kérjük, töltse ki a címet és a rövid összefoglalót!', 'warning');
+    if (!formData.title?.trim() || !formData.topic?.trim() || !formData.summary?.trim()) {
+      toast.notify('Kérjük, töltse ki a címet, a témakört és a rövid összefoglalót!', 'warning');
       return;
     }
 
@@ -574,7 +574,6 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       placeholder="pl. Magasban végzett munka és állványozási biztonság"
                       style={fieldStyle}
                       className="w-full border rounded-xl px-3 py-2 text-xs font-bold"
-                      required
                     />
                   </div>
 
@@ -588,7 +587,6 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                         placeholder="pl. Egyéni védőeszközök"
                         style={fieldStyle}
                         className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
-                        required
                       />
                     </div>
 
@@ -646,7 +644,6 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       placeholder="Néhány mondatos áttekintés a kártyás nézethez..."
                       style={fieldStyle}
                       className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
-                      required
                     />
                   </div>
 

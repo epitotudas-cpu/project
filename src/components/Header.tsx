@@ -473,6 +473,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               className={`p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all ${searchOpen ? 'bg-accent/20 text-accent border border-accent/30' : ''
                 }`}
               title="Kereső megnyitása"
+              aria-label={searchOpen ? 'Kereső bezárása' : 'Kereső megnyitása'}
             >
               <Search size={18} />
             </button>
@@ -742,6 +743,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
+                    aria-label="Keresési mező törlése"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
                   >
                     <X size={14} />
@@ -752,6 +754,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 onClick={() => setSearchOpen(false)}
                 className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                 title="Kereső bezárása"
+                aria-label="Kereső bezárása"
               >
                 <X size={18} />
               </button>
@@ -1154,7 +1157,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 </button>
                 <button
                   onClick={() => { onNavigate('register'); setMobileOpen(false); }}
-                  className="w-full py-3 bg-accent hover:bg-accent-hover text-black text-sm font-extrabold rounded-xl text-center min-h-[48px] active:scale-95 transition-transform"
+                  className="w-full py-3 bg-accent hover:bg-accent-hover text-white text-sm font-extrabold rounded-xl text-center min-h-[48px] active:scale-95 transition-transform"
                 >
                   Regisztráció
                 </button>

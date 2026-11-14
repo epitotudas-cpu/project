@@ -54,7 +54,7 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
             <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={() => onNavigate('partners')}
-                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-black text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
+                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
               >
                 <Building2 size={16} /> Partnereink
               </button>
@@ -261,7 +261,7 @@ export default function AboutHubPage({ onNavigate }: AboutHubPageProps) {
             </p>
             <button
               onClick={() => onNavigate('partners')}
-              className="w-full py-3 bg-accent hover:bg-accent-hover text-black font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+              className="w-full py-3 bg-accent hover:bg-accent-hover text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               <Building2 size={16} /> Megtekintés a Partnerek oldalon
             </button>

@@ -39,7 +39,7 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
             <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={() => onNavigate('safety')}
-                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-black text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
+                className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
               >
                 <ShieldAlert size={15} />
                 Munkavédelem Megnyitása
