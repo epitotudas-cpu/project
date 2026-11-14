@@ -49,10 +49,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
+  const encoder = new TextEncoder();
+  const timingSafeEqual = (a: string, b: string): boolean => {
+    const aBytes = encoder.encode(a);
+    const bBytes = encoder.encode(b);
+    const maxLen = Math.max(aBytes.length, bBytes.length);
+    let diff = aBytes.length ^ bBytes.length;
+    for (let i = 0; i < maxLen; i++) {
+      diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+    }
+    return diff === 0;
+  };
+
   const authHeader = req.headers.get('Authorization') || '';
   const requestCronSecret = req.headers.get('x-cron-secret') || '';
-  const isAuthorizedService = authHeader === `Bearer ${serviceRoleKey}`;
-  const isAuthorizedCron = Boolean(cronSecret) && requestCronSecret === cronSecret;
+  const isAuthorizedService = timingSafeEqual(authHeader, `Bearer ${serviceRoleKey}`);
+  const isAuthorizedCron = Boolean(cronSecret) && timingSafeEqual(requestCronSecret, cronSecret);
 
   if (!isAuthorizedService && !isAuthorizedCron) {
     return new Response(JSON.stringify({ error: 'Jogosulatlan hívás.' }), {

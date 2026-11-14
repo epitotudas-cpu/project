@@ -30,8 +30,9 @@ function getCorsHeaders(req: Request): Record<string, string> {
   };
 }
 
-const ALLOWED_EMAIL_ROLES = new Set(['admin', 'editor', 'moderator', 'partner', 'school', 'teacher']);
+const ALLOWED_EMAIL_ROLES = new Set(['admin']);
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_RECIPIENTS = 10;
 
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
@@ -102,6 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (
       recipients.length === 0 ||
+      recipients.length > MAX_RECIPIENTS ||
       recipients.some((r) => !EMAIL_REGEX.test(r)) ||
       typeof subject !== 'string' ||
       !subject.trim()

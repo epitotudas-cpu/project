@@ -125,61 +125,12 @@ export async function sendInvitationEmail(
   contactName?: string
 ): Promise<{ success: boolean; requires_manual_fallback?: boolean; error?: string }> {
   try {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://epitotudas.hu';
-    const inviteLink = `${baseUrl}/#register?code=${encodeURIComponent(invitation.code)}`;
-    const orgName = invitation.partner_name || invitation.organization_name || 'Szervezet';
-
-    const formattedDate = new Date(invitation.expires_at).toLocaleDateString('hu-HU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-
-    const greeting = contactName ? `Kedves ${contactName}!` : 'Tisztelt Partnerünk!';
-    const subject = `Meghívás az ÉpítőTudás partneri rendszerébe (${orgName})`;
-
-    const htmlBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
-        <h2 style="color: #d97706; margin-top: 0;">ÉpítőTudás v2 – Meghívás Szervezeti Partnerré</h2>
-        <p>${greeting}</p>
-        <p>Örömmel értesítjük, hogy meghívást kapott az ÉpítőTudás platformra a(z) <strong>${orgName}</strong> szervezet nevében.</p>
-
-        <div style="background-color: #f8fafc; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 6px;">
-          <p style="margin: 0; font-size: 14px; color: #475569;">Az Ön egyedi meghívókódja:</p>
-          <p style="margin: 8px 0 0 0; font-size: 22px; font-weight: bold; font-family: monospace; color: #b45309; letter-spacing: 2px;">${invitation.code}</p>
-        </div>
-
-        <p>A regisztráció és a szervezet összekapcsolásához kérjük, kattintson az alábbi gombra:</p>
-        <p style="text-align: center; margin: 28px 0;">
-          <a href="${inviteLink}" style="background-color: #f59e0b; color: #000000; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block;">Meghívás Elfogadása & Regisztráció</a>
-        </p>
-
-        <p style="font-size: 13px; color: #64748b;">
-          A meghívókód kizárólag erről az e-mail címről (<strong>${invitation.email}</strong>) váltható be.<br>
-          <strong>Érvényességi idő:</strong> ${formattedDate}
-        </p>
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-        <p style="font-size: 12px; color: #94a3b8; text-align: center;">ÉpítőTudás v2 – Szakmai Tudásplatform</p>
-      </div>
-    `;
-
-    let invokeRes = await supabase.functions.invoke('send-invitation-email', {
+    const invokeRes = await supabase.functions.invoke('send-invitation-email', {
       body: {
-        to: invitation.email,
-        subject,
-        html: htmlBody,
+        invitation_id: invitation.id,
+        contact_name: contactName || undefined,
       },
     });
-
-    if (invokeRes.error || (invokeRes.data && (invokeRes.data.error || invokeRes.data.name === 'validation_error'))) {
-      invokeRes = await supabase.functions.invoke('resend-email', {
-        body: {
-          to: invitation.email,
-          subject,
-          html: htmlBody,
-        },
-      });
-    }
 
     const { data, error } = invokeRes;
 

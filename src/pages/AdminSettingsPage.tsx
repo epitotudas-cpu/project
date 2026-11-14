@@ -328,6 +328,13 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     if (!smtpTestEmail) return;
     setSmtpTestLoading(true);
     setSmtpTestResult(null);
+    const safeSmtpTestEmail = smtpTestEmail
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
     try {
       const invokeRes = await supabase.functions.invoke('send-invitation-email', {
         body: {
@@ -338,7 +345,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
             <p>Ez egy igazoló teszt e-mail az ÉpítőTudás platformról.</p>
             <p><strong>SMTP Szerver:</strong> smtp.resend.com</p>
             <p><strong>Feladó:</strong> ÉpítőTudás &lt;info@epitotudas.hu&gt;</p>
-            <p><strong>Címzett:</strong> ${smtpTestEmail}</p>
+            <p><strong>Címzett:</strong> ${safeSmtpTestEmail}</p>
             <p><strong>Dátum:</strong> ${new Date().toLocaleString('hu-HU')}</p>
           </div>`,
         },

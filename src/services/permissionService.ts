@@ -150,8 +150,9 @@ const DEFAULT_TEACHER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   access_control: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
 };
 
-const STORAGE_KEY_PREFIX = 'epitotudas_role_permissions_';
 const ROLE_PERMISSIONS_CONFIG_KEY = '__SYSTEM_CONFIG_ROLE_PERMISSIONS__';
+
+const inMemoryRolePermissions: Partial<Record<ConfigurableRole, Record<string, ModuleActionPermissions>>> = {};
 
 function getDefaultPermissionsForRole(role: ConfigurableRole): Record<string, ModuleActionPermissions> {
   return role === 'editor'
@@ -165,14 +166,9 @@ function getDefaultPermissionsForRole(role: ConfigurableRole): Record<string, Mo
 
 export function getRoleModulePermissions(role: ConfigurableRole): Record<string, ModuleActionPermissions> {
   const defaultPerms = getDefaultPermissionsForRole(role);
-  try {
-    const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${role}`);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return { ...defaultPerms, ...parsed };
-    }
-  } catch (e) {
-    console.warn(`Hiba a role perms betöltésekor (${role}):`, e);
+  const cached = inMemoryRolePermissions[role];
+  if (cached) {
+    return { ...defaultPerms, ...cached };
   }
   return defaultPerms;
 }
@@ -181,13 +177,8 @@ function collectAllRolePermissions(): Partial<Record<ConfigurableRole, Record<st
   const roles: ConfigurableRole[] = ['editor', 'partner', 'school', 'teacher'];
   const result: Partial<Record<ConfigurableRole, Record<string, ModuleActionPermissions>>> = {};
   for (const r of roles) {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${r}`);
-      if (saved) {
-        result[r] = JSON.parse(saved);
-      }
-    } catch {
-      // ignore malformed localStorage
+    if (inMemoryRolePermissions[r]) {
+      result[r] = inMemoryRolePermissions[r];
     }
   }
   return result;
@@ -202,7 +193,9 @@ export async function fetchRolePermissionsFromCloud(): Promise<void> {
       const roles: ConfigurableRole[] = ['editor', 'partner', 'school', 'teacher'];
       for (const r of roles) {
         if (cloudMap[r]) {
-          localStorage.setItem(`${STORAGE_KEY_PREFIX}${r}`, JSON.stringify(cloudMap[r]));
+          inMemoryRolePermissions[r] = cloudMap[r];
+        } else {
+          delete inMemoryRolePermissions[r];
         }
       }
       if (typeof window !== 'undefined') {
@@ -218,8 +211,9 @@ export async function saveRoleModulePermissions(
   role: ConfigurableRole,
   permissions: Record<string, ModuleActionPermissions>
 ): Promise<void> {
+  const previous = inMemoryRolePermissions[role];
+  inMemoryRolePermissions[role] = permissions;
   try {
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${role}`, JSON.stringify(permissions));
     const allPerms = collectAllRolePermissions();
     allPerms[role] = permissions;
     await writeAppConfig(ROLE_PERMISSIONS_CONFIG_KEY, allPerms);
@@ -227,13 +221,20 @@ export async function saveRoleModulePermissions(
       window.dispatchEvent(new Event('role-permissions-changed'));
     }
   } catch (e) {
+    if (previous) {
+      inMemoryRolePermissions[role] = previous;
+    } else {
+      delete inMemoryRolePermissions[role];
+    }
     console.error(`Hiba a role perms mentésekor (${role}):`, e);
+    throw e;
   }
 }
 
 export async function resetRoleModulePermissions(role: ConfigurableRole): Promise<Record<string, ModuleActionPermissions>> {
+  const previous = inMemoryRolePermissions[role];
+  delete inMemoryRolePermissions[role];
   try {
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${role}`);
     const allPerms = collectAllRolePermissions();
     delete allPerms[role];
     await writeAppConfig(ROLE_PERMISSIONS_CONFIG_KEY, allPerms);
@@ -241,7 +242,11 @@ export async function resetRoleModulePermissions(role: ConfigurableRole): Promis
       window.dispatchEvent(new Event('role-permissions-changed'));
     }
   } catch (e) {
+    if (previous) {
+      inMemoryRolePermissions[role] = previous;
+    }
     console.error(`Hiba a role perms visszaállításakor (${role}):`, e);
+    throw e;
   }
   return getDefaultPermissionsForRole(role);
 }
