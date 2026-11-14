@@ -1123,22 +1123,21 @@ export function getCourseProgress(userId: string = 'anon_guest', courseId: strin
 }
 
 export async function saveCourseProgressSupabase(progress: CourseProgress): Promise<void> {
-  if (!progress.user_id || progress.user_id === 'anon_guest') return;
-  try {
-    await supabase.from('user_course_progress').upsert(
-      {
-        user_id: progress.user_id,
-        course_id: progress.course_id,
-        completed_chapter_ids: progress.completed_chapter_ids,
-        progress_percent: progress.progress_percent,
-        status: progress.status,
-        last_accessed_at: progress.last_accessed_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,course_id' }
-    );
-  } catch (e) {
-    console.warn('Error syncing course progress to Supabase:', e);
+  if (!progress.user_id || progress.user_id === 'anon_guest' || progress.user_id.startsWith('guest_')) return;
+  const { error } = await supabase.from('user_course_progress').upsert(
+    {
+      user_id: progress.user_id,
+      course_id: progress.course_id,
+      completed_chapter_ids: progress.completed_chapter_ids,
+      progress_percent: progress.progress_percent,
+      status: progress.status,
+      last_accessed_at: progress.last_accessed_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,course_id' }
+  );
+  if (error) {
+    throw new Error(error.message);
   }
 }
 
@@ -1146,33 +1145,33 @@ export async function fetchUserCourseProgressSupabase(
   userId: string,
   courseId?: string
 ): Promise<CourseProgress[]> {
-  try {
-    let query = supabase.from('user_course_progress').select('*').eq('user_id', userId);
-    if (courseId) {
-      query = query.eq('course_id', courseId);
-    }
-    const { data, error } = await query;
-    if (error || !data) return [];
-    return data.map((d: Record<string, unknown>) => ({
-      id: String(d.id),
-      user_id: String(d.user_id),
-      course_id: String(d.course_id),
-      completed_chapter_ids: (d.completed_chapter_ids as string[]) || [],
-      progress_percent: Number(d.progress_percent || 0),
-      status: (d.status as CourseProgress['status']) || 'not_started',
-      last_accessed_at: String(d.last_accessed_at || d.updated_at || new Date().toISOString()),
-    }));
-  } catch {
-    return [];
+  if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) return [];
+  let query = supabase.from('user_course_progress').select('*').eq('user_id', userId);
+  if (courseId) {
+    query = query.eq('course_id', courseId);
   }
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data) return [];
+  return data.map((d: Record<string, unknown>) => ({
+    id: String(d.id),
+    user_id: String(d.user_id),
+    course_id: String(d.course_id),
+    completed_chapter_ids: (d.completed_chapter_ids as string[]) || [],
+    progress_percent: Number(d.progress_percent || 0),
+    status: (d.status as CourseProgress['status']) || 'not_started',
+    last_accessed_at: String(d.last_accessed_at || d.updated_at || new Date().toISOString()),
+  }));
 }
 
-export function toggleChapterCompletion(
+export async function toggleChapterCompletion(
   userId: string = 'anon_guest',
   courseId: string,
   chapterId: string,
   totalChaptersCount: number
-): CourseProgress {
+): Promise<CourseProgress> {
   const current = getCourseProgress(userId, courseId);
   const isCompleted = current.completed_chapter_ids.includes(chapterId);
 
@@ -1192,16 +1191,15 @@ export function toggleChapterCompletion(
     last_accessed_at: new Date().toISOString(),
   };
 
+  if (userId && userId !== 'anon_guest' && !userId.startsWith('guest_')) {
+    await saveCourseProgressSupabase(updatedProgress);
+  }
+
   try {
     localStorage.setItem(`${PROGRESS_STORAGE_KEY}_${userId}_${courseId}`, JSON.stringify(updatedProgress));
     window.dispatchEvent(new Event('learning-updated'));
   } catch (e) {
     console.warn('Hiba a haladás mentésekor:', e);
-  }
-
-  // Sync to Supabase in background
-  if (userId && userId !== 'anon_guest') {
-    saveCourseProgressSupabase(updatedProgress);
   }
 
   return updatedProgress;

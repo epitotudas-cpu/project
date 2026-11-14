@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   BookOpen,
   ChevronRight,
@@ -13,12 +13,14 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import type { LearningCourse, CourseProgress, KeyTermItem } from '../lib/supabase';
+import type { LearningCourse, CourseProgress, KeyTermItem, Flashcard } from '../lib/supabase';
 import {
   getCourseBySlug,
   getCourseProgress,
+  fetchUserCourseProgressSupabase,
   toggleChapterCompletion,
-  addTermToFlashcards,
+  fetchFlashcardsFromCloud,
+  saveFlashcardsLocal,
 } from '../services/learningService';
 
 interface CourseDetailPageProps {
@@ -35,14 +37,32 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
   const [activeChapterId, setActiveChapterId] = useState<string>('');
   const [savedTerms, setSavedTerms] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [togglingChapter, setTogglingChapter] = useState(false);
+  const [savingTermId, setSavingTermId] = useState<string | null>(null);
+  const togglingRef = useRef(false);
+  const savingTermRef = useRef(false);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      setActionError(null);
       const data = await getCourseBySlug(slug);
       setCourse(data);
       if (data) {
-        const prog = getCourseProgress(userId, data.id);
+        let prog = getCourseProgress(userId, data.id);
+        if (userId && userId !== 'anon_guest' && !userId.startsWith('guest_')) {
+          try {
+            const cloudProgs = await fetchUserCourseProgressSupabase(userId, data.id);
+            if (cloudProgs.length > 0) {
+              prog = cloudProgs[0];
+            }
+            await fetchFlashcardsFromCloud(userId);
+          } catch (cloudErr) {
+            const msg = cloudErr instanceof Error && cloudErr.message ? cloudErr.message : 'Ismeretlen hiba';
+            setActionError(`A felhőbeli haladás vagy kártyák betöltése részben sikertelen volt: ${msg}`);
+          }
+        }
         setProgress(prog);
         if (data.chapters && data.chapters.length > 0) {
           setActiveChapterId(data.chapters[0].id);
@@ -59,15 +79,56 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
     loadData();
   }, [loadData]);
 
-  const handleChapterToggle = (chapId: string) => {
-    if (!course) return;
-    const updated = toggleChapterCompletion(userId, course.id, chapId, course.chapters.length);
-    setProgress(updated);
+  const handleChapterToggle = async (chapId: string) => {
+    if (!course || togglingRef.current) return;
+    togglingRef.current = true;
+    setTogglingChapter(true);
+    setActionError(null);
+    try {
+      const updated = await toggleChapterCompletion(userId, course.id, chapId, course.chapters.length);
+      setProgress(updated);
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      setActionError(`A fejezet teljesítésének mentése sikertelen volt. (${msg})`);
+    } finally {
+      togglingRef.current = false;
+      setTogglingChapter(false);
+    }
   };
 
-  const handleSaveKeyTerm = (termItem: KeyTermItem) => {
-    addTermToFlashcards(userId, termItem, course?.category_name || 'Tananyag');
-    setSavedTerms((prev) => new Set(prev).add(termItem.id));
+  const handleSaveKeyTerm = async (termItem: KeyTermItem) => {
+    if (savingTermRef.current) return;
+    savingTermRef.current = true;
+    setSavingTermId(termItem.id);
+    setActionError(null);
+    try {
+      const currentCards = await fetchFlashcardsFromCloud(userId);
+      const alreadyExists = currentCards.some(
+        (c) => c.term.toLowerCase() === termItem.term.toLowerCase()
+      );
+      if (!alreadyExists) {
+        const newCard: Flashcard = {
+          id: `fc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          user_id: userId,
+          term: termItem.term,
+          definition: termItem.definition,
+          explanation: termItem.explanation,
+          example: termItem.example,
+          category: course?.category_name || 'Tananyag',
+          tags: ['mentett fogalom'],
+          master_level: 0,
+          created_at: new Date().toISOString(),
+        };
+        await saveFlashcardsLocal(userId, [newCard, ...currentCards]);
+      }
+      setSavedTerms((prev) => new Set(prev).add(termItem.id));
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      setActionError(`A fogalom mentése a felhőbe sikertelen volt. (${msg})`);
+    } finally {
+      savingTermRef.current = false;
+      setSavingTermId(null);
+    }
   };
 
   if (loading) {
@@ -246,7 +307,8 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
                   {/* Mark Chapter Completed Button */}
                   <button
                     onClick={() => handleChapterToggle(activeChapter.id)}
-                    className={`px-5 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center gap-2 shadow-sm shrink-0 cursor-pointer ${
+                    disabled={togglingChapter}
+                    className={`px-5 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center gap-2 shadow-sm shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                       progress?.completed_chapter_ids.includes(activeChapter.id)
                         ? 'bg-emerald-600 text-white shadow-emerald-200'
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300'
@@ -260,6 +322,16 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
                     </span>
                   </button>
                 </div>
+
+                {actionError && (
+                  <div
+                    role="alert"
+                    className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-start gap-2.5"
+                  >
+                    <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
+                    <span>{actionError}</span>
+                  </div>
+                )}
 
                 {/* Chapter Markdown Content */}
                 <div className="prose prose-slate max-w-none text-gray-800 font-medium leading-relaxed whitespace-pre-line">
@@ -297,7 +369,8 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
 
                             <button
                               onClick={() => handleSaveKeyTerm(term)}
-                              className={`w-full py-2 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                              disabled={savingTermId === term.id}
+                              className={`w-full py-2 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                                 isSaved
                                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                   : 'bg-primary text-white hover:bg-primary-700 shadow-xs'
