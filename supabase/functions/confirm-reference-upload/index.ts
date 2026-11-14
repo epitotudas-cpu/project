@@ -10,10 +10,27 @@ declare const Deno: {
   };
 };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://www.epitotudas.hu',
+  'https://epitotudas.hu',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const configured = (Deno.env.get('ALLOWED_ORIGINS') || Deno.env.get('SITE_URL') || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const allowed = new Set([...DEFAULT_ALLOWED_ORIGINS, ...configured]);
+  const origin = req.headers.get('origin') || '';
+  const allowOrigin = allowed.has(origin) ? origin : DEFAULT_ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    Vary: 'Origin',
+  };
+}
 
 /**
  * Egyszerű képfejléc-elemző a dimenziók és a valódi képformátum kinyeréséhez.
@@ -73,6 +90,7 @@ function parseImageHeader(bytes: Uint8Array): { width: number; height: number; m
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
   // CORS Preflight kezelés
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -82,7 +100,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !serviceRoleKey || !anonKey) {
     return new Response(
       JSON.stringify({ success: false, error: 'Szerveroldali konfiguráció hiányos.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
