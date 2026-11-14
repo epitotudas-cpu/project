@@ -82,8 +82,8 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
     return found || null;
   }, [selectedTradeId, trades]);
 
-  const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
-  const [relatedTerms, setRelatedTerms] = useState<any[]>([]);
+  const [relatedArticles, setRelatedArticles] = useState<Array<{ id: string; title: string; slug: string; excerpt?: string | null; read_time?: number | null; featured_image?: string | null }>>([]);
+  const [relatedTerms, setRelatedTerms] = useState<Array<{ id: string; term: string; slug: string; definition?: string | null; category?: string | null }>>([]);
 
   useEffect(() => {
     const trade = activeTrade;

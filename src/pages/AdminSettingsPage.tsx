@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
   Palette,
   Compass,
@@ -166,10 +167,10 @@ export interface SettingsCardDef {
   key: SettingsCategoryKey;
   title: string;
   description: string;
-  icon: any;
+  icon: LucideIcon;
 }
 
-export const SETTINGS_CARDS: SettingsCardDef[] = [
+const SETTINGS_CARDS: SettingsCardDef[] = [
   {
     key: 'general',
     title: 'Alapértelmezett',
@@ -359,10 +360,10 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
           provider: invokeRes.data?.provider || 'Resend',
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSmtpTestResult({
         success: false,
-        message: err.message || 'Hiba történt a teszt e-mail küldése során.',
+        message: err instanceof Error ? err.message : 'Hiba történt a teszt e-mail küldése során.',
       });
     } finally {
       setSmtpTestLoading(false);
@@ -410,7 +411,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
     docKey: 'privacyPolicy' | 'terms',
     index: number,
     field: 'title' | 'text' | 'list',
-    value: any
+    value: string | string[]
   ) => {
     const doc = legalDocs[docKey];
     const updatedSections = [...doc.sections];
@@ -2995,7 +2996,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                         <label className="font-bold text-gray-400 block mb-1">Felsorolási Pontok (Soronként 1 elem, opcionális)</label>
                         <textarea
                           rows={3}
-                          value={(sec as any).list ? (sec as any).list.join('\n') : ''}
+                          value={(sec as { list?: string[] }).list ? (sec as { list?: string[] }).list!.join('\n') : ''}
                           onChange={(e) =>
                             handleUpdateLegalSection(
                               activeLegalDocTab,

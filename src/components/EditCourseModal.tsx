@@ -115,7 +115,7 @@ export default function EditCourseModal({
     setChapters(chapters.filter((c) => c.id !== id));
   };
 
-  const handleChapterChange = (id: string, field: keyof LearningChapter, val: any) => {
+  const handleChapterChange = <K extends keyof LearningChapter>(id: string, field: K, val: LearningChapter[K]) => {
     setChapters(chapters.map((c) => (c.id === id ? { ...c, [field]: val } : c)));
   };
 

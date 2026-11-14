@@ -785,7 +785,7 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
                           {qIdx + 1}. {q.question}
                         </h4>
                         <div className="space-y-2">
-                          {((q as any).options || (q as any).options_json || []).map((opt: string, optIdx: number) => (
+                          {((q as typeof q & { options?: string[]; options_json?: string[] }).options || (q as typeof q & { options_json?: string[] }).options_json || []).map((opt: string, optIdx: number) => (
                             <label
                               key={optIdx}
                               className={`flex items-center gap-3 p-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${

@@ -171,12 +171,13 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
       Object.entries(term.translations).forEach(([k, v]) => {
         const code = k.toLowerCase();
         if (code === 'hu') return; // Skip HU base language in translations panel
+        const obj = typeof v === 'string' || !v ? null : (v as { translated_term?: string; definition?: string; synonyms?: string[]; status?: 'draft' | 'published' | 'reviewed'; source?: string });
         initial[code] = {
-          translated_term: typeof v === 'string' ? v : (v as any)?.translated_term || '',
-          definition: typeof v === 'string' ? '' : (v as any)?.definition || '',
-          synonyms: typeof v === 'string' ? '' : Array.isArray((v as any)?.synonyms) ? (v as any).synonyms.join(', ') : '',
-          status: typeof v === 'string' ? 'published' : (v as any)?.status || 'published',
-          source: typeof v === 'string' ? '' : (v as any)?.source || '',
+          translated_term: typeof v === 'string' ? v : obj?.translated_term || '',
+          definition: typeof v === 'string' ? '' : obj?.definition || '',
+          synonyms: typeof v === 'string' ? '' : Array.isArray(obj?.synonyms) ? obj.synonyms.join(', ') : '',
+          status: typeof v === 'string' ? 'published' : obj?.status || 'published',
+          source: typeof v === 'string' ? '' : obj?.source || '',
         };
       });
     }
@@ -235,12 +236,13 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
         Object.entries(term.translations).forEach(([k, v]) => {
           const code = k.toLowerCase();
           if (code === 'hu') return;
+          const obj = typeof v === 'string' || !v ? null : (v as { translated_term?: string; definition?: string; synonyms?: string[]; status?: 'draft' | 'published' | 'reviewed'; source?: string });
           initial[code] = {
-            translated_term: typeof v === 'string' ? v : (v as any)?.translated_term || '',
-            definition: typeof v === 'string' ? '' : (v as any)?.definition || '',
-            synonyms: typeof v === 'string' ? '' : Array.isArray((v as any)?.synonyms) ? (v as any).synonyms.join(', ') : '',
-            status: typeof v === 'string' ? 'published' : (v as any)?.status || 'published',
-            source: typeof v === 'string' ? '' : (v as any)?.source || '',
+            translated_term: typeof v === 'string' ? v : obj?.translated_term || '',
+            definition: typeof v === 'string' ? '' : obj?.definition || '',
+            synonyms: typeof v === 'string' ? '' : Array.isArray(obj?.synonyms) ? obj.synonyms.join(', ') : '',
+            status: typeof v === 'string' ? 'published' : obj?.status || 'published',
+            source: typeof v === 'string' ? '' : obj?.source || '',
           };
         });
         setDynTranslations(initial);
@@ -364,7 +366,7 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
     setError(null);
     try {
       // Build translations object for glossary_terms.translations JSONB
-      const translationsPayload: Record<string, any> = {};
+      const translationsPayload: Record<string, Record<string, unknown>> = {};
 
       Object.entries(dynTranslations).forEach(([k, item]) => {
         const code = k.toLowerCase();

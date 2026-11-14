@@ -23,7 +23,7 @@ import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
 import { useGlossaryLanguages } from '../services/languageService';
 import FormattedText from './FormattedText';
 
-export function getEmbedVideoUrl(url: string | null | undefined): string | null {
+function getEmbedVideoUrl(url: string | null | undefined): string | null {
   if (!url || !url.trim()) return null;
   const cleanUrl = url.trim();
 
@@ -411,7 +411,8 @@ export default function TermDetailModal({
                 {activeLanguages
                   .filter((lang) => lang.iso_code !== 'hu')
                   .map((lang) => {
-                    const transVal = (translations as Record<string, any>)[lang.iso_code] || (translations as Record<string, any>)[lang.iso_code.toUpperCase()];
+                    const transMap = translations as Record<string, string | { translated_term?: string } | undefined>;
+                    const transVal = transMap[lang.iso_code] || transMap[lang.iso_code.toUpperCase()];
                     const text = typeof transVal === 'string' ? transVal : transVal?.translated_term;
 
                     return (

@@ -620,7 +620,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setActiveTab(t.id as any)}
+                  onClick={() => setActiveTab(t.id as typeof activeTab)}
                   style={{
                     backgroundColor: activeTab === t.id ? cardBg : 'transparent',
                     color: activeTab === t.id ? cardHighlight : textColor,
@@ -735,7 +735,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                       <label className="font-bold text-gray-300 block mb-1">Státusz</label>
                       <select
                         value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as typeof formData.status })}
                         style={fieldStyle}
                         className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
@@ -934,7 +934,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                         />
                         <select
                           value={docTypeInput}
-                          onChange={(e) => setDocTypeInput(e.target.value as any)}
+                          onChange={(e) => setDocTypeInput(e.target.value as typeof docTypeInput)}
                           style={fieldStyle}
                           className="border rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer"
                         >

@@ -204,7 +204,7 @@ export async function saveGlossaryLanguage(payload: Partial<GlossaryLanguage> & 
       .upsert({
         ...langToSave,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'iso_code' })
+      } as never, { onConflict: 'iso_code' })
       .select('*')
       .single();
 
@@ -240,7 +240,7 @@ export async function toggleLanguageActive(id: string): Promise<GlossaryLanguage
   try {
     await supabase
       .from('glossary_languages')
-      .update({ is_active: !target.is_active, updated_at: new Date().toISOString() } as any)
+      .update({ is_active: !target.is_active, updated_at: new Date().toISOString() } as never)
       .eq('id', target.id);
   } catch (err) {
     console.warn('Cloud toggle language active info:', err);

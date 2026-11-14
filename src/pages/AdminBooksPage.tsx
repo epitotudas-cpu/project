@@ -244,7 +244,7 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
     setStoreOffers([...storeOffers, newOffer]);
   };
 
-  const handleUpdateStoreOffer = (id: string, field: keyof BookStoreOffer, value: any) => {
+  const handleUpdateStoreOffer = <K extends keyof BookStoreOffer>(id: string, field: K, value: BookStoreOffer[K]) => {
     setStoreOffers(
       storeOffers.map((o) => (o.id === id ? { ...o, [field]: value } : o))
     );
@@ -576,7 +576,7 @@ export default function AdminBooksPage({ initialSearchQuery }: AdminBooksPagePro
               sampleExcerpt: sampleExcerpt.trim(),
               rating,
               downloadUrl: digitalUrl.trim(),
-              digitalAccessType: digitalAccessObj.digitalAccessType as any,
+              digitalAccessType: digitalAccessObj.digitalAccessType as typeof b.digitalAccessType,
               digitalFileUrl: digitalAccessObj.digitalFileUrl,
               digitalPreviewUrl: digitalAccessObj.digitalPreviewUrl,
               digitalLinkLabel: digitalAccessObj.digitalLinkLabel,

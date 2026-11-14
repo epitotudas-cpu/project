@@ -280,9 +280,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     return new Response(
-      JSON.stringify({ success: false, error: err?.message || 'Váratlan szerverhiba történt.' }),
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : 'Váratlan szerverhiba történt.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -11,7 +11,7 @@ const supabaseAnonKey = (rawKey && typeof rawKey === 'string' && rawKey.trim()) 
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => await fn(),
+    lock: async <R,>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => await fn(),
   },
 });
 

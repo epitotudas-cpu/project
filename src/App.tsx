@@ -1,3 +1,5 @@
+import type { EditorView } from './components/EditorLayout';
+import type { PartnerView } from './components/PartnerLayout';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -275,7 +277,7 @@ function PageFallback() {
 }
 
 function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const [editorView, setEditorView] = useState<any>('dashboard');
+  const [editorView, setEditorView] = useState<EditorView>('dashboard');
   return (
     <EditorLayout onNavigate={onNavigate} activeView={editorView} onNavigateView={setEditorView}>
       {editorView === 'dashboard' && <EditorDashboardPage onNavigateView={setEditorView} />}
@@ -297,7 +299,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
 function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params?: { partnerSlug?: string; slug?: string; articleSlug?: string }) => void }) {
   const { user, profile } = useAuth();
   const toast = useToast();
-  const [partnerView, setPartnerView] = useState<any>('dashboard');
+  const [partnerView, setPartnerView] = useState<PartnerView>('dashboard');
   const [memberRole, setMemberRole] = useState<string | null>(null);
   const [isSchoolCategory, setIsSchoolCategory] = useState(false);
   const [currentPartner, setCurrentPartner] = useState<Partner | null>(null);
@@ -391,7 +393,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
 
             if (pRec) {
               setCurrentPartner(pRec as Partner);
-              if (isEdu(pRec.category, (pRec as any).partner_type)) {
+              if (isEdu(pRec.category, (pRec as ExtendedPartner).partner_type)) {
                 setIsSchoolCategory(true);
               }
             }
@@ -423,7 +425,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                 setMemberRole(res.assigned_role || 'instructor');
                 if (pRec) {
                   setCurrentPartner(pRec as Partner);
-                  if (isEdu(pRec.category, (pRec as any).partner_type)) {
+                  if (isEdu(pRec.category, (pRec as ExtendedPartner).partner_type)) {
                     setIsSchoolCategory(true);
                   } else if (isEdu(invByEmail.organization_category, null)) {
                     setIsSchoolCategory(true);
@@ -447,7 +449,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
           if (partnerByEmail) {
             setCurrentPartner(partnerByEmail as Partner);
             setMemberRole('owner');
-            if (isEdu(partnerByEmail.category, (partnerByEmail as any).partner_type)) {
+            if (isEdu(partnerByEmail.category, (partnerByEmail as ExtendedPartner).partner_type)) {
               setIsSchoolCategory(true);
             }
             return;
@@ -560,7 +562,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
           <PartnerDashboardPage
             onNavigateView={setPartnerView}
             offersCount={offersList.filter((o) => o.status === 'Aktív').length}
-            servicesCount={(effectivePartner as any).services?.length || 0}
+            servicesCount={(effectivePartner as ExtendedPartner).services?.length || 0}
             profileViews={analytics.profileViews}
             articlesCount={analytics.articlesCount}
           />
@@ -577,9 +579,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                 <div className="flex items-start gap-4">
                   <div
                     className={`w-14 h-14 rounded-2xl border border-blue-500/30 p-1 flex items-center justify-center shrink-0 overflow-hidden ${
-                      (effectivePartner as any).logo_bg === 'white'
+                      (effectivePartner as ExtendedPartner).logo_bg === 'white'
                         ? 'bg-white'
-                        : (effectivePartner as any).logo_bg === 'light_gray'
+                        : (effectivePartner as ExtendedPartner).logo_bg === 'light_gray'
                         ? 'bg-gray-200'
                         : 'bg-blue-500/10'
                     }`}
@@ -710,7 +712,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                       const updated = await updatePartner(effectivePartner.id, {
                         ...effectivePartner,
                         ...data,
-                      } as any);
+                      } as Parameters<typeof updatePartner>[1]);
                       setCurrentPartner(updated);
                       setTimeout(() => {
                         setIsEditorOpen(false);
@@ -811,8 +813,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                       setNewOfferDesc('');
                       setShowNewOfferForm(false);
                       toast.success('Ajánlat sikeresen mentve és közzétéve!');
-                    } catch (err: any) {
-                      toast.error(err?.message || 'Hiba történt az ajánlat mentése során.');
+                    } catch (err: unknown) {
+                      toast.error(err instanceof Error ? err.message : 'Hiba történt az ajánlat mentése során.');
                     } finally {
                       setSavingOffer(false);
                     }
@@ -862,8 +864,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                               const updated = await updatePartnerOffer(off.id, { status: nextStatus });
                               setOffersList((prev) => prev.map((item) => (item.id === off.id ? updated : item)));
                               toast.success(`Ajánlat állapota frissítve: ${nextStatus}`);
-                            } catch (err: any) {
-                              toast.error(err?.message || 'Hiba történt az állapot módosításakor.');
+                            } catch (err: unknown) {
+                              toast.error(err instanceof Error ? err.message : 'Hiba történt az állapot módosításakor.');
                             }
                           }}
                           className="p-1 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
@@ -910,8 +912,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                 await deletePartnerOffer(offerToDelete.id);
                 setOffersList((prev) => prev.filter((item) => item.id !== offerToDelete.id));
                 toast.success('Ajánlat törölve.');
-              } catch (err: any) {
-                toast.error(err?.message || 'Hiba történt az ajánlat törlése során.');
+              } catch (err: unknown) {
+                toast.error(err instanceof Error ? err.message : 'Hiba történt az ajánlat törlése során.');
               } finally {
                 setOfferToDelete(null);
               }

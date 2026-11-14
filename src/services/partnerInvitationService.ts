@@ -203,9 +203,9 @@ export async function sendInvitationEmail(
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.warn('Email trigger warning:', err);
-    return { success: false, requires_manual_fallback: true, error: err.message || String(err) };
+    return { success: false, requires_manual_fallback: true, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -234,7 +234,7 @@ export async function acceptInvitation(
 
   const { data, error } = await supabase.rpc('accept_partner_invitation', {
     invite_code: cleanCode,
-    org_payload: orgPayload ? (orgPayload as any) : null,
+    org_payload: orgPayload ? (orgPayload as Record<string, unknown>) : null,
   });
 
   if (error) {
@@ -261,7 +261,7 @@ export async function listInvitations(partnerId?: string): Promise<PartnerInvita
     return [];
   }
 
-  return (data || []).map((row: any) => ({
+  return (data || []).map((row: PartnerInvitation & { partners?: { name?: string }; organization_name?: string }) => ({
     ...row,
     partner_name: row.partners?.name || row.organization_name || 'Új Szervezet',
   }));

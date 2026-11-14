@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
   Megaphone,
@@ -91,10 +92,10 @@ export interface AdModuleCardDef {
   key: AdCategoryKey;
   title: string;
   description: string;
-  icon: any;
+  icon: LucideIcon;
 }
 
-export const AD_MODULE_CARDS: AdModuleCardDef[] = [
+const AD_MODULE_CARDS: AdModuleCardDef[] = [
   {
     key: 'campaigns',
     title: 'Kampányok',
@@ -222,7 +223,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
   const textColor = getContrastTextColor(cardBg);
   const inputTextColor = getContrastTextColor(inputBg);
 
-  function settingsCardBg(s: any) {
+  function settingsCardBg(s: { adminCardBgColor?: string }) {
     return s.adminCardBgColor || '#111111';
   }
 
@@ -308,9 +309,9 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
         setBannerImageUrl('');
         setSavedSuccess(false);
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Hiba a kampány mentésekor:', err);
-      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentés során: ${err?.message || 'Ismeretlen hiba'}` });
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentés során: ${err instanceof Error ? err.message : 'Ismeretlen hiba'}` });
     }
   };
 
@@ -365,8 +366,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
         setModalFeedback(null);
         setSavedSuccess(false);
       }, 1000);
-    } catch (err: any) {
-      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err?.message || 'Sikertelen mentés'}` });
+    } catch (err: unknown) {
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err instanceof Error ? err.message : 'Sikertelen mentés'}` });
     }
   };
 
@@ -409,8 +410,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
         setModalFeedback(null);
         setSavedSuccess(false);
       }, 1000);
-    } catch (err: any) {
-      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err?.message || 'Sikertelen mentés'}` });
+    } catch (err: unknown) {
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err instanceof Error ? err.message : 'Sikertelen mentés'}` });
     }
   };
 
@@ -484,8 +485,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
         setModalFeedback(null);
         setSavedSuccess(false);
       }, 1000);
-    } catch (err: any) {
-      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err?.message || 'Sikertelen mentés'}` });
+    } catch (err: unknown) {
+      setModalFeedback({ type: 'error', message: `⚠️ Hiba a mentéskor: ${err instanceof Error ? err.message : 'Sikertelen mentés'}` });
     }
   };
 
@@ -825,8 +826,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                         saveFallbackVideoSettings(fallbackSettings);
                         setFallbackSaveStatus({ type: 'success', message: '✓ Tartalék beállítások sikeresen mentve!' });
                         setTimeout(() => setFallbackSaveStatus(null), 3500);
-                      } catch (err: any) {
-                        setFallbackSaveStatus({ type: 'error', message: `⚠️ Hiba: ${err?.message || 'Sikertelen mentés'}` });
+                      } catch (err: unknown) {
+                        setFallbackSaveStatus({ type: 'error', message: `⚠️ Hiba: ${err instanceof Error ? err.message : 'Sikertelen mentés'}` });
                       }
                     }}
                     style={{ backgroundColor: cardHighlight, color: '#000000' }}
@@ -926,8 +927,8 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                           saveTileAdSettings(tileAdSettings);
                           setTileSaveStatus({ type: 'success', message: '✓ Csempe beállítások mentve!' });
                           setTimeout(() => setTileSaveStatus(null), 3500);
-                        } catch (err: any) {
-                          setTileSaveStatus({ type: 'error', message: `⚠️ Hiba: ${err?.message || 'Sikertelen mentés'}` });
+                        } catch (err: unknown) {
+                          setTileSaveStatus({ type: 'error', message: `⚠️ Hiba: ${err instanceof Error ? err.message : 'Sikertelen mentés'}` });
                         }
                       }}
                       style={{ backgroundColor: cardHighlight, color: '#000000' }}
@@ -1492,7 +1493,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               </div>
               <div>
                 <label className="font-bold text-gray-400 block mb-1">Elhelyezés</label>
-                <select value={placementSlot} onChange={(e) => setPlacementSlot(e.target.value as any)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
+                <select value={placementSlot} onChange={(e) => setPlacementSlot(e.target.value as typeof placementSlot)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
                   <option value="top_banner">Főoldali Fejléc (Top Banner)</option>
                   <option value="sidebar">Oldalsáv Banner</option>
                   <option value="in_feed">Eszközök &amp; In-feed Banner</option>
@@ -1554,7 +1555,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               </div>
               <div>
                 <label className="font-bold text-gray-400 block mb-1">Elhelyezés</label>
-                <select value={ctrPlacementSlot} onChange={(e) => setCtrPlacementSlot(e.target.value as any)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
+                <select value={ctrPlacementSlot} onChange={(e) => setCtrPlacementSlot(e.target.value as typeof ctrPlacementSlot)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
                   <option value="top_banner">Főoldali Fejléc (Top Banner)</option>
                   <option value="sidebar">Oldalsáv Banner</option>
                   <option value="in_feed">Eszközök &amp; In-feed Banner</option>
@@ -1576,7 +1577,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               </div>
               <div>
                 <label className="font-bold text-gray-400 block mb-1">Státusz</label>
-                <select value={ctrStatus} onChange={(e) => setCtrStatus(e.target.value as any)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
+                <select value={ctrStatus} onChange={(e) => setCtrStatus(e.target.value as typeof ctrStatus)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
                   <option value="accepted">Elfogadott (Aktív)</option>
                   <option value="pending_acceptance">Elfogadásra vár</option>
                   <option value="draft">Piszkozat</option>
@@ -1641,7 +1642,7 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
               </div>
               <div>
                 <label className="font-bold text-gray-400 block mb-1">Státusz</label>
-                <select value={payStatus} onChange={(e) => setPayStatus(e.target.value as any)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
+                <select value={payStatus} onChange={(e) => setPayStatus(e.target.value as typeof payStatus)} style={fieldStyle} className="w-full border rounded-xl p-2.5">
                   <option value="unpaid">Kifizetetlen (Unpaid)</option>
                   <option value="paid">Kifizetve (Paid)</option>
                   <option value="overdue">Késedelmes (Overdue)</option>

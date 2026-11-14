@@ -38,6 +38,8 @@ export type EditorView =
   | 'moderation'
   | 'settings';
 
+import type { LucideIcon } from 'lucide-react';
+
 interface EditorLayoutProps {
   onNavigate: (page: string) => void;
   activeView: EditorView;
@@ -45,7 +47,7 @@ interface EditorLayoutProps {
   children: React.ReactNode;
 }
 
-const EDITOR_NAV_ITEMS: Array<{ id: EditorView; moduleId: string; label: string; icon: any }> = [
+const EDITOR_NAV_ITEMS: Array<{ id: EditorView; moduleId: string; label: string; icon: LucideIcon }> = [
   { id: 'dashboard', moduleId: 'articles', label: 'Szerkesztői Áttekintés', icon: LayoutDashboard },
   { id: 'articles', moduleId: 'articles', label: 'Cikkek & Tudásanyagok', icon: FileText },
   { id: 'utmutatok', moduleId: 'guides', label: 'Kivitelezési Útmutatók', icon: BookMarked },

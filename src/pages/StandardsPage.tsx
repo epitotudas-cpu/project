@@ -115,7 +115,7 @@ export default function StandardsPage({ onNavigate }: StandardsPageProps) {
         selectedCardCategories.length === 0 || selectedCardCategories.includes(card.type);
       const matchesAudience =
         selectedCardAudiences.length === 0 ||
-        selectedCardAudiences.some((aud) => card.target_audience.includes(aud as any));
+        selectedCardAudiences.some((aud) => card.target_audience.includes(aud as typeof card.target_audience[number]));
 
       const q = cardSearchQuery.toLowerCase().trim();
       const matchesQuery =
@@ -532,7 +532,7 @@ export default function StandardsPage({ onNavigate }: StandardsPageProps) {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setSelectedAudience(tab.id as any)}
+                        onClick={() => setSelectedAudience(tab.id as typeof selectedAudience)}
                         className={`flex-1 min-w-fit px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
                           active ? 'bg-primary text-white shadow-sm' : 'text-gray-700 hover:text-gray-900'
                         }`}

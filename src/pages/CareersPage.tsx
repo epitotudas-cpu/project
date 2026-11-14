@@ -134,8 +134,8 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
         setCoverNote('');
         setApplyError(null);
       }, 2000);
-    } catch (err: any) {
-      setApplyError(err?.message || 'Hiba történt a jelentkezés beküldésekor.');
+    } catch (err: unknown) {
+      setApplyError(err instanceof Error ? err.message : 'Hiba történt a jelentkezés beküldésekor.');
     }
   }
 

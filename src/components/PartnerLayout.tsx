@@ -44,6 +44,8 @@ export type PartnerView =
   | 'catalog'
   | 'partner_stats';
 
+import type { LucideIcon } from 'lucide-react';
+
 interface PartnerLayoutProps {
   onNavigate: (page: string) => void;
   activeView: PartnerView;
@@ -53,7 +55,7 @@ interface PartnerLayoutProps {
   children: React.ReactNode;
 }
 
-const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: string; icon: any }> = [
+const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: string; icon: LucideIcon }> = [
   { id: 'dashboard', moduleId: 'partner_profile', label: 'Partner Áttekintés', icon: LayoutDashboard },
   { id: 'partner_profile', moduleId: 'partner_profile', label: 'Saját Partnerprofil', icon: Building2 },
   { id: 'partner_offers', moduleId: 'partner_offers', label: 'Saját Ajánlatok & Akciók', icon: Tag },
@@ -134,7 +136,7 @@ export default function PartnerLayout({
     ? 'Iskolai Adminisztrátor'
     : 'Partner';
 
-  const teacherNavItems: Array<{ id: PartnerView; moduleId: string; label: string; icon: any }> = [
+  const teacherNavItems: Array<{ id: PartnerView; moduleId: string; label: string; icon: LucideIcon }> = [
     { id: 'dashboard', moduleId: 'partner_profile', label: 'Áttekintés', icon: LayoutDashboard },
     { id: 'classes', moduleId: 'partner_profile', label: 'Osztályaim', icon: GraduationCap },
     { id: 'students', moduleId: 'partner_profile', label: 'Tanulóim', icon: Users },

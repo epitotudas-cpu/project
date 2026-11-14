@@ -358,7 +358,7 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
       const renderContext = {
         canvasContext: ctx,
         viewport: viewport,
-        canvas: canvas as any,
+        canvas: canvas as HTMLCanvasElement,
       };
 
       await page.render(renderContext).promise;
@@ -391,7 +391,7 @@ export async function generateCoverFromPdfUrl(urlStr: string): Promise<PdfCoverR
       success: false,
       error: 'A dokumentum nem érhető el vagy nem tölthető le.',
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('PDF Cover generation error:', err);
     return {
       success: false,

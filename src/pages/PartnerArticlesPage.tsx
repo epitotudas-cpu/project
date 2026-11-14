@@ -232,8 +232,8 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
         toast.success(targetStatus === 'pending' ? 'Új cikk beküldve jóváhagyásra!' : 'Új piszkozat mentve!');
       }
       setIsModalOpen(false);
-    } catch (err: any) {
-      toast.error(err?.message || 'Hiba történt a cikk mentése során.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a cikk mentése során.');
     }
   };
 
@@ -532,7 +532,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setActiveTab(t.id as any)}
+                  onClick={() => setActiveTab(t.id as typeof activeTab)}
                   className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
                     activeTab === t.id ? 'border-accent text-primary bg-white rounded-t-lg' : 'border-transparent text-gray-500 hover:text-gray-800'
                   }`}
@@ -560,7 +560,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                           <button
                             key={t.id}
                             type="button"
-                            onClick={() => setFormData({ ...formData, article_type: t.id as any })}
+                            onClick={() => setFormData({ ...formData, article_type: t.id as typeof formData.article_type })}
                             className={`p-3 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                               formData.article_type === t.id
                                 ? 'bg-primary text-white border-primary shadow-sm'
@@ -630,7 +630,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                       <label className="font-bold text-gray-700 block mb-1">Nehézségi Szint</label>
                       <select
                         value={formData.difficulty || 'intermediate'}
-                        onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as typeof formData.difficulty })}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
                       >
                         <option value="beginner">Kezdő</option>
@@ -850,8 +850,8 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
               await deleteArticle(deleteArticleId);
               setAllItems((prev) => prev.filter((i) => i.id !== deleteArticleId));
               toast.success('Cikk törölve.');
-            } catch (err: any) {
-              toast.error(err?.message || 'Hiba történt a cikk törlésekor.');
+            } catch (err: unknown) {
+              toast.error(err instanceof Error ? err.message : 'Hiba történt a cikk törlésekor.');
             }
           }
           setDeleteArticleId(null);

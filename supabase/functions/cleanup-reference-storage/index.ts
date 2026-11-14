@@ -71,11 +71,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
           p_lock_token: task.lock_token,
         });
         deletedCount++;
-      } catch (err: any) {
+      } catch (err: unknown) {
         await adminClient.rpc('fail_storage_deletion_task', {
           p_task_id: task.task_id,
           p_lock_token: task.lock_token,
-          p_error_message: err?.message || 'Ismeretlen törlési hiba',
+          p_error_message: err instanceof Error ? err.message : 'Ismeretlen törlési hiba',
         });
       }
     }
@@ -84,8 +84,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err?.message || 'Hiba a takarítás során' }), {
+  } catch (err: unknown) {
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Hiba a takarítás során' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

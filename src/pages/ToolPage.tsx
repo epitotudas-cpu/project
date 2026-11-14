@@ -181,8 +181,11 @@ function FeaturedPartnerOffers({ partnerAds }: FeaturedPartnerOffersProps) {
   const featuredAd = partnerAds[0];
   const secondaryAds = partnerAds.slice(1);
 
+  type AdWithExtras = AdCampaign & { description?: string; excerpt?: string; summary?: string; category?: string };
+
   const getShortDesc = (ad: AdCampaign) => {
-    const rawDesc = (ad as any).description || (ad as any).excerpt || (ad as any).summary;
+    const ext = ad as AdWithExtras;
+    const rawDesc = ext.description || ext.excerpt || ext.summary;
     if (rawDesc && typeof rawDesc === 'string') {
       if (rawDesc.length <= 120) return rawDesc;
       return rawDesc.slice(0, 117).trim() + '...';
@@ -230,9 +233,9 @@ function FeaturedPartnerOffers({ partnerAds }: FeaturedPartnerOffersProps) {
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-bold rounded-lg bg-gray-100 text-gray-600 border border-gray-200">
                   Hivatalos partner
                 </span>
-                {(featuredAd as any).category && (
+                {(featuredAd as AdWithExtras).category && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-medium rounded-lg bg-slate-100 text-slate-600">
-                    {(featuredAd as any).category}
+                    {(featuredAd as AdWithExtras).category}
                   </span>
                 )}
               </div>

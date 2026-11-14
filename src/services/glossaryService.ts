@@ -397,7 +397,7 @@ export async function upsertTermTranslation(payload: {
 
   const { data, error } = await supabase
     .from('glossary_term_translations')
-    .upsert(row as any, { onConflict: 'glossary_term_id,language_code' })
+    .upsert(row as never, { onConflict: 'glossary_term_id,language_code' })
     .select('*')
     .single();
 

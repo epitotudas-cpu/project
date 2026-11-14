@@ -41,7 +41,7 @@ import FormattedText from '../components/FormattedText';
 
 interface PartnerDetailPageProps {
   partnerSlug: string | null;
-  onNavigate: (page: string, params?: Record<string, any>) => void;
+  onNavigate: (page: string, params?: Record<string, unknown>) => void;
 }
 
 function isValidLogoUrl(url: string | null | undefined): boolean {

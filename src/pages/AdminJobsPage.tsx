@@ -122,7 +122,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
     setEditingJob(job);
     setCompanyName(job.company_name);
     setTitle(job.title);
-    setJobType(job.job_type as any);
+    setJobType(job.job_type as JobPosting['job_type']);
     setLocation(job.location);
     setSalaryRange(job.salary_range || '');
     setDescription(job.description);
@@ -421,7 +421,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
                   <label style={{ color: textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563' }} className="font-bold block mb-1">Foglalkoztatás Típusa</label>
                   <select
                     value={jobType}
-                    onChange={(e) => setJobType(e.target.value as any)}
+                    onChange={(e) => setJobType(e.target.value as JobPosting['job_type'])}
                     style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
                     className="w-full border rounded-xl px-4 py-2 focus:outline-none transition-colors"
                   >

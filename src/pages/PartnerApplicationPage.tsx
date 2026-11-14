@@ -128,8 +128,8 @@ export default function PartnerApplicationPage({ onNavigate }: PartnerApplicatio
       });
 
       setSubmitted(true);
-    } catch (err: any) {
-      const msg = (err?.message || '').toLowerCase();
+    } catch (err: unknown) {
+      const msg = (err instanceof Error ? err.message : '').toLowerCase();
       if (
         msg.includes('already registered') ||
         msg.includes('already exists') ||
@@ -140,7 +140,7 @@ export default function PartnerApplicationPage({ onNavigate }: PartnerApplicatio
       } else if (msg.includes('invalid email') || msg.includes('format')) {
         setError('Kérjük, adj meg érvényes e-mail-címet.');
       } else {
-        setError(err?.message || 'Hiba történt a jelentkezés beküldésekor.');
+        setError(err instanceof Error ? err.message : 'Hiba történt a jelentkezés beküldésekor.');
       }
     } finally {
       setLoading(false);

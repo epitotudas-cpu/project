@@ -110,6 +110,7 @@ export interface ParsedVideoInfo {
   errorMessage?: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function parseAndSanitizeVideoInput(input: string | undefined): ParsedVideoInfo {
   if (!input || !input.trim()) {
     return { provider: null, embedUrl: null, isValid: false };
@@ -232,6 +233,7 @@ export interface ArticleSource {
   status?: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const SOURCE_TYPE_MAP: Record<SourceType, { label: string; icon: string }> = {
   jogszabaly: { label: 'Jogszabály', icon: '⚖️' },
   intezmenyi: { label: 'Hivatalos intézményi forrás', icon: '🏛️' },
@@ -289,7 +291,7 @@ function formFromArticle(article: Article): FormState {
     title: article.title,
     slug: article.slug,
     excerpt: article.excerpt ?? '',
-    article_type: (article.article_type as any) || 'utmutatok',
+    article_type: (article.article_type as FormState['article_type']) || 'utmutatok',
     category_id: article.category_id ?? '',
     subcategory_name: article.subcategory_name ?? '',
     status: article.status || 'draft',
@@ -304,7 +306,7 @@ function formFromArticle(article: Article): FormState {
   };
 }
 
-export function calculateReadTimeFromBlocks(blocks: ContentBlock[]): number {
+function calculateReadTimeFromBlocks(blocks: ContentBlock[]): number {
   let wordCount = 0;
   blocks.forEach((b) => {
     if (b.content) wordCount += b.content.trim().split(/\s+/).length;
@@ -319,7 +321,7 @@ export function calculateReadTimeFromBlocks(blocks: ContentBlock[]): number {
 // DATA SERIALIZATION & BACKWARD COMPATIBILITY HELPERS
 // ----------------------------------------------------------------------
 
-export function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEOData, sources?: ArticleSource[]): string {
+function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEOData, sources?: ArticleSource[]): string {
   let md = '';
 
   blocks.forEach((block) => {
@@ -453,6 +455,7 @@ export function serializeBlocksToContent(blocks: ContentBlock[], seo: GuideSEODa
   return md;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function parseBlocksFromContent(content: string): { blocks: ContentBlock[]; seo: GuideSEOData; sources: ArticleSource[] } {
   if (!content) {
     return { blocks: [], seo: { ...DEFAULT_SEO }, sources: [] };
@@ -477,7 +480,34 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
   const legacyMatch = content.match(/\[EPITOTUDAS_GUIDE_DATA:(.*)\]$/s);
   if (legacyMatch) {
     try {
-      const g = JSON.parse(legacyMatch[1]);
+      interface LegacyGuideData {
+        introduction?: string;
+        warnings?: Array<{ type?: ContentBlock['warningType']; text?: string }>;
+        workflow?: Array<{ title?: string }>;
+        materials?: Array<{ name?: string; sizeType?: string; unit?: string; note?: string }>;
+        tools?: Array<{ category?: string; name?: string; note?: string }>;
+        safety?: Array<{ hazardName?: string; hazardType?: string; prevention?: string; explanation?: string }>;
+        steps?: Array<{
+          title?: string;
+          whatWeDo?: string;
+          howWeDo?: string;
+          whatToWatch?: string;
+          commonMistake?: string;
+          verification?: string;
+          imageUrl?: string;
+          imageAlt?: string;
+          imageCaption?: string;
+          imagePrompt?: string;
+        }>;
+        techData?: Array<{ element?: string; value?: string; unit?: string; valueType?: string; note?: string }>;
+        mistakes?: Array<{ mistake?: string; whyProblem?: string; prevention?: string; fix?: string }>;
+        highlights?: Array<{ type?: ContentBlock['highlightType']; title?: string; content?: string }>;
+        checklist?: Array<{ id?: string; text?: string }>;
+        calculation?: { inputData?: string; formula?: string; calculation?: string; result?: string; note?: string };
+        summary?: string;
+        seo?: Partial<GuideSEOData>;
+      }
+      const g = JSON.parse(legacyMatch[1]) as LegacyGuideData;
       const blocks: ContentBlock[] = [];
 
       if (g.introduction?.trim()) {
@@ -485,7 +515,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
       }
 
       if (g.warnings && g.warnings.length > 0) {
-        g.warnings.forEach((w: any, idx: number) => {
+        g.warnings.forEach((w, idx: number) => {
           blocks.push({
             id: `legacy_warn_${idx}`,
             type: 'warning',
@@ -500,7 +530,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
         blocks.push({
           id: 'legacy_wf_list',
           type: 'numbered_list',
-          items: g.workflow.map((item: any) => item.title || ''),
+          items: g.workflow.map((item) => item.title || ''),
         });
       }
 
@@ -510,7 +540,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
           id: 'legacy_mat_table',
           type: 'table',
           tableHeaders: ['Anyag', 'Méret / Típus', 'Egység', 'Megjegyzés'],
-          tableRows: g.materials.map((m: any) => [m.name || '', m.sizeType || '', m.unit || '', m.note || '']),
+          tableRows: g.materials.map((m) => [m.name || '', m.sizeType || '', m.unit || '', m.note || '']),
         });
       }
 
@@ -519,13 +549,13 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
         blocks.push({
           id: 'legacy_tool_list',
           type: 'list',
-          items: g.tools.map((t: any) => `[${t.category || 'Szerszám'}] ${t.name || ''}${t.note ? `: ${t.note}` : ''}`),
+          items: g.tools.map((t) => `[${t.category || 'Szerszám'}] ${t.name || ''}${t.note ? `: ${t.note}` : ''}`),
         });
       }
 
       if (g.safety && g.safety.length > 0) {
         blocks.push({ id: 'legacy_safe_title', type: 'heading', level: 'h2', content: 'Munkavédelem & Biztonság' });
-        g.safety.forEach((s: any, idx: number) => {
+        g.safety.forEach((s, idx: number) => {
           blocks.push({
             id: `legacy_safe_${idx}`,
             type: 'warning',
@@ -537,7 +567,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
 
       if (g.steps && g.steps.length > 0) {
         blocks.push({ id: 'legacy_steps_title', type: 'heading', level: 'h2', content: 'Lépésenkénti Kivitelezés' });
-        g.steps.forEach((st: any, idx: number) => {
+        g.steps.forEach((st, idx: number) => {
           blocks.push({
             id: `legacy_step_h_${idx}`,
             type: 'heading',
@@ -575,13 +605,13 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
           id: 'legacy_tech_table',
           type: 'table',
           tableHeaders: ['Elem / Művelet', 'Érték', 'Egység', 'Típus', 'Megjegyzés'],
-          tableRows: g.techData.map((td: any) => [td.element || '', td.value || '', td.unit || '', td.valueType || '', td.note || '']),
+          tableRows: g.techData.map((td) => [td.element || '', td.value || '', td.unit || '', td.valueType || '', td.note || '']),
         });
       }
 
       if (g.mistakes && g.mistakes.length > 0) {
         blocks.push({ id: 'legacy_mistakes_title', type: 'heading', level: 'h2', content: 'Gyakori Hibák' });
-        g.mistakes.forEach((m: any, idx: number) => {
+        g.mistakes.forEach((m, idx: number) => {
           blocks.push({
             id: `legacy_mistake_${idx}`,
             type: 'highlight',
@@ -593,7 +623,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
       }
 
       if (g.highlights && g.highlights.length > 0) {
-        g.highlights.forEach((h: any, idx: number) => {
+        g.highlights.forEach((h, idx: number) => {
           blocks.push({
             id: `legacy_hl_${idx}`,
             type: 'highlight',
@@ -609,7 +639,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
         blocks.push({
           id: 'legacy_chk_list',
           type: 'checklist',
-          checkItems: g.checklist.map((c: any) => ({ id: c.id || Date.now().toString(), text: c.text || '' })),
+          checkItems: g.checklist.map((c) => ({ id: c.id || Date.now().toString(), text: c.text || '' })),
         });
       }
 
@@ -630,7 +660,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
         blocks.push({ id: 'legacy_summary', type: 'text', content: g.summary.trim() });
       }
 
-      const seo: GuideSEOData = g.seo ? { ...g.seo } : { ...DEFAULT_SEO };
+      const seo: GuideSEOData = g.seo ? { ...DEFAULT_SEO, ...g.seo } : { ...DEFAULT_SEO };
       return { blocks, seo, sources: [] };
     } catch (e) {
       console.error('Legacy guide parse error:', e);
@@ -669,7 +699,7 @@ export function parseBlocksFromContent(content: string): { blocks: ContentBlock[
 // STARTER TEMPLATES
 // ----------------------------------------------------------------------
 
-export const STARTER_TEMPLATES: Record<
+const STARTER_TEMPLATES: Record<
   string,
   { name: string; icon: string; description: string; getBlocks: () => ContentBlock[] }
 > = {
@@ -1444,7 +1474,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                         className={`${fieldClass} ${lockedArticleType ? 'opacity-85 cursor-not-allowed border-amber-500/50 pr-24' : ''}`}
                         value={form.article_type}
                         disabled={Boolean(lockedArticleType)}
-                        onChange={(e) => updateForm('article_type', e.target.value as any)}
+                        onChange={(e) => updateForm('article_type', e.target.value as FormState['article_type'])}
                       >
                         <option value="hirek">Hír</option>
                         <option value="ujdonsagok">Újdonság</option>
@@ -1921,7 +1951,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                                     className={fieldClass}
                                     value={block.imageWidth || 'full'}
                                     onChange={(e) => {
-                                      const val = e.target.value as any;
+                                      const val = e.target.value as ContentBlock['imageWidth'];
                                       updateBlocks((list) => {
                                         const next = [...list];
                                         next[idx].imageWidth = val;
@@ -1942,7 +1972,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                                     className={fieldClass}
                                     value={block.imageAlign || 'center'}
                                     onChange={(e) => {
-                                      const val = e.target.value as any;
+                                      const val = e.target.value as ContentBlock['imageAlign'];
                                       updateBlocks((list) => {
                                         const next = [...list];
                                         next[idx].imageAlign = val;
@@ -1977,7 +2007,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                                   className={`${fieldClass} w-48`}
                                   value={block.galleryLayout || 'grid'}
                                   onChange={(e) => {
-                                    const val = e.target.value as any;
+                                    const val = e.target.value as ContentBlock['galleryLayout'];
                                     updateBlocks((list) => {
                                       const next = [...list];
                                       next[idx].galleryLayout = val;
@@ -2236,7 +2266,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                                     className={fieldClass}
                                     value={block.videoWidth || 'normal'}
                                     onChange={(e) => {
-                                      const val = e.target.value as any;
+                                      const val = e.target.value as ContentBlock['videoWidth'];
                                       updateBlocks((list) => {
                                         const next = [...list];
                                         next[idx].videoWidth = val;
@@ -2255,7 +2285,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                                     className={fieldClass}
                                     value={block.videoAlign || 'center'}
                                     onChange={(e) => {
-                                      const val = e.target.value as any;
+                                      const val = e.target.value as ContentBlock['videoAlign'];
                                       updateBlocks((list) => {
                                         const next = [...list];
                                         next[idx].videoAlign = val;
@@ -2709,7 +2739,7 @@ export function EditArticleModal({ article, categories, lockedArticleType, onClo
                       <button
                         key={btn.type}
                         type="button"
-                        onClick={() => addBlock(btn.type as any)}
+                        onClick={() => addBlock(btn.type as ContentBlock['type'])}
                         style={{ backgroundColor: blockBg, borderColor: cardBorder, color: textColor }}
                         className="px-3 py-2 border rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer hover:opacity-90 shadow-sm"
                       >

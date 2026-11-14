@@ -239,7 +239,7 @@ export async function createJobPosting(
   };
 
   try {
-    const insertPayload: Record<string, any> = {
+    const insertPayload: Record<string, unknown> = {
       company_name: payload.companyName,
       title: payload.title,
       job_type: payload.jobType,
@@ -253,16 +253,17 @@ export async function createJobPosting(
     }
 
     const { data, error } = await supabase
-      .from('job_postings' as any)
-      .insert(insertPayload)
+      .from('job_postings' as never)
+      .insert(insertPayload as never)
       .select('*')
       .maybeSingle();
 
     if (!error && data) {
+      const rowData = data as Partial<JobPosting>;
       newJob = {
         ...newJob,
-        ...data,
-        moderation_status: (data as any).moderation_status || newJob.moderation_status,
+        ...rowData,
+        moderation_status: rowData.moderation_status || newJob.moderation_status,
       };
     }
   } catch (err) {
@@ -280,8 +281,8 @@ export async function approveJobPosting(id: string): Promise<void> {
   if (isUuid) {
     try {
       await supabase
-        .from('job_postings' as any)
-        .update({ is_active: true, moderation_status: 'approved' } as any)
+        .from('job_postings' as never)
+        .update({ is_active: true, moderation_status: 'approved' } as never)
         .eq('id', id);
     } catch (err) {
       console.warn('Supabase job approve info:', err);
@@ -302,8 +303,8 @@ export async function rejectJobPosting(id: string): Promise<void> {
   if (isUuid) {
     try {
       await supabase
-        .from('job_postings' as any)
-        .update({ is_active: false, moderation_status: 'rejected' } as any)
+        .from('job_postings' as never)
+        .update({ is_active: false, moderation_status: 'rejected' } as never)
         .eq('id', id);
     } catch (err) {
       console.warn('Supabase job reject info:', err);
@@ -354,7 +355,7 @@ export async function submitJobApplication(
   if (isUuid) {
     try {
       const { data, error } = await supabase
-        .from('job_applications' as any)
+        .from('job_applications' as never)
         .insert({
           job_id: jobId,
           user_id: userId || null,

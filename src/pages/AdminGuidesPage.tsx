@@ -226,7 +226,7 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
         excerpt: template.excerpt,
         content: template.content,
         article_type: 'utmutatok',
-        difficulty: template.difficulty as any,
+        difficulty: template.difficulty as Article['difficulty'],
         subcategory_name: template.trade,
         status: 'draft',
         created_at: new Date().toISOString(),

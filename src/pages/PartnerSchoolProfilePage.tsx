@@ -48,9 +48,11 @@ import { useToast } from '../components/ToastProvider';
 import { copyTextToClipboard } from '../lib/clipboard';
 import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
+import type { PartnerView } from '../components/PartnerLayout';
+
 interface PartnerSchoolProfilePageProps {
   initialTab?: 'profile' | 'instructors' | 'overview';
-  onNavigateView?: (view: any) => void;
+  onNavigateView?: (view: PartnerView) => void;
   onNavigate?: (page: string) => void;
 }
 
@@ -255,8 +257,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
       setPartner(updated);
       setSuccessMsg('Az iskola és kapcsolattartói adatai sikeresen frissültek!');
       scheduleTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Hiba történt az adatok mentésekor.');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Hiba történt az adatok mentésekor.');
     } finally {
       setSaving(false);
     }
@@ -301,8 +303,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
 
       const updatedInstructors = await listSchoolInstructors(partner.id);
       setInstructors(updatedInstructors);
-    } catch (err: any) {
-      setInviteErrorMsg(err.message || 'Meghívó küldése nem sikerült.');
+    } catch (err: unknown) {
+      setInviteErrorMsg(err instanceof Error ? err.message : 'Meghívó küldése nem sikerült.');
     } finally {
       setInvitingInstructor(false);
     }
@@ -326,8 +328,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
       } else {
         toast.error(`E-mail küldési hiba (Resend API): ${res.error || 'Szerveroldali hiba'}. Meghívó kód: ${inv.code}`);
       }
-    } catch (err: any) {
-      toast.error(`Újraküldés hiba: ${err.message || err}`);
+    } catch (err: unknown) {
+      toast.error(`Újraküldés hiba: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -344,8 +346,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
             const updated = await listInvitations(partner.id);
             setInvitations(updated);
           }
-        } catch (err: any) {
-          toast.error(err.message || 'Visszavonás nem sikerült.');
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'Visszavonás nem sikerült.');
         }
       },
     });
@@ -364,8 +366,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
             const updated = await listInvitations(partner.id);
             setInvitations(updated);
           }
-        } catch (err: any) {
-          toast.error(err.message || 'Törlés nem sikerült.');
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'Törlés nem sikerült.');
         }
       },
     });
@@ -393,8 +395,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
       const updated = await listInvitations(partner.id);
       setInvitations(updated);
       setEditingInvitation(null);
-    } catch (err: any) {
-      toast.error(err.message || 'Meghívó frissítése nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Meghívó frissítése nem sikerült.');
     } finally {
       setSavingEditInvite(false);
     }
@@ -411,8 +413,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
       setInstructors(updatedInstructors);
       setSelectedInstructorForTrade(null);
       setAddTradeId('');
-    } catch (err: any) {
-      toast.error(err.message || 'Szakma hozzárendelése nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Szakma hozzárendelése nem sikerült.');
     } finally {
       setAddingTrade(false);
     }
@@ -434,8 +436,8 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
           setInstructors(updatedInstructors);
           setSuccessMsg('Az oktató sikeresen el lett távolítva az iskolai szervezetből.');
           scheduleTimeout(() => setSuccessMsg(null), 4000);
-        } catch (err: any) {
-          setErrorMsg(err.message || 'Oktató eltávolítása nem sikerült.');
+        } catch (err: unknown) {
+          setErrorMsg(err instanceof Error ? err.message : 'Oktató eltávolítása nem sikerült.');
         }
       },
     });
@@ -1097,7 +1099,7 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
                 </label>
                 <select
                   value={editInviteStatus}
-                  onChange={(e) => setEditInviteStatus(e.target.value as any)}
+                  onChange={(e) => setEditInviteStatus(e.target.value as typeof editInviteStatus)}
                   className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
                 >
                   <option value="active">Aktív (Még nem aktiválta)</option>

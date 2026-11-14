@@ -32,7 +32,8 @@ import {
   FileCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
-import { CalculatorInput, safeNum, parseNumberValue } from '../components/CalculatorInput';
+import { CalculatorInput } from '../components/CalculatorInput';
+import { safeNum, parseNumberValue } from '../lib/calculatorUtils';
 import { useToast } from '../components/ToastProvider';
 import { copyTextToClipboard } from '../lib/clipboard';
 import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
@@ -2659,7 +2660,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         ].map((s) => (
                           <button
                             key={s.id}
-                            onClick={() => setConcreteShape(s.id as any)}
+                            onClick={() => setConcreteShape(s.id as typeof concreteShape)}
                             className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
                               concreteShape === s.id
                                 ? 'bg-primary text-white border-primary shadow-sm'
@@ -2711,7 +2712,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Beton Minőség (C-osztály)</label>
                         <select
                           value={cGrade}
-                          onChange={(e) => setCGrade(e.target.value as any)}
+                          onChange={(e) => setCGrade(e.target.value as typeof cGrade)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="C12">C12/15 - Szerelőbeton</option>
@@ -2754,7 +2755,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <label className="block text-xs font-bold text-gray-700 mb-1">Falazóelem Típusa</label>
                       <select
                         value={brickType}
-                        onChange={(e) => setBrickType(e.target.value as any)}
+                        onChange={(e) => setBrickType(e.target.value as typeof brickType)}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                       >
                         <option value="pth30">Porotherm 30 N+F (16 db/m²)</option>
@@ -2823,7 +2824,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Meglévő Falazat Típusa</label>
                         <select
                           value={wallBase}
-                          onChange={(e) => setWallBase(e.target.value as any)}
+                          onChange={(e) => setWallBase(e.target.value as typeof wallBase)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="b30">B30 Téglafal (30 cm)</option>
@@ -2836,7 +2837,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Hőszigetelő Anyag</label>
                         <select
                           value={insulationMat}
-                          onChange={(e) => setInsulationMat(e.target.value as any)}
+                          onChange={(e) => setInsulationMat(e.target.value as typeof insulationMat)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="eps">EPS 80 Fehér polisztirol (λ = 0.039)</option>
@@ -2889,7 +2890,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Munkálat Típusa</label>
                         <select
                           value={tilingType}
-                          onChange={(e) => setTilingType(e.target.value as any)}
+                          onChange={(e) => setTilingType(e.target.value as typeof tilingType)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="tile">Hidegburkolás (Csempézés / Járólap)</option>
@@ -2913,7 +2914,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                           <label className="block text-xs font-bold text-gray-700 mb-1">Lapméret (cm)</label>
                           <select
                             value={tTileSize}
-                            onChange={(e) => setTTileSize(e.target.value as any)}
+                            onChange={(e) => setTTileSize(e.target.value as typeof tTileSize)}
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                           >
                             <option value="30x30">30x30 cm</option>
@@ -2963,7 +2964,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Szerkezet Típusa</label>
                         <select
                           value={dwType}
-                          onChange={(e) => setDwType(e.target.value as any)}
+                          onChange={(e) => setDwType(e.target.value as typeof dwType)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="wall1">Válaszfal (1 réteg karton / oldal)</option>
@@ -2976,7 +2977,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Gipszkarton Típusa</label>
                         <select
                           value={dwBoardType}
-                          onChange={(e) => setDwBoardType(e.target.value as any)}
+                          onChange={(e) => setDwBoardType(e.target.value as typeof dwBoardType)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="rb">RB Normál Fehér (12.5 mm)</option>
@@ -3034,7 +3035,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       <label className="block text-xs font-bold text-gray-700 mb-1">Héjazat Típusa</label>
                       <select
                         value={tileType}
-                        onChange={(e) => setTileType(e.target.value as any)}
+                        onChange={(e) => setTileType(e.target.value as typeof tileType)}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                       >
                         <option value="ceramic">Kerámia cserép (~10.5 db/m²)</option>
@@ -3336,7 +3337,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Térkő Vastagság</label>
                         <select
                           value={pavingThickness}
-                          onChange={(e) => setPavingThickness(e.target.value as any)}
+                          onChange={(e) => setPavingThickness(e.target.value as typeof pavingThickness)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="6cm">6 cm (Gyalogos / Személyautó)</option>
@@ -3348,7 +3349,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Fektetési Mintázat</label>
                         <select
                           value={pavingPattern}
-                          onChange={(e) => setPavingPattern(e.target.value as any)}
+                          onChange={(e) => setPavingPattern(e.target.value as typeof pavingPattern)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="straight">Egyenes / Hálós (5% vágás)</option>
@@ -3438,7 +3439,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Talaj Típusa (Lazultság)</label>
                         <select
                           value={soilType}
-                          onChange={(e) => setSoilType(e.target.value as any)}
+                          onChange={(e) => setSoilType(e.target.value as typeof soilType)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="clay">Agyag / Kötött talaj (1.30x lazultság)</option>
@@ -3488,7 +3489,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Épület Hőszigeteltsége</label>
                         <select
                           value={ufInsulation}
-                          onChange={(e) => setUfInsulation(e.target.value as any)}
+                          onChange={(e) => setUfInsulation(e.target.value as typeof ufInsulation)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="passive">Passzívház / Újszerű (35 W/m²)</option>
@@ -3504,7 +3505,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                         <label className="block text-xs font-bold text-gray-700 mb-1">Csőtávolság (Fektetés)</label>
                         <select
                           value={ufSpacing}
-                          onChange={(e) => setUfSpacing(e.target.value as any)}
+                          onChange={(e) => setUfSpacing(e.target.value as typeof ufSpacing)}
                           className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent"
                         >
                           <option value="10cm">10 cm (Fürdőszoba / Hideg falak)</option>

@@ -487,7 +487,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setActiveTab(t.id as any)}
+                  onClick={() => setActiveTab(t.id as 'basic' | 'content' | 'specs' | 'media')}
                   className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
                     activeTab === t.id ? 'border-accent text-primary bg-white rounded-t-lg' : 'border-transparent text-gray-500 hover:text-gray-800'
                   }`}

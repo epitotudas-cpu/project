@@ -820,7 +820,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                               {activeLanguages
                                 .filter((l) => l.iso_code !== 'hu')
                                 .map((lang) => {
-                                  const tr = (item.translations as Record<string, any>)?.[lang.iso_code] || (item.translations as Record<string, any>)?.[lang.iso_code.toUpperCase()];
+                                  const transMap = item.translations as Record<string, string | { translated_term?: string } | undefined>;
+                                  const tr = transMap?.[lang.iso_code] || transMap?.[lang.iso_code.toUpperCase()];
                                   if (!tr) return null;
                                   const text = typeof tr === 'string' ? tr : tr.translated_term;
                                   return (
@@ -990,7 +991,8 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
                                     {activeLanguages
                                       .filter((l) => l.iso_code !== 'hu')
                                       .map((lang) => {
-                                        const tr = (item.translations as Record<string, any>)?.[lang.iso_code] || (item.translations as Record<string, any>)?.[lang.iso_code.toUpperCase()];
+                                        const transMap = item.translations as Record<string, string | { translated_term?: string } | undefined>;
+                                  const tr = transMap?.[lang.iso_code] || transMap?.[lang.iso_code.toUpperCase()];
                                         if (!tr) return null;
                                         const text = typeof tr === 'string' ? tr : tr.translated_term;
                                         return (

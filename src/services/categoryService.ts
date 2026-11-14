@@ -529,7 +529,7 @@ export async function deleteCategoryAndReassignArticles(
     if (rawArticles) {
       const parsed = JSON.parse(rawArticles);
       if (Array.isArray(parsed)) {
-        const updated = parsed.map((a: any) =>
+        const updated = parsed.map((a: { category_id?: string; [key: string]: unknown }) =>
           a.category_id === sourceCategoryId ? { ...a, category_id: targetCategoryId } : a
         );
         localStorage.setItem('epitotudas_articles_v2', JSON.stringify(updated));

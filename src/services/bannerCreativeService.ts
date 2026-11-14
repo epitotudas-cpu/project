@@ -94,7 +94,7 @@ export function saveStoredCreatives(creatives: AdCreative[]): void {
     void writeAppConfig('__SYSTEM_CONFIG_AD_CREATIVES__', sanitized, {
       id: SUPABASE_SYSTEM_ID,
       slug: 'system-ad-creatives-config',
-    }).catch(() => {});
+    }).catch(() => { });
   } catch (err) {
     console.error('Hiba a kreatívok mentésekor:', err);
   }
@@ -246,7 +246,7 @@ export function saveFallbackVideoSettings(settings: FallbackVideoSettings): void
     void writeAppConfig('__SYSTEM_CONFIG_AD_FALLBACK_VIDEO__', settings, {
       id: SUPABASE_FALLBACK_SYSTEM_ID,
       slug: 'system-ad-fallback-video-config',
-    }).catch(() => {});
+    }).catch(() => { });
   } catch (err) {
     console.error('Hiba a videó fallback beállítások mentésekor:', err);
   }
@@ -316,7 +316,7 @@ export function saveTileAdSettings(settings: TileAdSettings): void {
     void writeAppConfig('__SYSTEM_CONFIG_AD_TILE_SETTINGS__', settings, {
       id: SUPABASE_TILE_AD_SYSTEM_ID,
       slug: 'system-ad-tile-settings-config',
-    }).catch(() => {});
+    }).catch(() => { });
   } catch (err) {
     console.error('Hiba a csempe reklám beállítások mentésekor:', err);
   }

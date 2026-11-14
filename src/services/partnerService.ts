@@ -537,7 +537,7 @@ export async function updatePartner(
     ? payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     : existing?.slug;
 
-  const updatePayload: Record<string, any> = {
+  const updatePayload: Record<string, unknown> = {
     name: payload.name !== undefined ? payload.name.trim() : existing?.name,
     slug: updatedSlug || existing?.slug,
     category: payload.category !== undefined ? payload.category : existing?.category || 'ceg',
@@ -853,7 +853,12 @@ export async function listSchoolInstructors(
 
   const instructorMap: Record<string, { user_id: string; full_name?: string | null; email?: string | null; trades: string[] }> = {};
 
-  for (const row of (data || []) as any[]) {
+  interface InstructorRow {
+    user_id: string;
+    trade_id?: string | null;
+    profiles?: { full_name?: string | null; email?: string | null } | null;
+  }
+  for (const row of (data || []) as InstructorRow[]) {
     const uid = row.user_id;
     if (!instructorMap[uid]) {
       instructorMap[uid] = {
@@ -955,12 +960,17 @@ export async function listStudentInvitationCodes(
     return [];
   }
 
-  return (data || []).map((row: any) => ({
+  type InvitationRow = StudentInvitationCode & {
+    partners?: { name?: string | null } | null;
+    profiles?: { full_name?: string | null } | null;
+    school_classes?: { name?: string | null } | null;
+  };
+  return ((data || []) as InvitationRow[]).map((row) => ({
     ...row,
     school_name: row.partners?.name || 'Iskola',
     instructor_name: row.profiles?.full_name || 'Oktató',
     class_name: row.school_classes?.name || undefined,
-  })) as StudentInvitationCode[];
+  }));
 }
 
 /**
@@ -1111,11 +1121,15 @@ export async function listInstructorClasses(
     return [];
   }
 
-  const classes = (data || []).map((row: any) => ({
+  type ClassRow = SchoolClass & {
+    partners?: { name?: string | null } | null;
+    profiles?: { full_name?: string | null } | null;
+  };
+  const classes: SchoolClass[] = ((data || []) as ClassRow[]).map((row) => ({
     ...row,
     school_name: row.partners?.name || 'Iskola',
     instructor_name: row.profiles?.full_name || 'Oktató',
-  })) as SchoolClass[];
+  }));
 
   for (const cls of classes) {
     // 1. Active code
@@ -1163,10 +1177,14 @@ export async function getSchoolClassById(classId: string): Promise<SchoolClass |
     return null;
   }
 
+  const typedData = data as SchoolClass & {
+    partners?: { name?: string | null } | null;
+    profiles?: { full_name?: string | null } | null;
+  };
   const cls: SchoolClass = {
-    ...data,
-    school_name: (data as any).partners?.name || 'Iskola',
-    instructor_name: (data as any).profiles?.full_name || 'Oktató',
+    ...typedData,
+    school_name: typedData.partners?.name || 'Iskola',
+    instructor_name: typedData.profiles?.full_name || 'Oktató',
   };
 
   const { data: codeData } = await supabase
@@ -1330,7 +1348,7 @@ export async function updateSchoolClass(
   classId: string,
   payload: { name?: string; grade?: number | null; is_active?: boolean }
 ): Promise<SchoolClass> {
-  const updateData: Record<string, any> = {
+  const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
 

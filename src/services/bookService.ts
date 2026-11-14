@@ -1420,7 +1420,7 @@ export function getBooks(): BookItem[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const sanitized = parsed.map((b: any) => ({
+        const sanitized = parsed.map((b: Partial<BookItem> & Record<string, unknown>) => ({
           ...b,
           title: b.title || 'Szakmai Könyv',
           category: b.category || 'szerkezet',
@@ -1440,7 +1440,7 @@ export function getBooks(): BookItem[] {
             copyrightStatus: 'publisher_permission',
           },
           storeOffers: Array.isArray(b.storeOffers) ? b.storeOffers : [],
-        }));
+        })) as BookItem[];
         if (typeof window !== 'undefined') window.__GLOBAL_BOOKS_DATA__ = sanitized;
         return sanitized;
       }

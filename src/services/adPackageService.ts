@@ -268,7 +268,7 @@ export async function saveAdPackage(pkg: Partial<ManagedAdPackage> & { name: str
   try {
     const { data, error } = await supabase
       .from('ad_packages')
-      .upsert(target as any)
+      .upsert(target as never)
       .select('*')
       .single();
 
@@ -324,7 +324,7 @@ export async function duplicateAdPackage(id: string): Promise<ManagedAdPackage> 
     updated_at: new Date().toISOString(),
   };
 
-  return saveAdPackage(cloned as any);
+  return saveAdPackage(cloned as Parameters<typeof saveAdPackage>[0]);
 }
 
 export async function reorderAdPackages(orderedIds: string[]): Promise<ManagedAdPackage[]> {

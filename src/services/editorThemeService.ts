@@ -138,8 +138,8 @@ export function useEditorTheme(): EditorThemePreset {
   const [theme, setTheme] = useState<EditorThemePreset>(() => getEditorThemePreset());
 
   useEffect(() => {
-    const handleThemeChange = (e: any) => {
-      const newPresetId = e.detail || getStoredEditorThemeId();
+    const handleThemeChange = (e: Event) => {
+      const newPresetId = (e as CustomEvent<string | undefined>).detail || getStoredEditorThemeId();
       setTheme(getEditorThemePreset(newPresetId));
     };
 

@@ -5,15 +5,16 @@ import type { Partner } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 
 interface PartnersPageProps {
-  onNavigate: (page: string, params?: Record<string, any>) => void;
+  onNavigate: (page: string, params?: Record<string, unknown>) => void;
 }
 
 function PartnerCardLogo({ partner }: { partner: Partner }) {
   const [hasError, setHasError] = useState(false);
+  const logoBgKey = (partner as Partner & { logo_bg?: string }).logo_bg;
   const logoBg =
-    (partner as any).logo_bg === 'light_gray'
+    logoBgKey === 'light_gray'
       ? 'bg-gray-200'
-      : (partner as any).logo_bg === 'transparent'
+      : logoBgKey === 'transparent'
       ? 'bg-transparent border-gray-300'
       : 'bg-white';
 

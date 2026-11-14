@@ -170,6 +170,8 @@ const CAREER_QUESTIONS: CareerQuestion[] = [
   },
 ];
 
+import type { LucideIcon } from 'lucide-react';
+
 interface TradeRecommendationInfo {
   tradeId: string;
   name: string;
@@ -179,7 +181,7 @@ interface TradeRecommendationInfo {
   strengths: string[];
   courseSlug: string;
   courseTitle: string;
-  icon: any;
+  icon: LucideIcon;
 }
 
 const TRADE_RECOMMENDATIONS: Record<TradeOption, TradeRecommendationInfo> = {

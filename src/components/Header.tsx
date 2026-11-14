@@ -184,7 +184,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const isEditor = profile?.role === 'editor';
   const userType = user?.user_metadata?.user_type;
   const rawRole = (profile?.role || user?.user_metadata?.role) as string | undefined;
-  const rawUserType = (userType || (profile as any)?.userType || (profile as any)?.user_type) as string | undefined;
+  const profileRecord = profile as (typeof profile & { userType?: string; user_type?: string }) | null;
+  const rawUserType = (userType || profileRecord?.userType || profileRecord?.user_type) as string | undefined;
 
   const isInstructorRole =
     partnerMemberRole === 'instructor' ||

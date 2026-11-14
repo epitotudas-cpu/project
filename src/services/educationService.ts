@@ -743,10 +743,33 @@ export async function fetchStudentAssignedClassMaterials(
     .eq('student_id', studentId)
     .not('class_id', 'is', null);
 
+  interface EnrollmentRow {
+    class_id?: string | null;
+    school_class?: { name?: string | null } | null;
+  }
+  interface ClassMaterialRow {
+    id: string;
+    class_id?: string | null;
+    student_id?: string | null;
+    content_type: string;
+    content_id: string;
+    title?: string | null;
+    assigned_at?: string;
+    due_date?: string | null;
+    notes?: string | null;
+  }
+  interface ArticleSummaryRow {
+    id: string;
+    title?: string | null;
+    summary?: string | null;
+    category?: string | null;
+    slug?: string | null;
+  }
+
   const classMap = new Map<string, string>();
   const classIds: string[] = [];
   if (enrollments) {
-    for (const e of enrollments as any[]) {
+    for (const e of enrollments as EnrollmentRow[]) {
       if (e.class_id) {
         classIds.push(e.class_id);
         classMap.set(e.class_id, e.school_class?.name || 'Osztály');
@@ -755,27 +778,27 @@ export async function fetchStudentAssignedClassMaterials(
   }
 
   // 1. Fetch class-assigned materials
-  let classMaterials: any[] = [];
+  let classMaterials: ClassMaterialRow[] = [];
   if (classIds.length > 0) {
     const { data: cData } = await supabase
       .from('class_materials')
       .select('*')
       .in('class_id', classIds)
       .order('assigned_at', { ascending: false });
-    if (cData) classMaterials = cData;
+    if (cData) classMaterials = cData as ClassMaterialRow[];
   }
 
   // 2. Fetch individually assigned materials
-  let studentMaterials: any[] = [];
+  let studentMaterials: ClassMaterialRow[] = [];
   const { data: sData } = await supabase
     .from('class_materials')
     .select('*')
     .eq('student_id', studentId)
     .order('assigned_at', { ascending: false });
-  if (sData) studentMaterials = sData;
+  if (sData) studentMaterials = sData as ClassMaterialRow[];
 
   const combined = [...classMaterials, ...studentMaterials];
-  const uniqueMap = new Map<string, any>();
+  const uniqueMap = new Map<string, ClassMaterialRow>();
 
   for (const m of combined) {
     const key = `${m.content_type}_${m.content_id}`;
@@ -789,7 +812,7 @@ export async function fetchStudentAssignedClassMaterials(
   const coursesList = eduData.courses || [];
 
   // Fetch articles if any content_type is 'article'
-  const articlesMap = new Map<string, any>();
+  const articlesMap = new Map<string, ArticleSummaryRow>();
   const articleIds = rawList.filter((m) => m.content_type === 'article').map((m) => m.content_id);
   if (articleIds.length > 0) {
     const { data: artData } = await supabase
@@ -832,7 +855,7 @@ export async function fetchStudentAssignedClassMaterials(
     } else if (m.content_type === 'article') {
       const foundArt = articlesMap.get(m.content_id);
       if (foundArt) {
-        title = foundArt.title;
+        title = foundArt.title || 'Cikk';
         description = foundArt.summary || 'Cikk';
         category = foundArt.category || 'Cikk';
         slug = foundArt.slug || foundArt.id;

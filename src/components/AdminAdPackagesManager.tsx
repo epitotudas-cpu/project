@@ -354,7 +354,7 @@ export function AdminAdPackagesManager() {
         <div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
             style={fieldStyle}
             className={fieldClass}
           >
@@ -368,7 +368,7 @@ export function AdminAdPackagesManager() {
         <div>
           <select
             value={visibilityFilter}
-            onChange={(e) => setVisibilityFilter(e.target.value as any)}
+            onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}
             style={fieldStyle}
             className={fieldClass}
           >
@@ -649,7 +649,7 @@ export function AdminAdPackagesManager() {
                       <label style={labelStyle} className={labelClass}>Ár Kijelzés Típusa</label>
                       <select
                         value={formPriceType}
-                        onChange={(e) => setFormPriceType(e.target.value as any)}
+                        onChange={(e) => setFormPriceType(e.target.value as typeof formPriceType)}
                         style={fieldStyle}
                         className={fieldClass}
                       >
@@ -678,7 +678,7 @@ export function AdminAdPackagesManager() {
                       <label style={labelStyle} className={labelClass}>Számlázási Periódus</label>
                       <select
                         value={formBillingPeriod}
-                        onChange={(e) => setFormBillingPeriod(e.target.value as any)}
+                        onChange={(e) => setFormBillingPeriod(e.target.value as typeof formBillingPeriod)}
                         style={fieldStyle}
                         className={fieldClass}
                       >
@@ -894,7 +894,7 @@ export function AdminAdPackagesManager() {
                       <label style={labelStyle} className={labelClass}>Láthatóság</label>
                       <select
                         value={formVisibility}
-                        onChange={(e) => setFormVisibility(e.target.value as any)}
+                        onChange={(e) => setFormVisibility(e.target.value as typeof formVisibility)}
                         style={fieldStyle}
                         className={fieldClass}
                       >
@@ -927,7 +927,7 @@ export function AdminAdPackagesManager() {
                       <label style={labelStyle} className={labelClass}>Státusz</label>
                       <select
                         value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value as any)}
+                        onChange={(e) => setFormStatus(e.target.value as typeof formStatus)}
                         style={fieldStyle}
                         className={fieldClass}
                       >

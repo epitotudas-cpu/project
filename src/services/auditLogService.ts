@@ -126,7 +126,7 @@ export async function logAuditAction(
 
   // 2. Próbálkozás mentéssel Supabase-be (ha van audit_logs tábla)
   try {
-    const dbPayload: Record<string, any> = {
+    const dbPayload: Record<string, unknown> = {
       actor_email: newLog.actorEmail,
       action: newLog.action,
       target_module: newLog.targetModule,
@@ -164,13 +164,13 @@ export async function fetchAuditLogs(filters?: FetchAuditLogsFilters): Promise<A
       .limit(200);
 
     if (!error && data && data.length > 0) {
-      allLogs = data.map((row: any) => ({
-        id: row.id,
-        actorEmail: row.actor_email || row.actorEmail || 'admin@epitotudas.hu',
-        action: (row.action || 'ACTION').toUpperCase(),
-        targetModule: row.target_module || row.targetModule || 'system',
-        timestamp: row.created_at || row.timestamp || new Date().toISOString(),
-        details: row.details || '',
+      allLogs = data.map((row: Record<string, unknown>) => ({
+        id: String(row.id),
+        actorEmail: String(row.actor_email || row.actorEmail || 'admin@epitotudas.hu'),
+        action: String(row.action || 'ACTION').toUpperCase(),
+        targetModule: String(row.target_module || row.targetModule || 'system'),
+        timestamp: String(row.created_at || row.timestamp || new Date().toISOString()),
+        details: String(row.details || ''),
       }));
     } else {
       allLogs = getLocalAuditLogs();

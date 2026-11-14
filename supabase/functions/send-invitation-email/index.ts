@@ -97,9 +97,9 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ ok: false, error: errString, primary_error: data, fallback_error: fallbackData }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     return new Response(
-      JSON.stringify({ ok: false, error: err.message || 'Szerveroldali hiba az e-mail küldésekor.' }),
+      JSON.stringify({ ok: false, error: err instanceof Error ? err.message : 'Szerveroldali hiba az e-mail küldésekor.' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   }

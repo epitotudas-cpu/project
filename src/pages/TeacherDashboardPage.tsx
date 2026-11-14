@@ -52,10 +52,12 @@ import { useToast } from '../components/ToastProvider';
 import { copyTextToClipboard } from '../lib/clipboard';
 import { useSafeTimeouts } from '../hooks/useSafeTimeouts';
 
+import type { PartnerView } from '../components/PartnerLayout';
+
 export interface TeacherDashboardPageProps {
   onNavigate?: (page: string) => void;
   activeView?: string;
-  onNavigateView?: (view: any) => void;
+  onNavigateView?: (view: PartnerView) => void;
 }
 
 export interface CustomPackageItem {
@@ -162,7 +164,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [selectedAssignStudentId, setSelectedAssignStudentId] = useState<string>('');
 
   // DB Progress State
-  const [dbProgressRecords, setDbProgressRecords] = useState<any[]>([]);
+  const [dbProgressRecords, setDbProgressRecords] = useState<Array<{ user_id: string; course_id?: string; progress_percent?: number; status?: string; last_accessed_at?: string; [key: string]: unknown }>>([]);
   const [loadingProgress, setLoadingProgress] = useState(false);
 
   // Custom Package Builder State
@@ -217,12 +219,16 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           .select('user_id, profiles:user_id(id, full_name)')
           .eq('partner_id', partnerId);
         if (instData) {
-          const mapped = instData
-            .map((i: any) => ({
+          interface InstRow {
+            user_id: string;
+            profiles?: { full_name?: string | null } | null;
+          }
+          const mapped = (instData as InstRow[])
+            .map((i) => ({
               id: i.user_id,
               full_name: i.profiles?.full_name || i.user_id,
             }))
-            .filter((i: any) => i.id);
+            .filter((i) => Boolean(i.id));
           setSchoolInstructors(mapped);
         }
       }
@@ -355,8 +361,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       setShowCreateModal(false);
       setNewClassName('');
       setSelectedClassId(newClass.id);
-    } catch (err: any) {
-      setCreateError(err.message || 'Hiba történt az osztály létrehozásakor.');
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : 'Hiba történt az osztály létrehozásakor.');
     } finally {
       setSubmittingClass(false);
     }
@@ -389,8 +395,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         setSelectedClass({ ...selectedClass, ...updated });
       }
       setEditingClass(null);
-    } catch (err: any) {
-      setEditClassError(err.message || 'Osztály frissítése nem sikerült.');
+    } catch (err: unknown) {
+      setEditClassError(err instanceof Error ? err.message : 'Osztály frissítése nem sikerült.');
     } finally {
       setSavingEditClass(false);
     }
@@ -410,8 +416,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             setSelectedClassId(null);
             setSelectedClass(null);
           }
-        } catch (err: any) {
-          toast.error(err.message || 'Osztály törlése nem sikerült.');
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'Osztály törlése nem sikerült.');
         }
       },
     });
@@ -438,8 +444,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           if (selectedStudentDetail?.student_id === studentId) {
             setSelectedStudentDetail(null);
           }
-        } catch (err: any) {
-          toast.error(err.message || 'Tanuló eltávolítása nem sikerült.');
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'Tanuló eltávolítása nem sikerült.');
         }
       },
     });
@@ -461,8 +467,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
       setActiveCode(code);
       setClasses(classes.map((c) => (c.id === selectedClass.id ? { ...c, active_code: code } : c)));
-    } catch (err: any) {
-      toast.error(err.message || 'Kód generálása nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Kód generálása nem sikerült.');
     } finally {
       setGeneratingCode(false);
     }
@@ -525,8 +531,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       setClassMaterials(updatedMaterials);
       setMaterialSaveSuccess(true);
       scheduleTimeout(() => setMaterialSaveSuccess(false), 3000);
-    } catch (err: any) {
-      toast.error(err.message || 'Tananyagok mentése nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Tananyagok mentése nem sikerült.');
     } finally {
       setSavingMaterials(false);
     }
@@ -556,8 +562,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         toast.success(`Sikeresen kiosztva a kiválasztott tanulónak!`);
       }
       setAssignModalMaterial(null);
-    } catch (err: any) {
-      toast.error(err.message || 'Hiba a kiosztás során.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Hiba a kiosztás során.');
     }
   };
 
@@ -1834,7 +1840,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                             </span>
                           </td>
                           <td className="py-3.5 px-4 font-black text-white">{row.percent}%</td>
-                          <td className="py-3.5 px-4 text-gray-400">{new Date(row.lastAccessed).toLocaleDateString('hu-HU')}</td>
+                          <td className="py-3.5 px-4 text-gray-400">{row.lastAccessed ? new Date(row.lastAccessed).toLocaleDateString('hu-HU') : '–'}</td>
                         </tr>
                       ))}
                     </tbody>

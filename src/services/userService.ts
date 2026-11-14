@@ -111,7 +111,7 @@ export async function deleteUser(userId: string): Promise<boolean> {
   return true;
 }
 
-export async function getUserType(user: any): Promise<'tanulo' | 'szakember'> {
+export async function getUserType(user: { user_metadata?: { user_type?: string } } | null | undefined): Promise<'tanulo' | 'szakember'> {
   if (!user) return 'tanulo';
   const metaType = user.user_metadata?.user_type;
   if (metaType === 'szakember') return 'szakember';
@@ -131,13 +131,13 @@ export async function updateProfileRole(userId: string, newRole: string): Promis
 
   if (error) {
     console.warn('update_user_platform_role RPC error, attempting direct update fallback:', error);
-    if (error.message?.includes('Refresh Token') || error.message?.includes('JWT') || (error as any)?.status === 400 || error.code === '400') {
+    if (error.message?.includes('Refresh Token') || error.message?.includes('JWT') || (error as { status?: number })?.status === 400 || error.code === '400') {
       console.warn('Potential stale auth session detected:', error.message);
     }
 
     const { data: updatedRows, error: directErr } = await supabase
       .from('profiles')
-      .update({ role: newRole as any })
+      .update({ role: newRole as never })
       .eq('id', userId)
       .select('id, role');
 

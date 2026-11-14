@@ -368,7 +368,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
               </span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'recommended' | 'newest' | 'title_asc')}
                 className="bg-gray-50 border border-gray-200 rounded-2xl px-3.5 py-3 text-xs font-bold text-gray-800 focus:outline-none focus:border-accent cursor-pointer w-full sm:w-auto"
               >
                 <option value="recommended">Ajánlott</option>

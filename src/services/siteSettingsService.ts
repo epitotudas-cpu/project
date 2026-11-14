@@ -417,7 +417,7 @@ export function applySiteSettings(settings: SiteSettings): void {
     // 2. Web App Manifest
     setLink('app-webmanifest-link', 'manifest', `/site.webmanifest?v=${v}`);
     if (typeof window !== 'undefined') {
-      (window as any).__EPITOTUDAS_MANIFEST__ = generateManifestJson(settings);
+      (window as Window & { __EPITOTUDAS_MANIFEST__?: unknown }).__EPITOTUDAS_MANIFEST__ = generateManifestJson(settings);
     }
 
     // 3. PWA Theme Color
@@ -468,8 +468,9 @@ export function getSiteSettings(): SiteSettings {
     }
 
     // 2. Check initial settings loaded synchronously in <head>
-    if (typeof window !== 'undefined' && (window as any).__INITIAL_SITE_SETTINGS__) {
-      const init = (window as any).__INITIAL_SITE_SETTINGS__;
+    const winWithInit = typeof window !== 'undefined' ? (window as Window & { __INITIAL_SITE_SETTINGS__?: Partial<SiteSettings> }) : undefined;
+    if (winWithInit?.__INITIAL_SITE_SETTINGS__) {
+      const init = winWithInit.__INITIAL_SITE_SETTINGS__;
       const settings: SiteSettings = {
         ...DEFAULT_SITE_SETTINGS,
         ...init,

@@ -333,7 +333,7 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
     ]);
   };
 
-  const handleUpdateTimelineStation = (index: number, field: keyof TimelineStation, val: any) => {
+  const handleUpdateTimelineStation = <K extends keyof TimelineStation>(index: number, field: K, val: TimelineStation[K]) => {
     setTimelineStations((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [field]: val };
@@ -361,7 +361,7 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
     ]);
   };
 
-  const handleUpdateFutureTechCard = (index: number, field: keyof FutureTechCard, val: any) => {
+  const handleUpdateFutureTechCard = <K extends keyof FutureTechCard>(index: number, field: K, val: FutureTechCard[K]) => {
     setFutureTechCards((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [field]: val };
@@ -862,7 +862,7 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
                             <label className="text-[10px] text-gray-400 block font-bold mb-0.5">Kategória</label>
                             <select
                               value={card.category}
-                              onChange={(e) => handleUpdateFutureTechCard(idx, 'category', e.target.value)}
+                              onChange={(e) => handleUpdateFutureTechCard(idx, 'category', e.target.value as 'MÁR LÉTEZŐ' | 'FEJLŐDŐ' | 'KÍSÉRLETI')}
                               style={{ backgroundColor: cardBg, borderColor: cardBorder, color: inputTextColor }}
                               className="w-full border rounded-lg px-3 py-1.5 font-bold text-xs"
                             >

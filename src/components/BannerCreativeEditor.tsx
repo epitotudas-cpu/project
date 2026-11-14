@@ -92,8 +92,8 @@ export function BannerCreativeEditor() {
       setSaveSuccessMessage('🎬 Videó fallback beállítások mentve!');
       setTimeout(() => setSaveStatus(null), 3500);
       setTimeout(() => setSaveSuccessMessage(null), 3500);
-    } catch (err: any) {
-      setSaveStatus({ type: 'error', message: `⚠️ Hiba a mentés során: ${err?.message || 'Sikertelen mentés'}` });
+    } catch (err: unknown) {
+      setSaveStatus({ type: 'error', message: `⚠️ Hiba a mentés során: ${err instanceof Error ? err.message : 'Sikertelen mentés'}` });
     }
   }
 
@@ -206,11 +206,11 @@ export function BannerCreativeEditor() {
 
       setTimeout(() => setSaveStatus(null), 4000);
       setTimeout(() => setSaveSuccessMessage(null), 4000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Hiba a hirdetés mentésekor:', err);
       setSaveStatus({
         type: 'error',
-        message: `⚠️ Hiba a mentés során: ${err?.message || 'Ismeretlen hiba történt.'}`,
+        message: `⚠️ Hiba a mentés során: ${err instanceof Error ? err.message : 'Ismeretlen hiba történt.'}`,
       });
     }
   }

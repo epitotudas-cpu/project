@@ -37,7 +37,8 @@ import type { Article, Category } from '../lib/supabase';
 import { TopAdBanner, InFeedAdBanner, SidebarAdBanner } from '../components/ModernAdBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
-import SocialShareButton, { updateArticleMetaTags } from '../components/SocialShareButton';
+import SocialShareButton from '../components/SocialShareButton';
+import { updateArticleMetaTags } from '../lib/seoMeta';
 
 interface ArticlePageProps {
   onNavigate: (page: string, params?: { articleSlug?: string }) => void;

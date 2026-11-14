@@ -101,7 +101,7 @@ export default function EditQuizModal({
     setQuestions(questions.filter((q) => q.id !== id));
   };
 
-  const handleQuestionChange = (id: string, field: keyof QuizQuestion, val: any) => {
+  const handleQuestionChange = <K extends keyof QuizQuestion>(id: string, field: K, val: QuizQuestion[K]) => {
     setQuestions(questions.map((q) => (q.id === id ? { ...q, [field]: val } : q)));
   };
 

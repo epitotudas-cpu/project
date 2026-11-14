@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import {
   Building2,
@@ -699,9 +700,9 @@ export default function PartnerEditorModal({
       setTimeout(() => {
         setSaveSuccess(false);
       }, 5000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Hiba a partner mentésekor:', err);
-      const msg = err?.message || 'A partner adatainak mentésekor hiba történt. Kérjük, próbálja újra.';
+      const msg = err instanceof Error ? err.message : 'A partner adatainak mentésekor hiba történt. Kérjük, próbálja újra.';
       setSaveError(msg);
     } finally {
       setSaving(false);
@@ -722,7 +723,7 @@ export default function PartnerEditorModal({
     setServices([...services, newItem]);
   }
 
-  const navTabs: { id: TabKey; label: string; icon: any }[] = [
+  const navTabs: { id: TabKey; label: string; icon: LucideIcon }[] = [
     { id: 'basic', label: '1. Alapadatok', icon: Building2 },
     { id: 'media', label: '2. Megjelenés & Média', icon: ImageIcon },
     { id: 'contact', label: '3. Elérhetőségek', icon: PhoneCall },
@@ -900,7 +901,7 @@ export default function PartnerEditorModal({
                         <label className="block text-xs font-bold text-gray-300 mb-1.5">Státusz</label>
                         <select
                           value={status}
-                          onChange={(e) => setStatus(e.target.value as any)}
+                          onChange={(e) => setStatus(e.target.value as typeof status)}
                           className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-hidden"
                         >
                           <option value="published">Publikálva (Nyilvános)</option>
@@ -1117,7 +1118,7 @@ export default function PartnerEditorModal({
                             <button
                               key={b.id}
                               type="button"
-                              onClick={() => setLogoBg(b.id as any)}
+                              onClick={() => setLogoBg(b.id as typeof logoBg)}
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                                 logoBg === b.id
                                   ? 'bg-blue-600 text-white border-blue-500'
@@ -1285,7 +1286,7 @@ export default function PartnerEditorModal({
                       <label className="block text-xs font-bold text-gray-300 mb-1.5">Működési Terület</label>
                       <select
                         value={operatingArea}
-                        onChange={(e) => setOperatingArea(e.target.value as any)}
+                        onChange={(e) => setOperatingArea(e.target.value as typeof operatingArea)}
                         className="w-full bg-[#1e2225] border border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white"
                       >
                         <option value="local">Helyi / Városi</option>

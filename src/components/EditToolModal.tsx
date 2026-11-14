@@ -185,11 +185,13 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   // Gallery URLs state
   const [galleryUrls, setGalleryUrls] = useState<string[]>(() => {
     if (!tool) return [];
-    if (Array.isArray((tool as any).image_urls) && (tool as any).image_urls.length > 0) {
-      return (tool as any).image_urls;
+    const toolExtras = tool as typeof tool & { image_urls?: string[] };
+    if (Array.isArray(toolExtras.image_urls) && toolExtras.image_urls.length > 0) {
+      return toolExtras.image_urls;
     }
-    if ((tool.specs as any)?.gallery_image_urls && Array.isArray((tool.specs as any).gallery_image_urls)) {
-      return (tool.specs as any).gallery_image_urls;
+    const specsExtras = tool.specs as (typeof tool.specs & { gallery_image_urls?: string[] }) | null | undefined;
+    if (specsExtras?.gallery_image_urls && Array.isArray(specsExtras.gallery_image_urls)) {
+      return specsExtras.gallery_image_urls;
     }
     return [];
   });
@@ -452,7 +454,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         technical_specs: specsDict,
         specs: {
           gallery_image_urls: galleryUrls.filter(Boolean),
-        } as any,
+        } as NonNullable<typeof tool>['specs'],
         recommended_products: products
           .map((p) => ({
             id: p.id || undefined,
@@ -577,7 +579,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 style={{
                   color: isActive ? cardHighlight : textColor === '#FFFFFF' ? '#9CA3AF' : '#4B5563',
                   borderColor: isActive ? cardHighlight : 'transparent',

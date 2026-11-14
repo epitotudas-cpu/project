@@ -764,7 +764,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
             <div>
               <select
                 value={sortMode}
-                onChange={(e) => setSortMode(e.target.value as any)}
+                onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
                 className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-bold text-amber-400"
               >
                 <option value="latest">Legújabb elöl</option>
@@ -908,7 +908,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                             {/* EDIT */}
                             <button
                               onClick={() => {
-                                setLockedArticleTypeForModal((art.article_type as any) || undefined);
+                                setLockedArticleTypeForModal((art.article_type as typeof lockedArticleTypeForModal) || undefined);
                                 setEditingArticle(art);
                                 setEditorOpen(true);
                               }}
@@ -1068,7 +1068,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                 onChange={(e) => {
                   const found = articles.find((a) => a.id === e.target.value);
                   if (found) {
-                    setLockedArticleTypeForModal((found.article_type as any) || undefined);
+                    setLockedArticleTypeForModal((found.article_type as typeof lockedArticleTypeForModal) || undefined);
                     setEditingArticle(found);
                     setEditorOpen(true);
                   }
@@ -1131,14 +1131,14 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
               { key: 'showAuthor', label: 'Szerző Megjelenítése', desc: 'Cikk írójának / partnérének neve a fejlécben' },
               { key: 'showDate', label: 'Publikálási Dátum', desc: 'Közzététel dátumának kijelzése' },
               { key: 'showReadTime', label: 'Olvasási Idő', desc: 'Becsült olvasási idő percben' },
-              { key: 'showFeaturedImage', label: 'Kiemelt Kép', desc: 'Felső kiemelt borítókép megjelenítése' },
-              { key: 'showTags', label: 'Címkék & Kulcsszavak', desc: 'Kapcsolódó témacímkék a cikk alján' },
-              { key: 'showShareButtons', label: 'Közösségi Megosztás', desc: 'Megosztási gombok (Facebook, Linkedin, Link)' },
-              { key: 'showRelatedArticles', label: 'Kapcsolódó Cikkek Blokk', desc: 'Ajánlott cikkek rácsa a cikk végén' },
-              { key: 'showComments', label: 'Hozzászólások Blokk', desc: 'Szakmai visszajelzések és kommentek felülete' },
-              { key: 'showPartnerBlock', label: 'Partneri Sponzor Kártya', desc: 'Partnerek által jegyzett tartalmi doboz' },
+              { key: 'showFeaturedImage' as const, label: 'Kiemelt Kép', desc: 'Felső kiemelt borítókép megjelenítése' },
+              { key: 'showTags' as const, label: 'Címkék & Kulcsszavak', desc: 'Kapcsolódó témacímkék a cikk alján' },
+              { key: 'showShareButtons' as const, label: 'Közösségi Megosztás', desc: 'Megosztási gombok (Facebook, Linkedin, Link)' },
+              { key: 'showRelatedArticles' as const, label: 'Kapcsolódó Cikkek Blokk', desc: 'Ajánlott cikkek rácsa a cikk végén' },
+              { key: 'showComments' as const, label: 'Hozzászólások Blokk', desc: 'Szakmai visszajelzések és kommentek felülete' },
+              { key: 'showPartnerBlock' as const, label: 'Partneri Sponzor Kártya', desc: 'Partnerek által jegyzett tartalmi doboz' },
             ].map((item) => {
-              const val = (articleSettings as any)[item.key];
+              const val = articleSettings[item.key as keyof typeof articleSettings];
               return (
                 <div key={item.key} className="p-4 bg-black/40 border border-gray-800 rounded-xl flex items-center justify-between">
                   <div>
@@ -1242,7 +1242,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Grid Oszlopok (Desktop)</label>
                 <select
                   value={articleSettings.desktopGridColumns}
-                  onChange={(e) => setArticleSettingsState({ ...articleSettings, desktopGridColumns: Number(e.target.value) as any })}
+                  onChange={(e) => setArticleSettingsState({ ...articleSettings, desktopGridColumns: Number(e.target.value) as typeof articleSettings.desktopGridColumns })}
                   className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
                 >
                   <option value={2}>2 Oszlop</option>
@@ -1404,7 +1404,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                       <td className="p-3 text-right">
                         <button
                           onClick={() => {
-                            setLockedArticleTypeForModal((art.article_type as any) || undefined);
+                            setLockedArticleTypeForModal((art.article_type as typeof lockedArticleTypeForModal) || undefined);
                             setEditingArticle(art);
                             setEditorOpen(true);
                           }}
@@ -1647,7 +1647,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                     onChange={(e) =>
                       setEditingTypeSettings({
                         ...editingTypeSettings,
-                        desktopGridColumns: Number(e.target.value) as any,
+                        desktopGridColumns: Number(e.target.value) as NonNullable<typeof editingTypeSettings>['desktopGridColumns'],
                       })
                     }
                     className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
@@ -1665,7 +1665,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                     onChange={(e) =>
                       setEditingTypeSettings({
                         ...editingTypeSettings,
-                        featuredMode: e.target.value as any,
+                        featuredMode: e.target.value as NonNullable<typeof editingTypeSettings>['featuredMode'],
                       })
                     }
                     className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
@@ -1684,7 +1684,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                   onChange={(e) =>
                     setEditingTypeSettings({
                       ...editingTypeSettings,
-                      defaultSortMode: e.target.value as any,
+                      defaultSortMode: e.target.value as NonNullable<typeof editingTypeSettings>['defaultSortMode'],
                     })
                   }
                   className="w-full bg-black/60 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"

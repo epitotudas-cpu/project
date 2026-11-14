@@ -510,9 +510,9 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
                       setUsers((prev) =>
                         prev.map((item) => (item.id === userId ? { ...item, role: newRole as Profile['role'] } : item))
                       );
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       await loadUsers(); // Rollback on failure
-                      const msg = err.message || 'A szerepkör módosítása nem sikerült.';
+                      const msg = err instanceof Error ? err.message : 'A szerepkör módosítása nem sikerült.';
                       setRoleUpdateError(msg);
                     }
                   }

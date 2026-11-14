@@ -517,7 +517,7 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setActiveTab(t.id as any)}
+                  onClick={() => setActiveTab(t.id as typeof activeTab)}
                   style={{
                     backgroundColor: activeTab === t.id ? cardBg : 'transparent',
                     color: activeTab === t.id ? cardHighlight : textColor,
@@ -541,7 +541,7 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       <label className="font-bold text-gray-300 block mb-1">Modul Típusa</label>
                       <select
                         value={formData.hub_type}
-                        onChange={(e) => setFormData({ ...formData, hub_type: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, hub_type: e.target.value as typeof formData.hub_type })}
                         style={fieldStyle}
                         className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
@@ -554,7 +554,7 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       <label className="font-bold text-gray-300 block mb-1">Státusz</label>
                       <select
                         value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as typeof formData.status })}
                         style={fieldStyle}
                         className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >
@@ -610,7 +610,7 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       <label className="font-bold text-gray-300 block mb-1">Célközönség</label>
                       <select
                         value={formData.target_audience}
-                        onChange={(e) => setFormData({ ...formData, target_audience: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, target_audience: e.target.value as typeof formData.target_audience })}
                         style={fieldStyle}
                         className="w-full border rounded-xl px-3 py-2 text-xs font-medium cursor-pointer"
                       >

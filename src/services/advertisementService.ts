@@ -273,7 +273,7 @@ export async function getAdvertisementSlots(): Promise<AdvertisementSlot[]> {
   const campaigns = await listAdCampaigns();
   return campaigns.map((c) => ({
     id: c.id,
-    location: (c.placement_slot as any) || 'top_banner',
+    location: (c.placement_slot as AdvertisementSlot['location']) || 'top_banner',
     title: c.title,
     imageUrl: c.banner_image_url || undefined,
     targetUrl: c.target_url || undefined,
@@ -281,7 +281,7 @@ export async function getAdvertisementSlots(): Promise<AdvertisementSlot[]> {
   }));
 }
 
-export async function getAdsForTool(_toolId?: string, _category?: string): Promise<any[]> {
+export async function getAdsForTool(_toolId?: string, _category?: string): Promise<Awaited<ReturnType<typeof listAdCampaigns>>> {
   void _toolId;
   void _category;
   return listAdCampaigns();

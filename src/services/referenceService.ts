@@ -128,12 +128,31 @@ function getLocalFallbackReferences(partnerId: string, onlyPublished: boolean): 
     if (!raw) return [];
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) return [];
-    const p = list.find((item: any) => item && (item.id === partnerId || item.slug === partnerId));
+    interface LocalRefItem {
+      id?: string;
+      is_published?: boolean;
+      image_url?: string;
+      images?: string[];
+      title?: string;
+      location?: string;
+      year?: string;
+      category?: string;
+      description?: string;
+      website_url?: string;
+      created_at?: string;
+      updated_at?: string;
+    }
+    interface LocalPartnerItem {
+      id?: string;
+      slug?: string;
+      references?: LocalRefItem[];
+    }
+    const p = (list as LocalPartnerItem[]).find((item) => item && (item.id === partnerId || item.slug === partnerId));
     if (!p || !Array.isArray(p.references)) return [];
 
     return p.references
-      .filter((r: any) => r && (!onlyPublished || r.is_published !== false))
-      .map((r: any, idx: number) => {
+      .filter((r) => r && (!onlyPublished || r.is_published !== false))
+      .map((r, idx: number) => {
         const rawImgs: string[] = [
           ...(r.image_url ? [r.image_url] : []),
           ...((r.images || []).filter((u: string) => u !== r.image_url)),
@@ -226,9 +245,10 @@ export async function getPartnerReferences(
       return getLocalFallbackReferences(partnerId, onlyPublished);
     }
 
-    return (data as any[]).map((raw) => {
+    type RawReferenceRow = Omit<PartnerReference, 'images'> & { partner_reference_images?: PartnerReferenceImage[] };
+    return (data as RawReferenceRow[]).map((raw) => {
       let rawImages: PartnerReferenceImage[] = Array.isArray(raw.partner_reference_images)
-        ? raw.partner_reference_images.sort((a: any, b: any) => a.display_order - b.display_order)
+        ? [...raw.partner_reference_images].sort((a, b) => a.display_order - b.display_order)
         : [];
 
       // Kiegészítés a helyi adatokból, ha a relációs képtáblában még nincsenek sorok
@@ -304,7 +324,7 @@ export async function updateReference(
   referenceId: string,
   payload: UpdateReferencePayload
 ): Promise<void> {
-  const updateData: Record<string, any> = {};
+  const updateData: Record<string, unknown> = {};
   if (payload.title !== undefined) updateData.title = payload.title.trim();
   if (payload.location !== undefined) updateData.location = payload.location?.trim() || null;
   if (payload.year !== undefined) updateData.year = payload.year?.trim() || null;

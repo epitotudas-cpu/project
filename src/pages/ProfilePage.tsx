@@ -214,18 +214,37 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   // School Link & Class Code State
   const [classCodeInput, setClassCodeInput] = useState('');
   const [verifyingCode, setVerifyingCode] = useState(false);
-  const [verifiedCodeInfo, setVerifiedCodeInfo] = useState<any | null>(null);
+  const [verifiedCodeInfo, setVerifiedCodeInfo] = useState<(Awaited<ReturnType<typeof getStudentCodeInfo>> & { grade?: string | number | null }) | null>(null);
   const [redeemingCode, setRedeemingCode] = useState(false);
   const [classCodeMsg, setClassCodeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [studentEnrollments, setStudentEnrollments] = useState<any[]>([]);
+  const [studentEnrollments, setStudentEnrollments] = useState<
+    Array<{
+      id: string;
+      status: string;
+      joined_at: string;
+      trade_id?: string | null;
+      class_id?: string | null;
+      school?: { id?: string; name?: string | null } | null;
+      instructor?: { id?: string; full_name?: string | null } | null;
+      school_class?: { id?: string; name?: string | null; grade?: number | null } | null;
+    }>
+  >([]);
 
   // Classmates & Class Materials State
-  const [classmates, setClassmates] = useState<any[]>([]);
-  const [classMaterials, setClassMaterials] = useState<any[]>([]);
+  const [classmates, setClassmates] = useState<
+    Array<{
+      id: string;
+      joined_at: string;
+      status: string;
+      student_id: string;
+      student?: { id?: string; full_name?: string | null } | null;
+    }>
+  >([]);
+  const [classMaterials, setClassMaterials] = useState<Awaited<ReturnType<typeof fetchStudentAssignedClassMaterials>>>([]);
 
   // Personal Flashcards State
-  const [flashcards, setFlashcards] = useState<any[]>([]);
-  const [practiceModalCard, setPracticeModalCard] = useState<any | null>(null);
+  const [flashcards, setFlashcards] = useState<ReturnType<typeof getFlashcardsLocal>>([]);
+  const [practiceModalCard, setPracticeModalCard] = useState<ReturnType<typeof getFlashcardsLocal>[number] | null>(null);
   const [practiceFlipped, setPracticeFlipped] = useState(false);
 
   const handleGoToPracticeFlashcards = () => {
@@ -262,7 +281,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         .eq('status', 'active')
         .order('joined_at', { ascending: false });
 
-      if (data) setClassmates(data);
+      if (data) setClassmates(data as unknown as typeof classmates);
     } catch (err) {
       console.warn('Error loading classmates:', err);
     }
@@ -289,7 +308,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         .order('joined_at', { ascending: false });
 
       if (!error && data) {
-        setStudentEnrollments(data);
+        setStudentEnrollments(data as unknown as typeof studentEnrollments);
         if (data.length > 0 && data[0].class_id) {
           loadClassmates(data[0].class_id);
           loadClassMaterials(data[0].class_id);
@@ -363,8 +382,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       } else {
         setClassCodeMsg({ type: 'error', text: info.error || 'A megadott osztálykód érvénytelen vagy lejárt.' });
       }
-    } catch (err: any) {
-      setClassCodeMsg({ type: 'error', text: err.message || 'Hiba történt a kód ellenőrzésekor.' });
+    } catch (err: unknown) {
+      setClassCodeMsg({ type: 'error', text: err instanceof Error ? err.message : 'Hiba történt a kód ellenőrzésekor.' });
     } finally {
       setVerifyingCode(false);
     }
@@ -383,8 +402,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       setClassCodeInput('');
       setVerifiedCodeInfo(null);
       await loadStudentEnrollments();
-    } catch (err: any) {
-      setClassCodeMsg({ type: 'error', text: err.message || 'A csatlakozás nem sikerült. Ellenőrizze az osztálykódot!' });
+    } catch (err: unknown) {
+      setClassCodeMsg({ type: 'error', text: err instanceof Error ? err.message : 'A csatlakozás nem sikerült. Ellenőrizze az osztálykódot!' });
     } finally {
       setRedeemingCode(false);
     }
@@ -665,7 +684,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const isStudent = useMemo(() => {
     if (!user) return false;
     const ut = (user.user_metadata?.user_type || profile?.userType) as string | undefined;
-    const r = (profile?.role || (user as any)?.role) as string | undefined;
+    const r = (profile?.role || (user as { role?: string } | null)?.role) as string | undefined;
     if (ut === 'tanulo' || r === 'student' || r === 'tanulo') return true;
     if (ut === 'szakember' || r === 'partner' || r === 'school' || r === 'teacher' || r === 'admin' || r === 'editor' || r === 'contact' || r === 'szakember' || isPartnerContact || isInstructor) return false;
     return ut === 'tanulo';
@@ -1156,7 +1175,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               {(() => {
                 const q = materialsSearch.trim().toLowerCase();
                 const filteredMaterials = classMaterials.filter((cm) => {
-                  const isCompleted = (cm as any).status === 'completed' || Boolean((cm as any).completed_at);
+                  const cmExtras = cm as typeof cm & { status?: string; completed_at?: string };
+                  const isCompleted = cmExtras.status === 'completed' || Boolean(cmExtras.completed_at);
                   if (materialsFilter === 'completed' && !isCompleted) return false;
                   if (materialsFilter === 'in_progress' && isCompleted) return false;
                   if (!q) return true;
@@ -1188,7 +1208,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         <button
                           onClick={() => {
                             const targetSlug = cm.material?.slug || cm.slug || cm.content_id;
-                            const directUrl = (cm as any).file_url || (cm.material as any)?.file_url;
+                            const cmFile = cm as typeof cm & { file_url?: string };
+                            const matFile = cm.material as (typeof cm.material & { file_url?: string }) | undefined;
+                            const directUrl = cmFile.file_url || matFile?.file_url;
                             const isPdfFile =
                               directUrl ||
                               targetSlug.toLowerCase().endsWith('.pdf') ||

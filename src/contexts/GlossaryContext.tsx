@@ -105,6 +105,7 @@ export function GlossaryProvider({ children }: GlossaryProviderProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useGlossary() {
   const context = useContext(GlossaryContext);
   if (!context) {

@@ -603,14 +603,14 @@ export async function fetchUserCourseProgressSupabase(
     }
     const { data, error } = await query;
     if (error || !data) return [];
-    return data.map((d: any) => ({
-      id: d.id,
-      user_id: d.user_id,
-      course_id: d.course_id,
-      completed_chapter_ids: d.completed_chapter_ids || [],
-      progress_percent: d.progress_percent || 0,
-      status: d.status || 'not_started',
-      last_accessed_at: d.last_accessed_at || d.updated_at || new Date().toISOString(),
+    return data.map((d: Record<string, unknown>) => ({
+      id: String(d.id),
+      user_id: String(d.user_id),
+      course_id: String(d.course_id),
+      completed_chapter_ids: (d.completed_chapter_ids as string[]) || [],
+      progress_percent: Number(d.progress_percent || 0),
+      status: (d.status as CourseProgress['status']) || 'not_started',
+      last_accessed_at: String(d.last_accessed_at || d.updated_at || new Date().toISOString()),
     }));
   } catch {
     return [];

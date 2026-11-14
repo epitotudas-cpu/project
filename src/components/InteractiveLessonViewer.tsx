@@ -23,7 +23,7 @@ export default function InteractiveLessonViewer({
   onComplete,
 }: InteractiveLessonViewerProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<string, string | number | number[] | NonNullable<(typeof steps)[number]['reorder_items']>>>({});
   const [feedbackState, setFeedbackState] = useState<Record<string, { isCorrect: boolean; show: boolean }>>({});
   const [isCompleted, setIsCompleted] = useState(false);
 
@@ -48,7 +48,8 @@ export default function InteractiveLessonViewer({
   };
 
   const handleMultipleChoiceToggle = (optionIdx: number) => {
-    const currentList: number[] = userAnswers[step.id] || [];
+    const rawVal = userAnswers[step.id];
+    const currentList: number[] = Array.isArray(rawVal) ? (rawVal as number[]) : [];
     const updated = currentList.includes(optionIdx)
       ? currentList.filter((i) => i !== optionIdx)
       : [...currentList, optionIdx];
@@ -56,7 +57,8 @@ export default function InteractiveLessonViewer({
   };
 
   const handleMultipleChoiceCheck = () => {
-    const selected: number[] = userAnswers[step.id] || [];
+    const rawVal = userAnswers[step.id];
+    const selected: number[] = Array.isArray(rawVal) ? (rawVal as number[]) : [];
     const correct = step.correct_option_indices || [];
     const isCorrect =
       selected.length === correct.length && selected.every((val) => correct.includes(val));
@@ -75,7 +77,8 @@ export default function InteractiveLessonViewer({
 
   // Reorder logic
   const getReorderItems = () => {
-    if (userAnswers[step.id]) return userAnswers[step.id];
+    const saved = userAnswers[step.id];
+    if (Array.isArray(saved)) return saved as NonNullable<typeof step.reorder_items>;
     return step.reorder_items || [];
   };
 
@@ -91,7 +94,7 @@ export default function InteractiveLessonViewer({
 
   const handleReorderCheck = () => {
     const currentItems = getReorderItems();
-    const isCorrect = currentItems.every((item: any, idx: number) => item.correct_position === idx + 1);
+    const isCorrect = currentItems.every((item, idx: number) => item.correct_position === idx + 1);
     setFeedbackState((prev) => ({ ...prev, [step.id]: { isCorrect, show: true } }));
   };
 
@@ -207,7 +210,7 @@ export default function InteractiveLessonViewer({
           {step.type === 'multiple_choice' && step.options && (
             <div className="space-y-3">
               {step.options.map((option, idx) => {
-                const selectedList: number[] = userAnswers[step.id] || [];
+                const selectedList: number[] = Array.isArray(userAnswers[step.id]) ? (userAnswers[step.id] as number[]) : [];
                 const isChecked = selectedList.includes(idx);
                 return (
                   <label
@@ -312,7 +315,7 @@ export default function InteractiveLessonViewer({
           {step.type === 'reorder' && (
             <div className="space-y-3">
               <div className="space-y-2">
-                {getReorderItems().map((item: any, idx: number) => (
+                {getReorderItems().map((item, idx: number) => (
                   <div
                     key={item.id}
                     className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800"

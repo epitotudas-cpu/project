@@ -114,7 +114,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
   const [emailStatusNotice, setEmailStatusNotice] = useState<string | null>(null);
 
-  const inviteEmailCheckTimeoutRef = useRef<any>(null);
+  const inviteEmailCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleInviteEmailChange = (val: string) => {
     setInviteEmail(val);
@@ -170,7 +170,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [copied, setCopied] = useState(false);
 
   // School Education State
-  const [schoolInstructorsMap, setSchoolInstructorsMap] = useState<Record<string, any[]>>({});
+  const [schoolInstructorsMap, setSchoolInstructorsMap] = useState<Record<string, Awaited<ReturnType<typeof listSchoolInstructors>>>>({});
   const [schoolCodesMap, setSchoolCodesMap] = useState<Record<string, StudentInvitationCode[]>>({});
 
   // Assign Trade Modal State
@@ -223,8 +223,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       await loadSchoolData(assignTradePartnerId);
       setShowAssignTradeModal(false);
       setAssignTradeSelectedId('');
-    } catch (err: any) {
-      toast.error(err.message || 'Szakma hozzárendelése nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Szakma hozzárendelése nem sikerült.');
     } finally {
       setAssignTradeSubmitting(false);
     }
@@ -246,8 +246,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         setCodeTradeId('');
       }
       setShowGenerateCodeModal(true);
-    } catch (err: any) {
-      toast.error(err.message || 'Szakmák betöltése nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Szakmák betöltése nem sikerült.');
     }
   }
 
@@ -271,8 +271,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
       await loadSchoolData(codePartnerId);
       setShowGenerateCodeModal(false);
-    } catch (err: any) {
-      setCodeError(err.message || 'Osztálytermi kód generálása nem sikerült.');
+    } catch (err: unknown) {
+      setCodeError(err instanceof Error ? err.message : 'Osztálytermi kód generálása nem sikerült.');
     } finally {
       setCodeSubmitting(false);
     }
@@ -322,7 +322,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
       if (staffData) {
         const grouped: Record<string, PartnerStaffMember[]> = {};
-        for (const item of staffData as any[]) {
+        for (const item of staffData as unknown as PartnerStaffMember[]) {
           if (!grouped[item.partner_id]) grouped[item.partner_id] = [];
           grouped[item.partner_id].push(item);
         }
@@ -362,7 +362,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       if (editingPartner) {
         await updatePartner(editingPartner.id, data);
       } else {
-        await createPartner(data as any);
+        await createPartner(data as Parameters<typeof createPartner>[0]);
       }
       await loadData();
     } catch (err) {
@@ -479,8 +479,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       setCreatedInviteCode(inv.code);
       setCreatedTemplate(template);
       await loadData();
-    } catch (err: any) {
-      setInviteError(err.message || 'Hiba történt a meghívó létrehozásakor.');
+    } catch (err: unknown) {
+      setInviteError(err instanceof Error ? err.message : 'Hiba történt a meghívó létrehozásakor.');
     } finally {
       setInviteLoading(false);
     }
@@ -525,8 +525,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         );
         setShowInviteModal(true);
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Az újraküldés sikertelen.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Az újraküldés sikertelen.');
     }
   }
 
@@ -554,8 +554,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
       setShowEditInviteModal(false);
       loadData();
-    } catch (err: any) {
-      toast.error(err.message || 'A meghívó szerkesztése nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'A meghívó szerkesztése nem sikerült.');
     }
   }
 
@@ -569,8 +569,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         try {
           await deleteInvitation(id);
           loadData();
-        } catch (err: any) {
-          toast.error(err.message || 'A meghívó törlése nem sikerült.');
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'A meghívó törlése nem sikerült.');
         }
       },
     });
@@ -582,8 +582,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       await updateApplicationStatus(app.id, 'approved');
       openCreateInviteModal(app.company_name, app.email, (app.category as PartnerCategory) || 'ceg');
       await loadData();
-    } catch (err: any) {
-      toast.error(err.message || 'A jelentkezés elfogadása nem sikerült.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'A jelentkezés elfogadása nem sikerült.');
     }
   }
 
@@ -597,8 +597,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
         try {
           await updateApplicationStatus(id, 'rejected');
           await loadData();
-        } catch (err: any) {
-          toast.error(err.message || 'Az elutasítás nem sikerült.');
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'Az elutasítás nem sikerült.');
         }
       },
     });
@@ -974,7 +974,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => openGenerateCodeModalForInstructor(partner.id, inst.user_id, inst.full_name)}
+                                        onClick={() => openGenerateCodeModalForInstructor(partner.id, inst.user_id, inst.full_name || undefined)}
                                         className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors cursor-pointer"
                                       >
                                         + Kód

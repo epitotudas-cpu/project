@@ -27,7 +27,7 @@ const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
 
 export default function PartnerLearningPage() {
   const { profile } = useAuth();
-  const currentPartnerId = (profile as any)?.partner_id as string | undefined;
+  const currentPartnerId = (profile as (typeof profile & { partner_id?: string }) | null)?.partner_id;
   const hasPartnerAccess = Boolean(currentPartnerId) || isAdmin(profile);
   const currentPartnerName = profile?.full_name || 'Partner Kft.';
 

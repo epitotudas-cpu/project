@@ -1,47 +1,65 @@
 import { useState, useEffect } from 'react';
 import { Download, Info } from 'lucide-react';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+type PwaWindow = Window & {
+  opera?: string;
+  __DEFERRED_PWA_PROMPT__?: BeforeInstallPromptEvent | null;
+};
+
+type PwaNavigator = Navigator & {
+  standalone?: boolean;
+};
+
 export default function AndroidInstallCta() {
   const [isAndroid, setIsAndroid] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showFallbackInfo, setShowFallbackInfo] = useState(false);
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
+    const pwaWindow = typeof window !== 'undefined' ? (window as PwaWindow) : undefined;
+    const pwaNavigator = typeof navigator !== 'undefined' ? (navigator as PwaNavigator) : undefined;
+
     // 1. Detect Android OS on mobile device
-    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
-      const ua = navigator.userAgent || navigator.vendor || (window as any).opera || '';
+    if (pwaWindow && pwaNavigator) {
+      const ua = pwaNavigator.userAgent || pwaNavigator.vendor || pwaWindow.opera || '';
       const android = /android/i.test(ua);
       setIsAndroid(android);
 
       // 2. Detect standalone / already installed state
       const standalone =
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (navigator as any).standalone === true ||
+        pwaWindow.matchMedia('(display-mode: standalone)').matches ||
+        pwaNavigator.standalone === true ||
         document.referrer.includes('android-app://');
       setIsStandalone(standalone);
     }
 
     // 3. Check for globally pre-captured prompt event
-    if (typeof window !== 'undefined' && (window as any).__DEFERRED_PWA_PROMPT__) {
-      setDeferredPrompt((window as any).__DEFERRED_PWA_PROMPT__);
+    if (pwaWindow?.__DEFERRED_PWA_PROMPT__) {
+      setDeferredPrompt(pwaWindow.__DEFERRED_PWA_PROMPT__);
     }
 
     // 4. Register PWA event listeners
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      if (typeof window !== 'undefined') {
-        (window as any).__DEFERRED_PWA_PROMPT__ = e;
+      const installEvent = e as BeforeInstallPromptEvent;
+      if (pwaWindow) {
+        pwaWindow.__DEFERRED_PWA_PROMPT__ = installEvent;
       }
-      setDeferredPrompt(e);
+      setDeferredPrompt(installEvent);
     };
 
     const handleAppInstalled = () => {
       setInstalled(true);
       setDeferredPrompt(null);
-      if (typeof window !== 'undefined') {
-        (window as any).__DEFERRED_PWA_PROMPT__ = null;
+      if (pwaWindow) {
+        pwaWindow.__DEFERRED_PWA_PROMPT__ = null;
       }
     };
 
@@ -55,7 +73,8 @@ export default function AndroidInstallCta() {
   }, []);
 
   const handleInstallClick = async () => {
-    const promptEvent = deferredPrompt || (typeof window !== 'undefined' && (window as any).__DEFERRED_PWA_PROMPT__);
+    const pwaWindow = typeof window !== 'undefined' ? (window as PwaWindow) : undefined;
+    const promptEvent = deferredPrompt || pwaWindow?.__DEFERRED_PWA_PROMPT__;
     if (promptEvent && typeof promptEvent.prompt === 'function') {
       try {
         await promptEvent.prompt();
@@ -64,8 +83,8 @@ export default function AndroidInstallCta() {
           setInstalled(true);
         }
         setDeferredPrompt(null);
-        if (typeof window !== 'undefined') {
-          (window as any).__DEFERRED_PWA_PROMPT__ = null;
+        if (pwaWindow) {
+          pwaWindow.__DEFERRED_PWA_PROMPT__ = null;
         }
       } catch {
         setShowFallbackInfo(true);
