@@ -387,7 +387,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
       {editorView === 'tools' && (canView('catalog') ? <AdminToolsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'books' && (canView('catalog') ? <AdminBooksPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'moderation' && (canView('moderation') ? <AdminModerationPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
-      {editorView === 'settings' && <EditorSettingsPage />}
+      {editorView === 'settings' && (canView('settings') ? <EditorSettingsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
     </EditorLayout>
   );
 }
@@ -558,20 +558,6 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             if (isEdu(partnerByEmail.category, (partnerByEmail as ExtendedPartner).partner_type)) {
               setIsSchoolCategory(true);
             }
-            return;
-          }
-
-          // 4. Fallback check: query partner_applications by email
-          const { data: appByEmail } = await supabase
-            .from('partner_applications')
-            .select('category')
-            .eq('email', user.email)
-            .limit(1)
-            .maybeSingle();
-
-          if (appByEmail && isEdu(appByEmail.category, null)) {
-            setMemberRole('owner');
-            setIsSchoolCategory(true);
             return;
           }
         }

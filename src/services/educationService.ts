@@ -457,7 +457,7 @@ export async function saveEducationData(
       !options?.forceOverwrite &&
       typeof writeAppConfigIfUnchanged === 'function';
 
-    if (canUseCAS && lastKnownEducationUpdatedAt !== null) {
+    if (canUseCAS) {
       const res = await writeAppConfigIfUnchanged(
         '__SYSTEM_CONFIG_COURSES__',
         data,
@@ -778,7 +778,7 @@ export function getAllFlashcards(courseId?: string): Flashcard[] {
   return list;
 }
 
-export function saveFlashcard(card: Flashcard): void {
+export async function saveFlashcard(card: Flashcard): Promise<void> {
   const data = getEducationData();
   const currentCards = data.flashcards || DEFAULT_FLASHCARDS;
 
@@ -790,14 +790,14 @@ export function saveFlashcard(card: Flashcard): void {
     updated = [card, ...currentCards];
   }
 
-  saveEducationData({ ...data, flashcards: updated });
+  await saveEducationData({ ...data, flashcards: updated });
 }
 
-export function deleteFlashcard(cardId: string): void {
+export async function deleteFlashcard(cardId: string): Promise<void> {
   const data = getEducationData();
   const currentCards = data.flashcards || DEFAULT_FLASHCARDS;
   const updated = currentCards.filter((c) => c.id !== cardId);
-  saveEducationData({ ...data, flashcards: updated });
+  await saveEducationData({ ...data, flashcards: updated });
 }
 
 export function getInteractiveStepsForLesson(lessonId: string): InteractiveStep[] {
@@ -806,14 +806,14 @@ export function getInteractiveStepsForLesson(lessonId: string): InteractiveStep[
   return stepsMap[lessonId] || DEFAULT_INTERACTIVE_STEPS[lessonId] || [];
 }
 
-export function saveInteractiveStepsForLesson(lessonId: string, steps: InteractiveStep[]): void {
+export async function saveInteractiveStepsForLesson(lessonId: string, steps: InteractiveStep[]): Promise<void> {
   const data = getEducationData();
   const stepsMap = data.interactive_steps || DEFAULT_INTERACTIVE_STEPS;
   const updatedMap = {
     ...stepsMap,
     [lessonId]: steps,
   };
-  saveEducationData({ ...data, interactive_steps: updatedMap });
+  await saveEducationData({ ...data, interactive_steps: updatedMap });
 }
 
 export interface StudentClassMaterialItem {

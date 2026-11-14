@@ -149,6 +149,7 @@ export default function EditQuizModal({
         time_limit_minutes: timeLimit,
         questions,
         status,
+        updated_at: quiz?.updated_at,
         partner_id: partnerId || quiz?.partner_id || null,
         partner_name: partnerName || quiz?.partner_name || null,
       });

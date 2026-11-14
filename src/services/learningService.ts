@@ -381,6 +381,16 @@ async function mutateCloudListWithCAS<T extends { id: string; updated_at?: strin
   throw new Error('Párhuzamos módosítási ütközés történt. Kérjük, próbáld újra.');
 }
 
+function isStaleEdit(existingUpdatedAt?: string, payloadUpdatedAt?: string): boolean {
+  if (!existingUpdatedAt || !payloadUpdatedAt) return false;
+  const existingMs = Date.parse(existingUpdatedAt);
+  const payloadMs = Date.parse(payloadUpdatedAt);
+  if (Number.isNaN(existingMs) || Number.isNaN(payloadMs)) {
+    return existingUpdatedAt > payloadUpdatedAt;
+  }
+  return existingMs > payloadMs;
+}
+
 export async function saveCourse(payload: Partial<LearningCourse>): Promise<LearningCourse> {
   const result = await mutateCloudListWithCAS<LearningCourse>({
     cloudKey: CLOUD_COURSES_KEY,
@@ -391,7 +401,7 @@ export async function saveCourse(payload: Partial<LearningCourse>): Promise<Lear
       const existing = payload.id ? all.find((c) => c.id === payload.id) : undefined;
 
       if (existing) {
-        if (payload.updated_at && existing.updated_at && existing.updated_at > payload.updated_at) {
+        if (isStaleEdit(existing.updated_at, payload.updated_at)) {
           throw new Error('A tananyagot időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
         }
         const updatedCourse: LearningCourse = {
@@ -546,7 +556,7 @@ export async function saveQuiz(payload: Partial<Quiz>): Promise<Quiz> {
       const existing = payload.id ? all.find((q) => q.id === payload.id) : undefined;
 
       if (existing) {
-        if (payload.updated_at && existing.updated_at && existing.updated_at > payload.updated_at) {
+        if (isStaleEdit(existing.updated_at, payload.updated_at)) {
           throw new Error('A tesztet időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
         }
         const updatedQuiz: Quiz = {

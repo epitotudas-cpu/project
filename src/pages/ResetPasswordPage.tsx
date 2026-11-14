@@ -10,7 +10,7 @@ interface ResetPasswordPageProps {
 
 export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps) {
   const scheduleTimeout = useSafeTimeouts();
-  const { updatePassword } = useAuth();
+  const { updatePassword, authEvent } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +19,18 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const hasRecoveryContext = (() => {
+    if (authEvent === 'PASSWORD_RECOVERY') return true;
+    if (typeof window === 'undefined') return false;
+    try {
+      if (sessionStorage.getItem('password_recovery_active') === 'true') return true;
+    } catch {
+      // Ignore sessionStorage errors
+    }
+    const urlStr = `${window.location.hash || ''}${window.location.search || ''}`;
+    return urlStr.includes('type=recovery') || urlStr.includes('access_token=');
+  })();
+
   const siteSettings = useSiteSettings();
   const logoUrl = getDynamicImageUrl(siteSettings.logoUrl, '/logo.png', siteSettings.iconsUpdatedAt);
 
@@ -26,6 +38,10 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
     e.preventDefault();
     setError(null);
 
+    if (!hasRecoveryContext) {
+      setError('Érvénytelen vagy lejárt jelszó-visszaállítási munkamenet. Kérj új visszaállítási linket!');
+      return;
+    }
     if (!password) { setError('A jelszó megadása kötelező.'); return; }
     if (password.length < 8) { setError('A jelszónak legalább 8 karakter hosszúnak kell lennie.'); return; }
     if (password !== confirmPassword) { setError('A két jelszó nem egyezik.'); return; }
@@ -35,6 +51,11 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
       const result = await updatePassword(password);
       if (result.error) { setError(result.error); return; }
 
+      try {
+        sessionStorage.removeItem('password_recovery_active');
+      } catch {
+        // Ignore sessionStorage errors
+      }
       setSuccess(true);
       scheduleTimeout(() => onNavigate('home'), 2500);
     } catch {

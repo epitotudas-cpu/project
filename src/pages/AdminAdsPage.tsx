@@ -655,7 +655,7 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
             </div>
             <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border space-y-1 shadow-md col-span-2 sm:col-span-1">
               <span className="text-[11px] font-bold text-gray-400 block truncate">Átlagos CTR</span>
-              <span className="text-xl font-black style={{ color: cardHighlight }}" style={{ color: cardHighlight }}>{kpiStats.averageCtr}%</span>
+              <span className="text-xl font-black" style={{ color: cardHighlight }}>{kpiStats.averageCtr}%</span>
             </div>
           </div>
 

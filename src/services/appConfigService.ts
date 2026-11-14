@@ -111,7 +111,7 @@ export async function writeAppConfigIfUnchanged<T>(
   key: string,
   value: T,
   expectedUpdatedAt: string | null,
-  legacyCategory?: { id: string; slug: string }
+  _legacyCategory?: { id: string; slug: string }
 ): Promise<{ conflict: boolean; updatedAt: string | null }> {
   const now = new Date().toISOString();
 
@@ -132,6 +132,8 @@ export async function writeAppConfigIfUnchanged<T>(
         updatedAt: typeof data[0]?.updated_at === 'string' ? data[0].updated_at : now,
       };
     }
+
+    throw error;
   } else {
     const { data, error } = await supabase
       .from('app_configs')
@@ -148,9 +150,8 @@ export async function writeAppConfigIfUnchanged<T>(
     if (error.code === '23505') {
       return { conflict: true, updatedAt: null };
     }
-  }
 
-  await writeAppConfig(key, value, legacyCategory);
-  return { conflict: false, updatedAt: now };
+    throw error;
+  }
 }
 

@@ -124,6 +124,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const acceptableStatuses = ['sent', 'viewed', 'pending_acceptance'];
+    if (!acceptableStatuses.includes(String(contract.status || ''))) {
+      return new Response(
+        JSON.stringify({ error: 'Csak kiküldött vagy elfogadásra váró szerződés fogadható el.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { data: callerProfile } = await adminClient
       .from('profiles')
       .select('role')
@@ -156,25 +164,6 @@ Deno.serve(async (req: Request) => {
       `${contract.contract_number}|${contract.partner_id}|${contract.amount}|${contract.content || ''}`
     );
 
-    const { error: logErr } = await adminClient.from('contract_acceptance_logs').insert({
-      contract_id: contract.id,
-      partner_id: contract.partner_id,
-      user_id: callerId,
-      accepted_by: acceptedBy,
-      accepted_email: acceptedEmail,
-      ip_address: clientIp,
-      user_agent: userAgent,
-      content_sha256: contentSha256,
-      accepted_at: nowIso,
-    });
-
-    if (logErr) {
-      return new Response(
-        JSON.stringify({ error: `Audit napló mentési hiba: ${logErr.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const acceptanceLog = {
       acceptedBy,
       email: acceptedEmail,
@@ -198,7 +187,7 @@ Deno.serve(async (req: Request) => {
       },
     ];
 
-    const { error: updateErr } = await adminClient
+    const { data: claimedRow, error: updateErr } = await adminClient
       .from('partner_contracts')
       .update({
         status: 'accepted',
@@ -206,11 +195,40 @@ Deno.serve(async (req: Request) => {
         versions: nextVersions,
         updated_at: nowIso,
       })
-      .eq('id', contract.id);
+      .eq('id', contract.id)
+      .in('status', acceptableStatuses)
+      .select('id')
+      .maybeSingle();
 
     if (updateErr) {
       return new Response(
         JSON.stringify({ error: `Szerződés frissítési hiba: ${updateErr.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!claimedRow) {
+      return new Response(
+        JSON.stringify({ error: 'Ez a szerződés már korábban elfogadásra került.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { error: logErr } = await adminClient.from('contract_acceptance_logs').insert({
+      contract_id: contract.id,
+      partner_id: contract.partner_id,
+      user_id: callerId,
+      accepted_by: acceptedBy,
+      accepted_email: acceptedEmail,
+      ip_address: clientIp,
+      user_agent: userAgent,
+      content_sha256: contentSha256,
+      accepted_at: nowIso,
+    });
+
+    if (logErr) {
+      return new Response(
+        JSON.stringify({ error: `Audit napló mentési hiba: ${logErr.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

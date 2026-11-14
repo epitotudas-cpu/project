@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import * as authClient from '../lib/authClient';
 import * as userService from '../services/userService';
@@ -29,8 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
+  const inviteCheckInFlightRef = useRef(false);
 
   const checkPendingInvitation = useCallback(async (userObj?: User | null) => {
+    if (inviteCheckInFlightRef.current) return;
+    inviteCheckInFlightRef.current = true;
     try {
       // 1. Check for pending student class invitation code
       const pendingStudentCode = sessionStorage.getItem('pending_student_invite_code');
@@ -45,14 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // 2. Check for pending partner staff invitation code
+      let redeemedPending = false;
       const pendingCode = sessionStorage.getItem('pending_invite_code');
       if (pendingCode) {
         sessionStorage.removeItem('pending_invite_code');
         await acceptInvitation(pendingCode);
+        redeemedPending = true;
       }
 
       const activeEmail = userObj?.email;
-      if (activeEmail) {
+      if (activeEmail && !redeemedPending) {
         const { data: activeInv } = await supabase
           .from('partner_invitations')
           .select('code')
@@ -68,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.warn('Pending invitation accept info:', err);
+    } finally {
+      inviteCheckInFlightRef.current = false;
     }
   }, []);
 
@@ -98,6 +105,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = authClient.onAuthStateChange((event, session) => {
       setAuthEvent(event);
+
+      if (event === 'PASSWORD_RECOVERY') {
+        try {
+          sessionStorage.setItem('password_recovery_active', 'true');
+        } catch {
+          // Ignore sessionStorage errors
+        }
+      } else if (event === 'SIGNED_OUT') {
+        try {
+          sessionStorage.removeItem('password_recovery_active');
+        } catch {
+          // Ignore sessionStorage errors
+        }
+      }
 
       // Handle email verification callback hash cleanly
       if (typeof window !== 'undefined') {

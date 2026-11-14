@@ -167,6 +167,7 @@ export default function EditCourseModal({
         chapters,
         key_terms: keyTerms,
         status,
+        updated_at: course?.updated_at,
         partner_id: partnerId || course?.partner_id || null,
         partner_name: partnerName || course?.partner_name || null,
       });

@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://epitotudas.hu/</loc>
+    <loc>https://www.epitotudas.hu/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/paths</loc>
+    <loc>https://www.epitotudas.hu/paths</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/courses</loc>
+    <loc>https://www.epitotudas.hu/courses</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/careers</loc>
+    <loc>https://www.epitotudas.hu/careers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/glossary</loc>
+    <loc>https://www.epitotudas.hu/glossary</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/books</loc>
+    <loc>https://www.epitotudas.hu/books</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/calculations</loc>
+    <loc>https://www.epitotudas.hu/calculations</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/about</loc>
+    <loc>https://www.epitotudas.hu/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://epitotudas.hu/partners</loc>
+    <loc>https://www.epitotudas.hu/partners</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

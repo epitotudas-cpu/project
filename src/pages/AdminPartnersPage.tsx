@@ -424,19 +424,16 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
       return;
     }
 
-    const isAlreadyRegistered = await checkEmailExists(inviteEmail.trim());
-    if (isAlreadyRegistered) {
-      setInviteError('Ez az e-mail-cím már regisztrálva van.');
-      setInviteEmailError('Ez az e-mail-cím már regisztrálva van.');
-      return;
-    }
-
     setInviteLoading(true);
     setInviteError(null);
     setInviteEmailError(null);
     setEmailStatusNotice(null);
 
     try {
+      const selectedPartner = partners.find((p) => p.id === invitePartnerId);
+      const displayOrgName =
+        invitePartnerMode === 'uncreated' ? organizationName.trim() : selectedPartner?.name || 'Szervezet';
+
       const invPayload =
         invitePartnerMode === 'uncreated'
           ? {
@@ -444,16 +441,15 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             organizationCategory,
             email: inviteEmail.trim(),
             expiresInDays,
+            allowExistingUser: true,
           }
           : {
             partnerId: invitePartnerId,
+            organizationName: selectedPartner?.name,
             email: inviteEmail.trim(),
             expiresInDays,
+            allowExistingUser: true,
           };
-
-      const selectedPartner = partners.find((p) => p.id === invitePartnerId);
-      const displayOrgName =
-        invitePartnerMode === 'uncreated' ? organizationName.trim() : selectedPartner?.name || 'Szervezet';
 
       const inv = await createInvitation(invPayload);
 

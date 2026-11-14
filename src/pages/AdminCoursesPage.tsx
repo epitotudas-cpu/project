@@ -122,58 +122,67 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
       message: 'Biztosan törölni szeretnéd ezt a képzést és a hozzá tartozó leckéket?',
       confirmLabel: 'Törlés',
       destructive: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         const updatedCourses = eduData.courses.filter((c) => c.id !== id);
         const updatedLessons = { ...eduData.lessons };
         delete updatedLessons[id];
         const updatedQuestions = { ...eduData.questions };
         delete updatedQuestions[id];
 
-        saveEducationData({
-          courses: updatedCourses,
-          lessons: updatedLessons,
-          questions: updatedQuestions,
-        });
-        if (activeCourseId === id) setActiveCourseId(null);
-        triggerSuccessNotify();
+        try {
+          await saveEducationData({
+            ...eduData,
+            courses: updatedCourses,
+            lessons: updatedLessons,
+            questions: updatedQuestions,
+          });
+          if (activeCourseId === id) setActiveCourseId(null);
+          triggerSuccessNotify();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Hiba történt a tanfolyam törlésekor.');
+        }
       },
     });
   };
 
-  const handleSaveCourse = (e: React.FormEvent) => {
+  const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseTitle.trim()) return;
 
-    if (editingCourse) {
-      const updatedCourses = eduData.courses.map((c) =>
-        c.id === editingCourse.id
-          ? {
-              ...c,
-              title: courseTitle.trim(),
-              slug: courseTitle.trim().toLowerCase().replace(/\s+/g, '-'),
-              description: courseDescription.trim(),
-              category: courseCategory.trim(),
-              duration_hours: courseDuration,
-            }
-          : c
-      );
-      saveEducationData({ ...eduData, courses: updatedCourses });
-    } else {
-      const newCourse: Course = {
-        id: `course-${Date.now()}`,
-        title: courseTitle.trim(),
-        slug: courseTitle.trim().toLowerCase().replace(/\s+/g, '-'),
-        description: courseDescription.trim(),
-        category: courseCategory.trim(),
-        duration_hours: courseDuration,
-        is_published: true,
-        created_at: new Date().toISOString(),
-      };
-      saveEducationData({ ...eduData, courses: [newCourse, ...eduData.courses] });
-    }
+    try {
+      if (editingCourse) {
+        const updatedCourses = eduData.courses.map((c) =>
+          c.id === editingCourse.id
+            ? {
+                ...c,
+                title: courseTitle.trim(),
+                slug: courseTitle.trim().toLowerCase().replace(/\s+/g, '-'),
+                description: courseDescription.trim(),
+                category: courseCategory.trim(),
+                duration_hours: courseDuration,
+              }
+            : c
+        );
+        await saveEducationData({ ...eduData, courses: updatedCourses });
+      } else {
+        const newCourse: Course = {
+          id: `course-${Date.now()}`,
+          title: courseTitle.trim(),
+          slug: courseTitle.trim().toLowerCase().replace(/\s+/g, '-'),
+          description: courseDescription.trim(),
+          category: courseCategory.trim(),
+          duration_hours: courseDuration,
+          is_published: true,
+          created_at: new Date().toISOString(),
+        };
+        await saveEducationData({ ...eduData, courses: [newCourse, ...eduData.courses] });
+      }
 
-    setShowCourseModal(false);
-    triggerSuccessNotify();
+      setShowCourseModal(false);
+      triggerSuccessNotify();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a tanfolyam mentésekor.');
+    }
   };
 
   // Lesson Handlers
@@ -195,7 +204,7 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
     setShowLessonModal(true);
   };
 
-  const handleSaveLesson = (e: React.FormEvent) => {
+  const handleSaveLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCourseId || !lessonTitle.trim()) return;
 
@@ -226,16 +235,20 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
       updatedLessons = [...currentLessons, newLesson];
     }
 
-    saveEducationData({
-      ...eduData,
-      lessons: {
-        ...eduData.lessons,
-        [activeCourseId]: updatedLessons,
-      },
-    });
+    try {
+      await saveEducationData({
+        ...eduData,
+        lessons: {
+          ...eduData.lessons,
+          [activeCourseId]: updatedLessons,
+        },
+      });
 
-    setShowLessonModal(false);
-    triggerSuccessNotify();
+      setShowLessonModal(false);
+      triggerSuccessNotify();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a lecke mentésekor.');
+    }
   };
 
   const handleDeleteLesson = (courseId: string, lessonId: string) => {
@@ -244,17 +257,21 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
       message: 'Biztosan törölni szeretnéd ezt a leckét?',
       confirmLabel: 'Törlés',
       destructive: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         const currentLessons = eduData.lessons[courseId] || [];
         const updatedLessons = currentLessons.filter((l) => l.id !== lessonId);
-        saveEducationData({
-          ...eduData,
-          lessons: {
-            ...eduData.lessons,
-            [courseId]: updatedLessons,
-          },
-        });
-        triggerSuccessNotify();
+        try {
+          await saveEducationData({
+            ...eduData,
+            lessons: {
+              ...eduData.lessons,
+              [courseId]: updatedLessons,
+            },
+          });
+          triggerSuccessNotify();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Hiba történt a lecke törlésekor.');
+        }
       },
     });
   };
@@ -284,7 +301,7 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
     setShowQuizModal(true);
   };
 
-  const handleSaveQuiz = (e: React.FormEvent) => {
+  const handleSaveQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCourseId || !quizQuestionText.trim()) return;
 
@@ -315,16 +332,20 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
       updatedQuestions = [...currentQuestions, newQuestion];
     }
 
-    saveEducationData({
-      ...eduData,
-      questions: {
-        ...eduData.questions,
-        [activeCourseId]: updatedQuestions,
-      },
-    });
+    try {
+      await saveEducationData({
+        ...eduData,
+        questions: {
+          ...eduData.questions,
+          [activeCourseId]: updatedQuestions,
+        },
+      });
 
-    setShowQuizModal(false);
-    triggerSuccessNotify();
+      setShowQuizModal(false);
+      triggerSuccessNotify();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a tesztkérdés mentésekor.');
+    }
   };
 
   const handleDeleteQuiz = (courseId: string, qId: string) => {
@@ -333,17 +354,21 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
       message: 'Biztosan törölni szeretnéd ezt a tesztkérdést?',
       confirmLabel: 'Törlés',
       destructive: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         const currentQuestions = eduData.questions[courseId] || [];
         const updated = currentQuestions.filter((q) => q.id !== qId);
-        saveEducationData({
-          ...eduData,
-          questions: {
-            ...eduData.questions,
-            [courseId]: updated,
-          },
-        });
-        triggerSuccessNotify();
+        try {
+          await saveEducationData({
+            ...eduData,
+            questions: {
+              ...eduData.questions,
+              [courseId]: updated,
+            },
+          });
+          triggerSuccessNotify();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Hiba történt a tesztkérdés törlésekor.');
+        }
       },
     });
   };
@@ -354,9 +379,13 @@ export default function AdminCoursesPage({ initialSearchQuery }: AdminCoursesPag
       message: 'Biztosan visszaállítod a képzési katalógust az alapértelmezett adatokra?',
       confirmLabel: 'Visszaállítás',
       destructive: true,
-      onConfirm: () => {
-        saveEducationData(DEFAULT_EDUCATION_DATA);
-        triggerSuccessNotify();
+      onConfirm: async () => {
+        try {
+          await saveEducationData(DEFAULT_EDUCATION_DATA);
+          triggerSuccessNotify();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Hiba történt a visszaállításkor.');
+        }
       },
     });
   };

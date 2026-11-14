@@ -170,7 +170,7 @@ export async function approveAndOnboardPartnerApplication(
   const category = normalizePartnerCategory(app.category);
 
   // 1. Find existing partner or provision a new verified organization
-  const existingPartners = await listPartners(undefined, 200);
+  const existingPartners = await listPartners(undefined, 1000);
   let partner =
     (app.partner_id ? existingPartners.find((p) => p.id === app.partner_id) : undefined) ||
     existingPartners.find((p) => p.name.trim().toLowerCase() === normalizedName);
@@ -182,6 +182,8 @@ export async function approveAndOnboardPartnerApplication(
       category,
       description: app.description?.trim() || undefined,
       website_url: app.website_url?.trim() || undefined,
+      contact_email: normalizedEmail,
+      contact_person_name: app.contact_name?.trim() || undefined,
       is_verified: true,
     });
     partnerCreated = true;
@@ -203,6 +205,7 @@ export async function approveAndOnboardPartnerApplication(
   } else {
     invitation = await createInvitation({
       partnerId: partner.id,
+      organizationName: partner.name,
       email: normalizedEmail,
       expiresInDays: 14,
       allowExistingUser: true,

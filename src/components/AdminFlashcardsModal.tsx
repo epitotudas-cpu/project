@@ -100,7 +100,7 @@ export default function AdminFlashcardsModal({
     setDeleteCardId(id);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim() || !answer.trim()) return;
 
@@ -115,8 +115,12 @@ export default function AdminFlashcardsModal({
       created_at: editingCard?.created_at || new Date().toISOString(),
     };
 
-    saveFlashcard(newOrUpdated);
-    setShowEditModal(false);
+    try {
+      await saveFlashcard(newOrUpdated);
+      setShowEditModal(false);
+    } catch (err) {
+      setAiDraftNotice(err instanceof Error ? err.message : 'Hiba történt a kártya mentésekor.');
+    }
   };
 
   const handleGenerateAiDraft = () => {
@@ -398,9 +402,13 @@ export default function AdminFlashcardsModal({
         message="Biztosan törölni szeretnéd ezt a tanulókártyát?"
         confirmLabel="Törlés"
         destructive
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deleteCardId) {
-            deleteFlashcard(deleteCardId);
+            try {
+              await deleteFlashcard(deleteCardId);
+            } catch (err) {
+              setAiDraftNotice(err instanceof Error ? err.message : 'Hiba történt a kártya törlésekor.');
+            }
           }
           setDeleteCardId(null);
         }}

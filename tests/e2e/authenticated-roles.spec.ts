@@ -27,11 +27,41 @@ function attachErrorCollectors(page: Page) {
   return pageErrors;
 }
 
-test.describe('Hitelesített szerepkörös mély E2E tesztek (Admin / Partner / Oktató)', () => {
-  test('Admin munkamenet: teljes admin menü, Partnerek fülek, Szerződések modal és Profil hiba nélkül', async ({ page }) => {
+async function dismissAnyOpenModal(page: Page) {
+  const openModal = page.locator('div.fixed.inset-0').first();
+  if (await openModal.isVisible().catch(() => false)) {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    if (await openModal.isVisible().catch(() => false)) {
+      const closeBtn = openModal
+        .locator('button:has-text("Mégse"), button:has-text("Bezárás"), button[aria-label*="Bezár"], button:has(svg.lucide-x)')
+        .first();
+      if (await closeBtn.isVisible().catch(() => false)) {
+        await closeBtn.click();
+        await page.waitForTimeout(150);
+      }
+    }
+  }
+}
+
+async function exerciseSearchInMain(page: Page) {
+  const searchInput = page
+    .locator('main input[type="search"], main input[placeholder*="Keres"], main input[placeholder*="keres"]')
+    .first();
+  if (await searchInput.isVisible().catch(() => false)) {
+    await searchInput.fill('teszt');
+    await page.waitForTimeout(150);
+    await searchInput.fill('');
+    await page.waitForTimeout(100);
+  }
+}
+
+test.describe('Hitelesített szerepkörös teljes funkcionális E2E tesztek (Admin / Partner / Oktató)', () => {
+  test('Admin fiók: összes admin modul, belső fülek, keresők, modalok és profil működik', async ({ page }) => {
     const email = process.env.E2E_ADMIN_EMAIL;
     const password = process.env.E2E_ADMIN_PASSWORD;
     test.skip(!email || !password, 'E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD nincs beállítva (.env.test).');
+    test.setTimeout(120_000);
 
     const pageErrors = attachErrorCollectors(page);
     await loginViaUI(page, email!, password!);
@@ -43,24 +73,31 @@ test.describe('Hitelesített szerepkörös mély E2E tesztek (Admin / Partner / 
     expect(initialText).not.toContain('Hozzáférés megtagadva');
     expect(initialText).toMatch(/Admin|Vezérlőpult|Partnerek|Hirdetések/i);
 
-    // Click through all visible sidebar navigation buttons in AdminLayout
+    const visitedModules: string[] = [];
     const sidebarButtons = page.locator('aside button');
     const btnCount = await sidebarButtons.count();
-    expect(btnCount).toBeGreaterThan(3);
+    expect(btnCount).toBeGreaterThan(5);
 
     for (let i = 0; i < btnCount; i++) {
+      await dismissAnyOpenModal(page);
       const btn = sidebarButtons.nth(i);
       const label = (await btn.innerText()).trim();
       if (!label || /Kijelentkezés|Főoldal|Vissza/i.test(label)) continue;
-      if (await btn.isVisible()) {
+      if (await btn.isVisible().catch(() => false)) {
         await btn.click();
-        await page.waitForTimeout(250);
+        await page.waitForTimeout(300);
+        visitedModules.push(label);
+
         const text = await page.locator('body').innerText();
-        expect(text, `Admin nézet hibára futott: ${label}`).not.toContain('Váratlan alkalmazáshiba történt');
+        expect(text, `Admin modul hibára futott: ${label}`).not.toContain('Váratlan alkalmazáshiba történt');
+        expect(text.trim().length, `Admin modul üres maradt: ${label}`).toBeGreaterThan(40);
+
+        await exerciseSearchInMain(page);
       }
     }
+    expect(visitedModules.length).toBeGreaterThan(5);
 
-    // Deep-check Partnerek tabs (Partnerek / Meghívók / Jelentkezések)
+    // Deep-check Partnerek tabs & invite modal
     const partnersNav = page.locator('aside button').filter({ hasText: /Partnerek/i }).first();
     if (await partnersNav.isVisible()) {
       await partnersNav.click();
@@ -72,29 +109,37 @@ test.describe('Hitelesített szerepkörös mély E2E tesztek (Admin / Partner / 
           await page.waitForTimeout(250);
         }
       }
+      const newInviteBtn = page.locator('main button').filter({ hasText: /Új meghívó|Meghívó küldése/i }).first();
+      if (await newInviteBtn.isVisible().catch(() => false)) {
+        await newInviteBtn.click();
+        await page.waitForTimeout(200);
+        await dismissAnyOpenModal(page);
+      }
     }
 
-    // Deep-check Hirdetések & Szerződések tab + modal
+    // Deep-check Hirdetések tabs & contracts modal
     const adsNav = page.locator('aside button').filter({ hasText: /Hirdetések/i }).first();
     if (await adsNav.isVisible()) {
       await adsNav.click();
       await page.waitForTimeout(450);
-      const contractsTab = page.locator('main button').filter({ hasText: /Szerződések/i }).first();
-      if (await contractsTab.isVisible()) {
-        await contractsTab.click();
-        await page.waitForTimeout(300);
-        const newContractBtn = page.locator('main button').filter({ hasText: /Új szerződés/i }).first();
-        if (await newContractBtn.isVisible()) {
-          await newContractBtn.click();
+      for (const adTab of ['Kampányok', 'Hirdetők', 'Helyek', 'Csomagok', 'Fizetések', 'Szerződések', 'Értesítések']) {
+        const tabBtn = page.locator('main button').filter({ hasText: new RegExp(adTab, 'i') }).first();
+        if (await tabBtn.isVisible().catch(() => false)) {
+          await tabBtn.click();
           await page.waitForTimeout(200);
-          await page.keyboard.press('Escape');
         }
+      }
+      const newContractBtn = page.locator('main button').filter({ hasText: /Új szerződés/i }).first();
+      if (await newContractBtn.isVisible().catch(() => false)) {
+        await newContractBtn.click();
+        await page.waitForTimeout(200);
+        await dismissAnyOpenModal(page);
       }
     }
 
-    // Check Profile route for Admin
+    // Check Profile route & tabs
     await page.goto('/#/profile', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(450);
     const profileText = await page.locator('body').innerText();
     expect(profileText.length).toBeGreaterThan(80);
     expect(profileText).not.toContain('Váratlan alkalmazáshiba történt');
@@ -102,14 +147,15 @@ test.describe('Hitelesített szerepkörös mély E2E tesztek (Admin / Partner / 
     expect(pageErrors).toEqual([]);
   });
 
-  test('Szerkesztő munkamenet: kihagyva (nincs aktív editor szerepkörű tesztfiók)', async () => {
+  test('Szerkesztő fiók: kihagyva (nincs aktív editor szerepkörű tesztfiók)', async () => {
     test.skip(process.env.E2E_RUN_EDITOR !== 'true', 'Editor tesztfiók kihagyva a felhasználó kérésére.');
   });
 
-  test('Partner munkamenet: teljes partneri menü, Szerződések, Profil és RBAC védelem', async ({ page }) => {
+  test('Partner fiók: összes partneri menü, szerződések, keresők, modalok, profil és RBAC védelem', async ({ page }) => {
     const email = process.env.E2E_PARTNER_EMAIL;
     const password = process.env.E2E_PARTNER_PASSWORD;
     test.skip(!email || !password, 'E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD nincs beállítva (.env.test).');
+    test.setTimeout(90_000);
 
     const pageErrors = attachErrorCollectors(page);
     await loginViaUI(page, email!, password!);
@@ -121,24 +167,37 @@ test.describe('Hitelesített szerepkörös mély E2E tesztek (Admin / Partner / 
     expect(partnerText).not.toContain('Partneri Bejelentkezés Szükséges');
     expect(partnerText).toMatch(/Szerződések|Partner|Kampány|Vezérlőpult/i);
 
-    // Click through all visible sidebar navigation buttons in PartnerLayout
+    // Check contract review modal on Partner Dashboard if a contract button exists
+    const reviewContractBtn = page
+      .locator('main button')
+      .filter({ hasText: /Megtekintés|Elfogadás|Szerződés/i })
+      .first();
+    if (await reviewContractBtn.isVisible().catch(() => false)) {
+      await reviewContractBtn.click();
+      await page.waitForTimeout(250);
+      await dismissAnyOpenModal(page);
+    }
+
+    // Click through all Partner sidebar views & exercise search
     const sidebarButtons = page.locator('aside button');
     const btnCount = await sidebarButtons.count();
     for (let i = 0; i < btnCount; i++) {
+      await dismissAnyOpenModal(page);
       const btn = sidebarButtons.nth(i);
       const label = (await btn.innerText()).trim();
       if (!label || /Kijelentkezés|Főoldal|Vissza/i.test(label)) continue;
-      if (await btn.isVisible()) {
+      if (await btn.isVisible().catch(() => false)) {
         await btn.click();
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(350);
         const text = await page.locator('body').innerText();
         expect(text, `Partner nézet hibára futott: ${label}`).not.toContain('Váratlan alkalmazáshiba történt');
+        await exerciseSearchInMain(page);
       }
     }
 
     // Check Profile route
     await page.goto('/#/profile', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(450);
     expect((await page.locator('body').innerText()).length).toBeGreaterThan(80);
 
     // RBAC isolation: Partner must NOT access Admin or Editor
@@ -154,10 +213,11 @@ test.describe('Hitelesített szerepkörös mély E2E tesztek (Admin / Partner / 
     expect(pageErrors).toEqual([]);
   });
 
-  test('Oktató munkamenet: oktatói vezérlőpult fülek, Profil és RBAC védelem', async ({ page }) => {
+  test('Oktató fiók: összes tanári menüpont, keresők, modalok, publikus tanulás, profil és RBAC védelem', async ({ page }) => {
     const email = process.env.E2E_TEACHER_EMAIL;
     const password = process.env.E2E_TEACHER_PASSWORD;
     test.skip(!email || !password, 'E2E_TEACHER_EMAIL / E2E_TEACHER_PASSWORD nincs beállítva (.env.test).');
+    test.setTimeout(90_000);
 
     const pageErrors = attachErrorCollectors(page);
     await loginViaUI(page, email!, password!);
@@ -167,49 +227,46 @@ test.describe('Hitelesített szerepkörös mély E2E tesztek (Admin / Partner / 
 
     const teacherText = await page.locator('body').innerText();
     expect(teacherText).not.toContain('Hozzáférés megtagadva');
-    expect(teacherText).toMatch(/Oktató|Osztály|Tananyag|Diák/i);
+    expect(teacherText).toMatch(/Tanár panel|Oktató|Osztály|Tananyag/i);
 
-    // Click through visible tab/section buttons in TeacherDashboardPage
-    const tabButtons = page.locator('main button').filter({
-      hasText: /Osztály|Diák|Tananyag|Meghívó|Áttekintés/i,
-    });
-    const tabCount = await tabButtons.count();
-    for (let i = 0; i < Math.min(tabCount, 6); i++) {
-      // Close any open modal before clicking next button
-      const openModal = page.locator('div.fixed.inset-0').first();
-      if (await openModal.isVisible().catch(() => false)) {
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(150);
-        if (await openModal.isVisible().catch(() => false)) {
-          const closeBtn = openModal.locator('button:has-text("Mégse"), button:has-text("Bezárás"), button[aria-label*="Bezár"]').first();
-          if (await closeBtn.isVisible().catch(() => false)) {
-            await closeBtn.click();
-            await page.waitForTimeout(150);
-          } else {
-            break;
-          }
-        }
-      }
+    // Click through all Teacher sidebar / navigation buttons
+    const teacherNavLabels = [
+      'Áttekintés',
+      'Osztályaim',
+      'Tanulóim',
+      'Tananyagok',
+      'Tananyag összeállítása',
+      'Kiosztott tananyagok',
+      'Tesztek',
+      'Előrehaladás',
+      'Saját beállítások',
+    ];
 
-      const btn = tabButtons.nth(i);
-      if (await btn.isVisible()) {
-        await btn.click();
-        await page.waitForTimeout(250);
+    for (const label of teacherNavLabels) {
+      await dismissAnyOpenModal(page);
+      const navBtn = page.locator('button').filter({ hasText: new RegExp(`^${label}$|${label}`, 'i') }).first();
+      if (await navBtn.isVisible().catch(() => false)) {
+        await navBtn.click();
+        await page.waitForTimeout(300);
         const text = await page.locator('body').innerText();
-        expect(text).not.toContain('Váratlan alkalmazáshiba történt');
+        expect(text, `Tanári nézet hibára futott: ${label}`).not.toContain('Váratlan alkalmazáshiba történt');
+        await exerciseSearchInMain(page);
       }
     }
+    await dismissAnyOpenModal(page);
 
-    // Ensure no modal remains open before navigating away
-    const remainingModal = page.locator('div.fixed.inset-0').first();
-    if (await remainingModal.isVisible().catch(() => false)) {
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(150);
+    // Check public learning/courses/calculations while logged in as Teacher
+    for (const hash of ['#/learning', '#/courses', '#/calculations']) {
+      await page.goto(`/${hash}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(400);
+      const text = await page.locator('body').innerText();
+      expect(text.length).toBeGreaterThan(100);
+      expect(text).not.toContain('Váratlan alkalmazáshiba történt');
     }
 
     // Check Profile route
     await page.goto('/#/profile', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(450);
     expect((await page.locator('body').innerText()).length).toBeGreaterThan(80);
 
     // RBAC isolation: Teacher must NOT access Admin or Editor

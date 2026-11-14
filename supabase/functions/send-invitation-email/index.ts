@@ -117,7 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (invitationId) {
       const invRes = await fetch(
-        `${supabaseUrl}/rest/v1/partner_invitations?id=eq.${encodeURIComponent(invitationId)}&select=id,email,code,partner_id,organization_name,expires_at,created_by`,
+        `${supabaseUrl}/rest/v1/partner_invitations?id=eq.${encodeURIComponent(invitationId)}&select=id,email,code,partner_id,organization_name,expires_at,created_by,partners(name)`,
         {
           headers: {
             Authorization: `Bearer ${serviceRoleKey || token}`,
@@ -159,7 +159,8 @@ const handler = async (req: Request): Promise<Response> => {
 
       const siteOrigin = (Deno.env.get('SITE_URL') || 'https://www.epitotudas.hu').replace(/\/+$/, '');
       const inviteLink = `${siteOrigin}/#register?code=${encodeURIComponent(String(inv.code || ''))}`;
-      const orgName = String(inv.organization_name || 'Szervezet');
+      const joinedPartner = Array.isArray(inv.partners) ? inv.partners[0] : inv.partners;
+      const orgName = String(inv.organization_name || joinedPartner?.name || 'Szervezet');
       const safeOrgName = escapeHtml(orgName);
       const safeGreeting = contactName ? `Kedves ${escapeHtml(contactName)}!` : 'Tisztelt Partnerünk!';
       const safeCode = escapeHtml(String(inv.code || ''));

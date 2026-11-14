@@ -5,4 +5,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://epitotudas.hu/sitemap.xml
+Sitemap: https://www.epitotudas.hu/sitemap.xml

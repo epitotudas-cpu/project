@@ -6,9 +6,6 @@ import {
   type ContractAcceptanceLog,
   type ContractVersion,
 } from '../lib/supabase';
-import { readAppConfig, writeAppConfig } from './appConfigService';
-
-const CONTRACTS_CONFIG_KEY = '__SYSTEM_CONFIG_CONTRACTS__';
 
 export const DEFAULT_CONTRACT_TEMPLATES: ContractTemplate[] = [
   {
@@ -244,7 +241,6 @@ export async function saveContracts(contracts: AdvertisementContract[]): Promise
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
     window.dispatchEvent(new Event('contracts-changed'));
-    await writeAppConfig(CONTRACTS_CONFIG_KEY, contracts);
   } catch (err) {
     console.error('Hiba a szerződések mentésekor:', err);
     throw err;
@@ -341,7 +337,7 @@ export async function fetchContractsFromCloud(partnerId?: string): Promise<Adver
     }
 
     const { data, error } = await query;
-    if (!error && Array.isArray(data) && data.length > 0) {
+    if (!error && Array.isArray(data)) {
       const mapped = data.map((r) => mapContractRow(r as Record<string, unknown>));
       if (!partnerId) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
@@ -353,19 +349,7 @@ export async function fetchContractsFromCloud(partnerId?: string): Promise<Adver
     console.warn('partner_contracts lekérdezési hiba:', err);
   }
 
-  try {
-    const cloud = await readAppConfig<AdvertisementContract[]>(CONTRACTS_CONFIG_KEY);
-    if (Array.isArray(cloud) && cloud.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
-      window.dispatchEvent(new Event('contracts-changed'));
-      return partnerId ? cloud.filter((c) => c.partnerId === partnerId) : cloud;
-    }
-  } catch (err) {
-    console.warn('Szerződések felhőből olvasási hiba:', err);
-  }
-
-  const local = getContracts();
-  return partnerId ? local.filter((c) => c.partnerId === partnerId) : local;
+  return [];
 }
 
 export async function acceptContractByPartner(
@@ -460,49 +444,10 @@ export async function acceptContractByPartner(
     throw new Error(rpcMsg);
   }
 
-  // 3. Offline / unmigrated fallback: never fabricate a fake IP address
-  if (!existing) {
-    throw new Error('A szerződés nem található.');
-  }
-
-  const { data: userRes } = await supabase.auth.getUser();
-  const realUserId = userRes?.user?.id;
-  if (!realUserId) {
-    throw new Error('Hitelesítés szükséges a szerződés elfogadásához.');
-  }
-
-  const nowIso = new Date().toISOString();
-  const acceptanceLog: ContractAcceptanceLog = {
-    acceptedBy: cleanName,
-    email: cleanEmail,
-    acceptedAt: nowIso,
-    ipAddress: 'server-unavailable',
-    userId: realUserId,
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-    contentSha256: sha256,
-    serverVerified: false,
-  };
-
-  const newVersionNumber = (existing.versions?.length || 0) + 1;
-  const newVersion: ContractVersion = {
-    versionNumber: newVersionNumber,
-    createdAt: nowIso,
-    amount: existing.amount,
-    content: existing.content,
-    changeNote: `Szerződés elfogadva (helyi tartalék mód, felhasználó: ${realUserId})`,
-  };
-
-  const updated: AdvertisementContract = {
-    ...existing,
-    status: 'accepted',
-    acceptanceLog,
-    versions: [...(existing.versions || []), newVersion],
-    updatedAt: nowIso,
-  };
-
-  const nextList = contracts.map((c) => (c.id === contractId ? updated : c));
-  await saveContracts(nextList);
-  return updated;
+  // 3. No client-side/offline acceptance allowed: server audit is mandatory
+  throw new Error(
+    'A szerződéselfogadás csak aktív, szerveroldalon hitelesített kapcsolattal lehetséges. Kérjük, próbálja újra később.'
+  );
 }
 
 export function updateContractStatus(contractId: string, status: ContractStatus): void {
@@ -511,7 +456,8 @@ export function updateContractStatus(contractId: string, status: ContractStatus)
   if (index !== -1) {
     contracts[index].status = status;
     contracts[index].updatedAt = new Date().toISOString();
-    saveContracts(contracts);
+    void saveContracts(contracts);
+    void upsertContractInCloud(contracts[index]);
   }
 }
 
@@ -539,9 +485,11 @@ export function addContractVersion(
       amount: newAmount,
       content: newContent,
       status: 'pending_acceptance',
+      acceptanceLog: undefined,
       versions: [...(current.versions || []), newVer],
       updatedAt: new Date().toISOString(),
     };
-    saveContracts(contracts);
+    void saveContracts(contracts);
+    void upsertContractInCloud(contracts[index]);
   }
 }
