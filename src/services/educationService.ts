@@ -601,32 +601,71 @@ export async function submitQuizAnswers(
   let certificate: UserCertificate | undefined = undefined;
 
   if (passed) {
-    const certItem: UserCertificate = {
-      id: `cert-${Date.now()}`,
-      user_id: userId,
-      course_id: courseId,
-      score_achieved: scorePercentage,
-      certificate_code: `EPITO-CERT-2026-${Math.floor(100000 + Math.random() * 900000)}`,
-      issued_at: new Date().toISOString(),
-    };
-    certificate = certItem;
-
-    const userCerts = USER_CERTIFICATES_STORE.get(userId) || [];
-    userCerts.push(certItem);
-    USER_CERTIFICATES_STORE.set(userId, userCerts);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(`epitotudas_certificates_${userId}`, JSON.stringify(userCerts));
-      } catch {
-        // ignore
-      }
-    }
-
     if (userId && userId !== 'anon_guest') {
-      try {
-        await writeUserAppState(userId, 'certificates', userCerts);
-      } catch (err) {
-        console.warn('Supabase user certificates cloud sync error:', err);
+      const cloudCerts = await readUserAppState<UserCertificate[]>(
+        userId,
+        'certificates',
+        `__USER_CERTIFICATES_${userId}__`
+      );
+      const existingList = Array.isArray(cloudCerts) ? cloudCerts : [];
+      const existingCert = existingList.find((c) => c.course_id === courseId);
+
+      if (existingCert) {
+        certificate = existingCert;
+        USER_CERTIFICATES_STORE.set(userId, existingList);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(`epitotudas_certificates_${userId}`, JSON.stringify(existingList));
+          } catch {
+            // ignore
+          }
+        }
+      } else {
+        const certItem: UserCertificate = {
+          id: `cert-${Date.now()}`,
+          user_id: userId,
+          course_id: courseId,
+          score_achieved: scorePercentage,
+          certificate_code: `EPITO-CERT-2026-${Math.floor(100000 + Math.random() * 900000)}`,
+          issued_at: new Date().toISOString(),
+        };
+        const nextCerts = [...existingList, certItem];
+        await writeUserAppState(userId, 'certificates', nextCerts);
+
+        certificate = certItem;
+        USER_CERTIFICATES_STORE.set(userId, nextCerts);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(`epitotudas_certificates_${userId}`, JSON.stringify(nextCerts));
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } else {
+      const userCerts = USER_CERTIFICATES_STORE.get(userId) || [];
+      const existingLocalCert = userCerts.find((c) => c.course_id === courseId);
+      if (existingLocalCert) {
+        certificate = existingLocalCert;
+      } else {
+        const certItem: UserCertificate = {
+          id: `cert-${Date.now()}`,
+          user_id: userId,
+          course_id: courseId,
+          score_achieved: scorePercentage,
+          certificate_code: `EPITO-CERT-2026-${Math.floor(100000 + Math.random() * 900000)}`,
+          issued_at: new Date().toISOString(),
+        };
+        const nextCerts = [...userCerts, certItem];
+        certificate = certItem;
+        USER_CERTIFICATES_STORE.set(userId, nextCerts);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(`epitotudas_certificates_${userId}`, JSON.stringify(nextCerts));
+          } catch {
+            // ignore
+          }
+        }
       }
     }
   }

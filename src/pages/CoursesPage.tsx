@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   GraduationCap,
   Clock,
@@ -64,6 +64,9 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
   // Quiz state
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizResult, setQuizResult] = useState<QuizSubmissionResult | null>(null);
+  const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
+  const [quizSubmitError, setQuizSubmitError] = useState<string | null>(null);
+  const quizSubmittingRef = useRef(false);
   const [certificates, setCertificates] = useState<UserCertificate[]>([]);
 
   // Modals & Drawers
@@ -118,6 +121,7 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
       setActiveLessonIndex(0);
       setQuizAnswers({});
       setQuizResult(null);
+      setQuizSubmitError(null);
       setActiveTab('lessons');
     } catch (err) {
       console.warn('Kurzus részletek betöltése sikertelen:', err);
@@ -128,13 +132,25 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
 
   async function handleQuizSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedCourse || !user) return;
+    if (!selectedCourse || !user || quizSubmittingRef.current) return;
 
-    const result = await submitQuizAnswers(user.id, selectedCourse.course.id, quizAnswers);
-    setQuizResult(result);
-    if (result.passed) {
-      const certs = await getUserCertificates(user.id);
-      setCertificates(certs);
+    quizSubmittingRef.current = true;
+    setIsSubmittingQuiz(true);
+    setQuizSubmitError(null);
+
+    try {
+      const result = await submitQuizAnswers(user.id, selectedCourse.course.id, quizAnswers);
+      setQuizResult(result);
+      if (result.passed) {
+        const certs = await getUserCertificates(user.id);
+        setCertificates(certs);
+      }
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba történt a mentés során.';
+      setQuizSubmitError(`A vizsgaeredmény és a tanúsítvány felhőmentése sikertelen volt. Kérjük, próbáld meg újra! (${msg})`);
+    } finally {
+      quizSubmittingRef.current = false;
+      setIsSubmittingQuiz(false);
     }
   }
 
@@ -813,11 +829,22 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
                       </div>
                     ))}
 
+                    {quizSubmitError && (
+                      <div
+                        role="alert"
+                        className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-start gap-2.5"
+                      >
+                        <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
+                        <span>{quizSubmitError}</span>
+                      </div>
+                    )}
+
                     <button
                       type="submit"
-                      className="w-full py-3 bg-accent hover:bg-accent-hover text-primary font-black text-sm rounded-xl transition-all shadow-md"
+                      disabled={isSubmittingQuiz}
+                      className="w-full py-3 bg-accent hover:bg-accent-hover text-primary font-black text-sm rounded-xl transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      Vizsgateszt Beküldése &amp; Kiértékelése
+                      {isSubmittingQuiz ? 'Kiértékelés és mentés...' : 'Vizsgateszt Beküldése & Kiértékelése'}
                     </button>
                   </form>
                 )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CheckCircle2,
   XCircle,
@@ -32,6 +32,10 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number[]>>({});
   const [isFinished, setIsFinished] = useState(false);
   const [resultAttempt, setResultAttempt] = useState<QuizAttempt | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [pendingAttempt, setPendingAttempt] = useState<QuizAttempt | null>(null);
+  const submittingRef = useRef(false);
 
   const loadQuiz = useCallback(async () => {
     try {
@@ -50,6 +54,8 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
   }, [loadQuiz]);
 
   const handleSelectOption = (questionId: string, optionIdx: number, isMultiple: boolean) => {
+    setPendingAttempt(null);
+    setSaveError(null);
     setSelectedAnswers((prev) => {
       const current = prev[questionId] || [];
       if (isMultiple) {
@@ -63,45 +69,61 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
     });
   };
 
-  const handleFinishQuiz = () => {
-    if (!quiz) return;
+  const handleFinishQuiz = async () => {
+    if (!quiz || submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setSaveError(null);
 
-    let score = 0;
-    let maxScore = 0;
+    try {
+      let attempt = pendingAttempt;
+      if (!attempt) {
+        let score = 0;
+        let maxScore = 0;
 
-    quiz.questions.forEach((q) => {
-      maxScore += q.points || 10;
-      const userSelected = selectedAnswers[q.id] || [];
-      const correct = q.correct_options || [];
+        quiz.questions.forEach((q) => {
+          maxScore += q.points || 10;
+          const userSelected = selectedAnswers[q.id] || [];
+          const correct = q.correct_options || [];
 
-      // Exact match for correct options
-      const isCorrect =
-        userSelected.length === correct.length &&
-        userSelected.every((val) => correct.includes(val));
+          // Exact match for correct options
+          const isCorrect =
+            userSelected.length === correct.length &&
+            userSelected.every((val) => correct.includes(val));
 
-      if (isCorrect) {
-        score += q.points || 10;
+          if (isCorrect) {
+            score += q.points || 10;
+          }
+        });
+
+        const percentage = Math.round((score / Math.max(1, maxScore)) * 100);
+        const passed = percentage >= quiz.passing_score_percent;
+
+        attempt = {
+          id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: userId,
+          quiz_id: quiz.id,
+          score,
+          max_score: maxScore,
+          percentage,
+          passed,
+          user_answers: selectedAnswers,
+          completed_at: new Date().toISOString(),
+        };
+        setPendingAttempt(attempt);
       }
-    });
 
-    const percentage = Math.round((score / Math.max(1, maxScore)) * 100);
-    const passed = percentage >= quiz.passing_score_percent;
-
-    const attempt: QuizAttempt = {
-      id: `attempt-${Date.now()}`,
-      user_id: userId,
-      quiz_id: quiz.id,
-      score,
-      max_score: maxScore,
-      percentage,
-      passed,
-      user_answers: selectedAnswers,
-      completed_at: new Date().toISOString(),
-    };
-
-    saveQuizAttempt(attempt);
-    setResultAttempt(attempt);
-    setIsFinished(true);
+      await saveQuizAttempt(attempt);
+      setPendingAttempt(null);
+      setResultAttempt(attempt);
+      setIsFinished(true);
+    } catch (e) {
+      const msg = e instanceof Error && e.message ? e.message : 'Ismeretlen hiba történt a mentés során.';
+      setSaveError(`A teszt eredményét nem sikerült elmenteni a felhőbe. Kérjük, próbáld meg újra! (${msg})`);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   const handleRetake = () => {
@@ -109,6 +131,8 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
     setSelectedAnswers({});
     setIsFinished(false);
     setResultAttempt(null);
+    setSaveError(null);
+    setPendingAttempt(null);
   };
 
   if (loading) {
@@ -241,11 +265,21 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
               </div>
             )}
 
+            {saveError && (
+              <div
+                role="alert"
+                className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-start gap-2.5"
+              >
+                <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
+                <span>{saveError}</span>
+              </div>
+            )}
+
             {/* Navigation Action Footer */}
             <div className="pt-6 border-t border-gray-100 flex items-center justify-between gap-4">
               <button
                 onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                disabled={currentIndex === 0}
+                disabled={currentIndex === 0 || isSubmitting}
                 className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl disabled:opacity-40 transition-all flex items-center gap-1"
               >
                 <ArrowLeft size={15} /> Előző Kérdés
@@ -254,16 +288,18 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
               {currentIndex < questions.length - 1 ? (
                 <button
                   onClick={() => setCurrentIndex((prev) => Math.min(questions.length - 1, prev + 1))}
-                  className="px-6 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   Következő Kérdés <ArrowRight size={15} />
                 </button>
               ) : (
                 <button
                   onClick={handleFinishQuiz}
-                  className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-black text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                  disabled={isSubmitting}
+                  className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-black text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Zap size={16} /> Teszt Befejezése &amp; Értékelés
+                  <Zap size={16} /> {isSubmitting ? 'Mentés folyamatban...' : 'Teszt Befejezése & Értékelés'}
                 </button>
               )}
             </div>

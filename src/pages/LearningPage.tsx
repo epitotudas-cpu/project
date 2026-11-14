@@ -22,9 +22,8 @@ import {
   listCourses,
   listQuizzes,
   getFlashcardsLocal,
+  fetchFlashcardsFromCloud,
   saveFlashcardsLocal,
-  deleteFlashcard,
-  updateFlashcardMastery,
   getCourseProgress,
 } from '../services/learningService';
 
@@ -59,6 +58,9 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
   const [newTerm, setNewTerm] = useState('');
   const [newDef, setNewDef] = useState('');
   const [newCategory, setNewCategory] = useState('Általános');
+  const [flashcardError, setFlashcardError] = useState<string | null>(null);
+  const [flashcardsSyncing, setFlashcardsSyncing] = useState(false);
+  const [flashcardCloudBlocked, setFlashcardCloudBlocked] = useState(false);
 
   // ── URL HASH SYNC ──
   const syncFromHash = useCallback(() => {
@@ -94,7 +96,18 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
       setCategories(catsData);
       setCourses(coursesData);
       setQuizzes(quizzesData);
-      setFlashcards(getFlashcardsLocal(userId));
+      try {
+        const cloudCards = await fetchFlashcardsFromCloud(userId);
+        setFlashcards(cloudCards);
+        setFlashcardCloudBlocked(false);
+        setFlashcardError(null);
+      } catch (fcErr) {
+        const msg = fcErr instanceof Error && fcErr.message ? fcErr.message : 'Ismeretlen hiba';
+        setFlashcardCloudBlocked(true);
+        setFlashcardError(
+          `A felhőbeli tanulókártyák betöltése sikertelen volt, ezért a mentés ideiglenesen le van tiltva az adatvesztés elkerülése érdekében. (${msg})`
+        );
+      }
     } catch (e) {
       console.warn('Hiba az oktatási adatok betöltésekor:', e);
     }
@@ -163,9 +176,9 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
   }, [flashcards, searchQuery]);
 
   // ── HANDLERS FOR FLASHCARDS ──
-  const handleAddCustomCard = (e: React.FormEvent) => {
+  const handleAddCustomCard = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTerm.trim() || !newDef.trim()) return;
+    if (!newTerm.trim() || !newDef.trim() || flashcardsSyncing || flashcardCloudBlocked) return;
 
     const newCard: Flashcard = {
       id: `fc-custom-${Date.now()}`,
@@ -178,33 +191,82 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
       created_at: new Date().toISOString(),
     };
 
+    const previousCards = flashcards;
     const nextList = [newCard, ...flashcards];
-    setFlashcards(nextList);
-    saveFlashcardsLocal(userId, nextList);
-    setNewTerm('');
-    setNewDef('');
-    setNewCardModalOpen(false);
-  };
+    setFlashcardsSyncing(true);
+    setFlashcardError(null);
 
-  const handleDeleteCard = (id: string) => {
-    deleteFlashcard(userId, id);
-    setFlashcards(getFlashcardsLocal(userId));
-  };
-
-  const handleMasteryVote = (knewIt: boolean) => {
-    if (filteredFlashcards.length === 0) return;
-    const currentCard = filteredFlashcards[practiceIndex];
-    if (currentCard) {
-      updateFlashcardMastery(userId, currentCard.id, knewIt);
+    try {
+      await saveFlashcardsLocal(userId, nextList);
       setFlashcards(getFlashcardsLocal(userId));
+      setNewTerm('');
+      setNewDef('');
+      setNewCardModalOpen(false);
+    } catch (err) {
+      setFlashcards(previousCards);
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      setFlashcardError(`A tanulókártya felhőmentése sikertelen volt. (${msg})`);
+    } finally {
+      setFlashcardsSyncing(false);
     }
+  };
 
-    setIsFlipped(false);
-    if (practiceIndex < filteredFlashcards.length - 1) {
-      setPracticeIndex((prev) => prev + 1);
-    } else {
-      setPracticeMode(false);
-      setPracticeIndex(0);
+  const handleDeleteCard = async (id: string) => {
+    if (flashcardsSyncing || flashcardCloudBlocked) return;
+    const previousCards = flashcards;
+    const nextList = flashcards.filter((c) => c.id !== id);
+    setFlashcardsSyncing(true);
+    setFlashcardError(null);
+
+    try {
+      await saveFlashcardsLocal(userId, nextList);
+      setFlashcards(nextList);
+    } catch (err) {
+      setFlashcards(previousCards);
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      setFlashcardError(`A tanulókártya törlése a felhőből sikertelen volt. (${msg})`);
+    } finally {
+      setFlashcardsSyncing(false);
+    }
+  };
+
+  const handleMasteryVote = async (knewIt: boolean) => {
+    if (filteredFlashcards.length === 0 || flashcardsSyncing || flashcardCloudBlocked) return;
+    const currentCard = filteredFlashcards[practiceIndex];
+    if (!currentCard) return;
+
+    const previousCards = flashcards;
+    const nextList = flashcards.map((c) => {
+      if (c.id === currentCard.id) {
+        const nextLevel = knewIt ? Math.min(5, c.master_level + 1) : Math.max(0, c.master_level - 1);
+        return {
+          ...c,
+          master_level: nextLevel,
+          last_reviewed_at: new Date().toISOString(),
+        };
+      }
+      return c;
+    });
+
+    setFlashcardsSyncing(true);
+    setFlashcardError(null);
+
+    try {
+      await saveFlashcardsLocal(userId, nextList);
+      setFlashcards(nextList);
+      setIsFlipped(false);
+      if (practiceIndex < filteredFlashcards.length - 1) {
+        setPracticeIndex((prev) => prev + 1);
+      } else {
+        setPracticeMode(false);
+        setPracticeIndex(0);
+      }
+    } catch (err) {
+      setFlashcards(previousCards);
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      setFlashcardError(`A tanulókártya haladásának felhőmentése sikertelen volt. (${msg})`);
+    } finally {
+      setFlashcardsSyncing(false);
     }
   };
 
@@ -572,12 +634,23 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
 
                 <button
                   onClick={() => setNewCardModalOpen(true)}
-                  className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-extrabold text-xs rounded-xl border border-gray-300 transition-all flex items-center gap-1.5 cursor-pointer"
+                  disabled={flashcardsSyncing || flashcardCloudBlocked}
+                  className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-extrabold text-xs rounded-xl border border-gray-300 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus size={15} /> Új Saját Kártya
                 </button>
               </div>
             </div>
+
+            {flashcardError && (
+              <div
+                role="alert"
+                className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-start gap-2.5"
+              >
+                <XCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
+                <span>{flashcardError}</span>
+              </div>
+            )}
 
             {/* PRACTICE MODE MODAL PLAYER */}
             {practiceMode && filteredFlashcards.length > 0 && (
@@ -697,7 +770,8 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
                       </span>
                       <button
                         onClick={() => handleDeleteCard(card.id)}
-                        className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                        disabled={flashcardsSyncing || flashcardCloudBlocked}
+                        className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Törlés"
                       >
                         <Trash2 size={15} />

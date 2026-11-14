@@ -819,22 +819,31 @@ export async function deleteQuiz(id: string): Promise<void> {
 }
 
 // ── QUIZ EVALUATION & ATTEMPTS ──
-export function saveQuizAttempt(attempt: QuizAttempt): Promise<void> {
+export async function saveQuizAttempt(attempt: QuizAttempt): Promise<void> {
+  let list: QuizAttempt[] = [];
   try {
     const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
-    const list: QuizAttempt[] = raw ? JSON.parse(raw) : [];
-    const updated = [attempt, ...list];
-    localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify(updated));
-    if (attempt.user_id && attempt.user_id !== 'anon_guest') {
-      const userAttempts = updated.filter((a) => a.user_id === attempt.user_id);
-      return writeUserAppState(attempt.user_id, 'quiz_attempts', userAttempts).catch((e) =>
-        console.warn('Hiba a teszt eredményének felhő mentésekor:', e)
-      );
-    }
+    const parsed = raw ? JSON.parse(raw) : [];
+    list = Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    console.warn('Hiba a teszt eredményének mentésekor:', e);
+    console.warn('Hiba a teszt eredményeinek olvasásakor:', e);
   }
-  return Promise.resolve();
+
+  const alreadyExists = list.some((a) => a.id === attempt.id);
+  const updated = alreadyExists ? list : [attempt, ...list];
+
+  if (attempt.user_id && attempt.user_id !== 'anon_guest') {
+    const userAttempts = updated.filter((a) => a.user_id === attempt.user_id);
+    await writeUserAppState(attempt.user_id, 'quiz_attempts', userAttempts);
+  }
+
+  if (!alreadyExists) {
+    try {
+      localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Hiba a teszt eredményének helyi mentésekor:', e);
+    }
+  }
 }
 
 export async function fetchQuizAttemptsFromCloud(userId: string): Promise<QuizAttempt[]> {
@@ -870,6 +879,62 @@ export function getQuizAttempts(userId?: string): QuizAttempt[] {
 }
 
 // ── PERSONAL FLASHCARDS SERVICE HELPERS (🔒 PRIVATE PER USER) ──
+const hydratedFlashcardUsers = new Set<string>();
+
+async function readCloudFlashcardsStrict(
+  userId: string
+): Promise<{ exists: boolean; cards: Flashcard[] }> {
+  if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) {
+    return { exists: false, cards: [] };
+  }
+
+  const builder = supabase.from('user_app_states' as never) as unknown as {
+    select?: (cols: string) => {
+      eq: (col: string, val: string) => {
+        eq: (col: string, val: string) => {
+          maybeSingle: () => Promise<{ data: { value?: unknown } | null; error: { message: string } | null }>;
+        };
+      };
+    };
+  } | undefined;
+
+  if (builder && typeof builder.select === 'function') {
+    const { data, error } = await builder
+      .select('value')
+      .eq('user_id', userId)
+      .eq('state_key', 'flashcards')
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data && Array.isArray(data.value)) {
+      return { exists: true, cards: data.value as Flashcard[] };
+    }
+
+    const legacy = await readUserAppState<Flashcard[]>(
+      userId,
+      'flashcards',
+      `__USER_FLASHCARDS_${userId}__`
+    );
+    if (Array.isArray(legacy)) {
+      return { exists: true, cards: legacy };
+    }
+    return { exists: false, cards: [] };
+  }
+
+  const cloud = await readUserAppState<Flashcard[]>(
+    userId,
+    'flashcards',
+    `__USER_FLASHCARDS_${userId}__`
+  );
+  if (Array.isArray(cloud)) {
+    return { exists: true, cards: cloud };
+  }
+  return { exists: false, cards: [] };
+}
+
 export function getFlashcardsLocal(userId: string = 'anon_guest'): Flashcard[] {
   try {
     if (typeof window === 'undefined') return [];
@@ -912,40 +977,83 @@ export function getFlashcardsLocal(userId: string = 'anon_guest'): Flashcard[] {
   return seed;
 }
 
-export function saveFlashcardsLocal(userId: string = 'anon_guest', cards: Flashcard[]): Promise<void> {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`${FLASHCARDS_STORAGE_KEY}_${userId}`, JSON.stringify(cards));
+export async function saveFlashcardsLocal(userId: string = 'anon_guest', cards: Flashcard[]): Promise<void> {
+  const storageKey = `${FLASHCARDS_STORAGE_KEY}_${userId}`;
+  let previousRaw: string | null = null;
+  const isGuest = !userId || userId === 'anon_guest' || userId.startsWith('guest_');
+
+  if (typeof window !== 'undefined') {
+    try {
+      previousRaw = localStorage.getItem(storageKey);
+      localStorage.setItem(storageKey, JSON.stringify(cards));
       window.dispatchEvent(new Event('learning-updated'));
+    } catch (e) {
+      console.warn('Hiba a tanulókártyák helyi mentésekor:', e);
     }
+  }
+
+  if (isGuest) {
+    return;
+  }
+
+  try {
+    let cardsToPersist = cards;
+    if (!hydratedFlashcardUsers.has(userId)) {
+      const { exists, cards: cloudCards } = await readCloudFlashcardsStrict(userId);
+      if (exists && cloudCards.length > 0) {
+        const cloudIds = new Set(cloudCards.map((c) => c.id));
+        const extraCards = cards.filter(
+          (c) => !cloudIds.has(c.id) && !c.id.startsWith('fc-seed-')
+        );
+        cardsToPersist = [...extraCards, ...cloudCards];
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(cardsToPersist));
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+
+    await writeUserAppState(userId, 'flashcards', cardsToPersist);
+    hydratedFlashcardUsers.add(userId);
   } catch (e) {
-    console.warn('Hiba a tanulókártyák mentésekor:', e);
+    if (typeof window !== 'undefined') {
+      try {
+        if (previousRaw === null) {
+          localStorage.removeItem(storageKey);
+        } else {
+          localStorage.setItem(storageKey, previousRaw);
+        }
+        window.dispatchEvent(new Event('learning-updated'));
+      } catch {
+        // ignore
+      }
+    }
+    throw e;
   }
-  if (userId && userId !== 'anon_guest') {
-    return writeUserAppState(userId, 'flashcards', cards).catch((e) =>
-      console.warn('Hiba a tanulókártyák felhő szinkronizálásakor:', e)
-    );
-  }
-  return Promise.resolve();
 }
 
 export async function fetchFlashcardsFromCloud(userId: string): Promise<Flashcard[]> {
-  if (!userId || userId === 'anon_guest') return getFlashcardsLocal(userId);
-  try {
-    const cloud = await readUserAppState<Flashcard[]>(
-      userId,
-      'flashcards',
-      `__USER_FLASHCARDS_${userId}__`
-    );
-    if (Array.isArray(cloud)) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`${FLASHCARDS_STORAGE_KEY}_${userId}`, JSON.stringify(cloud));
-      }
-      return cloud;
-    }
-  } catch (e) {
-    console.warn('Hiba a tanulókártyák felhő betöltésekor:', e);
+  if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) {
+    return getFlashcardsLocal(userId);
   }
+
+  const { exists, cards } = await readCloudFlashcardsStrict(userId);
+  hydratedFlashcardUsers.add(userId);
+
+  if (exists) {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`${FLASHCARDS_STORAGE_KEY}_${userId}`, JSON.stringify(cards));
+      } catch {
+        // ignore
+      }
+    }
+    return cards;
+  }
+
   return getFlashcardsLocal(userId);
 }
 
