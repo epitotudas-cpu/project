@@ -19,6 +19,31 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization') || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+    if (!token || !supabaseUrl || !supabaseKey) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Hitelesítés szükséges.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseKey,
+      },
+    });
+    if (!userRes.ok) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Érvénytelen vagy lejárt munkamenet.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
     const { to, subject, html } = await req.json();

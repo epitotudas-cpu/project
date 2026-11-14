@@ -761,9 +761,9 @@ export async function fetchStudentAssignedClassMaterials(
   interface ArticleSummaryRow {
     id: string;
     title?: string | null;
-    summary?: string | null;
-    category?: string | null;
+    excerpt?: string | null;
     slug?: string | null;
+    categories?: { name?: string | null } | { name?: string | null }[] | null;
   }
 
   const classMap = new Map<string, string>();
@@ -815,12 +815,14 @@ export async function fetchStudentAssignedClassMaterials(
   const articlesMap = new Map<string, ArticleSummaryRow>();
   const articleIds = rawList.filter((m) => m.content_type === 'article').map((m) => m.content_id);
   if (articleIds.length > 0) {
-    const { data: artData } = await supabase
+    const { data: artData, error: artError } = await supabase
       .from('articles')
-      .select('id, title, summary, category, slug')
+      .select('id, title, excerpt, slug, categories(name)')
       .in('id', articleIds);
-    if (artData) {
-      for (const a of artData) {
+    if (artError) {
+      console.warn('fetchStudentAssignedClassMaterials articles query error:', artError.message);
+    } else if (artData) {
+      for (const a of artData as ArticleSummaryRow[]) {
         articlesMap.set(a.id, a);
       }
     }
@@ -855,9 +857,10 @@ export async function fetchStudentAssignedClassMaterials(
     } else if (m.content_type === 'article') {
       const foundArt = articlesMap.get(m.content_id);
       if (foundArt) {
+        const catObj = Array.isArray(foundArt.categories) ? foundArt.categories[0] : foundArt.categories;
         title = foundArt.title || 'Cikk';
-        description = foundArt.summary || 'Cikk';
-        category = foundArt.category || 'Cikk';
+        description = foundArt.excerpt || 'Cikk';
+        category = catObj?.name || 'Cikk';
         slug = foundArt.slug || foundArt.id;
       }
     }

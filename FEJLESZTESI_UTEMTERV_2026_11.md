@@ -32,16 +32,16 @@
 ## Fázis 2 – Kritikus Backend, DB Lekérdezés és Edge Function Biztonság
 **Cél:** Nem létező táblák/oszlopok, UUID FK hibák és hitelesítés nélküli Edge Functionök javítása.
 
-- [ ] **2.1 Edge Function hitelesítés és takarítás**
+- [x] **2.1 Edge Function hitelesítés és takarítás**
   - `supabase/functions/resend-email/index.ts` (16–101. sor) és `supabase/functions/send-invitation-email/index.ts` (17–106. sor): kötelező `Authorization: Bearer <jwt>` ellenőrzés (`supabase.auth.getUser(token)`) és szerepkör/jogosultság validáció (open relay megszüntetése).
   - `supabase/functions/cleanup-reference-storage/index.ts` és `supabase/functions/confirm-reference-upload/index.ts`: vagy az elavult `partner-references-staging` függvények kivezetése/archiválása (mivel a `referenceService.ts` már közvetlen `partner-references` + `finalize_reference_image` RPC-t használ), vagy `cleanup-reference-storage` védelme cron secret / service-role ellenőrzéssel.
-- [ ] **2.2 `searchService.ts` – nem létező `books` tábla javítása**
+- [x] **2.2 `searchService.ts` – nem létező `books` tábla javítása**
   - `src/services/searchService.ts` (115. sor): `supabase.from('books')` lekérdezés kiváltása a `bookService`-ben használt `app_configs` (`__SYSTEM_CONFIG_BOOKS__`) keresésre.
-- [ ] **2.3 `educationService.ts` – nem létező `articles.summary` és `articles.category` oszlopok javítása**
+- [x] **2.3 `educationService.ts` – nem létező `articles.summary` és `articles.category` oszlopok javítása**
   - `src/services/educationService.ts` (818–821. sor): `select('id, title, excerpt, category_id, slug, categories(name)')` használata és hibakezelés hozzáadása, hogy a tanulói kiosztott cikkek valós címmel és kategóriával jelenjenek meg.
-- [ ] **2.4 `roleService.ts` – `roles` tábla és UUID FK összehangolása**
+- [x] **2.4 `roleService.ts` – `roles` tábla és UUID FK összehangolása**
   - `src/services/roleService.ts` (3–28. sor): `listRoles` és `getRoleBySlug` valódi `supabase.from('roles')` lekérdezésre állítása (fallback csak ha szükséges, de `assignRoleToUser` ne írjon nem-UUID `'r-admin'` stringet a `profiles.role_id` UUID mezőbe).
-- [ ] **2.5 Elavult auth segédek takarítása**
+- [x] **2.5 Elavult auth segédek takarítása**
   - `src/lib/authClient.ts` (36–83. sor): használaton kívüli, token nélküli `sendVerificationEmailViaResend` törlése.
   - `src/services/userService.ts` (40–76. sor): RLS miatt mindig `false`-t visszaadó `checkEmailExists` felülvizsgálata/kivezetése.
   - `src/services/referenceService.ts` (551–555. sor): elavult JSDoc komment frissítése.

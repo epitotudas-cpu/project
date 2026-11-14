@@ -641,7 +641,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             servicesCount={(effectivePartner as ExtendedPartner).services?.length || 0}
             profileViews={analytics.profileViews}
             articlesCount={analytics.articlesCount}
-            isActive={effectivePartner.is_active !== false && effectivePartner.status !== 'inactive' && effectivePartner.status !== 'suspended'}
+            isActive={(effectivePartner as ExtendedPartner & { is_active?: boolean }).is_active !== false && (effectivePartner as ExtendedPartner).status !== 'inactive' && (effectivePartner as ExtendedPartner).status !== 'draft'}
             isVerified={Boolean(effectivePartner.is_verified)}
           />
         )
@@ -729,8 +729,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-400">Státusz:</span>
-                    <span className={`font-bold ${effectivePartner.is_active === false ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {effectivePartner.is_active === false ? 'Inaktív / Függőben' : effectivePartner.is_verified ? 'Aktív & Hitelesített' : 'Aktív'}
+                    <span className={`font-bold ${(effectivePartner as ExtendedPartner & { is_active?: boolean }).is_active === false ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {(effectivePartner as ExtendedPartner & { is_active?: boolean }).is_active === false ? 'Inaktív / Függőben' : effectivePartner.is_verified ? 'Aktív & Hitelesített' : 'Aktív'}
                     </span>
                   </div>
                 </div>

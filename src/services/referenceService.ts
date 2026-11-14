@@ -549,7 +549,7 @@ export async function uploadReferenceImageThroughIntent(
 
 /**
  * Szinkronizálja egy referencia képeit:
- * - A privát staging és az Edge Function segítségével biztonságosan véglegesíti az új képeket.
+ * - Közvetlenül a `partner-references` Storage bucketbe és a `finalize_reference_image` RPC segítségével rögzíti az új képeket.
  * - Törli a felületről eltávolított képeket.
  * - Rögzíti a kijelölt borítóképet.
  */

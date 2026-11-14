@@ -37,6 +37,11 @@ export async function countUsers(): Promise<number> {
   return count ?? 0;
 }
 
+/**
+ * Ellenőrzi, hogy egy e-mail-cím szerepel-e a profiles, partner_applications vagy partners táblákban.
+ * Megjegyzés: bejelentkezés nélküli (anon) híváskor a `profiles` RLS tiltja az olvasást,
+ * így a függvény biztonságosan `false`-szal tér vissza (a duplikációt ilyenkor a Supabase Auth `signUp` szűri).
+ */
 export async function checkEmailExists(email: string): Promise<boolean> {
   const cleanEmail = email.trim().toLowerCase();
   if (!cleanEmail) return false;

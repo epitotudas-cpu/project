@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { DEFAULT_ENCYCLOPEDIA_TOOLS } from './toolService';
 import { DEFAULT_MATERIALS } from './materialsService';
+import { fetchBooksFromCloud, getBooks } from './bookService';
 
 export interface GlobalSearchArticleResult {
   id: string;
@@ -86,7 +87,7 @@ export async function searchAll(query: string, limit = 5): Promise<GlobalSearchA
   const qLower = query.toLowerCase().trim();
   const like = `%${query}%`;
 
-  const [arts, cats, gloss, tools, books, users] = await Promise.all([
+  const [arts, cats, gloss, tools, cloudBooks, users] = await Promise.all([
     supabase
       .from('articles')
       .select('id, title, slug, status')
@@ -111,18 +112,27 @@ export async function searchAll(query: string, limit = 5): Promise<GlobalSearchA
       .ilike('name', like)
       .order('name')
       .limit(limit),
-    supabase
-      .from('books')
-      .select('id, title, author')
-      .ilike('title', like)
-      .order('title')
-      .limit(limit),
+    fetchBooksFromCloud().catch(() => null),
     supabase
       .from('profiles')
       .select('id, email, full_name')
       .or(`email.ilike.${like},full_name.ilike.${like}`)
       .limit(limit),
   ]);
+
+  const allBooks = cloudBooks ?? getBooks();
+  const matchedBooks: GlobalSearchBookResult[] = allBooks
+    .filter(
+      (b) =>
+        b.title.toLowerCase().includes(qLower) ||
+        (b.author && b.author.toLowerCase().includes(qLower))
+    )
+    .slice(0, limit)
+    .map((b) => ({
+      id: b.id,
+      title: b.title,
+      author: b.author || null,
+    }));
 
   // Kalkulátorok szűrése
   const matchedCalcs = PREDEFINED_CALCULATORS.filter((c) =>
@@ -167,7 +177,7 @@ export async function searchAll(query: string, limit = 5): Promise<GlobalSearchA
     categories: (cats.data ?? []) as GlobalSearchCategoryResult[],
     glossary: (gloss.data ?? []) as GlobalSearchGlossaryResult[],
     tools: finalTools,
-    books: (books.data ?? []) as GlobalSearchBookResult[],
+    books: matchedBooks,
     users: (users.data ?? []) as GlobalSearchUserResult[],
     calculators: matchedCalcs,
     materials: localMaterials,

@@ -22,10 +22,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  const cronSecret = Deno.env.get('CRON_SECRET') || '';
 
   if (!supabaseUrl || !serviceRoleKey) {
     return new Response(JSON.stringify({ error: 'Konfiguráció hiányos.' }), {
       status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const authHeader = req.headers.get('Authorization') || '';
+  const requestCronSecret = req.headers.get('x-cron-secret') || '';
+  const isAuthorizedService = authHeader === `Bearer ${serviceRoleKey}`;
+  const isAuthorizedCron = Boolean(cronSecret) && requestCronSecret === cronSecret;
+
+  if (!isAuthorizedService && !isAuthorizedCron) {
+    return new Response(JSON.stringify({ error: 'Jogosulatlan hívás.' }), {
+      status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
