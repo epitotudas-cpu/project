@@ -20,6 +20,8 @@ vi.mock('./appConfigService', () => ({
   writeAppConfig: vi.fn().mockResolvedValue(undefined),
   readAppConfigWithVersion: readAppConfigWithVersionMock,
   writeAppConfigIfUnchanged: writeAppConfigIfUnchangedMock,
+  readUserAppState: vi.fn().mockResolvedValue(null),
+  writeUserAppState: vi.fn().mockResolvedValue(undefined),
 }));
 
 import {

@@ -10,6 +10,8 @@ import {
   writeAppConfig,
   readAppConfigWithVersion,
   writeAppConfigIfUnchanged,
+  readUserAppState,
+  writeUserAppState,
 } from './appConfigService';
 
 let lastKnownEducationUpdatedAt: string | null = null;
@@ -622,7 +624,7 @@ export async function submitQuizAnswers(
 
     if (userId && userId !== 'anon_guest') {
       try {
-        await writeAppConfig(`__USER_CERTIFICATES_${userId}__`, userCerts);
+        await writeUserAppState(userId, 'certificates', userCerts);
       } catch (err) {
         console.warn('Supabase user certificates cloud sync error:', err);
       }
@@ -641,7 +643,11 @@ export async function submitQuizAnswers(
 export async function getUserCertificates(userId: string): Promise<UserCertificate[]> {
   if (userId && userId !== 'anon_guest') {
     try {
-      const cloudCerts = await readAppConfig<UserCertificate[]>(`__USER_CERTIFICATES_${userId}__`);
+      const cloudCerts = await readUserAppState<UserCertificate[]>(
+        userId,
+        'certificates',
+        `__USER_CERTIFICATES_${userId}__`
+      );
       if (Array.isArray(cloudCerts)) {
         USER_CERTIFICATES_STORE.set(userId, cloudCerts);
         if (typeof window !== 'undefined') {
@@ -690,7 +696,7 @@ export function getUserFlashcardProgress(userId: string): UserFlashcardProgressM
   return {};
 }
 
-export function saveUserFlashcardProgress(userId: string, progress: UserFlashcardProgressMap): void {
+export function saveUserFlashcardProgress(userId: string, progress: UserFlashcardProgressMap): Promise<void> {
   try {
     const key = `${FLASHCARD_PROGRESS_STORAGE_PREFIX}${userId}`;
     localStorage.setItem(key, JSON.stringify(progress));
@@ -699,16 +705,21 @@ export function saveUserFlashcardProgress(userId: string, progress: UserFlashcar
     console.error('Hiba a tanulókártya haladás mentésekor:', err);
   }
   if (userId && userId !== 'anon_guest') {
-    void writeAppConfig(`__USER_FLASHCARD_PROGRESS_${userId}__`, progress).catch((err) => {
+    return writeUserAppState(userId, 'flashcard_progress', progress).catch((err) => {
       console.warn('Supabase flashcard progress cloud sync error:', err);
     });
   }
+  return Promise.resolve();
 }
 
 export async function fetchUserFlashcardProgressFromCloud(userId: string): Promise<UserFlashcardProgressMap> {
   if (!userId || userId === 'anon_guest') return getUserFlashcardProgress(userId);
   try {
-    const cloud = await readAppConfig<UserFlashcardProgressMap>(`__USER_FLASHCARD_PROGRESS_${userId}__`);
+    const cloud = await readUserAppState<UserFlashcardProgressMap>(
+      userId,
+      'flashcard_progress',
+      `__USER_FLASHCARD_PROGRESS_${userId}__`
+    );
     if (cloud && typeof cloud === 'object') {
       if (typeof window !== 'undefined') {
         try {

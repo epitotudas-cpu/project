@@ -155,3 +155,61 @@ export async function writeAppConfigIfUnchanged<T>(
   }
 }
 
+/**
+ * Reads a private per-user state from `user_app_states` (with optional legacy `app_configs` fallback).
+ */
+export async function readUserAppState<T>(
+  userId: string,
+  stateKey: string,
+  legacyAppConfigKey?: string
+): Promise<T | null> {
+  if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('user_app_states' as never)
+      .select('value')
+      .eq('user_id', userId)
+      .eq('state_key', stateKey)
+      .maybeSingle();
+
+    if (!error && data && (data as { value?: unknown }).value !== undefined) {
+      return (data as { value: T }).value;
+    }
+  } catch {
+    // fallback below
+  }
+
+  if (legacyAppConfigKey) {
+    return readAppConfig<T>(legacyAppConfigKey);
+  }
+  return null;
+}
+
+/**
+ * Persists a private per-user state into `user_app_states` (owner-only RLS).
+ */
+export async function writeUserAppState<T>(
+  userId: string,
+  stateKey: string,
+  value: T
+): Promise<void> {
+  if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) return;
+
+  const { error } = await supabase
+    .from('user_app_states' as never)
+    .upsert(
+      {
+        user_id: userId,
+        state_key: stateKey,
+        value: value as unknown as Record<string, unknown>,
+        updated_at: new Date().toISOString(),
+      } as never,
+      { onConflict: 'user_id,state_key' }
+    );
+
+  if (error) {
+    throw error;
+  }
+}
+

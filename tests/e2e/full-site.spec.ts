@@ -63,7 +63,7 @@ async function attachErrorCollectors(page: Page) {
 
 test.describe('ÉpítőTudás teljes funkcionális E2E tesztkörnyezet', () => {
   test('minden publikus és hitelesítési oldal hiba és túllógás nélkül betölt', async ({ page }) => {
-    const { pageErrors } = await attachErrorCollectors(page);
+    const { pageErrors, consoleErrors } = await attachErrorCollectors(page);
 
     for (const route of PUBLIC_AND_AUTH_ROUTES) {
       await page.goto(`/${route.hash}`, { waitUntil: 'domcontentloaded' });
@@ -80,6 +80,7 @@ test.describe('ÉpítőTudás teljes funkcionális E2E tesztkörnyezet', () => {
     }
 
     expect(pageErrors, `Nem kezelt JS hibák: ${pageErrors.join(' | ')}`).toEqual([]);
+    expect(consoleErrors, `Konzolhibák: ${consoleErrors.join(' | ')}`).toEqual([]);
   });
 
   test('mobil nézetben (390x844) a fő oldalak reszponzívak és a mobil menü működik', async ({ page }) => {

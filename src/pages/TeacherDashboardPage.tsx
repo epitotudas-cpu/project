@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { readAppConfig, writeAppConfig } from '../services/appConfigService';
+import { readUserAppState, writeUserAppState } from '../services/appConfigService';
 import {
   listInstructorClasses,
   createSchoolClass,
@@ -101,7 +101,7 @@ function saveCustomPackagesLocal(packages: CustomPackage[], teacherId?: string):
     }
   }
   if (teacherId) {
-    void writeAppConfig(`__TEACHER_CUSTOM_PACKAGES_${teacherId}__`, packages).catch((err) => {
+    void writeUserAppState(teacherId, 'teacher_custom_packages', packages).catch((err) => {
       console.warn('Egyedi csomagok felhő szinkron hiba:', err);
     });
   }
@@ -206,7 +206,11 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       setUserRole(partnerUserData.member_role || 'instructor');
       setSelectedInstructorId(user!.id);
 
-      readAppConfig<CustomPackage[]>(`__TEACHER_CUSTOM_PACKAGES_${user!.id}__`)
+      readUserAppState<CustomPackage[]>(
+        user!.id,
+        'teacher_custom_packages',
+        `__TEACHER_CUSTOM_PACKAGES_${user!.id}__`
+      )
         .then((cloudPackages) => {
           if (Array.isArray(cloudPackages)) {
             setCustomPackages(cloudPackages);

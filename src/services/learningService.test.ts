@@ -5,12 +5,16 @@ const {
   readAppConfigMock,
   readAppConfigWithVersionMock,
   writeAppConfigIfUnchangedMock,
+  readUserAppStateMock,
+  writeUserAppStateMock,
   fromMock,
 } = vi.hoisted(() => ({
   writeAppConfigMock: vi.fn().mockResolvedValue(undefined),
   readAppConfigMock: vi.fn().mockResolvedValue(null),
   readAppConfigWithVersionMock: vi.fn().mockResolvedValue({ value: null, updatedAt: null }),
   writeAppConfigIfUnchangedMock: vi.fn().mockResolvedValue({ conflict: false, updatedAt: '2026-11-14T12:00:00Z' }),
+  readUserAppStateMock: vi.fn().mockResolvedValue(null),
+  writeUserAppStateMock: vi.fn().mockResolvedValue(undefined),
   fromMock: vi.fn(),
 }));
 
@@ -19,6 +23,8 @@ vi.mock('./appConfigService', () => ({
   readAppConfig: readAppConfigMock,
   readAppConfigWithVersion: readAppConfigWithVersionMock,
   writeAppConfigIfUnchanged: writeAppConfigIfUnchangedMock,
+  readUserAppState: readUserAppStateMock,
+  writeUserAppState: writeUserAppStateMock,
 }));
 
 vi.mock('../lib/supabase', () => ({

@@ -1246,15 +1246,30 @@ function AppContent() {
       teacher: `Oktatói Panel — ${baseTitle}`,
     };
     const pageDescMap: Partial<Record<PageKey, string>> = {
+      home: 'ÉpítőTudás – Magyar építőipari tudásportál, szakmai cikkek, kalkulátorok, szótár, képzések és karrierlehetőségek.',
+      tudastar: 'Átfogó építőipari tudástár: technológiai útmutatók, műszaki cikkek és kivitelezési segédletek.',
       glossary: 'Építőipari szakmai fogalomtár és szakszótár gyakorlati magyarázatokkal.',
       calculations: 'Építőipari kalkulátorok: hőszigetelés, falazat, tetőfedés, festés, térkő, padlófűtés és kábelméretezés.',
       tool: 'Építőipari gépek, szerszámok és berendezések szakmai katalógusa és összehasonlítása.',
+      valaszto: 'Interaktív gép- és szerszámválasztó segédlet építőipari munkákhoz.',
+      software: 'Építőipari tervező-, költségvetés-készítő és projektmenedzsment szoftverek.',
       materials: 'Építőipari alapanyagok, hőszigetelők, habarcsok és szerkezeti anyagok adatbázisa.',
+      books: 'Ajánlott építőipari szakkönyvek, műszaki kiadványok és segédletek.',
       courses: 'Építőipari online képzések, tananyagok és szakmai vizsgafelkészítők.',
+      learning: 'Mikrotanulási modulok, kvízek és tanulókártyák építőipari szakembereknek és tanulóknak.',
+      'learning-paths': 'Strukturált építőipari tanulási útvonalak kezdőtől a mesterszintig.',
+      paths: 'Szakmai fejlődési és képzési utak az építőipar különböző területein.',
       careers: 'Építőipari állásajánlatok, szakmai gyakorlatok és karrierlehetőségek.',
       partners: 'Minősített építőipari gyártók, kivitelezők és szakmai partnerek.',
+      'partner-application': 'Csatlakozz az ÉpítőTudás partnerhálózatához gyártóként, kivitelezőként vagy oktatási intézményként.',
       safety: 'Munkavédelmi előírások, egyéni védőeszközök és biztonságos építkezési útmutatók.',
       standards: 'Építőipari szabványok, műszaki irányelvek és jogszabályi követelmények.',
+      about: 'Ismerd meg az ÉpítőTudás küldetését, szakmai csapatát és minőségirányítási elveit.',
+      jogi: 'Az ÉpítőTudás jogi dokumentumai: impresszum, adatvédelem, ÁSZF és süti tájékoztató.',
+      impressum: 'Az ÉpítőTudás üzemeltetői és jogi elérhetőségi adatai (Impresszum).',
+      privacy: 'Adatkezelési és adatvédelmi tájékoztató az ÉpítőTudás felhasználói számára.',
+      terms: 'Az ÉpítőTudás Általános Szerződési Feltételei (ÁSZF).',
+      cookies: 'Tájékoztató az ÉpítőTudás weboldalán használt sütikről és tárolókról.',
     };
     const resolvedTitle = pageTitleMap[currentPage] || baseTitle;
     if (currentPage !== 'article') {

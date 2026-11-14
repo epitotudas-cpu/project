@@ -9,6 +9,8 @@ import {
   writeAppConfig,
   readAppConfigWithVersion,
   writeAppConfigIfUnchanged,
+  readUserAppState,
+  writeUserAppState,
 } from './appConfigService';
 import type {
   LearningCourse,
@@ -391,7 +393,97 @@ function isStaleEdit(existingUpdatedAt?: string, payloadUpdatedAt?: string): boo
   return existingMs > payloadMs;
 }
 
+async function isPrivilegedSystemConfigWriter(): Promise<boolean> {
+  try {
+    if (typeof supabase?.auth?.getUser !== 'function') return true;
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) return true;
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', uid)
+      .maybeSingle();
+    if (!prof?.role) return true;
+    return prof.role === 'admin' || prof.role === 'editor';
+  } catch {
+    return true;
+  }
+}
+
+async function syncLocalListAfterPartnerRpc<T extends { id: string }>(
+  storageKey: string,
+  getLocal: () => T[],
+  cloudKey: string,
+  fallbackTransform: (all: T[]) => T[]
+): Promise<void> {
+  const saveLocal = (list: T[]) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(storageKey, JSON.stringify(list));
+        window.dispatchEvent(new Event('learning-updated'));
+      }
+    } catch {
+      // ignore storage errors
+    }
+  };
+  try {
+    const cloud = await readAppConfig<T[]>(cloudKey);
+    const next = Array.isArray(cloud) && cloud.length > 0 ? cloud : fallbackTransform(getLocal());
+    saveLocal(next);
+  } catch {
+    saveLocal(fallbackTransform(getLocal()));
+  }
+}
+
 export async function saveCourse(payload: Partial<LearningCourse>): Promise<LearningCourse> {
+  if (!(await isPrivilegedSystemConfigWriter())) {
+    const now = new Date().toISOString();
+    const existingList = await listCourses();
+    const existing = payload.id ? existingList.find((c) => c.id === payload.id) : undefined;
+    if (existing && isStaleEdit(existing.updated_at, payload.updated_at)) {
+      throw new Error('A tananyagot időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
+    }
+    const itemToSave: LearningCourse = existing
+      ? { ...existing, ...payload, updated_at: now }
+      : {
+          id: payload.id || `course-${Date.now()}`,
+          title: payload.title || 'Új Tananyag',
+          slug: payload.slug || `tananyag-${Date.now()}`,
+          excerpt: payload.excerpt || '',
+          content: payload.content || '',
+          category_id: payload.category_id || 'cat-tech',
+          category_name: payload.category_name || 'Építési technológiák',
+          subcategory_name: payload.subcategory_name || undefined,
+          topic: payload.topic || 'Általános',
+          difficulty: payload.difficulty || 'beginner',
+          audience: payload.audience || 'everyone',
+          estimated_time_minutes: payload.estimated_time_minutes || 30,
+          featured_image: payload.featured_image || 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
+          documents: payload.documents || [],
+          video_url: payload.video_url || null,
+          keywords: payload.keywords || [],
+          tags: payload.tags || ['oktatás'],
+          chapters: payload.chapters || [],
+          key_terms: payload.key_terms || [],
+          status: payload.status === 'draft' ? 'draft' : 'pending',
+          partner_id: payload.partner_id || null,
+          partner_name: payload.partner_name || null,
+          author: payload.author || 'Partner Szerző',
+          created_at: now,
+          updated_at: now,
+        };
+    const { data, error } = await supabase.rpc('upsert_partner_learning_item', {
+      p_config_key: CLOUD_COURSES_KEY,
+      p_item: itemToSave,
+    });
+    if (error) throw new Error(error.message);
+    const saved = (data as LearningCourse) || itemToSave;
+    await syncLocalListAfterPartnerRpc(COURSES_STORAGE_KEY, getCoursesLocal, CLOUD_COURSES_KEY, (all) =>
+      existing ? all.map((c) => (c.id === saved.id ? saved : c)) : [saved, ...all]
+    );
+    return saved;
+  }
   const result = await mutateCloudListWithCAS<LearningCourse>({
     cloudKey: CLOUD_COURSES_KEY,
     storageKey: COURSES_STORAGE_KEY,
@@ -453,6 +545,27 @@ export async function saveCourse(payload: Partial<LearningCourse>): Promise<Lear
 }
 
 export async function setCourseStatus(id: string, status: LearningCourse['status'], rejectionNote?: string | null): Promise<void> {
+  if (!(await isPrivilegedSystemConfigWriter())) {
+    const existingList = await listCourses();
+    const existing = existingList.find((c) => c.id === id);
+    if (!existing) throw new Error('A tananyag nem található.');
+    const itemToSave: LearningCourse = {
+      ...existing,
+      status: status === 'draft' ? 'draft' : 'pending',
+      rejection_note: rejectionNote ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.rpc('upsert_partner_learning_item', {
+      p_config_key: CLOUD_COURSES_KEY,
+      p_item: itemToSave,
+    });
+    if (error) throw new Error(error.message);
+    await syncLocalListAfterPartnerRpc(COURSES_STORAGE_KEY, getCoursesLocal, CLOUD_COURSES_KEY, (all) =>
+      all.map((c) => (c.id === id ? itemToSave : c))
+    );
+    return;
+  }
+
   await mutateCloudListWithCAS<LearningCourse>({
     cloudKey: CLOUD_COURSES_KEY,
     storageKey: COURSES_STORAGE_KEY,
@@ -467,6 +580,18 @@ export async function setCourseStatus(id: string, status: LearningCourse['status
 }
 
 export async function deleteCourse(id: string): Promise<void> {
+  if (!(await isPrivilegedSystemConfigWriter())) {
+    const { error } = await supabase.rpc('delete_partner_learning_item', {
+      p_config_key: CLOUD_COURSES_KEY,
+      p_item_id: id,
+    });
+    if (error) throw new Error(error.message);
+    await syncLocalListAfterPartnerRpc(COURSES_STORAGE_KEY, getCoursesLocal, CLOUD_COURSES_KEY, (all) =>
+      all.filter((c) => c.id !== id)
+    );
+    return;
+  }
+
   await mutateCloudListWithCAS<LearningCourse>({
     cloudKey: CLOUD_COURSES_KEY,
     storageKey: COURSES_STORAGE_KEY,
@@ -547,6 +672,44 @@ export async function getQuizBySlug(slug: string): Promise<Quiz | null> {
 }
 
 export async function saveQuiz(payload: Partial<Quiz>): Promise<Quiz> {
+  if (!(await isPrivilegedSystemConfigWriter())) {
+    const now = new Date().toISOString();
+    const existingList = await listQuizzes();
+    const existing = payload.id ? existingList.find((q) => q.id === payload.id) : undefined;
+    if (existing && isStaleEdit(existing.updated_at, payload.updated_at)) {
+      throw new Error('A tesztet időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
+    }
+    const itemToSave: Quiz = existing
+      ? { ...existing, ...payload, updated_at: now }
+      : {
+          id: payload.id || `quiz-${Date.now()}`,
+          title: payload.title || 'Új Teszt',
+          slug: payload.slug || `teszt-${Date.now()}`,
+          description: payload.description || '',
+          category_id: payload.category_id || 'cat-tech',
+          category_name: payload.category_name || 'Építési technológiák',
+          difficulty: payload.difficulty || 'beginner',
+          passing_score_percent: payload.passing_score_percent || 70,
+          time_limit_minutes: payload.time_limit_minutes || 15,
+          questions: payload.questions || [],
+          status: payload.status === 'draft' ? 'draft' : 'pending',
+          partner_id: payload.partner_id || null,
+          partner_name: payload.partner_name || null,
+          created_at: now,
+          updated_at: now,
+        };
+    const { data, error } = await supabase.rpc('upsert_partner_learning_item', {
+      p_config_key: CLOUD_QUIZZES_KEY,
+      p_item: itemToSave,
+    });
+    if (error) throw new Error(error.message);
+    const saved = (data as Quiz) || itemToSave;
+    await syncLocalListAfterPartnerRpc(QUIZZES_STORAGE_KEY, getQuizzesLocal, CLOUD_QUIZZES_KEY, (all) =>
+      existing ? all.map((q) => (q.id === saved.id ? saved : q)) : [saved, ...all]
+    );
+    return saved;
+  }
+
   const result = await mutateCloudListWithCAS<Quiz>({
     cloudKey: CLOUD_QUIZZES_KEY,
     storageKey: QUIZZES_STORAGE_KEY,
@@ -597,6 +760,27 @@ export async function saveQuiz(payload: Partial<Quiz>): Promise<Quiz> {
 }
 
 export async function setQuizStatus(id: string, status: Quiz['status'], rejectionNote?: string | null): Promise<void> {
+  if (!(await isPrivilegedSystemConfigWriter())) {
+    const existingList = await listQuizzes();
+    const existing = existingList.find((q) => q.id === id);
+    if (!existing) throw new Error('A teszt nem található.');
+    const itemToSave: Quiz = {
+      ...existing,
+      status: status === 'draft' ? 'draft' : 'pending',
+      rejection_note: rejectionNote ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.rpc('upsert_partner_learning_item', {
+      p_config_key: CLOUD_QUIZZES_KEY,
+      p_item: itemToSave,
+    });
+    if (error) throw new Error(error.message);
+    await syncLocalListAfterPartnerRpc(QUIZZES_STORAGE_KEY, getQuizzesLocal, CLOUD_QUIZZES_KEY, (all) =>
+      all.map((q) => (q.id === id ? itemToSave : q))
+    );
+    return;
+  }
+
   await mutateCloudListWithCAS<Quiz>({
     cloudKey: CLOUD_QUIZZES_KEY,
     storageKey: QUIZZES_STORAGE_KEY,
@@ -611,6 +795,18 @@ export async function setQuizStatus(id: string, status: Quiz['status'], rejectio
 }
 
 export async function deleteQuiz(id: string): Promise<void> {
+  if (!(await isPrivilegedSystemConfigWriter())) {
+    const { error } = await supabase.rpc('delete_partner_learning_item', {
+      p_config_key: CLOUD_QUIZZES_KEY,
+      p_item_id: id,
+    });
+    if (error) throw new Error(error.message);
+    await syncLocalListAfterPartnerRpc(QUIZZES_STORAGE_KEY, getQuizzesLocal, CLOUD_QUIZZES_KEY, (all) =>
+      all.filter((q) => q.id !== id)
+    );
+    return;
+  }
+
   await mutateCloudListWithCAS<Quiz>({
     cloudKey: CLOUD_QUIZZES_KEY,
     storageKey: QUIZZES_STORAGE_KEY,
@@ -623,7 +819,7 @@ export async function deleteQuiz(id: string): Promise<void> {
 }
 
 // ── QUIZ EVALUATION & ATTEMPTS ──
-export function saveQuizAttempt(attempt: QuizAttempt): void {
+export function saveQuizAttempt(attempt: QuizAttempt): Promise<void> {
   try {
     const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
     const list: QuizAttempt[] = raw ? JSON.parse(raw) : [];
@@ -631,19 +827,24 @@ export function saveQuizAttempt(attempt: QuizAttempt): void {
     localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify(updated));
     if (attempt.user_id && attempt.user_id !== 'anon_guest') {
       const userAttempts = updated.filter((a) => a.user_id === attempt.user_id);
-      void writeAppConfig(`__USER_QUIZ_ATTEMPTS_${attempt.user_id}__`, userAttempts).catch((e) =>
+      return writeUserAppState(attempt.user_id, 'quiz_attempts', userAttempts).catch((e) =>
         console.warn('Hiba a teszt eredményének felhő mentésekor:', e)
       );
     }
   } catch (e) {
     console.warn('Hiba a teszt eredményének mentésekor:', e);
   }
+  return Promise.resolve();
 }
 
 export async function fetchQuizAttemptsFromCloud(userId: string): Promise<QuizAttempt[]> {
   if (!userId || userId === 'anon_guest') return getQuizAttempts(userId);
   try {
-    const cloud = await readAppConfig<QuizAttempt[]>(`__USER_QUIZ_ATTEMPTS_${userId}__`);
+    const cloud = await readUserAppState<QuizAttempt[]>(
+      userId,
+      'quiz_attempts',
+      `__USER_QUIZ_ATTEMPTS_${userId}__`
+    );
     if (Array.isArray(cloud) && cloud.length > 0) {
       const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
       const localList: QuizAttempt[] = raw ? JSON.parse(raw) : [];
@@ -711,7 +912,7 @@ export function getFlashcardsLocal(userId: string = 'anon_guest'): Flashcard[] {
   return seed;
 }
 
-export function saveFlashcardsLocal(userId: string = 'anon_guest', cards: Flashcard[]): void {
+export function saveFlashcardsLocal(userId: string = 'anon_guest', cards: Flashcard[]): Promise<void> {
   try {
     if (typeof window !== 'undefined') {
       localStorage.setItem(`${FLASHCARDS_STORAGE_KEY}_${userId}`, JSON.stringify(cards));
@@ -721,16 +922,21 @@ export function saveFlashcardsLocal(userId: string = 'anon_guest', cards: Flashc
     console.warn('Hiba a tanulókártyák mentésekor:', e);
   }
   if (userId && userId !== 'anon_guest') {
-    void writeAppConfig(`__USER_FLASHCARDS_${userId}__`, cards).catch((e) =>
+    return writeUserAppState(userId, 'flashcards', cards).catch((e) =>
       console.warn('Hiba a tanulókártyák felhő szinkronizálásakor:', e)
     );
   }
+  return Promise.resolve();
 }
 
 export async function fetchFlashcardsFromCloud(userId: string): Promise<Flashcard[]> {
   if (!userId || userId === 'anon_guest') return getFlashcardsLocal(userId);
   try {
-    const cloud = await readAppConfig<Flashcard[]>(`__USER_FLASHCARDS_${userId}__`);
+    const cloud = await readUserAppState<Flashcard[]>(
+      userId,
+      'flashcards',
+      `__USER_FLASHCARDS_${userId}__`
+    );
     if (Array.isArray(cloud)) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(`${FLASHCARDS_STORAGE_KEY}_${userId}`, JSON.stringify(cloud));

@@ -161,11 +161,12 @@ test.describe('Hitelesített szerepkörös teljes funkcionális E2E tesztek (Adm
     await loginViaUI(page, email!, password!);
 
     await page.goto('/#/partner', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(700);
+    await expect(page.locator('body')).toContainText(/Szerződések|Partner|Kampány|Vezérlőpult/i, {
+      timeout: 15_000,
+    });
 
     const partnerText = await page.locator('body').innerText();
     expect(partnerText).not.toContain('Partneri Bejelentkezés Szükséges');
-    expect(partnerText).toMatch(/Szerződések|Partner|Kampány|Vezérlőpult/i);
 
     // Check contract review modal on Partner Dashboard if a contract button exists
     const reviewContractBtn = page

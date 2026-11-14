@@ -1,5 +1,5 @@
 import { getUserTrustProfile, type UserTrustProfile } from './trustService';
-import { readAppConfig, writeAppConfig } from './appConfigService';
+import { readUserAppState, writeUserAppState } from './appConfigService';
 
 export interface UserDetailedProfile {
   id: string;
@@ -28,7 +28,11 @@ export async function getUserDetailedProfile(
 ): Promise<UserDetailedProfile> {
   if (!IN_MEMORY_DETAILED_PROFILES.has(userId)) {
     try {
-      const cloudProfile = await readAppConfig<Partial<UserDetailedProfile>>(`__USER_DETAILED_PROFILE_${userId}__`);
+      const cloudProfile = await readUserAppState<Partial<UserDetailedProfile>>(
+        userId,
+        'detailed_profile',
+        `__USER_DETAILED_PROFILE_${userId}__`
+      );
       if (cloudProfile && cloudProfile.id === userId) {
         const trustProfile = await getUserTrustProfile(userId);
         const merged: UserDetailedProfile = {
@@ -150,7 +154,7 @@ export async function updateUserDetailedProfile(
 
   IN_MEMORY_DETAILED_PROFILES.set(userId, updated);
   try {
-    await writeAppConfig(`__USER_DETAILED_PROFILE_${userId}__`, updated);
+    await writeUserAppState(userId, 'detailed_profile', updated);
   } catch (err) {
     console.warn('Részletes profil felhő mentési hiba:', err);
   }
