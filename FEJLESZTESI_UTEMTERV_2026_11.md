@@ -51,12 +51,12 @@
 ## Fázis 3 – Kritikus Adatperzisztencia (`localStorage` / Mock kiváltása Supabase-re)
 **Cél:** Minden kritikus admin, hirdetési és tanári adat valódi adatbázisba mentése (szükség esetén új SQL migrációkkal).
 
-- [ ] **3.1 RBAC szerepkör-jogosultságok perzisztálása (`AdminAccessControlPage` + `permissionService`)**
+- [x] **3.1 RBAC szerepkör-jogosultságok perzisztálása (`AdminAccessControlPage` + `permissionService`)**
   - `src/services/permissionService.ts` (153–180. sor) és `src/pages/AdminAccessControlPage.tsx` (18–81. sor): a `role_permissions` tábla vagy `app_configs` (`__SYSTEM_CONFIG_ROLE_PERMISSIONS__`) használata Supabase-ben a `localStorage` helyett (RLS: csak `admin` írhatja, bejelentkezett/publikus olvasás).
-- [ ] **3.2 Tanári „Tesztek” nézet és Egyéni Tananyagcsomagok bekötése**
+- [x] **3.2 Tanári „Tesztek” nézet és Egyéni Tananyagcsomagok bekötése**
   - `src/pages/TeacherDashboardPage.tsx` (1717–1756. sor): a hardcode-olt teszt táblázat lecserélése valódi Supabase tanulói kvíz-eredményekre (`quiz_attempts` / `user_course_progress`).
   - `src/pages/TeacherDashboardPage.tsx` (81–101, 577–612, 1651–1658. sorok): egyéni tananyagcsomagok mentése Supabase-be, és a „Kiosztás osztálynak →” gomb bekötése a valódi osztály-kiosztási folyamatba.
-- [ ] **3.3 Hirdetési Riport CSV Export és Hirdetés/Szerződés perzisztencia**
+- [x] **3.3 Hirdetési Riport CSV Export és Hirdetés/Szerződés perzisztencia**
   - `src/pages/AdminAdsPage.tsx` (1397–1405. sor): valódi CSV generálás és letöltés (`Blob` + `URL.createObjectURL`) a „CSV Export” gombra.
   - `src/services/contractService.ts` (222–260. sor) és `src/services/adService.ts` (295–370. sor): szerződések, hirdetési helyek, kifizetések és értesítések szinkronizálása Supabase-be (`app_configs` vagy dedikált táblák + RLS).
 

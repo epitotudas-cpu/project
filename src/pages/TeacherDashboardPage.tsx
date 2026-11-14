@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from '../services/appConfigService';
 import {
   listInstructorClasses,
   createSchoolClass,
@@ -91,12 +92,18 @@ function getCustomPackagesLocal(): CustomPackage[] {
   }
 }
 
-function saveCustomPackagesLocal(packages: CustomPackage[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(TEACHER_PACKAGES_STORAGE_KEY, JSON.stringify(packages));
-  } catch (err) {
-    console.warn('Hiba az egyedi csomagok mentésekor:', err);
+function saveCustomPackagesLocal(packages: CustomPackage[], teacherId?: string): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(TEACHER_PACKAGES_STORAGE_KEY, JSON.stringify(packages));
+    } catch (err) {
+      console.warn('Hiba az egyedi csomagok mentésekor:', err);
+    }
+  }
+  if (teacherId) {
+    void writeAppConfig(`__TEACHER_CUSTOM_PACKAGES_${teacherId}__`, packages).catch((err) => {
+      console.warn('Egyedi csomagok felhő szinkron hiba:', err);
+    });
   }
 }
 
@@ -198,6 +205,19 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       const partnerId = partnerUserData.partner_id;
       setUserRole(partnerUserData.member_role || 'instructor');
       setSelectedInstructorId(user!.id);
+
+      readAppConfig<CustomPackage[]>(`__TEACHER_CUSTOM_PACKAGES_${user!.id}__`)
+        .then((cloudPackages) => {
+          if (Array.isArray(cloudPackages)) {
+            setCustomPackages(cloudPackages);
+            try {
+              localStorage.setItem(TEACHER_PACKAGES_STORAGE_KEY, JSON.stringify(cloudPackages));
+            } catch {
+              // ignore
+            }
+          }
+        })
+        .catch(() => {});
 
       let partnerName = 'Iskola / Szervezet';
       if (partnerId) {
@@ -591,7 +611,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     };
     const updated = [newPkg, ...customPackages];
     setCustomPackages(updated);
-    saveCustomPackagesLocal(updated);
+    saveCustomPackagesLocal(updated, user?.id);
     setPkgTitle('');
     setPkgDesc('');
     setPkgItems([]);
@@ -607,7 +627,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       onConfirm: () => {
         const updated = customPackages.filter((p) => p.id !== pkgId);
         setCustomPackages(updated);
-        saveCustomPackagesLocal(updated);
+        saveCustomPackagesLocal(updated, user?.id);
       },
     });
   };
@@ -1650,7 +1670,11 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                         <div className="pt-3 border-t border-[#262626] flex items-center justify-between">
                           <button
                             onClick={() => {
-                              toast.info(`"${pkg.title}" csomag készen áll az osztályokhoz rendelésre a Kiosztás menüben.`);
+                              if (pkg.items.length > 0) {
+                                setMaterialSearch(pkg.items[0].title);
+                              }
+                              onNavigateView?.('materials');
+                              toast.info(`"${pkg.title}" csomaghoz válassz osztályt és tananyagot a Tananyagok / Kiosztás nézetben.`);
                             }}
                             className="text-xs font-bold text-[#60a5fa] hover:text-white transition-colors cursor-pointer"
                           >
@@ -1718,39 +1742,67 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#262626] rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <FileCheck className="w-5 h-5 text-[#60a5fa]" /> Tesztanyagok & Teszteredmények
+                <FileCheck className="w-5 h-5 text-[#60a5fa]" /> Tesztanyagok &amp; Kurzus-eredmények
               </h2>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-gray-300">
-                  <thead className="bg-[#1F1F1F] text-gray-400 uppercase text-[10px]">
-                    <tr>
-                      <th className="py-3 px-4 rounded-l-lg">Tanuló Neve</th>
-                      <th className="py-3 px-4">Teszt / Kurzus</th>
-                      <th className="py-3 px-4">Osztály</th>
-                      <th className="py-3 px-4">Próbálkozások</th>
-                      <th className="py-3 px-4">Eredmény %</th>
-                      <th className="py-3 px-4">Státusz</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1F1F1F]">
-                    {allStudents.slice(0, 5).map((st, idx) => (
-                      <tr key={st.id} className="hover:bg-[#1A1A1A]">
-                        <td className="py-3.5 px-4 font-semibold text-white">{st.profiles?.full_name || st.profiles?.email || 'Névtelen tanuló'}</td>
-                        <td className="py-3.5 px-4 text-gray-300">Monolitikus Beton- és Szerkezetépítés Mesterfogásai Teszt</td>
-                        <td className="py-3.5 px-4 text-[#60a5fa] font-bold">{st.school_class?.name || '10.A'}</td>
-                        <td className="py-3.5 px-4 text-gray-400">1</td>
-                        <td className="py-3.5 px-4 font-black text-emerald-400">{80 + idx * 4}%</td>
-                        <td className="py-3.5 px-4">
-                          <span className="px-2.5 py-1 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md">
-                            SIKERES
-                          </span>
-                        </td>
+              {loadingProgress ? (
+                <div className="p-8 text-center text-xs text-gray-400">Eredmények betöltése az adatbázisból...</div>
+              ) : dbProgressRecords.length === 0 ? (
+                <div className="p-8 text-center bg-[#1A1A1A] border border-[#262626] rounded-xl text-xs text-gray-400">
+                  Még nincs rögzített tanulói teszt- vagy kurzuseredmény az adatbázisban.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-gray-300">
+                    <thead className="bg-[#1F1F1F] text-gray-400 uppercase text-[10px]">
+                      <tr>
+                        <th className="py-3 px-4 rounded-l-lg">Tanuló Neve</th>
+                        <th className="py-3 px-4">Teszt / Kurzus</th>
+                        <th className="py-3 px-4">Osztály</th>
+                        <th className="py-3 px-4">Eredmény / Haladás %</th>
+                        <th className="py-3 px-4">Státusz</th>
+                        <th className="py-3 px-4 rounded-r-lg">Utolsó aktivitás</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-[#1F1F1F]">
+                      {dbProgressRecords.map((prog, idx) => {
+                        const student = allStudents.find((st) => st.student_id === prog.user_id);
+                        const courseObj = DEFAULT_COURSES.find((c) => c.id === prog.course_id);
+                        const pct = Number(prog.progress_percent ?? 0);
+                        const isCompleted = prog.status === 'completed' || pct >= 100;
+                        return (
+                          <tr key={`${prog.user_id}-${prog.course_id || idx}`} className="hover:bg-[#1A1A1A]">
+                            <td className="py-3.5 px-4 font-semibold text-white">
+                              {student?.profiles?.full_name || student?.profiles?.email || 'Névtelen tanuló'}
+                            </td>
+                            <td className="py-3.5 px-4 text-gray-300">
+                              {courseObj?.title || prog.course_id || 'Ismeretlen kurzus'}
+                            </td>
+                            <td className="py-3.5 px-4 text-[#60a5fa] font-bold">
+                              {student?.school_class?.name || 'Osztály'}
+                            </td>
+                            <td className="py-3.5 px-4 font-black text-emerald-400">{pct}%</td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`px-2.5 py-1 text-[10px] font-bold rounded-md border ${
+                                  isCompleted
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                }`}
+                              >
+                                {isCompleted ? 'TELJESÍTVE' : 'FOLYAMATBAN'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-gray-400">
+                              {prog.last_accessed_at ? new Date(prog.last_accessed_at).toLocaleDateString('hu-HU') : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

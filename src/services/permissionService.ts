@@ -5,6 +5,8 @@ export interface UserPermissionCheck {
   action: string;
 }
 
+import { readAppConfig, writeAppConfig } from './appConfigService';
+
 export interface ModuleActionPermissions {
   view: boolean;
   create: boolean;
@@ -149,16 +151,20 @@ const DEFAULT_TEACHER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
 };
 
 const STORAGE_KEY_PREFIX = 'epitotudas_role_permissions_';
+const ROLE_PERMISSIONS_CONFIG_KEY = '__SYSTEM_CONFIG_ROLE_PERMISSIONS__';
+
+function getDefaultPermissionsForRole(role: ConfigurableRole): Record<string, ModuleActionPermissions> {
+  return role === 'editor'
+    ? DEFAULT_EDITOR_PERMISSIONS
+    : role === 'partner'
+    ? DEFAULT_PARTNER_PERMISSIONS
+    : role === 'school'
+    ? DEFAULT_SCHOOL_PERMISSIONS
+    : DEFAULT_TEACHER_PERMISSIONS;
+}
 
 export function getRoleModulePermissions(role: ConfigurableRole): Record<string, ModuleActionPermissions> {
-  const defaultPerms =
-    role === 'editor'
-      ? DEFAULT_EDITOR_PERMISSIONS
-      : role === 'partner'
-      ? DEFAULT_PARTNER_PERMISSIONS
-      : role === 'school'
-      ? DEFAULT_SCHOOL_PERMISSIONS
-      : DEFAULT_TEACHER_PERMISSIONS;
+  const defaultPerms = getDefaultPermissionsForRole(role);
   try {
     const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${role}`);
     if (saved) {
@@ -171,12 +177,73 @@ export function getRoleModulePermissions(role: ConfigurableRole): Record<string,
   return defaultPerms;
 }
 
-export function saveRoleModulePermissions(role: ConfigurableRole, permissions: Record<string, ModuleActionPermissions>): void {
+function collectAllRolePermissions(): Partial<Record<ConfigurableRole, Record<string, ModuleActionPermissions>>> {
+  const roles: ConfigurableRole[] = ['editor', 'partner', 'school', 'teacher'];
+  const result: Partial<Record<ConfigurableRole, Record<string, ModuleActionPermissions>>> = {};
+  for (const r of roles) {
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${r}`);
+      if (saved) {
+        result[r] = JSON.parse(saved);
+      }
+    } catch {
+      // ignore malformed localStorage
+    }
+  }
+  return result;
+}
+
+export async function fetchRolePermissionsFromCloud(): Promise<void> {
+  try {
+    const cloudMap = await readAppConfig<Partial<Record<ConfigurableRole, Record<string, ModuleActionPermissions>>>>(
+      ROLE_PERMISSIONS_CONFIG_KEY
+    );
+    if (cloudMap && typeof cloudMap === 'object') {
+      const roles: ConfigurableRole[] = ['editor', 'partner', 'school', 'teacher'];
+      for (const r of roles) {
+        if (cloudMap[r]) {
+          localStorage.setItem(`${STORAGE_KEY_PREFIX}${r}`, JSON.stringify(cloudMap[r]));
+        }
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('role-permissions-changed'));
+      }
+    }
+  } catch (e) {
+    console.warn('Hiba a felhő alapú jogosultságok betöltésekor:', e);
+  }
+}
+
+export async function saveRoleModulePermissions(
+  role: ConfigurableRole,
+  permissions: Record<string, ModuleActionPermissions>
+): Promise<void> {
   try {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${role}`, JSON.stringify(permissions));
+    const allPerms = collectAllRolePermissions();
+    allPerms[role] = permissions;
+    await writeAppConfig(ROLE_PERMISSIONS_CONFIG_KEY, allPerms);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('role-permissions-changed'));
+    }
   } catch (e) {
     console.error(`Hiba a role perms mentésekor (${role}):`, e);
   }
+}
+
+export async function resetRoleModulePermissions(role: ConfigurableRole): Promise<Record<string, ModuleActionPermissions>> {
+  try {
+    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${role}`);
+    const allPerms = collectAllRolePermissions();
+    delete allPerms[role];
+    await writeAppConfig(ROLE_PERMISSIONS_CONFIG_KEY, allPerms);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('role-permissions-changed'));
+    }
+  } catch (e) {
+    console.error(`Hiba a role perms visszaállításakor (${role}):`, e);
+  }
+  return getDefaultPermissionsForRole(role);
 }
 
 export function hasModuleActionPermission(

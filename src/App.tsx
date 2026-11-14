@@ -15,6 +15,7 @@ import {
 } from './services/siteSettingsService';
 import { fetchHeroStateFromCloud } from './services/heroImageService';
 import { fetchImpressumDataFromCloud } from './services/impressumService';
+import { fetchRolePermissionsFromCloud } from './services/permissionService';
 import { supabase, type Partner } from './lib/supabase';
 import { acceptInvitation } from './services/partnerInvitationService';
 import {
@@ -1109,6 +1110,7 @@ function AppContent() {
     void fetchSiteSettingsFromCloud();
     void fetchHeroStateFromCloud();
     void fetchImpressumDataFromCloud();
+    void fetchRolePermissionsFromCloud();
 
     window.addEventListener('site-settings-changed', handleSettingsChange);
     window.addEventListener('hero-config-changed', handleSettingsChange);

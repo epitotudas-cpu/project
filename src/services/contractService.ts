@@ -5,6 +5,9 @@ import {
   type ContractAcceptanceLog,
   type ContractVersion,
 } from '../lib/supabase';
+import { readAppConfig, writeAppConfig } from './appConfigService';
+
+const CONTRACTS_CONFIG_KEY = '__SYSTEM_CONFIG_CONTRACTS__';
 
 export const DEFAULT_CONTRACT_TEMPLATES: ContractTemplate[] = [
   {
@@ -240,9 +243,26 @@ export function saveContracts(contracts: AdvertisementContract[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
     window.dispatchEvent(new Event('contracts-changed'));
+    void writeAppConfig(CONTRACTS_CONFIG_KEY, contracts).catch((err) => {
+      console.warn('Szerződések felhő szinkron hiba:', err);
+    });
   } catch (err) {
     console.error('Hiba a szerződések mentésekor:', err);
   }
+}
+
+export async function fetchContractsFromCloud(): Promise<AdvertisementContract[]> {
+  try {
+    const cloud = await readAppConfig<AdvertisementContract[]>(CONTRACTS_CONFIG_KEY);
+    if (Array.isArray(cloud) && cloud.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
+      window.dispatchEvent(new Event('contracts-changed'));
+      return cloud;
+    }
+  } catch (err) {
+    console.warn('Szerződések felhőből olvasási hiba:', err);
+  }
+  return getContracts();
 }
 
 export function acceptContractByPartner(

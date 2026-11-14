@@ -307,9 +307,21 @@ export function savePlacements(placements: AdPlacement[]): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_PLACEMENTS, JSON.stringify(placements));
     }
+    void writeAppConfig('__SYSTEM_CONFIG_AD_PLACEMENTS__', placements).catch(() => {});
   } catch (e) {
     console.error('Hiba az elhelyezések mentésekor:', e);
   }
+}
+
+export async function listPlacements(): Promise<AdPlacement[]> {
+  try {
+    const cloud = await readAppConfig<AdPlacement[]>('__SYSTEM_CONFIG_AD_PLACEMENTS__');
+    if (Array.isArray(cloud)) {
+      try { localStorage.setItem(STORAGE_KEY_PLACEMENTS, JSON.stringify(cloud)); } catch { /* ignore */ }
+      return cloud;
+    }
+  } catch { /* ignore */ }
+  return getPlacements();
 }
 
 // Helper: Payments
@@ -332,13 +344,26 @@ export function getPayments(): AdPayment[] {
 
 export function savePayments(payments: AdPayment[]): void {
   try {
+    const sanitized = payments.filter((p) => p.id !== 'pay-101' && !p.advertiserName?.includes('Leier'));
     if (typeof localStorage !== 'undefined') {
-      const sanitized = payments.filter((p) => p.id !== 'pay-101' && !p.advertiserName?.includes('Leier'));
       localStorage.setItem(STORAGE_KEY_PAYMENTS, JSON.stringify(sanitized));
     }
+    void writeAppConfig('__SYSTEM_CONFIG_AD_PAYMENTS__', sanitized).catch(() => {});
   } catch (e) {
     console.error('Hiba a fizetések mentésekor:', e);
   }
+}
+
+export async function listPayments(): Promise<AdPayment[]> {
+  try {
+    const cloud = await readAppConfig<AdPayment[]>('__SYSTEM_CONFIG_AD_PAYMENTS__');
+    if (Array.isArray(cloud)) {
+      const sanitized = cloud.filter((p) => p.id !== 'pay-101' && !p.advertiserName?.includes('Leier'));
+      try { localStorage.setItem(STORAGE_KEY_PAYMENTS, JSON.stringify(sanitized)); } catch { /* ignore */ }
+      return sanitized;
+    }
+  } catch { /* ignore */ }
+  return getPayments();
 }
 
 // Helper: Notifications
@@ -361,13 +386,26 @@ export function getNotifications(): AdNotification[] {
 
 export function saveNotifications(notifications: AdNotification[]): void {
   try {
+    const sanitized = notifications.filter((n) => n.id !== 'notif-4' && !n.message?.includes('Leier'));
     if (typeof localStorage !== 'undefined') {
-      const sanitized = notifications.filter((n) => n.id !== 'notif-4' && !n.message?.includes('Leier'));
       localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(sanitized));
     }
+    void writeAppConfig('__SYSTEM_CONFIG_AD_NOTIFICATIONS__', sanitized).catch(() => {});
   } catch (e) {
     console.error('Hiba az értesítések mentésekor:', e);
   }
+}
+
+export async function listNotifications(): Promise<AdNotification[]> {
+  try {
+    const cloud = await readAppConfig<AdNotification[]>('__SYSTEM_CONFIG_AD_NOTIFICATIONS__');
+    if (Array.isArray(cloud)) {
+      const sanitized = cloud.filter((n) => n.id !== 'notif-4' && !n.message?.includes('Leier'));
+      try { localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(sanitized)); } catch { /* ignore */ }
+      return sanitized;
+    }
+  } catch { /* ignore */ }
+  return getNotifications();
 }
 
 // Aggregate KPI calculation helper

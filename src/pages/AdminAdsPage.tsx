@@ -38,16 +38,17 @@ import { AdminAdPackagesManager } from '../components/AdminAdPackagesManager';
 import {
   getContracts,
   saveContracts,
+  fetchContractsFromCloud,
 } from '../services/contractService';
 import {
   saveAdvertisers,
   listAdvertisers,
-  getPlacements,
   savePlacements,
-  getPayments,
+  listPlacements,
   savePayments,
-  getNotifications,
+  listPayments,
   saveNotifications,
+  listNotifications,
   calculateAdKpiStats,
 } from '../services/adService';
 import {
@@ -242,16 +243,22 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
 
   async function loadAllData() {
     try {
-      const camps = await listAdCampaigns();
-      const advs = await listAdvertisers();
-      const fallbacks = await listFallbackVideoSettings();
-      const tiles = await listTileAdSettings();
+      const [camps, advs, fallbacks, tiles, cloudContracts, cloudPlacements, cloudPayments, cloudNotifications] = await Promise.all([
+        listAdCampaigns(),
+        listAdvertisers(),
+        listFallbackVideoSettings(),
+        listTileAdSettings(),
+        fetchContractsFromCloud(),
+        listPlacements(),
+        listPayments(),
+        listNotifications(),
+      ]);
       setCampaigns(camps || []);
-      setContracts(getContracts() || []);
+      setContracts(cloudContracts || getContracts() || []);
       setAdvertisers(advs || []);
-      setPlacements(getPlacements() || []);
-      setPayments(getPayments() || []);
-      setNotifications(getNotifications() || []);
+      setPlacements(cloudPlacements || []);
+      setPayments(cloudPayments || []);
+      setNotifications(cloudNotifications || []);
       setFallbackSettings(fallbacks);
       setTileAdSettings(tiles);
     } catch (e) {
@@ -1396,7 +1403,49 @@ export default function AdminAdsPage({ onNavigate }: AdminAdsPageProps) {
                 </h2>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => toast.success('Riport CSV exportálása sikeres!')}
+                    onClick={() => {
+                      const escapeCsv = (val: string | number | undefined | null) =>
+                        `"${String(val ?? '').replace(/"/g, '""')}"`;
+                      const headers = ['Kampany', 'Hirdeto', 'Hely', 'Csomag', 'Statusz', 'Megjelenes', 'Kattintas', 'CTR (%)', 'Ar (HUF)'];
+                      const rows = campaigns.map((c) => {
+                        const imp = c.impressions_count || 0;
+                        const clk = c.clicks_count || 0;
+                        const ctr = imp > 0 ? ((clk / imp) * 100).toFixed(2) : '0.00';
+                        return [
+                          escapeCsv(c.title),
+                          escapeCsv(c.sponsor_name),
+                          escapeCsv(c.placement_slot),
+                          escapeCsv(c.package_tier),
+                          escapeCsv(c.status_v2),
+                          imp,
+                          clk,
+                          ctr,
+                          c.price_huf || 0,
+                        ].join(';');
+                      });
+                      const summaryRow = [
+                        escapeCsv('OSSZESEN'),
+                        '',
+                        '',
+                        '',
+                        '',
+                        kpiStats.totalImpressions,
+                        kpiStats.totalClicks,
+                        kpiStats.averageCtr,
+                        '',
+                      ].join(';');
+                      const csvContent = '\uFEFF' + [headers.join(';'), ...rows, summaryRow].join('\n');
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `hirdetesi-riport-${new Date().toISOString().slice(0, 10)}.csv`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      toast.success('Riport CSV exportálása sikeres!');
+                    }}
                     style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
                     className="px-3.5 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                   >

@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, CheckSquare, Square, Save, RotateCcw, AlertTriangle, Lock, UserCheck, Briefcase, School, GraduationCap } from 'lucide-react';
 import {
   SYSTEM_MODULES,
   getRoleModulePermissions,
   saveRoleModulePermissions,
+  resetRoleModulePermissions,
+  fetchRolePermissionsFromCloud,
   type ModuleActionPermissions,
   type ConfigurableRole,
 } from '../services/permissionService';
@@ -21,6 +23,12 @@ export function AdminAccessControlPage() {
     getRoleModulePermissions(selectedRole)
   );
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetchRolePermissionsFromCloud().then(() => {
+      setPermissions(getRoleModulePermissions(selectedRole));
+    });
+  }, [selectedRole]);
 
   const handleRoleChange = (role: ConfigurableRole) => {
     setSelectedRole(role);
@@ -65,17 +73,17 @@ export function AdminAccessControlPage() {
     });
   };
 
-  const handleSave = () => {
-    saveRoleModulePermissions(selectedRole, permissions);
+  const handleSave = async () => {
+    await saveRoleModulePermissions(selectedRole, permissions);
     setToastMessage(
-      `A(z) ${ROLE_LABELS[selectedRole]} szerepkör jogosultságai sikeresen elmentve!`
+      `A(z) ${ROLE_LABELS[selectedRole]} szerepkör jogosultságai sikeresen elmentve a felhőbe!`
     );
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const handleReset = () => {
-    localStorage.removeItem(`epitotudas_role_permissions_${selectedRole}`);
-    setPermissions(getRoleModulePermissions(selectedRole));
+  const handleReset = async () => {
+    const defaults = await resetRoleModulePermissions(selectedRole);
+    setPermissions(defaults);
     setToastMessage(`A(z) ${ROLE_LABELS[selectedRole]} jogosultságok visszaállítva az alapértelmezettekre.`);
     setTimeout(() => setToastMessage(null), 4000);
   };
