@@ -92,18 +92,16 @@ function getCustomPackagesLocal(): CustomPackage[] {
   }
 }
 
-function saveCustomPackagesLocal(packages: CustomPackage[], teacherId?: string): void {
+async function saveCustomPackagesLocal(packages: CustomPackage[], teacherId?: string): Promise<void> {
+  if (teacherId) {
+    await writeUserAppState(teacherId, 'teacher_custom_packages', packages);
+  }
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(TEACHER_PACKAGES_STORAGE_KEY, JSON.stringify(packages));
     } catch (err) {
       console.warn('Hiba az egyedi csomagok mentésekor:', err);
     }
-  }
-  if (teacherId) {
-    void writeUserAppState(teacherId, 'teacher_custom_packages', packages).catch((err) => {
-      console.warn('Egyedi csomagok felhő szinkron hiba:', err);
-    });
   }
 }
 
@@ -597,7 +595,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     setPkgItems([...pkgItems, { id: course.id, title: course.title, contentType: 'course' }]);
   };
 
-  const handleSavePackage = (status: 'draft' | 'compiled') => {
+  const handleSavePackage = async (status: 'draft' | 'compiled') => {
     if (!pkgTitle.trim()) {
       toast.notify('Kérjük, adja meg a tananyagcsomag címét!', 'warning');
       return;
@@ -614,12 +612,16 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       createdAt: new Date().toISOString(),
     };
     const updated = [newPkg, ...customPackages];
-    setCustomPackages(updated);
-    saveCustomPackagesLocal(updated, user?.id);
-    setPkgTitle('');
-    setPkgDesc('');
-    setPkgItems([]);
-    toast.success(status === 'compiled' ? 'Tananyagcsomag sikeresen összeállítva és elmentve!' : 'Piszkozat sikeresen elmentve!');
+    try {
+      await saveCustomPackagesLocal(updated, user?.id);
+      setCustomPackages(updated);
+      setPkgTitle('');
+      setPkgDesc('');
+      setPkgItems([]);
+      toast.success(status === 'compiled' ? 'Tananyagcsomag sikeresen összeállítva és elmentve!' : 'Piszkozat sikeresen elmentve!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a tananyagcsomag felhőmentésekor.');
+    }
   };
 
   const handleDeletePackage = (pkgId: string) => {
@@ -628,10 +630,14 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       message: 'Biztosan törölni szeretné ezt a tananyagcsomagot?',
       confirmLabel: 'Törlés',
       destructive: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         const updated = customPackages.filter((p) => p.id !== pkgId);
-        setCustomPackages(updated);
-        saveCustomPackagesLocal(updated, user?.id);
+        try {
+          await saveCustomPackagesLocal(updated, user?.id);
+          setCustomPackages(updated);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Hiba történt a tananyagcsomag törlésekor.');
+        }
       },
     });
   };
