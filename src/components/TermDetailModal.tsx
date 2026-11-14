@@ -75,17 +75,21 @@ export default function TermDetailModal({
   const videoUrls = getVideoUrls(term);
   const translations = term.translations || {};
 
-  const handleToggleBookmark = (e: React.MouseEvent) => {
+  const handleToggleBookmark = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const res = toggleSaveItem(user?.id, {
-      itemId: term.id,
-      itemType: 'glossary',
-      title: term.term,
-      subtitle: term.category || undefined,
-      description: term.definition,
-      slug: term.slug || term.id,
-    });
-    setSaved(res.isSaved);
+    try {
+      const res = await toggleSaveItem(user?.id, {
+        itemId: term.id,
+        itemType: 'glossary',
+        title: term.term,
+        subtitle: term.category || undefined,
+        description: term.definition,
+        slug: term.slug || term.id,
+      });
+      setSaved(res.isSaved);
+    } catch (err) {
+      console.warn('A könyvjelző mentése sikertelen volt:', err);
+    }
   };
 
   return (

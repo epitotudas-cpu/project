@@ -177,18 +177,19 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
     setSavedItemIds(glossaryIds);
   }, [user]);
 
-  const handleToggleBookmark = (e: React.MouseEvent, item: GlossaryTermFromJson) => {
+  const handleToggleBookmark = async (e: React.MouseEvent, item: GlossaryTermFromJson) => {
     e.stopPropagation();
-    const res = toggleSaveItem(user?.id, {
-      itemId: item.id,
-      itemType: 'glossary',
-      title: item.term,
-      subtitle: item.category || undefined,
-      description: item.definition,
-      slug: item.slug || item.id,
-    });
+    try {
+      const res = await toggleSaveItem(user?.id, {
+        itemId: item.id,
+        itemType: 'glossary',
+        title: item.term,
+        subtitle: item.category || undefined,
+        description: item.definition,
+        slug: item.slug || item.id,
+      });
 
-    setSavedItemIds((prev) => {
+      setSavedItemIds((prev) => {
       const next = new Set(prev);
       if (res.isSaved) {
         next.add(item.id);
@@ -201,6 +202,9 @@ export default function GlossaryPage({ onNavigate }: GlossaryPageProps) {
       }
       return next;
     });
+    } catch (err) {
+      console.warn('A könyvjelző mentése sikertelen volt:', err);
+    }
   };
 
   // --------------------------------------------------------------------------

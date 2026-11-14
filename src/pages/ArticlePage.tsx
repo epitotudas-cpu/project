@@ -450,19 +450,23 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
     }
   }, [article, user]);
 
-  const handleToggleBookmark = () => {
+  const handleToggleBookmark = async () => {
     if (!article) return;
-    const res = toggleSaveItem(user?.id, {
-      itemId: article.id,
-      itemType: 'article',
-      title: article.title,
-      subtitle: categoryObj?.name || article.author || 'ÉpítőTudás',
-      description: article.excerpt || undefined,
-      slug: article.slug,
-      imageUrl: article.featured_image || undefined,
-      readTime: article.read_time,
-    });
-    setSaved(res.isSaved);
+    try {
+      const res = await toggleSaveItem(user?.id, {
+        itemId: article.id,
+        itemType: 'article',
+        title: article.title,
+        subtitle: categoryObj?.name || article.author || 'ÉpítőTudás',
+        description: article.excerpt || undefined,
+        slug: article.slug,
+        imageUrl: article.featured_image || undefined,
+        readTime: article.read_time,
+      });
+      setSaved(res.isSaved);
+    } catch (err) {
+      console.warn('A könyvjelző mentése sikertelen volt:', err);
+    }
   };
 
   useEffect(() => {

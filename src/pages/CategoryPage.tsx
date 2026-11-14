@@ -136,20 +136,21 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
     setSavedArticleIds(articleIds);
   }, [user]);
 
-  const handleToggleBookmark = (e: React.MouseEvent, article: Article, catName?: string) => {
+  const handleToggleBookmark = async (e: React.MouseEvent, article: Article, catName?: string) => {
     e.stopPropagation();
-    const res = toggleSaveItem(user?.id, {
-      itemId: article.id,
-      itemType: 'article',
-      title: article.title,
-      subtitle: catName || article.author || 'ÉpítőTudás',
-      description: article.excerpt || undefined,
-      slug: article.slug,
-      imageUrl: article.featured_image || undefined,
-      readTime: article.read_time,
-    });
+    try {
+      const res = await toggleSaveItem(user?.id, {
+        itemId: article.id,
+        itemType: 'article',
+        title: article.title,
+        subtitle: catName || article.author || 'ÉpítőTudás',
+        description: article.excerpt || undefined,
+        slug: article.slug,
+        imageUrl: article.featured_image || undefined,
+        readTime: article.read_time,
+      });
 
-    setSavedArticleIds((prev) => {
+      setSavedArticleIds((prev) => {
       const next = new Set(prev);
       if (res.isSaved) {
         next.add(article.id);
@@ -160,6 +161,9 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
       }
       return next;
     });
+    } catch (err) {
+      console.warn('A könyvjelző mentése sikertelen volt:', err);
+    }
   };
 
   // --------------------------------------------------------------------------

@@ -77,10 +77,10 @@ export function isItemSaved(
   );
 }
 
-export function saveItem(
+export async function saveItem(
   userId: string | null | undefined,
   item: Omit<SavedItem, 'savedAt' | 'id'>
-): SavedItem[] {
+): Promise<SavedItem[]> {
   if (typeof window === 'undefined') return [];
   const effectiveId = getEffectiveUserId(userId);
   const compositeId = `${item.itemType}_${item.itemId}`;
@@ -105,22 +105,22 @@ export function saveItem(
   };
 
   const updated = [newItem, ...existing];
+  if (userId && !effectiveId.startsWith('guest_')) {
+    await writeUserAppState(effectiveId, 'bookmarks', updated);
+  }
   try {
     localStorage.setItem(getStorageKey(effectiveId), JSON.stringify(updated));
-    if (userId && !effectiveId.startsWith('guest_')) {
-      void writeUserAppState(effectiveId, 'bookmarks', updated).catch(() => {});
-    }
   } catch (e) {
     console.error('Failed to save item:', e);
   }
   return updated;
 }
 
-export function removeSavedItem(
+export async function removeSavedItem(
   userId: string | null | undefined,
   itemId: string,
   itemType: 'article' | 'glossary' | 'tool' | 'course' | 'book'
-): SavedItem[] {
+): Promise<SavedItem[]> {
   if (typeof window === 'undefined') return [];
   const effectiveId = getEffectiveUserId(userId);
   const existing = getSavedItems(effectiveId);
@@ -132,11 +132,11 @@ export function removeSavedItem(
       )
   );
 
+  if (userId && !effectiveId.startsWith('guest_')) {
+    await writeUserAppState(effectiveId, 'bookmarks', updated);
+  }
   try {
     localStorage.setItem(getStorageKey(effectiveId), JSON.stringify(updated));
-    if (userId && !effectiveId.startsWith('guest_')) {
-      void writeUserAppState(effectiveId, 'bookmarks', updated).catch(() => {});
-    }
   } catch (e) {
     console.error('Failed to remove saved item:', e);
   }
@@ -161,16 +161,16 @@ export async function fetchSavedItemsFromCloud(userId: string): Promise<SavedIte
   return getSavedItems(userId);
 }
 
-export function toggleSaveItem(
+export async function toggleSaveItem(
   userId: string | null | undefined,
   item: Omit<SavedItem, 'savedAt' | 'id'>
-): { isSaved: boolean; items: SavedItem[] } {
+): Promise<{ isSaved: boolean; items: SavedItem[] }> {
   const currentlySaved = isItemSaved(userId, item.itemId, item.itemType);
   if (currentlySaved) {
-    const items = removeSavedItem(userId, item.itemId, item.itemType);
+    const items = await removeSavedItem(userId, item.itemId, item.itemType);
     return { isSaved: false, items };
   } else {
-    const items = saveItem(userId, item);
+    const items = await saveItem(userId, item);
     return { isSaved: true, items };
   }
 }

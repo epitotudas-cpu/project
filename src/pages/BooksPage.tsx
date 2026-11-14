@@ -60,19 +60,20 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
     setSavedBookIds(bookIds);
   }, [user]);
 
-  const handleToggleBookmark = (e: React.MouseEvent, book: BookItem) => {
+  const handleToggleBookmark = async (e: React.MouseEvent, book: BookItem) => {
     e.stopPropagation();
-    const res = toggleSaveItem(user?.id, {
-      itemId: book.id,
-      itemType: 'book',
-      title: book.title,
-      subtitle: book.categoryLabel || book.author,
-      description: book.description,
-      slug: book.id,
-      imageUrl: book.coverImage,
-    });
+    try {
+      const res = await toggleSaveItem(user?.id, {
+        itemId: book.id,
+        itemType: 'book',
+        title: book.title,
+        subtitle: book.categoryLabel || book.author,
+        description: book.description,
+        slug: book.id,
+        imageUrl: book.coverImage,
+      });
 
-    setSavedBookIds((prev) => {
+      setSavedBookIds((prev) => {
       const next = new Set(prev);
       if (res.isSaved) {
         next.add(book.id);
@@ -83,6 +84,9 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
       }
       return next;
     });
+    } catch (err) {
+      console.warn('A könyvjelző mentése sikertelen volt:', err);
+    }
   };
 
   // Calculate book count per category
