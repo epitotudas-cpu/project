@@ -10,9 +10,16 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
+const { readAppConfigWithVersionMock, writeAppConfigIfUnchangedMock } = vi.hoisted(() => ({
+  readAppConfigWithVersionMock: vi.fn().mockResolvedValue({ value: null, updatedAt: null }),
+  writeAppConfigIfUnchangedMock: vi.fn().mockResolvedValue({ conflict: false, updatedAt: '2026-11-14T12:00:00Z' }),
+}));
+
 vi.mock('./appConfigService', () => ({
   readAppConfig: vi.fn().mockResolvedValue(null),
   writeAppConfig: vi.fn().mockResolvedValue(undefined),
+  readAppConfigWithVersion: readAppConfigWithVersionMock,
+  writeAppConfigIfUnchanged: writeAppConfigIfUnchangedMock,
 }));
 
 import {
@@ -21,6 +28,8 @@ import {
   getCourseDetails,
   submitQuizAnswers,
   getUserCertificates,
+  fetchEducationDataFromCloud,
+  saveEducationData,
 } from './educationService';
 
 describe('educationService', () => {
@@ -73,6 +82,18 @@ describe('educationService', () => {
 
     const certs = await getUserCertificates('learner-pass');
     expect(certs.some((c) => c.course_id === firstCourse.id)).toBe(true);
+  });
+
+  it('rejects saveEducationData on CAS conflict after fetching versioned cloud state', async () => {
+    const baseData = getEducationData();
+    readAppConfigWithVersionMock.mockResolvedValueOnce({
+      value: { courses: baseData.courses, lessons: baseData.lessons, questions: baseData.questions },
+      updatedAt: '2026-11-14T11:00:00Z',
+    });
+    await fetchEducationDataFromCloud();
+
+    writeAppConfigIfUnchangedMock.mockResolvedValueOnce({ conflict: true, updatedAt: null });
+    await expect(saveEducationData(baseData)).rejects.toThrow('időközben más szerkesztő módosította');
   });
 });
 

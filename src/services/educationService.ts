@@ -5,7 +5,14 @@
  */
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { readAppConfig, writeAppConfig } from './appConfigService';
+import {
+  readAppConfig,
+  writeAppConfig,
+  readAppConfigWithVersion,
+  writeAppConfigIfUnchanged,
+} from './appConfigService';
+
+let lastKnownEducationUpdatedAt: string | null = null;
 import { type Course, type Lesson, type QuizQuestion, type UserCertificate } from '../lib/supabase';
 
 export type { Course, Lesson, QuizQuestion, UserCertificate };
@@ -441,18 +448,44 @@ export function getEducationData(): EducationData {
   return DEFAULT_EDUCATION_DATA;
 }
 
-export async function saveEducationData(data: EducationData): Promise<void> {
+export async function saveEducationData(
+  data: EducationData,
+  options?: { forceOverwrite?: boolean }
+): Promise<void> {
   try {
+    const canUseCAS =
+      !options?.forceOverwrite &&
+      typeof writeAppConfigIfUnchanged === 'function';
+
+    if (canUseCAS && lastKnownEducationUpdatedAt !== null) {
+      const res = await writeAppConfigIfUnchanged(
+        '__SYSTEM_CONFIG_COURSES__',
+        data,
+        lastKnownEducationUpdatedAt,
+        {
+          id: SUPABASE_COURSES_ID,
+          slug: 'system-courses-config',
+        }
+      );
+      if (res.conflict) {
+        throw new Error(
+          'A képzési adatokat időközben más szerkesztő módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!'
+        );
+      }
+      lastKnownEducationUpdatedAt = res.updatedAt;
+    } else {
+      await writeAppConfig('__SYSTEM_CONFIG_COURSES__', data, {
+        id: SUPABASE_COURSES_ID,
+        slug: 'system-courses-config',
+      });
+      lastKnownEducationUpdatedAt = new Date().toISOString();
+    }
+
     if (typeof window !== 'undefined') {
       window.__GLOBAL_EDUCATION_DATA__ = data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      window.dispatchEvent(new Event('education-data-changed'));
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new Event('education-data-changed'));
-
-    await writeAppConfig('__SYSTEM_CONFIG_COURSES__', data, {
-      id: SUPABASE_COURSES_ID,
-      slug: 'system-courses-config',
-    });
   } catch (err) {
     console.error('Hiba a képzési adatok mentésekor:', err);
     throw err;
@@ -461,25 +494,38 @@ export async function saveEducationData(data: EducationData): Promise<void> {
 
 export async function fetchEducationDataFromCloud(): Promise<EducationData | null> {
   try {
-    const parsed = await readAppConfig<Partial<EducationData>>(
-      '__SYSTEM_CONFIG_COURSES__',
-      SUPABASE_COURSES_ID
-    );
-    if (parsed && Array.isArray(parsed.courses)) {
-        const eduData: EducationData = {
-          courses: parsed.courses || DEFAULT_COURSES,
-          lessons: { ...DEFAULT_LESSONS, ...(parsed.lessons || {}) },
-          questions: { ...DEFAULT_QUESTIONS, ...(parsed.questions || {}) },
-          flashcards: parsed.flashcards && Array.isArray(parsed.flashcards) ? parsed.flashcards : DEFAULT_FLASHCARDS,
-          interactive_steps: { ...DEFAULT_INTERACTIVE_STEPS, ...(parsed.interactive_steps || {}) },
-        };
-        if (typeof window !== 'undefined') {
-          window.__GLOBAL_EDUCATION_DATA__ = eduData;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(eduData));
-          window.dispatchEvent(new Event('education-data-changed'));
-        }
-        return eduData;
+    let parsed: Partial<EducationData> | null = null;
+    if (typeof readAppConfigWithVersion === 'function') {
+      const res = await readAppConfigWithVersion<Partial<EducationData>>(
+        '__SYSTEM_CONFIG_COURSES__',
+        SUPABASE_COURSES_ID
+      );
+      parsed = res.value;
+      if (res.updatedAt !== null) {
+        lastKnownEducationUpdatedAt = res.updatedAt;
       }
+    } else {
+      parsed = await readAppConfig<Partial<EducationData>>(
+        '__SYSTEM_CONFIG_COURSES__',
+        SUPABASE_COURSES_ID
+      );
+    }
+
+    if (parsed && Array.isArray(parsed.courses)) {
+      const eduData: EducationData = {
+        courses: parsed.courses || DEFAULT_COURSES,
+        lessons: { ...DEFAULT_LESSONS, ...(parsed.lessons || {}) },
+        questions: { ...DEFAULT_QUESTIONS, ...(parsed.questions || {}) },
+        flashcards: parsed.flashcards && Array.isArray(parsed.flashcards) ? parsed.flashcards : DEFAULT_FLASHCARDS,
+        interactive_steps: { ...DEFAULT_INTERACTIVE_STEPS, ...(parsed.interactive_steps || {}) },
+      };
+      if (typeof window !== 'undefined') {
+        window.__GLOBAL_EDUCATION_DATA__ = eduData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(eduData));
+        window.dispatchEvent(new Event('education-data-changed'));
+      }
+      return eduData;
+    }
   } catch (err) {
     console.warn('Cloud education data fetch info:', err);
   }
