@@ -8,6 +8,8 @@ const {
   readUserAppStateMock,
   writeUserAppStateMock,
   fromMock,
+  getUserMock,
+  rpcMock,
 } = vi.hoisted(() => ({
   writeAppConfigMock: vi.fn().mockResolvedValue(undefined),
   readAppConfigMock: vi.fn().mockResolvedValue(null),
@@ -16,6 +18,8 @@ const {
   readUserAppStateMock: vi.fn().mockResolvedValue(null),
   writeUserAppStateMock: vi.fn().mockResolvedValue(undefined),
   fromMock: vi.fn(),
+  getUserMock: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }),
+  rpcMock: vi.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 vi.mock('./appConfigService', () => ({
@@ -30,6 +34,8 @@ vi.mock('./appConfigService', () => ({
 vi.mock('../lib/supabase', () => ({
   supabase: {
     from: fromMock,
+    auth: { getUser: getUserMock },
+    rpc: rpcMock,
   },
 }));
 
@@ -47,6 +53,19 @@ import {
 describe('learningService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getUserMock.mockResolvedValue({ data: { user: { id: 'admin-1' } } });
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { role: 'admin' }, error: null }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
     readAppConfigWithVersionMock.mockResolvedValue({ value: null, updatedAt: null });
     writeAppConfigIfUnchangedMock.mockResolvedValue({ conflict: false, updatedAt: '2026-11-14T12:00:00Z' });
     const store: Record<string, string> = {};
@@ -141,15 +160,15 @@ describe('learningService', () => {
     expect(missing).toBeNull();
   });
 
-  it('manages user flashcards and mastery state', () => {
-    const card = addTermToFlashcards('user-1', {
+  it('manages user flashcards and mastery state', async () => {
+    const card = await addTermToFlashcards('user-1', {
       id: 'kt-1',
       term: 'Párazáró fólia',
       definition: 'A belső oldali páraáteresztést gátló réteg.',
     });
     expect(getFlashcardsLocal('user-1').some((c) => c.id === card.id)).toBe(true);
 
-    updateFlashcardMastery('user-1', card.id, true);
+    await updateFlashcardMastery('user-1', card.id, true);
     const updated = getFlashcardsLocal('user-1').find((c) => c.id === card.id);
     expect(updated?.master_level).toBe(1);
   });

@@ -81,10 +81,14 @@ export interface CustomPackage {
 
 const TEACHER_PACKAGES_STORAGE_KEY = 'epitotudas_teacher_custom_packages_v1';
 
-function getCustomPackagesLocal(): CustomPackage[] {
-  if (typeof window === 'undefined') return [];
+function getTeacherPackagesStorageKey(teacherId?: string): string {
+  return teacherId ? `${TEACHER_PACKAGES_STORAGE_KEY}_${teacherId}` : TEACHER_PACKAGES_STORAGE_KEY;
+}
+
+function getCustomPackagesLocal(teacherId?: string): CustomPackage[] {
+  if (typeof window === 'undefined' || !teacherId) return [];
   try {
-    const raw = localStorage.getItem(TEACHER_PACKAGES_STORAGE_KEY);
+    const raw = localStorage.getItem(getTeacherPackagesStorageKey(teacherId));
     return raw ? JSON.parse(raw) : [];
   } catch (err) {
     console.warn('Hiba az egyedi csomagok betöltésekor:', err);
@@ -96,9 +100,9 @@ async function saveCustomPackagesLocal(packages: CustomPackage[], teacherId?: st
   if (teacherId) {
     await writeUserAppState(teacherId, 'teacher_custom_packages', packages);
   }
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && teacherId) {
     try {
-      localStorage.setItem(TEACHER_PACKAGES_STORAGE_KEY, JSON.stringify(packages));
+      localStorage.setItem(getTeacherPackagesStorageKey(teacherId), JSON.stringify(packages));
     } catch (err) {
       console.warn('Hiba az egyedi csomagok mentésekor:', err);
     }
@@ -173,7 +177,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [loadingProgress, setLoadingProgress] = useState(false);
 
   // Custom Package Builder State
-  const [customPackages, setCustomPackages] = useState<CustomPackage[]>(() => getCustomPackagesLocal());
+  const [customPackages, setCustomPackages] = useState<CustomPackage[]>(() => getCustomPackagesLocal(user?.id));
   const [pkgTitle, setPkgTitle] = useState('');
   const [pkgDesc, setPkgDesc] = useState('');
   const [pkgTrade, setPkgTrade] = useState('');
@@ -213,13 +217,18 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
           if (Array.isArray(cloudPackages)) {
             setCustomPackages(cloudPackages);
             try {
-              localStorage.setItem(TEACHER_PACKAGES_STORAGE_KEY, JSON.stringify(cloudPackages));
+              localStorage.setItem(getTeacherPackagesStorageKey(user!.id), JSON.stringify(cloudPackages));
             } catch {
               // ignore
             }
+          } else {
+            setCustomPackages(getCustomPackagesLocal(user!.id));
           }
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.warn('Hiba az egyedi csomagok felhő betöltésekor:', err);
+          setCustomPackages(getCustomPackagesLocal(user!.id));
+        });
 
       let partnerName = 'Iskola / Szervezet';
       if (partnerId) {

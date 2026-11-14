@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   ShieldAlert,
   Search,
@@ -1102,7 +1103,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                               {doc.description && <p className="text-[11px] text-gray-500">{doc.description}</p>}
                             </div>
                             <a
-                              href={doc.file_url}
+                              href={sanitizeExternalUrl(doc.file_url, { allowRelative: true }) || '#'}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3.5 py-2 bg-primary hover:bg-primary-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shrink-0 transition-colors"

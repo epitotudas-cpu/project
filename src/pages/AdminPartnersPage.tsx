@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   Building2,
   CheckCircle2,
@@ -915,15 +916,15 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                         {partner.description || 'Nincs megadva leírás.'}
                       </p>
 
-                      {partner.website_url && (
+                      {sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true }) && (
                         <a
-                          href={partner.website_url}
+                          href={sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true })}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:underline font-medium"
                         >
                           <Globe size={13} />
-                          <span>{partner.website_url.replace(/^https?:\/\//, '')}</span>
+                          <span>{partner.website_url!.replace(/^https?:\/\//, '')}</span>
                           <ExternalLink size={11} />
                         </a>
                       )}
@@ -1228,9 +1229,9 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                     <tr key={app.id} className="hover:bg-white/5 transition-colors">
                       <td className="p-3.5 font-bold" style={{ color: textColor }}>
                         {app.company_name}
-                        {app.website_url && (
-                          <a href={app.website_url} target="_blank" rel="noreferrer" className="block text-[10px] text-amber-400 hover:underline">
-                            {app.website_url.replace(/^https?:\/\//, '')}
+                        {sanitizeExternalUrl(app.website_url, { allowAutoHttps: true }) && (
+                          <a href={sanitizeExternalUrl(app.website_url, { allowAutoHttps: true })} target="_blank" rel="noreferrer" className="block text-[10px] text-amber-400 hover:underline">
+                            {app.website_url!.replace(/^https?:\/\//, '')}
                           </a>
                         )}
                       </td>

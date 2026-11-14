@@ -113,6 +113,7 @@ export async function writeAppConfigIfUnchanged<T>(
   expectedUpdatedAt: string | null,
   _legacyCategory?: { id: string; slug: string }
 ): Promise<{ conflict: boolean; updatedAt: string | null }> {
+  void _legacyCategory;
   const now = new Date().toISOString();
 
   if (expectedUpdatedAt !== null) {

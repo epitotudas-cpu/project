@@ -95,6 +95,7 @@ export default function PartnerApplicationPage({ onNavigate }: PartnerApplicatio
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
     if (!companyName.trim() || !contactName.trim() || !email.trim()) {
       setError('Kérjük, töltse ki a kötelező mezőket (Cégnév, Kapcsolattartó neve, E-mail).');
       return;
@@ -106,15 +107,16 @@ export default function PartnerApplicationPage({ onNavigate }: PartnerApplicatio
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     const isAlreadyRegistered = await checkEmailExists(email.trim());
     if (isAlreadyRegistered) {
       setError('Ez az e-mail-cím már regisztrálva van.');
       setEmailError('Ez az e-mail-cím már regisztrálva van.');
+      setLoading(false);
       return;
     }
-
-    setLoading(true);
-    setError(null);
 
     try {
       await submitPartnerApplication({

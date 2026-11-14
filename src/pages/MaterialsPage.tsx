@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   Layers,
   Search,
@@ -584,7 +585,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
                           <span className="text-[11px] text-gray-500 capitalize">{doc.doc_type.replace('_', ' ')} • {doc.file_size || 'PDF'}</span>
                         </div>
                         <a
-                          href={doc.file_url}
+                          href={sanitizeExternalUrl(doc.file_url, { allowRelative: true }) || '#'}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3.5 py-2 bg-primary hover:bg-primary-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"

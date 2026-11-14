@@ -460,6 +460,9 @@ export async function saveEducationData(
       typeof writeAppConfigIfUnchanged === 'function';
 
     if (canUseCAS) {
+      if (lastKnownEducationUpdatedAt === null) {
+        await fetchEducationDataFromCloud().catch(() => null);
+      }
       const res = await writeAppConfigIfUnchanged(
         '__SYSTEM_CONFIG_COURSES__',
         data,
@@ -736,7 +739,7 @@ export function getUserFlashcardProgress(userId: string): UserFlashcardProgressM
 }
 
 export async function saveUserFlashcardProgress(userId: string, progress: UserFlashcardProgressMap): Promise<void> {
-  if (userId && userId !== 'anon_guest' && !userId.startsWith('guest_')) {
+  if (userId && userId !== 'guest' && userId !== 'anon_guest' && !userId.startsWith('guest_')) {
     await writeUserAppState(userId, 'flashcard_progress', progress);
   }
 
@@ -752,7 +755,7 @@ export async function saveUserFlashcardProgress(userId: string, progress: UserFl
 }
 
 export async function fetchUserFlashcardProgressFromCloud(userId: string): Promise<UserFlashcardProgressMap> {
-  if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) {
+  if (!userId || userId === 'guest' || userId === 'anon_guest' || userId.startsWith('guest_')) {
     return getUserFlashcardProgress(userId);
   }
 

@@ -446,7 +446,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
     const avgProgress = activeOrCompleted.length > 0
       ? Math.round(activeOrCompleted.reduce((sum, uc) => sum + uc.progress.progress_percent, 0) / activeOrCompleted.length)
-      : (classMaterials.length > 0 ? 15 : 0);
+      : 0;
 
     const avgQuizScore = quizAttempts.length > 0
       ? Math.round(quizAttempts.reduce((sum, a) => sum + a.percentage, 0) / quizAttempts.length)
@@ -459,7 +459,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       avgQuizScore,
       totalQuizzesAttempted: quizAttempts.length,
     };
-  }, [userCourses, quizAttempts, classMaterials]);
+  }, [userCourses, quizAttempts]);
 
   const handleVerifyClassCode = async () => {
     if (!classCodeInput.trim()) return;
@@ -673,7 +673,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       if (trimmedName && trimmedName !== (authProfile?.full_name || '')) {
         const authRes = await updateProfile({ full_name: trimmedName });
         if (authRes.error) {
-          console.warn('Hiba az auth profil frissítésekor:', authRes.error);
+          throw authRes.error;
         }
       }
 
@@ -690,12 +690,11 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         selectedInterests,
         notifications,
       };
-      try {
-        await supabase.auth.updateUser({
-          data: { preferences: prefData },
-        });
-      } catch (prefErr) {
-        console.warn('Hiba a felhasználói preferenciák felhőbe mentésekor:', prefErr);
+      const { error: prefErr } = await supabase.auth.updateUser({
+        data: { preferences: prefData },
+      });
+      if (prefErr) {
+        throw prefErr;
       }
       localStorage.setItem(`epitotudas_user_pref_${user.id}`, JSON.stringify(prefData));
 
@@ -886,8 +885,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('overview')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'overview'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+              ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+              : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
             <LayoutGrid size={15} /> Áttekintés
@@ -896,8 +895,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('materials')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'materials'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+              ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+              : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
             <BookOpen size={15} /> Tananyagaink
@@ -906,8 +905,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('flashcards')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'flashcards'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+              ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+              : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
             <Bookmark size={15} /> Tanulókártyáim ({flashcards.length})
@@ -917,8 +916,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <button
               onClick={() => setActiveMainSection('my-class')}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'my-class'
-                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
                 }`}
             >
               <Users size={15} /> Osztályom
@@ -929,8 +928,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <button
               onClick={() => setActiveMainSection('progress')}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'progress'
-                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
                 }`}
             >
               <TrendingUp size={15} /> Haladásom
@@ -941,8 +940,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <button
               onClick={() => setActiveMainSection('tests')}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'tests'
-                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
                 }`}
             >
               <CheckSquare size={15} /> Tesztek
@@ -953,8 +952,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             <button
               onClick={() => setActiveMainSection('school-link')}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'school-link'
-                  ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                  : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
                 }`}
             >
               <School size={15} /> Iskolai kapcsolat
@@ -964,8 +963,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           <button
             onClick={() => setActiveMainSection('settings')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${activeMainSection === 'settings'
-                ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
-                : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
+              ? 'bg-[#4165b4] text-white shadow-md font-extrabold'
+              : 'text-gray-400 hover:text-white hover:bg-[#1F1F1F]'
               }`}
           >
             <Sliders size={15} /> Beállítások
@@ -1048,7 +1047,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     </div>
                   </div>
                   <div className="text-3xl font-black text-white group-hover:text-blue-400 transition-colors">
-                    {classMaterials.length > 0 ? 1 : 0}
+                    {learningStats.activeCount}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Megkezdett tananyagok</p>
                 </div>
@@ -1065,7 +1064,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                     </div>
                   </div>
                   <div className="text-3xl font-black text-white group-hover:text-emerald-400 transition-colors">
-                    0
+                    {learningStats.completedCount}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Sikeresen teljesített tananyagok</p>
                 </div>
@@ -1083,7 +1082,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       </div>
                     </div>
                     <div className="text-3xl font-black text-white group-hover:text-purple-400 transition-colors">
-                      {classMaterials.length > 0 ? '15%' : '0%'}
+                      {`${learningStats.avgProgress}%`}
                     </div>
                     <p className="text-xs text-gray-400 mt-2">Általános modul teljesítés</p>
                   </div>
@@ -1102,7 +1101,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                       </div>
                     </div>
                     <div className="text-3xl font-black text-white group-hover:text-rose-400 transition-colors">
-                      0
+                      {learningStats.totalQuizzesAttempted}
                     </div>
                     <p className="text-xs text-gray-400 mt-2">Sikeresen megírt teszt</p>
                   </div>
@@ -1138,53 +1137,53 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   <GraduationCap className="text-[#60a5fa]" size={20} /> Aktuális Tanulási Állapot
                 </h3>
 
-              {activeEnrollment ? (
-                <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-4">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <span className="text-xs font-bold text-[#60a5fa] uppercase tracking-wider">Aktív Osztály</span>
-                      <h4 className="text-lg font-bold text-white">{activeEnrollment.school?.name}</h4>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Osztály: {activeEnrollment.school_class?.name} ({activeEnrollment.school_class?.grade || '-'}. évfolyam) · Oktató: {activeEnrollment.instructor?.full_name || 'Nincs megadva'}
+                {activeEnrollment ? (
+                  <div className="bg-[#1F1F1F] border border-[#333] p-6 rounded-xl space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <span className="text-xs font-bold text-[#60a5fa] uppercase tracking-wider">Aktív Osztály</span>
+                        <h4 className="text-lg font-bold text-white">{activeEnrollment.school?.name}</h4>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Osztály: {activeEnrollment.school_class?.name} ({activeEnrollment.school_class?.grade || '-'}. évfolyam) · Oktató: {activeEnrollment.instructor?.full_name || 'Nincs megadva'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveMainSection('materials')}
+                        className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 self-start md:self-auto shadow-lg shadow-blue-500/10"
+                      >
+                        <Play size={14} /> Tananyagok Megnyitása
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-[#333]">
+                      <div className="flex justify-between text-xs text-gray-300">
+                        <span>Általános előrehaladás:</span>
+                        <span className="font-bold text-[#60a5fa]">{learningStats.avgProgress}%</span>
+                      </div>
+                      <div className="w-full bg-[#2A2A2A] rounded-full h-2.5">
+                        <div className="bg-[#4165b4] h-2.5 rounded-full" style={{ width: `${learningStats.avgProgress}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-[#1F1F1F] border border-[#4165b4]/40 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <School className="text-[#60a5fa]" size={16} /> Még nem csatlakoztál iskolai osztályhoz
+                      </h4>
+                      <p className="text-xs text-gray-400">
+                        Adja meg az oktatójától kapott osztálykódot a tananyagokhoz és feladatokhoz való hozzáféréshez.
                       </p>
                     </div>
                     <button
-                      onClick={() => setActiveMainSection('materials')}
-                      className="px-5 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 self-start md:self-auto shadow-lg shadow-blue-500/10"
+                      onClick={() => setActiveMainSection('school-link')}
+                      className="px-4 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <Play size={14} /> Tananyagok Megnyitása
+                      Osztálykód Megadása
                     </button>
                   </div>
-
-                  <div className="space-y-2 pt-2 border-t border-[#333]">
-                    <div className="flex justify-between text-xs text-gray-300">
-                      <span>Általános előrehaladás:</span>
-                      <span className="font-bold text-[#60a5fa]">15%</span>
-                    </div>
-                    <div className="w-full bg-[#2A2A2A] rounded-full h-2.5">
-                      <div className="bg-[#4165b4] h-2.5 rounded-full" style={{ width: '15%' }} />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-6 bg-[#1F1F1F] border border-[#4165b4]/40 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      <School className="text-[#60a5fa]" size={16} /> Még nem csatlakoztál iskolai osztályhoz
-                    </h4>
-                    <p className="text-xs text-gray-400">
-                      Adja meg az oktatójától kapott osztálykódot a tananyagokhoz és feladatokhoz való hozzáféréshez.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setActiveMainSection('school-link')}
-                    className="px-4 py-2.5 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap"
-                  >
-                    Osztálykód Megadása
-                  </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
             )}
 
             {/* LEGUTÓBBI AKTIVITÁS */}
@@ -1277,90 +1276,90 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   return title.includes(q) || desc.includes(q) || cat.includes(q);
                 });
                 return filteredMaterials.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredMaterials.map((cm) => (
-                    <div key={cm.id} className="bg-[#1F1F1F] border border-[#333] hover:border-[#4165b4]/50 rounded-xl p-5 space-y-4 transition-all">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-[#4165b4]/20 text-[#60a5fa] border border-[#4165b4]/40">
-                            {cm.material?.category || 'Szakmai tananyag'}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredMaterials.map((cm) => (
+                      <div key={cm.id} className="bg-[#1F1F1F] border border-[#333] hover:border-[#4165b4]/50 rounded-xl p-5 space-y-4 transition-all">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-[#4165b4]/20 text-[#60a5fa] border border-[#4165b4]/40">
+                              {cm.material?.category || 'Szakmai tananyag'}
+                            </span>
+                            <h4 className="text-base font-bold text-white mt-1.5">{cm.material?.title || 'Cím nélkül'}</h4>
+                          </div>
+                          <span className="text-xs font-bold text-[#60a5fa] bg-[#4165b4]/20 px-2 py-0.5 rounded border border-[#4165b4]/40 shrink-0">
+                            Folyamatban
                           </span>
-                          <h4 className="text-base font-bold text-white mt-1.5">{cm.material?.title || 'Cím nélkül'}</h4>
                         </div>
-                        <span className="text-xs font-bold text-[#60a5fa] bg-[#4165b4]/20 px-2 py-0.5 rounded border border-[#4165b4]/40 shrink-0">
-                          Folyamatban
-                        </span>
-                      </div>
 
-                      <p className="text-xs text-gray-400 line-clamp-2">{cm.material?.description || 'Nincs leírás.'}</p>
+                        <p className="text-xs text-gray-400 line-clamp-2">{cm.material?.description || 'Nincs leírás.'}</p>
 
-                      <div className="pt-2 border-t border-[#2A2A2A] flex items-center justify-between text-xs">
-                        <span className="text-gray-500">Iskola: {activeEnrollment?.school?.name || 'Iskolámból'}</span>
-                        <button
-                          onClick={() => {
-                            const targetSlug = cm.material?.slug || cm.slug || cm.content_id;
-                            const cmFile = cm as typeof cm & { file_url?: string };
-                            const matFile = cm.material as (typeof cm.material & { file_url?: string }) | undefined;
-                            const directUrl = cmFile.file_url || matFile?.file_url;
-                            const isPdfFile =
-                              directUrl ||
-                              targetSlug.toLowerCase().endsWith('.pdf') ||
-                              targetSlug.includes('/docs/') ||
-                              targetSlug.startsWith('http://') ||
-                              targetSlug.startsWith('https://');
+                        <div className="pt-2 border-t border-[#2A2A2A] flex items-center justify-between text-xs">
+                          <span className="text-gray-500">Iskola: {activeEnrollment?.school?.name || 'Iskolámból'}</span>
+                          <button
+                            onClick={() => {
+                              const targetSlug = cm.material?.slug || cm.slug || cm.content_id;
+                              const cmFile = cm as typeof cm & { file_url?: string };
+                              const matFile = cm.material as (typeof cm.material & { file_url?: string }) | undefined;
+                              const directUrl = cmFile.file_url || matFile?.file_url;
+                              const isPdfFile =
+                                directUrl ||
+                                targetSlug.toLowerCase().endsWith('.pdf') ||
+                                targetSlug.includes('/docs/') ||
+                                targetSlug.startsWith('http://') ||
+                                targetSlug.startsWith('https://');
 
-                            if (isPdfFile) {
-                              const openUrl = directUrl || (targetSlug.startsWith('http') || targetSlug.startsWith('/') ? targetSlug : '/' + targetSlug);
-                              window.open(openUrl, '_blank');
-                            } else if (cm.content_type === 'course') {
-                              if (onNavigate) {
-                                onNavigate('course-detail', { slug: targetSlug });
+                              if (isPdfFile) {
+                                const openUrl = directUrl || (targetSlug.startsWith('http') || targetSlug.startsWith('/') ? targetSlug : '/' + targetSlug);
+                                window.open(openUrl, '_blank');
+                              } else if (cm.content_type === 'course') {
+                                if (onNavigate) {
+                                  onNavigate('course-detail', { slug: targetSlug });
+                                } else {
+                                  window.location.hash = `#course-detail?slug=${targetSlug}`;
+                                }
+                              } else if (cm.content_type === 'article') {
+                                if (onNavigate) {
+                                  onNavigate('article', { articleSlug: targetSlug });
+                                } else {
+                                  window.location.hash = `#article?slug=${targetSlug}`;
+                                }
+                              } else if (cm.content_type === 'book') {
+                                window.location.hash = '#books';
+                              } else if (cm.content_type === 'material') {
+                                window.location.hash = '#materials';
+                              } else if (cm.content_type === 'tool') {
+                                window.location.hash = '#tool';
                               } else {
-                                window.location.hash = `#course-detail?slug=${targetSlug}`;
+                                window.location.hash = '#courses';
                               }
-                            } else if (cm.content_type === 'article') {
-                              if (onNavigate) {
-                                onNavigate('article', { articleSlug: targetSlug });
-                              } else {
-                                window.location.hash = `#article?slug=${targetSlug}`;
-                              }
-                            } else if (cm.content_type === 'book') {
-                              window.location.hash = '#books';
-                            } else if (cm.content_type === 'material') {
-                              window.location.hash = '#materials';
-                            } else if (cm.content_type === 'tool') {
-                              window.location.hash = '#tool';
-                            } else {
-                              window.location.hash = '#courses';
-                            }
-                          }}
-                          className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold rounded-lg transition-all flex items-center gap-1.5 text-xs cursor-pointer"
-                        >
-                          <Play size={12} /> Megnyitás
-                        </button>
+                            }}
+                            className="px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white font-extrabold rounded-lg transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+                          >
+                            <Play size={12} /> Megnyitás
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 space-y-3 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
-                  <BookOpen size={40} className="mx-auto text-gray-500 opacity-60" />
-                  <h4 className="text-sm font-bold text-white">
-                    {classMaterials.length > 0 ? 'Nincs a szűrésnek megfelelő tananyag' : 'Még nincs kiosztott tananyagod'}
-                  </h4>
-                  <p className="text-xs text-gray-400 max-w-sm mx-auto">
-                    {classMaterials.length > 0
-                      ? 'Próbálj meg más keresőszót vagy szűrőt választani.'
-                      : 'Amint az oktatód tananyagot rendel az osztályodhoz, azok azonnal megjelennének itt.'}
-                  </p>
-                  <button
-                    onClick={() => onNavigate?.('courses')}
-                    className="px-4 py-2 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer mt-2"
-                  >
-                    <Search size={14} /> Nyilvános Kurzusok Böngészése
-                  </button>
-                </div>
-              );
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 space-y-3 bg-[#1F1F1F] rounded-xl border border-[#333] p-6">
+                    <BookOpen size={40} className="mx-auto text-gray-500 opacity-60" />
+                    <h4 className="text-sm font-bold text-white">
+                      {classMaterials.length > 0 ? 'Nincs a szűrésnek megfelelő tananyag' : 'Még nincs kiosztott tananyagod'}
+                    </h4>
+                    <p className="text-xs text-gray-400 max-w-sm mx-auto">
+                      {classMaterials.length > 0
+                        ? 'Próbálj meg más keresőszót vagy szűrőt választani.'
+                        : 'Amint az oktatód tananyagot rendel az osztályodhoz, azok azonnal megjelennének itt.'}
+                    </p>
+                    <button
+                      onClick={() => onNavigate?.('courses')}
+                      className="px-4 py-2 bg-[#4165b4] hover:bg-[#325296] text-white font-bold text-xs rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer mt-2"
+                    >
+                      <Search size={14} /> Nyilvános Kurzusok Böngészése
+                    </button>
+                  </div>
+                );
               })()}
             </div>
           </div>
@@ -1781,11 +1780,10 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                                attempt.passed
-                                  ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50'
-                                  : 'bg-red-900/40 text-red-300 border border-red-700/50'
-                              }`}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${attempt.passed
+                                ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50'
+                                : 'bg-red-900/40 text-red-300 border border-red-700/50'
+                                }`}
                             >
                               {attempt.passed ? 'Sikeres' : 'Nem sikerült'}
                             </span>

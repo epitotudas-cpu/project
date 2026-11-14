@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import type { LearningCourse, CourseProgress, KeyTermItem, Flashcard } from '../lib/supabase';
 import {
   getCourseBySlug,
@@ -403,7 +404,7 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
                       {course.documents.map((doc) => (
                         <a
                           key={doc.id}
-                          href={doc.file_url}
+                          href={sanitizeExternalUrl(doc.file_url, { allowRelative: true }) || '#'}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="bg-white p-4 rounded-2xl border border-gray-200 hover:border-accent transition-all flex items-center justify-between group shadow-2xs"

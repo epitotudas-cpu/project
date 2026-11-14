@@ -395,19 +395,19 @@ function isStaleEdit(existingUpdatedAt?: string, payloadUpdatedAt?: string): boo
 
 async function isPrivilegedSystemConfigWriter(): Promise<boolean> {
   try {
-    if (typeof supabase?.auth?.getUser !== 'function') return true;
+    if (typeof supabase?.auth?.getUser !== 'function') return false;
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData?.user?.id;
-    if (!uid) return true;
+    if (!uid) return false;
     const { data: prof } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', uid)
       .maybeSingle();
-    if (!prof?.role) return true;
+    if (!prof?.role) return false;
     return prof.role === 'admin' || prof.role === 'editor';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -819,10 +819,15 @@ export async function deleteQuiz(id: string): Promise<void> {
 }
 
 // ── QUIZ EVALUATION & ATTEMPTS ──
+function getAttemptsStorageKey(userId?: string): string {
+  return `${ATTEMPTS_STORAGE_KEY}_${userId || 'anon_guest'}`;
+}
+
 export async function saveQuizAttempt(attempt: QuizAttempt): Promise<void> {
+  const storageKey = getAttemptsStorageKey(attempt.user_id);
   let list: QuizAttempt[] = [];
   try {
-    const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     const parsed = raw ? JSON.parse(raw) : [];
     list = Array.isArray(parsed) ? parsed : [];
   } catch (e) {
@@ -832,14 +837,14 @@ export async function saveQuizAttempt(attempt: QuizAttempt): Promise<void> {
   const alreadyExists = list.some((a) => a.id === attempt.id);
   const updated = alreadyExists ? list : [attempt, ...list];
 
-  if (attempt.user_id && attempt.user_id !== 'anon_guest') {
+  if (attempt.user_id && attempt.user_id !== 'guest' && attempt.user_id !== 'anon_guest' && !attempt.user_id.startsWith('guest_')) {
     const userAttempts = updated.filter((a) => a.user_id === attempt.user_id);
     await writeUserAppState(attempt.user_id, 'quiz_attempts', userAttempts);
   }
 
   if (!alreadyExists) {
     try {
-      localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
     } catch (e) {
       console.warn('Hiba a teszt eredményének helyi mentésekor:', e);
     }
@@ -847,18 +852,18 @@ export async function saveQuizAttempt(attempt: QuizAttempt): Promise<void> {
 }
 
 export async function fetchQuizAttemptsFromCloud(userId: string): Promise<QuizAttempt[]> {
-  if (!userId || userId === 'anon_guest') return getQuizAttempts(userId);
+  if (!userId || userId === 'guest' || userId === 'anon_guest' || userId.startsWith('guest_')) {
+    return getQuizAttempts(userId);
+  }
+  const storageKey = getAttemptsStorageKey(userId);
   try {
     const cloud = await readUserAppState<QuizAttempt[]>(
       userId,
       'quiz_attempts',
       `__USER_QUIZ_ATTEMPTS_${userId}__`
     );
-    if (Array.isArray(cloud) && cloud.length > 0) {
-      const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
-      const localList: QuizAttempt[] = raw ? JSON.parse(raw) : [];
-      const otherUsers = localList.filter((a) => a.user_id !== userId);
-      localStorage.setItem(ATTEMPTS_STORAGE_KEY, JSON.stringify([...cloud, ...otherUsers]));
+    if (Array.isArray(cloud)) {
+      localStorage.setItem(storageKey, JSON.stringify(cloud));
       return cloud;
     }
   } catch (e) {
@@ -869,7 +874,7 @@ export async function fetchQuizAttemptsFromCloud(userId: string): Promise<QuizAt
 
 export function getQuizAttempts(userId?: string): QuizAttempt[] {
   try {
-    const raw = localStorage.getItem(ATTEMPTS_STORAGE_KEY);
+    const raw = localStorage.getItem(getAttemptsStorageKey(userId));
     const list: QuizAttempt[] = raw ? JSON.parse(raw) : [];
     if (!userId) return list;
     return list.filter((a) => a.user_id === userId);
@@ -980,13 +985,15 @@ export function getFlashcardsLocal(userId: string = 'anon_guest'): Flashcard[] {
 export async function saveFlashcardsLocal(userId: string = 'anon_guest', cards: Flashcard[]): Promise<void> {
   const storageKey = `${FLASHCARDS_STORAGE_KEY}_${userId}`;
   let previousRaw: string | null = null;
-  const isGuest = !userId || userId === 'anon_guest' || userId.startsWith('guest_');
+  const isGuest = !userId || userId === 'guest' || userId === 'anon_guest' || userId.startsWith('guest_');
 
   if (typeof window !== 'undefined') {
     try {
       previousRaw = localStorage.getItem(storageKey);
       localStorage.setItem(storageKey, JSON.stringify(cards));
-      window.dispatchEvent(new Event('learning-updated'));
+      if (isGuest) {
+        window.dispatchEvent(new Event('learning-updated'));
+      }
     } catch (e) {
       console.warn('Hiba a tanulókártyák helyi mentésekor:', e);
     }
@@ -1018,6 +1025,9 @@ export async function saveFlashcardsLocal(userId: string = 'anon_guest', cards: 
 
     await writeUserAppState(userId, 'flashcards', cardsToPersist);
     hydratedFlashcardUsers.add(userId);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('learning-updated'));
+    }
   } catch (e) {
     if (typeof window !== 'undefined') {
       try {
@@ -1057,7 +1067,7 @@ export async function fetchFlashcardsFromCloud(userId: string): Promise<Flashcar
   return getFlashcardsLocal(userId);
 }
 
-export function addTermToFlashcards(userId: string = 'anon_guest', termItem: KeyTermItem, categoryName?: string): Flashcard {
+export async function addTermToFlashcards(userId: string = 'anon_guest', termItem: KeyTermItem, categoryName?: string): Promise<Flashcard> {
   const currentCards = getFlashcardsLocal(userId);
 
   // Check if already exists
@@ -1077,11 +1087,11 @@ export function addTermToFlashcards(userId: string = 'anon_guest', termItem: Key
     created_at: new Date().toISOString(),
   };
 
-  saveFlashcardsLocal(userId, [newCard, ...currentCards]);
+  await saveFlashcardsLocal(userId, [newCard, ...currentCards]);
   return newCard;
 }
 
-export function updateFlashcardMastery(userId: string = 'anon_guest', cardId: string, knewIt: boolean): void {
+export async function updateFlashcardMastery(userId: string = 'anon_guest', cardId: string, knewIt: boolean): Promise<void> {
   const cards = getFlashcardsLocal(userId);
   const updated = cards.map((c) => {
     if (c.id === cardId) {
@@ -1094,12 +1104,12 @@ export function updateFlashcardMastery(userId: string = 'anon_guest', cardId: st
     }
     return c;
   });
-  saveFlashcardsLocal(userId, updated);
+  await saveFlashcardsLocal(userId, updated);
 }
 
-export function deleteFlashcard(userId: string = 'anon_guest', cardId: string): void {
+export async function deleteFlashcard(userId: string = 'anon_guest', cardId: string): Promise<void> {
   const cards = getFlashcardsLocal(userId);
-  saveFlashcardsLocal(userId, cards.filter((c) => c.id !== cardId));
+  await saveFlashcardsLocal(userId, cards.filter((c) => c.id !== cardId));
 }
 
 // ── LEARNER COURSE PROGRESS HELPERS ──
@@ -1172,7 +1182,20 @@ export async function toggleChapterCompletion(
   chapterId: string,
   totalChaptersCount: number
 ): Promise<CourseProgress> {
-  const current = getCourseProgress(userId, courseId);
+  const isAuthenticated = Boolean(userId && userId !== 'guest' && userId !== 'anon_guest' && !userId.startsWith('guest_'));
+  let current = getCourseProgress(userId, courseId);
+
+  if (isAuthenticated && current.completed_chapter_ids.length === 0) {
+    try {
+      const cloudList = await fetchUserCourseProgressSupabase(userId, courseId);
+      if (cloudList.length > 0) {
+        current = cloudList[0];
+      }
+    } catch {
+      // fall through to local state if cloud fetch fails
+    }
+  }
+
   const isCompleted = current.completed_chapter_ids.includes(chapterId);
 
   const updatedChapterIds = isCompleted
@@ -1191,7 +1214,7 @@ export async function toggleChapterCompletion(
     last_accessed_at: new Date().toISOString(),
   };
 
-  if (userId && userId !== 'anon_guest' && !userId.startsWith('guest_')) {
+  if (isAuthenticated) {
     await saveCourseProgressSupabase(updatedProgress);
   }
 

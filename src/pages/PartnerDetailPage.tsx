@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   Building2,
   ExternalLink,
@@ -287,10 +288,10 @@ function PartnerReferenceCard({
         )}
       </div>
 
-      {reference.website_url && (
+      {sanitizeExternalUrl(reference.website_url, { allowAutoHttps: true }) && (
         <div className="pt-2 border-t border-gray-100">
           <a
-            href={reference.website_url}
+            href={sanitizeExternalUrl(reference.website_url, { allowAutoHttps: true })}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-accent-dark hover:underline"

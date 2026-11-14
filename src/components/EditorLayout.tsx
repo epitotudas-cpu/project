@@ -67,7 +67,7 @@ export default function EditorLayout({ onNavigate, activeView, onNavigateView, c
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useEditorTheme();
 
-  if (loading || (user && !profile)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />

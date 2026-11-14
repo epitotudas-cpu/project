@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   Wrench,
   Search,
@@ -1330,9 +1331,9 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                                 )}
 
                                 <div className="flex flex-wrap items-center gap-3 pt-2">
-                                  {prod.partner_url && (
+                                  {sanitizeExternalUrl(prod.partner_url, { allowAutoHttps: true }) && (
                                     <a
-                                      href={prod.partner_url}
+                                      href={sanitizeExternalUrl(prod.partner_url, { allowAutoHttps: true })}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-800 transition-colors shadow-xs"
@@ -1341,9 +1342,9 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                                     </a>
                                   )}
 
-                                  {prod.product_url && (
+                                  {sanitizeExternalUrl(prod.product_url, { allowAutoHttps: true }) && (
                                     <a
-                                      href={prod.product_url}
+                                      href={sanitizeExternalUrl(prod.product_url, { allowAutoHttps: true })}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-50 transition-colors"

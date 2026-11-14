@@ -13,7 +13,14 @@ export default function EmailVerificationPage({ onNavigate }: EmailVerificationP
   const [resendStatus, setResendStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   let email = '';
-  try { email = sessionStorage.getItem('pending_verify_email') || ''; } catch (err) { void err; }
+  try {
+    email =
+      sessionStorage.getItem('pending_verify_email') ||
+      localStorage.getItem('pending_verify_email') ||
+      '';
+  } catch (err) {
+    void err;
+  }
 
   useEffect(() => {
     if (cooldown <= 0) return;

@@ -81,7 +81,7 @@ export default function MyLearningDashboard({
   // Determine last accessed course (demo default course-1 or user completed certs)
   const completedCourseIds = new Set(certificates.map((c) => c.course_id));
   const activeCourse = courses.find((c) => !completedCourseIds.has(c.id)) || courses[0];
-  const activeProgressPercent = activeCourse ? 62 : 100;
+  const activeProgressPercent = activeCourse ? (completedCourseIds.has(activeCourse.id) ? 100 : 0) : 100;
 
   return (
     <div className="space-y-8 my-6">
@@ -244,7 +244,7 @@ export default function MyLearningDashboard({
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
               <span className="text-slate-600">Folyamatban lévő:</span>
               <span className="font-black text-amber-600 text-sm">
-                {Math.max(1, courses.length - completedCourseIds.size)}
+                {Math.max(0, courses.length - completedCourseIds.size)}
               </span>
             </div>
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">

@@ -91,6 +91,7 @@ Deno.serve(async (req: Request) => {
       );
     }
     const callerId = userData.user.id;
+    const callerEmail = String(userData.user.email || '').trim().toLowerCase();
 
     const body = await req.json().catch(() => ({}));
     const contractId = String(body.contractId || '').trim();
@@ -139,20 +140,28 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     const isAdmin = callerProfile?.role === 'admin';
-    let isPartnerMember = false;
+    let isAuthorizedPartnerSigner = false;
     if (!isAdmin) {
+      if (callerEmail && acceptedEmail !== callerEmail) {
+        return new Response(
+          JSON.stringify({ error: 'Az elfogadó e-mail-címének meg kell egyeznie a bejelentkezett fiók e-mail-címével.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const { data: membership } = await adminClient
         .from('partner_users')
-        .select('id')
+        .select('id, member_role')
         .eq('partner_id', contract.partner_id)
         .eq('user_id', callerId)
+        .in('member_role', ['owner', 'admin', 'partner_admin'])
         .maybeSingle();
-      isPartnerMember = Boolean(membership);
+      isAuthorizedPartnerSigner = Boolean(membership);
     }
 
-    if (!isAdmin && !isPartnerMember) {
+    if (!isAdmin && !isAuthorizedPartnerSigner) {
       return new Response(
-        JSON.stringify({ error: 'Nincs jogosultsága ehhez a partneri szerződéshez.' }),
+        JSON.stringify({ error: 'Csak a partner tulajdonosa vagy adminisztrátora fogadhatja el a szerződést.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -163,6 +172,31 @@ Deno.serve(async (req: Request) => {
     const contentSha256 = await sha256Hex(
       `${contract.contract_number}|${contract.partner_id}|${contract.amount}|${contract.content || ''}`
     );
+
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    if (supabaseAnonKey) {
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: rpcContract, error: rpcErr } = await userClient.rpc('accept_partner_contract', {
+        p_contract_id: contract.id,
+        p_accepted_by: acceptedBy,
+        p_accepted_email: acceptedEmail,
+        p_content_sha256: contentSha256,
+      });
+      if (rpcErr) {
+        const msg = rpcErr.message || 'Szerződés elfogadási hiba.';
+        const status = /már korábban elfogadásra/i.test(msg) ? 409 : /jogosultság/i.test(msg) ? 403 : 500;
+        return new Response(
+          JSON.stringify({ error: msg }),
+          { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ success: true, contract: rpcContract }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const acceptanceLog = {
       acceptedBy,
@@ -227,6 +261,17 @@ Deno.serve(async (req: Request) => {
     });
 
     if (logErr) {
+      // Compensating rollback so contract never stays 'accepted' without an audit log
+      await adminClient
+        .from('partner_contracts')
+        .update({
+          status: contract.status,
+          acceptance_log: contract.acceptance_log ?? null,
+          versions: existingVersions,
+          updated_at: contract.updated_at || nowIso,
+        })
+        .eq('id', contract.id);
+
       return new Response(
         JSON.stringify({ error: `Audit napló mentési hiba: ${logErr.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

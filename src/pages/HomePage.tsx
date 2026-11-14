@@ -181,7 +181,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             src="/hero-bg.jpg"
             alt="Építkezés"
             loading="eager"
-            fetchPriority="high"
             className="h-full w-full object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-primary/80" />
@@ -258,7 +257,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       src={optimizeImageUrl(img.imageUrl, 550, 65)}
                       alt={img.altText || 'ÉpítőTudás vizuális elem'}
                       loading={isCurrent ? 'eager' : 'lazy'}
-                      fetchPriority={isCurrent ? 'high' : 'low'}
                       decoding="async"
                       className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out ${
                         isCurrent

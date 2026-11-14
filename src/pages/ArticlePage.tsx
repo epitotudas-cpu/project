@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   Home,
   ChevronRight,
@@ -895,7 +896,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                         {article.documents.map((doc: { id?: string; title: string; file_url: string; file_size?: string }, idx: number) => (
                           <a
                             key={doc.id || idx}
-                            href={doc.file_url}
+                            href={sanitizeExternalUrl(doc.file_url, { allowRelative: true }) || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-4 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-between gap-3 hover:border-accent hover:bg-amber-50/50 transition-all group cursor-pointer"

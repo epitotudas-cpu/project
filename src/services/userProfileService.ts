@@ -152,11 +152,7 @@ export async function updateUserDetailedProfile(
     bio: finalBio,
   };
 
+  await writeUserAppState(userId, 'detailed_profile', updated);
   IN_MEMORY_DETAILED_PROFILES.set(userId, updated);
-  try {
-    await writeUserAppState(userId, 'detailed_profile', updated);
-  } catch (err) {
-    console.warn('Részletes profil felhő mentési hiba:', err);
-  }
   return updated;
 }

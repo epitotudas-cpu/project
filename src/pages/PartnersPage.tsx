@@ -4,6 +4,7 @@ import { listPartners, getCategoryLabel, type PartnerCategory } from '../service
 import type { Partner } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 import PaginationControls, { usePagination } from '../components/PaginationControls';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 
 interface PartnersPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -266,9 +267,9 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                     Partneri adatlap megtekintése <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </span>
 
-                  {partner.website_url && (
+                  {sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true }) && (
                     <a
-                      href={partner.website_url}
+                      href={sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true })}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
