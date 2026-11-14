@@ -173,6 +173,34 @@ export async function updateComment(
   return false;
 }
 
+function removeCommentLocally(commentId: string): void {
+  if (typeof window !== 'undefined') {
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('epitotudas_comments_')) continue;
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) continue;
+        const filtered = parsed.filter((c: Comment) => c.id !== commentId);
+        if (filtered.length !== parsed.length) {
+          localStorage.setItem(key, JSON.stringify(filtered));
+        }
+      }
+    } catch {
+      // Ignore localStorage cleanup errors
+    }
+  }
+
+  for (const [memKey, list] of IN_MEMORY_COMMENTS.entries()) {
+    const filtered = list.filter((c) => c.id !== commentId);
+    if (filtered.length !== list.length) {
+      IN_MEMORY_COMMENTS.set(memKey, filtered);
+    }
+  }
+}
+
 export async function deleteComment(
   commentId: string,
   _userId: string | null | undefined
@@ -180,13 +208,21 @@ export async function deleteComment(
   void _userId;
   if (!commentId) return false;
 
+  if (commentId.startsWith('c-')) {
+    removeCommentLocally(commentId);
+    return true;
+  }
+
   try {
     const { error } = await supabase
       .from('comments')
       .delete()
       .eq('id', commentId);
 
-    if (!error) return true;
+    if (!error) {
+      removeCommentLocally(commentId);
+      return true;
+    }
     console.error('Failed to delete comment from Supabase:', error);
   } catch (err) {
     console.error('Error deleting comment:', err);

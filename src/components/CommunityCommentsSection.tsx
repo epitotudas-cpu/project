@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, Star, Send, Heart, Edit3, Trash2, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { isAdmin } from '../lib/permissions';
 import { getComments, addComment, updateComment, deleteComment, toggleFavorite, isFavorite, type Comment } from '../services/communityService';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -25,6 +26,8 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
   const [editCommentText, setEditCommentText] = useState('');
   const [editCommentRating, setEditCommentRating] = useState(5);
   const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const canAdminDelete = isAdmin(profile);
 
   useEffect(() => {
     loadData();
@@ -187,9 +190,15 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
       </form>
 
       {/* Comments List */}
+      {deleteError && (
+        <div role="alert" className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300 font-semibold">
+          {deleteError}
+        </div>
+      )}
       <div className="space-y-4 pt-2">
         {comments.map((c) => {
           const isOwnComment = Boolean(user && c.user_id && c.user_id === user.id);
+          const canDeleteComment = isOwnComment || canAdminDelete;
           const isEditing = editingCommentId === c.id;
 
           return (
@@ -213,23 +222,30 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
                     </div>
                   )}
 
-                  {/* Edit & Delete Action Buttons for registered user */}
-                  {isOwnComment && !isEditing && (
+                  {/* Edit & Delete Action Buttons */}
+                  {(isOwnComment || canDeleteComment) && !isEditing && (
                     <div className="flex items-center gap-1 ml-2 border-l border-[#333] pl-2">
-                      <button
-                        onClick={() => handleStartEdit(c)}
-                        className="p-1 text-gray-400 hover:text-accent rounded-lg transition-colors cursor-pointer"
-                        title="Hozzászólás szerkesztése"
-                      >
-                        <Edit3 size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="p-1 text-gray-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer"
-                        title="Hozzászólás törlése"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {isOwnComment && (
+                        <button
+                          onClick={() => handleStartEdit(c)}
+                          className="p-1 text-gray-400 hover:text-accent rounded-lg transition-colors cursor-pointer"
+                          title="Hozzászólás szerkesztése"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                      )}
+                      {canDeleteComment && (
+                        <button
+                          onClick={() => {
+                            setDeleteError(null);
+                            handleDelete(c.id);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer"
+                          title={isOwnComment ? 'Hozzászólás törlése' : 'Hozzászólás törlése (Admin)'}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -296,6 +312,8 @@ export default function CommunityCommentsSection({ contentType, contentId, altCo
             const success = await deleteComment(deleteCommentId, user?.id);
             if (success) {
               setComments((prev) => prev.filter((item) => item.id !== deleteCommentId));
+            } else {
+              setDeleteError('A hozzászólás törlése sikertelen volt. Ellenőrizd a jogosultságot vagy a hálózati kapcsolatot.');
             }
           }
           setDeleteCommentId(null);
