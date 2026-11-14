@@ -3,6 +3,7 @@ import { Wrench, ChevronRight, Filter, Sparkles, ArrowRight, RefreshCw, Laptop, 
 import { getActiveTools, MOCK_TOOLS, type Tool } from '../services/toolService';
 import type { RecommendedProduct } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 
 interface ToolSelectorPageProps {
   onNavigate: (page: string) => void;
@@ -91,6 +92,13 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
       return true;
     });
   }, [activeToolsList, selectedTrade, selectedType]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedTools,
+  } = usePagination(filteredTools, 24, `${selectedTrade}|${selectedType}`);
 
   const resetFilters = () => {
     setSelectedTrade('all');
@@ -264,7 +272,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTools.map((tool: Tool) => {
+            {paginatedTools.map((tool: Tool) => {
               const recProducts = (tool.recommended_products || []) as RecommendedProduct[];
               const hasTestedProduct = recProducts.some((p) => p.is_tested === true);
 
@@ -338,6 +346,14 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
             })}
           </div>
         )}
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTools.length}
+          itemLabel="eszköz"
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

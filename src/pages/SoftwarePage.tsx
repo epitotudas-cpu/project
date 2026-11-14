@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import { readAppConfig } from '../services/appConfigService';
 
 interface SoftwarePageProps {
@@ -228,6 +229,13 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
     });
   }, [softwareCatalog, selectedCategory, searchQuery]);
 
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedSoftware,
+  } = usePagination(filteredSoftware, 24, `${selectedCategory}|${searchQuery}`);
+
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
       {/* Hero Header */}
@@ -362,7 +370,7 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredSoftware.map((item) => (
+            {paginatedSoftware.map((item) => (
               <div
                 key={item.id}
                 className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm hover:border-accent/60 transition-all flex flex-col justify-between space-y-5"
@@ -419,6 +427,14 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
             ))}
           </div>
         )}
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredSoftware.length}
+          itemLabel="szoftver"
+          onPageChange={setCurrentPage}
+        />
 
         <div className="pt-2 flex justify-center">
           <button

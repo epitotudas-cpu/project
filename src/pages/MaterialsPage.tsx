@@ -19,6 +19,7 @@ import {
   Library,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import FormattedText from '../components/FormattedText';
 import {
   getMaterialsLocal,
@@ -101,6 +102,13 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
       return matchCat && matchBrand && matchPartner && matchQuery;
     });
   }, [items, selectedCategory, selectedBrand, selectedPartner, searchQuery]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems,
+  } = usePagination(filteredItems, 24, `${selectedCategory}|${selectedBrand}|${selectedPartner}|${searchQuery}`);
 
   return (
     <div className="bg-[#f8fafc] text-[#1e293b] min-h-screen pb-20 selection:bg-accent selection:text-black">
@@ -261,7 +269,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
           viewMode === 'grid' ? (
             /* Grid View */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => {
@@ -343,7 +351,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
           ) : (
             /* List View */
             <div className="space-y-4">
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => {
@@ -419,6 +427,14 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
             </button>
           </div>
         )}
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredItems.length}
+          itemLabel="építőanyag"
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* ── DETAILED MATERIAL MODAL / ADATLAP ── */}

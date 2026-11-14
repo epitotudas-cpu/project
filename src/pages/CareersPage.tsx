@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import {
   listJobPostings,
   createJobPosting,
@@ -220,6 +221,13 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
       return matchesTitle && matchesLocation && matchesType && matchesRole;
     });
   }, [jobs, titleSearch, locationSearch, selectedType, selectedRoleCategory]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedJobs,
+  } = usePagination(filteredJobs, 24, `${titleSearch}|${locationSearch}|${selectedType}|${selectedRoleCategory}`);
 
   const resetFilters = () => {
     setTitleSearch('');
@@ -501,7 +509,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.map((job) => {
+              {paginatedJobs.map((job) => {
                 const typeLabel =
                   job.job_type === 'full_time'
                     ? 'Teljes munkaidő'
@@ -571,6 +579,14 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
               })}
             </div>
           )}
+
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredJobs.length}
+            itemLabel="állás"
+            onPageChange={setCurrentPage}
+          />
         </section>
 
         {/* CAREER TRAJECTORIES SECTION */}

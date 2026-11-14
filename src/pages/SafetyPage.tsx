@@ -27,6 +27,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import {
   getKnowledgeItemsLocal,
   fetchKnowledgeItemsFromCloud,
@@ -133,6 +134,13 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
     });
   }, [selectedCardCategories, selectedCardAudiences, cardSearchQuery]);
 
+  const {
+    currentPage: cardsPage,
+    setCurrentPage: setCardsPage,
+    totalPages: cardsTotalPages,
+    paginatedItems: paginatedCards,
+  } = usePagination(filteredCards, 24, `${selectedCardCategories.join(',')}|${selectedCardAudiences.join(',')}|${cardSearchQuery}`);
+
   // Unique topics list for Articles
   const availableTopics = useMemo(() => {
     const topics = new Set<string>();
@@ -161,6 +169,13 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
       return matchesTopic && matchesAudience && matchesQuery;
     });
   }, [items, selectedTopic, selectedAudience, searchQuery]);
+
+  const {
+    currentPage: itemsPage,
+    setCurrentPage: setItemsPage,
+    totalPages: itemsTotalPages,
+    paginatedItems,
+  } = usePagination(filteredItems, 24, `${selectedTopic}|${selectedAudience}|${searchQuery}`);
 
   // Modal Panel Handlers
   const handleOpenFilterModal = () => {
@@ -414,7 +429,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
             {/* Official Cards Grid */}
             {filteredCards.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCards.map((card) => (
+                {paginatedCards.map((card) => (
                   <div
                     key={card.id}
                     onClick={() => setActiveCard(card)}
@@ -492,6 +507,14 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                 </button>
               </div>
             )}
+
+            <PaginationControls
+              currentPage={cardsPage}
+              totalPages={cardsTotalPages}
+              totalItems={filteredCards.length}
+              itemLabel="kártya"
+              onPageChange={setCardsPage}
+            />
           </div>
         )}
 
@@ -582,7 +605,7 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
             {/* Content Articles Grid */}
             {filteredItems.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredItems.map((item) => (
+                {paginatedItems.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => setActiveItem(item)}
@@ -658,6 +681,14 @@ export default function SafetyPage({ onNavigate }: SafetyPageProps) {
                 </button>
               </div>
             )}
+
+            <PaginationControls
+              currentPage={itemsPage}
+              totalPages={itemsTotalPages}
+              totalItems={filteredItems.length}
+              itemLabel="anyag"
+              onPageChange={setItemsPage}
+            />
           </div>
         )}
       </div>

@@ -32,6 +32,7 @@ import {
   FileCheck,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import { CalculatorInput } from '../components/CalculatorInput';
 import { safeNum, parseNumberValue } from '../lib/calculatorUtils';
 import { useToast } from '../components/ToastProvider';
@@ -1168,6 +1169,13 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
     }
     return CALCULATION_ITEMS;
   }, [searchQuery, selectedCategory]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems,
+  } = usePagination(filteredItems, 24, `${searchQuery}|${selectedCategory ?? ''}`);
 
   // --------------------------------------------------------------------------
   // SPA ROUTER HASH & HISTORY STACK SYNCHRONIZATION
@@ -2317,8 +2325,9 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredItems.map((item) => (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {paginatedItems.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => navigateToDetail(item.id)}
@@ -2349,7 +2358,15 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
                       </div>
                     </button>
                   ))}
-                </div>
+                  </div>
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredItems.length}
+                    itemLabel="számítás"
+                    onPageChange={setCurrentPage}
+                  />
+                </>
               )}
             </div>
           )}

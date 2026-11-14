@@ -31,6 +31,7 @@ import { getArticlesForTool, getPublishedArticles } from '../services/articleSer
 import { filterTools } from '../services/toolFilterService';
 import type { Tool, AdCampaign, RecommendedProduct, Article } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import FormattedText from '../components/FormattedText';
 import { useAuth } from '../contexts/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
@@ -735,6 +736,13 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
       search: searchQuery,
     });
   }, [tools, selectedCategory, selectedSubtype, selectedProfession, searchQuery]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedTools,
+  } = usePagination(filteredTools, 24, `${selectedCategory ?? ''}|${selectedSubtype ?? ''}|${selectedProfession ?? ''}|${searchQuery}`);
 
   const hasActiveFilters = Boolean(
     searchQuery.trim() || selectedCategory || selectedSubtype || selectedProfession
@@ -1965,7 +1973,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredTools.map((tool) => (
+                  {paginatedTools.map((tool) => (
                     <div
                       key={tool.id}
                       onClick={() => handleToolSelect(tool)}
@@ -1998,6 +2006,14 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
                   ))}
                 </div>
               )}
+
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredTools.length}
+                itemLabel="eszköz"
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         )}

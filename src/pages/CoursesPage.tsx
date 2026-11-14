@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../lib/permissions';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import InteractiveLessonViewer from '../components/InteractiveLessonViewer';
 import FlashcardViewer from '../components/FlashcardViewer';
 import MyLearningDashboard from '../components/MyLearningDashboard';
@@ -178,6 +179,13 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
       return matchesSearch && matchesCategory && matchesDifficulty && matchesDuration;
     });
   }, [courses, searchQuery, selectedCategory, selectedDifficulty, selectedDuration]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedCourses,
+  } = usePagination(filteredCourses, 24, `${searchQuery}|${selectedCategory}|${selectedDifficulty}|${selectedDuration}`);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -543,7 +551,7 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((c) => {
+              {paginatedCourses.map((c) => {
                 const diffLabel =
                   c.difficulty === 'master'
                     ? 'Mester'
@@ -606,6 +614,14 @@ export default function CoursesPage({ onNavigate }: CoursesPageProps) {
               })}
             </div>
           )}
+
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredCourses.length}
+            itemLabel="tanfolyam"
+            onPageChange={setCurrentPage}
+          />
         </section>
 
         {/* SECONDARY USER CERTIFICATES BANNER */}

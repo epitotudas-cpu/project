@@ -3,6 +3,7 @@ import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, 
 import { listPartners, getCategoryLabel, type PartnerCategory } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 
 interface PartnersPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -81,6 +82,13 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
       return matchCat && matchQuery;
     });
   }, [partners, selectedCategory, searchQuery]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedPartners,
+  } = usePagination(filteredPartners, 24, `${selectedCategory}|${searchQuery}`);
 
   return (
     <div className="bg-background min-h-screen pb-16">
@@ -207,8 +215,9 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
 
         {/* Partners Grid */}
         {!loading && filteredPartners.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPartners.map((partner) => (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedPartners.map((partner) => (
               <div
                 key={partner.id}
                 role="button"
@@ -272,7 +281,15 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredPartners.length}
+              itemLabel="partner"
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
 
         {/* Partnership CTA Banner */}

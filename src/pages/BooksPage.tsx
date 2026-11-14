@@ -22,6 +22,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import { useBooks, useBookCategories, type BookItem } from '../services/bookService';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
@@ -146,6 +147,13 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
 
     return result;
   }, [allBooks, selectedCategory, searchQuery, sortBy, categories]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedBooks,
+  } = usePagination(filteredBooks, 24, `${selectedCategory}|${searchQuery}|${sortBy}`);
 
   const [digitalError, setDigitalError] = useState<string | null>(null);
 
@@ -489,7 +497,7 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
               </div>
             ) : (
               <div className="space-y-6">
-                {filteredBooks.map((book) => {
+                {paginatedBooks.map((book) => {
                   const isSaved = savedBookIds.has(book.id) || savedBookIds.has(book.title);
 
                   return (
@@ -623,6 +631,14 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                 })}
               </div>
             )}
+
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredBooks.length}
+              itemLabel="könyv"
+              onPageChange={setCurrentPage}
+            />
 
           </div>
 
