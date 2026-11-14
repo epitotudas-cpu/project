@@ -31,8 +31,8 @@ export default function SectionSubNav({ ariaLabel, items, onNavigate }: SectionS
 
           const className = `shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer select-none ${
             item.active
-              ? 'text-accent bg-accent/10 font-bold border border-accent/20 shadow-xs'
-              : 'text-gray-300 hover:text-white hover:bg-white/10'
+              ? 'text-white bg-white/15 font-bold border border-white/25 shadow-xs'
+              : 'text-gray-100 hover:text-white hover:bg-white/10'
           }`;
 
           if (item.href) {

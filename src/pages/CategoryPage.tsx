@@ -103,6 +103,15 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
   // Modals / Dropdowns State
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(() => new Set());
+  const markImageFailed = (id: string) => {
+    setFailedImageIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  };
   const [visibleCount, setVisibleCount] = useState<number>(typePageSettings.articlesPerPage || 12);
 
 
@@ -457,7 +466,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/10 border border-white/25 text-white font-bold text-xs rounded-full">
                 <FileText size={13} /> {selectedArticleType === 'utmutatok' ? 'Gyakorlati Kivitelezési Útmutatók & Technológiák' : 'Építőipari Szakmai Cikkek & Technológiák'}
               </span>
               <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
@@ -611,6 +620,8 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
             <div className="relative flex-1 w-full">
               <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
+                id="category-search-input"
+                name="category-search"
                 type="text"
                 placeholder={typePageSettings.searchPlaceholderText || 'Keresés cikkek között (pl. betonozás, szigetelés, csempézés)...'}
                 value={searchQuery}
@@ -795,7 +806,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
                       paginatedArticles.forEach((article, index) => {
                         const catObj = categories.find((c) => c.id === article.category_id);
-                        const hasImage = Boolean(article.featured_image);
+                        const hasImage = Boolean(article.featured_image) && !failedImageIds.has(article.id);
 
                         gridNodes.push(
                           <article
@@ -812,6 +823,7 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                                     alt={article.title}
                                     loading="lazy"
                                     decoding="async"
+                                    onError={() => markImageFailed(article.id)}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out opacity-90 group-hover:opacity-100"
                                   />
                                 ) : (
@@ -958,10 +970,15 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
                             onClick={() => onNavigate('article', { articleSlug: pop.slug })}
                             className="flex items-center gap-3 group cursor-pointer p-2 rounded-2xl hover:bg-gray-50 transition-colors"
                           >
-                            {pop.featured_image ? (
-                              <img src={optimizeImageUrl(pop.featured_image, 150)} alt={pop.title} className="w-13 h-13 rounded-xl object-cover shrink-0 border border-gray-200" />
+                            {pop.featured_image && !failedImageIds.has(pop.id) ? (
+                              <img
+                                src={optimizeImageUrl(pop.featured_image, 150)}
+                                alt={pop.title}
+                                onError={() => markImageFailed(pop.id)}
+                                className="w-14 h-14 rounded-xl object-cover shrink-0 border border-gray-200"
+                              />
                             ) : (
-                              <div className="w-13 h-13 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                              <div className="w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
                                 <FileText size={18} />
                               </div>
                             )}
