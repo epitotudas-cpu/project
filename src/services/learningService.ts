@@ -4,7 +4,12 @@
  * (A strukturált tanfolyamok, leckék és tanúsítványok az educationService.ts-ben találhatók.)
  */
 import { supabase } from '../lib/supabase';
-import { readAppConfig, writeAppConfig } from './appConfigService';
+import {
+  readAppConfig,
+  writeAppConfig,
+  readAppConfigWithVersion,
+  writeAppConfigIfUnchanged,
+} from './appConfigService';
 import type {
   LearningCourse,
   Quiz,
@@ -298,63 +303,169 @@ export async function getCourseBySlug(slug: string): Promise<LearningCourse | nu
   return all.find((c) => c.slug === slug || c.id === slug) || null;
 }
 
-export async function saveCourse(payload: Partial<LearningCourse>): Promise<LearningCourse> {
-  const all = getCoursesLocal();
-  const now = new Date().toISOString();
-  let updatedCourse: LearningCourse;
+const MAX_CAS_ATTEMPTS = 3;
 
-  if (payload.id && all.some((c) => c.id === payload.id)) {
-    updatedCourse = {
-      ...all.find((c) => c.id === payload.id)!,
-      ...payload,
-      updated_at: now,
-    } as LearningCourse;
-    saveCoursesLocal(all.map((c) => (c.id === payload.id ? updatedCourse : c)));
-  } else {
-    updatedCourse = {
-      id: `course-${Date.now()}`,
-      title: payload.title || 'Új Tananyag',
-      slug: payload.slug || `tananyag-${Date.now()}`,
-      excerpt: payload.excerpt || '',
-      content: payload.content || '',
-      category_id: payload.category_id || 'cat-1',
-      category_name: payload.category_name || 'Építési technológiák',
-      subcategory_name: payload.subcategory_name || undefined,
-      topic: payload.topic || 'Általános',
-      difficulty: payload.difficulty || 'beginner',
-      audience: payload.audience || 'everyone',
-      estimated_time_minutes: payload.estimated_time_minutes || 30,
-      featured_image: payload.featured_image || 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
-      documents: payload.documents || [],
-      video_url: payload.video_url || null,
-      keywords: payload.keywords || [],
-      tags: payload.tags || ['oktatás'],
-      chapters: payload.chapters || [],
-      key_terms: payload.key_terms || [],
-      status: payload.status || 'published',
-      partner_id: payload.partner_id || null,
-      partner_name: payload.partner_name || null,
-      author: payload.author || 'ÉpítőTudás Oktatási Csapat',
-      created_at: now,
-      updated_at: now,
-    };
-    saveCoursesLocal([updatedCourse, ...all]);
+function getLocalListFallback<T>(storageKey: string, defaults: T[]): T[] {
+  try {
+    if (typeof window === 'undefined') return defaults;
+    const raw = localStorage.getItem(storageKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed as T[];
+    }
+  } catch {
+    // Ignore malformed cache
+  }
+  return defaults;
+}
+
+/**
+ * Safely mutates a cloud JSON list using optimistic compare-and-swap (CAS).
+ * Prevents concurrent editors editing different courses/quizzes from overwriting
+ * each other's changes, and awaits cloud persistence before returning.
+ */
+async function mutateCloudListWithCAS<T extends { id: string; updated_at?: string }>(options: {
+  cloudKey: string;
+  storageKey: string;
+  defaults: T[];
+  mutate: (currentList: T[]) => { nextList: T[]; result: T | null };
+}): Promise<T | null> {
+  const canUseCAS =
+    typeof readAppConfigWithVersion === 'function' &&
+    typeof writeAppConfigIfUnchanged === 'function';
+
+  for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt++) {
+    let currentList: T[] | null = null;
+    let versionToken: string | null = null;
+
+    if (canUseCAS) {
+      const res = await readAppConfigWithVersion<T[]>(options.cloudKey);
+      if (Array.isArray(res.value) && res.value.length > 0) {
+        currentList = res.value;
+      }
+      versionToken = res.updatedAt;
+    } else {
+      const cloud = await readAppConfig<T[]>(options.cloudKey);
+      if (Array.isArray(cloud) && cloud.length > 0) {
+        currentList = cloud;
+      }
+    }
+
+    if (!currentList) {
+      currentList = getLocalListFallback(options.storageKey, options.defaults);
+    }
+
+    const { nextList, result } = options.mutate(currentList);
+
+    if (canUseCAS) {
+      const writeRes = await writeAppConfigIfUnchanged(options.cloudKey, nextList, versionToken);
+      if (writeRes.conflict) {
+        continue;
+      }
+    } else {
+      await writeAppConfig(options.cloudKey, nextList);
+    }
+
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(options.storageKey, JSON.stringify(nextList));
+        window.dispatchEvent(new Event('learning-updated'));
+      }
+    } catch (e) {
+      console.warn('Hiba a helyi gyorsítótár frissítésekor:', e);
+    }
+
+    return result;
   }
 
-  return updatedCourse;
+  throw new Error('Párhuzamos módosítási ütközés történt. Kérjük, próbáld újra.');
+}
+
+export async function saveCourse(payload: Partial<LearningCourse>): Promise<LearningCourse> {
+  const result = await mutateCloudListWithCAS<LearningCourse>({
+    cloudKey: CLOUD_COURSES_KEY,
+    storageKey: COURSES_STORAGE_KEY,
+    defaults: DEFAULT_COURSES,
+    mutate: (all) => {
+      const now = new Date().toISOString();
+      const existing = payload.id ? all.find((c) => c.id === payload.id) : undefined;
+
+      if (existing) {
+        if (payload.updated_at && existing.updated_at && existing.updated_at > payload.updated_at) {
+          throw new Error('A tananyagot időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
+        }
+        const updatedCourse: LearningCourse = {
+          ...existing,
+          ...payload,
+          updated_at: now,
+        };
+        return {
+          nextList: all.map((c) => (c.id === payload.id ? updatedCourse : c)),
+          result: updatedCourse,
+        };
+      }
+
+      const newCourse: LearningCourse = {
+        id: payload.id || `course-${Date.now()}`,
+        title: payload.title || 'Új Tananyag',
+        slug: payload.slug || `tananyag-${Date.now()}`,
+        excerpt: payload.excerpt || '',
+        content: payload.content || '',
+        category_id: payload.category_id || 'cat-1',
+        category_name: payload.category_name || 'Építési technológiák',
+        subcategory_name: payload.subcategory_name || undefined,
+        topic: payload.topic || 'Általános',
+        difficulty: payload.difficulty || 'beginner',
+        audience: payload.audience || 'everyone',
+        estimated_time_minutes: payload.estimated_time_minutes || 30,
+        featured_image: payload.featured_image || 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
+        documents: payload.documents || [],
+        video_url: payload.video_url || null,
+        keywords: payload.keywords || [],
+        tags: payload.tags || ['oktatás'],
+        chapters: payload.chapters || [],
+        key_terms: payload.key_terms || [],
+        status: payload.status || 'published',
+        partner_id: payload.partner_id || null,
+        partner_name: payload.partner_name || null,
+        author: payload.author || 'ÉpítőTudás Oktatási Csapat',
+        created_at: now,
+        updated_at: now,
+      };
+      return {
+        nextList: [newCourse, ...all],
+        result: newCourse,
+      };
+    },
+  });
+
+  return result!;
 }
 
 export async function setCourseStatus(id: string, status: LearningCourse['status'], rejectionNote?: string | null): Promise<void> {
-  const all = getCoursesLocal();
-  const updated = all.map((c) =>
-    c.id === id ? { ...c, status, rejection_note: rejectionNote ?? null, updated_at: new Date().toISOString() } : c
-  );
-  saveCoursesLocal(updated);
+  await mutateCloudListWithCAS<LearningCourse>({
+    cloudKey: CLOUD_COURSES_KEY,
+    storageKey: COURSES_STORAGE_KEY,
+    defaults: DEFAULT_COURSES,
+    mutate: (all) => ({
+      nextList: all.map((c) =>
+        c.id === id ? { ...c, status, rejection_note: rejectionNote ?? null, updated_at: new Date().toISOString() } : c
+      ),
+      result: null,
+    }),
+  });
 }
 
 export async function deleteCourse(id: string): Promise<void> {
-  const all = getCoursesLocal();
-  saveCoursesLocal(all.filter((c) => c.id !== id));
+  await mutateCloudListWithCAS<LearningCourse>({
+    cloudKey: CLOUD_COURSES_KEY,
+    storageKey: COURSES_STORAGE_KEY,
+    defaults: DEFAULT_COURSES,
+    mutate: (all) => ({
+      nextList: all.filter((c) => c.id !== id),
+      result: null,
+    }),
+  });
 }
 
 // ── QUIZZES SERVICE HELPERS ──
@@ -426,50 +537,79 @@ export async function getQuizBySlug(slug: string): Promise<Quiz | null> {
 }
 
 export async function saveQuiz(payload: Partial<Quiz>): Promise<Quiz> {
-  const all = getQuizzesLocal();
-  const now = new Date().toISOString();
-  let updatedQuiz: Quiz;
+  const result = await mutateCloudListWithCAS<Quiz>({
+    cloudKey: CLOUD_QUIZZES_KEY,
+    storageKey: QUIZZES_STORAGE_KEY,
+    defaults: DEFAULT_QUIZZES,
+    mutate: (all) => {
+      const now = new Date().toISOString();
+      const existing = payload.id ? all.find((q) => q.id === payload.id) : undefined;
 
-  if (payload.id && all.some((q) => q.id === payload.id)) {
-    updatedQuiz = {
-      ...all.find((q) => q.id === payload.id)!,
-      ...payload,
-      updated_at: now,
-    } as Quiz;
-    saveQuizzesLocal(all.map((q) => (q.id === payload.id ? updatedQuiz : q)));
-  } else {
-    updatedQuiz = {
-      id: `quiz-${Date.now()}`,
-      title: payload.title || 'Új Teszt',
-      slug: payload.slug || `teszt-${Date.now()}`,
-      description: payload.description || '',
-      category_id: payload.category_id || 'cat-1',
-      difficulty: payload.difficulty || 'beginner',
-      passing_score_percent: payload.passing_score_percent || 75,
-      time_limit_minutes: payload.time_limit_minutes || 10,
-      questions: payload.questions || [],
-      status: payload.status || 'published',
-      partner_id: payload.partner_id || null,
-      partner_name: payload.partner_name || null,
-      created_at: now,
-      updated_at: now,
-    };
-    saveQuizzesLocal([updatedQuiz, ...all]);
-  }
+      if (existing) {
+        if (payload.updated_at && existing.updated_at && existing.updated_at > payload.updated_at) {
+          throw new Error('A tesztet időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
+        }
+        const updatedQuiz: Quiz = {
+          ...existing,
+          ...payload,
+          updated_at: now,
+        };
+        return {
+          nextList: all.map((q) => (q.id === payload.id ? updatedQuiz : q)),
+          result: updatedQuiz,
+        };
+      }
 
-  return updatedQuiz;
+      const newQuiz: Quiz = {
+        id: payload.id || `quiz-${Date.now()}`,
+        title: payload.title || 'Új Teszt',
+        slug: payload.slug || `teszt-${Date.now()}`,
+        description: payload.description || '',
+        category_id: payload.category_id || 'cat-1',
+        difficulty: payload.difficulty || 'beginner',
+        passing_score_percent: payload.passing_score_percent || 75,
+        time_limit_minutes: payload.time_limit_minutes || 10,
+        questions: payload.questions || [],
+        status: payload.status || 'published',
+        partner_id: payload.partner_id || null,
+        partner_name: payload.partner_name || null,
+        created_at: now,
+        updated_at: now,
+      };
+      return {
+        nextList: [newQuiz, ...all],
+        result: newQuiz,
+      };
+    },
+  });
+
+  return result!;
 }
 
 export async function setQuizStatus(id: string, status: Quiz['status'], rejectionNote?: string | null): Promise<void> {
-  const all = getQuizzesLocal();
-  saveQuizzesLocal(
-    all.map((q) => (q.id === id ? { ...q, status, rejection_note: rejectionNote ?? null, updated_at: new Date().toISOString() } : q))
-  );
+  await mutateCloudListWithCAS<Quiz>({
+    cloudKey: CLOUD_QUIZZES_KEY,
+    storageKey: QUIZZES_STORAGE_KEY,
+    defaults: DEFAULT_QUIZZES,
+    mutate: (all) => ({
+      nextList: all.map((q) =>
+        q.id === id ? { ...q, status, rejection_note: rejectionNote ?? null, updated_at: new Date().toISOString() } : q
+      ),
+      result: null,
+    }),
+  });
 }
 
 export async function deleteQuiz(id: string): Promise<void> {
-  const all = getQuizzesLocal();
-  saveQuizzesLocal(all.filter((q) => q.id !== id));
+  await mutateCloudListWithCAS<Quiz>({
+    cloudKey: CLOUD_QUIZZES_KEY,
+    storageKey: QUIZZES_STORAGE_KEY,
+    defaults: DEFAULT_QUIZZES,
+    mutate: (all) => ({
+      nextList: all.filter((q) => q.id !== id),
+      result: null,
+    }),
+  });
 }
 
 // ── QUIZ EVALUATION & ATTEMPTS ──
