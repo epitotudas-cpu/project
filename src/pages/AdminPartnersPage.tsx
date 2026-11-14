@@ -50,6 +50,7 @@ import {
 import {
   listPartnerApplications,
   updateApplicationStatus,
+  approveAndOnboardPartnerApplication,
   type PartnerApplication,
 } from '../services/partnerApplicationService';
 import { checkEmailExists } from '../services/userService';
@@ -94,6 +95,7 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'partners' | 'invitations' | 'applications'>('partners');
   const [loading, setLoading] = useState(true);
+  const [approvingAppId, setApprovingAppId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
   // Partner Editor Modal State
@@ -578,12 +580,36 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
 
   // Approve / Reject Applications
   async function handleApproveApplication(app: PartnerApplication) {
+    setApprovingAppId(app.id);
     try {
-      await updateApplicationStatus(app.id, 'approved');
-      openCreateInviteModal(app.company_name, app.email, (app.category as PartnerCategory) || 'ceg');
+      const result = await approveAndOnboardPartnerApplication(app);
       await loadData();
+
+      if (result.emailSent) {
+        toast.success(
+          `${result.partner.name} ${result.partnerCreated ? 'létrehozva' : 'összekapcsolva'}, meghívókód (${result.invitation.code}) e-mailben kiküldve!`
+        );
+      } else {
+        setInvitePartnerMode('existing');
+        setInvitePartnerId(result.partner.id);
+        setOrganizationName(result.partner.name);
+        setContactName(app.contact_name || '');
+        setInviteEmail(app.email);
+        setInviteError(null);
+        setInviteEmailError(null);
+        setCopied(false);
+        setCreatedInviteCode(result.invitation.code);
+        setCreatedTemplate(result.emailTemplate);
+        const errDetail = result.emailError ? `: ${result.emailError}` : '';
+        setEmailStatusNotice(
+          `A partner (${result.partner.name}) és a meghívókód (${result.invitation.code}) automatikusan létrejött, de az e-mail küldés sikertelen volt${errDetail}. Használd az alábbi másolható sablont!`
+        );
+        setShowInviteModal(true);
+      }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'A jelentkezés elfogadása nem sikerült.');
+      toast.error(err instanceof Error ? err.message : 'A jelentkezés automatizált elfogadása nem sikerült.');
+    } finally {
+      setApprovingAppId(null);
     }
   }
 
@@ -1228,9 +1254,22 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                             Pending
                           </span>
                         ) : app.status === 'approved' ? (
-                          <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded">
-                            Jóváhagyva
-                          </span>
+                          (() => {
+                            const matchedInvite =
+                              (app.invitation_id ? invitations.find((i) => i.id === app.invitation_id) : undefined) ||
+                              invitations.find((i) => i.email.trim().toLowerCase() === app.email.trim().toLowerCase());
+                            const pipelineLabel =
+                              matchedInvite?.status === 'used'
+                                ? 'Jóváhagyva • Aktív fiók'
+                                : matchedInvite?.status === 'active'
+                                  ? `Jóváhagyva • Meghívó (${matchedInvite.code})`
+                                  : 'Jóváhagyva';
+                            return (
+                              <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded inline-block">
+                                {pipelineLabel}
+                              </span>
+                            );
+                          })()
                         ) : (
                           <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 rounded">
                             Elutasítva
@@ -1242,9 +1281,11 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                           <>
                             <button
                               onClick={() => handleApproveApplication(app)}
-                              className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold border border-emerald-500/30 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
+                              disabled={approvingAppId === app.id}
+                              className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-50 text-emerald-400 font-bold border border-emerald-500/30 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
                             >
-                              <UserCheck size={13} /> Elfogadás & Meghívás
+                              <UserCheck size={13} />
+                              {approvingAppId === app.id ? 'Folyamatban...' : 'Elfogadás & Meghívás'}
                             </button>
                             <button
                               onClick={() => handleRejectApplication(app.id)}

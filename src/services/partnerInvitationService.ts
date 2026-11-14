@@ -41,6 +41,7 @@ export interface CreateInvitationPayload {
   organizationCategory?: string;
   email: string;
   expiresInDays?: number;
+  allowExistingUser?: boolean;
 }
 
 function generateRandomCode(): string {
@@ -58,9 +59,11 @@ export async function createInvitation(payload: CreateInvitationPayload): Promis
     throw new Error('Kérjük, adj meg érvényes e-mail-címet.');
   }
 
-  const isRegistered = await checkEmailExists(cleanEmail);
-  if (isRegistered) {
-    throw new Error('Ez az e-mail-cím már regisztrálva van.');
+  if (!payload.allowExistingUser) {
+    const isRegistered = await checkEmailExists(cleanEmail);
+    if (isRegistered) {
+      throw new Error('Ez az e-mail-cím már regisztrálva van.');
+    }
   }
 
   const code = generateRandomCode();
