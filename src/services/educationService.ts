@@ -735,52 +735,86 @@ export function getUserFlashcardProgress(userId: string): UserFlashcardProgressM
   return {};
 }
 
-export function saveUserFlashcardProgress(userId: string, progress: UserFlashcardProgressMap): Promise<void> {
-  try {
-    const key = `${FLASHCARD_PROGRESS_STORAGE_PREFIX}${userId}`;
-    localStorage.setItem(key, JSON.stringify(progress));
-    window.dispatchEvent(new Event('flashcard-progress-changed'));
-  } catch (err) {
-    console.error('Hiba a tanulókártya haladás mentésekor:', err);
+export async function saveUserFlashcardProgress(userId: string, progress: UserFlashcardProgressMap): Promise<void> {
+  if (userId && userId !== 'anon_guest' && !userId.startsWith('guest_')) {
+    await writeUserAppState(userId, 'flashcard_progress', progress);
   }
-  if (userId && userId !== 'anon_guest') {
-    return writeUserAppState(userId, 'flashcard_progress', progress).catch((err) => {
-      console.warn('Supabase flashcard progress cloud sync error:', err);
-    });
+
+  if (typeof window !== 'undefined') {
+    try {
+      const key = `${FLASHCARD_PROGRESS_STORAGE_PREFIX}${userId}`;
+      localStorage.setItem(key, JSON.stringify(progress));
+      window.dispatchEvent(new Event('flashcard-progress-changed'));
+    } catch (err) {
+      console.error('Hiba a tanulókártya haladás mentésekor:', err);
+    }
   }
-  return Promise.resolve();
 }
 
 export async function fetchUserFlashcardProgressFromCloud(userId: string): Promise<UserFlashcardProgressMap> {
-  if (!userId || userId === 'anon_guest') return getUserFlashcardProgress(userId);
-  try {
-    const cloud = await readUserAppState<UserFlashcardProgressMap>(
-      userId,
-      'flashcard_progress',
-      `__USER_FLASHCARD_PROGRESS_${userId}__`
-    );
-    if (cloud && typeof cloud === 'object') {
+  if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) {
+    return getUserFlashcardProgress(userId);
+  }
+
+  const builder = supabase.from('user_app_states' as never) as unknown as {
+    select?: (cols: string) => {
+      eq: (col: string, val: string) => {
+        eq: (col: string, val: string) => {
+          maybeSingle: () => Promise<{ data: { value?: unknown } | null; error: { message: string } | null }>;
+        };
+      };
+    };
+  } | undefined;
+
+  if (builder && typeof builder.select === 'function') {
+    const { data, error } = await builder
+      .select('value')
+      .eq('user_id', userId)
+      .eq('state_key', 'flashcard_progress')
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data && data.value && typeof data.value === 'object') {
+      const cloudMap = data.value as UserFlashcardProgressMap;
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(`${FLASHCARD_PROGRESS_STORAGE_PREFIX}${userId}`, JSON.stringify(cloud));
+          localStorage.setItem(`${FLASHCARD_PROGRESS_STORAGE_PREFIX}${userId}`, JSON.stringify(cloudMap));
         } catch {
           // ignore
         }
       }
-      return cloud;
+      return cloudMap;
     }
-  } catch (err) {
-    console.warn('Supabase flashcard progress fetch fallback:', err);
   }
+
+  const cloud = await readUserAppState<UserFlashcardProgressMap>(
+    userId,
+    'flashcard_progress',
+    `__USER_FLASHCARD_PROGRESS_${userId}__`
+  );
+  if (cloud && typeof cloud === 'object') {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`${FLASHCARD_PROGRESS_STORAGE_PREFIX}${userId}`, JSON.stringify(cloud));
+      } catch {
+        // ignore
+      }
+    }
+    return cloud;
+  }
+
   return getUserFlashcardProgress(userId);
 }
 
-export function recordFlashcardReview(
+export async function recordFlashcardReview(
   userId: string,
   cardId: string,
   knewIt: boolean
-): UserFlashcardProgressMap {
-  const current = getUserFlashcardProgress(userId);
+): Promise<UserFlashcardProgressMap> {
+  const current = { ...getUserFlashcardProgress(userId) };
   const existing = current[cardId] || {
     card_id: cardId,
     state: 'new' as FlashcardState,
@@ -815,7 +849,7 @@ export function recordFlashcardReview(
     incorrect_count: incorrectCount,
   };
 
-  saveUserFlashcardProgress(userId, current);
+  await saveUserFlashcardProgress(userId, current);
   return current;
 }
 

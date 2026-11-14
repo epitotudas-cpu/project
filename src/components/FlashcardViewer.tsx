@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Layers,
   RotateCw,
@@ -14,6 +14,7 @@ import {
   type FlashcardState,
   type UserFlashcardProgressMap,
   getUserFlashcardProgress,
+  fetchUserFlashcardProgressFromCloud,
   recordFlashcardReview,
 } from '../services/educationService';
 
@@ -40,6 +41,9 @@ export default function FlashcardViewer({
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
   const [sessionStats, setSessionStats] = useState({ knewCount: 0, didntKnowCount: 0 });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   // Filter cards based on study mode
   const getFilteredCards = () => {
@@ -68,30 +72,65 @@ export default function FlashcardViewer({
   const currentCard = activeDeck[currentCardIndex];
 
   useEffect(() => {
+    let active = true;
+    if (!userId || userId === 'anon_guest' || userId.startsWith('guest_')) {
+      setProgressMap(getUserFlashcardProgress(userId));
+      return;
+    }
+    fetchUserFlashcardProgressFromCloud(userId)
+      .then((cloudMap) => {
+        if (active) {
+          setProgressMap(cloudMap);
+          setSaveError(null);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+          setSaveError(`A felhőbeli haladás betöltése sikertelen volt. (${msg})`);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  useEffect(() => {
     setCurrentCardIndex(0);
     setIsFlipped(false);
     setSessionCompleted(false);
     setSessionStats({ knewCount: 0, didntKnowCount: 0 });
   }, [studyMode, cards]);
 
-  const handleAssessment = (knewIt: boolean) => {
-    if (!currentCard) return;
+  const handleAssessment = async (knewIt: boolean) => {
+    if (!currentCard || savingRef.current) return;
+    savingRef.current = true;
+    setIsSaving(true);
+    setSaveError(null);
 
-    const updatedMap = recordFlashcardReview(userId, currentCard.id, knewIt);
-    setProgressMap(updatedMap);
+    try {
+      const updatedMap = await recordFlashcardReview(userId, currentCard.id, knewIt);
+      setProgressMap(updatedMap);
 
-    setSessionStats((prev) => ({
-      knewCount: prev.knewCount + (knewIt ? 1 : 0),
-      didntKnowCount: prev.didntKnowCount + (knewIt ? 0 : 1),
-    }));
+      setSessionStats((prev) => ({
+        knewCount: prev.knewCount + (knewIt ? 1 : 0),
+        didntKnowCount: prev.didntKnowCount + (knewIt ? 0 : 1),
+      }));
 
-    setIsFlipped(false);
+      setIsFlipped(false);
 
-    if (currentCardIndex < activeDeck.length - 1) {
-      setCurrentCardIndex((prev) => prev + 1);
-    } else {
-      setSessionCompleted(true);
-      if (onFinish) onFinish();
+      if (currentCardIndex < activeDeck.length - 1) {
+        setCurrentCardIndex((prev) => prev + 1);
+      } else {
+        setSessionCompleted(true);
+        if (onFinish) onFinish();
+      }
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Ismeretlen hiba';
+      setSaveError(`A tanulókártya haladásának felhőmentése sikertelen volt. Kérjük, próbáld meg újra! (${msg})`);
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -248,17 +287,29 @@ export default function FlashcardViewer({
                     <div className="grid grid-cols-2 gap-4">
                       <button
                         onClick={() => handleAssessment(false)}
-                        className="py-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                        disabled={isSaving}
+                        className="py-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <XCircle className="w-5 h-5 text-rose-600" /> [NEM TUDTAM]
                       </button>
                       <button
                         onClick={() => handleAssessment(true)}
-                        className="py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md"
+                        disabled={isSaving}
+                        className="py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <CheckCircle2 className="w-5 h-5 text-emerald-200" /> [TUDTAM]
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {saveError && (
+                  <div
+                    role="alert"
+                    className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-start gap-2"
+                  >
+                    <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                    <span>{saveError}</span>
                   </div>
                 )}
               </div>
