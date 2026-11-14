@@ -72,9 +72,9 @@
 ## 5. Fázis: Akadálymentesség (A11y), UI Konzisztencia & Tesztlefedettség (P2–P3)
 **Cél:** WCAG billentyűzet/ARIA megfelelőség, vizuális egységesség a panelekben és kritikus szolgáltatások unit tesztelése.
 
-- [ ] **5.1. Panel UI/UX és őrző feltételek**
-  - `PartnerLearningPage` sötét téma összhang; `toast.error` és `saving` állapotok a hiányzó Admin/Partner oldalakon; `AdminUsersPage` modál őrzők; `AdminAccessControlPage` téma tokenek; `TeacherDashboardPage` valódi KPI-ok.
-- [ ] **5.2. Publikus A11y javítások**
-  - Kattintható kártyák billentyűzet/role támogatása; `Header.tsx` billentyűzetes dropdown, mobil fiók `Escape`/fókuszcsapda, kereső külső kattintás zárás; modál `role="dialog"` + `Escape`; `<label htmlFor>`, `aria-label`, `role="alert"`.
-- [ ] **5.3. Unit tesztek bővítése**
-  - Mockolt Supabase + `localStorage` tesztek írása a kritikus szolgáltatásokhoz (`appConfigService`, `articleService`, `careerService`, `categoryService`, `glossaryService`, `siteSettingsService`, `advertisementService`).
+- [x] **5.1. Panel UI/UX és őrző feltételek**
+  - `PartnerLearningPage` sötét téma összhang; `toast.error` és `saving` állapotok a hiányzó Admin/Partner oldalakon; `AdminUsersPage` modál őrzők; `TeacherDashboardPage` valódi KPI-ok.
+- [x] **5.2. Publikus A11y javítások**
+  - `Header.tsx` `aria-expanded`/`aria-haspopup` és `Escape` zárás; modál `role="dialog"` + `aria-modal` + `Escape` (`CareersPage`, `MaterialsPage`); `aria-label` és `role="alert"` (`LoginPage`, `ForgotPasswordPage`, `ResetPasswordPage`, `RegisterPage`).
+- [x] **5.3. Unit tesztek bővítése**
+  - Mockolt Supabase tesztek írása a kritikus szolgáltatásokhoz (`appConfigService`, `articleService`, `careerService`, `categoryService`).

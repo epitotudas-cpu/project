@@ -16,6 +16,7 @@ import {
 import { fetchAuditLogs, clearAuditLogs, type AuditLog } from '../services/auditLogService';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 const MODULE_LABELS: Record<string, string> = {
   all: 'Összes modul',
@@ -67,6 +68,7 @@ export default function AdminAuditPage() {
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  const toast = useToast();
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
@@ -84,11 +86,12 @@ export default function AdminAuditPage() {
       setLogs(data);
     } catch (err) {
       console.error('Hiba az audit napló betöltésekor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba az audit napló betöltésekor.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     loadLogs();
@@ -118,9 +121,11 @@ export default function AdminAuditPage() {
     try {
       await clearAuditLogs();
       setShowClearConfirm(false);
+      toast.success('Audit napló ürítve.');
       await loadLogs();
     } catch (err) {
       console.error('Hiba az audit napló ürítésekor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba az audit napló ürítésekor.');
       setShowClearConfirm(false);
     }
   };

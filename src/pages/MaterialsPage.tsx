@@ -423,7 +423,15 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
 
       {/* ── DETAILED MATERIAL MODAL / ADATLAP ── */}
       {activeItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={activeItem.name}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setActiveItem(null);
+          }}
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+        >
           <div className="bg-white rounded-3xl border border-gray-200 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
             {/* Modal Header */}
             <div className="bg-primary text-white p-6 sm:p-8 rounded-t-3xl sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-primary-700">
@@ -447,6 +455,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
               </div>
               <button
                 onClick={() => setActiveItem(null)}
+                aria-label="Adatlap bezárása"
                 className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer shrink-0"
               >
                 <X size={20} />

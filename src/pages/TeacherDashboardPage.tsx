@@ -333,7 +333,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   }, [allStudents]);
 
   useEffect(() => {
-    if (activeView === 'progress' && allStudents.length > 0) {
+    if ((activeView === 'progress' || activeView === 'dashboard') && allStudents.length > 0) {
       loadDbProgressData();
     }
   }, [activeView, allStudents, loadDbProgressData]);
@@ -804,7 +804,12 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     </div>
                   </div>
                   <div className="text-3xl font-black text-white group-hover:text-[#60a5fa] transition-colors">
-                    {Math.max(0, totalStudentsCount * 2 - 1)}
+                    {dbProgressRecords.length > 0
+                      ? dbProgressRecords.filter((r) => {
+                          const pct = Number(r.progress_percent ?? 0);
+                          return pct > 0 && pct < 100 && r.status !== 'completed';
+                        }).length
+                      : '—'}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Teljesítésre váró feladatok</p>
                 </div>
@@ -821,7 +826,12 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                     </div>
                   </div>
                   <div className="text-3xl font-black text-white group-hover:text-rose-400 transition-colors">
-                    84%
+                    {dbProgressRecords.length > 0
+                      ? `${Math.round(
+                          dbProgressRecords.reduce((sum, r) => sum + Number(r.progress_percent ?? 0), 0) /
+                            dbProgressRecords.length
+                        )}%`
+                      : '—'}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">Átlagos teszt pontszám</p>
                 </div>

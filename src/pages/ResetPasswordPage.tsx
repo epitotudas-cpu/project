@@ -150,6 +150,7 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
+                  aria-label={showConfirm ? 'Jelszó elrejtése' : 'Jelszó megjelenítése'}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
                 >
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -158,7 +159,7 @@ export default function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps
             </div>
 
             {error && (
-              <div className="flex items-start gap-2.5 p-3.5 bg-red-950/60 border border-red-500/30 rounded-xl text-red-300">
+              <div role="alert" className="flex items-start gap-2.5 p-3.5 bg-red-950/60 border border-red-500/30 rounded-xl text-red-300">
                 <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-red-400" />
                 <p className="text-xs font-medium leading-relaxed">{error}</p>
               </div>

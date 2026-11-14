@@ -725,14 +725,22 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
 
       {/* JOB APPLICATION MODAL */}
       {applyModalJob && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Jelentkezés: ${applyModalJob.title}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setApplyModalJob(null);
+          }}
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+        >
           <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 border border-gray-200 shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
                 <h2 className="text-base font-extrabold text-gray-900">Jelentkezés: {applyModalJob.title}</h2>
                 <p className="text-xs text-gray-500 font-semibold">{applyModalJob.company_name}</p>
               </div>
-              <button onClick={() => setApplyModalJob(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setApplyModalJob(null)} aria-label="Bezárás" className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
@@ -746,7 +754,7 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
             ) : (
               <form onSubmit={handleApplySubmit} className="space-y-3">
                 {applyError && (
-                  <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-600 text-xs font-semibold">
+                  <div role="alert" className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-600 text-xs font-semibold">
                     {applyError}
                   </div>
                 )}
@@ -806,11 +814,19 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
 
       {/* CREATE JOB MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Új Álláshirdetés Feladása"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setShowCreateModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+        >
           <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 border border-gray-200 shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h2 className="text-base font-extrabold text-gray-900">Új Álláshirdetés Feladása</h2>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowCreateModal(false)} aria-label="Bezárás" className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>

@@ -146,6 +146,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
       }));
     } catch (err) {
       console.error('Hiba a megbízható státusz módosításakor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba a megbízható státusz módosításakor.');
     }
   }
 
@@ -158,6 +159,7 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
       }));
     } catch (err) {
       console.error('Hiba a bizalmi pontszám módosításakor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba a bizalmi pontszám módosításakor.');
     }
   }
 
@@ -777,8 +779,8 @@ export default function AdminUsersPage({ initialSearchQuery }: AdminUsersPagePro
 
                 <button
                   onClick={() => handleDeleteUser(selectedUserDetail)}
-                  disabled={currentUser?.id === selectedUserDetail.id}
-                  className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 font-bold rounded-xl hover:bg-red-500/20 transition-colors cursor-pointer text-xs flex items-center gap-1.5"
+                  disabled={!isAdmin || currentUser?.id === selectedUserDetail.id || deletingId === selectedUserDetail.id}
+                  className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 font-bold rounded-xl hover:bg-red-500/20 transition-colors cursor-pointer text-xs flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Trash2 size={14} /> Fiók Törlése
                 </button>

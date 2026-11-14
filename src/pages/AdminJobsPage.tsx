@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Briefcase,
   Plus,
@@ -46,6 +46,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Form State
   const [companyName, setCompanyName] = useState('');
@@ -55,21 +56,22 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
   const [salaryRange, setSalaryRange] = useState('');
   const [description, setDescription] = useState('');
 
-  useEffect(() => {
-    loadJobs();
-  }, []);
-
-  async function loadJobs() {
+  const loadJobs = useCallback(async () => {
     setLoading(true);
     try {
       const data = await listJobPostings(undefined, undefined, true);
       setJobs([...data]);
     } catch (err) {
       console.error('Hiba az álláshirdetések betöltésekor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba az álláshirdetések betöltésekor.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    loadJobs();
+  }, [loadJobs]);
 
   const handleApproveJob = async (id: string) => {
     try {
@@ -78,6 +80,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
       triggerSuccessNotify();
     } catch (err) {
       console.error('Hiba az állás jóváhagyásakor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba az állás jóváhagyásakor.');
     }
   };
 
@@ -88,6 +91,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
       triggerSuccessNotify();
     } catch (err) {
       console.error('Hiba az állás elutasításakor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba az állás elutasításakor.');
     }
   };
 
@@ -146,6 +150,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
       triggerSuccessNotify();
     } catch (err) {
       console.error('Hiba az állás státuszának módosításakor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba az állás státuszának módosításakor.');
     }
   };
 
@@ -155,7 +160,9 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
 
   const handleSaveJob = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !companyName.trim()) return;
+    if (saving || !title.trim() || !companyName.trim()) return;
+
+    setSaving(true);
 
     try {
       if (editingJob) {
@@ -183,6 +190,9 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
       triggerSuccessNotify();
     } catch (err) {
       console.error('Hiba az álláshirdetés mentésekor:', err);
+      toast.error(err instanceof Error ? err.message : 'Hiba az álláshirdetés mentésekor.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -489,10 +499,11 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
                 </button>
                 <button
                   type="submit"
+                  disabled={saving}
                   style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-5 py-2 font-extrabold rounded-xl transition-all shadow-lg cursor-pointer hover:opacity-90"
+                  className="px-5 py-2 font-extrabold rounded-xl transition-all shadow-lg cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editingJob ? 'Módosítások Mentése' : 'Állás Feladása'}
+                  {saving ? 'Mentés...' : editingJob ? 'Módosítások Mentése' : 'Állás Feladása'}
                 </button>
               </div>
             </form>
@@ -513,6 +524,7 @@ export default function AdminJobsPage({ initialSearchQuery }: AdminJobsPageProps
               triggerSuccessNotify();
             } catch (err) {
               console.error('Hiba az álláshirdetés törlésekor:', err);
+              toast.error(err instanceof Error ? err.message : 'Hiba az álláshirdetés törlésekor.');
             }
           }
           setDeleteJobId(null);

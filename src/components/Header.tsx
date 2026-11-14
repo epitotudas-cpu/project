@@ -143,8 +143,20 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         setActiveDropdown(null);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setUserMenuOpen(false);
+        setActiveDropdown(null);
+        setSearchOpen(false);
+        setMobileOpen(false);
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const handleSignOut = async () => {
@@ -523,6 +535,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               <div className="relative hidden md:block" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="menu"
                   className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-600 text-gray-300 text-sm font-medium hover:bg-white/5 transition-all"
                 >
                   <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center flex-shrink-0">
@@ -688,6 +702,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             <button
               className="xl:hidden p-2 text-gray-300 hover:text-white"
               onClick={() => setMobileOpen(!mobileOpen)}
+              aria-expanded={mobileOpen}
               aria-label={mobileOpen ? "Navigációs menü bezárása" : "Navigációs menü megnyitása"}
               title={mobileOpen ? "Menü bezárása" : "Menü megnyitása"}
             >

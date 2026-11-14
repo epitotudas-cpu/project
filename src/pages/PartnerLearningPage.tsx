@@ -14,15 +14,16 @@ import {
 import EditCourseModal from '../components/EditCourseModal';
 import EditQuizModal from '../components/EditQuizModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
-  draft: { label: 'Piszkozat', class: 'bg-gray-100 text-gray-700 border-gray-300' },
-  pending: { label: 'Jóváhagyásra vár', class: 'bg-amber-100 text-amber-900 border-amber-300' },
-  review: { label: 'Felülvizsgálat', class: 'bg-amber-100 text-amber-900 border-amber-300' },
-  approved: { label: 'Jóváhagyva', class: 'bg-blue-100 text-blue-900 border-blue-300' },
-  published: { label: 'Közzétéve', class: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-  rejected: { label: 'Elutasítva', class: 'bg-red-100 text-red-900 border-red-300' },
-  archived: { label: 'Archivált', class: 'bg-gray-200 text-gray-600 border-gray-300' },
+  draft: { label: 'Piszkozat', class: 'bg-slate-800 text-slate-300 border-slate-700' },
+  pending: { label: 'Jóváhagyásra vár', class: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
+  review: { label: 'Felülvizsgálat', class: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
+  approved: { label: 'Jóváhagyva', class: 'bg-blue-500/10 text-blue-300 border-blue-500/30' },
+  published: { label: 'Közzétéve', class: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
+  rejected: { label: 'Elutasítva', class: 'bg-red-500/10 text-red-300 border-red-500/30' },
+  archived: { label: 'Archivált', class: 'bg-slate-800 text-slate-400 border-slate-700' },
 };
 
 interface PartnerLearningPageProps {
@@ -31,6 +32,7 @@ interface PartnerLearningPageProps {
 }
 
 export default function PartnerLearningPage({ partnerId: propPartnerId, partnerName }: PartnerLearningPageProps = {}) {
+  const toast = useToast();
   const { profile } = useAuth();
   const profilePartnerId = (profile as (typeof profile & { partner_id?: string }) | null)?.partner_id;
   const [resolvedPartnerId, setResolvedPartnerId] = useState<string | undefined>(propPartnerId || profilePartnerId);
@@ -93,8 +95,9 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       setQuizzes(qData);
     } catch (e) {
       console.warn('Hiba a partner oktatási adatok betöltésekor:', e);
+      toast.error('Nem sikerült betölteni a partner oktatási anyagokat.');
     }
-  }, [currentPartnerId, profile]);
+  }, [currentPartnerId, profile, toast]);
 
   useEffect(() => {
     loadData();
@@ -105,18 +108,22 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
   const handleSubmitForReviewCourse = async (id: string) => {
     try {
       await setCourseStatus(id, 'pending');
+      toast.success('Tananyag beküldve ellenőrzésre.');
       await loadData();
     } catch (e) {
       console.warn('Hiba a tananyag beküldésekor:', e);
+      toast.error(e instanceof Error ? e.message : 'Hiba a tananyag beküldésekor.');
     }
   };
 
   const handleSubmitForReviewQuiz = async (id: string) => {
     try {
       await setQuizStatus(id, 'pending');
+      toast.success('Teszt beküldve ellenőrzésre.');
       await loadData();
     } catch (e) {
       console.warn('Hiba a teszt beküldésekor:', e);
+      toast.error(e instanceof Error ? e.message : 'Hiba a teszt beküldésekor.');
     }
   };
 
@@ -127,9 +134,11 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       onConfirm: async () => {
         try {
           await deleteCourse(id);
+          toast.success('Tananyag törölve.');
           await loadData();
         } catch (e) {
           console.warn('Hiba a tananyag törlésekor:', e);
+          toast.error(e instanceof Error ? e.message : 'Hiba a tananyag törlésekor.');
         }
       },
     });
@@ -142,9 +151,11 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       onConfirm: async () => {
         try {
           await deleteQuiz(id);
+          toast.success('Teszt törölve.');
           await loadData();
         } catch (e) {
           console.warn('Hiba a teszt törlésekor:', e);
+          toast.error(e instanceof Error ? e.message : 'Hiba a teszt törlésekor.');
         }
       },
     });
@@ -153,10 +164,10 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
   if (!hasPartnerAccess) {
     return (
       <div className="p-6">
-        <div className="max-w-lg mx-auto bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2 shadow-sm">
-          <AlertCircle className="mx-auto text-amber-500" size={28} />
-          <h2 className="text-lg font-bold text-gray-900">Nincs jogosult partnerfiók</h2>
-          <p className="text-sm text-gray-600">
+        <div className="max-w-lg mx-auto bg-slate-900/80 border border-slate-800 rounded-2xl p-6 text-center space-y-2 shadow-sm">
+          <AlertCircle className="mx-auto text-amber-400" size={28} />
+          <h2 className="text-lg font-bold text-slate-100">Nincs jogosult partnerfiók</h2>
+          <p className="text-sm text-slate-400">
             A partner oktatási anyagok eléréséhez érvényes partner-hozzárendelés vagy adminisztrátori jogosultság szükséges.
           </p>
         </div>
@@ -165,15 +176,15 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
   }
 
   return (
-    <div className="space-y-6 p-6 bg-white rounded-3xl border border-gray-200 shadow-sm text-gray-900">
+    <div className="space-y-6 p-6 bg-slate-900/80 rounded-3xl border border-slate-800 shadow-sm text-slate-100">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-100 tracking-tight flex items-center gap-2">
             <BookOpen className="text-accent" size={24} /> Saját Oktatási Tananyagok &amp; Tesztek
           </h1>
-          <p className="text-gray-500 text-xs font-medium mt-1">
+          <p className="text-slate-400 text-xs font-medium mt-1">
             🔒 Partner Portál: Hozz létre oktatási anyagokat és teszteket, majd küldd be őket ellenőrzésre az adminisztrátornak.
           </p>
         </div>
@@ -201,13 +212,13 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       </div>
 
       {/* Tabs Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs flex items-center gap-3">
+      <div className="bg-slate-900/80 rounded-2xl p-4 border border-slate-800 shadow-xs flex items-center gap-3">
         <button
           onClick={() => setActiveTab('courses')}
           className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === 'courses'
               ? 'bg-primary text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
           }`}
         >
           <BookOpen size={14} /> Saját Tananyagok ({courses.length})
@@ -217,7 +228,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
           className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === 'quizzes'
               ? 'bg-primary text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
           }`}
         >
           <HelpCircle size={14} /> Saját Tesztek ({quizzes.length})
@@ -228,48 +239,48 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       {activeTab === 'courses' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {courses.length === 0 ? (
-            <div className="md:col-span-2 bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-3 shadow-xs">
-              <BookOpen size={48} className="mx-auto text-gray-300" />
-              <h3 className="text-lg font-bold text-gray-800">Még nincs saját tananyagod</h3>
-              <p className="text-gray-500 text-xs">Hozz létre egy új tananyagot a fenti gombra kattintva!</p>
+            <div className="md:col-span-2 bg-slate-900/80 rounded-3xl border border-slate-800 p-12 text-center space-y-3 shadow-xs">
+              <BookOpen size={48} className="mx-auto text-slate-600" />
+              <h3 className="text-lg font-bold text-slate-200">Még nincs saját tananyagod</h3>
+              <p className="text-slate-400 text-xs">Hozz létre egy új tananyagot a fenti gombra kattintva!</p>
             </div>
           ) : (
             courses.map((course) => {
               const badge = STATUS_BADGE[course.status] || {
                 label: 'Elbírálás alatt',
-                class: 'bg-amber-100 text-amber-900 border-amber-300',
+                class: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
               };
 
               return (
                 <div
                   key={course.id}
-                  className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xs space-y-4 flex flex-col justify-between"
+                  className="bg-slate-900/80 rounded-3xl border border-slate-800 p-6 shadow-xs space-y-4 flex flex-col justify-between"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.class}`}>
                         {badge.label}
                       </span>
-                      <span className="text-[11px] font-semibold text-gray-400">
+                      <span className="text-[11px] font-semibold text-slate-400">
                         {course.chapters?.length || 0} fejezet
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-gray-900">{course.title}</h3>
-                    <p className="text-xs text-gray-600 font-medium line-clamp-2">{course.excerpt}</p>
+                    <h3 className="text-lg font-bold text-slate-100">{course.title}</h3>
+                    <p className="text-xs text-slate-400 font-medium line-clamp-2">{course.excerpt}</p>
 
                     {/* REJECTION NOTE CALLOUT IF REJECTED BY ADMIN */}
                     {course.status === 'rejected' && course.rejection_note && (
-                      <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-xs space-y-1">
-                        <span className="font-extrabold text-red-800 flex items-center gap-1">
+                      <div className="bg-red-950/40 border border-red-500/30 rounded-2xl p-3 text-xs space-y-1">
+                        <span className="font-extrabold text-red-300 flex items-center gap-1">
                           <AlertCircle size={14} /> Adminisztrátori Indoklás Az Elutasításról:
                         </span>
-                        <p className="text-red-950 font-medium">{course.rejection_note}</p>
+                        <p className="text-red-200 font-medium">{course.rejection_note}</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2">
+                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-2">
                     {course.status === 'draft' || course.status === 'rejected' ? (
                       <button
                         onClick={() => handleSubmitForReviewCourse(course.id)}
@@ -278,7 +289,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                         <Send size={13} /> Beküldés Ellenőrzésre
                       </button>
                     ) : (
-                      <span className="text-[11px] text-gray-500 font-semibold italic">Beküldve ellenőrzésre</span>
+                      <span className="text-[11px] text-slate-400 font-semibold italic">Beküldve ellenőrzésre</span>
                     )}
 
                     <div className="flex items-center gap-2">
@@ -287,15 +298,17 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                           setEditingCourse(course);
                           setCourseModalOpen(true);
                         }}
-                        className="p-2 text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl"
                         title="Szerkesztés"
+                        aria-label="Tananyag szerkesztése"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => handleDeleteCourse(course.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 bg-gray-100 hover:bg-gray-200 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-red-400 bg-slate-800 hover:bg-slate-700 rounded-xl"
                         title="Törlés"
+                        aria-label="Tananyag törlése"
                       >
                         <XCircle size={15} />
                       </button>
@@ -312,47 +325,47 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       {activeTab === 'quizzes' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {quizzes.length === 0 ? (
-            <div className="md:col-span-2 bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-3 shadow-xs">
-              <HelpCircle size={48} className="mx-auto text-gray-300" />
-              <h3 className="text-lg font-bold text-gray-800">Még nincs saját teszted</h3>
-              <p className="text-gray-500 text-xs">Hozz létre egy új tesztet a fenti gombra kattintva!</p>
+            <div className="md:col-span-2 bg-slate-900/80 rounded-3xl border border-slate-800 p-12 text-center space-y-3 shadow-xs">
+              <HelpCircle size={48} className="mx-auto text-slate-600" />
+              <h3 className="text-lg font-bold text-slate-200">Még nincs saját teszted</h3>
+              <p className="text-slate-400 text-xs">Hozz létre egy új tesztet a fenti gombra kattintva!</p>
             </div>
           ) : (
             quizzes.map((quiz) => {
               const badge = STATUS_BADGE[quiz.status] || {
                 label: 'Elbírálás alatt',
-                class: 'bg-amber-100 text-amber-900 border-amber-300',
+                class: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
               };
 
               return (
                 <div
                   key={quiz.id}
-                  className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xs space-y-4 flex flex-col justify-between"
+                  className="bg-slate-900/80 rounded-3xl border border-slate-800 p-6 shadow-xs space-y-4 flex flex-col justify-between"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.class}`}>
                         {badge.label}
                       </span>
-                      <span className="text-[11px] font-semibold text-gray-400">
+                      <span className="text-[11px] font-semibold text-slate-400">
                         {quiz.questions?.length || 0} kérdés
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-gray-900">{quiz.title}</h3>
-                    <p className="text-xs text-gray-600 font-medium line-clamp-2">{quiz.description}</p>
+                    <h3 className="text-lg font-bold text-slate-100">{quiz.title}</h3>
+                    <p className="text-xs text-slate-400 font-medium line-clamp-2">{quiz.description}</p>
 
                     {quiz.status === 'rejected' && quiz.rejection_note && (
-                      <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-xs space-y-1">
-                        <span className="font-extrabold text-red-800 flex items-center gap-1">
+                      <div className="bg-red-950/40 border border-red-500/30 rounded-2xl p-3 text-xs space-y-1">
+                        <span className="font-extrabold text-red-300 flex items-center gap-1">
                           <AlertCircle size={14} /> Adminisztrátori Indoklás Az Elutasításról:
                         </span>
-                        <p className="text-red-950 font-medium">{quiz.rejection_note}</p>
+                        <p className="text-red-200 font-medium">{quiz.rejection_note}</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2">
+                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-2">
                     {quiz.status === 'draft' || quiz.status === 'rejected' ? (
                       <button
                         onClick={() => handleSubmitForReviewQuiz(quiz.id)}
@@ -361,7 +374,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                         <Send size={13} /> Beküldés Ellenőrzésre
                       </button>
                     ) : (
-                      <span className="text-[11px] text-gray-500 font-semibold italic">Beküldve ellenőrzésre</span>
+                      <span className="text-[11px] text-slate-400 font-semibold italic">Beküldve ellenőrzésre</span>
                     )}
 
                     <div className="flex items-center gap-2">
@@ -370,15 +383,17 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                           setEditingQuiz(quiz);
                           setQuizModalOpen(true);
                         }}
-                        className="p-2 text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl"
                         title="Szerkesztés"
+                        aria-label="Teszt szerkesztése"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => handleDeleteQuiz(quiz.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 bg-gray-100 hover:bg-gray-200 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-red-400 bg-slate-800 hover:bg-slate-700 rounded-xl"
                         title="Törlés"
+                        aria-label="Teszt törlése"
                       >
                         <XCircle size={15} />
                       </button>

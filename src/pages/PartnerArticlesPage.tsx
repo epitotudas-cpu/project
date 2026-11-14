@@ -50,6 +50,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
   const [editingItem, setEditingItem] = useState<Article | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'content' | 'tags_docs' | 'media'>('basic');
   const [previewItem, setPreviewItem] = useState<Article | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<Partial<Article>>({
@@ -161,10 +162,13 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
   };
 
   const handleSaveForm = async (targetStatus: 'draft' | 'pending') => {
+    if (saving) return;
     if (!formData.title || !formData.excerpt) {
       toast.error('Kérjük, töltse ki a cikk címét és a rövid összefoglalót!');
       return;
     }
+
+    setSaving(true);
 
     const generatedSlug =
       formData.slug ||
@@ -234,6 +238,8 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
       setIsModalOpen(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Hiba történt a cikk mentése során.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -793,17 +799,19 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  disabled={saving}
                   onClick={() => handleSaveForm('draft')}
-                  className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Save size={14} /> Mentés Piszkozatként
+                  <Save size={14} /> {saving ? 'Mentés...' : 'Mentés Piszkozatként'}
                 </button>
                 <button
                   type="button"
+                  disabled={saving}
                   onClick={() => handleSaveForm('pending')}
-                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send size={14} /> Beküldés Ellenőrzésre
+                  <Send size={14} /> {saving ? 'Küldés...' : 'Beküldés Ellenőrzésre'}
                 </button>
               </div>
             </div>

@@ -13,6 +13,7 @@ import EditCourseModal from '../components/EditCourseModal';
 import EditQuizModal from '../components/EditQuizModal';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/ToastProvider';
 
 const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
   draft: { label: 'Piszkozat', class: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
@@ -25,6 +26,7 @@ const STATUS_BADGE: Record<LearningStatus, { label: string; class: string }> = {
 };
 
 export default function AdminLearningPage() {
+  const toast = useToast();
   const siteSettings = useSiteSettings();
   const cardBg = siteSettings.adminCardBgColor || '#111111';
   const cardHighlight = siteSettings.adminCardHighlightColor || siteSettings.adminAccentColor || '#FFC400';
@@ -73,8 +75,9 @@ export default function AdminLearningPage() {
       setQuizzes(qData);
     } catch (e) {
       console.warn('Hiba az admin oktatási adatok betöltésekor:', e);
+      toast.error('Nem sikerült betölteni az oktatási anyagokat.');
     }
-  }, [statusFilter, search]);
+  }, [statusFilter, search, toast]);
 
   useEffect(() => {
     loadData();
@@ -85,18 +88,22 @@ export default function AdminLearningPage() {
   const handleApproveCourse = async (id: string) => {
     try {
       await setCourseStatus(id, 'published');
+      toast.success('Tananyag jóváhagyva.');
       await loadData();
     } catch (e) {
       console.error('Hiba a tananyag jóváhagyásakor:', e);
+      toast.error(e instanceof Error ? e.message : 'Hiba a tananyag jóváhagyásakor.');
     }
   };
 
   const handleApproveQuiz = async (id: string) => {
     try {
       await setQuizStatus(id, 'published');
+      toast.success('Teszt jóváhagyva.');
       await loadData();
     } catch (e) {
       console.error('Hiba a teszt jóváhagyásakor:', e);
+      toast.error(e instanceof Error ? e.message : 'Hiba a teszt jóváhagyásakor.');
     }
   };
 
@@ -110,9 +117,11 @@ export default function AdminLearningPage() {
       }
       setRejectModalItem(null);
       setRejectionNoteInput('');
+      toast.success('Tartalom elutasítva.');
       await loadData();
     } catch (e) {
       console.error('Hiba az elutasítás során:', e);
+      toast.error(e instanceof Error ? e.message : 'Hiba az elutasítás során.');
     }
   };
 
@@ -123,9 +132,11 @@ export default function AdminLearningPage() {
       onConfirm: async () => {
         try {
           await deleteCourse(id);
+          toast.success('Tananyag törölve.');
           await loadData();
         } catch (e) {
           console.error('Hiba a tananyag törlésekor:', e);
+          toast.error(e instanceof Error ? e.message : 'Hiba a tananyag törlésekor.');
         }
       },
     });
@@ -138,9 +149,11 @@ export default function AdminLearningPage() {
       onConfirm: async () => {
         try {
           await deleteQuiz(id);
+          toast.success('Teszt törölve.');
           await loadData();
         } catch (e) {
           console.error('Hiba a teszt törlésekor:', e);
+          toast.error(e instanceof Error ? e.message : 'Hiba a teszt törlésekor.');
         }
       },
     });

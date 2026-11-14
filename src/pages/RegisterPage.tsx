@@ -451,7 +451,7 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
                 </div>
 
                 {inviteError && (
-                  <p className="text-xs text-red-400 flex items-center gap-1 font-medium pt-1 break-words">
+                  <p role="alert" className="text-xs text-red-400 flex items-center gap-1 font-medium pt-1 break-words">
                     <AlertCircle size={14} className="shrink-0" />
                     <span>{inviteError}</span>
                   </p>
