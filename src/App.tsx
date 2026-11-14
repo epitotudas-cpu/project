@@ -668,6 +668,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
         ) : (
           <PartnerDashboardPage
             onNavigateView={setPartnerView}
+            partnerId={effectivePartner.id}
+            partnerName={effectivePartner.name}
             offersCount={offersList.filter((o) => o.status === 'Aktív').length}
             servicesCount={(effectivePartner as ExtendedPartner).services?.length || 0}
             profileViews={analytics.profileViews}

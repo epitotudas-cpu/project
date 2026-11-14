@@ -1,4 +1,5 @@
 import {
+  supabase,
   type AdvertisementContract,
   type ContractTemplate,
   type ContractStatus,
@@ -250,61 +251,257 @@ export async function saveContracts(contracts: AdvertisementContract[]): Promise
   }
 }
 
-export async function fetchContractsFromCloud(): Promise<AdvertisementContract[]> {
+function mapContractRow(row: Record<string, unknown>): AdvertisementContract {
+  return {
+    id: String(row.id),
+    contractNumber: String(row.contract_number || ''),
+    campaignId: String(row.campaign_id || ''),
+    partnerId: String(row.partner_id || ''),
+    partnerName: String(row.partner_name || ''),
+    campaignTitle: String(row.campaign_title || ''),
+    placementSlot: String(row.placement_slot || 'top_banner'),
+    templateId: String(row.template_id || 'tmpl-annual'),
+    status: (row.status as ContractStatus) || 'draft',
+    startDate: String(row.start_date || ''),
+    endDate: String(row.end_date || ''),
+    amount: Number(row.amount || 0),
+    currency: 'HUF',
+    content: String(row.content || ''),
+    versions: Array.isArray(row.versions) ? (row.versions as ContractVersion[]) : [],
+    acceptanceLog: (row.acceptance_log as ContractAcceptanceLog | null) ?? undefined,
+    createdAt: String(row.created_at || new Date().toISOString()),
+    updatedAt: String(row.updated_at || new Date().toISOString()),
+  };
+}
+
+async function computeContractSha256(contract: AdvertisementContract): Promise<string | undefined> {
+  try {
+    if (typeof crypto === 'undefined' || !crypto.subtle) return undefined;
+    const payload = `${contract.contractNumber}|${contract.partnerId}|${contract.amount}|${contract.content || ''}`;
+    const bytes = new TextEncoder().encode(payload);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  } catch {
+    return undefined;
+  }
+}
+
+export async function upsertContractInCloud(contract: AdvertisementContract): Promise<void> {
+  const { error } = await supabase
+    .from('partner_contracts' as never)
+    .upsert({
+      id: contract.id,
+      contract_number: contract.contractNumber,
+      campaign_id: contract.campaignId,
+      partner_id: contract.partnerId,
+      partner_name: contract.partnerName,
+      campaign_title: contract.campaignTitle,
+      placement_slot: contract.placementSlot,
+      template_id: contract.templateId,
+      status: contract.status,
+      start_date: contract.startDate,
+      end_date: contract.endDate,
+      amount: contract.amount,
+      currency: contract.currency,
+      content: contract.content,
+      versions: contract.versions,
+      acceptance_log: contract.acceptanceLog ?? null,
+      created_at: contract.createdAt,
+      updated_at: contract.updatedAt,
+    } as never);
+
+  if (error) {
+    console.warn('partner_contracts upsert fallback notice:', error.message);
+  }
+}
+
+export async function deleteContractInCloud(contractId: string): Promise<void> {
+  const { error } = await supabase
+    .from('partner_contracts' as never)
+    .delete()
+    .eq('id', contractId);
+
+  if (error) {
+    console.warn('partner_contracts delete fallback notice:', error.message);
+  }
+}
+
+export async function fetchContractsFromCloud(partnerId?: string): Promise<AdvertisementContract[]> {
+  try {
+    let query = supabase
+      .from('partner_contracts' as never)
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (partnerId) {
+      query = query.eq('partner_id', partnerId);
+    }
+
+    const { data, error } = await query;
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const mapped = data.map((r) => mapContractRow(r as Record<string, unknown>));
+      if (!partnerId) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+        window.dispatchEvent(new Event('contracts-changed'));
+      }
+      return mapped;
+    }
+  } catch (err) {
+    console.warn('partner_contracts lekérdezési hiba:', err);
+  }
+
   try {
     const cloud = await readAppConfig<AdvertisementContract[]>(CONTRACTS_CONFIG_KEY);
     if (Array.isArray(cloud) && cloud.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
       window.dispatchEvent(new Event('contracts-changed'));
-      return cloud;
+      return partnerId ? cloud.filter((c) => c.partnerId === partnerId) : cloud;
     }
   } catch (err) {
     console.warn('Szerződések felhőből olvasási hiba:', err);
   }
-  return getContracts();
+
+  const local = getContracts();
+  return partnerId ? local.filter((c) => c.partnerId === partnerId) : local;
 }
 
-export function acceptContractByPartner(
+export async function acceptContractByPartner(
   contractId: string,
   personName: string,
   personEmail: string
-): AdvertisementContract | null {
+): Promise<AdvertisementContract> {
+  const cleanName = personName.trim();
+  const cleanEmail = personEmail.trim().toLowerCase();
+
+  if (cleanName.length < 2) {
+    throw new Error('Kérjük, adja meg az elfogadó teljes nevét.');
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    throw new Error('Kérjük, adjon meg egy érvényes e-mail-címet.');
+  }
+
   const contracts = getContracts();
   const index = contracts.findIndex((c) => c.id === contractId);
-  if (index === -1) return null;
+  const existing = index !== -1 ? contracts[index] : undefined;
 
-  const current = contracts[index];
-  const nowStr = new Date().toLocaleString('hu-HU');
-  const simulatedIp = `185.${Math.floor(Math.random() * 200 + 10)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
+  if (existing?.status === 'accepted') {
+    throw new Error('Ez a szerződés már korábban elfogadásra került.');
+  }
 
+  // 1. Primary secure path: Edge Function (records real server IP, auth.uid(), UA, SHA-256)
+  const { data: edgeData, error: edgeError } = await supabase.functions.invoke('accept-contract', {
+    body: {
+      contractId,
+      personName: cleanName,
+      personEmail: cleanEmail,
+    },
+  });
+
+  if (!edgeError && edgeData && !(edgeData as { error?: string }).error) {
+    const serverContract = (edgeData as { contract?: Partial<AdvertisementContract> }).contract;
+    if (serverContract) {
+      const merged: AdvertisementContract = {
+        ...(existing || ({ id: contractId } as AdvertisementContract)),
+        ...serverContract,
+        status: 'accepted',
+      };
+      const nextList = existing
+        ? contracts.map((c) => (c.id === contractId ? merged : c))
+        : [merged, ...contracts];
+      await saveContracts(nextList);
+      return merged;
+    }
+  }
+
+  const edgeMsg = (edgeData as { error?: string } | null)?.error || edgeError?.message || '';
+  if (
+    edgeMsg &&
+    !edgeMsg.includes('Failed to send') &&
+    !edgeMsg.includes('Relay Error') &&
+    !edgeMsg.includes('not found') &&
+    !edgeMsg.includes('404')
+  ) {
+    throw new Error(edgeMsg);
+  }
+
+  // 2. Secondary secure path: PostgreSQL SECURITY DEFINER RPC
+  const sha256 = existing ? await computeContractSha256(existing) : undefined;
+  const { data: rpcData, error: rpcError } = await supabase.rpc('accept_partner_contract', {
+    p_contract_id: contractId,
+    p_accepted_by: cleanName,
+    p_accepted_email: cleanEmail,
+    p_content_sha256: sha256 ?? null,
+  });
+
+  if (!rpcError && rpcData) {
+    const serverContract = rpcData as Partial<AdvertisementContract>;
+    const merged: AdvertisementContract = {
+      ...(existing || ({ id: contractId } as AdvertisementContract)),
+      ...serverContract,
+      status: 'accepted',
+    };
+    const nextList = existing
+      ? contracts.map((c) => (c.id === contractId ? merged : c))
+      : [merged, ...contracts];
+    await saveContracts(nextList);
+    return merged;
+  }
+
+  const rpcMsg = rpcError?.message || '';
+  if (
+    rpcMsg &&
+    !rpcMsg.includes('Could not find the function') &&
+    !rpcMsg.includes('does not exist') &&
+    !rpcMsg.includes('not found')
+  ) {
+    throw new Error(rpcMsg);
+  }
+
+  // 3. Offline / unmigrated fallback: never fabricate a fake IP address
+  if (!existing) {
+    throw new Error('A szerződés nem található.');
+  }
+
+  const { data: userRes } = await supabase.auth.getUser();
+  const realUserId = userRes?.user?.id;
+  if (!realUserId) {
+    throw new Error('Hitelesítés szükséges a szerződés elfogadásához.');
+  }
+
+  const nowIso = new Date().toISOString();
   const acceptanceLog: ContractAcceptanceLog = {
-    acceptedBy: personName,
-    email: personEmail,
-    acceptedAt: nowStr,
-    ipAddress: simulatedIp,
-    userId: `user-${Date.now()}`,
-    userAgent: navigator.userAgent,
+    acceptedBy: cleanName,
+    email: cleanEmail,
+    acceptedAt: nowIso,
+    ipAddress: 'server-unavailable',
+    userId: realUserId,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+    contentSha256: sha256,
+    serverVerified: false,
   };
 
-  const newVersionNumber = (current.versions?.length || 0) + 1;
+  const newVersionNumber = (existing.versions?.length || 0) + 1;
   const newVersion: ContractVersion = {
     versionNumber: newVersionNumber,
-    createdAt: nowStr,
-    amount: current.amount,
-    content: current.content,
-    changeNote: `Szerződés Elfogadva - Rögzített IP: ${simulatedIp}`,
+    createdAt: nowIso,
+    amount: existing.amount,
+    content: existing.content,
+    changeNote: `Szerződés elfogadva (helyi tartalék mód, felhasználó: ${realUserId})`,
   };
 
   const updated: AdvertisementContract = {
-    ...current,
+    ...existing,
     status: 'accepted',
     acceptanceLog,
-    versions: [...(current.versions || []), newVersion],
-    updatedAt: new Date().toISOString(),
+    versions: [...(existing.versions || []), newVersion],
+    updatedAt: nowIso,
   };
 
-  contracts[index] = updated;
-  saveContracts(contracts);
+  const nextList = contracts.map((c) => (c.id === contractId ? updated : c));
+  await saveContracts(nextList);
   return updated;
 }
 

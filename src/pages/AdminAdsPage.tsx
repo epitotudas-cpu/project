@@ -39,6 +39,10 @@ import {
   getContracts,
   saveContracts,
   fetchContractsFromCloud,
+  upsertContractInCloud,
+  deleteContractInCloud,
+  DEFAULT_CONTRACT_TEMPLATES,
+  interpolateTemplate,
 } from '../services/contractService';
 import {
   saveAdvertisers,
@@ -324,7 +328,7 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
   };
 
   // Handlers for Contract Creation
-  const handleCreateContractSubmit = (e: React.FormEvent) => {
+  const handleCreateContractSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ctrPartnerName.trim() || !ctrCampaignTitle.trim()) {
       setModalFeedback({ type: 'error', message: '⚠️ Kérjük, töltsd ki a partner nevét és a kampány címét!' });
@@ -333,27 +337,41 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
 
     try {
       setModalFeedback({ type: 'loading', message: 'Szerződés mentése...' });
+      const contractNumber = ctrNumber.trim() || `ET-2026-${Math.floor(Math.random() * 900 + 100)}`;
+      const startDate = ctrStartDate || new Date().toISOString().split('T')[0];
+      const endDate = ctrEndDate || new Date().toISOString().split('T')[0];
+      const tmpl = DEFAULT_CONTRACT_TEMPLATES[0];
+      const content = interpolateTemplate(tmpl.body, {
+        szerzodes_szam: contractNumber,
+        partner_nev: ctrPartnerName.trim(),
+        kampany_cim: ctrCampaignTitle.trim(),
+        reklamhely: ctrPlacementSlot === 'top_banner' ? 'Főoldali Fejléc Banner' : ctrPlacementSlot,
+        kezdes: startDate,
+        vege: endDate,
+        osszeg: ctrAmount,
+      });
+
       const newContract: AdvertisementContract = {
         id: `contract-${Date.now()}`,
-        contractNumber: ctrNumber.trim() || `ET-2026-${Math.floor(Math.random() * 900 + 100)}`,
+        contractNumber,
         campaignId: `camp-${Date.now()}`,
         partnerId: `partner-${Date.now()}`,
         partnerName: ctrPartnerName.trim(),
         campaignTitle: ctrCampaignTitle.trim(),
         placementSlot: ctrPlacementSlot,
-        templateId: 'tmpl-annual',
+        templateId: tmpl.id,
         status: ctrStatus,
-        startDate: ctrStartDate || new Date().toISOString().split('T')[0],
-        endDate: ctrEndDate || new Date().toISOString().split('T')[0],
+        startDate,
+        endDate,
         amount: ctrAmount,
         currency: 'HUF',
-        content: '',
+        content,
         versions: [
           {
             versionNumber: 1,
             createdAt: new Date().toISOString(),
             amount: ctrAmount,
-            content: '',
+            content,
             changeNote: 'Kezdeti szerződés létrejött',
           },
         ],
@@ -363,7 +381,8 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
 
       const updated = [newContract, ...contracts];
       setContracts(updated);
-      saveContracts(updated);
+      await saveContracts(updated);
+      await upsertContractInCloud(newContract);
       setModalFeedback({ type: 'success', message: '✓ Szerződés sikeresen elmentve!' });
       setSavedSuccess(true);
       setTimeout(() => {
@@ -520,7 +539,7 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
     setShowAdvertiserModal(true);
   }
 
-  function handleDeleteItemConfirmed() {
+  async function handleDeleteItemConfirmed() {
     if (!deleteConfirmId) return;
     const { id, type } = deleteConfirmId;
 
@@ -543,7 +562,8 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
     } else if (type === 'contract') {
       const updated = contracts.filter((c) => c.id !== id);
       setContracts(updated);
-      saveContracts(updated);
+      await saveContracts(updated);
+      await deleteContractInCloud(id);
     } else if (type === 'notification') {
       const updated = notifications.filter((n) => n.id !== id);
       setNotifications(updated);
@@ -1299,6 +1319,11 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
                             {c.status}
                           </span>
+                          {c.acceptanceLog && (
+                            <div className="text-[10px] text-emerald-400 mt-1">
+                              Elfogadva: {c.acceptanceLog.acceptedBy} ({c.acceptanceLog.ipAddress})
+                            </div>
+                          )}
                         </td>
                         <td className="p-3 font-mono font-bold text-white">{c.amount.toLocaleString('hu-HU')} HUF</td>
                         <td className="p-3 text-gray-300">{c.startDate} - {c.endDate}</td>

@@ -1127,6 +1127,8 @@ export interface ContractAcceptanceLog {
   ipAddress: string;
   userId?: string;
   userAgent?: string;
+  contentSha256?: string;
+  serverVerified?: boolean;
 }
 
 export interface ContractVersion {

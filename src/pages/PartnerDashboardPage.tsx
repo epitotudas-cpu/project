@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import {
   Building2,
   Tag,
@@ -10,11 +11,19 @@ import {
   Eye,
   ShieldCheck,
   Briefcase,
+  FileText,
+  X,
 } from 'lucide-react';
 import type { PartnerView } from '../components/PartnerLayout';
+import type { AdvertisementContract } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/ToastProvider';
+import { fetchContractsFromCloud, acceptContractByPartner } from '../services/contractService';
 
 interface PartnerDashboardPageProps {
   onNavigateView: (view: PartnerView) => void;
+  partnerId?: string;
+  partnerName?: string;
   offersCount?: number;
   servicesCount?: number;
   profileViews?: number;
@@ -25,6 +34,8 @@ interface PartnerDashboardPageProps {
 
 export function PartnerDashboardPage({
   onNavigateView,
+  partnerId,
+  partnerName,
   offersCount = 0,
   servicesCount = 0,
   profileViews = 0,
@@ -32,6 +43,59 @@ export function PartnerDashboardPage({
   isActive = true,
   isVerified = false,
 }: PartnerDashboardPageProps) {
+  const { user, profile } = useAuth();
+  const toast = useToast();
+  const [contracts, setContracts] = useState<AdvertisementContract[]>([]);
+  const [selectedContract, setSelectedContract] = useState<AdvertisementContract | null>(null);
+  const [signerName, setSignerName] = useState('');
+  const [signerEmail, setSignerEmail] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+
+  const loadContracts = useCallback(async () => {
+    if (!partnerId) return;
+    try {
+      const list = await fetchContractsFromCloud(partnerId);
+      setContracts(list);
+    } catch (err) {
+      console.warn('Partner szerződések betöltési hiba:', err);
+    }
+  }, [partnerId]);
+
+  useEffect(() => {
+    void loadContracts();
+  }, [loadContracts]);
+
+  const openContractModal = (contract: AdvertisementContract) => {
+    setSelectedContract(contract);
+    setSignerName(profile?.full_name || partnerName || '');
+    setSignerEmail(user?.email || '');
+    setAcceptedTerms(false);
+    setAcceptError(null);
+  };
+
+  const handleAcceptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedContract || accepting) return;
+    if (!acceptedTerms) {
+      setAcceptError('A jóváhagyáshoz el kell fogadnia a szerződés feltételeit.');
+      return;
+    }
+
+    setAccepting(true);
+    setAcceptError(null);
+    try {
+      const updated = await acceptContractByPartner(selectedContract.id, signerName, signerEmail);
+      setContracts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      setSelectedContract(updated);
+      toast.success('Szerződés sikeresen elfogadva és auditnaplózva!');
+    } catch (err) {
+      setAcceptError(err instanceof Error ? err.message : 'A szerződés elfogadása sikertelen.');
+    } finally {
+      setAccepting(false);
+    }
+  };
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Welcome Banner */}
@@ -187,6 +251,167 @@ export function PartnerDashboardPage({
           </button>
         </div>
       </div>
+
+      {/* Partner Contracts & Verified Acceptance */}
+      {contracts.length > 0 && (
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-lg space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-amber-400" />
+              Partneri Szerződések &amp; Megállapodások ({contracts.length})
+            </h2>
+          </div>
+
+          <div className="divide-y divide-slate-800">
+            {contracts.map((c) => (
+              <div key={c.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-amber-400">{c.contractNumber}</span>
+                    <span className="text-xs sm:text-sm font-bold text-white">{c.campaignTitle}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
+                        c.status === 'accepted'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                      }`}
+                    >
+                      {c.status === 'accepted' ? 'Elfogadva' : 'Elfogadásra vár'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {c.amount.toLocaleString('hu-HU')} {c.currency} • {c.startDate} – {c.endDate}
+                  </p>
+                  {c.acceptanceLog && (
+                    <p className="text-[11px] text-emerald-400">
+                      Elfogadta: {c.acceptanceLog.acceptedBy} ({c.acceptanceLog.email}) • IP: {c.acceptanceLog.ipAddress}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => openContractModal(c)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition-colors cursor-pointer shrink-0"
+                >
+                  {c.status === 'accepted' ? 'Részletek megtekintése' : 'Megtekintés & Elfogadás'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedContract && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Szerződés: ${selectedContract.contractNumber}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setSelectedContract(null);
+          }}
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  {selectedContract.contractNumber} – {selectedContract.campaignTitle}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Díj: {selectedContract.amount.toLocaleString('hu-HU')} {selectedContract.currency} • {selectedContract.startDate} – {selectedContract.endDate}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedContract(null)}
+                aria-label="Bezárás"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <pre className="whitespace-pre-wrap text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-xl p-4 font-sans leading-relaxed max-h-64 overflow-y-auto">
+              {selectedContract.content || 'Szerződéses megállapodás szövege.'}
+            </pre>
+
+            {selectedContract.status === 'accepted' && selectedContract.acceptanceLog ? (
+              <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300 space-y-1">
+                <p className="font-bold">Elektronikusan elfogadva</p>
+                <p>Elfogadó: {selectedContract.acceptanceLog.acceptedBy} ({selectedContract.acceptanceLog.email})</p>
+                <p>Időpont: {selectedContract.acceptanceLog.acceptedAt}</p>
+                <p>Rögzített IP: {selectedContract.acceptanceLog.ipAddress}</p>
+                {selectedContract.acceptanceLog.contentSha256 && (
+                  <p className="font-mono text-[11px] break-all">
+                    SHA-256: {selectedContract.acceptanceLog.contentSha256}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <form onSubmit={handleAcceptSubmit} className="space-y-3">
+                {acceptError && (
+                  <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/30 text-xs text-red-300">
+                    {acceptError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Aláíró teljes neve</label>
+                    <input
+                      type="text"
+                      required
+                      value={signerName}
+                      onChange={(e) => setSignerName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Hivatalos e-mail cím</label>
+                    <input
+                      type="email"
+                      required
+                      value={signerEmail}
+                      onChange={(e) => setSignerEmail(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-600"
+                  />
+                  <span>
+                    Kijelentem, hogy a fenti szerződést elolvastam, megértettem, és a cég nevében kötelező érvényűnek fogadom el.
+                  </span>
+                </label>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedContract(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  >
+                    Mégse
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={accepting}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50"
+                  >
+                    {accepting ? 'Rögzítés...' : 'Szerződés Elfogadása'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
