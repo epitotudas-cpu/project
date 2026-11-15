@@ -418,15 +418,16 @@ export async function listPartners(category?: string, limit: number = 100): Prom
   const stored = getStoredPartners();
 
   const mergedList = cleanSupabase.map((sp) => {
+    const spExt = sp as ExtendedPartner;
     const localExt = stored.find(
       (p) => p.id === sp.id || p.slug === sp.slug
     );
     if (!localExt) {
-      return sp as ExtendedPartner;
+      return spExt;
     }
     return {
       ...localExt,
-      ...sp,
+      ...spExt,
       id: sp.id,
       slug: sp.slug,
       name: sp.name,
@@ -435,10 +436,10 @@ export async function listPartners(category?: string, limit: number = 100): Prom
       website_url: sp.website_url,
       logo_url: sp.logo_url,
       is_verified: sp.is_verified,
-      services: localExt.services || [],
+      services: Array.isArray(spExt.services) ? spExt.services : (localExt.services || []),
       references: localExt.references || [],
       certificates: localExt.certificates || [],
-      related_content: localExt.related_content || [],
+      related_content: Array.isArray(spExt.related_content) ? spExt.related_content : (localExt.related_content || []),
     } as ExtendedPartner;
   });
 
@@ -563,6 +564,17 @@ export async function updatePartner(
     detailed_description: payload.detailed_description !== undefined ? (payload.detailed_description?.trim() || null) : existing?.detailed_description || null,
     cover_url: payload.cover_url !== undefined ? (payload.cover_url?.trim() || null) : existing?.cover_url || null,
     inquiry_email: payload.inquiry_email !== undefined ? (payload.inquiry_email?.trim() || null) : existing?.inquiry_email || null,
+    logo_bg: payload.logo_bg !== undefined ? payload.logo_bg : existing?.logo_bg || 'white',
+    operating_area: payload.operating_area !== undefined ? (payload.operating_area || null) : existing?.operating_area || null,
+    social_facebook: payload.social_facebook !== undefined ? (payload.social_facebook?.trim() || null) : existing?.social_facebook || null,
+    social_linkedin: payload.social_linkedin !== undefined ? (payload.social_linkedin?.trim() || null) : existing?.social_linkedin || null,
+    social_instagram: payload.social_instagram !== undefined ? (payload.social_instagram?.trim() || null) : existing?.social_instagram || null,
+    social_youtube: payload.social_youtube !== undefined ? (payload.social_youtube?.trim() || null) : existing?.social_youtube || null,
+    services: payload.services !== undefined ? payload.services : existing?.services,
+    related_content: payload.related_content !== undefined ? payload.related_content : existing?.related_content,
+    seo_title: payload.seo_title !== undefined ? (payload.seo_title?.trim() || null) : existing?.seo_title || null,
+    seo_description: payload.seo_description !== undefined ? (payload.seo_description?.trim() || null) : existing?.seo_description || null,
+    is_indexable: payload.is_indexable !== undefined ? payload.is_indexable : existing?.is_indexable ?? true,
   };
 
   // Strip keys that are strictly undefined
@@ -644,18 +656,19 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
   }
 
   // A) Supabase sikeres válasz és létező rekord -> Supabase rekord az elsődleges
+  const dataExt = data as ExtendedPartner;
   const stored = getStoredPartners();
   const localExt = stored.find(
     (p) => p.slug === cleanKey || p.id === cleanKey || p.id === data.id || p.slug === data.slug
   );
 
   if (!localExt) {
-    return data as ExtendedPartner;
+    return dataExt;
   }
 
   return {
     ...localExt,
-    ...data,
+    ...dataExt,
     id: data.id,
     slug: data.slug,
     name: data.name,
@@ -664,10 +677,10 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
     website_url: data.website_url,
     logo_url: data.logo_url,
     is_verified: data.is_verified,
-    services: localExt.services || [],
+    services: Array.isArray(dataExt.services) ? dataExt.services : (localExt.services || []),
     references: localExt.references || [],
     certificates: localExt.certificates || [],
-    related_content: localExt.related_content || [],
+    related_content: Array.isArray(dataExt.related_content) ? dataExt.related_content : (localExt.related_content || []),
   } as ExtendedPartner;
 }
 
