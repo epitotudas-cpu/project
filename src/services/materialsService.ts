@@ -1,4 +1,10 @@
-import { readAppConfig, writeAppConfig } from './appConfigService';
+import { supabase } from '../lib/supabase';
+import {
+  readAppConfig,
+  writeAppConfig,
+  readAppConfigWithVersion,
+  writeAppConfigIfUnchanged,
+} from './appConfigService';
 
 export interface MaterialCategory {
   id: string;
@@ -334,28 +340,199 @@ export function getMaterialsLocal(): MaterialItem[] {
   return DEFAULT_MATERIALS;
 }
 
-export async function saveMaterialsLocal(items: MaterialItem[]): Promise<void> {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(items));
-    window.dispatchEvent(new Event('materials-updated'));
+const MAX_CAS_RETRIES = 4;
+let lastCloudMaterialsUpdatedAt: string | null = null;
+let lastCloudMaterialsItems: MaterialItem[] | null = null;
 
-    await writeAppConfig('__SYSTEM_CONFIG_MATERIALS_ITEMS__', items, {
-      id: SUPABASE_SYSTEM_ROW_ID,
-      slug: 'system-materials-items-config',
+function mergeMaterialLists(
+  baseItems: MaterialItem[],
+  targetItems: MaterialItem[],
+  freshCloudItems: MaterialItem[],
+  patchOnlyFields?: Array<keyof MaterialItem>
+): MaterialItem[] {
+  const baseMap = new Map(baseItems.map((i) => [i.id, i]));
+  const targetMap = new Map(targetItems.map((i) => [i.id, i]));
+
+  const deletedIds = new Set<string>();
+  for (const b of baseItems) {
+    if (!targetMap.has(b.id)) {
+      deletedIds.add(b.id);
+    }
+  }
+
+  const added: MaterialItem[] = [];
+  const updatedMap = new Map<string, MaterialItem>();
+  for (const t of targetItems) {
+    const prev = baseMap.get(t.id);
+    if (!prev) {
+      added.push(t);
+    } else if (JSON.stringify(prev) !== JSON.stringify(t)) {
+      updatedMap.set(t.id, t);
+    }
+  }
+
+  const next = freshCloudItems
+    .filter((f) => !deletedIds.has(f.id))
+    .map((f) => {
+      const upd = updatedMap.get(f.id);
+      if (!upd) return f;
+      if (patchOnlyFields && patchOnlyFields.length > 0) {
+        const patched: MaterialItem = { ...f };
+        for (const field of patchOnlyFields) {
+          (patched as unknown as Record<string, unknown>)[field as string] = upd[field];
+        }
+        return patched;
+      }
+      return upd;
     });
-  } catch (err) {
-    console.error('Hiba az anyagok mentésekor:', err);
-    throw err;
+
+  const existingIds = new Set(next.map((i) => i.id));
+  const uniqueAdded = added.filter((a) => !existingIds.has(a.id));
+  return [...uniqueAdded, ...next];
+}
+
+export async function saveMaterialsLocal(
+  items: MaterialItem[],
+  options?: { patchOnlyFields?: Array<keyof MaterialItem> }
+): Promise<MaterialItem[]> {
+  if (typeof window === 'undefined') return items;
+
+  let expectedUpdatedAt = lastCloudMaterialsUpdatedAt;
+  let baselineItems = lastCloudMaterialsItems;
+  let candidateItems = items;
+
+  if (baselineItems === null) {
+    const initial = await readAppConfigWithVersion<MaterialItem[]>(
+      '__SYSTEM_CONFIG_MATERIALS_ITEMS__',
+      SUPABASE_SYSTEM_ROW_ID
+    );
+    expectedUpdatedAt = initial.updatedAt;
+    const fresh = Array.isArray(initial.value) ? initial.value : [];
+    baselineItems = fresh;
+    if (fresh.length > 0) {
+      candidateItems = mergeMaterialLists([], items, fresh, options?.patchOnlyFields);
+    }
+  }
+
+  for (let attempt = 0; attempt < MAX_CAS_RETRIES; attempt++) {
+    const res = await writeAppConfigIfUnchanged(
+      '__SYSTEM_CONFIG_MATERIALS_ITEMS__',
+      candidateItems,
+      expectedUpdatedAt,
+      {
+        id: SUPABASE_SYSTEM_ROW_ID,
+        slug: 'system-materials-items-config',
+      }
+    );
+
+    if (!res.conflict) {
+      lastCloudMaterialsUpdatedAt = res.updatedAt;
+      lastCloudMaterialsItems = candidateItems;
+      localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(candidateItems));
+      window.dispatchEvent(new Event('materials-updated'));
+      return candidateItems;
+    }
+
+    const latest = await readAppConfigWithVersion<MaterialItem[]>(
+      '__SYSTEM_CONFIG_MATERIALS_ITEMS__',
+      SUPABASE_SYSTEM_ROW_ID
+    );
+    expectedUpdatedAt = latest.updatedAt;
+    const fresh = Array.isArray(latest.value) ? latest.value : [];
+    candidateItems = mergeMaterialLists(baselineItems, items, fresh, options?.patchOnlyFields);
+    baselineItems = fresh;
+  }
+
+  throw new Error(
+    'A termékadatok mentése többszöri egyidejű módosítás (CAS konfliktus) miatt sikertelen. Kérjük, frissítse az oldalt és próbálja újra.'
+  );
+}
+
+export async function setMaterialStatusAsAdmin(
+  itemId: string,
+  status: 'published' | 'rejected',
+  rejectionNote: string | null
+): Promise<MaterialItem[]> {
+  const latest = await readAppConfigWithVersion<MaterialItem[]>(
+    '__SYSTEM_CONFIG_MATERIALS_ITEMS__',
+    SUPABASE_SYSTEM_ROW_ID
+  );
+  const currentCloud = Array.isArray(latest.value) ? latest.value : getMaterialsLocal();
+  lastCloudMaterialsUpdatedAt = latest.updatedAt;
+  lastCloudMaterialsItems = Array.isArray(latest.value) ? latest.value : currentCloud;
+
+  const now = new Date().toISOString();
+  const updated = currentCloud.map((i) =>
+    i.id === itemId
+      ? {
+          ...i,
+          status,
+          rejection_note: rejectionNote,
+          updated_at: now,
+        }
+      : i
+  );
+
+  return saveMaterialsLocal(updated, {
+    patchOnlyFields: ['status', 'rejection_note', 'updated_at'],
+  });
+}
+
+export async function upsertPartnerMaterialItem(
+  partnerId: string,
+  item: Partial<MaterialItem> & { status: 'draft' | 'pending_approval' }
+): Promise<MaterialItem> {
+  const { data, error } = await supabase.rpc('upsert_partner_material_item', {
+    p_partner_id: partnerId,
+    p_item: item,
+  });
+
+  if (error || !data) {
+    throw new Error(error?.message || 'Partner termék mentése sikertelen.');
+  }
+
+  const saved = data as MaterialItem;
+  if (typeof window !== 'undefined') {
+    const current = getMaterialsLocal();
+    const exists = current.some((i) => i.id === saved.id);
+    const next = exists ? current.map((i) => (i.id === saved.id ? saved : i)) : [saved, ...current];
+    localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event('materials-updated'));
+  }
+
+  return saved;
+}
+
+export async function deletePartnerMaterialItem(partnerId: string, itemId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_partner_material_item', {
+    p_partner_id: partnerId,
+    p_item_id: itemId,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Partner termék törlése sikertelen.');
+  }
+
+  if (typeof window !== 'undefined') {
+    const current = getMaterialsLocal();
+    const next = current.filter((i) => i.id !== itemId);
+    localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event('materials-updated'));
   }
 }
 
 export async function fetchMaterialsFromCloud(): Promise<{ items: MaterialItem[] | null; categories: MaterialCategory[] | null }> {
   try {
-    const [parsedItems, parsedCats] = await Promise.all([
-      readAppConfig<MaterialItem[]>('__SYSTEM_CONFIG_MATERIALS_ITEMS__', SUPABASE_SYSTEM_ROW_ID),
+    const [itemsResult, parsedCats] = await Promise.all([
+      readAppConfigWithVersion<MaterialItem[]>('__SYSTEM_CONFIG_MATERIALS_ITEMS__', SUPABASE_SYSTEM_ROW_ID),
       readAppConfig<MaterialCategory[]>('__SYSTEM_CONFIG_MATERIAL_CATEGORIES__', SUPABASE_CATS_ROW_ID),
     ]);
+
+    const parsedItems = itemsResult.value;
+    lastCloudMaterialsUpdatedAt = itemsResult.updatedAt;
+    if (Array.isArray(parsedItems)) {
+      lastCloudMaterialsItems = parsedItems;
+    }
 
     let loadedItems: MaterialItem[] | null = null;
     let loadedCats: MaterialCategory[] | null = null;

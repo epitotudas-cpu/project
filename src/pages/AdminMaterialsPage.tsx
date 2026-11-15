@@ -21,6 +21,8 @@ import {
   getMaterialsLocal,
   saveMaterialsLocal,
   getMaterialCategoriesLocal,
+  fetchMaterialsFromCloud,
+  setMaterialStatusAsAdmin,
   type MaterialItem,
   type MaterialCategory,
   type MaterialSpec,
@@ -114,18 +116,32 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
   const [keywordInput, setKeywordInput] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     function reload() {
       setItems(getMaterialsLocal());
       setCategories(getMaterialCategoriesLocal());
     }
     reload();
 
+    void fetchMaterialsFromCloud()
+      .then(({ items: cloudItems, categories: cloudCats }) => {
+        if (cancelled) return;
+        if (cloudItems) setItems(cloudItems);
+        if (cloudCats) setCategories(cloudCats);
+      })
+      .catch((err) => console.warn('Hiba a felhő anyagok betöltésekor:', err));
+
     void listPartners()
-      .then((p) => setPartners(p))
+      .then((p) => {
+        if (!cancelled) setPartners(p);
+      })
       .catch((err) => console.warn('Hiba a partnerek betöltésekor:', err));
 
     window.addEventListener('materials-updated', reload);
-    return () => window.removeEventListener('materials-updated', reload);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('materials-updated', reload);
+    };
   }, []);
 
   const pendingCount = items.filter((i) => i.status === 'pending_approval').length;
@@ -181,33 +197,32 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
     setDeleteMaterialId(id);
   };
 
-  const handleApprovePublish = (item: MaterialItem) => {
-    const updated = items.map((i) =>
-      i.id === item.id ? { ...i, status: 'published' as const, rejection_note: null, updated_at: new Date().toISOString() } : i
-    );
-    setItems(updated);
-    saveMaterialsLocal(updated);
+  const handleApprovePublish = async (item: MaterialItem) => {
+    try {
+      const savedList = await setMaterialStatusAsAdmin(item.id, 'published', null);
+      setItems(savedList);
+      toast.success(`"${item.name}" jóváhagyva és közzétéve.`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a jóváhagyás során.');
+    }
   };
 
-  const handleRejectConfirm = () => {
+  const handleRejectConfirm = async () => {
     if (!rejectModalItem) return;
-    const updated = items.map((i) =>
-      i.id === rejectModalItem.id
-        ? {
-            ...i,
-            status: 'rejected' as const,
-            rejection_note: rejectionNoteInput.trim() || 'Kérjük, javítsa a hiányzó műszaki adatokat vagy csatolmányokat.',
-            updated_at: new Date().toISOString(),
-          }
-        : i
-    );
-    setItems(updated);
-    saveMaterialsLocal(updated);
-    setRejectModalItem(null);
-    setRejectionNoteInput('');
+    const note =
+      rejectionNoteInput.trim() || 'Kérjük, javítsa a hiányzó műszaki adatokat vagy csatolmányokat.';
+    try {
+      const savedList = await setMaterialStatusAsAdmin(rejectModalItem.id, 'rejected', note);
+      setItems(savedList);
+      setRejectModalItem(null);
+      setRejectionNoteInput('');
+      toast.success('Termék elutasítva.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt az elutasítás során.');
+    }
   };
 
-  const handleSaveForm = (e: React.FormEvent) => {
+  const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.short_description) {
       toast.error('Kérjük, adja meg az anyag nevét és a rövid leírást!');
@@ -278,9 +293,14 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       updatedList = [newItem, ...items];
     }
 
-    setItems(updatedList);
-    saveMaterialsLocal(updatedList);
-    setIsModalOpen(false);
+    try {
+      const savedList = await saveMaterialsLocal(updatedList);
+      setItems(savedList);
+      setIsModalOpen(false);
+      toast.success('Termékadatok elmentve.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a mentés során.');
+    }
   };
 
   const handleAddSpec = () => {
@@ -1140,11 +1160,16 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
         message="Biztosan törölni szeretné ezt az építőanyagot?"
         confirmLabel="Törlés"
         destructive
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deleteMaterialId) {
-            const updated = items.filter((i) => i.id !== deleteMaterialId);
-            setItems(updated);
-            saveMaterialsLocal(updated);
+            try {
+              const updated = items.filter((i) => i.id !== deleteMaterialId);
+              const savedList = await saveMaterialsLocal(updated);
+              setItems(savedList);
+              toast.success('Termék törölve.');
+            } catch (err: unknown) {
+              toast.error(err instanceof Error ? err.message : 'Hiba történt a törlés során.');
+            }
           }
           setDeleteMaterialId(null);
         }}

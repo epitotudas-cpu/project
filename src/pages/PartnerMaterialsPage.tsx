@@ -18,9 +18,10 @@ import {
 } from 'lucide-react';
 import {
   getMaterialsLocal,
-  saveMaterialsLocal,
   getMaterialCategoriesLocal,
   fetchMaterialsFromCloud,
+  upsertPartnerMaterialItem,
+  deletePartnerMaterialItem,
   type MaterialItem,
   type MaterialCategory,
   type MaterialSpec,
@@ -47,6 +48,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MaterialItem | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'content' | 'specs' | 'media'>('basic');
+  const [saving, setSaving] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<Partial<MaterialItem>>({
@@ -164,12 +166,14 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
     setConfirmDeleteId(id);
   };
 
-  const handleSaveForm = (targetStatus: 'draft' | 'pending_approval') => {
+  const handleSaveForm = async (targetStatus: 'draft' | 'pending_approval') => {
+    if (saving) return;
     if (!formData.name || !formData.short_description) {
       toast.notify('Kérjük, töltse ki az anyag nevét és a rövid leírást!', 'warning');
       return;
     }
 
+    setSaving(true);
     const selectedCat = categories.find((c) => c.id === formData.category_id);
     const generatedSlug =
       formData.slug ||
@@ -179,65 +183,44 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
 
-    const now = new Date().toISOString();
-    let updatedAll: MaterialItem[];
-
-    if (editingItem) {
-      updatedAll = allItems.map((i) =>
-        i.id === editingItem.id
-          ? ({
-              ...i,
-              ...formData,
-              partner_id: currentPartner.id, // Force current partner ownership
-              partner_name: currentPartner.name,
-              category_name: selectedCat?.name || formData.category_name || '',
-              slug: generatedSlug,
-              status: targetStatus,
-              rejection_note: targetStatus === 'pending_approval' ? null : formData.rejection_note,
-              updated_at: now,
-            } as MaterialItem)
-          : i
-      );
-    } else {
-      const newItem: MaterialItem = {
-        id: `mat-partner-${Date.now()}`,
-        name: formData.name || '',
+    try {
+      const payload: Partial<MaterialItem> & { status: 'draft' | 'pending_approval' } = {
+        ...(editingItem ? { id: editingItem.id } : {}),
+        name: formData.name,
         slug: generatedSlug,
         category_id: formData.category_id || categories[0]?.id || 'mat-cat-1',
-        category_name: selectedCat?.name || 'Szigetelőanyagok',
+        category_name: selectedCat?.name || formData.category_name || 'Általános Anyagok',
         subcategory_name: formData.subcategory_name || null,
         brand: formData.brand || currentPartner.name,
-        partner_id: currentPartner.id, // 🔒 Bound strictly to partner
-        partner_name: currentPartner.name,
         sku: formData.sku || null,
         barcode: formData.barcode || null,
-        short_description: formData.short_description || '',
+        short_description: formData.short_description,
         full_description: formData.full_description || '',
         application_area: formData.application_area || null,
         technical_specs: formData.technical_specs || [],
         main_image_url:
           formData.main_image_url ||
+          editingItem?.main_image_url ||
           'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=800&auto=format&fit=crop',
         gallery_image_urls: formData.gallery_image_urls || [],
         documents: formData.documents || [],
-        related_material_ids: [],
         status: targetStatus,
-        rejection_note: null,
-        featured: false,
-        sort_order: partnerItems.length + 1,
-        views: 0,
-        seo_title: null,
-        seo_description: null,
-        keywords: [],
-        created_at: now,
-        updated_at: now,
       };
-      updatedAll = [newItem, ...allItems];
-    }
 
-    setAllItems(updatedAll);
-    saveMaterialsLocal(updatedAll);
-    setIsModalOpen(false);
+      const saved = await upsertPartnerMaterialItem(currentPartner.id, payload);
+      if (editingItem) {
+        setAllItems((prev) => prev.map((i) => (i.id === editingItem.id ? saved : i)));
+        toast.success(targetStatus === 'pending_approval' ? 'Termék beküldve jóváhagyásra!' : 'Piszkozat mentve!');
+      } else {
+        setAllItems((prev) => [saved, ...prev]);
+        toast.success(targetStatus === 'pending_approval' ? 'Új termék beküldve jóváhagyásra!' : 'Új piszkozat mentve!');
+      }
+      setIsModalOpen(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a termék mentése során.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddSpec = () => {
@@ -715,17 +698,19 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  disabled={saving}
                   onClick={() => handleSaveForm('draft')}
-                  className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Save size={14} /> Mentés Piszkozatként
+                  <Save size={14} /> {saving ? 'Mentés...' : 'Mentés Piszkozatként'}
                 </button>
                 <button
                   type="button"
+                  disabled={saving}
                   onClick={() => handleSaveForm('pending_approval')}
-                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-50 text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Send size={14} /> Beküldés Ellenőrzésre
+                  <Send size={14} /> {saving ? 'Küldés...' : 'Beküldés Ellenőrzésre'}
                 </button>
               </div>
             </div>
@@ -739,12 +724,17 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
         message="Biztosan törölni szeretné ezt a saját anyagot?"
         confirmLabel="Törlés"
         destructive
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!confirmDeleteId) return;
-          const updated = allItems.filter((i) => i.id !== confirmDeleteId);
-          setAllItems(updated);
-          saveMaterialsLocal(updated);
-          setConfirmDeleteId(null);
+          try {
+            await deletePartnerMaterialItem(currentPartner.id, confirmDeleteId);
+            setAllItems((prev) => prev.filter((i) => i.id !== confirmDeleteId));
+            toast.success('Termék törölve.');
+          } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Hiba történt a termék törlésekor.');
+          } finally {
+            setConfirmDeleteId(null);
+          }
         }}
         onCancel={() => setConfirmDeleteId(null)}
       />
