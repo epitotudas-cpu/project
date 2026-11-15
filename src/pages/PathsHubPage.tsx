@@ -36,6 +36,7 @@ import SectionSubNav from '../components/SectionSubNav';
 import { type TradeDetail } from '../data/tradeDetailsData';
 import { useTrades } from '../services/tradeService';
 import AuthPromptModal from '../components/AuthPromptModal';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 
 interface PathsHubPageProps {
   onNavigate: (page: string, params?: { articleSlug?: string; slug?: string }) => void;
@@ -758,6 +759,8 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                           catBadge = 'bg-amber-50 text-amber-800 border-amber-200';
                         }
 
+                        const safeSourceUrl = sanitizeExternalUrl(card.sourceUrl, { allowAutoHttps: true, allowRelative: true });
+
                         return (
                           <div
                             key={card.id}
@@ -786,9 +789,9 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
                             {card.sourceName && (
                               <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
                                 <span className="text-gray-500 font-medium">Forrás: <strong className="text-gray-700">{card.sourceName}</strong></span>
-                                {card.sourceUrl && (
+                                {safeSourceUrl && (
                                   <a
-                                    href={card.sourceUrl}
+                                    href={safeSourceUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-primary font-bold hover:underline inline-flex items-center gap-1"

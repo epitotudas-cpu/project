@@ -1,4 +1,5 @@
 import React from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 
 interface FormattedTextProps {
   content?: string | null;
@@ -161,10 +162,14 @@ function renderInlineMarkdown(textStr: string, strongClassName: string): React.R
     }
     const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (linkMatch) {
+      const safeHref = sanitizeExternalUrl(linkMatch[2], { allowAutoHttps: true, allowRelative: true });
+      if (!safeHref) {
+        return <span key={idx}>{linkMatch[1]}</span>;
+      }
       return (
         <a
           key={idx}
-          href={linkMatch[2]}
+          href={safeHref}
           target="_blank"
           rel="noopener noreferrer"
           className="text-amber-400 hover:underline font-semibold"

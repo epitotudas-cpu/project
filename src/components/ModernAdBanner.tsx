@@ -10,16 +10,17 @@ import {
   type FallbackVideoSettings,
 } from '../services/bannerCreativeService';
 import type { AdCreative, TransitionEffect } from '../lib/supabase';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 
 function getValidAdUrl(url?: string | null): string {
   if (!url || url.trim() === '' || url.trim() === '#' || url.includes('#contact') || url.includes('contact')) {
     return '#partner-application';
   }
   const trimmed = url.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+  if (trimmed.startsWith('#')) {
     return trimmed;
   }
-  return `https://${trimmed}`;
+  return sanitizeExternalUrl(trimmed, { allowAutoHttps: true, allowRelative: true }) || '#partner-application';
 }
 
 interface TopBannerProps {
@@ -609,18 +610,21 @@ export function InFeedAdBanner({ slots, onNavigate }: InFeedAdBannerProps) {
               )}
 
               <div className="pt-2 flex flex-col sm:flex-row flex-wrap items-center gap-3.5">
-                {activeCreative.cta_url && (
-                  <a
-                    href={/^https?:\/\//i.test(activeCreative.cta_url) ? activeCreative.cta_url : `https://${activeCreative.cta_url}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => recordAdClick(activeCreative.id)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:scale-[1.02]"
-                  >
-                    <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
-                    <ExternalLink size={16} />
-                  </a>
-                )}
+                {(() => {
+                  const safeCtaUrl = sanitizeExternalUrl(activeCreative.cta_url, { allowAutoHttps: true, allowRelative: true });
+                  return safeCtaUrl ? (
+                    <a
+                      href={safeCtaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => recordAdClick(activeCreative.id)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:scale-[1.02]"
+                    >
+                      <span>{activeCreative.cta_text || 'Ajánlat Megtekintése'}</span>
+                      <ExternalLink size={16} />
+                    </a>
+                  ) : null;
+                })()}
 
                 {onNavigate && (
                   <button

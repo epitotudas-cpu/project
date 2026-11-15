@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, ShieldCheck, Building, Mail, Phone, MapPin, Globe, ChevronRight, Target, FileText, Building2 } from 'lucide-react';
 import { getImpressumData, type ImpressumData } from '../services/impressumService';
 import SectionSubNav from '../components/SectionSubNav';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 
 interface ImpressumPageProps {
   onNavigate: (page: string) => void;
@@ -150,9 +151,16 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
             </div>
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/80">
               <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block mb-1">Weboldal</span>
-              <a href={/^https?:\/\//i.test(data.hostingWebsite) ? data.hostingWebsite : `https://${data.hostingWebsite}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold text-sm truncate block">
-                {data.hostingWebsite}
-              </a>
+              {(() => {
+                const safeHostingWebsite = sanitizeExternalUrl(data.hostingWebsite, { allowAutoHttps: true });
+                return safeHostingWebsite ? (
+                  <a href={safeHostingWebsite} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold text-sm truncate block">
+                    {data.hostingWebsite}
+                  </a>
+                ) : (
+                  <span className="text-gray-900 font-bold text-sm truncate block">{data.hostingWebsite}</span>
+                );
+              })()}
             </div>
           </div>
         </div>

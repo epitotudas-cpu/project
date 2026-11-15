@@ -569,9 +569,9 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
 
             {/* CTA Buttons Block */}
             <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto shrink-0 pt-2 md:pt-0">
-              {partner.website_url && (
+              {sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true }) && (
                 <a
-                  href={/^https?:\/\//i.test(partner.website_url) ? partner.website_url : `https://${partner.website_url}`}
+                  href={sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-5 py-3 bg-accent hover:bg-accent-hover text-white font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
@@ -748,9 +748,9 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
           <section className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
             <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wider">Közösségi Felületek</h3>
             <div className="flex flex-wrap gap-3">
-              {partner.social_facebook && (
+              {sanitizeExternalUrl(partner.social_facebook, { allowAutoHttps: true }) && (
                 <a
-                  href={/^https?:\/\//i.test(partner.social_facebook) ? partner.social_facebook : `https://${partner.social_facebook}`}
+                  href={sanitizeExternalUrl(partner.social_facebook, { allowAutoHttps: true })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-blue-50 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"
@@ -758,9 +758,9 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                   Facebook profil megtekintése <ExternalLink size={12} />
                 </a>
               )}
-              {partner.social_linkedin && (
+              {sanitizeExternalUrl(partner.social_linkedin, { allowAutoHttps: true }) && (
                 <a
-                  href={/^https?:\/\//i.test(partner.social_linkedin) ? partner.social_linkedin : `https://${partner.social_linkedin}`}
+                  href={sanitizeExternalUrl(partner.social_linkedin, { allowAutoHttps: true })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 hover:bg-sky-100 transition-colors flex items-center gap-2"
@@ -768,9 +768,9 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                   LinkedIn profil megtekintése <ExternalLink size={12} />
                 </a>
               )}
-              {partner.social_instagram && (
+              {sanitizeExternalUrl(partner.social_instagram, { allowAutoHttps: true }) && (
                 <a
-                  href={/^https?:\/\//i.test(partner.social_instagram) ? partner.social_instagram : `https://${partner.social_instagram}`}
+                  href={sanitizeExternalUrl(partner.social_instagram, { allowAutoHttps: true })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-pink-50 text-pink-700 font-bold text-xs rounded-xl border border-pink-200 hover:bg-pink-100 transition-colors flex items-center gap-2"
@@ -778,9 +778,9 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                   Instagram profil megtekintése <ExternalLink size={12} />
                 </a>
               )}
-              {partner.social_youtube && (
+              {sanitizeExternalUrl(partner.social_youtube, { allowAutoHttps: true }) && (
                 <a
-                  href={/^https?:\/\//i.test(partner.social_youtube) ? partner.social_youtube : `https://${partner.social_youtube}`}
+                  href={sanitizeExternalUrl(partner.social_youtube, { allowAutoHttps: true })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-red-50 text-red-700 font-bold text-xs rounded-xl border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-2"
@@ -908,21 +908,39 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {partner.related_content!.slice(0, 6).map((item) => (
-                <a
-                  key={item.id}
-                  href={item.url || '#'}
-                  className="p-4 bg-gray-50 hover:bg-amber-500/10 border border-gray-200 hover:border-amber-400 rounded-2xl transition-all group space-y-2 block"
-                >
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 bg-amber-100 px-2 py-0.5 rounded">
-                    {item.type}
-                  </span>
-                  <div className="font-bold text-gray-900 text-xs group-hover:text-primary transition-colors flex items-center justify-between">
-                    <span>{item.title}</span>
-                    <ExternalLink size={12} className="text-gray-400 group-hover:text-amber-500" />
-                  </div>
-                </a>
-              ))}
+              {partner.related_content!.slice(0, 6).map((item) => {
+                const safeRelatedUrl = sanitizeExternalUrl(item.url, { allowAutoHttps: true, allowRelative: true });
+                if (!safeRelatedUrl) {
+                  return (
+                    <div
+                      key={item.id}
+                      className="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-2 block"
+                    >
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 bg-amber-100 px-2 py-0.5 rounded">
+                        {item.type}
+                      </span>
+                      <div className="font-bold text-gray-900 text-xs flex items-center justify-between">
+                        <span>{item.title}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <a
+                    key={item.id}
+                    href={safeRelatedUrl}
+                    className="p-4 bg-gray-50 hover:bg-amber-500/10 border border-gray-200 hover:border-amber-400 rounded-2xl transition-all group space-y-2 block"
+                  >
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 bg-amber-100 px-2 py-0.5 rounded">
+                      {item.type}
+                    </span>
+                    <div className="font-bold text-gray-900 text-xs group-hover:text-primary transition-colors flex items-center justify-between">
+                      <span>{item.title}</span>
+                      <ExternalLink size={12} className="text-gray-400 group-hover:text-amber-500" />
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           </section>
         )}
@@ -937,9 +955,9 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
           </button>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            {partner.website_url && (
+            {sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true }) && (
               <a
-                href={/^https?:\/\//i.test(partner.website_url) ? partner.website_url : `https://${partner.website_url}`}
+                href={sanitizeExternalUrl(partner.website_url, { allowAutoHttps: true })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-accent hover:bg-accent-hover text-white font-extrabold text-xs rounded-xl transition-all shadow-sm"

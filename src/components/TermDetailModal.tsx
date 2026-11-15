@@ -21,6 +21,7 @@ import { getVideoUrls } from '../lib/glossaryJsonService';
 import { useAuth } from '../contexts/AuthContext';
 import { isItemSaved, toggleSaveItem } from '../services/bookmarkService';
 import { useGlossaryLanguages } from '../services/languageService';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import FormattedText from './FormattedText';
 
 function getEmbedVideoUrl(url: string | null | undefined): string | null {
@@ -73,6 +74,7 @@ export default function TermDetailModal({
   const slides = term.slides || [];
   const imageGallery = term.image_urls || [];
   const videoUrls = getVideoUrls(term);
+  const safeActiveVideoUrl = sanitizeExternalUrl(videoUrls[activeVideoIndex] || videoUrls[0], { allowAutoHttps: true });
   const translations = term.translations || {};
 
   const handleToggleBookmark = async (e: React.MouseEvent) => {
@@ -344,14 +346,16 @@ export default function TermDetailModal({
                 <h4 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
                   <Video size={16} className="text-red-600" /> Szakmai Oktatóvideó{videoUrls.length > 1 ? `k (${videoUrls.length})` : ''}
                 </h4>
-                <a
-                  href={videoUrls[activeVideoIndex] || videoUrls[0]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-bold"
-                >
-                  Aktív videó megnyitása új lapon <ExternalLink size={13} />
-                </a>
+                {safeActiveVideoUrl && (
+                  <a
+                    href={safeActiveVideoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-bold"
+                  >
+                    Aktív videó megnyitása új lapon <ExternalLink size={13} />
+                  </a>
+                )}
               </div>
 
               {videoUrls.length > 1 && (

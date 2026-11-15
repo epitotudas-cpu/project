@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   Sparkles,
   ShieldCheck,
@@ -1354,7 +1355,7 @@ export function BannerCreativeEditor() {
                     {/* CTA Button */}
                     {activeCreative.cta_text && activeCreative.cta_text.trim() !== '' && (
                       <a
-                        href={activeCreative.cta_url || '#'}
+                        href={sanitizeExternalUrl(activeCreative.cta_url, { allowAutoHttps: true, allowRelative: true }) || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.preventDefault()}

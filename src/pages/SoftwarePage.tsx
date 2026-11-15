@@ -17,6 +17,7 @@ import {
 import SectionSubNav from '../components/SectionSubNav';
 import PaginationControls, { usePagination } from '../components/PaginationControls';
 import { readAppConfig } from '../services/appConfigService';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 
 interface SoftwarePageProps {
   onNavigate: (page: string) => void;
@@ -414,14 +415,19 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
                     ))}
                   </div>
 
-                  <a
-                    href={item.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-600 text-white text-xs font-bold rounded-xl transition-colors"
-                  >
-                    Hivatalos oldal <ExternalLink size={13} />
-                  </a>
+                  {(() => {
+                    const safeWebsiteUrl = sanitizeExternalUrl(item.websiteUrl, { allowAutoHttps: true });
+                    return safeWebsiteUrl ? (
+                      <a
+                        href={safeWebsiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-600 text-white text-xs font-bold rounded-xl transition-colors"
+                      >
+                        Hivatalos oldal <ExternalLink size={13} />
+                      </a>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             ))}

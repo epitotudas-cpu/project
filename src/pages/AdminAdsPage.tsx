@@ -28,6 +28,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
   listAdCampaigns,
@@ -1183,19 +1184,22 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
                       <p className="flex items-center gap-1.5"><UserCheck size={13} className="text-accent shrink-0" /> {adv.contactName} ({adv.contactRole || 'Kapcsolattartó'})</p>
                       <p className="flex items-center gap-1.5"><Mail size={13} className="text-accent shrink-0" /> {adv.contactEmail}</p>
                       {adv.contactPhone && <p className="flex items-center gap-1.5"><Phone size={13} className="text-accent shrink-0" /> {adv.contactPhone}</p>}
-                      {adv.websiteUrl && (
-                        <p className="flex items-center gap-1.5 truncate pt-0.5">
-                          <ExternalLink size={13} className="text-amber-400 shrink-0" />
-                          <a
-                            href={adv.websiteUrl.startsWith('http') ? adv.websiteUrl : `https://${adv.websiteUrl}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-amber-400 font-semibold hover:underline truncate"
-                          >
-                            {adv.websiteUrl}
-                          </a>
-                        </p>
-                      )}
+                      {(() => {
+                        const safeWebsiteUrl = sanitizeExternalUrl(adv.websiteUrl, { allowAutoHttps: true });
+                        return safeWebsiteUrl ? (
+                          <p className="flex items-center gap-1.5 truncate pt-0.5">
+                            <ExternalLink size={13} className="text-amber-400 shrink-0" />
+                            <a
+                              href={safeWebsiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-amber-400 font-semibold hover:underline truncate"
+                            >
+                              {adv.websiteUrl}
+                            </a>
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                     <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs gap-2">
                       {onNavigate ? (

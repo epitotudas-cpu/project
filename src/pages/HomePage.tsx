@@ -28,6 +28,7 @@ import { getContentRatingsMap, resolveContentRating, type RatingSummary } from '
 import { getCategoryLabel } from '../services/partnerService';
 import { TopAdBanner, InFeedAdBanner } from '../components/ModernAdBanner';
 import { useSiteSettings } from '../services/siteSettingsService';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
   getHeroState,
   getActiveHeroImages,
@@ -524,8 +525,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {partners.map((partner) => {
-              const linkUrl = partner.websiteUrl || `#partnerek/${partner.slug || partner.id}`;
-              const isExternal = Boolean(partner.websiteUrl);
+              const safeWebsiteUrl = sanitizeExternalUrl(partner.websiteUrl, { allowAutoHttps: true });
+              const linkUrl = safeWebsiteUrl || `#partnerek/${partner.slug || partner.id}`;
+              const isExternal = Boolean(safeWebsiteUrl);
 
               return (
                 <a

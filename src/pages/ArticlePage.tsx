@@ -833,6 +833,7 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                         <div className="space-y-3">
                           {sources.map((src, idx) => {
                             const info = SOURCE_TYPE_MAP[src.sourceType] || { label: 'Szakmai forrás', icon: '📚' };
+                            const safeSourceUrl = sanitizeExternalUrl(src.url, { allowAutoHttps: true, allowRelative: true });
                             return (
                               <div
                                 key={src.id || idx}
@@ -861,9 +862,9 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
                                   </h4>
                                 </div>
 
-                                {src.url && (
+                                {safeSourceUrl && (
                                   <a
-                                    href={src.url}
+                                    href={safeSourceUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-4 py-2 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"

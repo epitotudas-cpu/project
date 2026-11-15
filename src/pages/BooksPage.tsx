@@ -28,6 +28,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toggleSaveItem, getSavedItems } from '../services/bookmarkService';
 import AuthPromptModal from '../components/AuthPromptModal';
 import BookCoverImage from '../components/BookCoverImage';
+import { sanitizeExternalUrl } from '../lib/urlUtils';
 
 interface BooksPageProps {
   onNavigate: (page: string) => void;
@@ -831,29 +832,35 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                     </div>
 
                     <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
-                      {selectedBook.digitalAccess.previewUrl && (
-                        <a
-                          href={/^https?:\/\//i.test(selectedBook.digitalAccess.previewUrl) ? selectedBook.digitalAccess.previewUrl : `https://${selectedBook.digitalAccess.previewUrl}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-                        >
-                          <Eye size={14} /> Minta Megtekintése
-                        </a>
-                      )}
+                      {(() => {
+                        const safePreviewUrl = sanitizeExternalUrl(selectedBook.digitalAccess.previewUrl, { allowAutoHttps: true });
+                        return safePreviewUrl ? (
+                          <a
+                            href={safePreviewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                          >
+                            <Eye size={14} /> Minta Megtekintése
+                          </a>
+                        ) : null;
+                      })()}
 
-                      {selectedBook.digitalAccess.digitalUrl && (
-                        <a
-                          href={/^https?:\/\//i.test(selectedBook.digitalAccess.digitalUrl) ? selectedBook.digitalAccess.digitalUrl : `https://${selectedBook.digitalAccess.digitalUrl}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-5 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-                        >
-                          <Download size={15} />
-                          <span>{selectedBook.digitalAccess.buttonLabel || 'Kiadvány Megnyitása'}</span>
-                          <ExternalLink size={13} className="opacity-80" />
-                        </a>
-                      )}
+                      {(() => {
+                        const safeDigitalUrl = sanitizeExternalUrl(selectedBook.digitalAccess.digitalUrl, { allowAutoHttps: true });
+                        return safeDigitalUrl ? (
+                          <a
+                            href={safeDigitalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2.5 bg-primary hover:bg-primary-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                          >
+                            <Download size={15} />
+                            <span>{selectedBook.digitalAccess.buttonLabel || 'Kiadvány Megnyitása'}</span>
+                            <ExternalLink size={13} className="opacity-80" />
+                          </a>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -951,15 +958,20 @@ export default function BooksPage({ onNavigate }: BooksPageProps) {
                               )}
                             </div>
 
-                            <a
-                              href={/^https?:\/\//i.test(offer.productUrl) ? offer.productUrl : `https://${offer.productUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                            >
-                              <span>Megnézem a boltban</span>
-                              <ExternalLink size={13} />
-                            </a>
+                            {(() => {
+                              const safeProductUrl = sanitizeExternalUrl(offer.productUrl, { allowAutoHttps: true });
+                              return safeProductUrl ? (
+                                <a
+                                  href={safeProductUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-primary font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <span>Megnézem a boltban</span>
+                                  <ExternalLink size={13} />
+                                </a>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                       ))}

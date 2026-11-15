@@ -943,27 +943,32 @@ export default function StandardsPage({ onNavigate }: StandardsPageProps) {
                   <FileCheck size={16} className="text-emerald-600" /> Hivatalos Jogszabályi &amp; Szabványos Forrás (NJT)
                 </h4>
                 <div className="space-y-2">
-                  {(activeCard.legal_sources ?? []).map((src, i) => (
-                    <div
-                      key={i}
-                      className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                    >
-                      <div className="space-y-1">
-                        <span className="text-xs font-extrabold text-gray-900 block">{src.name}</span>
-                        <span className="text-xs font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-700 inline-block">
-                          {src.section}
-                        </span>
-                      </div>
-                      <a
-                        href={src.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3.5 py-2 bg-primary hover:bg-primary-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
+                  {(activeCard.legal_sources ?? []).map((src, i) => {
+                    const safeUrl = sanitizeExternalUrl(src.url, { allowAutoHttps: true, allowRelative: true });
+                    return (
+                      <div
+                        key={i}
+                        className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                       >
-                        <ExternalLink size={13} /> NJT Forrás Megnyitása
-                      </a>
-                    </div>
-                  ))}
+                        <div className="space-y-1">
+                          <span className="text-xs font-extrabold text-gray-900 block">{src.name}</span>
+                          <span className="text-xs font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-700 inline-block">
+                            {src.section}
+                          </span>
+                        </div>
+                        {safeUrl && (
+                          <a
+                            href={safeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3.5 py-2 bg-primary hover:bg-primary-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
+                          >
+                            <ExternalLink size={13} /> NJT Forrás Megnyitása
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
