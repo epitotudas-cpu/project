@@ -67,11 +67,13 @@ test.describe('Hitelesített szerepkörös teljes funkcionális E2E tesztek (Adm
     await loginViaUI(page, email!, password!);
 
     await page.goto('/#/admin', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(700);
+    await expect(page.locator('aside button').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('body')).toContainText(/Admin|Vezérlőpult|Partnerek|Hirdetések/i, {
+      timeout: 15_000,
+    });
 
     const initialText = await page.locator('body').innerText();
     expect(initialText).not.toContain('Hozzáférés megtagadva');
-    expect(initialText).toMatch(/Admin|Vezérlőpult|Partnerek|Hirdetések/i);
 
     const visitedModules: string[] = [];
     const sidebarButtons = page.locator('aside button');
@@ -85,12 +87,16 @@ test.describe('Hitelesített szerepkörös teljes funkcionális E2E tesztek (Adm
       if (!label || /Kijelentkezés|Főoldal|Vissza/i.test(label)) continue;
       if (await btn.isVisible().catch(() => false)) {
         await btn.click();
-        await page.waitForTimeout(300);
+        await expect(page.locator('main')).toBeVisible({ timeout: 10_000 });
+        await expect(async () => {
+          const mainText = (await page.locator('main').innerText()).trim();
+          expect(mainText, `Admin modul üres vagy töltés alatt maradt: ${label}`).not.toMatch(/^(Betöltés\.\.\.|Hitelesítés ellenőrzése\.\.\.)$/i);
+          expect(mainText.length, `Admin modul üres maradt: ${label}`).toBeGreaterThan(20);
+        }).toPass({ timeout: 15_000 });
         visitedModules.push(label);
 
         const text = await page.locator('body').innerText();
         expect(text, `Admin modul hibára futott: ${label}`).not.toContain('Váratlan alkalmazáshiba történt');
-        expect(text.trim().length, `Admin modul üres maradt: ${label}`).toBeGreaterThan(40);
 
         await exerciseSearchInMain(page);
       }
@@ -139,10 +145,11 @@ test.describe('Hitelesített szerepkörös teljes funkcionális E2E tesztek (Adm
 
     // Check Profile route & tabs
     await page.goto('/#/profile', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(450);
-    const profileText = await page.locator('body').innerText();
-    expect(profileText.length).toBeGreaterThan(80);
-    expect(profileText).not.toContain('Váratlan alkalmazáshiba történt');
+    await expect(async () => {
+      const profileText = await page.locator('body').innerText();
+      expect(profileText).not.toContain('Váratlan alkalmazáshiba történt');
+      expect(profileText.length).toBeGreaterThan(80);
+    }).toPass({ timeout: 15_000 });
 
     expect(pageErrors).toEqual([]);
   });
