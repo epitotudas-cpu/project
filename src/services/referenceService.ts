@@ -241,24 +241,19 @@ export async function getPartnerReferences(
 
     const { data, error } = await query;
 
-    if (error || !data || data.length === 0) {
-      return getLocalFallbackReferences(partnerId, onlyPublished);
+    if (error) {
+      throw new Error(`Referenciák betöltése sikertelen: ${error.message}`);
+    }
+
+    if (!data || data.length === 0) {
+      return [];
     }
 
     type RawReferenceRow = Omit<PartnerReference, 'images'> & { partner_reference_images?: PartnerReferenceImage[] };
     return (data as RawReferenceRow[]).map((raw) => {
-      let rawImages: PartnerReferenceImage[] = Array.isArray(raw.partner_reference_images)
+      const rawImages: PartnerReferenceImage[] = Array.isArray(raw.partner_reference_images)
         ? [...raw.partner_reference_images].sort((a, b) => a.display_order - b.display_order)
         : [];
-
-      // Kiegészítés a helyi adatokból, ha a relációs képtáblában még nincsenek sorok
-      if (rawImages.length === 0) {
-        const localList = getLocalFallbackReferences(partnerId, false);
-        const match = localList.find((lr) => lr.id === raw.id || lr.title === raw.title);
-        if (match && match.images && match.images.length > 0) {
-          rawImages = match.images;
-        }
-      }
 
       const cover = rawImages.find((img) => img.is_cover) || rawImages[0] || null;
 
@@ -362,19 +357,16 @@ export async function deleteReference(referenceId: string): Promise<void> {
  * Partneri vagy adminisztrátori publikálási RPC meghívása.
  */
 export async function publishPartnerReference(referenceId: string): Promise<boolean> {
-  if (!referenceId) return false;
-  try {
-    const { data, error } = await supabase.rpc('publish_partner_reference', {
-      p_reference_id: referenceId,
-    });
-    if (!error) return !!data;
-
-    console.warn('Figyelmeztetés a referencia publikálásakor:', error.message);
-    return false;
-  } catch (err) {
-    console.warn('Kivétel a referencia publikálásakor:', err);
-    return false;
+  if (!referenceId) {
+    throw new Error('Hiányzó referenciaazonosító a publikáláshoz.');
   }
+  const { data, error } = await supabase.rpc('publish_partner_reference', {
+    p_reference_id: referenceId,
+  });
+  if (error) {
+    throw new Error(`A referencia publikálása sikertelen: ${error.message}`);
+  }
+  return !!data;
 }
 
 /**
@@ -512,13 +504,17 @@ export async function uploadReferenceImageThroughIntent(
       }
       blob = new Blob([array], { type: mime });
     } else if (dataUrlOrFileOrHttp.startsWith('http://') || dataUrlOrFileOrHttp.startsWith('https://')) {
+      let resp: Response;
       try {
-        const resp = await fetch(dataUrlOrFileOrHttp);
-        blob = await resp.blob();
-        mime = blob.type || 'image/jpeg';
+        resp = await fetch(dataUrlOrFileOrHttp);
       } catch {
-        blob = new Blob([new Uint8Array(100)], { type: 'image/jpeg' });
+        throw new Error('A külső kép URL nem tölthető le (CORS vagy hálózati hiba). Kérjük, töltsön fel helyi képfájlt.');
       }
+      if (!resp.ok) {
+        throw new Error(`A kép letöltése sikertelen (HTTP ${resp.status}). Kérjük, töltsön fel helyi képfájlt.`);
+      }
+      blob = await resp.blob();
+      mime = blob.type || 'image/jpeg';
     } else {
       // Ismeretlen kulcs
       return { imageId: '', objectKey: dataUrlOrFileOrHttp, publicUrl: dataUrlOrFileOrHttp };

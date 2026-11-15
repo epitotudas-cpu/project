@@ -30,6 +30,7 @@ import {
   type PartnerOfferItem,
   type PartnerAnalyticsSummary,
 } from './services/partnerService';
+import { fetchMaterialsFromCloud, type MaterialItem } from './services/materialsService';
 import { useToast } from './components/ToastProvider';
 import ConfirmDialog from './components/ConfirmDialog';
 import { resetDefaultMetaTags } from './lib/seoMeta';
@@ -417,8 +418,16 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
   const [newOfferTitle, setNewOfferTitle] = useState('');
   const [newOfferDiscount, setNewOfferDiscount] = useState('');
   const [newOfferValidUntil, setNewOfferValidUntil] = useState('');
+  const [newOfferExpiresAt, setNewOfferExpiresAt] = useState('');
+  const [newOfferMaterialId, setNewOfferMaterialId] = useState('');
   const [newOfferDesc, setNewOfferDesc] = useState('');
   const [offerToDelete, setOfferToDelete] = useState<PartnerOfferItem | null>(null);
+  const [partnerMaterialsList, setPartnerMaterialsList] = useState<MaterialItem[]>([]);
+  const [applicationStatus, setApplicationStatus] = useState<{
+    status: string;
+    company_name?: string | null;
+    rejection_reason?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!loadingRole && !user) {
@@ -429,6 +438,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
   useEffect(() => {
     if (!currentPartner?.id) {
       setOffersList([]);
+      setPartnerMaterialsList([]);
       setAnalytics({ profileViews: 0, articlesCount: 0, articleViewsSum: 0, referencesCount: 0 });
       return;
     }
@@ -437,11 +447,13 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
     Promise.all([
       getPartnerOffers(currentPartner.id),
       getPartnerAnalytics(currentPartner.id),
+      fetchMaterialsFromCloud().catch(() => ({ items: null, categories: null })),
     ])
-      .then(([rows, stats]) => {
+      .then(([rows, stats, materialsRes]) => {
         if (!cancelled) {
           setOffersList(rows);
           setAnalytics(stats);
+          setPartnerMaterialsList((materialsRes.items || []).filter((m) => m.partner_id === currentPartner.id));
         }
       })
       .catch((err) => {
@@ -560,6 +572,19 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             }
             return;
           }
+
+          // 4. Check pending/rejected partner application for user
+          const { data: appData } = await supabase
+            .from('partner_applications')
+            .select('status, company_name, rejection_reason')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (appData) {
+            setApplicationStatus(appData as { status: string; company_name?: string | null; rejection_reason?: string | null });
+          }
         }
       } catch (err) {
         console.warn('Error fetching member role in App.tsx:', err);
@@ -618,14 +643,42 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
             <AlertCircle className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Nincs hozzárendelt partneri profil</h2>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            A bejelentkezett felhasználói fiókhoz (<span className="text-white font-mono">{user?.email || 'azonosítatlan'}</span>) jelenleg nem található érvényes partnerkapcsolat az adatbázisban (<code className="text-xs bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">partner_users</code>).
-          </p>
+          <h2 className="text-2xl font-bold text-white">
+            {applicationStatus?.status === 'pending'
+              ? 'Partneri jelentkezés elbírálás alatt'
+              : applicationStatus?.status === 'rejected'
+              ? 'Partneri jelentkezés elutasítva'
+              : 'Nincs hozzárendelt partneri profil'}
+          </h2>
+          {applicationStatus ? (
+            <div className="space-y-2 text-sm text-slate-300">
+              {applicationStatus.company_name && (
+                <p>Cégnév: <span className="text-white font-semibold">{applicationStatus.company_name}</span></p>
+              )}
+              {applicationStatus.status === 'pending' && (
+                <p>Az ÉpítőTudás szerkesztősége jelenleg ellenőrzi a jelentkezését. Jóváhagyás után automatikusan aktiválódik a partnerfiókja.</p>
+              )}
+              {applicationStatus.status === 'rejected' && (
+                <p className="text-red-300">
+                  Elutasítás oka: {applicationStatus.rejection_reason || 'Kérjük, vegye fel a kapcsolatot az adminisztrációval.'}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-slate-300 text-sm leading-relaxed">
+              A bejelentkezett felhasználói fiókhoz (<span className="text-white font-mono">{user?.email || 'azonosítatlan'}</span>) jelenleg nem található érvényes partnerkapcsolat az adatbázisban (<code className="text-xs bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">partner_users</code>).
+            </p>
+          )}
           <p className="text-slate-400 text-xs">
             Amennyiben Ön szerződött partnercég képviselője, kérjük, vegye fel a kapcsolatot az ÉpítőTudás adminisztrációval a fiók összerendeléséhez.
           </p>
           <div className="pt-4 flex justify-center gap-3">
+            <button
+              onClick={() => onNavigate('partner-application')}
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+            >
+              Partner jelentkezés
+            </button>
             <button
               onClick={() => onNavigate('home')}
               className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
@@ -657,7 +710,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
             partnerId={effectivePartner.id}
             partnerName={effectivePartner.name}
             offersCount={offersList.filter((o) => o.status === 'Aktív').length}
-            servicesCount={(effectivePartner as ExtendedPartner).services?.length || 0}
+            servicesCount={partnerMaterialsList.length}
             profileViews={analytics.profileViews}
             articlesCount={analytics.articlesCount}
             isActive={(effectivePartner as ExtendedPartner & { is_active?: boolean }).is_active !== false && (effectivePartner as ExtendedPartner).status !== 'inactive' && (effectivePartner as ExtendedPartner).status !== 'draft'}
@@ -849,9 +902,13 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                   setNewOfferTitle('');
                   setNewOfferDiscount('');
                   setNewOfferValidUntil('');
+                  setNewOfferExpiresAt('');
+                  setNewOfferMaterialId('');
                   setNewOfferDesc('');
                 } else {
                   setEditingOfferId(null);
+                  setNewOfferExpiresAt('');
+                  setNewOfferMaterialId('');
                   setShowNewOfferForm(true);
                 }
               }}
@@ -884,11 +941,37 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                 />
                 <input
                   type="text"
-                  placeholder="Érvényesség (pl. 2026.12.31 vagy Visszavonásig)"
+                  placeholder="Érvényesség szöveg (pl. Visszavonásig)"
                   value={newOfferValidUntil}
                   onChange={(e) => setNewOfferValidUntil(e.target.value)}
                   className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500"
                 />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-400 block">Lejárati dátum (opcionális)</label>
+                  <input
+                    type="date"
+                    value={newOfferExpiresAt}
+                    onChange={(e) => setNewOfferExpiresAt(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-400 block">Kapcsolódó termék (opcionális)</label>
+                  <select
+                    value={newOfferMaterialId}
+                    onChange={(e) => setNewOfferMaterialId(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white"
+                  >
+                    <option value="">-- Nincs kiválasztva --</option>
+                    {partnerMaterialsList.map((mat) => (
+                      <option key={mat.id} value={mat.id}>
+                        {mat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <textarea
                 placeholder="Részletes leírás, feltételek, érvényesség..."
@@ -904,6 +987,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                     setNewOfferTitle('');
                     setNewOfferDiscount('');
                     setNewOfferValidUntil('');
+                    setNewOfferExpiresAt('');
+                    setNewOfferMaterialId('');
                     setNewOfferDesc('');
                   }}
                   className="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700 cursor-pointer"
@@ -920,7 +1005,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                         const updated = await updatePartnerOffer(editingOfferId, {
                           title: newOfferTitle.trim(),
                           discount: newOfferDiscount.trim() || 'Kiemelt ajánlat',
-                          valid_until: newOfferValidUntil.trim() || 'Visszavonásig',
+                          valid_until: newOfferValidUntil.trim() || (newOfferExpiresAt || 'Visszavonásig'),
+                          expires_at: newOfferExpiresAt || null,
+                          material_id: newOfferMaterialId || null,
                           description: newOfferDesc.trim() || 'Partneri ajánlat.',
                         });
                         setOffersList((prev) => prev.map((item) => (item.id === editingOfferId ? updated : item)));
@@ -930,7 +1017,9 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                           partner_id: effectivePartner.id,
                           title: newOfferTitle.trim(),
                           discount: newOfferDiscount.trim() || 'Kiemelt ajánlat',
-                          valid_until: newOfferValidUntil.trim() || 'Visszavonásig',
+                          valid_until: newOfferValidUntil.trim() || (newOfferExpiresAt || 'Visszavonásig'),
+                          expires_at: newOfferExpiresAt || null,
+                          material_id: newOfferMaterialId || null,
                           description: newOfferDesc.trim() || 'Partneri ajánlat.',
                           status: 'Aktív',
                           created_by: user?.id ?? null,
@@ -941,6 +1030,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                       setNewOfferTitle('');
                       setNewOfferDiscount('');
                       setNewOfferValidUntil('');
+                      setNewOfferExpiresAt('');
+                      setNewOfferMaterialId('');
                       setNewOfferDesc('');
                       setEditingOfferId(null);
                       setShowNewOfferForm(false);
@@ -1014,6 +1105,8 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                             setNewOfferTitle(off.title);
                             setNewOfferDiscount(off.discount);
                             setNewOfferValidUntil(off.valid_until);
+                            setNewOfferExpiresAt(off.expires_at || '');
+                            setNewOfferMaterialId(off.material_id || '');
                             setNewOfferDesc(off.description);
                             setShowNewOfferForm(true);
                           }}
@@ -1035,7 +1128,10 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
                     <p className="text-xs text-slate-400 leading-relaxed">{off.description}</p>
                   </div>
                   <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                    <span>Érvényes: {off.valid_until}</span>
+                    <div className="flex items-center gap-3">
+                      <span>Érvényes: {off.expires_at || off.valid_until}</span>
+                      <span className="text-slate-500">({off.views ?? 0} megtekintés)</span>
+                    </div>
                     <button
                       onClick={() => onNavigate('partner-detail', { slug: effectivePartner.slug })}
                       className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
@@ -1272,9 +1368,9 @@ function AppContent() {
       cookies: 'Tájékoztató az ÉpítőTudás weboldalán használt sütikről és tárolókról.',
     };
     const resolvedTitle = pageTitleMap[currentPage] || baseTitle;
-    if (currentPage !== 'article') {
+    if (currentPage !== 'article' && currentPage !== 'partner-detail') {
       resetDefaultMetaTags(resolvedTitle, pageDescMap[currentPage]);
-    } else {
+    } else if (currentPage === 'article') {
       document.title = resolvedTitle;
     }
   }, [currentPage, siteSettings.siteTitle]);

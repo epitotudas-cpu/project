@@ -391,7 +391,11 @@ function saveStoredPartners(list: ExtendedPartner[]): void {
   }
 }
 
-export async function listPartners(category?: string, limit: number = 100): Promise<ExtendedPartner[]> {
+export async function listPartners(
+  category?: string,
+  limit: number = 100,
+  options?: { includeInactive?: boolean }
+): Promise<ExtendedPartner[]> {
   let query = supabase
     .from('partners')
     .select('*')
@@ -438,17 +442,75 @@ export async function listPartners(category?: string, limit: number = 100): Prom
       is_verified: sp.is_verified,
       services: Array.isArray(spExt.services) ? spExt.services : (localExt.services || []),
       references: localExt.references || [],
-      certificates: localExt.certificates || [],
+      certificates: Array.isArray(spExt.certificates) ? spExt.certificates : (localExt.certificates || []),
       related_content: Array.isArray(spExt.related_content) ? spExt.related_content : (localExt.related_content || []),
     } as ExtendedPartner;
   });
 
   saveStoredPartners(mergedList);
 
+  const visibleList = options?.includeInactive
+    ? mergedList
+    : mergedList.filter((p) => (p.status ?? 'published') === 'published');
+
   if (category && category !== 'all') {
-    return mergedList.filter((p) => p.category === category);
+    return visibleList.filter((p) => p.category === category);
   }
-  return mergedList;
+  return visibleList;
+}
+
+function buildPartnerDbPayload(
+  payload: Partial<ExtendedPartner> | CreatePartnerPayload,
+  existing: ExtendedPartner | null,
+  slugOverride?: string
+): Record<string, unknown> {
+  const trimOpt = (val: string | null | undefined, fallback?: string | null) =>
+    val !== undefined ? (val?.trim() || null) : (fallback ?? null);
+
+  const dbPayload: Record<string, unknown> = {
+    name: payload.name !== undefined ? payload.name.trim() : existing?.name,
+    slug: slugOverride ?? existing?.slug,
+    category: payload.category !== undefined ? payload.category : existing?.category || 'ceg',
+    description: trimOpt(payload.description, existing?.description),
+    website_url: trimOpt(payload.website_url, existing?.website_url),
+    logo_url: trimOpt(payload.logo_url, existing?.logo_url),
+    is_verified: payload.is_verified !== undefined ? payload.is_verified : existing?.is_verified ?? true,
+    status: payload.status !== undefined ? payload.status : existing?.status || 'published',
+    is_featured: payload.is_featured !== undefined ? payload.is_featured : existing?.is_featured ?? false,
+    official_name: trimOpt(payload.official_name, existing?.official_name),
+    partner_type: trimOpt(payload.partner_type, existing?.partner_type),
+    contact_person_name: trimOpt(payload.contact_person_name, existing?.contact_person_name),
+    contact_person_title: trimOpt(payload.contact_person_title, existing?.contact_person_title),
+    contact_email: trimOpt(payload.contact_email, existing?.contact_email),
+    contact_phone: trimOpt(payload.contact_phone, existing?.contact_phone),
+    address: trimOpt(payload.address, existing?.address),
+    zip_code: trimOpt(payload.zip_code, existing?.zip_code),
+    city: trimOpt(payload.city, existing?.city),
+    county: trimOpt(payload.county, existing?.county),
+    business_hours: trimOpt(payload.business_hours, existing?.business_hours),
+    detailed_description: trimOpt(payload.detailed_description, existing?.detailed_description),
+    cover_url: trimOpt(payload.cover_url, existing?.cover_url),
+    inquiry_email: trimOpt(payload.inquiry_email, existing?.inquiry_email),
+    logo_bg: payload.logo_bg !== undefined ? payload.logo_bg : existing?.logo_bg || 'white',
+    operating_area: payload.operating_area !== undefined ? (payload.operating_area || null) : existing?.operating_area || null,
+    social_facebook: trimOpt(payload.social_facebook, existing?.social_facebook),
+    social_linkedin: trimOpt(payload.social_linkedin, existing?.social_linkedin),
+    social_instagram: trimOpt(payload.social_instagram, existing?.social_instagram),
+    social_youtube: trimOpt(payload.social_youtube, existing?.social_youtube),
+    services: payload.services !== undefined ? payload.services : existing?.services,
+    certificates: payload.certificates !== undefined ? payload.certificates : existing?.certificates,
+    related_content: payload.related_content !== undefined ? payload.related_content : existing?.related_content,
+    seo_title: trimOpt(payload.seo_title, existing?.seo_title),
+    seo_description: trimOpt(payload.seo_description, existing?.seo_description),
+    is_indexable: payload.is_indexable !== undefined ? payload.is_indexable : existing?.is_indexable ?? true,
+  };
+
+  Object.keys(dbPayload).forEach((k) => {
+    if (dbPayload[k] === undefined) {
+      delete dbPayload[k];
+    }
+  });
+  return dbPayload;
 }
 
 export async function createPartner(payload: CreatePartnerPayload): Promise<ExtendedPartner> {
@@ -498,17 +560,10 @@ export async function createPartner(payload: CreatePartnerPayload): Promise<Exte
     created_at: new Date().toISOString(),
   };
 
+  const insertPayload = buildPartnerDbPayload(payload, partnerObject, partnerObject.slug);
   const { data, error } = await supabase
     .from('partners')
-    .insert({
-      name: partnerObject.name,
-      slug: partnerObject.slug,
-      category: partnerObject.category,
-      description: partnerObject.description,
-      website_url: partnerObject.website_url,
-      logo_url: partnerObject.logo_url,
-      is_verified: partnerObject.is_verified,
-    })
+    .insert(insertPayload as never)
     .select('*')
     .single();
 
@@ -542,47 +597,7 @@ export async function updatePartner(
     ? payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     : existing?.slug;
 
-  const updatePayload: Record<string, unknown> = {
-    name: payload.name !== undefined ? payload.name.trim() : existing?.name,
-    slug: updatedSlug || existing?.slug,
-    category: payload.category !== undefined ? payload.category : existing?.category || 'ceg',
-    description: payload.description !== undefined ? (payload.description?.trim() || null) : existing?.description || null,
-    website_url: payload.website_url !== undefined ? (payload.website_url?.trim() || null) : existing?.website_url || null,
-    logo_url: payload.logo_url !== undefined ? (payload.logo_url?.trim() || null) : existing?.logo_url || null,
-    is_verified: payload.is_verified !== undefined ? payload.is_verified : existing?.is_verified ?? true,
-    official_name: payload.official_name !== undefined ? (payload.official_name?.trim() || null) : existing?.official_name || null,
-    partner_type: payload.partner_type !== undefined ? (payload.partner_type?.trim() || null) : existing?.partner_type || null,
-    contact_person_name: payload.contact_person_name !== undefined ? (payload.contact_person_name?.trim() || null) : existing?.contact_person_name || null,
-    contact_person_title: payload.contact_person_title !== undefined ? (payload.contact_person_title?.trim() || null) : existing?.contact_person_title || null,
-    contact_email: payload.contact_email !== undefined ? (payload.contact_email?.trim() || null) : existing?.contact_email || null,
-    contact_phone: payload.contact_phone !== undefined ? (payload.contact_phone?.trim() || null) : existing?.contact_phone || null,
-    address: payload.address !== undefined ? (payload.address?.trim() || null) : existing?.address || null,
-    zip_code: payload.zip_code !== undefined ? (payload.zip_code?.trim() || null) : existing?.zip_code || null,
-    city: payload.city !== undefined ? (payload.city?.trim() || null) : existing?.city || null,
-    county: payload.county !== undefined ? (payload.county?.trim() || null) : existing?.county || null,
-    business_hours: payload.business_hours !== undefined ? (payload.business_hours?.trim() || null) : existing?.business_hours || null,
-    detailed_description: payload.detailed_description !== undefined ? (payload.detailed_description?.trim() || null) : existing?.detailed_description || null,
-    cover_url: payload.cover_url !== undefined ? (payload.cover_url?.trim() || null) : existing?.cover_url || null,
-    inquiry_email: payload.inquiry_email !== undefined ? (payload.inquiry_email?.trim() || null) : existing?.inquiry_email || null,
-    logo_bg: payload.logo_bg !== undefined ? payload.logo_bg : existing?.logo_bg || 'white',
-    operating_area: payload.operating_area !== undefined ? (payload.operating_area || null) : existing?.operating_area || null,
-    social_facebook: payload.social_facebook !== undefined ? (payload.social_facebook?.trim() || null) : existing?.social_facebook || null,
-    social_linkedin: payload.social_linkedin !== undefined ? (payload.social_linkedin?.trim() || null) : existing?.social_linkedin || null,
-    social_instagram: payload.social_instagram !== undefined ? (payload.social_instagram?.trim() || null) : existing?.social_instagram || null,
-    social_youtube: payload.social_youtube !== undefined ? (payload.social_youtube?.trim() || null) : existing?.social_youtube || null,
-    services: payload.services !== undefined ? payload.services : existing?.services,
-    related_content: payload.related_content !== undefined ? payload.related_content : existing?.related_content,
-    seo_title: payload.seo_title !== undefined ? (payload.seo_title?.trim() || null) : existing?.seo_title || null,
-    seo_description: payload.seo_description !== undefined ? (payload.seo_description?.trim() || null) : existing?.seo_description || null,
-    is_indexable: payload.is_indexable !== undefined ? payload.is_indexable : existing?.is_indexable ?? true,
-  };
-
-  // Strip keys that are strictly undefined
-  Object.keys(updatePayload).forEach((k) => {
-    if (updatePayload[k] === undefined) {
-      delete updatePayload[k];
-    }
-  });
+  const updatePayload = buildPartnerDbPayload(payload, existing, updatedSlug);
 
   const { data: updateRes, error: updateErr } = await supabase
     .from('partners')
@@ -632,7 +647,10 @@ export async function deletePartner(id: string): Promise<void> {
   saveStoredPartners(filtered);
 }
 
-export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartner | null> {
+export async function getPartnerBySlug(
+  slugOrId: string,
+  options?: { includeInactive?: boolean }
+): Promise<ExtendedPartner | null> {
   if (!slugOrId) return null;
   const cleanKey = slugOrId.trim();
 
@@ -657,6 +675,10 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
 
   // A) Supabase sikeres válasz és létező rekord -> Supabase rekord az elsődleges
   const dataExt = data as ExtendedPartner;
+  if (!options?.includeInactive && (dataExt.status ?? 'published') !== 'published') {
+    return null;
+  }
+
   const stored = getStoredPartners();
   const localExt = stored.find(
     (p) => p.slug === cleanKey || p.id === cleanKey || p.id === data.id || p.slug === data.slug
@@ -679,7 +701,7 @@ export async function getPartnerBySlug(slugOrId: string): Promise<ExtendedPartne
     is_verified: data.is_verified,
     services: Array.isArray(dataExt.services) ? dataExt.services : (localExt.services || []),
     references: localExt.references || [],
-    certificates: localExt.certificates || [],
+    certificates: Array.isArray(dataExt.certificates) ? dataExt.certificates : (localExt.certificates || []),
     related_content: Array.isArray(dataExt.related_content) ? dataExt.related_content : (localExt.related_content || []),
   } as ExtendedPartner;
 }
@@ -1457,14 +1479,22 @@ export interface PartnerOfferItem {
   discount: string;
   description: string;
   valid_until: string;
+  expires_at?: string | null;
+  views?: number;
+  material_id?: string | null;
   status: 'Aktív' | 'Szüneteltetve' | 'Lejárt';
   created_by?: string | null;
   created_at?: string;
   updated_at?: string;
 }
 
+function isOfferNotExpired(offer: PartnerOfferItem, todayIso: string): boolean {
+  if (!offer.expires_at) return true;
+  return offer.expires_at >= todayIso;
+}
+
 /**
- * S) Lists partner offers for a partner (optionally filtered to active offers only).
+ * S) Lists partner offers for a partner (optionally filtered to active, non-expired offers only).
  */
 export async function getPartnerOffers(
   partnerId: string,
@@ -1482,8 +1512,29 @@ export async function getPartnerOffers(
 
   const { data, error } = await query;
   if (error) {
-    console.warn('Error fetching partner offers:', error.message);
-    return [];
+    console.error('Error fetching partner offers:', error.message);
+    throw new Error(`Nem sikerült a partneri ajánlatok betöltése: ${error.message}`);
+  }
+  const items = (data || []) as PartnerOfferItem[];
+  if (!activeOnly) {
+    return items;
+  }
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return items.filter((offer) => isOfferNotExpired(offer, todayIso));
+}
+
+/**
+ * Lists all partner offers across partners for admin oversight.
+ */
+export async function getAllPartnerOffers(limit = 200): Promise<PartnerOfferItem[]> {
+  const { data, error } = await supabase
+    .from('partner_offers')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Nem sikerült az ajánlatok betöltése: ${error.message}`);
   }
   return (data || []) as PartnerOfferItem[];
 }
@@ -1497,9 +1548,14 @@ export async function createPartnerOffer(input: {
   discount?: string;
   description?: string;
   valid_until?: string;
+  expires_at?: string | null;
+  material_id?: string | null;
   status?: 'Aktív' | 'Szüneteltetve' | 'Lejárt';
   created_by?: string | null;
 }): Promise<PartnerOfferItem> {
+  const cleanExpiresAt = input.expires_at?.trim() || null;
+  const cleanValidUntil = input.valid_until?.trim() || (cleanExpiresAt ? cleanExpiresAt : 'Visszavonásig');
+
   const { data, error } = await supabase
     .from('partner_offers')
     .insert({
@@ -1507,7 +1563,9 @@ export async function createPartnerOffer(input: {
       title: input.title.trim(),
       discount: input.discount?.trim() || 'Kiemelt ajánlat',
       description: input.description?.trim() || 'Partneri ajánlat.',
-      valid_until: input.valid_until?.trim() || 'Visszavonásig',
+      valid_until: cleanValidUntil,
+      expires_at: cleanExpiresAt,
+      material_id: input.material_id?.trim() || null,
       status: input.status || 'Aktív',
       created_by: input.created_by ?? null,
     })
@@ -1525,7 +1583,9 @@ export async function createPartnerOffer(input: {
  */
 export async function updatePartnerOffer(
   offerId: string,
-  updates: Partial<Pick<PartnerOfferItem, 'title' | 'discount' | 'description' | 'valid_until' | 'status'>>
+  updates: Partial<
+    Pick<PartnerOfferItem, 'title' | 'discount' | 'description' | 'valid_until' | 'expires_at' | 'material_id' | 'status'>
+  >
 ): Promise<PartnerOfferItem> {
   const { data, error } = await supabase
     .from('partner_offers')
@@ -1563,12 +1623,32 @@ export interface PartnerAnalyticsSummary {
   articlesCount: number;
   articleViewsSum: number;
   referencesCount: number;
+  offersCount?: number;
+  offerViewsSum?: number;
+}
+
+function shouldTrackViewOnce(sessionKey: string): boolean {
+  if (typeof sessionStorage === 'undefined') {
+    return true;
+  }
+  try {
+    if (sessionStorage.getItem(sessionKey)) {
+      return false;
+    }
+    sessionStorage.setItem(sessionKey, '1');
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 /**
- * W) Atomically increments profile_views on a partner record via RPC.
+ * W) Atomically increments profile_views on a partner record via RPC (deduplicated per browser session).
  */
 export async function incrementPartnerViews(partnerId: string): Promise<number> {
+  if (!shouldTrackViewOnce(`viewed_partner_${partnerId}`)) {
+    return 0;
+  }
   try {
     const { data, error } = await supabase.rpc('increment_partner_views', {
       p_partner_id: partnerId,
@@ -1583,13 +1663,34 @@ export async function incrementPartnerViews(partnerId: string): Promise<number> 
 }
 
 /**
- * X) Fetches real analytics summary for a partner (profile views, partner articles & views, references).
+ * Atomically increments views on a partner offer via RPC (deduplicated per browser session).
+ */
+export async function incrementOfferViews(offerId: string): Promise<number> {
+  if (!shouldTrackViewOnce(`viewed_offer_${offerId}`)) {
+    return 0;
+  }
+  try {
+    const { data, error } = await supabase.rpc('increment_offer_views', {
+      p_offer_id: offerId,
+    });
+    if (!error && typeof data === 'number') {
+      return data;
+    }
+  } catch (err) {
+    console.warn('Error incrementing offer views:', err);
+  }
+  return 0;
+}
+
+/**
+ * X) Fetches real analytics summary for a partner (profile views, partner articles & views, references, offers).
  */
 export async function getPartnerAnalytics(partnerId: string): Promise<PartnerAnalyticsSummary> {
-  const [partnerRes, articlesRes, refsRes] = await Promise.all([
+  const [partnerRes, articlesRes, refsRes, offersRes] = await Promise.all([
     supabase.from('partners').select('profile_views').eq('id', partnerId).maybeSingle(),
     supabase.from('articles').select('id, views').eq('partner_id', partnerId),
     supabase.from('partner_references').select('id', { count: 'exact', head: true }).eq('partner_id', partnerId),
+    supabase.from('partner_offers').select('id, views').eq('partner_id', partnerId),
   ]);
 
   const profileViews = Number((partnerRes.data as { profile_views?: number } | null)?.profile_views || 0);
@@ -1597,12 +1698,17 @@ export async function getPartnerAnalytics(partnerId: string): Promise<PartnerAna
   const articlesCount = articleRows.length;
   const articleViewsSum = articleRows.reduce((sum, row) => sum + Number(row.views || 0), 0);
   const referencesCount = Number(refsRes.count || 0);
+  const offerRows = (offersRes.data || []) as Array<{ id: string; views?: number | null }>;
+  const offersCount = offerRows.length;
+  const offerViewsSum = offerRows.reduce((sum, row) => sum + Number(row.views || 0), 0);
 
   return {
     profileViews,
     articlesCount,
     articleViewsSum,
     referencesCount,
+    offersCount,
+    offerViewsSum,
   };
 }
 

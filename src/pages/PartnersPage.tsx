@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Building2, Search, ExternalLink, ShieldCheck, ArrowLeft, Mail, Target, FileText, ChevronRight } from 'lucide-react';
-import { listPartners, getCategoryLabel, type PartnerCategory } from '../services/partnerService';
+import { listPartners, getCategoryLabel, type PartnerCategory, type ExtendedPartner } from '../services/partnerService';
 import type { Partner } from '../lib/supabase';
 import SectionSubNav from '../components/SectionSubNav';
 import PaginationControls, { usePagination } from '../components/PaginationControls';
@@ -48,10 +48,11 @@ function PartnerCardLogo({ partner }: { partner: Partner }) {
 }
 
 export default function PartnersPage({ onNavigate }: PartnersPageProps) {
-  const [partners, setPartners] = useState<Partner[]>([]);
+  const [partners, setPartners] = useState<ExtendedPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedArea, setSelectedArea] = useState<string>('all');
 
   useEffect(() => {
     async function loadPartners() {
@@ -71,25 +72,30 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
   const categories: PartnerCategory[] = ['gyarto', 'kereskedo', 'ceg', 'iskola', 'oktato', 'tamogato'];
 
   const filteredPartners = useMemo(() => {
-    return partners.filter((p) => {
-      const matchCat = selectedCategory === 'all' || p.category === selectedCategory;
-      const q = searchQuery.toLowerCase().trim();
-      const matchQuery =
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        (p.description && p.description.toLowerCase().includes(q)) ||
-        getCategoryLabel(p.category).toLowerCase().includes(q);
+    return partners
+      .filter((p) => {
+        const matchCat = selectedCategory === 'all' || p.category === selectedCategory;
+        const matchArea = selectedArea === 'all' || p.operating_area === selectedArea;
+        const q = searchQuery.toLowerCase().trim();
+        const matchQuery =
+          !q ||
+          p.name.toLowerCase().includes(q) ||
+          (p.description && p.description.toLowerCase().includes(q)) ||
+          (p.city && p.city.toLowerCase().includes(q)) ||
+          (p.county && p.county.toLowerCase().includes(q)) ||
+          getCategoryLabel(p.category).toLowerCase().includes(q);
 
-      return matchCat && matchQuery;
-    });
-  }, [partners, selectedCategory, searchQuery]);
+        return matchCat && matchArea && matchQuery;
+      })
+      .sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)));
+  }, [partners, selectedCategory, selectedArea, searchQuery]);
 
   const {
     currentPage,
     setCurrentPage,
     totalPages,
     paginatedItems: paginatedPartners,
-  } = usePagination(filteredPartners, 24, `${selectedCategory}|${searchQuery}`);
+  } = usePagination(filteredPartners, 24, `${selectedCategory}|${selectedArea}|${searchQuery}`);
 
   return (
     <div className="bg-background min-h-screen pb-16">
@@ -146,15 +152,28 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Search & Category Filter Bar */}
         <div className="space-y-4">
-          <div className="relative max-w-2xl">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Keress partner neve vagy tevékenysége szerint..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-gray-200 focus:border-accent rounded-xl pl-11 pr-4 py-3.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-accent/30 text-sm font-medium"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 max-w-3xl">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Keress partner neve, városa vagy tevékenysége szerint..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border border-gray-200 focus:border-accent rounded-xl pl-11 pr-4 py-3.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-accent/30 text-sm font-medium"
+              />
+            </div>
+            <select
+              aria-label="Működési terület szűrő"
+              value={selectedArea}
+              onChange={(e) => setSelectedArea(e.target.value)}
+              className="bg-white border border-gray-200 focus:border-accent rounded-xl px-4 py-3.5 text-gray-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/30"
+            >
+              <option value="all">Minden terület</option>
+              <option value="national">Országos</option>
+              <option value="county">Megyei / Regionális</option>
+              <option value="local">Helyi</option>
+            </select>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -206,6 +225,7 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
               onClick={() => {
                 setSearchQuery('');
                 setSelectedCategory('all');
+                setSelectedArea('all');
               }}
               className="px-4 py-2 bg-accent text-white text-xs font-bold rounded-xl hover:bg-accent-hover transition-colors"
             >
@@ -233,10 +253,17 @@ export default function PartnersPage({ onNavigate }: PartnersPageProps) {
                 className="group bg-white border border-gray-200 hover:border-accent rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between"
               >
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg">
-                      {getCategoryLabel(partner.category)}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg">
+                        {getCategoryLabel(partner.category)}
+                      </span>
+                      {partner.is_featured && (
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-md">
+                          Kiemelt
+                        </span>
+                      )}
+                    </div>
 
                     {partner.is_verified && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">

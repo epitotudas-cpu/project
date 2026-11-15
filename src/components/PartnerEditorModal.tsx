@@ -51,7 +51,7 @@ interface PartnerEditorModalProps {
   partner: ExtendedPartner | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<ExtendedPartner>) => Promise<void>;
+  onSave: (data: Partial<ExtendedPartner>) => Promise<ExtendedPartner | void>;
   isAdmin?: boolean;
 }
 
@@ -681,12 +681,13 @@ export default function PartnerEditorModal({
     }
 
     try {
-      await onSave(payload);
+      const savedPartner = await onSave(payload);
+      const targetPartnerId = (savedPartner && typeof savedPartner === 'object' && 'id' in savedPartner ? savedPartner.id : undefined) || partner?.id;
 
       // Referenciák és képeik szinkronizálása a partner_references és partner_reference_images táblákkal
-      if (partner?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partner.id)) {
+      if (targetPartnerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetPartnerId)) {
         try {
-          const updatedDbRefs = await syncPartnerReferences(partner.id, references, initialReferenceIdsRef.current);
+          const updatedDbRefs = await syncPartnerReferences(targetPartnerId, references, initialReferenceIdsRef.current);
           if (updatedDbRefs && updatedDbRefs.length > 0) {
             initialReferenceIdsRef.current = updatedDbRefs.map((r) => r.id);
           }

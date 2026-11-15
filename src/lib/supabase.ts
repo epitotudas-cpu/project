@@ -606,6 +606,17 @@ export interface Database {
           website_url: string | null;
           description: string | null;
           is_verified: boolean;
+          status?: 'draft' | 'published' | 'inactive';
+          is_featured?: boolean;
+          certificates?: unknown[];
+          profile_views?: number;
+          operating_area?: string | null;
+          city?: string | null;
+          county?: string | null;
+          cover_url?: string | null;
+          seo_title?: string | null;
+          seo_description?: string | null;
+          is_indexable?: boolean;
           created_at: string;
         };
         Insert: {
@@ -617,6 +628,18 @@ export interface Database {
           website_url?: string | null;
           description?: string | null;
           is_verified?: boolean;
+          status?: 'draft' | 'published' | 'inactive';
+          is_featured?: boolean;
+          certificates?: unknown[];
+          profile_views?: number;
+          operating_area?: string | null;
+          city?: string | null;
+          county?: string | null;
+          cover_url?: string | null;
+          seo_title?: string | null;
+          seo_description?: string | null;
+          is_indexable?: boolean;
+          [key: string]: unknown;
           created_at?: string;
         };
         Update: {
@@ -628,6 +651,18 @@ export interface Database {
           website_url?: string | null;
           description?: string | null;
           is_verified?: boolean;
+          status?: 'draft' | 'published' | 'inactive';
+          is_featured?: boolean;
+          certificates?: unknown[];
+          profile_views?: number;
+          operating_area?: string | null;
+          city?: string | null;
+          county?: string | null;
+          cover_url?: string | null;
+          seo_title?: string | null;
+          seo_description?: string | null;
+          is_indexable?: boolean;
+          [key: string]: unknown;
           created_at?: string;
         };
       };

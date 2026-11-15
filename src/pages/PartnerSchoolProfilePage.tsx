@@ -102,6 +102,15 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
   const [detailedDescription, setDetailedDescription] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
+  const [operatingArea, setOperatingArea] = useState<'local' | 'county' | 'national'>('county');
+  const [inquiryEmail, setInquiryEmail] = useState('');
+  const [socialFacebook, setSocialFacebook] = useState('');
+  const [socialLinkedin, setSocialLinkedin] = useState('');
+  const [socialInstagram, setSocialInstagram] = useState('');
+  const [socialYoutube, setSocialYoutube] = useState('');
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [isIndexable, setIsIndexable] = useState(true);
 
   // Registered Instructor Management State
   const [instructors, setInstructors] = useState<
@@ -195,6 +204,15 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
         setDetailedDescription(currentPartner.detailed_description || '');
         setLogoUrl(currentPartner.logo_url || '');
         setCoverUrl(currentPartner.cover_url || '');
+        setOperatingArea(currentPartner.operating_area || 'county');
+        setInquiryEmail(currentPartner.inquiry_email || '');
+        setSocialFacebook(currentPartner.social_facebook || '');
+        setSocialLinkedin(currentPartner.social_linkedin || '');
+        setSocialInstagram(currentPartner.social_instagram || '');
+        setSocialYoutube(currentPartner.social_youtube || '');
+        setSeoTitle(currentPartner.seo_title || '');
+        setSeoDescription(currentPartner.seo_description || '');
+        setIsIndexable(currentPartner.is_indexable !== false);
 
         // Load instructors
         const instructorList = await listSchoolInstructors(currentPartner.id);
@@ -252,6 +270,15 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
         detailed_description: detailedDescription,
         logo_url: logoUrl,
         cover_url: coverUrl,
+        operating_area: operatingArea,
+        inquiry_email: inquiryEmail,
+        social_facebook: socialFacebook,
+        social_linkedin: socialLinkedin,
+        social_instagram: socialInstagram,
+        social_youtube: socialYoutube,
+        seo_title: seoTitle,
+        seo_description: seoDescription,
+        is_indexable: isIndexable,
       });
 
       setPartner(updated);
@@ -751,6 +778,89 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
                 />
               </div>
             </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-800 space-y-4">
+            <h4 className="text-sm font-bold text-slate-200">Működési terület, Közösségi oldalak &amp; SEO</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Működési terület
+                </label>
+                <select
+                  value={operatingArea}
+                  onChange={(e) => setOperatingArea(e.target.value as 'local' | 'county' | 'national')}
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+                >
+                  <option value="local">Helyi / Települési</option>
+                  <option value="county">Megyei / Regionális</option>
+                  <option value="national">Országos</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Érdeklődési e-mail (nyilvános)
+                </label>
+                <input
+                  type="email"
+                  value={inquiryEmail}
+                  onChange={(e) => setInquiryEmail(e.target.value)}
+                  placeholder="info@iskola.hu"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+                />
+              </div>
+              <input
+                type="url"
+                value={socialFacebook}
+                onChange={(e) => setSocialFacebook(e.target.value)}
+                placeholder="Facebook URL"
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+              />
+              <input
+                type="url"
+                value={socialLinkedin}
+                onChange={(e) => setSocialLinkedin(e.target.value)}
+                placeholder="LinkedIn URL"
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+              />
+              <input
+                type="url"
+                value={socialInstagram}
+                onChange={(e) => setSocialInstagram(e.target.value)}
+                placeholder="Instagram URL"
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+              />
+              <input
+                type="url"
+                value={socialYoutube}
+                onChange={(e) => setSocialYoutube(e.target.value)}
+                placeholder="YouTube URL"
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+              />
+              <input
+                type="text"
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                placeholder="SEO Cím (opcionális)"
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+              />
+              <input
+                type="text"
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                placeholder="SEO Leírás (opcionális)"
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+              />
+            </div>
+            <label className="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isIndexable}
+                onChange={(e) => setIsIndexable(e.target.checked)}
+                className="rounded border-slate-600 bg-slate-800"
+              />
+              Keresőmotorok indexelhetik az intézmény publikus adatlapját
+            </label>
           </div>
 
           <div className="pt-6 flex justify-end">

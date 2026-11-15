@@ -93,6 +93,42 @@ export function updateArticleMetaTags(title: string, description: string, image?
   });
 }
 
+export function updatePartnerMetaTags(options: {
+  name: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  description?: string | null;
+  image?: string | null;
+  isIndexable?: boolean;
+  url?: string;
+}) {
+  const currentUrl = getCleanCanonicalUrl(options.url);
+  const pageTitle = options.seoTitle?.trim()
+    ? options.seoTitle.trim()
+    : `${options.name} | Partnerek | ÉpítőTudás`;
+  const desc =
+    options.seoDescription?.trim() ||
+    options.description?.trim() ||
+    DEFAULT_SITE_DESCRIPTION;
+
+  document.title = pageTitle;
+  setCanonicalLink(currentUrl);
+  setMetaTag('description', desc, true);
+  setMetaTag('robots', options.isIndexable === false ? 'noindex, nofollow' : 'index, follow', true);
+
+  setMetaTag('og:title', pageTitle);
+  setMetaTag('og:description', desc);
+  setMetaTag('og:url', currentUrl);
+  setMetaTag('og:type', 'profile');
+  setMetaTag('og:site_name', 'ÉpítőTudás');
+  setMetaTag('og:image', options.image || DEFAULT_OG_IMAGE);
+
+  setMetaTag('twitter:card', 'summary_large_image', true);
+  setMetaTag('twitter:title', pageTitle, true);
+  setMetaTag('twitter:description', desc, true);
+  setMetaTag('twitter:image', options.image || DEFAULT_OG_IMAGE, true);
+}
+
 export function resetDefaultMetaTags(
   title: string,
   description: string = DEFAULT_SITE_DESCRIPTION,
@@ -103,6 +139,7 @@ export function resetDefaultMetaTags(
   setCanonicalLink(currentUrl);
 
   setMetaTag('description', description, true);
+  setMetaTag('robots', 'index, follow', true);
   setMetaTag('og:title', title);
   setMetaTag('og:description', description);
   setMetaTag('og:url', currentUrl);

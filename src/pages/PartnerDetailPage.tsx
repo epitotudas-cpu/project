@@ -29,6 +29,7 @@ import {
   getCategoryLabel,
   getPartnerOffers,
   incrementPartnerViews,
+  incrementOfferViews,
   type ExtendedPartner,
   type PartnerOfferItem,
 } from '../services/partnerService';
@@ -38,6 +39,9 @@ import {
   type PartnerReference,
   type PartnerReferenceImage,
 } from '../services/referenceService';
+import { listArticles, type Article } from '../services/articleService';
+import { fetchMaterialsFromCloud, type MaterialItem } from '../services/materialsService';
+import { updatePartnerMetaTags } from '../lib/seoMeta';
 import FormattedText from '../components/FormattedText';
 
 interface PartnerDetailPageProps {
@@ -308,6 +312,8 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
   const [partner, setPartner] = useState<ExtendedPartner | null>(null);
   const [referencesList, setReferencesList] = useState<PartnerReference[]>([]);
   const [offersList, setOffersList] = useState<PartnerOfferItem[]>([]);
+  const [partnerArticles, setPartnerArticles] = useState<Article[]>([]);
+  const [partnerMaterials, setPartnerMaterials] = useState<MaterialItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [imageError, setImageError] = useState<boolean>(false);
   const [activeLightbox, setActiveLightbox] = useState<LightboxState | null>(null);
@@ -380,16 +386,36 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
         const data = await getPartnerBySlug(partnerSlug);
         setPartner(data);
         if (data?.id) {
+          updatePartnerMetaTags({
+            name: data.name,
+            seoTitle: data.seo_title,
+            seoDescription: data.seo_description,
+            description: data.description,
+            image: data.cover_url || data.logo_url,
+            isIndexable: data.is_indexable,
+          });
           void incrementPartnerViews(data.id);
-          const [refs, offers] = await Promise.all([
-            getPartnerReferences(data.id, true),
-            getPartnerOffers(data.id, true),
+          const [refs, offers, articlesRes, materialsRes] = await Promise.all([
+            getPartnerReferences(data.id, true).catch(() => []),
+            getPartnerOffers(data.id, true).catch(() => []),
+            listArticles({ partnerId: data.id, status: 'published', pageSize: 6 }).catch(() => ({ items: [] as Article[] })),
+            fetchMaterialsFromCloud().catch(() => ({ items: null, categories: null })),
           ]);
           setReferencesList(refs);
           setOffersList(offers);
+          offers.forEach((offer) => {
+            void incrementOfferViews(offer.id);
+          });
+          setPartnerArticles(articlesRes.items || []);
+          const pubMaterials = (materialsRes.items || []).filter(
+            (m) => m.partner_id === data.id && m.status === 'published'
+          );
+          setPartnerMaterials(pubMaterials);
         } else {
           setReferencesList([]);
           setOffersList([]);
+          setPartnerArticles([]);
+          setPartnerMaterials([]);
         }
       } catch (err) {
         console.error('Hiba a partner betöltésekor:', err);
@@ -739,6 +765,22 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                   </div>
                 </div>
               )}
+
+              {partner.operating_area && (
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200/80 space-y-1">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Működési terület</span>
+                  <div className="font-bold text-gray-900 flex items-center gap-1.5">
+                    <Globe size={15} className="text-primary shrink-0" />
+                    <span>
+                      {partner.operating_area === 'national'
+                        ? 'Országos lefedettség'
+                        : partner.operating_area === 'county'
+                        ? 'Megyei / Regionális'
+                        : 'Helyi / Települési'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -826,17 +868,33 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                     )}
                   </div>
                   <div className="pt-3 border-t border-gray-200/70 flex items-center justify-between text-xs text-gray-500">
-                    <span>Érvényes: <strong className="text-gray-800">{offer.valid_until}</strong></span>
-                    {(partner.inquiry_email || partner.contact_email) && (
-                      <a
-                        href={`mailto:${partner.inquiry_email || partner.contact_email}?subject=${encodeURIComponent(
-                          `Érdeklődés ajánlatról: ${offer.title} - ${partner.name}`
-                        )}`}
-                        className="text-primary hover:text-accent font-bold flex items-center gap-1 transition-colors"
-                      >
-                        <Mail size={13} /> Érdeklődöm
-                      </a>
-                    )}
+                    <span>
+                      Érvényes:{' '}
+                      <strong className="text-gray-800">
+                        {offer.expires_at || offer.valid_until}
+                      </strong>
+                    </span>
+                    <div className="flex items-center gap-3">
+                      {offer.material_id && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigate('materials', { materialId: offer.material_id })}
+                          className="text-amber-700 hover:text-amber-900 font-bold transition-colors"
+                        >
+                          Termék megtekintése
+                        </button>
+                      )}
+                      {(partner.inquiry_email || partner.contact_email) && (
+                        <a
+                          href={`mailto:${partner.inquiry_email || partner.contact_email}?subject=${encodeURIComponent(
+                            `Érdeklődés ajánlatról: ${offer.title} - ${partner.name}`
+                          )}`}
+                          className="text-primary hover:text-accent font-bold flex items-center gap-1 transition-colors"
+                        >
+                          <Mail size={13} /> Érdeklődöm
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -889,6 +947,92 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
                   {cert.issuer && <div className="text-xs font-semibold text-gray-500">Kibocsátó: {cert.issuer}</div>}
                   {cert.valid_until && <div className="text-xs text-gray-400">Érvényes: {cert.valid_until}</div>}
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 7b. Partner Termékei & Szakmai Anyagai (ONLY IF PUBLISHED MATERIALS EXIST) */}
+        {partnerMaterials.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-accent/10 border border-accent/20 rounded-xl text-accent">
+                  <Tag size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#202628]">Termékek &amp; Szakmai Anyagok</h2>
+                  <p className="text-xs text-[#5f6868]">A partner publikált építőipari termékei és rendszerei.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigate('materials')}
+                className="text-xs font-extrabold text-primary hover:text-accent transition-colors"
+              >
+                Összes anyag →
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {partnerMaterials.slice(0, 6).map((mat) => (
+                <button
+                  key={mat.id}
+                  type="button"
+                  onClick={() => onNavigate('materials', { materialId: mat.id })}
+                  className="text-left p-4 bg-gray-50 hover:bg-amber-500/10 border border-gray-200 hover:border-amber-400 rounded-2xl transition-all group space-y-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                      {mat.category || 'Termék'}
+                    </span>
+                    {mat.price_indicator && (
+                      <span className="text-[11px] font-bold text-gray-500">{mat.price_indicator}</span>
+                    )}
+                  </div>
+                  <div className="font-extrabold text-gray-900 text-sm group-hover:text-primary transition-colors line-clamp-2">
+                    {mat.name}
+                  </div>
+                  {mat.description && (
+                    <p className="text-xs text-[#5f6868] line-clamp-2">{mat.description}</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 7c. Partner Szakmai Cikkei (ONLY IF PUBLISHED ARTICLES EXIST) */}
+        {partnerArticles.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="flex items-center gap-2.5 border-b border-gray-100 pb-4">
+              <div className="p-2.5 bg-accent/10 border border-accent/20 rounded-xl text-accent">
+                <FileText size={22} />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#202628]">Partner Szakmai Cikkei</h2>
+                <p className="text-xs text-[#5f6868]">A partner által publikált műszaki cikkek és esettanulmányok.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {partnerArticles.map((art) => (
+                <button
+                  key={art.id}
+                  type="button"
+                  onClick={() => onNavigate('article', { slug: art.slug })}
+                  className="text-left p-4 bg-gray-50 hover:bg-amber-500/10 border border-gray-200 hover:border-amber-400 rounded-2xl transition-all group space-y-2"
+                >
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                    Szakmai cikk
+                  </span>
+                  <div className="font-extrabold text-gray-900 text-sm group-hover:text-primary transition-colors line-clamp-2">
+                    {art.title}
+                  </div>
+                  {art.excerpt && (
+                    <p className="text-xs text-[#5f6868] line-clamp-2">{art.excerpt}</p>
+                  )}
+                </button>
               ))}
             </div>
           </section>

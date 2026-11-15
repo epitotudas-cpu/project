@@ -19,12 +19,18 @@ import {
   UserX,
   Send,
   AlertTriangle,
+  Archive,
+  RotateCcw,
+  Tag,
 } from 'lucide-react';
 import {
   listPartners,
   createPartner,
   updatePartner,
   deletePartner,
+  getAllPartnerOffers,
+  updatePartnerOffer,
+  deletePartnerOffer,
   getCategoryLabel,
   assignInstructorTrade,
   listInstructorTrades,
@@ -33,6 +39,7 @@ import {
   listStudentInvitationCodes,
   type PartnerCategory,
   type ExtendedPartner,
+  type PartnerOfferItem,
   type PartnerUserTrade,
   type StudentInvitationCode,
 } from '../services/partnerService';
@@ -94,7 +101,8 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   const [staffMap, setStaffMap] = useState<Record<string, PartnerStaffMember[]>>({});
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'partners' | 'invitations' | 'applications'>('partners');
+  const [activeTab, setActiveTab] = useState<'partners' | 'invitations' | 'applications' | 'offers'>('partners');
+  const [offers, setOffers] = useState<PartnerOfferItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvingAppId, setApprovingAppId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
@@ -305,14 +313,16 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
   async function loadData() {
     try {
       setLoading(true);
-      const [partnerData, inviteData, appData] = await Promise.all([
-        listPartners(activeCategory === 'all' ? undefined : activeCategory),
+      const [partnerData, inviteData, appData, offerData] = await Promise.all([
+        listPartners(activeCategory === 'all' ? undefined : activeCategory, 100, { includeInactive: true }),
         listInvitations(),
         listPartnerApplications(),
+        getAllPartnerOffers().catch(() => []),
       ]);
       setPartners(partnerData);
       setInvitations(inviteData);
       setApplications(appData);
+      setOffers(offerData);
 
       if (partnerData.length > 0 && !invitePartnerId) {
         setInvitePartnerId(partnerData[0].id);
@@ -360,17 +370,31 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
     setShowEditorModal(true);
   }
 
-  async function handleSaveRichPartner(data: Partial<ExtendedPartner>) {
+  async function handleSaveRichPartner(data: Partial<ExtendedPartner>): Promise<ExtendedPartner> {
     try {
-      if (editingPartner) {
-        await updatePartner(editingPartner.id, data);
-      } else {
-        await createPartner(data as Parameters<typeof createPartner>[0]);
-      }
+      const saved = editingPartner
+        ? await updatePartner(editingPartner.id, data)
+        : await createPartner(data as Parameters<typeof createPartner>[0]);
       await loadData();
+      return saved;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Hiba történt a partner mentésekor.');
       throw err;
+    }
+  }
+
+  async function handleTogglePartnerStatus(partner: ExtendedPartner) {
+    const nextStatus = (partner.status ?? 'published') === 'published' ? 'inactive' : 'published';
+    try {
+      await updatePartner(partner.id, { status: nextStatus });
+      toast.success(
+        nextStatus === 'inactive'
+          ? `„${partner.name}” archiválva (inaktív).`
+          : `„${partner.name}” újra publikálva.`
+      );
+      await loadData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Nem sikerült a státusz módosítása.');
     }
   }
 
@@ -721,6 +745,15 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('offers')}
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'offers'
+                ? 'bg-amber-500 text-gray-900 shadow-sm'
+                : 'text-gray-400 hover:text-gray-200'
+              }`}
+          >
+            <Tag size={14} /> Ajánlatok ({offers.length})
+          </button>
         </div>
 
         {/* Category Filters */}
@@ -1063,8 +1096,22 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
                     </div>
 
                     <div style={{ borderColor: cardBorder }} className="pt-3 border-t flex items-center justify-between text-xs">
-                      <span className="text-gray-500">ID: {partner.id.substring(0, 8)}...</span>
                       <div className="flex items-center gap-2">
+                        <span className="text-gray-500">ID: {partner.id.substring(0, 8)}...</span>
+                        {(partner.status ?? 'published') !== 'published' && (
+                          <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold text-[10px] uppercase">
+                            {partner.status === 'inactive' ? 'Archivált' : 'Piszkozat'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleTogglePartnerStatus(partner)}
+                          className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors cursor-pointer"
+                          title={(partner.status ?? 'published') === 'published' ? 'Archiválás (inaktívvá tétel)' : 'Újra publikálás'}
+                        >
+                          {(partner.status ?? 'published') === 'published' ? <Archive size={15} /> : <RotateCcw size={15} />}
+                        </button>
                         <button
                           onClick={() => openEditModal(partner)}
                           className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors cursor-pointer"
@@ -1087,6 +1134,88 @@ export default function AdminPartnersPage({ initialSearchQuery }: AdminPartnersP
             </div>
           )}
         </>
+      )}
+
+      {/* TAB 4: PARTNER OFFERS OVERSIGHT */}
+      {activeTab === 'offers' && (
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="border rounded-2xl overflow-hidden shadow-xl">
+          <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: cardBorder }}>
+            <div>
+              <h3 className="text-sm font-bold text-white">Partneri Ajánlatok Felügyelete</h3>
+              <p className="text-xs text-gray-400">Összes partneri kedvezmény és promóció állapota, lejárata és moderálása.</p>
+            </div>
+          </div>
+          {offers.length === 0 ? (
+            <div className="p-10 text-center text-gray-400 text-xs">Jelenleg nincs rögzített partneri ajánlat.</div>
+          ) : (
+            <div className="divide-y divide-gray-800">
+              {offers.map((offer) => {
+                const partnerName = partners.find((p) => p.id === offer.partner_id)?.name || offer.partner_id.slice(0, 8);
+                return (
+                  <div key={offer.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-extrabold text-amber-400">{partnerName}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 font-bold">
+                          {offer.discount}
+                        </span>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                            offer.status === 'Aktív'
+                              ? 'bg-emerald-500/15 text-emerald-400'
+                              : offer.status === 'Lejárt'
+                              ? 'bg-red-500/15 text-red-400'
+                              : 'bg-gray-700 text-gray-300'
+                          }`}
+                        >
+                          {offer.status}
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-white">{offer.title}</div>
+                      <div className="text-xs text-gray-400">
+                        Érvényes: {offer.expires_at || offer.valid_until} · Megtekintés: {offer.views ?? 0}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const nextStatus = offer.status === 'Aktív' ? 'Szüneteltetve' : 'Aktív';
+                          try {
+                            const updated = await updatePartnerOffer(offer.id, { status: nextStatus });
+                            setOffers((prev) => prev.map((o) => (o.id === offer.id ? updated : o)));
+                            toast.success(`Ajánlat állapota: ${nextStatus}`);
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : 'Frissítés sikertelen.');
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 cursor-pointer"
+                      >
+                        {offer.status === 'Aktív' ? 'Szüneteltetés' : 'Aktiválás'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await deletePartnerOffer(offer.id);
+                            setOffers((prev) => prev.filter((o) => o.id !== offer.id));
+                            toast.success('Ajánlat törölve.');
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : 'Törlés sikertelen.');
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-400/10 cursor-pointer"
+                        title="Ajánlat törlése"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {/* TAB 2: INVITATIONS LIST */}
