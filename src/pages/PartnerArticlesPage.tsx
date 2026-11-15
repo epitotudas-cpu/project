@@ -21,9 +21,8 @@ import {
 import {
   getArticlesLocal,
   listArticles,
-  createArticle,
-  updateArticle,
-  deleteArticle,
+  upsertPartnerArticle,
+  deletePartnerArticle,
 } from '../services/articleService';
 import { listCategories } from '../services/categoryService';
 import type { Partner, Category, Article } from '../lib/supabase';
@@ -80,7 +79,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
     function reload() {
       setAllItems(getArticlesLocal());
     }
-    listArticles({ status: 'all', pageSize: 200 })
+    listArticles({ status: 'all', partnerId: currentPartner.id, pageSize: 200 })
       .then((res) => {
         if (!cancelled) setAllItems(res.rows);
       })
@@ -121,7 +120,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
       excerpt: '',
       content: '',
       article_type: 'hirek',
-      category_id: defaultCat?.id || 'cat-1',
+      category_id: defaultCat?.id || '',
       subcategory_name: '',
       tags: ['építőipar', 'partneri hír'],
       author: currentPartner.name,
@@ -178,61 +177,33 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
 
-    const now = new Date().toISOString();
-
     try {
+      const payload: Partial<Article> & { status: 'draft' | 'pending' } = {
+        ...(editingItem ? { id: editingItem.id } : {}),
+        title: formData.title,
+        slug: generatedSlug,
+        excerpt: formData.excerpt,
+        content: formData.content || '',
+        article_type: (formData.article_type as Article['article_type']) || 'hirek',
+        category_id: formData.category_id || categories[0]?.id || null,
+        subcategory_name: formData.subcategory_name || null,
+        tags: formData.tags || [],
+        author: formData.author || currentPartner.name,
+        featured_image:
+          formData.featured_image ||
+          editingItem?.featured_image ||
+          'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+        documents: formData.documents || [],
+        read_time: editingItem?.read_time || 5,
+        status: targetStatus,
+      };
+
+      const saved = await upsertPartnerArticle(currentPartner.id, payload);
       if (editingItem) {
-        const updatePayload: Record<string, unknown> = {
-          title: formData.title,
-          slug: generatedSlug,
-          excerpt: formData.excerpt,
-          content: formData.content || '',
-          article_type: (formData.article_type as string) || 'hirek',
-          category_id: formData.category_id || categories[0]?.id || 'cat-1',
-          subcategory_name: formData.subcategory_name || null,
-          tags: formData.tags || [],
-          author: formData.author || currentPartner.name,
-          partner_id: currentPartner.id,
-          partner_name: currentPartner.name,
-          featured_image: formData.featured_image || editingItem.featured_image,
-          documents: formData.documents || [],
-          status: targetStatus,
-          rejection_note: targetStatus === 'pending' ? null : (formData.rejection_note ?? null),
-          updated_at: now,
-        };
-        const updated = await updateArticle(editingItem.id, updatePayload);
-        setAllItems((prev) => prev.map((i) => (i.id === editingItem.id ? updated : i)));
+        setAllItems((prev) => prev.map((i) => (i.id === editingItem.id ? saved : i)));
         toast.success(targetStatus === 'pending' ? 'Cikk beküldve jóváhagyásra!' : 'Piszkozat mentve!');
       } else {
-        const newPayload: Record<string, unknown> = {
-          id: `art-partner-${Date.now()}`,
-          title: formData.title || '',
-          slug: generatedSlug,
-          excerpt: formData.excerpt || '',
-          content: formData.content || '',
-          article_type: (formData.article_type as string) || 'hirek',
-          category_id: formData.category_id || categories[0]?.id || 'cat-1',
-          subcategory_name: formData.subcategory_name || null,
-          tags: formData.tags || [],
-          author: formData.author || currentPartner.name,
-          partner_id: currentPartner.id,
-          partner_name: currentPartner.name,
-          featured_image:
-            formData.featured_image ||
-            'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
-          documents: formData.documents || [],
-          read_time: 5,
-          views: 0,
-          rating: 0,
-          rating_count: 0,
-          status: targetStatus,
-          rejection_note: null,
-          featured: false,
-          created_at: now,
-          updated_at: now,
-        };
-        const created = await createArticle(newPayload);
-        setAllItems((prev) => [created, ...prev]);
+        setAllItems((prev) => [saved, ...prev]);
         toast.success(targetStatus === 'pending' ? 'Új cikk beküldve jóváhagyásra!' : 'Új piszkozat mentve!');
       }
       setIsModalOpen(false);
@@ -855,7 +826,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
         onConfirm={async () => {
           if (deleteArticleId) {
             try {
-              await deleteArticle(deleteArticleId);
+              await deletePartnerArticle(deleteArticleId);
               setAllItems((prev) => prev.filter((i) => i.id !== deleteArticleId));
               toast.success('Cikk törölve.');
             } catch (err: unknown) {

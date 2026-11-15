@@ -796,6 +796,74 @@ export async function deleteArticle(id: string): Promise<void> {
   void logAuditAction('ARTICLE_DELETE', 'articles', `Cikk törölve: "${target?.title || id}"`);
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function upsertPartnerArticle(
+  partnerId: string,
+  payload: Partial<Article> & { status?: 'draft' | 'pending' }
+): Promise<Article> {
+  const safeId = payload.id && UUID_REGEX.test(payload.id) ? payload.id : undefined;
+  const safeCategoryId = payload.category_id && UUID_REGEX.test(payload.category_id) ? payload.category_id : null;
+
+  const rpcPayload = {
+    ...(safeId ? { id: safeId } : {}),
+    title: payload.title ?? '',
+    slug: payload.slug ?? '',
+    excerpt: payload.excerpt ?? null,
+    content: payload.content ?? '',
+    article_type: payload.article_type ?? 'hirek',
+    category_id: safeCategoryId,
+    subcategory_name: payload.subcategory_name ?? null,
+    tags: Array.isArray(payload.tags) ? payload.tags : [],
+    author: payload.author ?? null,
+    difficulty: payload.difficulty ?? 'beginner',
+    read_time: payload.read_time ?? 5,
+    featured_image: payload.featured_image ?? null,
+    documents: Array.isArray(payload.documents) ? payload.documents : [],
+    status: payload.status === 'pending' ? 'pending' : 'draft',
+  };
+
+  const { data, error } = await supabase.rpc('upsert_partner_article', {
+    p_partner_id: partnerId,
+    p_payload: rpcPayload,
+  });
+
+  if (error || !data) {
+    throw new Error(`Partner cikk mentése sikertelen: ${error?.message || 'Ismeretlen hiba'}`);
+  }
+
+  const saved = data as Article;
+  const allLocal = getArticlesLocal();
+  const idx = allLocal.findIndex((a) => a.id === saved.id);
+  if (idx !== -1) {
+    allLocal[idx] = saved;
+    saveArticlesLocal(allLocal);
+  } else {
+    saveArticlesLocal([saved, ...allLocal]);
+  }
+
+  void logAuditAction(
+    safeId ? 'PARTNER_ARTICLE_UPDATE' : 'PARTNER_ARTICLE_CREATE',
+    'articles',
+    `Partner cikk mentve (${saved.status}): "${saved.title}"`
+  );
+
+  return saved;
+}
+
+export async function deletePartnerArticle(id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_partner_article', { p_id: id });
+  if (error) {
+    throw new Error(`Partner cikk törlése sikertelen: ${error.message}`);
+  }
+
+  const allLocal = getArticlesLocal();
+  const target = allLocal.find((a) => a.id === id);
+  saveArticlesLocal(allLocal.filter((a) => a.id !== id));
+
+  void logAuditAction('PARTNER_ARTICLE_DELETE', 'articles', `Partner cikk törölve: "${target?.title || id}"`);
+}
+
 export async function countArticles(): Promise<number> {
   try {
     const { count, error } = await supabase
