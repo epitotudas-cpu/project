@@ -249,7 +249,7 @@ END;
 $$;
 
 ALTER FUNCTION public.upsert_partner_material_item(UUID, JSONB) OWNER TO postgres;
-REVOKE ALL ON FUNCTION public.upsert_partner_material_item(UUID, JSONB) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.upsert_partner_material_item(UUID, JSONB) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.upsert_partner_material_item(UUID, JSONB) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.delete_partner_material_item(
@@ -337,5 +337,5 @@ END;
 $$;
 
 ALTER FUNCTION public.delete_partner_material_item(UUID, TEXT) OWNER TO postgres;
-REVOKE ALL ON FUNCTION public.delete_partner_material_item(UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.delete_partner_material_item(UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.delete_partner_material_item(UUID, TEXT) TO authenticated;
