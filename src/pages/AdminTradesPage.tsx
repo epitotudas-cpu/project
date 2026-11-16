@@ -715,7 +715,7 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
                         onClick={handleAddTimelineStation}
                         className="px-3 py-1.5 bg-amber-400/20 text-amber-300 hover:bg-amber-400/30 border border-amber-400/40 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        <Plus size={14} /> + Állomás Hozzáadása
+                        <Plus size={14} /> Állomás Hozzáadása
                       </button>
                     </div>
 
@@ -826,7 +826,7 @@ export default function AdminTradesPage({ initialSearchQuery }: AdminTradesPageP
                         onClick={handleAddFutureTechCard}
                         className="px-3 py-1.5 bg-purple-400/20 text-purple-300 hover:bg-purple-400/30 border border-purple-400/40 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        <Plus size={14} /> + Tech Kártya Hozzáadása
+                        <Plus size={14} /> Tech Kártya Hozzáadása
                       </button>
                     </div>
 

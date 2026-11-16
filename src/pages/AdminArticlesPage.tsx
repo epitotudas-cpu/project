@@ -464,7 +464,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                   }}
                   className="flex-1 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Plus size={14} /> + Új Hír
+                  <Plus size={14} /> Új Hír
                 </button>
                 <button
                   onClick={() => setSubTab('list-hirek')}
@@ -527,7 +527,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                   }}
                   className="flex-1 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Plus size={14} /> + Új Újdonság
+                  <Plus size={14} /> Új Újdonság
                 </button>
                 <button
                   onClick={() => setSubTab('list-ujdonsagok')}

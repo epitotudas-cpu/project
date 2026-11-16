@@ -288,7 +288,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
           onClick={handleOpenCreateModal}
           className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
         >
-          <Plus size={16} /> + Új Építőanyag Hozzáadása
+          <Plus size={16} /> Új Építőanyag Hozzáadása
         </button>
       </div>
 

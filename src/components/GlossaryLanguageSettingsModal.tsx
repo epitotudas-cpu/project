@@ -234,7 +234,7 @@ export default function GlossaryLanguageSettingsModal({
                 style={{ backgroundColor: cardHighlight, color: '#000000' }}
                 className="px-3.5 py-1.5 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 cursor-pointer hover:opacity-90 shadow-md"
               >
-                <Plus size={14} /> + Új Nyelv Hozzáadása
+                <Plus size={14} /> Új Nyelv Hozzáadása
               </button>
             </div>
           </div>

@@ -1137,7 +1137,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                   style={{ backgroundColor: cardHighlight, color: '#000000' }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg hover:opacity-90 transition-colors cursor-pointer shadow-md"
                 >
-                  <Plus size={14} /> + Új Gyártói Termék
+                  <Plus size={14} /> Új Gyártói Termék
                 </button>
               </div>
 
