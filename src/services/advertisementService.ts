@@ -337,11 +337,17 @@ function isExcludedTestPartner(partner: { id?: string | null; slug?: string | nu
   return name.includes('[e2e-') || name === 'teszt iskola' || name === '78-as építők kft.';
 }
 
-export async function getPartnerHighlights(): Promise<PartnerHighlight[]> {
+export async function getPartnerHighlights(options?: {
+  includeTestPartners?: boolean;
+}): Promise<PartnerHighlight[]> {
   try {
     const allPartners = await listPartners();
+    const includeTestPartners = options?.includeTestPartners === true;
     const active = allPartners.filter(
-      (p) => p.status !== 'inactive' && p.status !== 'draft' && !isExcludedTestPartner(p)
+      (p) =>
+        p.status !== 'inactive' &&
+        p.status !== 'draft' &&
+        (includeTestPartners || !isExcludedTestPartner(p))
     );
 
     // Sort: Featured partners first, then verified, then newest

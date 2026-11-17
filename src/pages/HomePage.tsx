@@ -181,7 +181,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         ] = await Promise.all([
           getCategories(),
           getArticles({ status: 'published', limit: 6, orderBy: 'created_at' }),
-          getPartnerHighlights(),
+          getPartnerHighlights({ includeTestPartners: true }),
           getAdvertisementSlots(),
           fetchKnowledgeItemsFromCloud(),
           fetchMaterialsFromCloud(),
