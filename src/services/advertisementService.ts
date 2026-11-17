@@ -323,10 +323,26 @@ export async function recordAdClick(campaignId: string): Promise<void> {
   }
 }
 
+const EXCLUDED_TEST_PARTNER_IDS = new Set([
+  'c45a9ebd-8afb-43ab-8761-b1e7bc69aee6',
+  'd876ac79-13a7-4c14-852d-3b5adb282047',
+]);
+
+function isExcludedTestPartner(partner: { id?: string | null; slug?: string | null; name?: string | null }): boolean {
+  const id = (partner.id || '').toLowerCase();
+  if (EXCLUDED_TEST_PARTNER_IDS.has(id)) return true;
+  const slug = (partner.slug || '').toLowerCase();
+  if (slug.startsWith('teszt-iskola') || slug === '78-as-epitok') return true;
+  const name = (partner.name || '').trim().toLowerCase();
+  return name.includes('[e2e-') || name === 'teszt iskola' || name === '78-as építők kft.';
+}
+
 export async function getPartnerHighlights(): Promise<PartnerHighlight[]> {
   try {
     const allPartners = await listPartners();
-    const active = allPartners.filter((p) => p.status !== 'inactive' && p.status !== 'draft');
+    const active = allPartners.filter(
+      (p) => p.status !== 'inactive' && p.status !== 'draft' && !isExcludedTestPartner(p)
+    );
 
     // Sort: Featured partners first, then verified, then newest
     const sorted = [...active].sort((a, b) => {
