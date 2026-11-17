@@ -289,13 +289,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     },
   ];
 
-  // Kiemelt szakmai tartalom + Friss szakmai cikkek (1 nagy + 2-3 kisebb)
+  // Kiemelt szakmai tartalom + Friss szakmai cikkek (1 nagy + 2-3 kisebb, duplikáció nélkül)
   const featuredSpotlightArticle =
     articles.find((a) => a.featured) || articles[0] || null;
   const freshArticlesPool = featuredSpotlightArticle
     ? articles.filter((a) => a.id !== featuredSpotlightArticle.id)
     : articles;
-  const leadFreshArticle = freshArticlesPool[0] || featuredSpotlightArticle;
+  const leadFreshArticle = freshArticlesPool[0] || null;
   const secondaryFreshArticles = freshArticlesPool
     .filter((a) => a.id !== leadFreshArticle?.id)
     .slice(0, 3);
@@ -417,11 +417,10 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       alt={img.altText || 'ÉpítőTudás vizuális elem'}
                       loading={isCurrent ? 'eager' : 'lazy'}
                       decoding="async"
-                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out ${
-                        isCurrent
+                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out ${isCurrent
                           ? 'opacity-100 scale-100 z-10'
                           : 'opacity-0 scale-105 z-0 pointer-events-none'
-                      }`}
+                        }`}
                     />
                   );
                 })}
@@ -439,9 +438,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                           aria-label={`Ugrás a(z) ${idx + 1}. képre`}
                         >
                           <span
-                            className={`h-2 rounded-full transition-all ${
-                              idx === currentHeroIndex ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'
-                            }`}
+                            className={`h-2 rounded-full transition-all ${idx === currentHeroIndex ? 'w-6 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'
+                              }`}
                           />
                         </button>
                       ))}
@@ -541,7 +539,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
         {!leadFreshArticle ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
-            Jelenleg nincs megjeleníthető publikált cikk.
+            Jelenleg nincs további megjeleníthető publikált cikk.
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -549,7 +547,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <button
               type="button"
               onClick={() => onNavigate('article', { articleSlug: leadFreshArticle.slug })}
-              className="lg:col-span-7 group bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-xl transition-all overflow-hidden text-left flex flex-col cursor-pointer min-w-0"
+              className={`${secondaryFreshArticles.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'
+                } group bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-xl transition-all overflow-hidden text-left flex flex-col cursor-pointer min-w-0`}
             >
               <div className="aspect-[16/9] w-full bg-gray-900 overflow-hidden relative">
                 {leadFreshArticle.featured_image ? (
@@ -599,54 +598,56 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </button>
 
             {/* 2–3 kisebb cikkkártya */}
-            <div className="lg:col-span-5 flex flex-col gap-4">
-              {secondaryFreshArticles.map((article) => (
-                <button
-                  key={article.id}
-                  type="button"
-                  onClick={() => onNavigate('article', { articleSlug: article.slug })}
-                  className="group bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-lg transition-all p-4 text-left flex gap-4 items-stretch cursor-pointer min-w-0 flex-1"
-                >
-                  <div className="w-28 sm:w-32 aspect-[4/3] rounded-xl bg-gray-900 overflow-hidden shrink-0">
-                    {article.featured_image ? (
-                      <img
-                        src={optimizeImageUrl(article.featured_image, 320, 70)}
-                        alt={article.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-primary/90 flex items-center justify-center">
-                        <BookOpen size={24} className="text-white/50" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 flex flex-col justify-between gap-2">
-                    <div>
-                      <span className="inline-block rounded bg-accent/10 px-2 py-0.5 text-[11px] font-bold text-accent mb-1.5">
-                        {categories.find((c) => c.id === article.category_id)?.name || 'Általános'}
-                      </span>
-                      <h3 className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                        {article.title}
-                      </h3>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                      {formatHuDate(article.created_at) && (
-                        <span className="inline-flex items-center gap-1">
-                          <Calendar size={12} />
-                          {formatHuDate(article.created_at)}
-                        </span>
+            {secondaryFreshArticles.length > 0 && (
+              <div className="lg:col-span-5 flex flex-col gap-4">
+                {secondaryFreshArticles.map((article) => (
+                  <button
+                    key={article.id}
+                    type="button"
+                    onClick={() => onNavigate('article', { articleSlug: article.slug })}
+                    className="group bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-lg transition-all p-4 text-left flex gap-4 items-stretch cursor-pointer min-w-0 flex-1"
+                  >
+                    <div className="w-28 sm:w-32 aspect-[4/3] rounded-xl bg-gray-900 overflow-hidden shrink-0">
+                      {article.featured_image ? (
+                        <img
+                          src={optimizeImageUrl(article.featured_image, 320, 70)}
+                          alt={article.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-primary/90 flex items-center justify-center">
+                          <BookOpen size={24} className="text-white/50" />
+                        </div>
                       )}
-                      <span className="inline-flex items-center gap-1">
-                        <Clock size={12} />
-                        {article.read_time || 5} perc
-                      </span>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                    <div className="min-w-0 flex-1 flex flex-col justify-between gap-2">
+                      <div>
+                        <span className="inline-block rounded bg-accent/10 px-2 py-0.5 text-[11px] font-bold text-accent mb-1.5">
+                          {categories.find((c) => c.id === article.category_id)?.name || 'Általános'}
+                        </span>
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
+                          {article.title}
+                        </h3>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                        {formatHuDate(article.created_at) && (
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar size={12} />
+                            {formatHuDate(article.created_at)}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <Clock size={12} />
+                          {article.read_time || 5} perc
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -755,10 +756,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* 6. Kiemelt gyártói katalógusok: 1 nagy + 2 kisebb */}
+            {/* 6. Kiemelt gyártói katalógusok: 1 nagy + 2 kisebb (vagy teljes szélesség 1 elemnél) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Nagy kiemelt katalógus */}
-              <div className="lg:col-span-6 bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-xl transition-all overflow-hidden flex flex-col justify-between min-w-0">
+              <div
+                className={`${secondaryFeaturedCatalogs.length > 0 ? 'lg:col-span-6' : 'lg:col-span-12'
+                  } bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-xl transition-all overflow-hidden flex flex-col justify-between min-w-0`}
+              >
                 <div>
                   <div className="aspect-[16/9] w-full bg-gray-900 relative overflow-hidden">
                     {leadCatalog.item.main_image_url ? (
@@ -819,58 +823,60 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </div>
 
               {/* 2 kisebb kiemelt katalógus */}
-              <div className="lg:col-span-6 flex flex-col gap-6">
-                {secondaryFeaturedCatalogs.map((entry) => (
-                  <div
-                    key={entry.item.id}
-                    className="bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-lg transition-all p-5 flex flex-col sm:flex-row gap-4 items-stretch flex-1 min-w-0"
-                  >
-                    <div className="w-full sm:w-36 aspect-[16/10] sm:aspect-auto rounded-xl bg-gray-900 overflow-hidden shrink-0">
-                      {entry.item.main_image_url ? (
-                        <img
-                          src={optimizeImageUrl(entry.item.main_image_url, 360, 70)}
-                          alt={entry.doc.title || entry.item.name}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-primary/90 flex items-center justify-center">
-                          <FileText size={28} className="text-white/50" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1 flex flex-col justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-1.5">
-                          <span className="font-bold text-primary">
-                            {entry.item.brand || entry.item.partner_name}
-                          </span>
-                          {formatHuDate(entry.item.created_at) && (
-                            <span>• {formatHuDate(entry.item.created_at)}</span>
-                          )}
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 line-clamp-2">
-                          {entry.doc.title || entry.item.name}
-                        </h3>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <a
-                          href={entry.pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-primary-800 text-white text-xs font-bold rounded-xl transition-colors"
-                        >
-                          <Download size={13} /> PDF megnyitása
-                        </a>
-                        {entry.doc.file_size && (
-                          <span className="text-[11px] text-gray-500 font-medium">{entry.doc.file_size}</span>
+              {secondaryFeaturedCatalogs.length > 0 && (
+                <div className="lg:col-span-6 flex flex-col gap-6">
+                  {secondaryFeaturedCatalogs.map((entry) => (
+                    <div
+                      key={entry.item.id}
+                      className="bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-lg transition-all p-5 flex flex-col sm:flex-row gap-4 items-stretch flex-1 min-w-0"
+                    >
+                      <div className="w-full sm:w-36 aspect-[16/10] sm:aspect-auto rounded-xl bg-gray-900 overflow-hidden shrink-0">
+                        {entry.item.main_image_url ? (
+                          <img
+                            src={optimizeImageUrl(entry.item.main_image_url, 360, 70)}
+                            alt={entry.doc.title || entry.item.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-primary/90 flex items-center justify-center">
+                            <FileText size={28} className="text-white/50" />
+                          </div>
                         )}
                       </div>
+                      <div className="min-w-0 flex-1 flex flex-col justify-between gap-3">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-1.5">
+                            <span className="font-bold text-primary">
+                              {entry.item.brand || entry.item.partner_name}
+                            </span>
+                            {formatHuDate(entry.item.created_at) && (
+                              <span>• {formatHuDate(entry.item.created_at)}</span>
+                            )}
+                          </div>
+                          <h3 className="text-base font-bold text-gray-900 line-clamp-2">
+                            {entry.doc.title || entry.item.name}
+                          </h3>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <a
+                            href={entry.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-primary-800 text-white text-xs font-bold rounded-xl transition-colors"
+                          >
+                            <Download size={13} /> PDF megnyitása
+                          </a>
+                          {entry.doc.file_size && (
+                            <span className="text-[11px] text-gray-500 font-medium">{entry.doc.file_size}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 7. További friss katalógusok (3–4 friss dokumentum) */}
