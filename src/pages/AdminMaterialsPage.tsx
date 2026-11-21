@@ -123,7 +123,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
     }
     reload();
 
-    void fetchMaterialsFromCloud()
+    void fetchMaterialsFromCloud({ isAdmin: true })
       .then(({ items: cloudItems, categories: cloudCats }) => {
         if (cancelled) return;
         if (cloudItems) setItems(cloudItems);

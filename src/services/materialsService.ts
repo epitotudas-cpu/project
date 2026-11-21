@@ -521,18 +521,59 @@ export async function deletePartnerMaterialItem(partnerId: string, itemId: strin
   }
 }
 
-export async function fetchMaterialsFromCloud(): Promise<{ items: MaterialItem[] | null; categories: MaterialCategory[] | null }> {
+export async function fetchMaterialsFromCloud(options?: {
+  partnerId?: string;
+  isAdmin?: boolean;
+}): Promise<{ items: MaterialItem[] | null; categories: MaterialCategory[] | null }> {
   try {
-    const [itemsResult, parsedCats] = await Promise.all([
-      readAppConfigWithVersion<MaterialItem[]>('__SYSTEM_CONFIG_MATERIALS_ITEMS__', SUPABASE_SYSTEM_ROW_ID),
+    const fetchItems = async (): Promise<MaterialItem[] | null> => {
+      if (options?.isAdmin) {
+        const itemsResult = await readAppConfigWithVersion<MaterialItem[]>(
+          '__SYSTEM_CONFIG_MATERIALS_ITEMS__',
+          SUPABASE_SYSTEM_ROW_ID
+        );
+        lastCloudMaterialsUpdatedAt = itemsResult.updatedAt;
+        if (Array.isArray(itemsResult.value)) {
+          lastCloudMaterialsItems = itemsResult.value;
+        }
+        return itemsResult.value;
+      }
+
+      if (options?.partnerId) {
+        const rpcRes = await supabase.rpc('get_partner_own_materials', {
+          p_partner_id: options.partnerId,
+        });
+        if (rpcRes && !rpcRes.error && Array.isArray(rpcRes.data)) {
+          return rpcRes.data as MaterialItem[];
+        }
+        if (rpcRes && rpcRes.error && rpcRes.error.code !== '42883' && rpcRes.error.code !== 'PGRST202') {
+          return null;
+        }
+      } else {
+        const rpcRes = await supabase.rpc('get_published_materials');
+        if (rpcRes && !rpcRes.error && Array.isArray(rpcRes.data)) {
+          return rpcRes.data as MaterialItem[];
+        }
+        if (rpcRes && rpcRes.error && rpcRes.error.code !== '42883' && rpcRes.error.code !== 'PGRST202') {
+          return null;
+        }
+      }
+
+      const itemsResult = await readAppConfigWithVersion<MaterialItem[]>(
+        '__SYSTEM_CONFIG_MATERIALS_ITEMS__',
+        SUPABASE_SYSTEM_ROW_ID
+      );
+      lastCloudMaterialsUpdatedAt = itemsResult.updatedAt;
+      if (Array.isArray(itemsResult.value)) {
+        lastCloudMaterialsItems = itemsResult.value;
+      }
+      return itemsResult.value;
+    };
+
+    const [parsedItems, parsedCats] = await Promise.all([
+      fetchItems(),
       readAppConfig<MaterialCategory[]>('__SYSTEM_CONFIG_MATERIAL_CATEGORIES__', SUPABASE_CATS_ROW_ID),
     ]);
-
-    const parsedItems = itemsResult.value;
-    lastCloudMaterialsUpdatedAt = itemsResult.updatedAt;
-    if (Array.isArray(parsedItems)) {
-      lastCloudMaterialsItems = parsedItems;
-    }
 
     let loadedItems: MaterialItem[] | null = null;
     let loadedCats: MaterialCategory[] | null = null;

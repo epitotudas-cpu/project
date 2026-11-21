@@ -86,7 +86,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       setAllItems(getMaterialsLocal());
     }
     reload();
-    fetchMaterialsFromCloud()
+    fetchMaterialsFromCloud({ partnerId: currentPartner.id })
       .then(({ items }) => {
         if (!cancelled && items) setAllItems(items);
       })
@@ -96,7 +96,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       cancelled = true;
       window.removeEventListener('materials-updated', reload);
     };
-  }, []);
+  }, [currentPartner.id]);
 
   // 🔒 STRICT SECURITY SCOPING: Filter items belonging ONLY to currentPartner
   const partnerItems = allItems.filter((i) => i.partner_id === currentPartner.id);

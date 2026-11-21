@@ -547,10 +547,15 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
     );
 
     // Cloud sync to Supabase app_configs (with legacy categories fallback)
-    await writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', updatedSettings, {
+    // Security: never store smtpSettings inside the publicly readable __SYSTEM_CONFIG_SITE_SETTINGS__ key
+    const { smtpSettings, ...publicSiteSettings } = updatedSettings;
+    await writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', publicSiteSettings, {
       id: SUPABASE_SYSTEM_ID,
       slug: 'system-site-settings-config',
     });
+    if (smtpSettings) {
+      await writeAppConfig('__SYSTEM_CONFIG_SMTP_SETTINGS__', smtpSettings);
+    }
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);
     throw err;
@@ -601,7 +606,9 @@ export async function fetchSiteSettingsFromCloud(): Promise<SiteSettings | null>
               const cloudTime = cloudSettings.iconsUpdatedAt || 0;
 
               if (localTime > cloudTime) {
-                void writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', localParsed, {
+                const { smtpSettings: _localSmtp, ...publicLocalSettings } = localParsed;
+                void _localSmtp;
+                void writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', publicLocalSettings, {
                   id: SUPABASE_SYSTEM_ID,
                   slug: 'system-site-settings-config',
                 });
