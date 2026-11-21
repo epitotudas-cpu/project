@@ -12,6 +12,8 @@ import {
   Search,
   X,
   Building2,
+  Check,
+  Scale,
 } from 'lucide-react';
 import {
   fetchMaterialsFromCloud,
@@ -20,6 +22,14 @@ import {
 } from '../services/materialsService';
 import SectionSubNav from '../components/SectionSubNav';
 import PaginationControls, { usePagination } from '../components/PaginationControls';
+
+const MAX_COMPARE_ITEMS = 4;
+
+function formatCompareValue(value: string | null | undefined): string {
+  if (typeof value !== 'string') return '—';
+  const trimmed = value.trim();
+  return trimmed ? trimmed : '—';
+}
 
 interface ToolSelectorPageProps {
   onNavigate: (page: string) => void;
@@ -33,6 +43,9 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
   const [loadedCategories, setLoadedCategories] = useState<MaterialCategory[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(true);
   const [fetchError, setFetchError] = useState(false);
+  const [selectedCompareIds, setSelectedCompareIds] = useState<string[]>([]);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [compareLimitNotice, setCompareLimitNotice] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,6 +154,91 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
     setSelectedCategory('all');
     setSelectedBrand('all');
   };
+
+  useEffect(() => {
+    if (loadingMaterials) return;
+    const validIds = new Set(loadedMaterials.map((item) => item.id));
+    setSelectedCompareIds((prev) => {
+      const next = prev.filter((id) => validIds.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [loadedMaterials, loadingMaterials]);
+
+  const selectedCompareProducts = useMemo(() => {
+    const byId = new Map(loadedMaterials.map((item) => [item.id, item]));
+    return selectedCompareIds
+      .map((id) => byId.get(id))
+      .filter((item): item is MaterialItem => Boolean(item));
+  }, [loadedMaterials, selectedCompareIds]);
+
+  useEffect(() => {
+    if (isCompareOpen && selectedCompareProducts.length < 2) {
+      setIsCompareOpen(false);
+    }
+  }, [isCompareOpen, selectedCompareProducts.length]);
+
+  const toggleCompareItem = (id: string) => {
+    setSelectedCompareIds((prev) => {
+      if (prev.includes(id)) {
+        setCompareLimitNotice(false);
+        return prev.filter((itemId) => itemId !== id);
+      }
+      if (prev.length >= MAX_COMPARE_ITEMS) {
+        setCompareLimitNotice(true);
+        return prev;
+      }
+      setCompareLimitNotice(false);
+      return [...prev, id];
+    });
+  };
+
+  const clearCompareSelection = () => {
+    setSelectedCompareIds([]);
+    setCompareLimitNotice(false);
+    setIsCompareOpen(false);
+  };
+
+  const comparedSpecRows = useMemo(() => {
+    const labelByKey = new Map<string, string>();
+    const valuesByProduct = new Map<string, Map<string, string[]>>();
+
+    selectedCompareProducts.forEach((product) => {
+      const productMap = new Map<string, string[]>();
+      const specs = Array.isArray(product.technical_specs) ? product.technical_specs : [];
+      specs.forEach((spec) => {
+        if (!spec || typeof spec !== 'object') return;
+        const rawLabel = typeof spec.label === 'string' ? spec.label.trim() : '';
+        if (!rawLabel) return;
+
+        const normKey = rawLabel.toLowerCase();
+        if (!labelByKey.has(normKey)) {
+          labelByKey.set(normKey, rawLabel);
+        }
+
+        const rawValue =
+          typeof spec.value === 'string' || typeof spec.value === 'number'
+            ? String(spec.value).trim()
+            : '';
+        if (!rawValue) return;
+
+        const rawUnit = typeof spec.unit === 'string' ? spec.unit.trim() : '';
+        const formatted = rawUnit ? `${rawValue} ${rawUnit}` : rawValue;
+        const existing = productMap.get(normKey) || [];
+        existing.push(formatted);
+        productMap.set(normKey, existing);
+      });
+      valuesByProduct.set(product.id, productMap);
+    });
+
+    return Array.from(labelByKey.entries()).map(([key, label]) => ({
+      key,
+      label,
+      values: selectedCompareProducts.map((product) => {
+        const list = valuesByProduct.get(product.id)?.get(key);
+        return list && list.length > 0 ? list.join(', ') : '—';
+      }),
+    }));
+  }, [selectedCompareProducts]);
 
   return (
     <div className="bg-[#f5f5f5] text-[#202628] min-h-screen pb-16">
@@ -419,13 +517,46 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
                   )}
                 </div>
 
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
+                <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
                   <button
                     onClick={() => onNavigate('materials')}
                     className="text-primary hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     Megtekintés a Katalógusban <ArrowRight size={13} />
                   </button>
+
+                  {(() => {
+                    const isSelected = selectedCompareIds.includes(item.id);
+                    const isLimitReached = !isSelected && selectedCompareIds.length >= MAX_COMPARE_ITEMS;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => toggleCompareItem(item.id)}
+                        aria-pressed={isSelected}
+                        aria-disabled={isLimitReached}
+                        title={
+                          isLimitReached
+                            ? `Legfeljebb ${MAX_COMPARE_ITEMS} termék hasonlítható össze`
+                            : undefined
+                        }
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary text-white border-primary'
+                            : isLimitReached
+                              ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <>
+                            <Check size={13} /> Kijelölve
+                          </>
+                        ) : (
+                          '+ Összehasonlítás'
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
@@ -439,7 +570,197 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
           itemLabel="termék"
           onPageChange={setCurrentPage}
         />
+
+        {/* Comparison Selection Bar */}
+        {selectedCompareProducts.length > 0 && (
+          <div className="sticky bottom-4 z-30 bg-white border border-primary/25 shadow-lg rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
+                <Scale size={16} className="text-primary shrink-0" />
+                <span>
+                  Összehasonlításra kijelölve: {selectedCompareProducts.length} / {MAX_COMPARE_ITEMS} termék
+                </span>
+              </div>
+              {compareLimitNotice || selectedCompareProducts.length >= MAX_COMPARE_ITEMS ? (
+                <p className="text-xs font-semibold text-amber-700">
+                  Elérted a maximumot: legfeljebb {MAX_COMPARE_ITEMS} termék jelölhető ki egyszerre.
+                </p>
+              ) : selectedCompareProducts.length === 1 ? (
+                <p className="text-xs text-gray-500">
+                  Az összehasonlításhoz válassz ki még legalább 1 terméket.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={clearCompareSelection}
+                className="px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:text-red-600 hover:border-red-200 transition-colors cursor-pointer"
+              >
+                Kijelölések törlése
+              </button>
+              <button
+                type="button"
+                disabled={selectedCompareProducts.length < 2}
+                onClick={() => setIsCompareOpen(true)}
+                className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <Scale size={14} /> Összehasonlítás ({selectedCompareProducts.length})
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Comparison Modal */}
+      {isCompareOpen && selectedCompareProducts.length >= 2 && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
+          onClick={() => setIsCompareOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Termékek összehasonlítása"
+        >
+          <div
+            className="bg-white rounded-3xl border border-gray-200 shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Scale size={18} className="text-primary shrink-0" />
+                <h3 className="text-base sm:text-lg font-black text-gray-900">
+                  Termékek összehasonlítása ({selectedCompareProducts.length})
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearCompareSelection}
+                  className="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:text-red-600 hover:border-red-200 transition-colors cursor-pointer"
+                >
+                  Kijelölések törlése
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCompareOpen(false)}
+                  className="p-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                  aria-label="Összehasonlítás bezárása"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-auto flex-1">
+              <table className="w-full border-collapse text-left text-xs sm:text-sm min-w-[560px]">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="sticky left-0 z-20 bg-gray-50 px-4 py-3 font-extrabold text-gray-700 border-r border-gray-200 min-w-[150px] sm:min-w-[200px]">
+                      Paraméter
+                    </th>
+                    {selectedCompareProducts.map((product) => (
+                      <th
+                        key={product.id}
+                        className="px-4 py-3 font-black text-gray-900 align-top min-w-[180px]"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="leading-snug">{formatCompareValue(product.name)}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleCompareItem(product.id)}
+                            className="shrink-0 p-1 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            aria-label={`${formatCompareValue(product.name)} eltávolítása`}
+                            title="Eltávolítás az összehasonlításból"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {[
+                    {
+                      label: 'Terméknév',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.name),
+                    },
+                    {
+                      label: 'Márka',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.brand),
+                    },
+                    {
+                      label: 'Partner',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.partner_name),
+                    },
+                    {
+                      label: 'Kategória',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.category_name),
+                    },
+                    {
+                      label: 'Alkategória',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.subcategory_name),
+                    },
+                    {
+                      label: 'Cikkszám',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.sku),
+                    },
+                    {
+                      label: 'Vonalkód',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.barcode),
+                    },
+                    {
+                      label: 'Alkalmazási terület',
+                      getValue: (p: MaterialItem) => formatCompareValue(p.application_area),
+                    },
+                    {
+                      label: 'Dokumentumok száma',
+                      getValue: (p: MaterialItem) =>
+                        Array.isArray(p.documents) ? `${p.documents.length} db` : '—',
+                    },
+                  ].map((row) => (
+                    <tr key={row.label} className="bg-white">
+                      <td className="sticky left-0 z-10 bg-white px-4 py-3 font-bold text-gray-700 border-r border-gray-200">
+                        {row.label}
+                      </td>
+                      {selectedCompareProducts.map((product) => (
+                        <td key={product.id} className="px-4 py-3 text-gray-800 align-top">
+                          {row.getValue(product)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+
+                  {comparedSpecRows.length > 0 && (
+                    <tr className="bg-gray-50/80">
+                      <td
+                        colSpan={selectedCompareProducts.length + 1}
+                        className="px-4 py-2 text-[11px] font-extrabold uppercase tracking-wider text-gray-500"
+                      >
+                        Műszaki paraméterek
+                      </td>
+                    </tr>
+                  )}
+
+                  {comparedSpecRows.map((specRow) => (
+                    <tr key={specRow.key} className="bg-white">
+                      <td className="sticky left-0 z-10 bg-white px-4 py-3 font-bold text-gray-700 border-r border-gray-200">
+                        {specRow.label}
+                      </td>
+                      {specRow.values.map((val, idx) => (
+                        <td key={selectedCompareProducts[idx].id} className="px-4 py-3 text-gray-800 align-top">
+                          {val}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
