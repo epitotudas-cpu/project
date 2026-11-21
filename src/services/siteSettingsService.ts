@@ -142,7 +142,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   adminCardBgColor: '#2b2e36',
   adminCardHighlightColor: '#EC4899',
 
-  heroMainTitle: 'Magyarország vezető építőipari tudásbázisa',
+  heroMainTitle: 'Magyarország építőipari tudásbázisa',
   heroSubtitle: 'Szakmai enciklopédia, megbízható útmutatók, kalkulátorok és szerszámkatalógus szakembereknek, tanulóknak és kivitelezőknek egyaránt.',
   newsletterTitle: 'Szakmai hírlevél',
   newsletterDescription: 'Heti frissítések, új cikkek, szakmai tippek és iparági újdonságok közvetlenül az e-mail fiókodba.',

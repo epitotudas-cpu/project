@@ -1473,7 +1473,7 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
                   onChange={(e) => setSettings({ ...settings, heroMainTitle: e.target.value })}
                   style={fieldStyle}
                   className="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none"
-                  placeholder="Magyarország vezető építőipari tudásbázisa"
+                  placeholder="Magyarország építőipari tudásbázisa"
                 />
               </div>
 
