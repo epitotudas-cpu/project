@@ -228,9 +228,6 @@ export default function StandardsPage({ onNavigate }: StandardsPageProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs rounded-full">
-                <ShieldCheck size={14} /> Hivatalos Építésügyi Jogszabály- &amp; Szabványtár
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
                 Építőipari Szabályok, Szabványok &amp; Jogszabályok
               </h1>

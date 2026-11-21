@@ -22,9 +22,6 @@ export default function LegalHubPage({ onNavigate }: LegalHubPageProps) {
           </div>
 
           <div className="space-y-2">
-            <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
-              Jogi Információk
-            </span>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
               Jogi Nyilatkozatok &amp; Szabályzatok
             </h1>

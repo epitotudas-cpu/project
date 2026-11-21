@@ -2124,9 +2124,6 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <Sparkles size={13} /> Építőipari Számítási Tudásbázis
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight uppercase">
                 SZÁMÍTÁSOK
               </h1>
@@ -2396,11 +2393,6 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
             
             {/* Document Header */}
             <div className="bg-primary text-white p-6 md:p-8 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded bg-accent text-black">
-                  {activeCalculationObj.level} SZINT
-                </span>
-              </div>
               <h1 className="text-2xl md:text-3xl font-extrabold leading-tight">
                 {activeCalculationObj.title}
               </h1>

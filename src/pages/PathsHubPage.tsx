@@ -218,9 +218,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <HardHat size={13} /> Építőipari Szakmaismertető &amp; Pályaorientáció
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
                 Építőipari Szakmák
               </h1>
@@ -366,9 +363,6 @@ export default function PathsHubPage({ onNavigate }: PathsHubPageProps) {
             {/* Trade Hero Card */}
             <div className="bg-primary text-white rounded-3xl p-6 md:p-10 shadow-xl border border-primary-700 relative overflow-hidden">
               <div className="space-y-3 relative z-10">
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                  <HardHat size={13} /> {activeTrade.categoryLabel}
-                </span>
                 <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">
                   {activeTrade.name}
                 </h1>

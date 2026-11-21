@@ -470,9 +470,6 @@ export default function CategoryPage({ onNavigate }: CategoryPageProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/10 border border-white/25 text-white font-bold text-xs rounded-full">
-                <FileText size={13} /> {selectedArticleType === 'utmutatok' ? 'Gyakorlati Kivitelezési Útmutatók & Technológiák' : 'Építőipari Szakmai Cikkek & Technológiák'}
-              </span>
               <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
                 {typePageSettings.articlesPageTitle}
               </h1>

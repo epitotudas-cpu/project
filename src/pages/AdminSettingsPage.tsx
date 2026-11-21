@@ -966,12 +966,6 @@ export default function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
               <div className="space-y-1 min-w-0">
-                <span
-                  style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 border font-extrabold text-[11px] rounded-full uppercase tracking-wider"
-                >
-                  <Settings size={13} /> RENDSZER- ÉS OLDALBEÁLLÍTÁSOK
-                </span>
                 <h1 style={{ color: textColor }} className="text-2xl md:text-3xl font-black tracking-tight">
                   Beállítások
                 </h1>

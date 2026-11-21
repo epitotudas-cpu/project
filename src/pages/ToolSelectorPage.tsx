@@ -129,9 +129,6 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
           </div>
 
           <div className="space-y-2">
-            <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
-              Interaktív Modul
-            </span>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
               Interaktív Eszköz- és Gépválasztó
             </h1>

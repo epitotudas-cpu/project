@@ -561,24 +561,6 @@ export default function PartnerDetailPage({ partnerSlug, onNavigate }: PartnerDe
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center flex-wrap gap-2">
-                  <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-extrabold text-xs rounded-full uppercase tracking-wider">
-                    {displayType}
-                  </span>
-
-                  {partner.is_verified && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-xs rounded-full">
-                      <ShieldCheck size={14} /> Minősített Partner
-                    </span>
-                  )}
-
-                  {partner.is_featured && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400/20 border border-amber-400/40 text-amber-300 font-bold text-xs rounded-full">
-                      <Sparkles size={14} /> Kiemelt Partner
-                    </span>
-                  )}
-                </div>
-
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
                   {partner.name}
                 </h1>

@@ -313,9 +313,6 @@ export default function AdminGuidesPage({ initialSearchQuery }: AdminGuidesPageP
         style={{ backgroundColor: cardBg, borderColor: cardBorder }}
       >
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent/15 border border-accent/30 text-accent font-bold text-xs rounded-full">
-            <BookOpen size={14} /> Kivitelezési Útmutatók Kezelőközpont
-          </div>
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
             Kivitelezési Útmutatók Kezelése
           </h1>

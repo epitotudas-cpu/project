@@ -133,9 +133,6 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs rounded-full">
-                <Layers size={14} /> Építőipari Anyag-Katalógus
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
                 Építőipari Anyagok &amp; Termékek
               </h1>

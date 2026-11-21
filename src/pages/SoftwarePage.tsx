@@ -261,9 +261,6 @@ export default function SoftwarePage({ onNavigate }: SoftwarePageProps) {
           </div>
 
           <div className="space-y-2">
-            <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
-              Digitális Eszközök
-            </span>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
               Építőipari Szoftverek &amp; Digitális Alkalmazások
             </h1>

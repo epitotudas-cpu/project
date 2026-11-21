@@ -193,11 +193,6 @@ export default function PartnerApplicationPage({ onNavigate }: PartnerApplicatio
 
         {/* Hero Header Section */}
         <div className="text-center max-w-3xl mx-auto space-y-4 pt-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3B82F6]/15 border border-[#3B82F6]/30 text-[#3B82F6] text-xs font-black uppercase tracking-wider backdrop-blur-md">
-            <Sparkles size={14} className="text-[#3B82F6] animate-pulse" />
-            2026 ÉPÍTŐIPARI & OKTATÁSI PARTNERI PROGRAM
-          </div>
-
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
             Partneri &amp; Iskolai <span className="text-[#3B82F6]">Csatlakozás</span>
           </h1>

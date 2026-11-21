@@ -688,35 +688,6 @@ export default function ArticlePage({ onNavigate, articleSlug }: ArticlePageProp
         
         {/* HERO AREA: Full-width Header Banner */}
         <div className="space-y-6 border-b border-gray-200 pb-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="px-3 py-1 rounded-full text-xs font-black bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider flex items-center gap-1.5">
-              {categoryObj && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: categoryObj.color || '#FFC400' }} />}
-              {categoryObj ? categoryObj.name : 'ÉpítőTudás Szakcikk'}
-            </span>
-            <span className="px-3 py-1 rounded-full text-xs font-black bg-accent/20 text-accent border border-accent/30 uppercase tracking-wider">
-              {articleTypeLabel}
-            </span>
-            {article.subcategory_name && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-700 border border-blue-500/20">
-                Szakma: {article.subcategory_name}
-              </span>
-            )}
-            {article.difficulty && (
-              <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 flex items-center gap-1">
-                <span>🎯 Szint:</span>
-                <span>
-                  {article.difficulty === 'beginner'
-                    ? 'Kezdő'
-                    : article.difficulty === 'intermediate'
-                    ? 'Haladó'
-                    : article.difficulty === 'advanced'
-                    ? 'Tapasztalt'
-                    : 'Szakértő'}
-                </span>
-              </span>
-            )}
-          </div>
-
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 tracking-tight leading-[1.15]">
             {article.title}
           </h1>

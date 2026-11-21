@@ -178,15 +178,6 @@ export default function CourseDetailPage({ slug, onNavigate }: CourseDetailPageP
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-3 max-w-4xl">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="bg-accent text-white font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
-                  {course.category_name || 'Tananyag'}
-                </span>
-                <span className="bg-white/10 text-white font-semibold text-xs px-3 py-1 rounded-full border border-white/20">
-                  {course.topic}
-                </span>
-              </div>
-
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
                 {course.title}
               </h1>

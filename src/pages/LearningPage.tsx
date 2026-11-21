@@ -293,9 +293,6 @@ export default function LearningPage({ onNavigate }: LearningPageProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <GraduationCap size={15} /> ÉpítőTudás Akadémia &amp; Tanulókártyák
-              </span>
               <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
                 Tanulási Központ &amp; Vizsgafelkészítő
               </h1>

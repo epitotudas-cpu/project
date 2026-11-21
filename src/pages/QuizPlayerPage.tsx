@@ -182,10 +182,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
 
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <span className="bg-accent text-white font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
-                {quiz.category_name || 'Teszt'}
-              </span>
-              <h1 className="text-2xl md:text-3xl font-black text-white mt-1">{quiz.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-black text-white">{quiz.title}</h1>
             </div>
 
             <div className="text-xs bg-white/10 border border-white/20 px-4 py-2 rounded-2xl backdrop-blur-sm">

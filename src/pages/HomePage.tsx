@@ -333,11 +333,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left - Text & Search */}
             <div className="min-w-0">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs sm:text-sm font-semibold text-accent">
-                <HardHat size={14} />
-                Építőipari Szakmai Tudásportál
-              </div>
-
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-white whitespace-pre-line">
                 {siteSettings.heroMainTitle || 'Tudás, ami épít.'}
               </h1>

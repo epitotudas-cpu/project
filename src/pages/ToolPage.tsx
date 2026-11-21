@@ -807,11 +807,6 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
 
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black bg-accent/20 border border-accent/40 text-accent px-3 py-1 rounded-full uppercase tracking-wider">
-                  Szakmai Enciklopédia
-                </span>
-              </div>
               <h1 className="text-2xl sm:text-3xl font-black text-white">
                 Építőipari Eszköz- és Gépismeret
               </h1>

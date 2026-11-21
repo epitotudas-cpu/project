@@ -32,9 +32,6 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
-                ÁSZF &amp; Szabályzat
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
                 <FileText className="text-accent" size={32} />
                 {TERMS_DATA.title}

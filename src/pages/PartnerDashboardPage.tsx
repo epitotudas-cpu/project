@@ -102,10 +102,6 @@ export function PartnerDashboardPage({
       <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/20 rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider">
-              <Briefcase className="w-3.5 h-3.5" />
-              Partneri Fiók
-            </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight">
               Üdvözlünk a Partner Panelen!
             </h1>

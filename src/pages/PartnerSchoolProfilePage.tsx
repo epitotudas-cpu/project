@@ -526,10 +526,6 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
       <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/20 rounded-2xl p-6 md:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">
-              <Building2 className="w-3.5 h-3.5" />
-              Szervezeti &amp; Iskolai Kezelőfelület
-            </div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
               {name || 'Oktatási Intézmény Kezelése'}
             </h1>

@@ -270,9 +270,6 @@ export default function CareersPage({ onNavigate }: CareersPageProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded-full">
-                <Briefcase size={13} /> Építőipari Karrier &amp; Állásbörze
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
                 Építőipari Állások &amp; Karrierlehetőségek
               </h1>

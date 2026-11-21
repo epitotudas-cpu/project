@@ -372,10 +372,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       {/* Top Banner */}
       <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl border shadow-xl">
         <div>
-          <span style={{ backgroundColor: `${cardHighlight}20`, borderColor: `${cardHighlight}40`, color: cardHighlight }} className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border">
-            Építőipari Anyagkatalógus Kezelő
-          </span>
-          <h1 style={{ color: textColor }} className="text-2xl font-black mt-2">
+          <h1 style={{ color: textColor }} className="text-2xl font-black">
             Építőanyagok &amp; Gyártói Katalógus Kezelése
           </h1>
           <p className="text-xs text-gray-400 mt-1">

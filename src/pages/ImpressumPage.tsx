@@ -44,9 +44,6 @@ export default function ImpressumPage({ onNavigate }: ImpressumPageProps) {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
-                Hivatalos Adatok
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
                 <Building className="text-accent" size={32} />
                 Impresszum

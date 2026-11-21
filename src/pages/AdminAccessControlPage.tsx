@@ -103,10 +103,6 @@ export function AdminAccessControlPage() {
       <div className="bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/20 rounded-2xl p-6 md:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold uppercase tracking-wider">
-              <Lock className="w-3.5 h-3.5" />
-              Kizárólag Adminisztrátori Hozzáférés
-            </div>
             <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
               Szerepkörök és Jogosultságok Kezelése
             </h1>

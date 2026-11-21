@@ -25,9 +25,6 @@ export default function KnowledgeHubPage({ onNavigate, activeSubTab }: Knowledge
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-semibold text-xs rounded-full">
-                Tudástár
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
                 Építőipari Tudástár Központ
               </h1>
