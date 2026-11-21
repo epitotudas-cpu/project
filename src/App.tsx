@@ -447,7 +447,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
     Promise.all([
       getPartnerOffers(currentPartner.id),
       getPartnerAnalytics(currentPartner.id),
-      fetchMaterialsFromCloud().catch(() => ({ items: null, categories: null })),
+      fetchMaterialsFromCloud({ partnerId: currentPartner.id }).catch(() => ({ items: null, categories: null })),
     ])
       .then(([rows, stats, materialsRes]) => {
         if (!cancelled) {

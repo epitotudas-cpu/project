@@ -547,15 +547,14 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
     );
 
     // Cloud sync to Supabase app_configs (with legacy categories fallback)
-    // Security: never store smtpSettings inside the publicly readable __SYSTEM_CONFIG_SITE_SETTINGS__ key
+    // Security: never store smtpSettings inside the publicly readable __SYSTEM_CONFIG_SITE_SETTINGS__ key,
+    // and never overwrite __SYSTEM_CONFIG_SMTP_SETTINGS__ with client-side defaults/placeholders on normal saves.
     const { smtpSettings, ...publicSiteSettings } = updatedSettings;
+    void smtpSettings;
     await writeAppConfig('__SYSTEM_CONFIG_SITE_SETTINGS__', publicSiteSettings, {
       id: SUPABASE_SYSTEM_ID,
       slug: 'system-site-settings-config',
     });
-    if (smtpSettings) {
-      await writeAppConfig('__SYSTEM_CONFIG_SMTP_SETTINGS__', smtpSettings);
-    }
   } catch (err) {
     console.error('Hiba a beállítások mentésekor:', err);
     throw err;
