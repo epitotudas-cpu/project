@@ -524,8 +524,10 @@ export async function deletePartnerMaterialItem(partnerId: string, itemId: strin
 export async function fetchMaterialsFromCloud(options?: {
   partnerId?: string;
   isAdmin?: boolean;
-}): Promise<{ items: MaterialItem[] | null; categories: MaterialCategory[] | null }> {
+}): Promise<{ items: MaterialItem[] | null; categories: MaterialCategory[] | null; error?: boolean }> {
   try {
+    let hasFetchError = false;
+
     const fetchItems = async (): Promise<MaterialItem[] | null> => {
       if (options?.isAdmin) {
         const itemsResult = await readAppConfigWithVersion<MaterialItem[]>(
@@ -547,6 +549,7 @@ export async function fetchMaterialsFromCloud(options?: {
           return rpcRes.data as MaterialItem[];
         }
         if (rpcRes && rpcRes.error && rpcRes.error.code !== '42883' && rpcRes.error.code !== 'PGRST202') {
+          hasFetchError = true;
           return null;
         }
       } else {
@@ -555,6 +558,7 @@ export async function fetchMaterialsFromCloud(options?: {
           return rpcRes.data as MaterialItem[];
         }
         if (rpcRes && rpcRes.error && rpcRes.error.code !== '42883' && rpcRes.error.code !== 'PGRST202') {
+          hasFetchError = true;
           return null;
         }
       }
@@ -596,9 +600,11 @@ export async function fetchMaterialsFromCloud(options?: {
       window.dispatchEvent(new Event('materials-updated'));
     }
 
-    return { items: loadedItems, categories: loadedCats };
+    return hasFetchError
+      ? { items: loadedItems, categories: loadedCats, error: true }
+      : { items: loadedItems, categories: loadedCats };
   } catch (err) {
     console.warn('Cloud materials fetch:', err);
   }
-  return { items: null, categories: null };
+  return { items: null, categories: null, error: true };
 }
