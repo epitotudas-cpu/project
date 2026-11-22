@@ -38,6 +38,77 @@ interface AdminMaterialsPageProps {
   initialSearchQuery?: string;
 }
 
+const DEMO_FALLBACK_IMAGE_ID = 'photo-1589939705384-5185137a7f0f';
+
+const DOC_TYPE_LABELS: Record<MaterialDocument['doc_type'], string> = {
+  muszaki_adatlap: 'Műszaki adatlap',
+  teljesitmenynyilatkozat: 'Teljesítménynyilatkozat',
+  biztonsagi_adatlap: 'Biztonsági adatlap',
+  utmutato: 'Alkalmazástechnikai útmutató',
+  katalogus: 'Termékkatalógus',
+  tanusitvany: 'Tanúsítvány / ÉME',
+  egyeb: 'Egyéb dokumentum',
+};
+
+function getValidTechnicalSpecs(
+  specs: MaterialItem['technical_specs'] | null | undefined
+): MaterialSpec[] {
+  if (!Array.isArray(specs)) return [];
+  return specs.filter((spec): spec is MaterialSpec => {
+    if (!spec || typeof spec !== 'object') return false;
+    const hasLabel = typeof spec.label === 'string' && spec.label.trim().length > 0;
+    const hasValue =
+      (typeof spec.value === 'string' || typeof spec.value === 'number') &&
+      String(spec.value).trim().length > 0;
+    return hasLabel && hasValue;
+  });
+}
+
+function getMaterialQualityWarnings(item: MaterialItem): {
+  warnings: string[];
+  optionalMissing: string[];
+  validSpecs: MaterialSpec[];
+} {
+  const warnings: string[] = [];
+  const optionalMissing: string[] = [];
+  const validSpecs = getValidTechnicalSpecs(item.technical_specs);
+
+  const img = typeof item.main_image_url === 'string' ? item.main_image_url.trim() : '';
+  if (!img) {
+    warnings.push('Hiányzó termékkép');
+  } else if (img.includes(DEMO_FALLBACK_IMAGE_ID)) {
+    warnings.push('Alapértelmezett demo Unsplash kép');
+  }
+
+  if (validSpecs.length === 0) {
+    warnings.push('Hiányzó érvényes műszaki paraméter');
+  }
+
+  if (typeof item.full_description !== 'string' || !item.full_description.trim()) {
+    warnings.push('Hiányzó részletes leírás');
+  }
+
+  if (typeof item.application_area !== 'string' || !item.application_area.trim()) {
+    warnings.push('Hiányzó alkalmazási terület');
+  }
+
+  if (!Array.isArray(item.documents) || item.documents.length === 0) {
+    warnings.push('Hiányzó dokumentum');
+  }
+
+  if (typeof item.subcategory_name !== 'string' || !item.subcategory_name.trim()) {
+    optionalMissing.push('Alkategória');
+  }
+  if (typeof item.sku !== 'string' || !item.sku.trim()) {
+    optionalMissing.push('SKU');
+  }
+  if (typeof item.barcode !== 'string' || !item.barcode.trim()) {
+    optionalMissing.push('Vonalkód');
+  }
+
+  return { warnings, optionalMissing, validSpecs };
+}
+
 export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMaterialsPageProps) {
   const toast = useToast();
   const [deleteMaterialId, setDeleteMaterialId] = useState<string | null>(null);
@@ -71,6 +142,8 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
   const [previewItem, setPreviewItem] = useState<MaterialItem | null>(null);
   const [rejectModalItem, setRejectModalItem] = useState<MaterialItem | null>(null);
   const [rejectionNoteInput, setRejectionNoteInput] = useState('');
+  const [publishConfirmItem, setPublishConfirmItem] = useState<MaterialItem | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<Partial<MaterialItem>>({
@@ -197,14 +270,28 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
     setDeleteMaterialId(id);
   };
 
-  const handleApprovePublish = async (item: MaterialItem) => {
+  const executePublish = async (item: MaterialItem) => {
+    if (publishingId) return;
+    setPublishingId(item.id);
     try {
       const savedList = await setMaterialStatusAsAdmin(item.id, 'published', null);
       setItems(savedList);
+      setPublishConfirmItem(null);
       toast.success(`"${item.name}" jóváhagyva és közzétéve.`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Hiba történt a jóváhagyás során.');
+    } finally {
+      setPublishingId(null);
     }
+  };
+
+  const handleApprovePublish = async (item: MaterialItem) => {
+    const { warnings } = getMaterialQualityWarnings(item);
+    if (warnings.length > 0) {
+      setPublishConfirmItem(item);
+      return;
+    }
+    await executePublish(item);
   };
 
   const handleRejectConfirm = async () => {
@@ -249,6 +336,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
           ? ({
               ...i,
               ...formData,
+              barcode: formData.barcode?.trim() || null,
               category_name: selectedCat?.name || formData.category_name || '',
               partner_name: selectedPart?.name || formData.partner_name || '',
               slug: generatedSlug,
@@ -268,7 +356,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
         partner_id: formData.partner_id || partners[0]?.id || 'p-1',
         partner_name: selectedPart?.name || 'Leier Hungária Kft.',
         sku: formData.sku || null,
-        barcode: formData.barcode || null,
+        barcode: formData.barcode?.trim() || null,
         short_description: formData.short_description || '',
         full_description: formData.full_description || '',
         application_area: formData.application_area || null,
@@ -537,21 +625,52 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                     )}
                   </td>
                   <td className="py-3.5 px-4">
-                    {item.status === 'published' ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-[11px]">
-                        <CheckCircle2 size={13} /> Publikált
-                      </span>
-                    ) : item.status === 'pending_approval' ? (
-                      <span className="inline-flex items-center gap-1 text-amber-700 font-bold text-[11px] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                        <Clock size={13} /> Jóváhagyásra vár
-                      </span>
-                    ) : item.status === 'rejected' ? (
-                      <span className="inline-flex items-center gap-1 text-red-700 font-bold text-[11px]">
-                        <Ban size={13} /> Elutasítva
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-[11px]">Piszkozat</span>
-                    )}
+                    <div className="space-y-1">
+                      <div>
+                        {item.status === 'published' ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-[11px]">
+                            <CheckCircle2 size={13} /> Publikált
+                          </span>
+                        ) : item.status === 'pending_approval' ? (
+                          <span className="inline-flex items-center gap-1 text-amber-700 font-bold text-[11px] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            <Clock size={13} /> Jóváhagyásra vár
+                          </span>
+                        ) : item.status === 'rejected' ? (
+                          <span className="inline-flex items-center gap-1 text-red-700 font-bold text-[11px]">
+                            <Ban size={13} /> Elutasítva
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-[11px]">Piszkozat</span>
+                        )}
+                      </div>
+                      {(() => {
+                        const { warnings, optionalMissing } = getMaterialQualityWarnings(item);
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {warnings.length > 0 ? (
+                              <span
+                                title={warnings.join(', ')}
+                                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                              >
+                                <AlertTriangle size={10} /> {warnings.length} hiányosság
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                <Check size={10} /> Teljes
+                              </span>
+                            )}
+                            {optionalMissing.length > 0 && (
+                              <span
+                                title={`Opcionális, de ajánlott mezők hiányoznak: ${optionalMissing.join(', ')}`}
+                                className="text-[10px] text-gray-400"
+                              >
+                                Opc.: -{optionalMissing.length}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
@@ -559,7 +678,8 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                       {item.status !== 'published' && (
                         <button
                           onClick={() => handleApprovePublish(item)}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                          disabled={publishingId === item.id}
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                           title="Jóváhagyás és Publikálás"
                         >
                           <Check size={12} /> Publikálás
@@ -737,7 +857,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="font-bold text-gray-300 block mb-1">Cikkszám / SKU</label>
                       <input
@@ -750,6 +870,20 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                       />
                     </div>
 
+                    <div>
+                      <label className="font-bold text-gray-300 block mb-1">Vonalkód (EAN / GTIN)</label>
+                      <input
+                        type="text"
+                        value={formData.barcode || ''}
+                        onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                        placeholder="pl. 5998123456789"
+                        style={fieldStyle}
+                        className="w-full border rounded-xl px-3 py-2 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="font-bold text-gray-300 block mb-1">Státusz</label>
                       <select
@@ -1124,33 +1258,208 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
         </div>
       )}
 
-      {/* ── LIVE PREVIEW MODAL ── */}
-      {previewItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <span className="font-extrabold text-xs text-primary flex items-center gap-1.5">
-                <Eye size={15} /> Élő Előnézet (Admin Preview)
-              </span>
-              <button onClick={() => setPreviewItem(null)} className="p-1 text-gray-400 hover:text-gray-600 rounded-full cursor-pointer">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="space-y-3 text-xs">
-              <h2 className="text-xl font-bold text-gray-900">{previewItem.name}</h2>
-              <p className="text-gray-600 font-medium bg-amber-50 p-3 rounded-xl border border-amber-200">
-                {previewItem.short_description}
+      {/* ── PUBLISH QUALITY CONFIRMATION MODAL ── */}
+      {publishConfirmItem && (() => {
+        const { warnings, optionalMissing } = getMaterialQualityWarnings(publishConfirmItem);
+        const isBusy = publishingId === publishConfirmItem.id;
+        return (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-gray-200 max-w-lg w-full p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center gap-2 text-amber-600 font-extrabold text-sm">
+                <AlertTriangle size={18} /> Adatminőségi figyelmeztetés publikálás előtt
+              </div>
+              <p className="text-xs text-gray-700 font-medium">
+                A(z) <strong>{publishConfirmItem.name || 'Névtelen termék'}</strong> termék az alábbi hiányosságokkal rendelkezik. A termék ezekkel a hiányosságokkal is publikálható, de érdemes ellenőrizni őket:
               </p>
-              <div className="prose text-xs whitespace-pre-line text-gray-800">{previewItem.full_description}</div>
-            </div>
-            <div className="pt-4 border-t border-gray-200 flex justify-end">
-              <button onClick={() => setPreviewItem(null)} className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl cursor-pointer">
-                Bezárás
-              </button>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-1.5">
+                <span className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider block">
+                  Hiányosságok ({warnings.length})
+                </span>
+                <ul className="list-disc list-inside text-xs text-amber-950 space-y-1">
+                  {warnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {optionalMissing.length > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 space-y-1">
+                  <span className="text-[11px] font-extrabold text-gray-700 uppercase tracking-wider block">
+                    Opcionális, de ajánlott mezők hiányoznak
+                  </span>
+                  <p className="text-xs text-gray-600">{optionalMissing.join(', ')}</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => setPublishConfirmItem(null)}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-gray-800 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Vissza / Mégsem
+                </button>
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => void executePublish(publishConfirmItem)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check size={13} /> {isBusy ? 'Publikálás...' : 'Publikálás így is'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
+      {/* ── LIVE PREVIEW MODAL ── */}
+      {previewItem && (() => {
+        const { warnings, optionalMissing, validSpecs } = getMaterialQualityWarnings(previewItem);
+        const imgUrl = typeof previewItem.main_image_url === 'string' ? previewItem.main_image_url.trim() : '';
+        const isDemoImg = Boolean(imgUrl && imgUrl.includes(DEMO_FALLBACK_IMAGE_ID));
+        const docs = Array.isArray(previewItem.documents) ? previewItem.documents : [];
+        return (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[88vh] overflow-y-auto shadow-2xl relative p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <span className="font-extrabold text-xs text-primary flex items-center gap-1.5">
+                  <Eye size={15} /> Élő Előnézet (Admin Preview)
+                </span>
+                <button onClick={() => setPreviewItem(null)} className="p-1 text-gray-400 hover:text-gray-600 rounded-full cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Quality Summary */}
+              <div className={`rounded-2xl border p-3.5 text-xs space-y-1.5 ${warnings.length > 0 ? 'bg-amber-50 border-amber-200 text-amber-950' : 'bg-emerald-50 border-emerald-200 text-emerald-950'}`}>
+                <div className="font-extrabold flex items-center gap-1.5">
+                  {warnings.length > 0 ? (
+                    <>
+                      <AlertTriangle size={14} className="text-amber-600" /> Adatminőségi összegzés: {warnings.length} hiányosság
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={14} className="text-emerald-600" /> Adatminőségi összegzés: Teljes
+                    </>
+                  )}
+                </div>
+                {warnings.length > 0 && (
+                  <p className="text-[11px]">Hiányosságok: {warnings.join(', ')}</p>
+                )}
+                {optionalMissing.length > 0 && (
+                  <p className="text-[11px] text-gray-700">Opcionális, de ajánlott mezők hiányoznak: {optionalMissing.join(', ')}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div className="sm:col-span-1">
+                  {imgUrl ? (
+                    <div className="space-y-1">
+                      <img
+                        src={imgUrl}
+                        alt={previewItem.name || 'Termékkép'}
+                        className="w-full h-40 object-cover rounded-2xl border border-gray-200"
+                      />
+                      {isDemoImg && (
+                        <span className="inline-block text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                          Demo fallback kép
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-full h-40 rounded-2xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400 font-medium">
+                      Nincs megadva
+                    </div>
+                  )}
+                </div>
+
+                <div className="sm:col-span-2 space-y-2">
+                  <h2 className="text-xl font-bold text-gray-900">{previewItem.name?.trim() || 'Nincs megadva'}</h2>
+                  <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-2xl border border-gray-200 text-[11px]">
+                    <div><span className="text-gray-500">Márka:</span> <strong className="text-gray-900">{previewItem.brand?.trim() || 'Nincs megadva'}</strong></div>
+                    <div><span className="text-gray-500">Partner:</span> <strong className="text-gray-900">{previewItem.partner_name?.trim() || 'Nincs megadva'}</strong></div>
+                    <div><span className="text-gray-500">Kategória:</span> <strong className="text-gray-900">{previewItem.category_name?.trim() || 'Nincs megadva'}</strong></div>
+                    <div><span className="text-gray-500">Alkategória:</span> <strong className="text-gray-900">{previewItem.subcategory_name?.trim() || 'Nincs megadva'}</strong></div>
+                    <div><span className="text-gray-500">SKU:</span> <strong className="font-mono text-gray-900">{previewItem.sku?.trim() || 'Nincs megadva'}</strong></div>
+                    <div><span className="text-gray-500">Vonalkód:</span> <strong className="font-mono text-gray-900">{previewItem.barcode?.trim() || 'Nincs megadva'}</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="font-bold text-gray-700 block mb-1">Rövid leírás</span>
+                  <p className="text-gray-700 font-medium bg-amber-50 p-3 rounded-xl border border-amber-200">
+                    {previewItem.short_description?.trim() || 'Nincs megadva'}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="font-bold text-gray-700 block mb-1">Részletes leírás</span>
+                  <div className="prose text-xs whitespace-pre-line text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    {previewItem.full_description?.trim() || 'Nincs megadva'}
+                  </div>
+                </div>
+
+                <div>
+                  <span className="font-bold text-gray-700 block mb-1">Alkalmazási terület</span>
+                  <p className="text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    {previewItem.application_area?.trim() || 'Nincs megadva'}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="font-bold text-gray-700 block mb-1">Műszaki paraméterek ({validSpecs.length})</span>
+                  {validSpecs.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {validSpecs.map((spec, idx) => (
+                        <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                          <span className="text-gray-600 font-semibold">{spec.label.trim()}</span>
+                          <span className="font-bold text-gray-900">
+                            {String(spec.value).trim()}{typeof spec.unit === 'string' && spec.unit.trim() ? ` ${spec.unit.trim()}` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-200">Nincs megadva</p>
+                  )}
+                </div>
+
+                <div>
+                  <span className="font-bold text-gray-700 block mb-1">Dokumentumok ({docs.length})</span>
+                  {docs.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {docs.map((doc, idx) => (
+                        <div key={doc.id || idx} className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText size={13} className="text-primary shrink-0" />
+                            <span className="font-bold text-gray-900 truncate">{doc.title || 'Nincs megadva'}</span>
+                          </div>
+                          <span className="text-[10px] font-semibold bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded-md shrink-0">
+                            {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type || 'Nincs megadva'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-200">Nincs megadva</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200 flex justify-end">
+                <button onClick={() => setPreviewItem(null)} className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl cursor-pointer">
+                  Bezárás
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       <ConfirmDialog
         open={Boolean(deleteMaterialId)}
         title="Építőanyag törlése"
