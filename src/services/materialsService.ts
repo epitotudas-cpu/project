@@ -324,20 +324,24 @@ export async function saveMaterialCategoriesLocal(cats: MaterialCategory[]): Pro
   }
 }
 
-export function getMaterialsLocal(): MaterialItem[] {
-  if (typeof window === 'undefined') return DEFAULT_MATERIALS;
+function readStoredMaterialsArrayOrNull(): MaterialItem[] | null {
+  if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_ITEMS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed;
     }
   } catch (err) {
     console.error('Hiba az anyagok olvasásakor:', err);
   }
-  return DEFAULT_MATERIALS;
+  return null;
+}
+
+export function getMaterialsLocal(): MaterialItem[] {
+  const stored = readStoredMaterialsArrayOrNull();
+  return stored !== null ? stored : DEFAULT_MATERIALS;
 }
 
 const MAX_CAS_RETRIES = 4;
@@ -408,9 +412,13 @@ export async function saveMaterialsLocal(
     );
     expectedUpdatedAt = initial.updatedAt;
     const fresh = Array.isArray(initial.value) ? initial.value : [];
-    baselineItems = fresh;
+    const storedBaseline = readStoredMaterialsArrayOrNull();
+    baselineItems = storedBaseline !== null ? storedBaseline : fresh;
     if (fresh.length > 0) {
-      candidateItems = mergeMaterialLists([], items, fresh, options?.patchOnlyFields);
+      candidateItems =
+        storedBaseline !== null || (options?.patchOnlyFields && options.patchOnlyFields.length > 0)
+          ? mergeMaterialLists(baselineItems, items, fresh, options?.patchOnlyFields)
+          : items;
     }
   }
 
@@ -575,14 +583,72 @@ export async function uploadPartnerMaterialImage(
   };
 }
 
+export interface R2CleanupFailureRecord {
+  itemId: string;
+  itemName: string;
+  partnerId: string;
+  imageUrls: string[];
+  error: string;
+  updatedAt: string;
+}
+
+export interface R2DeleteResult {
+  deleted: number;
+  already_missing: number;
+  skipped: number;
+  failed: number;
+  remainingUrls: string[];
+}
+
+export class R2DeletePartialError extends Error {
+  result: R2DeleteResult;
+  constructor(message: string, result: R2DeleteResult) {
+    super(message);
+    this.name = 'R2DeletePartialError';
+    this.result = result;
+  }
+}
+
+const R2_CLEANUP_FAILURES_KEY = '__SYSTEM_CONFIG_R2_CLEANUP_FAILURES__';
+
+export async function getR2CleanupFailures(): Promise<R2CleanupFailureRecord[]> {
+  try {
+    const { value } = await readAppConfigWithVersion<R2CleanupFailureRecord[]>(R2_CLEANUP_FAILURES_KEY);
+    return Array.isArray(value) ? value : [];
+  } catch (err) {
+    console.warn('Hiba az R2 törlési hibalista olvasásakor:', err);
+    return [];
+  }
+}
+
+export async function saveR2CleanupFailures(
+  updater: (current: R2CleanupFailureRecord[]) => R2CleanupFailureRecord[]
+): Promise<R2CleanupFailureRecord[]> {
+  for (let attempt = 0; attempt < MAX_CAS_RETRIES; attempt++) {
+    const currentRes = await readAppConfigWithVersion<R2CleanupFailureRecord[]>(R2_CLEANUP_FAILURES_KEY);
+    const currentList = Array.isArray(currentRes.value) ? currentRes.value : [];
+    const nextList = updater(currentList);
+    const writeRes = await writeAppConfigIfUnchanged(
+      R2_CLEANUP_FAILURES_KEY,
+      nextList,
+      currentRes.updatedAt
+    );
+    if (!writeRes.conflict) {
+      return nextList;
+    }
+  }
+  throw new Error('Az R2 hibalista mentése többszöri egyidejű módosítás (CAS konfliktus) miatt sikertelen.');
+}
+
 export async function deletePartnerMaterialImages(
   partnerId: string,
   imageUrls: string[],
-  excludeItemId?: string | null
-): Promise<{ deleted: number; skipped: number }> {
+  excludeItemId?: string | null,
+  productId?: string | null
+): Promise<R2DeleteResult> {
   const validUrls = (imageUrls || []).filter((u) => typeof u === 'string' && u.trim().length > 0);
   if (validUrls.length === 0) {
-    return { deleted: 0, skipped: 0 };
+    return { deleted: 0, already_missing: 0, skipped: 0, failed: 0, remainingUrls: [] };
   }
 
   const { data: sessionData } = await supabase.auth.getSession();
@@ -592,31 +658,89 @@ export async function deletePartnerMaterialImages(
   }
 
   const { url, anonKey } = getEdgeFunctionUrl('partner-material-images');
-  const resp = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      apikey: anonKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      partner_id: partnerId,
-      image_urls: validUrls,
-      exclude_item_id: excludeItemId || undefined,
-    }),
-  });
+  let deleted = 0;
+  let alreadyMissing = 0;
+  let skipped = 0;
+  let failed = 0;
+  const remainingUrls: string[] = [];
+  let lastErrorMessage: string | null = null;
 
-  const body = await resp.json().catch(() => ({} as Record<string, unknown>));
-  if (!resp.ok || !body?.success) {
-    throw new Error(
-      typeof body?.error === 'string' ? body.error : `Képtörlés sikertelen (HTTP ${resp.status}).`
+  for (let i = 0; i < validUrls.length; i += 20) {
+    const batch = validUrls.slice(i, i + 20);
+    try {
+      const resp = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: anonKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          partner_id: partnerId,
+          image_urls: batch,
+          exclude_item_id: excludeItemId || undefined,
+          product_id: productId || undefined,
+        }),
+      });
+
+      const body = await resp.json().catch(() => ({} as Record<string, unknown>));
+      const batchDeleted = Number(body?.deleted || 0);
+      const batchAlreadyMissing = Number(body?.already_missing || 0);
+      const batchSkipped = Number(body?.skipped || 0);
+      const batchFailed = Number(body?.failed || 0);
+      const hasPerUrlResult =
+        typeof body?.deleted === 'number' ||
+        typeof body?.already_missing === 'number' ||
+        typeof body?.skipped === 'number' ||
+        typeof body?.failed === 'number' ||
+        Array.isArray(body?.remaining_urls);
+
+      if (hasPerUrlResult) {
+        deleted += batchDeleted;
+        alreadyMissing += batchAlreadyMissing;
+        skipped += batchSkipped;
+        failed += batchFailed;
+        if (Array.isArray(body?.remaining_urls)) {
+          remainingUrls.push(
+            ...body.remaining_urls.filter((u: unknown): u is string => typeof u === 'string' && u.trim().length > 0)
+          );
+        }
+        if (!resp.ok || !body?.success || batchFailed > 0) {
+          lastErrorMessage =
+            typeof body?.error === 'string'
+              ? body.error
+              : `R2 képtörlés részben vagy teljesen sikertelen (${batchFailed} objektum).`;
+        }
+      } else if (!resp.ok || !body?.success) {
+        failed += batch.length;
+        remainingUrls.push(...batch);
+        lastErrorMessage =
+          typeof body?.error === 'string' ? body.error : `Képtörlés sikertelen (HTTP ${resp.status}).`;
+      }
+    } catch (batchErr: unknown) {
+      failed += batch.length;
+      remainingUrls.push(...batch);
+      lastErrorMessage =
+        batchErr instanceof Error ? batchErr.message : 'Hálózati hiba az R2 képtörlés során.';
+    }
+  }
+
+  const result: R2DeleteResult = {
+    deleted,
+    already_missing: alreadyMissing,
+    skipped,
+    failed,
+    remainingUrls,
+  };
+
+  if (failed > 0 || lastErrorMessage) {
+    throw new R2DeletePartialError(
+      lastErrorMessage || `R2 képtörlés részben vagy teljesen sikertelen (${failed} objektum).`,
+      result
     );
   }
 
-  return {
-    deleted: Number(body.deleted || 0),
-    skipped: Number(body.skipped || 0),
-  };
+  return result;
 }
 
 export async function fetchMaterialsFromCloud(options?: {
@@ -680,7 +804,7 @@ export async function fetchMaterialsFromCloud(options?: {
     let loadedItems: MaterialItem[] | null = null;
     let loadedCats: MaterialCategory[] | null = null;
 
-    if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+    if (Array.isArray(parsedItems)) {
       loadedItems = parsedItems;
       if (typeof window !== 'undefined') {
         localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(parsedItems));

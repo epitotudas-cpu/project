@@ -23,6 +23,11 @@ import {
   getMaterialCategoriesLocal,
   fetchMaterialsFromCloud,
   setMaterialStatusAsAdmin,
+  deletePartnerMaterialImages,
+  getR2CleanupFailures,
+  saveR2CleanupFailures,
+  R2DeletePartialError,
+  type R2CleanupFailureRecord,
   type MaterialItem,
   type MaterialCategory,
   type MaterialSpec,
@@ -142,11 +147,11 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
   const [editingItem, setEditingItem] = useState<MaterialItem | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'content' | 'specs' | 'media' | 'seo'>('basic');
   const [previewItem, setPreviewItem] = useState<MaterialItem | null>(null);
-  const [rejectModalItem, setRejectModalItem] = useState<MaterialItem | null>(null);
-  const [rejectionNoteInput, setRejectionNoteInput] = useState('');
   const [publishConfirmItem, setPublishConfirmItem] = useState<MaterialItem | null>(null);
   const [unpublishConfirmItem, setUnpublishConfirmItem] = useState<MaterialItem | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [r2CleanupFailures, setR2CleanupFailures] = useState<R2CleanupFailureRecord[]>([]);
+  const [retryingR2Id, setRetryingR2Id] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<Partial<MaterialItem>>({
@@ -213,14 +218,18 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       })
       .catch((err) => console.warn('Hiba a partnerek betöltésekor:', err));
 
+    void getR2CleanupFailures()
+      .then((failures) => {
+        if (!cancelled) setR2CleanupFailures(failures);
+      })
+      .catch((err) => console.warn('Hiba az R2 törlési hibalista betöltésekor:', err));
+
     window.addEventListener('materials-updated', reload);
     return () => {
       cancelled = true;
       window.removeEventListener('materials-updated', reload);
     };
   }, []);
-
-  const pendingCount = items.filter((i) => i.status === 'pending_approval').length;
 
   const handleOpenCreateModal = () => {
     const defaultPartner = partners[0];
@@ -280,9 +289,9 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       const savedList = await setMaterialStatusAsAdmin(item.id, 'published', null);
       setItems(savedList);
       setPublishConfirmItem(null);
-      toast.success(`"${item.name}" jóváhagyva és közzétéve.`);
+      toast.success(`"${item.name}" közzétéve.`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Hiba történt a jóváhagyás során.');
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a publikálás során.');
     } finally {
       setPublishingId(null);
     }
@@ -312,18 +321,66 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
     }
   };
 
-  const handleRejectConfirm = async () => {
-    if (!rejectModalItem) return;
-    const note =
-      rejectionNoteInput.trim() || 'Kérjük, javítsa a hiányzó műszaki adatokat vagy csatolmányokat.';
+  const persistR2Failure = async (record: R2CleanupFailureRecord) => {
     try {
-      const savedList = await setMaterialStatusAsAdmin(rejectModalItem.id, 'rejected', note);
-      setItems(savedList);
-      setRejectModalItem(null);
-      setRejectionNoteInput('');
-      toast.success('Termék elutasítva.');
+      const saved = await saveR2CleanupFailures((curr) => [
+        ...curr.filter((f) => f.itemId !== record.itemId),
+        record,
+      ]);
+      setR2CleanupFailures(saved);
+    } catch {
+      setR2CleanupFailures((prev) => [...prev.filter((f) => f.itemId !== record.itemId), record]);
+    }
+  };
+
+  const removePersistedR2Failure = async (itemId: string) => {
+    try {
+      const saved = await saveR2CleanupFailures((curr) => curr.filter((f) => f.itemId !== itemId));
+      setR2CleanupFailures(saved);
+    } catch {
+      setR2CleanupFailures((prev) => prev.filter((f) => f.itemId !== itemId));
+    }
+  };
+
+  const handleRetryR2Cleanup = async (failure: R2CleanupFailureRecord) => {
+    if (retryingR2Id) return;
+    setRetryingR2Id(failure.itemId);
+    try {
+      const res = await deletePartnerMaterialImages(
+        failure.partnerId,
+        failure.imageUrls,
+        undefined,
+        failure.itemId
+      );
+      if (res.skipped > 0 || res.remainingUrls.length > 0) {
+        const remaining = res.remainingUrls.length > 0 ? res.remainingUrls : failure.imageUrls;
+        const msg = `${res.skipped} R2 objektum kihagyva (nem igazolható termék-hozzárendelés, pl. régi draft/ vagy hivatkozott kép).`;
+        await persistR2Failure({
+          ...failure,
+          imageUrls: remaining,
+          error: msg,
+          updatedAt: new Date().toISOString(),
+        });
+        toast.error(msg);
+      } else {
+        await removePersistedR2Failure(failure.itemId);
+        toast.success(`"${failure.itemName}" R2 képei sikeresen törölve.`);
+      }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Hiba történt az elutasítás során.');
+      const msg = err instanceof Error ? err.message : 'Az R2 képtörlés újrapróbálása sikertelen.';
+      const remaining =
+        err instanceof R2DeletePartialError && err.result.remainingUrls.length > 0
+          ? err.result.remainingUrls
+          : failure.imageUrls;
+      await persistR2Failure({
+        ...failure,
+        imageUrls: remaining,
+        error: msg,
+        updatedAt: new Date().toISOString(),
+      });
+      toast.error(msg);
+    } finally {
+      setRetryingR2Id(null);
     }
   };
 
@@ -531,14 +588,6 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               Összes
             </button>
             <button
-              onClick={() => setStatusFilter('pending_approval')}
-              className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
-                statusFilter === 'pending_approval' ? 'bg-amber-500/30 text-amber-300 font-extrabold' : 'text-amber-400'
-              }`}
-            >
-              Jóváhagyásra vár {pendingCount > 0 && <span className="bg-amber-500 text-black font-black px-1.5 py-0.2 rounded-full text-[10px]">{pendingCount}</span>}
-            </button>
-            <button
               onClick={() => setStatusFilter('published')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 statusFilter === 'published' ? 'bg-emerald-500/30 text-emerald-300 font-extrabold' : 'text-emerald-400'
@@ -547,12 +596,12 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               Publikált
             </button>
             <button
-              onClick={() => setStatusFilter('rejected')}
+              onClick={() => setStatusFilter('draft')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'rejected' ? 'bg-red-500/30 text-red-300 font-extrabold' : 'text-red-400'
+                statusFilter === 'draft' ? 'bg-gray-500/30 text-gray-200 font-extrabold' : 'text-gray-400'
               }`}
             >
-              Elutasított
+              Rejtett / Piszkozat
             </button>
           </div>
 
@@ -591,6 +640,41 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
           )}
         </div>
       </div>
+
+      {/* R2 Partial Cleanup Warning & Retry */}
+      {r2CleanupFailures.length > 0 && (
+        <div className="p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 space-y-2">
+          <div className="flex items-center gap-2 text-amber-300 font-extrabold text-xs">
+            <AlertTriangle size={16} /> Részleges törlési hiba: a termék törölve lett az adatbázisból, de az R2 képek törlése sikertelen volt (árva objektumok maradhattak):
+          </div>
+          <div className="space-y-1.5">
+            {r2CleanupFailures.map((failure) => (
+              <div key={failure.itemId} className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-200 bg-black/20 px-3 py-2 rounded-xl">
+                <div>
+                  <span className="font-bold">{failure.itemName}</span>
+                  <span className="text-amber-300 ml-2">({failure.error})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleRetryR2Cleanup(failure)}
+                    disabled={retryingR2Id === failure.itemId}
+                    className="px-3 py-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold rounded-lg cursor-pointer"
+                  >
+                    {retryingR2Id === failure.itemId ? 'Újrapróbálás...' : 'Képtörlés újrapróbálása'}
+                  </button>
+                  <button
+                    onClick={() => void removePersistedR2Failure(failure.itemId)}
+                    className="px-2 py-1 text-gray-400 hover:text-white cursor-pointer"
+                    title="Figyelmeztetés bezárása"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content Table */}
       <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="rounded-3xl border shadow-xl overflow-hidden">
@@ -717,20 +801,6 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                           title="Termék elrejtése a nyilvános felületről"
                         >
                           <Ban size={12} /> Elrejtés
-                        </button>
-                      )}
-
-                      {/* Reject Button */}
-                      {item.status === 'pending_approval' && (
-                        <button
-                          onClick={() => {
-                            setRejectModalItem(item);
-                            setRejectionNoteInput('');
-                          }}
-                          className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-[11px] font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                          title="Elutasítás indoklással"
-                        >
-                          <Ban size={12} /> Elutasítás
                         </button>
                       )}
 
@@ -1261,41 +1331,6 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
         </div>
       )}
 
-      {/* ── REJECTION REASON MODAL ── */}
-      {rejectModalItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-2 text-red-600 font-extrabold text-sm">
-              <AlertTriangle size={18} /> Beküldött Építőanyag Elutasítása
-            </div>
-            <p className="text-xs text-gray-600">
-              Kérjük, adja meg az elutasítás okát, amit a partner látni fog a felületén a javítás érdekében:
-            </p>
-            <textarea
-              rows={3}
-              value={rejectionNoteInput}
-              onChange={(e) => setRejectionNoteInput(e.target.value)}
-              placeholder="pl. Hiányzik a kötelező teljesítménynyilatkozat PDF csatolmány..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs focus:outline-none focus:border-red-500"
-            />
-            <div className="flex items-center justify-end gap-2">
-              <button
-                onClick={() => setRejectModalItem(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 font-bold text-xs rounded-xl cursor-pointer"
-              >
-                Mégse
-              </button>
-              <button
-                onClick={handleRejectConfirm}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl cursor-pointer"
-              >
-                Elutasítás Beküldése
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── PUBLISH QUALITY CONFIRMATION MODAL ── */}
       {publishConfirmItem && (() => {
         const { warnings, optionalMissing } = getMaterialQualityWarnings(publishConfirmItem);
@@ -1518,10 +1553,9 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
         message={`Biztosan elrejti a(z) „${unpublishConfirmItem?.name || ''}” terméket?\n\nA termék a nyilvános felületen többé nem lesz látható, státusza piszkozatra (draft) módosul. Később bármikor újra publikálható.`}
         confirmLabel="Elrejtés"
         destructive
-        busy={Boolean(unpublishConfirmItem && publishingId === unpublishConfirmItem.id)}
         onConfirm={() => {
           if (unpublishConfirmItem) {
-            executeUnpublish(unpublishConfirmItem);
+            return executeUnpublish(unpublishConfirmItem);
           }
         }}
         onCancel={() => {
@@ -1538,13 +1572,76 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
         destructive
         onConfirm={async () => {
           if (deleteMaterialId) {
+            const targetItem = items.find((i) => i.id === deleteMaterialId);
+            let dbDeleted = false;
             try {
               const updated = items.filter((i) => i.id !== deleteMaterialId);
               const savedList = await saveMaterialsLocal(updated);
               setItems(savedList);
-              toast.success('Termék törölve.');
+              dbDeleted = true;
             } catch (err: unknown) {
-              toast.error(err instanceof Error ? err.message : 'Hiba történt a törlés során.');
+              toast.error(err instanceof Error ? err.message : 'Hiba történt az adatbázis-törlés során.');
+            }
+
+            if (dbDeleted && targetItem) {
+              const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+              const candidateImages = [
+                targetItem.main_image_url,
+                ...(Array.isArray(targetItem.gallery_image_urls) ? targetItem.gallery_image_urls : []),
+              ].filter(
+                (u): u is string =>
+                  typeof u === 'string' &&
+                  u.trim().length > 0 &&
+                  !u.startsWith('https://images.unsplash.com/')
+              );
+
+              if (candidateImages.length > 0 && uuidPattern.test(targetItem.partner_id || '')) {
+                try {
+                  const res = await deletePartnerMaterialImages(
+                    targetItem.partner_id,
+                    candidateImages,
+                    undefined,
+                    targetItem.id
+                  );
+                  if (res.skipped > 0 || res.remainingUrls.length > 0) {
+                    const remaining = res.remainingUrls.length > 0 ? res.remainingUrls : candidateImages;
+                    const skipMsg = `${res.skipped} R2 objektum kihagyva (nem igazolható termék-hozzárendelés, pl. régi draft/ vagy hivatkozott kép).`;
+                    await persistR2Failure({
+                      itemId: targetItem.id,
+                      itemName: targetItem.name,
+                      partnerId: targetItem.partner_id,
+                      imageUrls: remaining,
+                      error: skipMsg,
+                      updatedAt: new Date().toISOString(),
+                    });
+                    toast.error(`A termék törölve az adatbázisból, de: ${skipMsg}`);
+                  } else {
+                    toast.success('Termék és minden hozzá tartozó kép törölve.');
+                  }
+                } catch (r2Err: unknown) {
+                  const errMsg =
+                    r2Err instanceof Error ? r2Err.message : 'R2 képtörlés sikertelen.';
+                  const remaining =
+                    r2Err instanceof R2DeletePartialError && r2Err.result.remainingUrls.length > 0
+                      ? r2Err.result.remainingUrls
+                      : candidateImages;
+                  await persistR2Failure({
+                    itemId: targetItem.id,
+                    itemName: targetItem.name,
+                    partnerId: targetItem.partner_id,
+                    imageUrls: remaining,
+                    error: errMsg,
+                    updatedAt: new Date().toISOString(),
+                  });
+                  toast.error(
+                    `A termék törölve az adatbázisból, de az R2 képek törlése sikertelen: ${errMsg}`
+                  );
+                }
+              } else {
+                toast.success('Termék törölve.');
+              }
+            } else if (dbDeleted) {
+              toast.success('Termék törölve.');
             }
           }
           setDeleteMaterialId(null);

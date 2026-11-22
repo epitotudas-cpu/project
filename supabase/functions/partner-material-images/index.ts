@@ -1,6 +1,7 @@
 // Supabase Edge Function: partner-material-images
 // Biztonságos partneri termékkép-feltöltés és -törlés Cloudflare R2 S3-kompatibilis API-n keresztül.
 
+// @ts-ignore: Deno URL import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
 
 declare const Deno: {
@@ -349,6 +350,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const body = await req.json().catch(() => ({}));
     const partnerId = String(body?.partner_id || '').trim();
     const excludeItemId = typeof body?.exclude_item_id === 'string' ? body.exclude_item_id.trim() : '';
+    const productId = typeof body?.product_id === 'string' ? body.product_id.trim() : '';
     const urls: string[] = Array.isArray(body?.image_urls)
       ? body.image_urls.filter((u: unknown): u is string => typeof u === 'string')
       : typeof body?.image_url === 'string'
@@ -362,8 +364,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: isContact, error: contactErr } = await userClient.rpc('is_partner_contact', {
       target_partner_id: partnerId,
     });
+    let isAuthorizedAdmin = false;
     if (contactErr || !isContact) {
-      return jsonResponse(corsHeaders, 403, { success: false, error: 'Nincs jogosultsága ehhez a partnerfiókhoz.' });
+      const { data: isAdmin, error: adminErr } = await userClient.rpc('is_admin_role');
+      if (adminErr || !isAdmin) {
+        return jsonResponse(corsHeaders, 403, { success: false, error: 'Nincs jogosultsága ehhez a partnerfiókhoz.' });
+      }
+      isAuthorizedAdmin = true;
+    }
+
+    if (isAuthorizedAdmin && !productId) {
+      return jsonResponse(corsHeaders, 400, {
+        success: false,
+        error: 'Adminisztrátori képtörléshez a termékazonosító megadása kötelező.',
+      });
     }
 
     if (urls.length === 0) {
@@ -418,27 +432,69 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    const expectedPrefix = `materials/${partnerId}/`;
+    const productSegment = productId ? sanitizeProductSegment(productId) : '';
+    if (isAuthorizedAdmin && (!productSegment || productSegment === 'draft')) {
+      return jsonResponse(corsHeaders, 400, {
+        success: false,
+        error: 'Érvénytelen termékazonosító adminisztrátori képtörléshez.',
+      });
+    }
+    const expectedPrefix = productSegment
+      ? `materials/${partnerId}/${productSegment}/`
+      : `materials/${partnerId}/`;
     let deleted = 0;
+    let alreadyMissing = 0;
     let skipped = 0;
+    let failed = 0;
+    const remainingUrls: string[] = [];
 
     for (const rawUrl of urls.slice(0, 20)) {
       const key = extractR2ObjectKey(rawUrl, r2Config.publicUrl);
       if (!key || !key.startsWith(expectedPrefix)) {
         skipped++;
+        remainingUrls.push(rawUrl);
         continue;
       }
       if (referencedKeys.has(key)) {
         skipped++;
+        remainingUrls.push(rawUrl);
         continue;
       }
       const delResp = await signedR2Request(r2Config, 'DELETE', key);
-      if (delResp.ok || delResp.status === 404) {
+      if (delResp.ok) {
         deleted++;
+      } else if (delResp.status === 404) {
+        alreadyMissing++;
+      } else {
+        failed++;
+        remainingUrls.push(rawUrl);
       }
     }
 
-    return jsonResponse(corsHeaders, 200, { success: true, deleted, skipped });
+    if (urls.length > 20) {
+      remainingUrls.push(...urls.slice(20));
+    }
+
+    if (failed > 0) {
+      return jsonResponse(corsHeaders, 502, {
+        success: false,
+        deleted,
+        already_missing: alreadyMissing,
+        skipped,
+        failed,
+        remaining_urls: remainingUrls,
+        error: 'Néhány R2 képobjektum törlése sikertelen volt.',
+      });
+    }
+
+    return jsonResponse(corsHeaders, 200, {
+      success: true,
+      deleted,
+      already_missing: alreadyMissing,
+      skipped,
+      failed: 0,
+      remaining_urls: remainingUrls,
+    });
   } catch (err: unknown) {
     return jsonResponse(corsHeaders, 500, {
       success: false,

@@ -40,6 +40,9 @@ import {
   deletePartnerMaterialItem,
   uploadPartnerMaterialImage,
   deletePartnerMaterialImages,
+  getR2CleanupFailures,
+  saveR2CleanupFailures,
+  R2DeletePartialError,
   getMaterialsLocal,
   type MaterialItem,
 } from './materialsService';
@@ -235,12 +238,16 @@ describe('materialsService (0.C)', () => {
     const initial = makeItem({ id: 'mat-x', name: 'Eredeti' });
     localStorage.setItem('epitotudas_materials_items_v1', JSON.stringify([initial]));
 
-    readAppConfigWithVersionMock.mockResolvedValue({
+    readAppConfigWithVersionMock.mockResolvedValueOnce({
       value: [initial],
       updatedAt: '2026-11-15T11:20:00Z',
     });
     await fetchMaterialsFromCloud();
 
+    readAppConfigWithVersionMock.mockResolvedValue({
+      value: [initial],
+      updatedAt: '2026-11-15T11:20:00Z',
+    });
     writeAppConfigIfUnchangedMock.mockResolvedValue({ conflict: true, updatedAt: null });
 
     await expect(saveMaterialsLocal([{ ...initial, name: 'Sikertelen módosítás' }])).rejects.toThrow(
@@ -249,6 +256,8 @@ describe('materialsService (0.C)', () => {
     expect(writeAppConfigIfUnchangedMock).toHaveBeenCalledTimes(4);
     expect(writeAppConfigMock).not.toHaveBeenCalled();
     expect(getMaterialsLocal()[0].name).toBe('Eredeti');
+    readAppConfigWithVersionMock.mockResolvedValue({ value: null, updatedAt: null });
+    writeAppConfigIfUnchangedMock.mockResolvedValue({ conflict: false, updatedAt: '2026-11-15T12:00:00Z' });
   });
 
   it('uploadPartnerMaterialImage and deletePartnerMaterialImages call Edge Function with JWT', async () => {
@@ -272,13 +281,219 @@ describe('materialsService (0.C)', () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ success: true, deleted: 1, skipped: 0 }),
+      json: async () => ({
+        success: true,
+        deleted: 1,
+        already_missing: 0,
+        skipped: 0,
+        failed: 0,
+        remaining_urls: [],
+      }),
     });
     const deleted = await deletePartnerMaterialImages(
       'p-1',
       ['https://cdn.epitotudas.hu/materials/p-1/mat-1/img.webp'],
+      'mat-1',
       'mat-1'
     );
-    expect(deleted).toEqual({ deleted: 1, skipped: 0 });
+    expect(deleted).toEqual({
+      deleted: 1,
+      already_missing: 0,
+      skipped: 0,
+      failed: 0,
+      remainingUrls: [],
+    });
+  });
+
+  it('saveMaterialsLocal persists deletion even when localStorage has baseline and cloud fetch has not run', async () => {
+    vi.resetModules();
+    const freshService = await import('./materialsService');
+    const itemA = makeItem({ id: 'mat-del-1', name: 'Törlendő A' });
+    const itemB = makeItem({ id: 'mat-keep-2', name: 'Megmaradó B' });
+    const itemC = makeItem({ id: 'mat-partner-3', name: 'Partner új C', partner_id: 'partner-2' });
+
+    localStorage.setItem('epitotudas_materials_items_v1', JSON.stringify([itemA, itemB]));
+    readAppConfigWithVersionMock.mockResolvedValueOnce({
+      value: [itemC, itemA, itemB],
+      updatedAt: '2026-11-22T10:00:00Z',
+    });
+    writeAppConfigIfUnchangedMock.mockResolvedValueOnce({
+      conflict: false,
+      updatedAt: '2026-11-22T10:01:00Z',
+    });
+
+    const saved = await freshService.saveMaterialsLocal([itemB]);
+    expect(saved.map((i) => i.id)).toEqual(['mat-partner-3', 'mat-keep-2']);
+    expect(saved.some((i) => i.id === 'mat-del-1')).toBe(false);
+  });
+
+  it('empty catalog ([]) is preserved across saveMaterialsLocal, fetchMaterialsFromCloud, and getMaterialsLocal without falling back to DEFAULT_MATERIALS', async () => {
+    vi.resetModules();
+    const freshService = await import('./materialsService');
+    const lastItem = makeItem({ id: 'mat-last', name: 'Utolsó termék' });
+    readAppConfigWithVersionMock.mockResolvedValueOnce({
+      value: [lastItem],
+      updatedAt: '2026-11-22T11:00:00Z',
+    });
+    await freshService.fetchMaterialsFromCloud({ isAdmin: true });
+
+    writeAppConfigIfUnchangedMock.mockResolvedValueOnce({
+      conflict: false,
+      updatedAt: '2026-11-22T11:01:00Z',
+    });
+    const saved = await freshService.saveMaterialsLocal([]);
+    expect(saved).toEqual([]);
+    expect(freshService.getMaterialsLocal()).toEqual([]);
+
+    readAppConfigWithVersionMock.mockResolvedValueOnce({
+      value: [],
+      updatedAt: '2026-11-22T11:01:00Z',
+    });
+    const refetched = await freshService.fetchMaterialsFromCloud({ isAdmin: true });
+    expect(refetched.items).toEqual([]);
+    expect(freshService.getMaterialsLocal()).toEqual([]);
+  });
+
+  it('deletePartnerMaterialImages throws when Edge Function reports failed R2 deletions', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: async () => ({
+        success: false,
+        deleted: 0,
+        already_missing: 0,
+        skipped: 0,
+        failed: 1,
+        remaining_urls: [
+          'https://cdn.epitotudas.hu/materials/11111111-1111-1111-1111-111111111111/mat-1/img.webp',
+        ],
+        error: 'Néhány R2 képobjektum törlése sikertelen volt.',
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      deletePartnerMaterialImages(
+        '11111111-1111-1111-1111-111111111111',
+        ['https://cdn.epitotudas.hu/materials/11111111-1111-1111-1111-111111111111/mat-1/img.webp'],
+        undefined,
+        'mat-1'
+      )
+    ).rejects.toThrow('Néhány R2 képobjektum törlése sikertelen volt.');
+  });
+
+  it('deletePartnerMaterialImages batches >20 URLs and keeps only failed remainingUrls on partial failure', async () => {
+    const urls = Array.from(
+      { length: 23 },
+      (_, i) => `https://cdn.epitotudas.hu/materials/11111111-1111-1111-1111-111111111111/mat-1/img-${i}.webp`
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          deleted: 19,
+          already_missing: 1,
+          skipped: 0,
+          failed: 0,
+          remaining_urls: [],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        json: async () => ({
+          success: false,
+          deleted: 1,
+          already_missing: 0,
+          skipped: 0,
+          failed: 2,
+          remaining_urls: urls.slice(21),
+          error: 'Részleges R2 hiba',
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      await deletePartnerMaterialImages(
+        '11111111-1111-1111-1111-111111111111',
+        urls,
+        undefined,
+        'mat-1'
+      );
+      expect.unreachable('Should have thrown R2DeletePartialError');
+    } catch (err) {
+      expect(err).toBeInstanceOf(R2DeletePartialError);
+      const r2Err = err as R2DeletePartialError;
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(r2Err.result.deleted).toBe(20);
+      expect(r2Err.result.already_missing).toBe(1);
+      expect(r2Err.result.failed).toBe(2);
+      expect(r2Err.result.remainingUrls).toEqual(urls.slice(21));
+    }
+  });
+
+  it('deletePartnerMaterialImages reports already_missing as success and preserves skipped URLs in remainingUrls', async () => {
+    const draftUrl =
+      'https://cdn.epitotudas.hu/materials/11111111-1111-1111-1111-111111111111/draft/old.webp';
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        deleted: 0,
+        already_missing: 1,
+        skipped: 1,
+        failed: 0,
+        remaining_urls: [draftUrl],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await deletePartnerMaterialImages(
+      '11111111-1111-1111-1111-111111111111',
+      [
+        'https://cdn.epitotudas.hu/materials/11111111-1111-1111-1111-111111111111/mat-1/missing.webp',
+        draftUrl,
+      ],
+      undefined,
+      'mat-1'
+    );
+    expect(res).toEqual({
+      deleted: 0,
+      already_missing: 1,
+      skipped: 1,
+      failed: 0,
+      remainingUrls: [draftUrl],
+    });
+  });
+
+  it('getR2CleanupFailures and saveR2CleanupFailures persist and clear failures via app_configs safely', async () => {
+    readAppConfigWithVersionMock.mockResolvedValueOnce({ value: null, updatedAt: null });
+    expect(await getR2CleanupFailures()).toEqual([]);
+
+    const failure = {
+      itemId: 'mat-r2-1',
+      itemName: 'Teszt termék',
+      partnerId: '11111111-1111-1111-1111-111111111111',
+      imageUrls: ['https://cdn.epitotudas.hu/materials/11111111-1111-1111-1111-111111111111/mat-r2-1/a.webp'],
+      error: 'R2 hiba',
+      updatedAt: '2026-11-22T16:00:00Z',
+    };
+    readAppConfigWithVersionMock.mockResolvedValueOnce({ value: null, updatedAt: null });
+    writeAppConfigIfUnchangedMock.mockResolvedValueOnce({
+      conflict: false,
+      updatedAt: '2026-11-22T16:00:01Z',
+    });
+
+    const saved = await saveR2CleanupFailures((curr) => [...curr, failure]);
+    expect(saved).toEqual([failure]);
+    expect(writeAppConfigIfUnchangedMock).toHaveBeenCalledWith(
+      '__SYSTEM_CONFIG_R2_CLEANUP_FAILURES__',
+      [failure],
+      null
+    );
   });
 });
