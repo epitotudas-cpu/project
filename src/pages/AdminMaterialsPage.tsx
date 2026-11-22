@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   Layers,
   Search,
@@ -109,6 +109,12 @@ function getMaterialQualityWarnings(item: MaterialItem): {
   return { warnings, optionalMissing, validSpecs };
 }
 
+function autoResizeTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
 export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMaterialsPageProps) {
   const toast = useToast();
   const [deleteMaterialId, setDeleteMaterialId] = useState<string | null>(null);
@@ -187,6 +193,24 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
 
   // Keyword Input
   const [keywordInput, setKeywordInput] = useState('');
+  const shortDescRef = useRef<HTMLTextAreaElement | null>(null);
+  const fullDescRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!isModalOpen || activeTab !== 'content') return;
+    autoResizeTextarea(shortDescRef.current);
+    autoResizeTextarea(fullDescRef.current);
+  }, [isModalOpen, activeTab, formData.short_description, formData.full_description]);
+
+  useEffect(() => {
+    if (!isModalOpen || activeTab !== 'content') return;
+    const handleResize = () => {
+      autoResizeTextarea(shortDescRef.current);
+      autoResizeTextarea(fullDescRef.current);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isModalOpen, activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -921,12 +945,13 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                   <div>
                     <label className="font-bold text-gray-300 block mb-1">Rövid Leírás *</label>
                     <textarea
+                      ref={shortDescRef}
                       rows={3}
                       value={formData.short_description}
                       onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
                       placeholder="Néhány mondatos összefoglaló a kártyás megjelenítéshez..."
                       style={fieldStyle}
-                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium"
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium overflow-hidden resize-none"
                       required
                     />
                   </div>
@@ -934,12 +959,13 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                   <div>
                     <label className="font-bold text-gray-300 block mb-1">Részletes Termékleírás (Markdown / HTML)</label>
                     <textarea
+                      ref={fullDescRef}
                       rows={8}
                       value={formData.full_description}
                       onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
                       placeholder="A termék teljes bemutatása, előnyei, kivitelezési tanácsok..."
                       style={fieldStyle}
-                      className="w-full border rounded-xl px-3 py-2 text-xs font-mono"
+                      className="w-full border rounded-xl px-3 py-2 text-xs font-mono overflow-hidden resize-none"
                     />
                   </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   Layers,
   Plus,
@@ -60,6 +60,12 @@ function isPartnerEditableStatus(status: MaterialItem['status']): boolean {
   return status === 'draft' || status === 'pending_approval' || status === 'rejected';
 }
 
+function autoResizeTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
 export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterialsPageProps) {
   const toast = useToast();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -104,6 +110,24 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const [docTitleInput, setDocTitleInput] = useState('');
   const [docUrlInput, setDocUrlInput] = useState('');
   const [docTypeInput, setDocTypeInput] = useState<MaterialDocument['doc_type']>('muszaki_adatlap');
+  const shortDescRef = useRef<HTMLTextAreaElement | null>(null);
+  const fullDescRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!isModalOpen || activeTab !== 'content') return;
+    autoResizeTextarea(shortDescRef.current);
+    autoResizeTextarea(fullDescRef.current);
+  }, [isModalOpen, activeTab, formData.short_description, formData.full_description]);
+
+  useEffect(() => {
+    if (!isModalOpen || activeTab !== 'content') return;
+    const handleResize = () => {
+      autoResizeTextarea(shortDescRef.current);
+      autoResizeTextarea(fullDescRef.current);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isModalOpen, activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -630,11 +654,12 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                   <div>
                     <label className="font-bold text-gray-700 block mb-1">Rövid Leírás *</label>
                     <textarea
+                      ref={shortDescRef}
                       rows={3}
                       value={formData.short_description}
                       onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
                       placeholder="Néhány mondatos összefoglaló a vásárlóknak..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium overflow-hidden resize-none"
                       required
                     />
                   </div>
@@ -642,11 +667,12 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                   <div>
                     <label className="font-bold text-gray-700 block mb-1">Részletes Leírás &amp; Előnyök</label>
                     <textarea
+                      ref={fullDescRef}
                       rows={6}
                       value={formData.full_description}
                       onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
                       placeholder="Részletes bemutató szöveg..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium overflow-hidden resize-none"
                     />
                   </div>
 
