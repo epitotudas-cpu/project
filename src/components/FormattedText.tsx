@@ -66,7 +66,12 @@ export default function FormattedText({
   function flushList(keyPrefix: number) {
     if (!currentList) return;
     const ListTag = currentList.type === 'ul' ? 'ul' : 'ol';
-    const listStyleClass = currentList.type === 'ul' ? listClassName : `${listClassName} list-decimal`;
+    const listStyleClass =
+      currentList.type === 'ul'
+        ? listClassName
+        : listClassName.includes('list-disc')
+          ? listClassName.replace(/\blist-disc\b/g, 'list-decimal')
+          : `${listClassName} list-decimal`;
     elements.push(
       <ListTag key={`list-${keyPrefix}`} className={listStyleClass}>
         {currentList.items.map((item, iIdx) => (
@@ -163,34 +168,66 @@ export default function FormattedText({
 }
 
 /**
- * Parses inline markdown: **bold**, *italic*, [link](url)
+ * Parses inline markdown: ***bold italic***, **bold**, *italic*, [link](url)
+ * Supports bounded nesting (e.g. **[link](url)** or **text [link](url)**).
  */
-function renderInlineMarkdown(textStr: string, strongClassName: string): React.ReactNode[] {
-  const tokenRegex = /(\*\*[^*]+\*\*|_[^_]+_|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
+function renderInlineMarkdown(
+  textStr: string,
+  strongClassName: string,
+  depth = 0,
+  keyPrefix = 'in'
+): React.ReactNode[] {
+  if (!textStr || depth > 4) return [textStr];
+
+  const tokenRegex =
+    /(\*\*\*[\s\S]+?\*\*\*|\*\*[\s\S]+?\*\*|\[[^\]]+\]\([^)]+\)|\*[^*]+\*|_[^_]+_)/g;
   const parts = textStr.split(tokenRegex);
 
   return parts.map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={idx} className={strongClassName}>{part.slice(2, -2)}</strong>;
+    const key = `${keyPrefix}-${depth}-${idx}`;
+    if (part.startsWith('***') && part.endsWith('***') && part.length > 6) {
+      return (
+        <strong key={key} className={strongClassName}>
+          <em className="italic">
+            {renderInlineMarkdown(part.slice(3, -3), strongClassName, depth + 1, key)}
+          </em>
+        </strong>
+      );
     }
-    if ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) {
-      return <em key={idx} className="italic">{part.slice(1, -1)}</em>;
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return (
+        <strong key={key} className={strongClassName}>
+          {renderInlineMarkdown(part.slice(2, -2), strongClassName, depth + 1, key)}
+        </strong>
+      );
+    }
+    if (
+      ((part.startsWith('*') && part.endsWith('*')) ||
+        (part.startsWith('_') && part.endsWith('_'))) &&
+      part.length > 2
+    ) {
+      return (
+        <em key={key} className="italic">
+          {renderInlineMarkdown(part.slice(1, -1), strongClassName, depth + 1, key)}
+        </em>
+      );
     }
     const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (linkMatch) {
       const safeHref = sanitizeExternalUrl(linkMatch[2], { allowAutoHttps: true, allowRelative: true });
+      const labelNodes = renderInlineMarkdown(linkMatch[1], strongClassName, depth + 1, key);
       if (!safeHref) {
-        return <span key={idx}>{linkMatch[1]}</span>;
+        return <span key={key}>{labelNodes}</span>;
       }
       return (
         <a
-          key={idx}
+          key={key}
           href={safeHref}
           target="_blank"
           rel="noopener noreferrer"
           className="text-amber-400 hover:underline font-semibold"
         >
-          {linkMatch[1]}
+          {labelNodes}
         </a>
       );
     }
