@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   X,
   Save,
@@ -8,7 +8,6 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  Eye,
   Sparkles,
   Sliders,
   Cpu,
@@ -16,8 +15,6 @@ import {
   Image as ImageIcon,
   Wrench,
   Search,
-  Smartphone,
-  Monitor,
 } from 'lucide-react';
 import { slugify } from '../lib/slugify';
 import type { Tool, RecommendedProduct, Article } from '../lib/supabase';
@@ -43,8 +40,6 @@ interface FormState {
   uses: string;
   buying_guide: string;
   common_mistakes: string;
-  price: string;
-  currency: string;
   features: string;
   image_url: string;
   video_url: string;
@@ -54,55 +49,28 @@ interface FormState {
   keywords: string;
   canonical_url: string;
   is_indexable: boolean;
-
-  // Dedicated Technical Specs Fields
-  head_weight: string;
-  handle_length: string;
-  handle_material: string;
-  grip_type: string;
-  finish_types: string[];
-  standard_ref: string;
 }
 
-const FINISH_OPTIONS = [
-  'Kovácsolt edzett acél',
-  'Hőkezelt ütőfelület (Pálya/Szem)',
-  'Rozsdavédő fekete lakk bevonat',
-  'Krómozott bevonat',
-  'Polírozott pálya',
-  'Nikkelezett felület',
-];
-
-const HANDLE_MATERIAL_OPTIONS = [
-  'Hikkori fa (Észak-amerikai dió)',
-  'Kőrisfa',
-  'Üvegszálas polimer',
-  'Monolit edzett acél',
-  'Akácfa',
-  'Műanyag / Kompozit',
-];
-
-const GRIP_TYPE_OPTIONS = [
-  'Csúszásmentes gumi',
-  'TPR ergonómiai grip',
-  'Natúr csiszolt fa',
-  'Lakk bevonatú fa',
-  'Nincs / Szántott acélnyél',
+const TOOL_CATEGORY_SUGGESTIONS = [
+  'Kéziszerszámok',
+  'Gépek és kisgépek',
+  'Mérőeszközök',
+  'Állványok és segédeszközök',
+  'Munkavédelmi eszközök',
+  'Digitális eszközök és szoftverek',
 ];
 
 const EMPTY_FORM: FormState = {
   name: '',
   slug: '',
   type: 'Kéziszerszámok',
-  subtype: 'Kalapácsok',
+  subtype: '',
   brand: '',
   description: '',
   professions: '',
   uses: '',
   buying_guide: '',
   common_mistakes: '',
-  price: '',
-  currency: 'HUF',
   features: '',
   image_url: '',
   video_url: '',
@@ -112,20 +80,9 @@ const EMPTY_FORM: FormState = {
   keywords: '',
   canonical_url: '',
   is_indexable: true,
-
-  head_weight: '',
-  handle_length: '',
-  handle_material: 'Hikkori fa (Észak-amerikai dió)',
-  grip_type: 'Csúszásmentes gumi',
-  finish_types: ['Kovácsolt edzett acél', 'Rozsdavédő fekete lakk bevonat'],
-  standard_ref: 'DIN 1041',
 };
 
 function formFromTool(t: Tool): FormState {
-  const specs = t.technical_specs || {};
-  const finishStr = specs['Felületkezelés'] || '';
-  const initialFinishes = FINISH_OPTIONS.filter((opt) => finishStr.includes(opt.split(' ')[0]));
-
   return {
     name: t.name,
     slug: t.slug,
@@ -137,8 +94,6 @@ function formFromTool(t: Tool): FormState {
     uses: (t.uses ?? []).join(', '),
     buying_guide: (t.buying_guide ?? []).join('\n'),
     common_mistakes: (t.common_mistakes ?? []).join('\n'),
-    price: t.price != null ? String(t.price) : '',
-    currency: t.currency ?? 'HUF',
     features: (t.features ?? []).join(', '),
     image_url: t.image_url ?? '',
     video_url: t.video_url ?? '',
@@ -148,14 +103,23 @@ function formFromTool(t: Tool): FormState {
     keywords: (t.keywords ?? []).join(', '),
     canonical_url: t.canonical_url ?? '',
     is_indexable: t.is_indexable ?? true,
-
-    head_weight: specs['Fej tömege'] || specs['Súly'] || '',
-    handle_length: specs['Nyél hossza'] || '',
-    handle_material: specs['Nyél anyaga'] || specs['Nyél'] || 'Hikkori fa (Észak-amerikai dió)',
-    grip_type: specs['Markolat típusa'] || 'Csúszásmentes gumi',
-    finish_types: initialFinishes.length > 0 ? initialFinishes : ['Kovácsolt edzett acél'],
-    standard_ref: specs['Szabvány'] || 'DIN 1041',
   };
+}
+
+function specsFromTool(t: Tool | null): Array<{ key: string; value: string }> {
+  if (!t?.technical_specs || typeof t.technical_specs !== 'object') return [];
+  return Object.entries(t.technical_specs).map(([key, value]) => ({
+    key,
+    value: String(value ?? ''),
+  }));
+}
+
+function partsFromTool(t: Tool | null): Array<{ name: string; description: string }> {
+  if (!t?.parts || !Array.isArray(t.parts)) return [];
+  return t.parts.map((p) => ({
+    name: p?.name ?? '',
+    description: p?.description ?? '',
+  }));
 }
 
 function parseList(s: string): string[] {
@@ -165,47 +129,51 @@ function parseList(s: string): string[] {
     .filter(Boolean);
 }
 
+function AutoGrowTextarea(
+  props: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { minRows?: number }
+) {
+  const { minRows = 3, value, onChange, className = '', ...rest } = props;
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      rows={minRows}
+      value={value}
+      onChange={(e) => {
+        const el = e.currentTarget;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+        onChange?.(e);
+      }}
+      className={`${className} overflow-hidden resize-none`}
+      {...rest}
+    />
+  );
+}
+
 export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalProps) {
   const isCreate = tool === null;
-  const [activeTab, setActiveTab] = useState<'basic' | 'specs' | 'content' | 'media' | 'products' | 'seo'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'content' | 'specs' | 'media' | 'products' | 'seo'>('basic');
   const [form, setForm] = useState<FormState>(() => (tool ? formFromTool(tool) : EMPTY_FORM));
   const [products, setProducts] = useState<RecommendedProduct[]>(() =>
     tool?.recommended_products ? (JSON.parse(JSON.stringify(tool.recommended_products)) as RecommendedProduct[]) : []
   );
+  const [customSpecs, setCustomSpecs] = useState<Array<{ key: string; value: string }>>(() => specsFromTool(tool));
+  const [parts, setParts] = useState<Array<{ name: string; description: string }>>(() => partsFromTool(tool));
 
-  // Custom key-value specs builder state
-  const [customSpecs, setCustomSpecs] = useState<Array<{ key: string; value: string }>>(() => {
-    if (!tool?.technical_specs) return [];
-    const reservedKeys = new Set(['Fej tömege', 'Súly', 'Nyél hossza', 'Nyél anyaga', 'Nyél', 'Markolat típusa', 'Felületkezelés', 'Szabvány']);
-    return Object.entries(tool.technical_specs)
-      .filter(([k]) => !reservedKeys.has(k))
-      .map(([key, value]) => ({ key, value }));
-  });
-
-  // Gallery URLs state
-  const [galleryUrls, setGalleryUrls] = useState<string[]>(() => {
-    if (!tool) return [];
-    const toolExtras = tool as typeof tool & { image_urls?: string[] };
-    if (Array.isArray(toolExtras.image_urls) && toolExtras.image_urls.length > 0) {
-      return toolExtras.image_urls;
-    }
-    const specsExtras = tool.specs as (typeof tool.specs & { gallery_image_urls?: string[] }) | null | undefined;
-    if (specsExtras?.gallery_image_urls && Array.isArray(specsExtras.gallery_image_urls)) {
-      return specsExtras.gallery_image_urls;
-    }
-    return [];
-  });
-
-  const [newGalleryInput, setNewGalleryInput] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // Preview & Device Switcher State
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [livePreviewDevice, setLivePreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
-  const [descriptionPreviewDevice, setDescriptionPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [contentSubTab, setContentSubTab] = useState<'edit' | 'preview'>('edit');
   const [serpDevice, setSerpDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [availableArticles, setAvailableArticles] = useState<Article[]>([]);
@@ -231,23 +199,29 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     if (tool) {
       setForm(formFromTool(tool));
       setProducts(tool.recommended_products ? (JSON.parse(JSON.stringify(tool.recommended_products)) as RecommendedProduct[]) : []);
+      setCustomSpecs(specsFromTool(tool));
+      setParts(partsFromTool(tool));
       setSlugTouched(true);
     } else {
       setForm({ ...EMPTY_FORM });
       setProducts([]);
+      setCustomSpecs([]);
+      setParts([]);
       setSlugTouched(false);
     }
+    setActiveTab('basic');
+    setContentSubTab('edit');
     setError(null);
     setSaveStatus('idle');
   }, [tool]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !saving && !previewModalOpen) onClose();
+      if (e.key === 'Escape' && !saving) onClose();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [saving, previewModalOpen, onClose]);
+  }, [saving, onClose]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -302,16 +276,6 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     update('slug', slugify(value));
   }
 
-  function addGalleryUrl() {
-    if (!newGalleryInput.trim()) return;
-    setGalleryUrls((prev) => [...prev, newGalleryInput.trim()]);
-    setNewGalleryInput('');
-  }
-
-  function removeGalleryUrl(index: number) {
-    setGalleryUrls((prev) => prev.filter((_, i) => i !== index));
-  }
-
   function addCustomSpec() {
     setCustomSpecs((prev) => [...prev, { key: '', value: '' }]);
   }
@@ -322,6 +286,18 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
 
   function removeCustomSpec(index: number) {
     setCustomSpecs((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function addPart() {
+    setParts((prev) => [...prev, { name: '', description: '' }]);
+  }
+
+  function updatePart(index: number, name: string, description: string) {
+    setParts((prev) => prev.map((p, i) => (i === index ? { name, description } : p)));
+  }
+
+  function removePart(index: number) {
+    setParts((prev) => prev.filter((_, i) => i !== index));
   }
 
   function addProduct() {
@@ -387,7 +363,7 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) {
-      setError('Az eszköz neve megadása kötelező.');
+      setError('Az eszköz vagy gép nevének megadása kötelező.');
       setSaveStatus('error');
       return;
     }
@@ -401,39 +377,21 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
     setSaveStatus('saving');
     setError(null);
     try {
-      const priceNum = form.price.trim() === '' ? null : Number(form.price.trim());
-      if (priceNum != null && Number.isNaN(priceNum)) {
-        setError('Az ár értéke érvénytelen szám.');
-        setSaveStatus('error');
-        setSaving(false);
-        return;
-      }
-
-      // Build consolidated Technical Specs dictionary
       const specsDict: Record<string, string> = {};
-      if (form.head_weight.trim()) {
-        specsDict['Fej tömege'] = form.head_weight.trim();
-      }
-      if (form.handle_length.trim()) {
-        specsDict['Nyél hossza'] = form.handle_length.trim();
-      }
-      if (form.handle_material.trim()) {
-        specsDict['Nyél anyaga'] = form.handle_material.trim();
-      }
-      if (form.grip_type.trim()) {
-        specsDict['Markolat típusa'] = form.grip_type.trim();
-      }
-      if (form.finish_types.length > 0) {
-        specsDict['Felületkezelés'] = form.finish_types.join(', ');
-      }
-      if (form.standard_ref.trim()) {
-        specsDict['Szabvány'] = form.standard_ref.trim();
-      }
       customSpecs.forEach((s) => {
         if (s.key.trim() && s.value.trim()) {
           specsDict[s.key.trim()] = s.value.trim();
         }
       });
+
+      const cleanedParts = parts
+        .map((p) => ({ name: p.name.trim(), description: p.description.trim() }))
+        .filter((p) => p.name.length > 0 && p.description.length > 0);
+
+      const preservedSpecs =
+        tool?.specs && typeof tool.specs === 'object' && !Array.isArray(tool.specs)
+          ? (tool.specs as Record<string, unknown>)
+          : {};
 
       const payload = {
         name: form.name.trim(),
@@ -444,17 +402,16 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         description: form.description.trim() || null,
         professions: parseList(form.professions),
         uses: parseList(form.uses),
+        parts: cleanedParts,
         buying_guide: form.buying_guide.split('\n').map((s) => s.trim()).filter(Boolean),
         common_mistakes: form.common_mistakes.split('\n').map((s) => s.trim()).filter(Boolean),
-        price: priceNum,
-        currency: form.currency.trim() || 'HUF',
+        price: tool?.price ?? null,
+        currency: tool?.currency ?? 'HUF',
         features: parseList(form.features),
         image_url: form.image_url.trim() || null,
         video_url: form.video_url.trim() || null,
         technical_specs: specsDict,
-        specs: {
-          gallery_image_urls: galleryUrls.filter(Boolean),
-        } as NonNullable<typeof tool>['specs'],
+        specs: preservedSpecs as NonNullable<typeof tool>['specs'],
         recommended_products: products
           .map((p) => ({
             id: p.id || undefined,
@@ -544,19 +501,12 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
             </div>
             <div>
               <h2 style={{ color: textColor }} className="text-base font-black tracking-tight">
-                {isCreate ? 'Új Eszköz / Szerszám Létrehozása' : `Eszköz Szerkesztése: ${form.name || tool?.name}`}
+                {isCreate ? 'Új eszköz / gép hozzáadása' : `Enciklopédia-bejegyzés szerkesztése: ${form.name || tool?.name}`}
               </h2>
-              <p className="text-xs text-gray-400">Részletes, strukturált és SEO-barát termékoldal szerkesztő</p>
+              <p className="text-xs text-gray-400">Eszközök &amp; gépek enciklopédiája – adatlap szerkesztő</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPreviewModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              <Eye size={15} /> Élő Előnézet
-            </button>
             <button onClick={onClose} disabled={saving} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer">
               <X size={20} />
             </button>
@@ -567,11 +517,11 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
         <div style={{ borderColor: cardBorder, backgroundColor: adjustColorBrightness(cardBg, -2) }} className="flex items-center justify-start sm:justify-between gap-1 px-4 pt-2 border-b overflow-x-auto shrink-0 scrollbar-none">
           {[
             { id: 'basic', label: '1. Alapadatok', icon: Sliders },
-            { id: 'specs', label: '2. Műszaki Adatok', icon: Cpu },
-            { id: 'content', label: '3. Leírás', icon: FileText },
-            { id: 'media', label: '4. Média & Galéria', icon: ImageIcon },
+            { id: 'content', label: '2. Tartalom & Felépítés', icon: FileText },
+            { id: 'specs', label: '3. Műszaki jellemzők', icon: Cpu },
+            { id: 'media', label: '4. Kép & Videó', icon: ImageIcon },
             { id: 'products', label: `5. Gyártók & Tesztek (${products.length})`, icon: Wrench },
-            { id: 'seo', label: '6. SEO & Előnézet', icon: Search },
+            { id: 'seo', label: '6. SEO', icon: Search },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -639,16 +589,22 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label style={labelStyle} className={labelClass}>Fő Kategória</label>
+                  <label style={labelStyle} className={labelClass}>Főkategória</label>
                   <input
+                    list="tool-category-suggestions"
                     style={fieldStyle}
                     className={fieldClass}
                     value={form.type}
                     onChange={(e) => update('type', e.target.value)}
-                    placeholder="pl. Kéziszerszámok"
+                    placeholder="pl. Gépek és kisgépek"
                   />
+                  <datalist id="tool-category-suggestions">
+                    {TOOL_CATEGORY_SUGGESTIONS.map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>
@@ -658,10 +614,12 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                     className={fieldClass}
                     value={form.subtype}
                     onChange={(e) => update('subtype', e.target.value)}
-                    placeholder="pl. Kalapácsok"
+                    placeholder="pl. Fúrógépek, Kalapácsok"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle} className={labelClass}>Ismert Márkák / Gyártók</label>
                   <input
@@ -669,46 +627,20 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                     className={fieldClass}
                     value={form.brand}
                     onChange={(e) => update('brand', e.target.value)}
-                    placeholder="pl. Stanley / GEDORE / Picard"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label style={labelStyle} className={labelClass}>Irányár / Irányadó ár</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    style={fieldStyle}
-                    className={fieldClass}
-                    value={form.price}
-                    onChange={(e) => update('price', e.target.value)}
-                    placeholder="pl. 6500"
+                    placeholder="pl. Bosch / Makita / Hilti / Stanley"
                   />
                 </div>
 
                 <div>
-                  <label style={labelStyle} className={labelClass}>Pénznem</label>
-                  <input
-                    style={fieldStyle}
-                    className={fieldClass}
-                    value={form.currency}
-                    onChange={(e) => update('currency', e.target.value)}
-                    placeholder="HUF"
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle} className={labelClass}>Státusz</label>
+                  <label style={labelStyle} className={labelClass}>Publikálási állapot</label>
                   <select
                     style={fieldStyle}
                     className={fieldClass}
                     value={form.status}
                     onChange={(e) => update('status', e.target.value as Tool['status'])}
                   >
-                    <option value="active">Aktív (Publikus és látható)</option>
-                    <option value="discontinued">Kivezetve (Archivált szerszám)</option>
+                    <option value="active">Aktív (nyilvánosan látható)</option>
+                    <option value="discontinued">Kivezetve (rejtett / archivált)</option>
                   </select>
                 </div>
               </div>
@@ -748,155 +680,66 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
             </div>
           )}
 
-          {/* TAB 2: TECHNICAL SPECS */}
+          {/* TAB 3: TECHNICAL SPECS (General Key-Value) */}
           {activeTab === 'specs' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                 <div className="flex items-center gap-2 mb-1">
                   <Cpu size={16} className="text-amber-400" />
                   <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider">
-                    Strukturált Műszaki Specifikációk (Lakatos Kalapács &amp; Szerszámok)
+                    Műszaki jellemzők
                   </h3>
                 </div>
                 <p className="text-[11px] text-gray-300">
-                  Az itt megadott műszaki paraméterek automatikusan megjelennek a publikus termékoldalon egy jól áttekinthető specifikációs táblázatban.
+                  Add meg az adott eszköz vagy gép tényleges műszaki paramétereit (pl. Teljesítmény, Súly, Fordulatszám, Mérési tartomány, Szabvány). Ezek jelennek meg a nyilvános enciklopédia specifikációs táblázatában.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label style={labelStyle} className={labelClass}>Fej tömege (g / kg)</label>
-                  <input
-                    style={fieldStyle}
-                    className={fieldClass}
-                    value={form.head_weight}
-                    onChange={(e) => update('head_weight', e.target.value)}
-                    placeholder="pl. 500 g vagy 1.0 kg"
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle} className={labelClass}>Nyél hossza (mm)</label>
-                  <input
-                    style={fieldStyle}
-                    className={fieldClass}
-                    value={form.handle_length}
-                    onChange={(e) => update('handle_length', e.target.value)}
-                    placeholder="pl. 320 mm"
-                  />
-                </div>
+              <div className="flex items-center justify-between">
+                <span style={labelStyle} className={labelClass}>Műszaki paraméterek ({customSpecs.length})</span>
+                <button
+                  type="button"
+                  onClick={addCustomSpec}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-amber-300 text-xs font-bold rounded-lg border border-gray-700 transition-colors cursor-pointer"
+                >
+                  <Plus size={14} /> Paraméter hozzáadása
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label style={labelStyle} className={labelClass}>Nyél anyaga</label>
-                  <select
-                    style={fieldStyle}
-                    className={fieldClass}
-                    value={form.handle_material}
-                    onChange={(e) => update('handle_material', e.target.value)}
-                  >
-                    {HANDLE_MATERIAL_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+              {customSpecs.length === 0 ? (
+                <div className="p-6 text-center bg-gray-900/40 border border-dashed border-gray-800 rounded-xl text-xs text-gray-400">
+                  Még nincsenek műszaki jellemzők megadva. Kattints a „Paraméter hozzáadása” gombra.
                 </div>
-
-                <div>
-                  <label style={labelStyle} className={labelClass}>Markolat típusa</label>
-                  <select
-                    style={fieldStyle}
-                    className={fieldClass}
-                    value={form.grip_type}
-                    onChange={(e) => update('grip_type', e.target.value)}
-                  >
-                    {GRIP_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+              ) : (
+                <div className="space-y-2.5">
+                  {customSpecs.map((spec, idx) => (
+                    <div key={idx} className="flex items-center gap-3">
+                      <input
+                        style={fieldStyle}
+                        className={`${fieldClass} w-1/3`}
+                        placeholder="Paraméter neve (pl. Súly, Teljesítmény)"
+                        value={spec.key}
+                        onChange={(e) => updateCustomSpec(idx, e.target.value, spec.value)}
+                      />
+                      <input
+                        style={fieldStyle}
+                        className={`${fieldClass} flex-1`}
+                        placeholder="Érték (pl. 2,4 kg / 850 W)"
+                        value={spec.value}
+                        onChange={(e) => updateCustomSpec(idx, spec.key, e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeCustomSpec(idx)}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        title="Paraméter törlése"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              <div>
-                <label style={labelStyle} className={labelClass}>DIN / ISO Szabvány Hivatkozás</label>
-                <input
-                  style={fieldStyle}
-                  className={fieldClass}
-                  value={form.standard_ref}
-                  onChange={(e) => update('standard_ref', e.target.value)}
-                  placeholder="pl. DIN 1041 / ISO 15601"
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle} className={labelClass}>Felületkezelés &amp; Gyártási technológia (Válassz ki több opciót):</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-gray-900/60 border border-gray-800 rounded-xl">
-                  {FINISH_OPTIONS.map((finish) => {
-                    const checked = form.finish_types.includes(finish);
-                    return (
-                      <label key={finish} className="flex items-center gap-2 cursor-pointer text-xs p-1.5 rounded hover:bg-gray-800/80 transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              update('finish_types', [...form.finish_types, finish]);
-                            } else {
-                              update('finish_types', form.finish_types.filter((f) => f !== finish));
-                            }
-                          }}
-                          className="w-4 h-4 rounded cursor-pointer accent-amber-500"
-                        />
-                        <span style={{ color: checked ? cardHighlight : textColor }}>{finish}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Custom Specs Builder */}
-              <div className="pt-4 border-t border-gray-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span style={labelStyle} className={labelClass}>További Egyedi Specifikációk ({customSpecs.length})</span>
-                  <button
-                    type="button"
-                    onClick={addCustomSpec}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-800 hover:bg-gray-700 text-amber-300 text-xs font-bold rounded-lg border border-gray-700 transition-colors cursor-pointer"
-                  >
-                    <Plus size={14} /> Specifikáció Hozzáadása
-                  </button>
-                </div>
-
-                {customSpecs.map((spec, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <input
-                      style={fieldStyle}
-                      className={`${fieldClass} w-1/3`}
-                      placeholder="Tulajdonság neve (pl. Fejkeménység)"
-                      value={spec.key}
-                      onChange={(e) => updateCustomSpec(idx, e.target.value, spec.value)}
-                    />
-                    <input
-                      style={fieldStyle}
-                      className={`${fieldClass} flex-1`}
-                      placeholder="Érték (pl. HRC 50-58)"
-                      value={spec.value}
-                      onChange={(e) => updateCustomSpec(idx, spec.key, e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeCustomSpec(idx)}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              )}
             </div>
           )}
 
@@ -947,29 +790,6 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {contentSubTab === 'preview' && (
-                      <div className="flex items-center bg-gray-900 rounded-lg p-0.5 border border-gray-800 mr-2">
-                        <button
-                          type="button"
-                          onClick={() => setDescriptionPreviewDevice('desktop')}
-                          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
-                            descriptionPreviewDevice === 'desktop' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          <Monitor size={12} /> Asztali
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDescriptionPreviewDevice('mobile')}
-                          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
-                            descriptionPreviewDevice === 'mobile' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          <Smartphone size={12} /> Mobil (375px)
-                        </button>
-                      </div>
-                    )}
-
                     <div className="flex items-center bg-gray-900 rounded-lg p-0.5 border border-gray-800">
                       <button
                         type="button"
@@ -994,21 +814,16 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                 </div>
 
                 {contentSubTab === 'edit' ? (
-                  <textarea
+                  <AutoGrowTextarea
                     style={fieldStyle}
                     className={`${fieldClass} font-mono text-xs leading-relaxed`}
-                    rows={12}
+                    minRows={8}
                     value={form.description}
                     onChange={(e) => update('description', e.target.value)}
-                    placeholder="Írd ide a leírást. Több bekezdést, sortörést vagy Markdown elemeket (## Címsor, - Felsorolás, **Félkövér**) egyaránt megadhatsz..."
+                    placeholder="Írd ide a részletes leírást, működési elvet és szakmai tudnivalókat (Markdown formázás is támogatott: ## Címsor, - Felsorolás, **Félkövér**)..."
                   />
                 ) : (
-                  <div className={`p-4 bg-gray-950 border border-gray-800 rounded-xl min-h-[280px] transition-all ${
-                    descriptionPreviewDevice === 'mobile' ? 'max-w-[375px] mx-auto border-4 border-gray-800 rounded-[32px] shadow-2xl p-5 relative' : ''
-                  }`}>
-                    {descriptionPreviewDevice === 'mobile' && (
-                      <div className="w-24 h-3 bg-gray-800 rounded-b-lg mx-auto mb-4 -mt-2"></div>
-                    )}
+                  <div className="p-4 bg-gray-950 border border-gray-800 rounded-xl min-h-[200px]">
                     <FormattedText
                       content={form.description || '*Még nincs leírás megadva.*'}
                       paragraphClassName="text-gray-200 text-xs leading-relaxed mb-3"
@@ -1019,39 +834,79 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                 )}
               </div>
 
+              {/* Parts / Anatomy */}
+              <div className="pt-4 border-t border-gray-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span style={labelStyle} className={labelClass}>Felépítés / Fő részek ({parts.length})</span>
+                  <button
+                    type="button"
+                    onClick={addPart}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-800 hover:bg-gray-700 text-amber-300 text-xs font-bold rounded-lg border border-gray-700 transition-colors cursor-pointer"
+                  >
+                    <Plus size={14} /> Fő rész hozzáadása
+                  </button>
+                </div>
+                {parts.map((part, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2.5">
+                    <input
+                      style={fieldStyle}
+                      className={`${fieldClass} sm:w-1/3`}
+                      placeholder="Rész neve (pl. Tokmány, Fej)"
+                      value={part.name}
+                      onChange={(e) => updatePart(idx, e.target.value, part.description)}
+                    />
+                    <input
+                      style={fieldStyle}
+                      className={`${fieldClass} flex-1`}
+                      placeholder="Rövid leírás a funkcióról..."
+                      value={part.description}
+                      onChange={(e) => updatePart(idx, part.name, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePart(idx)}
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer self-end sm:self-auto"
+                      title="Eltávolítás"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               {/* Buying Guide */}
               <div>
-                <label style={labelStyle} className={labelClass}>Vásárlási Tanácsadó / Mire figyeljünk kiválasztáskor? (soronként egy tanács)</label>
-                <textarea
+                <label style={labelStyle} className={labelClass}>Vásárlási tanácsok / Mire figyeljünk kiválasztáskor? (soronként egy tanács)</label>
+                <AutoGrowTextarea
                   style={fieldStyle}
-                  className={`${fieldClass} resize-y font-mono`}
-                  rows={3}
+                  className={`${fieldClass} font-mono`}
+                  minRows={3}
                   value={form.buying_guide}
                   onChange={(e) => update('buying_guide', e.target.value)}
-                  placeholder="Válassz DIN 1041 szabvány szerinti fejet&#10;Reszketéscsillapító hikkori vagy üvegszálas nyelet keresd&#10;Melléütés-védő acélhüvelyes kivitel megnöveli az élettartamot"
+                  placeholder="Válassz a munkafeladathoz illő teljesítményt / súlyt&#10;Ellenőrizd a pótalkatrész- és szervizhátteret"
                 />
               </div>
 
-              {/* Common Mistakes */}
+              {/* Common Mistakes & Safety */}
               <div>
-                <label style={labelStyle} className={labelClass}>Gyakori Hibák és Tévedések Használat Közben (soronként egy hiba)</label>
-                <textarea
+                <label style={labelStyle} className={labelClass}>Gyakori hibák és biztonsági tudnivalók (soronként egy pont)</label>
+                <AutoGrowTextarea
                   style={fieldStyle}
-                  className={`${fieldClass} resize-y font-mono`}
-                  rows={3}
+                  className={`${fieldClass} font-mono`}
+                  minRows={3}
                   value={form.common_mistakes}
                   onChange={(e) => update('common_mistakes', e.target.value)}
-                  placeholder="Lötyögő vagy repedt nyéllel végzett munka (balesetveszély)&#10;Védőszemüveg elhagyása a fémforgácsok ellen&#10;Helytelen súlyválasztás a feladathoz"
+                  placeholder="Sérült vagy repedt eszközzel végzett munka (balesetveszély)&#10;Egyéni védőfelszerelés elhagyása használat közben"
                 />
               </div>
             </div>
           )}
 
-          {/* TAB 4: MEDIA & GALLERY */}
+          {/* TAB 4: MEDIA */}
           {activeTab === 'media' && (
             <div className="space-y-6">
               <div>
-                <label style={labelStyle} className={labelClass}>Fő Termékkép URL</label>
+                <label style={labelStyle} className={labelClass}>Fő termékkép URL</label>
                 <input
                   style={fieldStyle}
                   className={fieldClass}
@@ -1066,50 +921,8 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
                 )}
               </div>
 
-              {/* Gallery Image Manager */}
-              <div className="pt-4 border-t border-gray-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span style={labelStyle} className={labelClass}>Termék Képgaléria ({galleryUrls.length} kép)</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    style={fieldStyle}
-                    className={fieldClass}
-                    value={newGalleryInput}
-                    onChange={(e) => setNewGalleryInput(e.target.value)}
-                    placeholder="https://... további képek URL-je"
-                  />
-                  <button
-                    type="button"
-                    onClick={addGalleryUrl}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-lg shrink-0 transition-colors cursor-pointer"
-                  >
-                    + Hozzáadás
-                  </button>
-                </div>
-
-                {galleryUrls.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                    {galleryUrls.map((url, idx) => (
-                      <div key={idx} className="relative group bg-gray-900 border border-gray-800 rounded-xl p-2 flex flex-col items-center">
-                        <img src={url} alt={`Galéria kép #${idx + 1}`} className="w-full h-24 object-contain rounded-lg bg-black/50" />
-                        <button
-                          type="button"
-                          onClick={() => removeGalleryUrl(idx)}
-                          className="absolute top-3 right-3 p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg shadow-lg opacity-90 group-hover:opacity-100 transition-all cursor-pointer"
-                          title="Törlés"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               <div>
-                <label style={labelStyle} className={labelClass}>Fő Eszközvideó URL (YouTube / Vimeo / Beágyazó link)</label>
+                <label style={labelStyle} className={labelClass}>Fő eszközvideó URL (YouTube / Vimeo / Beágyazó link)</label>
                 <input
                   style={fieldStyle}
                   className={fieldClass}
@@ -1626,16 +1439,6 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
 
           {/* Modal Footer Controls */}
           <div style={{ backgroundColor: headerBg, borderColor: cardBorder }} className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t sticky bottom-0 z-10 -mx-6 -mb-6 px-6 pb-4 backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPreviewModalOpen(true)}
-                className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-amber-300 font-bold text-xs rounded-xl border border-gray-700 transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <Eye size={14} /> Előnézet
-              </button>
-            </div>
-
             <div className="flex flex-wrap items-center gap-3 ml-auto">
               {saveStatus === 'saving' && (
                 <span className="flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl animate-pulse">
@@ -1673,132 +1476,6 @@ export default function EditToolModal({ tool, onClose, onSaved }: EditToolModalP
           </div>
         </form>
       </div>
-
-      {/* LIVE TOOL PAGE PREVIEW MODAL OVERLAY */}
-      {previewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className={`bg-gray-950 border border-amber-500/30 rounded-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto text-gray-100 transition-all ${
-            livePreviewDevice === 'mobile' ? 'max-w-md' : 'max-w-4xl'
-          }`}>
-            <div className="flex items-center justify-between px-6 py-4 bg-gray-900 border-b border-gray-800 flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Eye size={18} className="text-amber-400" />
-                <h3 className="text-sm font-black text-white">Publikus Termékoldal Élő Előnézete</h3>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center bg-gray-800 rounded-lg p-0.5 border border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => setLivePreviewDevice('desktop')}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded transition-colors ${
-                      livePreviewDevice === 'desktop' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    <Monitor size={14} /> Asztali Nézet
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLivePreviewDevice('mobile')}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded transition-colors ${
-                      livePreviewDevice === 'mobile' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    <Smartphone size={14} /> Mobil Nézet (375px)
-                  </button>
-                </div>
-                <button
-                  onClick={() => setPreviewModalOpen(false)}
-                  className="px-3 py-1 bg-amber-500 text-black font-bold text-xs rounded-lg hover:bg-amber-400 cursor-pointer"
-                >
-                  Bezárás
-                </button>
-              </div>
-            </div>
-
-            <div className={`overflow-y-auto p-6 space-y-6 text-xs leading-relaxed ${
-              livePreviewDevice === 'mobile'
-                ? 'max-w-[375px] mx-auto border-8 border-gray-800 rounded-[36px] bg-gray-950 my-4 shadow-2xl relative p-5 max-h-[75vh]'
-                : ''
-            }`}>
-              {livePreviewDevice === 'mobile' && (
-                <div className="w-24 h-3 bg-gray-800 rounded-b-lg mx-auto mb-4 -mt-2"></div>
-              )}
-
-              <div className="space-y-2 border-b border-gray-800 pb-4">
-                <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                  {form.type} / {form.subtype || 'Szerszám'}
-                </span>
-                <h1 className="text-xl font-black text-amber-400">{form.name || 'Névtelen eszköz'}</h1>
-                {form.brand && <p className="text-xs text-gray-400">Ajánlott gyártók: {form.brand}</p>}
-              </div>
-
-              {/* Specs Table Preview */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">Műszaki Adatok</h4>
-                <div className={`grid gap-2 bg-gray-900 border border-gray-800 rounded-xl p-3 text-xs ${
-                  livePreviewDevice === 'mobile' ? 'grid-cols-1' : 'grid-cols-2'
-                }`}>
-                  {form.head_weight && (
-                    <div>
-                      <span className="text-gray-400">Fej tömege:</span> <span className="font-bold text-white">{form.head_weight}</span>
-                    </div>
-                  )}
-                  {form.handle_length && (
-                    <div>
-                      <span className="text-gray-400">Nyél hossza:</span> <span className="font-bold text-white">{form.handle_length}</span>
-                    </div>
-                  )}
-                  {form.handle_material && (
-                    <div>
-                      <span className="text-gray-400">Nyél anyaga:</span> <span className="font-bold text-white">{form.handle_material}</span>
-                    </div>
-                  )}
-                  {form.grip_type && (
-                    <div>
-                      <span className="text-gray-400">Markolat:</span> <span className="font-bold text-white">{form.grip_type}</span>
-                    </div>
-                  )}
-                  {form.standard_ref && (
-                    <div>
-                      <span className="text-gray-400">Szabvány:</span> <span className="font-bold text-white">{form.standard_ref}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Formatted Markdown Content Preview */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">Részletes Szerszómbemutató</h4>
-                <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-xl">
-                  <FormattedText
-                    content={form.description || 'Nincs leírás.'}
-                    paragraphClassName="text-gray-200 text-xs sm:text-sm leading-relaxed mb-3"
-                    headingClassName="text-sm font-bold text-amber-400 mt-4 mb-2"
-                    strongClassName="font-bold text-amber-300"
-                  />
-                </div>
-              </div>
-
-              {/* Recommended Products Preview */}
-              {products.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">Gyártói Termékek &amp; Tesztek ({products.length})</h4>
-                  <div className="space-y-3">
-                    {products.map((p, i) => (
-                      <div key={i} className="p-3 bg-gray-900 border border-gray-800 rounded-xl space-y-1">
-                        <span className="font-bold text-amber-400">{p.name}</span>
-                        {p.brand && <span className="text-gray-400 ml-2">({p.brand})</span>}
-                        {p.price != null && <p className="text-xs font-bold text-emerald-400">{p.price} {p.currency || 'HUF'}</p>}
-                        {p.description && <p className="text-xs text-gray-300">{p.description}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
