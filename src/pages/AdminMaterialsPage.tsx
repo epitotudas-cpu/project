@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Layers,
   Search,
@@ -33,6 +33,8 @@ import type { Partner } from '../lib/supabase';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 import { useToast } from '../components/ToastProvider';
 import ConfirmDialog from '../components/ConfirmDialog';
+import RichTextEditor from '../components/RichTextEditor';
+import FormattedText from '../components/FormattedText';
 
 interface AdminMaterialsPageProps {
   initialSearchQuery?: string;
@@ -107,12 +109,6 @@ function getMaterialQualityWarnings(item: MaterialItem): {
   }
 
   return { warnings, optionalMissing, validSpecs };
-}
-
-function autoResizeTextarea(el: HTMLTextAreaElement | null) {
-  if (!el) return;
-  el.style.height = 'auto';
-  el.style.height = `${el.scrollHeight}px`;
 }
 
 export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMaterialsPageProps) {
@@ -193,24 +189,6 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
 
   // Keyword Input
   const [keywordInput, setKeywordInput] = useState('');
-  const shortDescRef = useRef<HTMLTextAreaElement | null>(null);
-  const fullDescRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useLayoutEffect(() => {
-    if (!isModalOpen || activeTab !== 'content') return;
-    autoResizeTextarea(shortDescRef.current);
-    autoResizeTextarea(fullDescRef.current);
-  }, [isModalOpen, activeTab, formData.short_description, formData.full_description]);
-
-  useEffect(() => {
-    if (!isModalOpen || activeTab !== 'content') return;
-    const handleResize = () => {
-      autoResizeTextarea(shortDescRef.current);
-      autoResizeTextarea(fullDescRef.current);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isModalOpen, activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -335,8 +313,12 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
 
   const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.short_description) {
+    if (!formData.name || !formData.short_description?.trim()) {
       toast.error('Kérjük, adja meg az anyag nevét és a rövid leírást!');
+      return;
+    }
+    if ((formData.short_description || '').length > 1000) {
+      toast.error('A rövid leírás Markdown tartalma legfeljebb 1000 karakter lehet!');
       return;
     }
 
@@ -944,28 +926,30 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                 <div className="space-y-4">
                   <div>
                     <label className="font-bold text-gray-300 block mb-1">Rövid Leírás *</label>
-                    <textarea
-                      ref={shortDescRef}
-                      rows={3}
-                      value={formData.short_description}
-                      onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                    <RichTextEditor
+                      value={formData.short_description || ''}
+                      onChange={(md) => setFormData((prev) => ({ ...prev, short_description: md }))}
                       placeholder="Néhány mondatos összefoglaló a kártyás megjelenítéshez..."
-                      style={fieldStyle}
-                      className="w-full border rounded-xl px-3 py-2 text-xs font-medium overflow-hidden resize-none"
-                      required
+                      minHeightClass="min-h-[84px]"
+                      maxLength={1000}
+                      backgroundColor={inputBg}
+                      borderColor={cardBorder}
+                      textColor={inputTextColor}
+                      ariaLabel="Rövid Leírás"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-300 block mb-1">Részletes Termékleírás (Markdown / HTML)</label>
-                    <textarea
-                      ref={fullDescRef}
-                      rows={8}
-                      value={formData.full_description}
-                      onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
+                    <label className="font-bold text-gray-300 block mb-1">Részletes Termékleírás</label>
+                    <RichTextEditor
+                      value={formData.full_description || ''}
+                      onChange={(md) => setFormData((prev) => ({ ...prev, full_description: md }))}
                       placeholder="A termék teljes bemutatása, előnyei, kivitelezési tanácsok..."
-                      style={fieldStyle}
-                      className="w-full border rounded-xl px-3 py-2 text-xs font-mono overflow-hidden resize-none"
+                      minHeightClass="min-h-[180px]"
+                      backgroundColor={inputBg}
+                      borderColor={cardBorder}
+                      textColor={inputTextColor}
+                      ariaLabel="Részletes Termékleírás"
                     />
                   </div>
 
@@ -1418,15 +1402,29 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
               <div className="space-y-3 text-xs">
                 <div>
                   <span className="font-bold text-gray-700 block mb-1">Rövid leírás</span>
-                  <p className="text-gray-700 font-medium bg-amber-50 p-3 rounded-xl border border-amber-200">
-                    {previewItem.short_description?.trim() || 'Nincs megadva'}
-                  </p>
+                  <div className="text-gray-700 font-medium bg-amber-50 p-3 rounded-xl border border-amber-200">
+                    {previewItem.short_description?.trim() ? (
+                      <FormattedText
+                        content={previewItem.short_description}
+                        paragraphClassName="text-xs text-gray-800 leading-relaxed mb-1"
+                      />
+                    ) : (
+                      'Nincs megadva'
+                    )}
+                  </div>
                 </div>
 
                 <div>
                   <span className="font-bold text-gray-700 block mb-1">Részletes leírás</span>
-                  <div className="prose text-xs whitespace-pre-line text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                    {previewItem.full_description?.trim() || 'Nincs megadva'}
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    {previewItem.full_description?.trim() ? (
+                      <FormattedText
+                        content={previewItem.full_description}
+                        paragraphClassName="text-xs text-gray-800 leading-relaxed mb-2"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-500">Nincs megadva</span>
+                    )}
                   </div>
                 </div>
 

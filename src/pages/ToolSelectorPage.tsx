@@ -22,6 +22,7 @@ import {
 } from '../services/materialsService';
 import SectionSubNav from '../components/SectionSubNav';
 import PaginationControls, { usePagination } from '../components/PaginationControls';
+import { stripMarkdownToPlainText } from '../components/FormattedText';
 
 const MAX_COMPARE_ITEMS = 4;
 
@@ -478,7 +479,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
 
                   {item.short_description && (
                     <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                      {item.short_description}
+                      {stripMarkdownToPlainText(item.short_description)}
                     </p>
                   )}
 

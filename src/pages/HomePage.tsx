@@ -40,6 +40,7 @@ import {
   type MaterialDocument,
 } from '../services/materialsService';
 import { TopAdBanner, InFeedAdBanner } from '../components/ModernAdBanner';
+import { stripMarkdownToPlainText } from '../components/FormattedText';
 import { useSiteSettings } from '../services/siteSettingsService';
 import { sanitizeExternalUrl } from '../lib/urlUtils';
 import {
@@ -794,7 +795,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       {leadCatalog.doc.title || leadCatalog.item.name}
                     </h3>
                     <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-                      {leadCatalog.item.short_description}
+                      {stripMarkdownToPlainText(leadCatalog.item.short_description)}
                     </p>
                   </div>
                 </div>

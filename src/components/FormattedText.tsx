@@ -11,6 +11,22 @@ interface FormattedTextProps {
   strongClassName?: string;
 }
 
+export function stripMarkdownToPlainText(raw?: string | null): string {
+  if (!raw || typeof raw !== 'string') return '';
+  return raw
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s+/gm, '')
+    .replace(/^[-*•]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function FormattedText({
   content,
   text,

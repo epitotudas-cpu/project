@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Layers,
   Plus,
@@ -30,6 +30,7 @@ import {
 import type { Partner } from '../lib/supabase';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
+import RichTextEditor from '../components/RichTextEditor';
 
 interface PartnerMaterialsPageProps {
   currentPartner: Partner;
@@ -58,12 +59,6 @@ const DOC_TYPE_LABELS: Record<MaterialDocument['doc_type'], string> = {
 
 function isPartnerEditableStatus(status: MaterialItem['status']): boolean {
   return status === 'draft' || status === 'pending_approval' || status === 'rejected';
-}
-
-function autoResizeTextarea(el: HTMLTextAreaElement | null) {
-  if (!el) return;
-  el.style.height = 'auto';
-  el.style.height = `${el.scrollHeight}px`;
 }
 
 export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterialsPageProps) {
@@ -110,24 +105,6 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const [docTitleInput, setDocTitleInput] = useState('');
   const [docUrlInput, setDocUrlInput] = useState('');
   const [docTypeInput, setDocTypeInput] = useState<MaterialDocument['doc_type']>('muszaki_adatlap');
-  const shortDescRef = useRef<HTMLTextAreaElement | null>(null);
-  const fullDescRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useLayoutEffect(() => {
-    if (!isModalOpen || activeTab !== 'content') return;
-    autoResizeTextarea(shortDescRef.current);
-    autoResizeTextarea(fullDescRef.current);
-  }, [isModalOpen, activeTab, formData.short_description, formData.full_description]);
-
-  useEffect(() => {
-    if (!isModalOpen || activeTab !== 'content') return;
-    const handleResize = () => {
-      autoResizeTextarea(shortDescRef.current);
-      autoResizeTextarea(fullDescRef.current);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isModalOpen, activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -226,8 +203,12 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
   const handleSaveForm = async (targetStatus: 'draft' | 'pending_approval') => {
     if (saving) return;
-    if (!formData.name || !formData.short_description) {
+    if (!formData.name || !formData.short_description?.trim()) {
       toast.notify('Kérjük, töltse ki az anyag nevét és a rövid leírást!', 'warning');
+      return;
+    }
+    if ((formData.short_description || '').length > 1000) {
+      toast.notify('A rövid leírás Markdown tartalma legfeljebb 1000 karakter lehet!', 'warning');
       return;
     }
 
@@ -360,7 +341,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             placeholder="Keresés saját anyagok között..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
+            className="w-full bg-white text-gray-900 placeholder-gray-400 border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
           />
         </div>
 
@@ -518,17 +499,17 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
       {/* ── CREATE / EDIT MODAL FOR PARTNER ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 text-slate-100 rounded-3xl border border-slate-700 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
             {/* Header */}
-            <div className="bg-primary text-white p-5 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-primary-700">
+            <div className="bg-slate-950 text-white p-5 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-slate-800">
               <h3 className="text-base font-black flex items-center gap-2">
                 <Layers size={17} className="text-accent" />
                 {editingItem ? 'Saját Építőanyag Szerkesztése' : 'Új Építőanyag Hozzáadása'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-white/70 hover:text-white rounded-full cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white rounded-full cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -536,16 +517,16 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
             {/* Rejection Alert if editing rejected item */}
             {formData.status === 'rejected' && formData.rejection_note && (
-              <div className="bg-red-50 border-b border-red-200 p-4 space-y-1">
-                <span className="font-extrabold text-red-800 text-xs flex items-center gap-1">
+              <div className="bg-red-950/50 border-b border-red-800/60 p-4 space-y-1">
+                <span className="font-extrabold text-red-300 text-xs flex items-center gap-1">
                   <AlertTriangle size={14} /> AZ ADMINISZTRÁTOR MEGJEGYZÉSE AZ ELUTASÍTÁSHOZ:
                 </span>
-                <p className="text-xs text-red-950 font-medium">{formData.rejection_note}</p>
+                <p className="text-xs text-red-100 font-medium">{formData.rejection_note}</p>
               </div>
             )}
 
             {/* Subnav Tabs */}
-            <div className="flex border-b border-gray-200 bg-gray-50 px-5 pt-3 gap-2">
+            <div className="flex border-b border-slate-800 bg-slate-950/60 px-5 pt-3 gap-2 overflow-x-auto">
               {[
                 { id: 'basic', label: '1. Alapadatok' },
                 { id: 'content', label: '2. Leírás' },
@@ -555,8 +536,10 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id as 'basic' | 'content' | 'specs' | 'media')}
-                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                    activeTab === t.id ? 'border-accent text-primary bg-white rounded-t-lg' : 'border-transparent text-gray-500 hover:text-gray-800'
+                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+                    activeTab === t.id
+                      ? 'border-accent text-accent bg-slate-900 rounded-t-lg'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   {t.label}
@@ -565,35 +548,35 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             </div>
 
             {/* Form */}
-            <div className="p-6 space-y-5 text-xs flex-1">
+            <div className="p-6 space-y-5 text-xs flex-1 text-slate-100">
               {/* TAB 1: BASIC INFO */}
               {activeTab === 'basic' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Anyag / Termék Neve *</label>
+                    <label className="font-bold text-slate-300 block mb-1">Anyag / Termék Neve *</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="pl. Masterplast Műanyag Dübel 100mm"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold"
+                      className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-accent"
                       required
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Kategória *</label>
+                      <label className="font-bold text-slate-300 block mb-1">Kategória *</label>
                       <select
                         value={formData.category_id}
                         onChange={(e) => {
                           const cat = categories.find((c) => c.id === e.target.value);
                           setFormData({ ...formData, category_id: e.target.value, category_name: cat?.name || '' });
                         }}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        className="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-accent"
                       >
                         {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
+                          <option key={c.id} value={c.id} className="bg-slate-900 text-slate-100">
                             {c.name}
                           </option>
                         ))}
@@ -601,47 +584,47 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Alkategória</label>
+                      <label className="font-bold text-slate-300 block mb-1">Alkategória</label>
                       <input
                         type="text"
                         value={formData.subcategory_name || ''}
                         onChange={(e) => setFormData({ ...formData, subcategory_name: e.target.value })}
                         placeholder="pl. Homlokzati Hőszigetelés"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-accent"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Márka / Gyártó</label>
+                      <label className="font-bold text-slate-300 block mb-1">Márka / Gyártó</label>
                       <input
                         type="text"
                         value={formData.brand}
                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-accent"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Cikkszám / Termékkód (SKU)</label>
+                      <label className="font-bold text-slate-300 block mb-1">Cikkszám / Termékkód (SKU)</label>
                       <input
                         type="text"
                         value={formData.sku || ''}
                         onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                         placeholder="pl. MP-DUBEL-100"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                        className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-accent"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Vonalkód (EAN / GTIN)</label>
+                      <label className="font-bold text-slate-300 block mb-1">Vonalkód (EAN / GTIN)</label>
                       <input
                         type="text"
                         value={formData.barcode || ''}
                         onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                         placeholder="pl. 5998123456789"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                        className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-accent"
                       />
                     </div>
                   </div>
@@ -652,38 +635,42 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {activeTab === 'content' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Rövid Leírás *</label>
-                    <textarea
-                      ref={shortDescRef}
-                      rows={3}
-                      value={formData.short_description}
-                      onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                    <label className="font-bold text-slate-300 block mb-1.5">Rövid Leírás *</label>
+                    <RichTextEditor
+                      value={formData.short_description || ''}
+                      onChange={(md) => setFormData((prev) => ({ ...prev, short_description: md }))}
                       placeholder="Néhány mondatos összefoglaló a vásárlóknak..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium overflow-hidden resize-none"
-                      required
+                      minHeightClass="min-h-[84px]"
+                      maxLength={1000}
+                      backgroundColor="#1e293b"
+                      borderColor="#334155"
+                      textColor="#f1f5f9"
+                      ariaLabel="Rövid Leírás"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Részletes Leírás &amp; Előnyök</label>
-                    <textarea
-                      ref={fullDescRef}
-                      rows={6}
-                      value={formData.full_description}
-                      onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
+                    <label className="font-bold text-slate-300 block mb-1.5">Részletes Leírás &amp; Előnyök</label>
+                    <RichTextEditor
+                      value={formData.full_description || ''}
+                      onChange={(md) => setFormData((prev) => ({ ...prev, full_description: md }))}
                       placeholder="Részletes bemutató szöveg..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium overflow-hidden resize-none"
+                      minHeightClass="min-h-[180px]"
+                      backgroundColor="#1e293b"
+                      borderColor="#334155"
+                      textColor="#f1f5f9"
+                      ariaLabel="Részletes Leírás"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Alkalmazási Terület</label>
+                    <label className="font-bold text-slate-300 block mb-1">Alkalmazási Terület</label>
                     <textarea
                       rows={2}
                       value={formData.application_area || ''}
                       onChange={(e) => setFormData({ ...formData, application_area: e.target.value })}
                       placeholder="pl. Külső teherhordó falak, homlokzati hőszigetelés vagy beltéri burkolás..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-accent"
                     />
                   </div>
                 </div>
@@ -692,19 +679,19 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {/* TAB 3: SPECS */}
               {activeTab === 'specs' && (
                 <div className="space-y-4">
-                  <h4 className="font-extrabold text-gray-900 flex items-center gap-1.5">
+                  <h4 className="font-extrabold text-slate-100 flex items-center gap-1.5">
                     <Wrench size={15} className="text-accent" /> Műszaki Adatok
                   </h4>
 
                   {formData.technical_specs && formData.technical_specs.length > 0 && (
                     <div className="space-y-2">
                       {formData.technical_specs.map((s, idx) => (
-                        <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-2.5 flex items-center justify-between">
+                        <div key={idx} className="bg-slate-800 border border-slate-700 rounded-xl p-2.5 flex items-center justify-between">
                           <div>
-                            <span className="font-bold text-gray-700">{s.label}:</span>{' '}
-                            <span className="font-extrabold text-gray-900">{s.value} {s.unit || ''}</span>
+                            <span className="font-bold text-slate-300">{s.label}:</span>{' '}
+                            <span className="font-extrabold text-white">{s.value} {s.unit || ''}</span>
                           </div>
-                          <button type="button" onClick={() => handleRemoveSpec(idx)} className="text-red-600 p-1 cursor-pointer">
+                          <button type="button" onClick={() => handleRemoveSpec(idx)} className="text-red-400 hover:text-red-300 p-1 cursor-pointer">
                             <Trash2 size={13} />
                           </button>
                         </div>
@@ -734,16 +721,16 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     return (
                       <>
                         {duplicates.length > 0 && (
-                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2">
-                            <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                          <div className="bg-amber-950/50 border border-amber-700/60 rounded-xl p-3 text-xs text-amber-200 flex items-start gap-2">
+                            <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
                             <div>
                               <strong>Figyelmeztetés:</strong> A következő műszaki paraméterek többször szerepelnek:{' '}
-                              <span className="font-bold">{duplicates.join(', ')}</span>. A termék-összehasonlítóban ezek egy sorba kerülnek. A mentés ettől függetlenül engedélyezett.
+                              <span className="font-bold text-white">{duplicates.join(', ')}</span>. A termék-összehasonlítóban ezek egy sorba kerülnek. A mentés ettől függetlenül engedélyezett.
                             </div>
                           </div>
                         )}
                         {pendingDuplicate && (
-                          <p className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
+                          <p className="text-[11px] font-semibold text-amber-400 flex items-center gap-1">
                             <AlertTriangle size={12} /> A(z) „{specLabelInput.trim()}” paraméternév már szerepel a listában.
                           </p>
                         )}
@@ -751,34 +738,34 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     );
                   })()}
 
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
+                  <div className="bg-slate-800/70 p-3 rounded-xl border border-slate-700 space-y-2">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input
                         type="text"
                         placeholder="Tulajdonság (pl. Méret)"
                         value={specLabelInput}
                         onChange={(e) => setSpecLabelInput(e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                        className="bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-accent"
                       />
                       <input
                         type="text"
                         placeholder="Érték (pl. 25)"
                         value={specValueInput}
                         onChange={(e) => setSpecValueInput(e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold"
+                        className="bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-accent"
                       />
                       <input
                         type="text"
                         placeholder="Mértékegység (pl. kg)"
                         value={specUnitInput}
                         onChange={(e) => setSpecUnitInput(e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                        className="bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-accent"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleAddSpec}
-                      className="px-3 py-1 bg-primary text-white font-bold text-xs rounded-lg cursor-pointer"
+                      className="px-3 py-1.5 bg-accent hover:bg-accent-hover text-black font-bold text-xs rounded-lg cursor-pointer"
                     >
                       + Hozzáadás
                     </button>
@@ -790,31 +777,31 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {activeTab === 'media' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Fő Kép URL *</label>
+                    <label className="font-bold text-slate-300 block mb-1">Fő Kép URL *</label>
                     <input
                       type="text"
                       value={formData.main_image_url}
                       onChange={(e) => setFormData({ ...formData, main_image_url: e.target.value })}
                       placeholder="https://..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                      className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-accent"
                       required
                     />
                   </div>
 
                   {/* Documents */}
-                  <div className="border-t border-gray-200 pt-4 space-y-2">
-                    <h5 className="font-extrabold text-gray-900">Csatolt PDF Dokumentumok</h5>
+                  <div className="border-t border-slate-800 pt-4 space-y-2">
+                    <h5 className="font-extrabold text-slate-100">Csatolt PDF Dokumentumok</h5>
                     {formData.documents && formData.documents.length > 0 && (
                       <div className="space-y-1.5">
                         {formData.documents.map((d) => (
-                          <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-center justify-between gap-2">
+                          <div key={d.id} className="bg-slate-800 border border-slate-700 rounded-xl p-2 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="font-bold text-gray-900 truncate">{d.title}</span>
-                              <span className="text-[10px] font-semibold bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded-md shrink-0">
+                              <span className="font-bold text-slate-100 truncate">{d.title}</span>
+                              <span className="text-[10px] font-semibold bg-slate-900 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-md shrink-0">
                                 {DOC_TYPE_LABELS[d.doc_type] || d.doc_type}
                               </span>
                             </div>
-                            <button type="button" onClick={() => handleRemoveDocument(d.id)} className="text-red-600 p-1 cursor-pointer shrink-0">
+                            <button type="button" onClick={() => handleRemoveDocument(d.id)} className="text-red-400 hover:text-red-300 p-1 cursor-pointer shrink-0">
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -828,23 +815,23 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                         placeholder="Dokumentum címe (pl. Műszaki_Adatlap.pdf)"
                         value={docTitleInput}
                         onChange={(e) => setDocTitleInput(e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                        className="bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-accent"
                       />
                       <input
                         type="text"
                         placeholder="PDF Fájl URL (pl. /docs/adatlap.pdf)"
                         value={docUrlInput}
                         onChange={(e) => setDocUrlInput(e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-mono"
+                        className="bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent"
                       />
                       <select
                         value={docTypeInput}
                         onChange={(e) => setDocTypeInput(e.target.value as MaterialDocument['doc_type'])}
                         aria-label="Dokumentum típusa"
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer"
+                        className="bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer focus:outline-none focus:border-accent"
                       >
                         {DOC_TYPE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
+                          <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-100">
                             {opt.label}
                           </option>
                         ))}
@@ -853,7 +840,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     <button
                       type="button"
                       onClick={handleAddDocument}
-                      className="px-3 py-1 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg cursor-pointer"
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-lg cursor-pointer"
                     >
                       + PDF Csatolása
                     </button>
@@ -863,11 +850,11 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             </div>
 
             {/* Modal Actions */}
-            <div className="bg-gray-50 border-t border-gray-200 p-4 px-6 rounded-b-3xl flex items-center justify-between">
+            <div className="bg-slate-950/80 border-t border-slate-800 p-4 px-6 rounded-b-3xl flex flex-wrap items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl cursor-pointer"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
               >
                 Mégse
               </button>

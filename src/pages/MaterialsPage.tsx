@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import SectionSubNav from '../components/SectionSubNav';
 import PaginationControls, { usePagination } from '../components/PaginationControls';
-import FormattedText from '../components/FormattedText';
+import FormattedText, { stripMarkdownToPlainText } from '../components/FormattedText';
 import {
   getMaterialsLocal,
   getMaterialCategoriesLocal,
@@ -314,7 +314,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
                       </h3>
 
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-                        {item.short_description}
+                        {stripMarkdownToPlainText(item.short_description)}
                       </p>
                     </div>
 
@@ -383,7 +383,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
                       </h3>
 
                       <p className="text-xs text-gray-600 line-clamp-1 max-w-2xl">
-                        {item.short_description}
+                        {stripMarkdownToPlainText(item.short_description)}
                       </p>
                     </div>
                   </div>
@@ -521,7 +521,10 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
               <div className="space-y-4">
                 <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-5 text-xs sm:text-sm text-amber-950 font-medium leading-relaxed">
                   <h4 className="font-extrabold text-amber-900 mb-1">Rövid Összefoglaló:</h4>
-                  <p>{activeItem.short_description}</p>
+                  <FormattedText
+                    content={activeItem.short_description}
+                    paragraphClassName="text-xs sm:text-sm text-amber-950 font-medium leading-relaxed mb-1"
+                  />
                 </div>
 
                 <div className="space-y-2">
