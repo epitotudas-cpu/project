@@ -100,6 +100,20 @@ async function decodeImageSource(
   }
 }
 
+export function resolveCompressedOutputFormat(blobType: string): {
+  mime: 'image/webp' | 'image/png';
+  ext: 'webp' | 'png';
+} {
+  const normalized = (blobType || '').trim().toLowerCase();
+  if (normalized === 'image/webp') {
+    return { mime: 'image/webp', ext: 'webp' };
+  }
+  if (normalized === 'image/png') {
+    return { mime: 'image/png', ext: 'png' };
+  }
+  throw new Error('A tömörített kép formátuma nem támogatott (csak WebP vagy PNG engedélyezett).');
+}
+
 export async function compressImageToWebP(
   file: File,
   options?: { maxDimension?: number; quality?: number; maxBytes?: number }
@@ -153,9 +167,10 @@ export async function compressImageToWebP(
       );
     }
 
+    const outputFormat = resolveCompressedOutputFormat(webpBlob.type);
     const baseName = file.name.replace(/\.[^.]+$/, '') || 'termek-kep';
-    const compressedFile = new File([webpBlob], `${baseName}.webp`, {
-      type: 'image/webp',
+    const compressedFile = new File([webpBlob], `${baseName}.${outputFormat.ext}`, {
+      type: outputFormat.mime,
       lastModified: Date.now(),
     });
 

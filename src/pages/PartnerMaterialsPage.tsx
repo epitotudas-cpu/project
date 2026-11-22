@@ -227,6 +227,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   };
 
   const handleCloseModal = () => {
+    if (uploadingImages) return;
     if (sessionUploadedUrls.length > 0) {
       deletePartnerMaterialImages(currentPartner.id, sessionUploadedUrls, editingItem?.id).catch(() => {});
     }
@@ -743,8 +744,10 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                 {editingItem ? 'Termék szerkesztése' : 'Új termék hozzáadása'}
               </h3>
               <button
+                type="button"
+                disabled={uploadingImages}
                 onClick={handleCloseModal}
-                className="p-1.5 text-slate-400 hover:text-white rounded-full cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed rounded-full cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -1294,21 +1297,24 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
+                  disabled={uploadingImages}
                   onClick={handleCloseModal}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Mégse
                 </button>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={saving || uploadingImages}
-                    onClick={() => handleSaveForm('draft')}
-                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Save size={14} /> {saving ? 'Mentés...' : 'Mentés piszkozatként'}
-                  </button>
+                  {editingItem && (
+                    <button
+                      type="button"
+                      disabled={saving || uploadingImages}
+                      onClick={() => handleSaveForm('draft')}
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Save size={14} /> {saving ? 'Mentés...' : 'Mentés piszkozatként'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={saving || uploadingImages}
@@ -1342,7 +1348,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                 ...(Array.isArray(targetItem.gallery_image_urls) ? targetItem.gallery_image_urls : []),
               ].filter((u): u is string => typeof u === 'string' && u.trim().length > 0);
               if (itemImages.length > 0) {
-                deletePartnerMaterialImages(currentPartner.id, itemImages, targetItem.id).catch(() => {});
+                deletePartnerMaterialImages(currentPartner.id, itemImages).catch(() => {});
               }
             }
             toast.success('Termék törölve.');

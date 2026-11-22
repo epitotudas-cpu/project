@@ -370,20 +370,50 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse(corsHeaders, 200, { success: true, deleted: 0, skipped: 0 });
     }
 
-    const { data: cfg } = await adminClient
+    const { data: cfg, error: cfgErr } = await adminClient
       .from('app_configs')
       .select('value')
       .eq('key', '__SYSTEM_CONFIG_MATERIALS_ITEMS__')
       .maybeSingle();
 
-    const list = Array.isArray(cfg?.value) ? cfg.value : [];
-    const referencedUrls = new Set<string>();
-    for (const item of list as Array<Record<string, unknown>>) {
+    if (cfgErr) {
+      return jsonResponse(corsHeaders, 500, {
+        success: false,
+        error: 'A termékhivatkozások ellenőrzése sikertelen.',
+      });
+    }
+
+    const list = Array.isArray(cfg?.value) ? (cfg.value as Array<Record<string, unknown>>) : [];
+
+    if (excludeItemId) {
+      const excludedItem = list.find((item) => item && item.id === excludeItemId);
+      if (!excludedItem) {
+        return jsonResponse(corsHeaders, 404, {
+          success: false,
+          error: 'A megadott termékazonosító nem található.',
+        });
+      }
+      if (String(excludedItem.partner_id || '') !== partnerId) {
+        return jsonResponse(corsHeaders, 403, {
+          success: false,
+          error: 'Más partner termékazonosítója nem használható kizárásra.',
+        });
+      }
+    }
+
+    const referencedKeys = new Set<string>();
+    for (const item of list) {
       if (!item || (excludeItemId && item.id === excludeItemId)) continue;
-      if (typeof item.main_image_url === 'string') referencedUrls.add(item.main_image_url);
+      if (typeof item.main_image_url === 'string') {
+        const key = extractR2ObjectKey(item.main_image_url, r2Config.publicUrl);
+        if (key) referencedKeys.add(key);
+      }
       if (Array.isArray(item.gallery_image_urls)) {
         for (const g of item.gallery_image_urls) {
-          if (typeof g === 'string') referencedUrls.add(g);
+          if (typeof g === 'string') {
+            const key = extractR2ObjectKey(g, r2Config.publicUrl);
+            if (key) referencedKeys.add(key);
+          }
         }
       }
     }
@@ -398,7 +428,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         skipped++;
         continue;
       }
-      if (referencedUrls.has(rawUrl)) {
+      if (referencedKeys.has(key)) {
         skipped++;
         continue;
       }

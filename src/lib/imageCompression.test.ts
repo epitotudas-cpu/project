@@ -3,6 +3,7 @@ import {
   detectImageMimeFromBytes,
   calculateTargetDimensions,
   formatFileSize,
+  resolveCompressedOutputFormat,
 } from './imageCompression';
 
 describe('imageCompression helpers', () => {
@@ -32,5 +33,12 @@ describe('imageCompression helpers', () => {
     expect(formatFileSize(512)).toBe('512 B');
     expect(formatFileSize(1536)).toBe('1.5 KB');
     expect(formatFileSize(2 * 1024 * 1024)).toBe('2.00 MB');
+  });
+
+  it('resolves WebP and PNG fallback output formats and rejects unsupported MIME types', () => {
+    expect(resolveCompressedOutputFormat('image/webp')).toEqual({ mime: 'image/webp', ext: 'webp' });
+    expect(resolveCompressedOutputFormat('image/png')).toEqual({ mime: 'image/png', ext: 'png' });
+    expect(() => resolveCompressedOutputFormat('image/svg+xml')).toThrow();
+    expect(() => resolveCompressedOutputFormat('')).toThrow();
   });
 });
