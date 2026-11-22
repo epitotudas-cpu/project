@@ -15,6 +15,13 @@ import {
   Save,
   HelpCircle,
   Wrench,
+  Upload,
+  Image as ImageIcon,
+  Star,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import {
   getMaterialsLocal,
@@ -22,6 +29,8 @@ import {
   fetchMaterialsFromCloud,
   upsertPartnerMaterialItem,
   deletePartnerMaterialItem,
+  uploadPartnerMaterialImage,
+  deletePartnerMaterialImages,
   type MaterialItem,
   type MaterialCategory,
   type MaterialSpec,
@@ -31,6 +40,11 @@ import type { Partner } from '../lib/supabase';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
 import RichTextEditor from '../components/RichTextEditor';
+import { compressImageToWebP, formatFileSize } from '../lib/imageCompression';
+
+const DEFAULT_FALLBACK_IMAGE_URL =
+  'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=800&auto=format&fit=crop';
+const MAX_PRODUCT_IMAGES = 10;
 
 interface PartnerMaterialsPageProps {
   currentPartner: Partner;
@@ -58,7 +72,12 @@ const DOC_TYPE_LABELS: Record<MaterialDocument['doc_type'], string> = {
 };
 
 function isPartnerEditableStatus(status: MaterialItem['status']): boolean {
-  return status === 'draft' || status === 'pending_approval' || status === 'rejected';
+  return (
+    status === 'draft' ||
+    status === 'pending_approval' ||
+    status === 'rejected' ||
+    status === 'published'
+  );
 }
 
 export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterialsPageProps) {
@@ -106,6 +125,17 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const [docUrlInput, setDocUrlInput] = useState('');
   const [docTypeInput, setDocTypeInput] = useState<MaterialDocument['doc_type']>('muszaki_adatlap');
 
+  // Image Upload State
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadProgressText, setUploadProgressText] = useState<string | null>(null);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [compressionStats, setCompressionStats] = useState<
+    Array<{ name: string; originalSize: number; compressedSize: number }>
+  >([]);
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
+  const [sessionUploadedUrls, setSessionUploadedUrls] = useState<string[]>([]);
+  const [pendingDeleteImageUrls, setPendingDeleteImageUrls] = useState<string[]>([]);
+
   useEffect(() => {
     let cancelled = false;
     function reload() {
@@ -140,9 +170,20 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
     return matchStatus && matchQuery;
   });
 
+  const resetImageUploadState = () => {
+    setUploadingImages(false);
+    setUploadProgressText(null);
+    setUploadErrors([]);
+    setCompressionStats([]);
+    setIsDraggingImages(false);
+    setSessionUploadedUrls([]);
+    setPendingDeleteImageUrls([]);
+  };
+
   const handleOpenCreateModal = () => {
     const defaultCat = categories[0];
     setEditingItem(null);
+    resetImageUploadState();
     setFormData({
       name: '',
       slug: '',
@@ -158,10 +199,10 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       full_description: '',
       application_area: '',
       technical_specs: [],
-      main_image_url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=800&auto=format&fit=crop',
+      main_image_url: DEFAULT_FALLBACK_IMAGE_URL,
       gallery_image_urls: [],
       documents: [],
-      status: 'draft',
+      status: 'published',
       rejection_note: null,
     });
     setActiveTab('basic');
@@ -175,13 +216,22 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       return;
     }
     if (!isPartnerEditableStatus(item.status)) {
-      toast.notify('Jóváhagyott vagy közzétett termék partner által nem módosítható.', 'warning');
+      toast.notify('Ez a termék jelenlegi státuszában nem módosítható.', 'warning');
       return;
     }
     setEditingItem(item);
-    setFormData({ ...item });
+    resetImageUploadState();
+    setFormData({ ...item, gallery_image_urls: item.gallery_image_urls || [] });
     setActiveTab('basic');
     setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    if (sessionUploadedUrls.length > 0) {
+      deletePartnerMaterialImages(currentPartner.id, sessionUploadedUrls, editingItem?.id).catch(() => {});
+    }
+    resetImageUploadState();
+    setIsModalOpen(false);
   };
 
   const handleDeleteItem = (id: string) => {
@@ -194,15 +244,15 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       return;
     }
     if (!isPartnerEditableStatus(item.status)) {
-      toast.notify('Jóváhagyott vagy közzétett termék partner által nem törölhető.', 'warning');
+      toast.notify('Ez a termék jelenlegi státuszában nem törölhető.', 'warning');
       return;
     }
 
     setConfirmDeleteId(id);
   };
 
-  const handleSaveForm = async (targetStatus: 'draft' | 'pending_approval') => {
-    if (saving) return;
+  const handleSaveForm = async (targetStatus: 'draft' | 'published') => {
+    if (saving || uploadingImages) return;
     if (!formData.name || !formData.short_description?.trim()) {
       toast.notify('Kérjük, töltse ki a termék nevét és a rövid leírást!', 'warning');
       return;
@@ -223,12 +273,12 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
         .replace(/^-|-$/g, '');
 
     try {
-      const payload: Partial<MaterialItem> & { status: 'draft' | 'pending_approval' } = {
+      const payload: Partial<MaterialItem> & { status: 'draft' | 'published' } = {
         ...(editingItem ? { id: editingItem.id } : {}),
         name: formData.name,
         slug: generatedSlug,
         category_id: formData.category_id || categories[0]?.id || 'mat-cat-1',
-        category_name: selectedCat?.name || formData.category_name || 'Általános Anyagok',
+        category_name: selectedCat?.name || formData.category_name || 'Általános anyagok',
         subcategory_name: formData.subcategory_name?.trim() || null,
         brand: formData.brand || currentPartner.name,
         sku: formData.sku?.trim() || null,
@@ -240,20 +290,24 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
         main_image_url:
           formData.main_image_url ||
           editingItem?.main_image_url ||
-          'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=800&auto=format&fit=crop',
+          DEFAULT_FALLBACK_IMAGE_URL,
         gallery_image_urls: formData.gallery_image_urls || [],
         documents: formData.documents || [],
         status: targetStatus,
       };
 
       const saved = await upsertPartnerMaterialItem(currentPartner.id, payload);
+      if (pendingDeleteImageUrls.length > 0) {
+        deletePartnerMaterialImages(currentPartner.id, pendingDeleteImageUrls, saved.id).catch(() => {});
+      }
       if (editingItem) {
         setAllItems((prev) => prev.map((i) => (i.id === editingItem.id ? saved : i)));
-        toast.success(targetStatus === 'pending_approval' ? 'Termék beküldve jóváhagyásra!' : 'Piszkozat mentve!');
+        toast.success(targetStatus === 'published' ? 'Termék frissítve és publikálva!' : 'Piszkozat mentve!');
       } else {
         setAllItems((prev) => [saved, ...prev]);
-        toast.success(targetStatus === 'pending_approval' ? 'Új termék beküldve jóváhagyásra!' : 'Új piszkozat mentve!');
+        toast.success(targetStatus === 'published' ? 'Új termék mentve és publikálva!' : 'Új piszkozat mentve!');
       }
+      resetImageUploadState();
       setIsModalOpen(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Hiba történt a termék mentése során.');
@@ -308,6 +362,179 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       ...formData,
       documents: formData.documents?.filter((d) => d.id !== docId),
     });
+  };
+
+  const getProductImageList = (data: Partial<MaterialItem> = formData): string[] => {
+    const main = (data.main_image_url || '').trim();
+    const gallery = Array.isArray(data.gallery_image_urls)
+      ? data.gallery_image_urls.filter((u) => typeof u === 'string' && u.trim().length > 0)
+      : [];
+    const list: string[] = [];
+    if (main && main !== DEFAULT_FALLBACK_IMAGE_URL) {
+      list.push(main);
+    }
+    for (const g of gallery) {
+      if (!list.includes(g)) list.push(g);
+    }
+    return list;
+  };
+
+  const applyImageListToForm = (images: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      main_image_url: images[0] || DEFAULT_FALLBACK_IMAGE_URL,
+      gallery_image_urls: images.slice(1),
+    }));
+  };
+
+  const handleUploadImageFiles = async (files: FileList | File[]) => {
+    const selected = Array.from(files || []);
+    if (selected.length === 0 || uploadingImages) return;
+
+    const currentImages = getProductImageList();
+    const availableSlots = MAX_PRODUCT_IMAGES - currentImages.length;
+    if (availableSlots <= 0) {
+      toast.notify(`Termékenként legfeljebb ${MAX_PRODUCT_IMAGES} kép tölthető fel.`, 'warning');
+      return;
+    }
+
+    const toProcess = selected.slice(0, availableSlots);
+    if (selected.length > availableSlots) {
+      setUploadErrors([
+        `Legfeljebb ${MAX_PRODUCT_IMAGES} kép engedélyezett termékenként, így csak az első ${availableSlots} kép kerül feltöltésre.`,
+      ]);
+    } else {
+      setUploadErrors([]);
+    }
+
+    setUploadingImages(true);
+    const errors: string[] = [];
+    const newUrls: string[] = [];
+    const stats: Array<{ name: string; originalSize: number; compressedSize: number }> = [];
+
+    for (let i = 0; i < toProcess.length; i++) {
+      const file = toProcess[i];
+      setUploadProgressText(`Feldolgozás és feltöltés: ${i + 1} / ${toProcess.length} (${file.name})`);
+      try {
+        const compressed = await compressImageToWebP(file);
+        const uploaded = await uploadPartnerMaterialImage(
+          currentPartner.id,
+          compressed.file,
+          editingItem?.id || 'draft'
+        );
+        newUrls.push(uploaded.url);
+        stats.push({
+          name: file.name,
+          originalSize: compressed.originalSize,
+          compressedSize: compressed.compressedSize,
+        });
+      } catch (err: unknown) {
+        errors.push(err instanceof Error ? err.message : `„${file.name}”: sikertelen feltöltés.`);
+      }
+    }
+
+    if (newUrls.length > 0) {
+      setSessionUploadedUrls((prev) => [...prev, ...newUrls]);
+      setFormData((prev) => {
+        const merged = [...getProductImageList(prev), ...newUrls].slice(0, MAX_PRODUCT_IMAGES);
+        return {
+          ...prev,
+          main_image_url: merged[0] || DEFAULT_FALLBACK_IMAGE_URL,
+          gallery_image_urls: merged.slice(1),
+        };
+      });
+      setCompressionStats((prev) => [...prev, ...stats]);
+      toast.success(`${newUrls.length} kép sikeresen feltöltve a Cloudflare R2 tárhelyre.`);
+    }
+
+    if (errors.length > 0) {
+      setUploadErrors((prev) => [...prev, ...errors]);
+    }
+
+    setUploadingImages(false);
+    setUploadProgressText(null);
+  };
+
+  const handleReplaceImageAt = async (index: number, file: File) => {
+    if (uploadingImages) return;
+    const currentImages = getProductImageList();
+    const oldUrl = currentImages[index];
+    if (!oldUrl) return;
+
+    setUploadingImages(true);
+    setUploadErrors([]);
+    setUploadProgressText(`Kép cseréje: ${file.name}`);
+
+    try {
+      const compressed = await compressImageToWebP(file);
+      const uploaded = await uploadPartnerMaterialImage(
+        currentPartner.id,
+        compressed.file,
+        editingItem?.id || 'draft'
+      );
+
+      setSessionUploadedUrls((prev) => [...prev, uploaded.url]);
+      setCompressionStats((prev) => [
+        ...prev,
+        {
+          name: file.name,
+          originalSize: compressed.originalSize,
+          compressedSize: compressed.compressedSize,
+        },
+      ]);
+
+      const updatedImages = currentImages.map((u, idx) => (idx === index ? uploaded.url : u));
+      applyImageListToForm(updatedImages);
+
+      if (sessionUploadedUrls.includes(oldUrl)) {
+        setSessionUploadedUrls((prev) => prev.filter((u) => u !== oldUrl));
+        deletePartnerMaterialImages(currentPartner.id, [oldUrl], editingItem?.id).catch(() => {});
+      } else {
+        setPendingDeleteImageUrls((prev) => (prev.includes(oldUrl) ? prev : [...prev, oldUrl]));
+      }
+
+      toast.success('Kép sikeresen lecserélve.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'A kép cseréje sikertelen.';
+      setUploadErrors([msg]);
+      toast.error(msg);
+    } finally {
+      setUploadingImages(false);
+      setUploadProgressText(null);
+    }
+  };
+
+  const handleSetMainImage = (index: number) => {
+    const currentImages = getProductImageList();
+    if (index <= 0 || index >= currentImages.length) return;
+    const chosen = currentImages[index];
+    const reordered = [chosen, ...currentImages.filter((_, idx) => idx !== index)];
+    applyImageListToForm(reordered);
+  };
+
+  const handleMoveImage = (index: number, direction: -1 | 1) => {
+    const currentImages = getProductImageList();
+    const target = index + direction;
+    if (target < 0 || target >= currentImages.length) return;
+    const copy = [...currentImages];
+    [copy[index], copy[target]] = [copy[target], copy[index]];
+    applyImageListToForm(copy);
+  };
+
+  const handleRemoveImageAt = (index: number) => {
+    const currentImages = getProductImageList();
+    const targetUrl = currentImages[index];
+    if (!targetUrl) return;
+
+    const remaining = currentImages.filter((_, idx) => idx !== index);
+    applyImageListToForm(remaining);
+
+    if (sessionUploadedUrls.includes(targetUrl)) {
+      setSessionUploadedUrls((prev) => prev.filter((u) => u !== targetUrl));
+      deletePartnerMaterialImages(currentPartner.id, [targetUrl], editingItem?.id).catch(() => {});
+    } else {
+      setPendingDeleteImageUrls((prev) => (prev.includes(targetUrl) ? prev : [...prev, targetUrl]));
+    }
   };
 
   return (
@@ -516,7 +743,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                 {editingItem ? 'Termék szerkesztése' : 'Új termék hozzáadása'}
               </h3>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleCloseModal}
                 className="p-1.5 text-slate-400 hover:text-white rounded-full cursor-pointer"
               >
                 <X size={18} />
@@ -784,17 +1011,215 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {/* TAB 4: MEDIA & DOCS */}
               {activeTab === 'media' && (
                 <div className="space-y-4">
-                  <div>
-                    <label className="font-bold text-slate-300 block mb-1">Fő kép URL *</label>
-                    <input
-                      type="text"
-                      value={formData.main_image_url}
-                      onChange={(e) => setFormData({ ...formData, main_image_url: e.target.value })}
-                      placeholder="https://..."
-                      className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-accent"
-                      required
-                    />
-                  </div>
+                  {/* Multi-Image R2 Uploader */}
+                  {(() => {
+                    const images = getProductImageList();
+                    const remainingSlots = MAX_PRODUCT_IMAGES - images.length;
+                    const totalSaved = compressionStats.reduce(
+                      (acc, s) => ({ orig: acc.orig + s.originalSize, comp: acc.comp + s.compressedSize }),
+                      { orig: 0, comp: 0 }
+                    );
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <label className="font-bold text-slate-200 block">
+                              Termékképek ({images.length} / {MAX_PRODUCT_IMAGES})
+                            </label>
+                            <p className="text-[11px] text-slate-400">
+                              JPEG, PNG vagy WebP • Automatikus WebP tömörítés (max. 1920 px, max. 5 MB/kép) • Cloudflare R2 tárhely
+                            </p>
+                          </div>
+                          {compressionStats.length > 0 && totalSaved.orig > 0 && (
+                            <span className="text-[11px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                              Tömörítés: {formatFileSize(totalSaved.orig)} → {formatFileSize(totalSaved.comp)}
+                            </span>
+                          )}
+                        </div>
+
+                        <label
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (!uploadingImages && remainingSlots > 0) setIsDraggingImages(true);
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault();
+                            setIsDraggingImages(false);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setIsDraggingImages(false);
+                            if (!uploadingImages && e.dataTransfer.files?.length) {
+                              handleUploadImageFiles(e.dataTransfer.files);
+                            }
+                          }}
+                          className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-5 text-center transition-colors ${
+                            remainingSlots <= 0 || uploadingImages
+                              ? 'border-slate-700 bg-slate-800/40 opacity-60 cursor-not-allowed'
+                              : isDraggingImages
+                                ? 'border-blue-400 bg-blue-500/10 cursor-copy'
+                                : 'border-slate-700 bg-slate-800/60 hover:border-blue-500/60 hover:bg-slate-800 cursor-pointer'
+                          }`}
+                        >
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            multiple
+                            disabled={uploadingImages || remainingSlots <= 0}
+                            onChange={(e) => {
+                              if (e.target.files?.length) {
+                                handleUploadImageFiles(e.target.files);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                          />
+                          {uploadingImages ? (
+                            <Loader2 size={24} className="text-blue-400 animate-spin" />
+                          ) : (
+                            <Upload size={22} className="text-blue-400" />
+                          )}
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-slate-200 text-xs">
+                              {uploadingImages
+                                ? uploadProgressText || 'Képek feldolgozása és feltöltése...'
+                                : remainingSlots <= 0
+                                  ? `Elérte a maximum ${MAX_PRODUCT_IMAGES} képet`
+                                  : 'Húzza ide a képeket, vagy kattintson a tallózáshoz (egyszerre több is)'}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              Az első kép lesz a fő termékkép, a többi a galériában jelenik meg.
+                            </p>
+                          </div>
+                        </label>
+
+                        {uploadErrors.length > 0 && (
+                          <div className="bg-red-950/50 border border-red-700/60 rounded-xl p-3 space-y-1 text-xs text-red-200">
+                            {uploadErrors.map((errMsg, i) => (
+                              <p key={i} className="flex items-start gap-1.5">
+                                <AlertTriangle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                                <span>{errMsg}</span>
+                              </p>
+                            ))}
+                          </div>
+                        )}
+
+                        {images.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {images.map((imgUrl, idx) => {
+                              const isMain = idx === 0;
+                              return (
+                                <div
+                                  key={`${imgUrl}-${idx}`}
+                                  className={`bg-slate-800/80 rounded-xl border overflow-hidden flex flex-col ${
+                                    isMain ? 'border-blue-400 ring-1 ring-blue-400/40' : 'border-slate-700'
+                                  }`}
+                                >
+                                  <div className="relative aspect-square bg-slate-950">
+                                    <img
+                                      src={imgUrl}
+                                      alt={isMain ? 'Fő termékkép' : `Galériakép ${idx}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    {isMain && (
+                                      <span className="absolute top-1.5 left-1.5 px-2 py-0.5 bg-blue-500 text-slate-950 font-black text-[10px] rounded-full flex items-center gap-1 shadow">
+                                        <Star size={10} /> Fő kép
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="p-2 flex items-center justify-between gap-1 bg-slate-900/90">
+                                    <div className="flex items-center gap-1">
+                                      {!isMain && (
+                                        <button
+                                          type="button"
+                                          disabled={uploadingImages}
+                                          onClick={() => handleSetMainImage(idx)}
+                                          title="Beállítás fő képként"
+                                          className="p-1 text-slate-300 hover:text-amber-300 bg-slate-800 hover:bg-slate-700 rounded-md cursor-pointer"
+                                        >
+                                          <Star size={12} />
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        disabled={uploadingImages || idx === 0}
+                                        onClick={() => handleMoveImage(idx, -1)}
+                                        title="Mozgatás előre"
+                                        className="p-1 text-slate-300 hover:text-white disabled:opacity-30 bg-slate-800 hover:bg-slate-700 rounded-md cursor-pointer disabled:cursor-not-allowed"
+                                      >
+                                        <ArrowLeft size={12} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={uploadingImages || idx === images.length - 1}
+                                        onClick={() => handleMoveImage(idx, 1)}
+                                        title="Mozgatás hátra"
+                                        className="p-1 text-slate-300 hover:text-white disabled:opacity-30 bg-slate-800 hover:bg-slate-700 rounded-md cursor-pointer disabled:cursor-not-allowed"
+                                      >
+                                        <ArrowRight size={12} />
+                                      </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-1">
+                                      <label
+                                        title="Kép cseréje"
+                                        className={`p-1 text-slate-300 hover:text-blue-400 bg-slate-800 hover:bg-slate-700 rounded-md ${
+                                          uploadingImages ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                                        }`}
+                                      >
+                                        <RefreshCw size={12} />
+                                        <input
+                                          type="file"
+                                          accept="image/jpeg,image/png,image/webp"
+                                          disabled={uploadingImages}
+                                          onChange={(e) => {
+                                            const f = e.target.files?.[0];
+                                            if (f) {
+                                              handleReplaceImageAt(idx, f);
+                                              e.target.value = '';
+                                            }
+                                          }}
+                                          className="hidden"
+                                        />
+                                      </label>
+                                      <button
+                                        type="button"
+                                        disabled={uploadingImages}
+                                        onClick={() => handleRemoveImageAt(idx)}
+                                        title="Kép eltávolítása"
+                                        className="p-1 text-red-400 hover:text-red-300 bg-slate-800 hover:bg-slate-700 rounded-md cursor-pointer"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                            <ImageIcon size={15} className="text-slate-500" />
+                            <span>Még nincs feltöltött termékkép. Mentéskor alapértelmezett előnézeti kép jelenik meg.</span>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="font-bold text-slate-400 block mb-1 text-[11px]">
+                            Fő kép URL (opcionális külső hivatkozás)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.main_image_url || ''}
+                            onChange={(e) => setFormData({ ...formData, main_image_url: e.target.value })}
+                            placeholder="https://..."
+                            className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Documents */}
                   <div className="border-t border-slate-800 pt-4 space-y-2">
@@ -857,33 +1282,42 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               )}
             </div>
 
-            {/* Modal Actions */}
-            <div className="bg-slate-950/80 border-t border-slate-800 p-4 px-6 rounded-b-3xl flex flex-wrap items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
-              >
-                Mégse
-              </button>
+            {/* Partner Responsibility Notice & Modal Actions */}
+            <div className="bg-slate-950/80 border-t border-slate-800 p-4 px-6 rounded-b-3xl space-y-3">
+              <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl px-3 py-2 text-[11px] text-slate-300 flex items-start gap-2">
+                <AlertTriangle size={14} className="text-blue-400 shrink-0 mt-0.5" />
+                <span>
+                  A termékadatok, a leírás, a műszaki adatok pontosságáért, az árakért és a feltöltött képek jogszerű felhasználásáért a partner felel. A publikált termék azonnal megjelenik a nyilvános katalógusban.
+                </span>
+              </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
-                  disabled={saving}
-                  onClick={() => handleSaveForm('draft')}
-                  className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
                 >
-                  <Save size={14} /> {saving ? 'Mentés...' : 'Mentés piszkozatként'}
+                  Mégse
                 </button>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => handleSaveForm('pending_approval')}
-                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-50 text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Send size={14} /> {saving ? 'Küldés...' : 'Beküldés ellenőrzésre'}
-                </button>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={saving || uploadingImages}
+                    onClick={() => handleSaveForm('draft')}
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Save size={14} /> {saving ? 'Mentés...' : 'Mentés piszkozatként'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving || uploadingImages}
+                    onClick={() => handleSaveForm('published')}
+                    className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-slate-950 font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Send size={14} /> {saving ? 'Publikálás...' : 'Mentés és publikálás'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -898,9 +1332,19 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
         destructive
         onConfirm={async () => {
           if (!confirmDeleteId) return;
+          const targetItem = partnerItems.find((i) => i.id === confirmDeleteId);
           try {
             await deletePartnerMaterialItem(currentPartner.id, confirmDeleteId);
             setAllItems((prev) => prev.filter((i) => i.id !== confirmDeleteId));
+            if (targetItem) {
+              const itemImages = [
+                targetItem.main_image_url,
+                ...(Array.isArray(targetItem.gallery_image_urls) ? targetItem.gallery_image_urls : []),
+              ].filter((u): u is string => typeof u === 'string' && u.trim().length > 0);
+              if (itemImages.length > 0) {
+                deletePartnerMaterialImages(currentPartner.id, itemImages, targetItem.id).catch(() => {});
+              }
+            }
             toast.success('Termék törölve.');
           } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'Hiba történt a termék törlésekor.');

@@ -480,7 +480,7 @@ export async function setMaterialStatusAsAdmin(
 
 export async function upsertPartnerMaterialItem(
   partnerId: string,
-  item: Partial<MaterialItem> & { status: 'draft' | 'pending_approval' }
+  item: Partial<MaterialItem> & { status: 'draft' | 'published' }
 ): Promise<MaterialItem> {
   const { data, error } = await supabase.rpc('upsert_partner_material_item', {
     p_partner_id: partnerId,
@@ -519,6 +519,104 @@ export async function deletePartnerMaterialItem(partnerId: string, itemId: strin
     localStorage.setItem(LOCAL_STORAGE_ITEMS_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event('materials-updated'));
   }
+}
+
+function getEdgeFunctionUrl(fnName: string): { url: string; anonKey: string } {
+  const rawUrl = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_URL : undefined;
+  const rawKey = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_ANON_KEY : undefined;
+  const baseUrl = (rawUrl && typeof rawUrl === 'string' && rawUrl.trim())
+    ? rawUrl.trim().replace(/\/+$/, '')
+    : 'https://olmavxcmkvvcebgqxohe.supabase.co';
+  const anonKey = (rawKey && typeof rawKey === 'string' && rawKey.trim())
+    ? rawKey.trim()
+    : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sbWF2eGNta3Z2Y2ViZ3F4b2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNjAzNzksImV4cCI6MjA5NTgzNjM3OX0.uwz9kRkODHafloihBfDauFTAGk4dTb2X9TJrnF_vwHw';
+  return { url: `${baseUrl}/functions/v1/${fnName}`, anonKey };
+}
+
+export async function uploadPartnerMaterialImage(
+  partnerId: string,
+  file: File,
+  productId?: string | null
+): Promise<{ url: string; key: string; size: number }> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (!accessToken) {
+    throw new Error('A képfeltöltéshez aktív bejelentkezés szükséges.');
+  }
+
+  const { url, anonKey } = getEdgeFunctionUrl('partner-material-images');
+  const form = new FormData();
+  form.append('partner_id', partnerId);
+  if (productId) {
+    form.append('product_id', productId);
+  }
+  form.append('file', file);
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: anonKey,
+    },
+    body: form,
+  });
+
+  const body = await resp.json().catch(() => ({} as Record<string, unknown>));
+  if (!resp.ok || !body?.success || typeof body?.url !== 'string') {
+    throw new Error(
+      typeof body?.error === 'string' ? body.error : `Képfeltöltés sikertelen (HTTP ${resp.status}).`
+    );
+  }
+
+  return {
+    url: body.url,
+    key: String(body.key || ''),
+    size: Number(body.size || file.size),
+  };
+}
+
+export async function deletePartnerMaterialImages(
+  partnerId: string,
+  imageUrls: string[],
+  excludeItemId?: string | null
+): Promise<{ deleted: number; skipped: number }> {
+  const validUrls = (imageUrls || []).filter((u) => typeof u === 'string' && u.trim().length > 0);
+  if (validUrls.length === 0) {
+    return { deleted: 0, skipped: 0 };
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (!accessToken) {
+    throw new Error('A képtörléshez aktív bejelentkezés szükséges.');
+  }
+
+  const { url, anonKey } = getEdgeFunctionUrl('partner-material-images');
+  const resp = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: anonKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      partner_id: partnerId,
+      image_urls: validUrls,
+      exclude_item_id: excludeItemId || undefined,
+    }),
+  });
+
+  const body = await resp.json().catch(() => ({} as Record<string, unknown>));
+  if (!resp.ok || !body?.success) {
+    throw new Error(
+      typeof body?.error === 'string' ? body.error : `Képtörlés sikertelen (HTTP ${resp.status}).`
+    );
+  }
+
+  return {
+    deleted: Number(body.deleted || 0),
+    skipped: Number(body.skipped || 0),
+  };
 }
 
 export async function fetchMaterialsFromCloud(options?: {

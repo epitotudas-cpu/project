@@ -6,12 +6,14 @@ const {
   readAppConfigWithVersionMock,
   writeAppConfigIfUnchangedMock,
   rpcMock,
+  getSessionMock,
 } = vi.hoisted(() => ({
   readAppConfigMock: vi.fn().mockResolvedValue(null),
   writeAppConfigMock: vi.fn().mockResolvedValue(undefined),
   readAppConfigWithVersionMock: vi.fn().mockResolvedValue({ value: null, updatedAt: null }),
   writeAppConfigIfUnchangedMock: vi.fn().mockResolvedValue({ conflict: false, updatedAt: '2026-11-15T12:00:00Z' }),
   rpcMock: vi.fn(),
+  getSessionMock: vi.fn().mockResolvedValue({ data: { session: { access_token: 'jwt-token-123' } } }),
 }));
 
 vi.mock('./appConfigService', () => ({
@@ -24,6 +26,9 @@ vi.mock('./appConfigService', () => ({
 vi.mock('../lib/supabase', () => ({
   supabase: {
     rpc: rpcMock,
+    auth: {
+      getSession: getSessionMock,
+    },
   },
 }));
 
@@ -33,6 +38,8 @@ import {
   setMaterialStatusAsAdmin,
   upsertPartnerMaterialItem,
   deletePartnerMaterialItem,
+  uploadPartnerMaterialImage,
+  deletePartnerMaterialImages,
   getMaterialsLocal,
   type MaterialItem,
 } from './materialsService';
@@ -103,35 +110,44 @@ describe('materialsService (0.C)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('upsertPartnerMaterialItem calls RPC and updates localStorage only on success', async () => {
-    const savedItem = makeItem({ id: 'mat-partner-abc', status: 'pending_approval' });
+  it('upsertPartnerMaterialItem calls RPC with published status and updates localStorage only on success', async () => {
+    const savedItem = makeItem({
+      id: 'mat-partner-abc',
+      status: 'published',
+      gallery_image_urls: ['https://cdn.example.com/2.webp'],
+    });
     rpcMock.mockResolvedValueOnce({ data: savedItem, error: null });
 
     const result = await upsertPartnerMaterialItem('partner-1', {
       name: 'Alap Termék',
       short_description: 'Rövid leírás',
-      status: 'pending_approval',
+      gallery_image_urls: ['https://cdn.example.com/2.webp'],
+      status: 'published',
     });
 
     expect(rpcMock).toHaveBeenCalledWith('upsert_partner_material_item', {
       p_partner_id: 'partner-1',
-      p_item: expect.objectContaining({ status: 'pending_approval' }),
+      p_item: expect.objectContaining({
+        status: 'published',
+        gallery_image_urls: ['https://cdn.example.com/2.webp'],
+      }),
     });
     expect(result.id).toBe('mat-partner-abc');
+    expect(result.status).toBe('published');
     expect(getMaterialsLocal().some((i) => i.id === 'mat-partner-abc')).toBe(true);
 
     rpcMock.mockResolvedValueOnce({
       data: null,
-      error: { message: 'Jóváhagyott vagy közzétett termék partner által nem módosítható.' },
+      error: { message: 'Csak a saját termékét módosíthatja.' },
     });
     await expect(
       upsertPartnerMaterialItem('partner-1', {
         id: 'mat-partner-abc',
         name: 'Módosított',
         short_description: 'Rövid',
-        status: 'draft',
+        status: 'published',
       })
-    ).rejects.toThrow('Jóváhagyott vagy közzétett termék partner által nem módosítható.');
+    ).rejects.toThrow('Csak a saját termékét módosíthatja.');
   });
 
   it('deletePartnerMaterialItem calls RPC and does not mutate localStorage on error', async () => {
@@ -233,5 +249,36 @@ describe('materialsService (0.C)', () => {
     expect(writeAppConfigIfUnchangedMock).toHaveBeenCalledTimes(4);
     expect(writeAppConfigMock).not.toHaveBeenCalled();
     expect(getMaterialsLocal()[0].name).toBe('Eredeti');
+  });
+
+  it('uploadPartnerMaterialImage and deletePartnerMaterialImages call Edge Function with JWT', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        url: 'https://cdn.epitotudas.hu/materials/p-1/mat-1/img.webp',
+        key: 'materials/p-1/mat-1/img.webp',
+        size: 12345,
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const file = new File([new Uint8Array([1, 2, 3])], 'test.webp', { type: 'image/webp' });
+    const uploaded = await uploadPartnerMaterialImage('p-1', file, 'mat-1');
+    expect(uploaded.url).toBe('https://cdn.epitotudas.hu/materials/p-1/mat-1/img.webp');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, deleted: 1, skipped: 0 }),
+    });
+    const deleted = await deletePartnerMaterialImages(
+      'p-1',
+      ['https://cdn.epitotudas.hu/materials/p-1/mat-1/img.webp'],
+      'mat-1'
+    );
+    expect(deleted).toEqual({ deleted: 1, skipped: 0 });
   });
 });
