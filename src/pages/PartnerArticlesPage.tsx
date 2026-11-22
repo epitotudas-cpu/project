@@ -258,37 +258,39 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 p-6 space-y-6 shadow-sm">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
-        <div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/10 text-primary font-bold text-xs rounded-full">
-            <Building2 size={13} className="text-accent" /> {currentPartner.name} • Partner Portal
-          </span>
-          <h2 className="text-xl font-extrabold text-gray-900 mt-1">Saját Cikkek, Hírek &amp; Útmutatók</h2>
-          <p className="text-xs text-gray-500">
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/20 rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+            <Building2 size={13} /> {currentPartner.name} • Partner Portal
+          </div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            Saját Cikkek, Hírek &amp; Útmutatók
+          </h2>
+          <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
             Hozzon létre szakmai híreket, termékújdonságokat és útmutatókat, majd küldje be ellenőrzésre az adminisztrátornak!
           </p>
         </div>
 
         <button
           onClick={handleOpenCreateModal}
-          className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+          className="w-full sm:w-auto px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
         >
           <Plus size={16} /> Új Cikk Beküldése
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50 p-3.5 rounded-2xl border border-gray-200">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 bg-slate-900/80 p-3.5 sm:p-4 rounded-2xl border border-slate-800">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Keresés saját cikkek között..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
+            className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
           />
         </div>
 
@@ -298,20 +300,20 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="bg-white border border-gray-200 text-xs font-bold px-3 py-2 rounded-xl focus:outline-none cursor-pointer"
+            className="bg-slate-800 border border-slate-700 text-white text-xs font-bold px-3 py-2 rounded-xl focus:outline-none focus:border-blue-500 cursor-pointer"
           >
-            <option value="all">Összes típus</option>
-            <option value="hirek">Hírek</option>
-            <option value="ujdonsagok">Újdonságok</option>
-            <option value="utmutatok">Útmutatók</option>
+            <option value="all" className="bg-slate-900 text-white">Összes típus</option>
+            <option value="hirek" className="bg-slate-900 text-white">Hírek</option>
+            <option value="ujdonsagok" className="bg-slate-900 text-white">Újdonságok</option>
+            <option value="utmutatok" className="bg-slate-900 text-white">Útmutatók</option>
           </select>
 
           {/* Status Tabs */}
-          <div className="flex items-center bg-gray-200/70 p-1 rounded-xl text-xs font-bold">
+          <div className="flex flex-wrap items-center bg-slate-950/70 border border-slate-800 p-1 rounded-xl text-xs font-bold gap-1">
             <button
               onClick={() => setStatusFilter('all')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'all' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600'
+                statusFilter === 'all' ? 'bg-blue-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
               }`}
             >
               Összes ({partnerItems.length})
@@ -319,7 +321,9 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
             <button
               onClick={() => setStatusFilter('published')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'published' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-600'
+                statusFilter === 'published'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Publikált
@@ -327,7 +331,9 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
             <button
               onClick={() => setStatusFilter('pending')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'pending' ? 'bg-amber-600 text-white shadow-xs' : 'text-gray-600'
+                statusFilter === 'pending'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Jóváhagyásra vár
@@ -335,7 +341,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
             <button
               onClick={() => setStatusFilter('draft')}
               className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                statusFilter === 'draft' ? 'bg-gray-700 text-white shadow-xs' : 'text-gray-600'
+                statusFilter === 'draft' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-400 hover:text-white'
               }`}
             >
               Piszkozat
@@ -346,144 +352,146 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
 
       {/* Articles Table */}
       {filteredItems.length > 0 ? (
-        <div className="border border-gray-200 rounded-2xl overflow-hidden">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">Cikk Címe &amp; Típusa</th>
-                <th className="py-3 px-4">Címkék</th>
-                <th className="py-3 px-4">Dokumentumok</th>
-                <th className="py-3 px-4">Státusz</th>
-                <th className="py-3 px-4 text-right">Műveletek</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      {item.featured_image && (
-                        <img
-                          src={item.featured_image}
-                          alt={item.title}
-                          className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0"
-                        />
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span
-                            className={`px-2 py-0.2 text-[10px] font-black rounded-md uppercase tracking-wider ${
-                              item.article_type === 'hirek'
-                                ? 'bg-blue-100 text-blue-900 border border-blue-200'
-                                : item.article_type === 'ujdonsagok'
-                                ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                                : 'bg-purple-100 text-purple-900 border border-purple-200'
-                            }`}
-                          >
-                            {item.article_type === 'hirek'
-                              ? 'Hír'
-                              : item.article_type === 'ujdonsagok'
-                              ? 'Újdonság'
-                              : 'Útmutató'}
-                          </span>
-                        </div>
-                        <span className="font-bold text-gray-900 block">{item.title}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    {item.tags && item.tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {item.tags.slice(0, 3).map((t: string) => (
-                          <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-md">
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-[11px]">-</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    {item.documents && item.documents.length > 0 ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-primary text-[11px]">
-                        <FileText size={13} /> {item.documents.length} PDF
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-[11px]">Nincs</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    {item.status === 'published' ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-[11px]">
-                        <CheckCircle2 size={13} /> Publikált
-                      </span>
-                    ) : item.status === 'pending' || item.status === 'review' ? (
-                      <span className="inline-flex items-center gap-1 text-amber-700 font-bold text-[11px] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                        <Clock size={13} /> Jóváhagyásra vár
-                      </span>
-                    ) : item.status === 'rejected' ? (
-                      <span className="inline-flex items-center gap-1 text-red-700 font-bold text-[11px] bg-red-50 px-2 py-0.5 rounded border border-red-200">
-                        <AlertTriangle size={13} /> Elutasítva (Javítandó)
-                      </span>
-                    ) : (
-                      <span className="text-gray-500 font-bold text-[11px]">Piszkozat</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => setPreviewItem(item)}
-                        className="p-1.5 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                        title="Előnézet"
-                      >
-                        <Eye size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleOpenEditModal(item)}
-                        className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                        title="Szerkesztés"
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteItem(item.id)}
-                        className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                        title="Törlés"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">Cikk Címe &amp; Típusa</th>
+                  <th className="py-3 px-4">Címkék</th>
+                  <th className="py-3 px-4">Dokumentumok</th>
+                  <th className="py-3 px-4">Státusz</th>
+                  <th className="py-3 px-4 text-right">Műveletek</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {filteredItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        {item.featured_image && (
+                          <img
+                            src={item.featured_image}
+                            alt={item.title}
+                            className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                          />
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span
+                              className={`px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider border ${
+                                item.article_type === 'hirek'
+                                  ? 'bg-blue-500/10 text-blue-300 border-blue-500/30'
+                                  : item.article_type === 'ujdonsagok'
+                                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                                  : 'bg-purple-500/10 text-purple-300 border-purple-500/30'
+                              }`}
+                            >
+                              {item.article_type === 'hirek'
+                                ? 'Hír'
+                                : item.article_type === 'ujdonsagok'
+                                ? 'Újdonság'
+                                : 'Útmutató'}
+                            </span>
+                          </div>
+                          <span className="font-bold text-white block">{item.title}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      {item.tags && item.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {item.tags.slice(0, 3).map((t: string) => (
+                            <span key={t} className="px-2 py-0.5 bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-bold rounded-md">
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 text-[11px]">-</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {item.documents && item.documents.length > 0 ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-blue-400 text-[11px]">
+                          <FileText size={13} /> {item.documents.length} PDF
+                        </span>
+                      ) : (
+                        <span className="text-slate-500 text-[11px]">Nincs</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {item.status === 'published' ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-400 font-bold text-[11px]">
+                          <CheckCircle2 size={13} /> Publikált
+                        </span>
+                      ) : item.status === 'pending' || item.status === 'review' ? (
+                        <span className="inline-flex items-center gap-1 text-amber-300 font-bold text-[11px] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                          <Clock size={13} /> Jóváhagyásra vár
+                        </span>
+                      ) : item.status === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1 text-red-300 font-bold text-[11px] bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/30">
+                          <AlertTriangle size={13} /> Elutasítva (Javítandó)
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-bold text-[11px]">Piszkozat</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setPreviewItem(item)}
+                          className="p-1.5 text-slate-300 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                          title="Előnézet"
+                        >
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          className="p-1.5 text-slate-300 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                          title="Szerkesztés"
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="p-1.5 text-slate-300 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                          title="Törlés"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-gray-50 rounded-2xl p-10 text-center space-y-3 border border-gray-200">
-          <HelpCircle size={32} className="mx-auto text-gray-400" />
-          <h4 className="font-bold text-gray-800 text-sm">Önnek jelenleg nincs saját feltöltött cikke ebben a nézetben</h4>
-          <p className="text-xs text-gray-500 max-w-sm mx-auto">
-            Hozzon létre új Hírt, Újdonságot vagy Útmutatót az "+ Új Cikk Beküldése" gombra kattintva!
+        <div className="bg-slate-900/80 rounded-2xl p-10 text-center space-y-3 border border-slate-800">
+          <HelpCircle size={32} className="mx-auto text-slate-600" />
+          <h4 className="font-bold text-slate-200 text-sm">Önnek jelenleg nincs saját feltöltött cikke ebben a nézetben</h4>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            Hozzon létre új Hírt, Újdonságot vagy Útmutatót az „Új Cikk Beküldése” gombra kattintva!
           </p>
         </div>
       )}
 
       {/* ── CREATE / EDIT MODAL FOR PARTNER ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 text-slate-100 rounded-3xl border border-slate-700 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
             {/* Header */}
-            <div className="bg-primary text-white p-5 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-primary-700">
+            <div className="bg-slate-950 text-white p-5 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-slate-800">
               <h3 className="text-base font-black flex items-center gap-2">
-                <FileText size={17} className="text-accent" />
+                <FileText size={17} className="text-blue-400" />
                 {editingItem ? 'Saját Cikk Szerkesztése' : 'Új Cikk Beküldése'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-white/70 hover:text-white rounded-full cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white rounded-full cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -491,16 +499,16 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
 
             {/* Rejection Alert if editing rejected item */}
             {formData.status === 'rejected' && formData.rejection_note && (
-              <div className="bg-red-50 border-b border-red-200 p-4 space-y-1">
-                <span className="font-extrabold text-red-800 text-xs flex items-center gap-1">
+              <div className="bg-red-950/50 border-b border-red-800/60 p-4 space-y-1">
+                <span className="font-extrabold text-red-300 text-xs flex items-center gap-1">
                   <AlertTriangle size={14} /> AZ ADMINISZTRÁTOR MEGJEGYZÉSE AZ ELUTASÍTÁSHOZ:
                 </span>
-                <p className="text-xs text-red-950 font-medium">{formData.rejection_note}</p>
+                <p className="text-xs text-red-100 font-medium">{formData.rejection_note}</p>
               </div>
             )}
 
             {/* Subnav Tabs */}
-            <div className="flex border-b border-gray-200 bg-gray-50 px-5 pt-3 gap-2">
+            <div className="flex border-b border-slate-800 bg-slate-950/60 px-5 pt-3 gap-2 overflow-x-auto">
               {[
                 { id: 'basic', label: '1. Alapadatok' },
                 { id: 'content', label: '2. Tartalom' },
@@ -510,8 +518,10 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id as typeof activeTab)}
-                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                    activeTab === t.id ? 'border-accent text-primary bg-white rounded-t-lg' : 'border-transparent text-gray-500 hover:text-gray-800'
+                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+                    activeTab === t.id
+                      ? 'border-blue-400 text-blue-400 bg-slate-900 rounded-t-lg'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   {t.label}
@@ -520,13 +530,13 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
             </div>
 
             {/* Form */}
-            <div className="p-6 space-y-5 text-xs flex-1">
+            <div className="p-6 space-y-5 text-xs flex-1 text-slate-100">
               {/* TAB 1: BASIC INFO */}
               {activeTab === 'basic' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Cikk Típusa *</label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <label className="font-bold text-slate-300 block mb-1">Cikk Típusa *</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {[
                         { id: 'hirek', label: 'Hír', icon: Sparkles },
                         { id: 'ujdonsagok', label: 'Újdonság', icon: Calendar },
@@ -540,11 +550,11 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                             onClick={() => setFormData({ ...formData, article_type: t.id as typeof formData.article_type })}
                             className={`p-3 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                               formData.article_type === t.id
-                                ? 'bg-primary text-white border-primary shadow-sm'
-                                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                                ? 'bg-blue-500 text-slate-950 border-blue-400 shadow-sm'
+                                : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
                             }`}
                           >
-                            <IconComponent size={14} className={formData.article_type === t.id ? 'text-accent' : ''} />
+                            <IconComponent size={14} className={formData.article_type === t.id ? 'text-slate-950' : 'text-blue-400'} />
                             {t.label}
                           </button>
                         );
@@ -553,27 +563,27 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Cikk Címe *</label>
+                    <label className="font-bold text-slate-300 block mb-1">Cikk Címe *</label>
                     <input
                       type="text"
                       value={formData.title || ''}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="pl. Új környezetbarát szigetelőanyagok a hazai piacon"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold"
+                      className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-500"
                       required
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Kategória *</label>
+                      <label className="font-bold text-slate-300 block mb-1">Kategória *</label>
                       <select
                         value={formData.category_id || ''}
                         onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
                       >
                         {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
+                          <option key={c.id} value={c.id} className="bg-slate-900 text-white">
                             {c.name}
                           </option>
                         ))}
@@ -581,39 +591,39 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Szerző Megnevezése</label>
+                      <label className="font-bold text-slate-300 block mb-1">Szerző Megnevezése</label>
                       <input
                         type="text"
                         value={formData.author || ''}
                         onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Szakma / Alkategória</label>
+                      <label className="font-bold text-slate-300 block mb-1">Szakma / Alkategória</label>
                       <input
                         type="text"
                         placeholder="pl. Kőműves / Hőszigetelő"
                         value={formData.subcategory_name || ''}
                         onChange={(e) => setFormData({ ...formData, subcategory_name: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-gray-700 block mb-1">Nehézségi Szint</label>
+                      <label className="font-bold text-slate-300 block mb-1">Nehézségi Szint</label>
                       <select
                         value={formData.difficulty || 'intermediate'}
                         onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as typeof formData.difficulty })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                        className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
                       >
-                        <option value="beginner">Kezdő</option>
-                        <option value="intermediate">Haladó</option>
-                        <option value="advanced">Tapasztalt</option>
-                        <option value="expert">Szakértő</option>
+                        <option value="beginner" className="bg-slate-900 text-white">Kezdő</option>
+                        <option value="intermediate" className="bg-slate-900 text-white">Haladó</option>
+                        <option value="advanced" className="bg-slate-900 text-white">Tapasztalt</option>
+                        <option value="expert" className="bg-slate-900 text-white">Szakértő</option>
                       </select>
                     </div>
                   </div>
@@ -624,25 +634,25 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
               {activeTab === 'content' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Rövid Összefoglaló (Kivonat) *</label>
+                    <label className="font-bold text-slate-300 block mb-1">Rövid Összefoglaló (Kivonat) *</label>
                     <textarea
                       rows={3}
                       value={formData.excerpt || ''}
                       onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
                       placeholder="Néhány mondatos bevezető a kártyás megjelenítéshez..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Teljes Cikktartalom (Markdown)</label>
+                    <label className="font-bold text-slate-300 block mb-1">Teljes Cikktartalom (Markdown)</label>
                     <textarea
                       rows={10}
                       value={formData.content || ''}
                       onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                       placeholder="A cikk teljes szövege alcímekkel (##), felsorolásokkal..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                      className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -653,12 +663,12 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                 <div className="space-y-5">
                   {/* Tags */}
                   <div className="space-y-2">
-                    <label className="font-bold text-gray-700 block">Címkék (Tags)</label>
+                    <label className="font-bold text-slate-300 block">Címkék (Tags)</label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {formData.tags?.map((t: string) => (
-                        <span key={t} className="bg-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                        <span key={t} className="bg-blue-500/10 border border-blue-500/30 text-blue-300 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                           #{t}
-                          <button type="button" onClick={() => handleRemoveTag(t)} className="hover:text-red-600 cursor-pointer">
+                          <button type="button" onClick={() => handleRemoveTag(t)} className="hover:text-red-400 cursor-pointer">
                             <X size={12} />
                           </button>
                         </span>
@@ -676,12 +686,12 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                             handleAddTag();
                           }
                         }}
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs flex-1"
+                        className="bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs flex-1 focus:outline-none focus:border-blue-500"
                       />
                       <button
                         type="button"
                         onClick={handleAddTag}
-                        className="px-3 py-1.5 bg-primary text-white font-bold text-xs rounded-xl cursor-pointer"
+                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs rounded-xl cursor-pointer"
                       >
                         + Hozzáadás
                       </button>
@@ -689,16 +699,16 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                   </div>
 
                   {/* Documents */}
-                  <div className="border-t border-gray-200 pt-4 space-y-3">
-                    <h5 className="font-extrabold text-gray-900 flex items-center gap-1.5">
-                      <FileText size={15} className="text-accent" /> Csatolt PDF Dokumentumok
+                  <div className="border-t border-slate-800 pt-4 space-y-3">
+                    <h5 className="font-extrabold text-white flex items-center gap-1.5">
+                      <FileText size={15} className="text-blue-400" /> Csatolt PDF Dokumentumok
                     </h5>
                     {formData.documents && formData.documents.length > 0 && (
                       <div className="space-y-1.5">
                         {formData.documents.map((d: { id: string; title: string }) => (
-                          <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-xl p-2.5 flex items-center justify-between">
-                            <span className="font-bold text-gray-900">{d.title}</span>
-                            <button type="button" onClick={() => handleRemoveDocument(d.id)} className="text-red-600 p-1 cursor-pointer">
+                          <div key={d.id} className="bg-slate-800 border border-slate-700 rounded-xl p-2.5 flex items-center justify-between">
+                            <span className="font-bold text-slate-100">{d.title}</span>
+                            <button type="button" onClick={() => handleRemoveDocument(d.id)} className="text-red-400 hover:text-red-300 p-1 cursor-pointer">
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -712,20 +722,20 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                         placeholder="Dokumentum címe (pl. Műszaki_Adatlap.pdf)"
                         value={docTitleInput}
                         onChange={(e) => setDocTitleInput(e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs"
+                        className="bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500"
                       />
                       <input
                         type="text"
                         placeholder="PDF Fájl URL (pl. /docs/adatlap.pdf)"
                         value={docUrlInput}
                         onChange={(e) => setDocUrlInput(e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-mono"
+                        className="bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-blue-500"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleAddDocument}
-                      className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl cursor-pointer"
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
                     >
                       + PDF Csatolása
                     </button>
@@ -737,19 +747,19 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
               {activeTab === 'media' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Kiemelt Kép URL *</label>
+                    <label className="font-bold text-slate-300 block mb-1">Kiemelt Kép URL *</label>
                     <input
                       type="text"
                       value={formData.featured_image || ''}
                       onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
                       placeholder="https://images.unsplash.com/..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"
+                      className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
                       required
                     />
                   </div>
 
                   {formData.featured_image && (
-                    <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-48">
+                    <div className="border border-slate-700 rounded-2xl overflow-hidden max-h-48">
                       <img src={formData.featured_image} alt="Kiemelt kép előnézet" className="w-full h-full object-cover" />
                     </div>
                   )}
@@ -758,11 +768,11 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
             </div>
 
             {/* Modal Actions */}
-            <div className="bg-gray-50 border-t border-gray-200 p-4 px-6 rounded-b-3xl flex items-center justify-between">
+            <div className="bg-slate-950/80 border-t border-slate-800 p-4 px-6 rounded-b-3xl flex flex-wrap items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl cursor-pointer"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
               >
                 Mégse
               </button>
@@ -772,7 +782,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                   type="button"
                   disabled={saving}
                   onClick={() => handleSaveForm('draft')}
-                  className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save size={14} /> {saving ? 'Mentés...' : 'Mentés Piszkozatként'}
                 </button>
@@ -780,7 +790,7 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
                   type="button"
                   disabled={saving}
                   onClick={() => handleSaveForm('pending')}
-                  className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send size={14} /> {saving ? 'Küldés...' : 'Beküldés Ellenőrzésre'}
                 </button>
@@ -792,25 +802,25 @@ export default function PartnerArticlesPage({ currentPartner, onNavigate: _onNav
 
       {/* ── LIVE PREVIEW MODAL ── */}
       {previewItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-gray-200 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <span className="font-extrabold text-xs text-primary flex items-center gap-1.5">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 text-slate-100 rounded-3xl border border-slate-700 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-extrabold text-xs text-blue-400 flex items-center gap-1.5">
                 <Eye size={15} /> Saját Cikk Előnézete
               </span>
-              <button onClick={() => setPreviewItem(null)} className="p-1 text-gray-400 hover:text-gray-600 rounded-full cursor-pointer">
+              <button onClick={() => setPreviewItem(null)} className="p-1 text-slate-400 hover:text-white rounded-full cursor-pointer">
                 <X size={18} />
               </button>
             </div>
             <div className="space-y-3 text-xs">
-              <h2 className="text-xl font-bold text-gray-900">{previewItem.title}</h2>
-              <p className="text-gray-600 font-medium bg-amber-50 p-3 rounded-xl border border-amber-200">
+              <h2 className="text-xl font-bold text-white">{previewItem.title}</h2>
+              <p className="text-slate-200 font-medium bg-slate-800/80 p-3 rounded-xl border border-slate-700">
                 {previewItem.excerpt}
               </p>
-              <div className="prose text-xs whitespace-pre-line text-gray-800">{previewItem.content}</div>
+              <div className="prose prose-invert text-xs whitespace-pre-line text-slate-300">{previewItem.content}</div>
             </div>
-            <div className="pt-4 border-t border-gray-200 flex justify-end">
-              <button onClick={() => setPreviewItem(null)} className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl cursor-pointer">
+            <div className="pt-4 border-t border-slate-800 flex justify-end">
+              <button onClick={() => setPreviewItem(null)} className="px-4 py-2 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs rounded-xl cursor-pointer">
                 Bezárás
               </button>
             </div>

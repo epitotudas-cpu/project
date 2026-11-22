@@ -136,6 +136,126 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
   const selectClass =
     'border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors';
 
+  if (readOnly) {
+    return (
+      <div className="space-y-6 sm:space-y-8 animate-fadeIn text-slate-100">
+        {/* Partner Header Banner */}
+        <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/20 rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+              <Wrench className="w-3.5 h-3.5" /> Katalógus
+            </div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+              Eszközök &amp; Szerszámok katalógusa
+            </h1>
+            <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              {tools.length} eszköz rögzítve a platform katalógusában.
+            </p>
+          </div>
+          {!loading && (
+            <button
+              onClick={loadTools}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer shrink-0"
+            >
+              <RefreshCw size={14} /> Frissítés
+            </button>
+          )}
+        </div>
+
+        {/* Filter Bar */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 min-w-0">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Keresés név, típus, márka..."
+              className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500 transition-colors"
+            />
+          </div>
+          <select
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          >
+            <option value="all" className="bg-slate-900 text-white">Összes státusz</option>
+            <option value="active" className="bg-slate-900 text-white">Aktív</option>
+            <option value="discontinued" className="bg-slate-900 text-white">Kivezetve</option>
+          </select>
+        </div>
+
+        {error && (
+          <div className="p-4 bg-red-950/50 border border-red-500/30 rounded-2xl flex items-center gap-3">
+            <AlertCircle size={18} className="text-red-400 flex-shrink-0" />
+            <p className="text-red-300 text-xs flex-1">{error}</p>
+            <button onClick={loadTools} className="text-red-300 text-xs font-bold hover:text-white cursor-pointer">
+              Újrapróbálás
+            </button>
+          </div>
+        )}
+
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+                  <th className="px-4 py-3">Eszköz</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Típus</th>
+                  <th className="px-4 py-3">Leírás</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Státusz</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {loading &&
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-4 py-3.5"><div className="h-4 w-40 bg-slate-800 rounded animate-pulse" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-20 bg-slate-800 rounded animate-pulse" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-48 bg-slate-800 rounded animate-pulse" /></td>
+                      <td className="px-4 py-3.5"><div className="h-5 w-20 bg-slate-800 rounded-full animate-pulse" /></td>
+                    </tr>
+                  ))}
+
+                {!loading && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-14 text-center">
+                      <Wrench size={32} className="mx-auto text-slate-600 mb-3" />
+                      <p className="text-slate-400 text-xs">
+                        {search || statusFilter !== 'all' ? 'Nincs a szűrőknek megfelelő eszköz.' : 'Még nincs eszköz.'}
+                      </p>
+                    </td>
+                  </tr>
+                )}
+
+                {!loading &&
+                  filtered.map((t) => {
+                    const badge = STATUS_BADGE[t.status];
+                    return (
+                      <tr key={t.id} id={`admin-tool-${t.id}`} className="hover:bg-slate-800/40 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <p className="font-bold text-white line-clamp-1">{t.name}</p>
+                          {t.brand && <p className="text-slate-400 text-[11px] line-clamp-1 mt-0.5">{t.brand}</p>}
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-300 whitespace-nowrap">{t.type ?? '—'}</td>
+                        <td className="px-4 py-3.5 text-slate-400 max-w-xs">
+                          <p className="line-clamp-2">{t.description ?? '—'}</p>
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badge.class}`}>
+                            {badge.label}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-6" style={{ color: textColor }}>
       <div className="flex items-start justify-between gap-4 flex-wrap border-b pb-4" style={{ borderColor: cardBorder }}>

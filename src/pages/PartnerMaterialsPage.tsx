@@ -311,46 +311,48 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 p-6 space-y-6 shadow-sm">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
-        <div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/10 text-primary font-bold text-xs rounded-full">
-            <Building2 size={13} className="text-accent" /> {currentPartner.name} • Partner Portal
-          </span>
-          <h2 className="text-xl font-extrabold text-gray-900 mt-1">Saját Építőanyagok &amp; Termékek</h2>
-          <p className="text-xs text-gray-500">
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/20 rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+            <Building2 size={13} /> {currentPartner.name} • Partner Portal
+          </div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            Saját Építőanyagok &amp; Termékek
+          </h2>
+          <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
             Kezelje saját építőanyagait, töltsön fel műszaki adatlapokat és kövesse az adminisztrátori jóváhagyás státuszát.
           </p>
         </div>
 
         <button
           onClick={handleOpenCreateModal}
-          className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+          className="w-full sm:w-auto px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
         >
           <Plus size={16} /> Új Építőanyag Hozzáadása
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50 p-3.5 rounded-2xl border border-gray-200">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-slate-900/80 p-3.5 sm:p-4 rounded-2xl border border-slate-800">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Keresés saját anyagok között..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white text-gray-900 placeholder-gray-400 border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-accent"
+            className="w-full bg-slate-800 text-white placeholder-slate-400 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
           />
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center bg-gray-200/70 p-1 rounded-xl text-xs font-bold w-full sm:w-auto">
+        <div className="flex flex-wrap items-center bg-slate-950/70 border border-slate-800 p-1 rounded-xl text-xs font-bold w-full sm:w-auto gap-1">
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              statusFilter === 'all' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600'
+              statusFilter === 'all' ? 'bg-blue-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
             }`}
           >
             Összes ({partnerItems.length})
@@ -358,7 +360,9 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
           <button
             onClick={() => setStatusFilter('published')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              statusFilter === 'published' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-600'
+              statusFilter === 'published'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Publikált
@@ -366,7 +370,9 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
           <button
             onClick={() => setStatusFilter('pending_approval')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              statusFilter === 'pending_approval' ? 'bg-amber-600 text-white shadow-xs' : 'text-gray-600'
+              statusFilter === 'pending_approval'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Jóváhagyásra vár
@@ -374,7 +380,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
           <button
             onClick={() => setStatusFilter('draft')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              statusFilter === 'draft' ? 'bg-gray-700 text-white shadow-xs' : 'text-gray-600'
+              statusFilter === 'draft' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-400 hover:text-white'
             }`}
           >
             Piszkozat
@@ -384,115 +390,117 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
       {/* Materials Table */}
       {filteredItems.length > 0 ? (
-        <div className="border border-gray-200 rounded-2xl overflow-hidden">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">Termék Neve</th>
-                <th className="py-3 px-4">Kategória</th>
-                <th className="py-3 px-4">Dokumentumok</th>
-                <th className="py-3 px-4">Státusz</th>
-                <th className="py-3 px-4 text-right">Műveletek</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={item.main_image_url}
-                        alt={item.name}
-                        className="w-9 h-9 rounded-xl object-cover border border-gray-200 shrink-0"
-                      />
-                      <div>
-                        <span className="font-bold text-gray-900 block">{item.name}</span>
-                        {item.sku && <span className="font-mono text-[10px] text-gray-400">SKU: {item.sku}</span>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-gray-700">{item.category_name}</td>
-                  <td className="py-3 px-4">
-                    {item.documents && item.documents.length > 0 ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-primary text-[11px]">
-                        <FileText size={13} /> {item.documents.length} PDF
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-[11px]">Nincs</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    {item.status === 'published' ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-[11px]">
-                        <CheckCircle2 size={13} /> Publikált
-                      </span>
-                    ) : item.status === 'pending_approval' ? (
-                      <span className="inline-flex items-center gap-1 text-amber-700 font-bold text-[11px] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                        <Clock size={13} /> Jóváhagyásra vár
-                      </span>
-                    ) : item.status === 'rejected' ? (
-                      <span className="inline-flex items-center gap-1 text-red-700 font-bold text-[11px] bg-red-50 px-2 py-0.5 rounded border border-red-200">
-                        <AlertTriangle size={13} /> Elutasítva (Javítandó)
-                      </span>
-                    ) : (
-                      <span className="text-gray-500 font-bold text-[11px]">Piszkozat</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    {(() => {
-                      const canEditOrDelete = isPartnerEditableStatus(item.status);
-                      return (
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            disabled={!canEditOrDelete}
-                            onClick={() => handleOpenEditModal(item)}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              canEditOrDelete
-                                ? 'text-gray-600 hover:text-primary hover:bg-gray-100 cursor-pointer'
-                                : 'text-gray-300 cursor-not-allowed'
-                            }`}
-                            title={
-                              canEditOrDelete
-                                ? 'Szerkesztés'
-                                : 'Jóváhagyott vagy közzétett termék nem szerkeszthető'
-                            }
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={!canEditOrDelete}
-                            onClick={() => handleDeleteItem(item.id)}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              canEditOrDelete
-                                ? 'text-gray-600 hover:text-red-600 hover:bg-gray-100 cursor-pointer'
-                                : 'text-gray-300 cursor-not-allowed'
-                            }`}
-                            title={
-                              canEditOrDelete
-                                ? 'Törlés'
-                                : 'Jóváhagyott vagy közzétett termék nem törölhető'
-                            }
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      );
-                    })()}
-                  </td>
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">Termék Neve</th>
+                  <th className="py-3 px-4">Kategória</th>
+                  <th className="py-3 px-4">Dokumentumok</th>
+                  <th className="py-3 px-4">Státusz</th>
+                  <th className="py-3 px-4 text-right">Műveletek</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {filteredItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={item.main_image_url}
+                          alt={item.name}
+                          className="w-9 h-9 rounded-xl object-cover border border-slate-700 shrink-0"
+                        />
+                        <div>
+                          <span className="font-bold text-white block">{item.name}</span>
+                          {item.sku && <span className="font-mono text-[10px] text-slate-400">SKU: {item.sku}</span>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-slate-300 whitespace-nowrap">{item.category_name}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {item.documents && item.documents.length > 0 ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-blue-400 text-[11px]">
+                          <FileText size={13} /> {item.documents.length} PDF
+                        </span>
+                      ) : (
+                        <span className="text-slate-500 text-[11px]">Nincs</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {item.status === 'published' ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-400 font-bold text-[11px]">
+                          <CheckCircle2 size={13} /> Publikált
+                        </span>
+                      ) : item.status === 'pending_approval' ? (
+                        <span className="inline-flex items-center gap-1 text-amber-300 font-bold text-[11px] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                          <Clock size={13} /> Jóváhagyásra vár
+                        </span>
+                      ) : item.status === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1 text-red-300 font-bold text-[11px] bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/30">
+                          <AlertTriangle size={13} /> Elutasítva (Javítandó)
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-bold text-[11px]">Piszkozat</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      {(() => {
+                        const canEditOrDelete = isPartnerEditableStatus(item.status);
+                        return (
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              disabled={!canEditOrDelete}
+                              onClick={() => handleOpenEditModal(item)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                canEditOrDelete
+                                  ? 'text-slate-300 hover:text-blue-400 hover:bg-slate-800 cursor-pointer'
+                                  : 'text-slate-600 cursor-not-allowed'
+                              }`}
+                              title={
+                                canEditOrDelete
+                                  ? 'Szerkesztés'
+                                  : 'Jóváhagyott vagy közzétett termék nem szerkeszthető'
+                              }
+                            >
+                              <Edit2 size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canEditOrDelete}
+                              onClick={() => handleDeleteItem(item.id)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                canEditOrDelete
+                                  ? 'text-slate-300 hover:text-red-400 hover:bg-slate-800 cursor-pointer'
+                                  : 'text-slate-600 cursor-not-allowed'
+                              }`}
+                              title={
+                                canEditOrDelete
+                                  ? 'Törlés'
+                                  : 'Jóváhagyott vagy közzétett termék nem törölhető'
+                              }
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-gray-50 rounded-2xl p-10 text-center space-y-3 border border-gray-200">
-          <HelpCircle size={32} className="mx-auto text-gray-400" />
-          <h4 className="font-bold text-gray-800 text-sm">Önnek jelenleg nincs saját feltöltött építőanyaga</h4>
-          <p className="text-xs text-gray-500 max-w-sm mx-auto">
-            Hozzon létre új terméket az "+ Új Építőanyag Hozzáadása" gombra kattintva!
+        <div className="bg-slate-900/80 rounded-2xl p-10 text-center space-y-3 border border-slate-800">
+          <HelpCircle size={32} className="mx-auto text-slate-600" />
+          <h4 className="font-bold text-slate-200 text-sm">Önnek jelenleg nincs saját feltöltött építőanyaga</h4>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            Hozzon létre új terméket az „Új Építőanyag Hozzáadása” gombra kattintva!
           </p>
         </div>
       )}

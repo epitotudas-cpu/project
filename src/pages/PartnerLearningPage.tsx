@@ -176,26 +176,28 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
   }
 
   return (
-    <div className="space-y-6 p-6 bg-slate-900/80 rounded-3xl border border-slate-800 shadow-sm text-slate-100">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-100 tracking-tight flex items-center gap-2">
-            <BookOpen className="text-accent" size={24} /> Saját Oktatási Tananyagok &amp; Tesztek
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn text-slate-100">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/20 rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+            <BookOpen size={13} /> {currentPartnerName ? `${currentPartnerName} • ` : ''}Oktatás &amp; Tesztek
+          </div>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            Saját Oktatási Tananyagok &amp; Tesztek
           </h1>
-          <p className="text-slate-400 text-xs font-medium mt-1">
-            🔒 Partner Portál: Hozz létre oktatási anyagokat és teszteket, majd küldd be őket ellenőrzésre az adminisztrátornak.
+          <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
+            Hozz létre oktatási anyagokat és teszteket, majd küldd be őket ellenőrzésre az adminisztrátornak.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             onClick={() => {
               setEditingCourse(null);
               setCourseModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-primary text-white font-extrabold text-xs rounded-xl hover:bg-primary-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+            className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Plus size={15} /> Új Saját Tananyag
           </button>
@@ -204,7 +206,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
               setEditingQuiz(null);
               setQuizModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-accent text-black font-extrabold text-xs rounded-xl hover:bg-amber-400 transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+            className="w-full sm:w-auto px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-blue-500/20"
           >
             <Plus size={15} /> Új Saját Teszt
           </button>
@@ -212,23 +214,23 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       </div>
 
       {/* Tabs Bar */}
-      <div className="bg-slate-900/80 rounded-2xl p-4 border border-slate-800 shadow-xs flex items-center gap-3">
+      <div className="bg-slate-900/80 rounded-2xl p-3 sm:p-4 border border-slate-800 shadow-lg flex flex-wrap items-center gap-2 sm:gap-3">
         <button
           onClick={() => setActiveTab('courses')}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === 'courses'
-              ? 'bg-primary text-white shadow-md'
-              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              ? 'bg-blue-500 text-slate-950 shadow-md'
+              : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
           }`}
         >
           <BookOpen size={14} /> Saját Tananyagok ({courses.length})
         </button>
         <button
           onClick={() => setActiveTab('quizzes')}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === 'quizzes'
-              ? 'bg-primary text-white shadow-md'
-              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              ? 'bg-blue-500 text-slate-950 shadow-md'
+              : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
           }`}
         >
           <HelpCircle size={14} /> Saját Tesztek ({quizzes.length})
@@ -237,9 +239,9 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
 
       {/* COURSES CARDS */}
       {activeTab === 'courses' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {courses.length === 0 ? (
-            <div className="md:col-span-2 bg-slate-900/80 rounded-3xl border border-slate-800 p-12 text-center space-y-3 shadow-xs">
+            <div className="md:col-span-2 bg-slate-900/80 rounded-2xl border border-slate-800 p-10 sm:p-12 text-center space-y-3 shadow-lg">
               <BookOpen size={48} className="mx-auto text-slate-600" />
               <h3 className="text-lg font-bold text-slate-200">Még nincs saját tananyagod</h3>
               <p className="text-slate-400 text-xs">Hozz létre egy új tananyagot a fenti gombra kattintva!</p>
@@ -254,7 +256,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
               return (
                 <div
                   key={course.id}
-                  className="bg-slate-900/80 rounded-3xl border border-slate-800 p-6 shadow-xs space-y-4 flex flex-col justify-between"
+                  className="bg-slate-900/80 rounded-2xl border border-slate-800 p-5 sm:p-6 shadow-lg space-y-4 flex flex-col justify-between"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
@@ -266,12 +268,12 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-slate-100">{course.title}</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-white">{course.title}</h3>
                     <p className="text-xs text-slate-400 font-medium line-clamp-2">{course.excerpt}</p>
 
                     {/* REJECTION NOTE CALLOUT IF REJECTED BY ADMIN */}
                     {course.status === 'rejected' && course.rejection_note && (
-                      <div className="bg-red-950/40 border border-red-500/30 rounded-2xl p-3 text-xs space-y-1">
+                      <div className="bg-red-950/40 border border-red-500/30 rounded-xl p-3 text-xs space-y-1">
                         <span className="font-extrabold text-red-300 flex items-center gap-1">
                           <AlertCircle size={14} /> Adminisztrátori Indoklás Az Elutasításról:
                         </span>
@@ -280,11 +282,11 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                     )}
                   </div>
 
-                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
                     {course.status === 'draft' || course.status === 'rejected' ? (
                       <button
                         onClick={() => handleSubmitForReviewCourse(course.id)}
-                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-2 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
                       >
                         <Send size={13} /> Beküldés Ellenőrzésre
                       </button>
@@ -298,7 +300,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                           setEditingCourse(course);
                           setCourseModalOpen(true);
                         }}
-                        className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl cursor-pointer"
                         title="Szerkesztés"
                         aria-label="Tananyag szerkesztése"
                       >
@@ -306,7 +308,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                       </button>
                       <button
                         onClick={() => handleDeleteCourse(course.id)}
-                        className="p-2 text-slate-300 hover:text-red-400 bg-slate-800 hover:bg-slate-700 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-red-400 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl cursor-pointer"
                         title="Törlés"
                         aria-label="Tananyag törlése"
                       >
@@ -323,9 +325,9 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
 
       {/* QUIZZES CARDS */}
       {activeTab === 'quizzes' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {quizzes.length === 0 ? (
-            <div className="md:col-span-2 bg-slate-900/80 rounded-3xl border border-slate-800 p-12 text-center space-y-3 shadow-xs">
+            <div className="md:col-span-2 bg-slate-900/80 rounded-2xl border border-slate-800 p-10 sm:p-12 text-center space-y-3 shadow-lg">
               <HelpCircle size={48} className="mx-auto text-slate-600" />
               <h3 className="text-lg font-bold text-slate-200">Még nincs saját teszted</h3>
               <p className="text-slate-400 text-xs">Hozz létre egy új tesztet a fenti gombra kattintva!</p>
@@ -340,7 +342,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
               return (
                 <div
                   key={quiz.id}
-                  className="bg-slate-900/80 rounded-3xl border border-slate-800 p-6 shadow-xs space-y-4 flex flex-col justify-between"
+                  className="bg-slate-900/80 rounded-2xl border border-slate-800 p-5 sm:p-6 shadow-lg space-y-4 flex flex-col justify-between"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
@@ -352,11 +354,11 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-slate-100">{quiz.title}</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-white">{quiz.title}</h3>
                     <p className="text-xs text-slate-400 font-medium line-clamp-2">{quiz.description}</p>
 
                     {quiz.status === 'rejected' && quiz.rejection_note && (
-                      <div className="bg-red-950/40 border border-red-500/30 rounded-2xl p-3 text-xs space-y-1">
+                      <div className="bg-red-950/40 border border-red-500/30 rounded-xl p-3 text-xs space-y-1">
                         <span className="font-extrabold text-red-300 flex items-center gap-1">
                           <AlertCircle size={14} /> Adminisztrátori Indoklás Az Elutasításról:
                         </span>
@@ -365,11 +367,11 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                     )}
                   </div>
 
-                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
                     {quiz.status === 'draft' || quiz.status === 'rejected' ? (
                       <button
                         onClick={() => handleSubmitForReviewQuiz(quiz.id)}
-                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-2 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
                       >
                         <Send size={13} /> Beküldés Ellenőrzésre
                       </button>
@@ -383,7 +385,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                           setEditingQuiz(quiz);
                           setQuizModalOpen(true);
                         }}
-                        className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl cursor-pointer"
                         title="Szerkesztés"
                         aria-label="Teszt szerkesztése"
                       >
@@ -391,7 +393,7 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
                       </button>
                       <button
                         onClick={() => handleDeleteQuiz(quiz.id)}
-                        className="p-2 text-slate-300 hover:text-red-400 bg-slate-800 hover:bg-slate-700 rounded-xl"
+                        className="p-2 text-slate-300 hover:text-red-400 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl cursor-pointer"
                         title="Törlés"
                         aria-label="Teszt törlése"
                       >
