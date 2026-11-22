@@ -36,6 +36,30 @@ interface PartnerMaterialsPageProps {
   onNavigateHome?: () => void;
 }
 
+const DOC_TYPE_OPTIONS: Array<{ value: MaterialDocument['doc_type']; label: string }> = [
+  { value: 'muszaki_adatlap', label: 'Műszaki adatlap' },
+  { value: 'teljesitmenynyilatkozat', label: 'Teljesítménynyilatkozat' },
+  { value: 'biztonsagi_adatlap', label: 'Biztonsági adatlap' },
+  { value: 'utmutato', label: 'Alkalmazástechnikai útmutató' },
+  { value: 'katalogus', label: 'Termékkatalógus' },
+  { value: 'tanusitvany', label: 'Tanúsítvány / ÉME' },
+  { value: 'egyeb', label: 'Egyéb dokumentum' },
+];
+
+const DOC_TYPE_LABELS: Record<MaterialDocument['doc_type'], string> = {
+  muszaki_adatlap: 'Műszaki adatlap',
+  teljesitmenynyilatkozat: 'Teljesítménynyilatkozat',
+  biztonsagi_adatlap: 'Biztonsági adatlap',
+  utmutato: 'Alkalmazástechnikai útmutató',
+  katalogus: 'Termékkatalógus',
+  tanusitvany: 'Tanúsítvány / ÉME',
+  egyeb: 'Egyéb dokumentum',
+};
+
+function isPartnerEditableStatus(status: MaterialItem['status']): boolean {
+  return status === 'draft' || status === 'pending_approval' || status === 'rejected';
+}
+
 export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterialsPageProps) {
   const toast = useToast();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -79,6 +103,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
   const [docTitleInput, setDocTitleInput] = useState('');
   const [docUrlInput, setDocUrlInput] = useState('');
+  const [docTypeInput, setDocTypeInput] = useState<MaterialDocument['doc_type']>('muszaki_adatlap');
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +152,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       partner_id: currentPartner.id,
       partner_name: currentPartner.name,
       sku: '',
+      barcode: '',
       short_description: '',
       full_description: '',
       application_area: '',
@@ -147,6 +173,10 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       toast.error('Biztonsági figyelmeztetés: Csak a saját anyagait szerkesztheti!');
       return;
     }
+    if (!isPartnerEditableStatus(item.status)) {
+      toast.notify('Jóváhagyott vagy közzétett termék partner által nem módosítható.', 'warning');
+      return;
+    }
     setEditingItem(item);
     setFormData({ ...item });
     setActiveTab('basic');
@@ -160,6 +190,10 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
     // 🔒 SECURITY CHECK: Ensure partner owns item before deleting
     if (item.partner_id !== currentPartner.id) {
       toast.error('Biztonsági figyelmeztetés: Csak a saját anyagait törölheti!');
+      return;
+    }
+    if (!isPartnerEditableStatus(item.status)) {
+      toast.notify('Jóváhagyott vagy közzétett termék partner által nem törölhető.', 'warning');
       return;
     }
 
@@ -190,13 +224,13 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
         slug: generatedSlug,
         category_id: formData.category_id || categories[0]?.id || 'mat-cat-1',
         category_name: selectedCat?.name || formData.category_name || 'Általános Anyagok',
-        subcategory_name: formData.subcategory_name || null,
+        subcategory_name: formData.subcategory_name?.trim() || null,
         brand: formData.brand || currentPartner.name,
-        sku: formData.sku || null,
-        barcode: formData.barcode || null,
+        sku: formData.sku?.trim() || null,
+        barcode: formData.barcode?.trim() || null,
         short_description: formData.short_description,
         full_description: formData.full_description || '',
-        application_area: formData.application_area || null,
+        application_area: formData.application_area?.trim() || null,
         technical_specs: formData.technical_specs || [],
         main_image_url:
           formData.main_image_url ||
@@ -252,8 +286,8 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
       id: `doc-${Date.now()}`,
       title: docTitleInput.trim(),
       file_url: docUrlInput.trim(),
-      doc_type: 'muszaki_adatlap',
-      file_size: 'PDF',
+      doc_type: docTypeInput,
+      file_size: docUrlInput.trim().toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOC',
     };
     setFormData({
       ...formData,
@@ -261,6 +295,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
     });
     setDocTitleInput('');
     setDocUrlInput('');
+    setDocTypeInput('muszaki_adatlap');
   };
 
   const handleRemoveDocument = (docId: string) => {
@@ -399,22 +434,47 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     )}
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleOpenEditModal(item)}
-                        className="p-1.5 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                        title="Szerkesztés"
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteItem(item.id)}
-                        className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                        title="Törlés"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                    {(() => {
+                      const canEditOrDelete = isPartnerEditableStatus(item.status);
+                      return (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            disabled={!canEditOrDelete}
+                            onClick={() => handleOpenEditModal(item)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              canEditOrDelete
+                                ? 'text-gray-600 hover:text-primary hover:bg-gray-100 cursor-pointer'
+                                : 'text-gray-300 cursor-not-allowed'
+                            }`}
+                            title={
+                              canEditOrDelete
+                                ? 'Szerkesztés'
+                                : 'Jóváhagyott vagy közzétett termék nem szerkeszthető'
+                            }
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!canEditOrDelete}
+                            onClick={() => handleDeleteItem(item.id)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              canEditOrDelete
+                                ? 'text-gray-600 hover:text-red-600 hover:bg-gray-100 cursor-pointer'
+                                : 'text-gray-300 cursor-not-allowed'
+                            }`}
+                            title={
+                              canEditOrDelete
+                                ? 'Törlés'
+                                : 'Jóváhagyott vagy közzétett termék nem törölhető'
+                            }
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
@@ -517,6 +577,19 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     </div>
 
                     <div>
+                      <label className="font-bold text-gray-700 block mb-1">Alkategória</label>
+                      <input
+                        type="text"
+                        value={formData.subcategory_name || ''}
+                        onChange={(e) => setFormData({ ...formData, subcategory_name: e.target.value })}
+                        placeholder="pl. Homlokzati Hőszigetelés"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
                       <label className="font-bold text-gray-700 block mb-1">Márka / Gyártó</label>
                       <input
                         type="text"
@@ -525,17 +598,28 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">Cikkszám / Termékkód (SKU)</label>
-                    <input
-                      type="text"
-                      value={formData.sku || ''}
-                      onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                      placeholder="pl. MP-DUBEL-100"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
-                    />
+                    <div>
+                      <label className="font-bold text-gray-700 block mb-1">Cikkszám / Termékkód (SKU)</label>
+                      <input
+                        type="text"
+                        value={formData.sku || ''}
+                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                        placeholder="pl. MP-DUBEL-100"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-gray-700 block mb-1">Vonalkód (EAN / GTIN)</label>
+                      <input
+                        type="text"
+                        value={formData.barcode || ''}
+                        onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                        placeholder="pl. 5998123456789"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -565,6 +649,17 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
                     />
                   </div>
+
+                  <div>
+                    <label className="font-bold text-gray-700 block mb-1">Alkalmazási Terület</label>
+                    <textarea
+                      rows={2}
+                      value={formData.application_area || ''}
+                      onChange={(e) => setFormData({ ...formData, application_area: e.target.value })}
+                      placeholder="pl. Külső teherhordó falak, homlokzati hőszigetelés vagy beltéri burkolás..."
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -590,6 +685,45 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                       ))}
                     </div>
                   )}
+
+                  {(() => {
+                    const counts = new Map<string, { label: string; count: number }>();
+                    (formData.technical_specs || []).forEach((s) => {
+                      const trimmed = (s.label || '').trim();
+                      if (!trimmed) return;
+                      const key = trimmed.toLowerCase();
+                      const prev = counts.get(key);
+                      if (prev) {
+                        prev.count += 1;
+                      } else {
+                        counts.set(key, { label: trimmed, count: 1 });
+                      }
+                    });
+                    const duplicates = Array.from(counts.values())
+                      .filter((entry) => entry.count > 1)
+                      .map((entry) => entry.label);
+                    const pendingNorm = specLabelInput.trim().toLowerCase();
+                    const pendingDuplicate = Boolean(pendingNorm && counts.has(pendingNorm));
+
+                    return (
+                      <>
+                        {duplicates.length > 0 && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2">
+                            <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <strong>Figyelmeztetés:</strong> A következő műszaki paraméterek többször szerepelnek:{' '}
+                              <span className="font-bold">{duplicates.join(', ')}</span>. A termék-összehasonlítóban ezek egy sorba kerülnek. A mentés ettől függetlenül engedélyezett.
+                            </div>
+                          </div>
+                        )}
+                        {pendingDuplicate && (
+                          <p className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
+                            <AlertTriangle size={12} /> A(z) „{specLabelInput.trim()}” paraméternév már szerepel a listában.
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -647,9 +781,14 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     {formData.documents && formData.documents.length > 0 && (
                       <div className="space-y-1.5">
                         {formData.documents.map((d) => (
-                          <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-center justify-between">
-                            <span className="font-bold text-gray-900">{d.title}</span>
-                            <button type="button" onClick={() => handleRemoveDocument(d.id)} className="text-red-600 p-1 cursor-pointer">
+                          <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-bold text-gray-900 truncate">{d.title}</span>
+                              <span className="text-[10px] font-semibold bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded-md shrink-0">
+                                {DOC_TYPE_LABELS[d.doc_type] || d.doc_type}
+                              </span>
+                            </div>
+                            <button type="button" onClick={() => handleRemoveDocument(d.id)} className="text-red-600 p-1 cursor-pointer shrink-0">
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -657,7 +796,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                       <input
                         type="text"
                         placeholder="Dokumentum címe (pl. Műszaki_Adatlap.pdf)"
@@ -672,6 +811,18 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                         onChange={(e) => setDocUrlInput(e.target.value)}
                         className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-mono"
                       />
+                      <select
+                        value={docTypeInput}
+                        onChange={(e) => setDocTypeInput(e.target.value as MaterialDocument['doc_type'])}
+                        aria-label="Dokumentum típusa"
+                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer"
+                      >
+                        {DOC_TYPE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <button
                       type="button"
