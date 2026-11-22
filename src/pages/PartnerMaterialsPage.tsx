@@ -171,7 +171,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const handleOpenEditModal = (item: MaterialItem) => {
     // 🔒 SECURITY CHECK: Ensure partner owns item before editing
     if (item.partner_id !== currentPartner.id) {
-      toast.error('Biztonsági figyelmeztetés: Csak a saját anyagait szerkesztheti!');
+      toast.error('Biztonsági figyelmeztetés: Csak a saját termékeit szerkesztheti!');
       return;
     }
     if (!isPartnerEditableStatus(item.status)) {
@@ -190,7 +190,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
     // 🔒 SECURITY CHECK: Ensure partner owns item before deleting
     if (item.partner_id !== currentPartner.id) {
-      toast.error('Biztonsági figyelmeztetés: Csak a saját anyagait törölheti!');
+      toast.error('Biztonsági figyelmeztetés: Csak a saját termékeit törölheti!');
       return;
     }
     if (!isPartnerEditableStatus(item.status)) {
@@ -204,7 +204,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
   const handleSaveForm = async (targetStatus: 'draft' | 'pending_approval') => {
     if (saving) return;
     if (!formData.name || !formData.short_description?.trim()) {
-      toast.notify('Kérjük, töltse ki az anyag nevét és a rövid leírást!', 'warning');
+      toast.notify('Kérjük, töltse ki a termék nevét és a rövid leírást!', 'warning');
       return;
     }
     if ((formData.short_description || '').length > 1000) {
@@ -319,10 +319,10 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             <Building2 size={13} /> {currentPartner.name} • Partner Portal
           </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-            Saját Építőanyagok &amp; Termékek
+            Termékek és anyagok
           </h2>
           <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
-            Kezelje saját építőanyagait, töltsön fel műszaki adatlapokat és kövesse az adminisztrátori jóváhagyás státuszát.
+            Kezelje saját termékeit és építőanyagait, töltsön fel műszaki adatlapokat és kövesse az adminisztrátori jóváhagyás státuszát.
           </p>
         </div>
 
@@ -330,7 +330,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
           onClick={handleOpenCreateModal}
           className="w-full sm:w-auto px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
         >
-          <Plus size={16} /> Új Építőanyag Hozzáadása
+          <Plus size={16} /> Új termék hozzáadása
         </button>
       </div>
 
@@ -340,7 +340,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Keresés saját anyagok között..."
+            placeholder="Keresés saját termékek között..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-slate-800 text-white placeholder-slate-400 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"
@@ -395,7 +395,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Termék Neve</th>
+                  <th className="py-3 px-4">Termék neve</th>
                   <th className="py-3 px-4">Kategória</th>
                   <th className="py-3 px-4">Dokumentumok</th>
                   <th className="py-3 px-4">Státusz</th>
@@ -498,9 +498,9 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
         /* Empty State */
         <div className="bg-slate-900/80 rounded-2xl p-10 text-center space-y-3 border border-slate-800">
           <HelpCircle size={32} className="mx-auto text-slate-600" />
-          <h4 className="font-bold text-slate-200 text-sm">Önnek jelenleg nincs saját feltöltött építőanyaga</h4>
+          <h4 className="font-bold text-slate-200 text-sm">Önnek jelenleg nincs saját feltöltött terméke</h4>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Hozzon létre új terméket az „Új Építőanyag Hozzáadása” gombra kattintva!
+            Hozzon létre új terméket az „Új termék hozzáadása” gombra kattintva!
           </p>
         </div>
       )}
@@ -513,7 +513,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             <div className="bg-slate-950 text-white p-5 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-slate-800">
               <h3 className="text-base font-black flex items-center gap-2">
                 <Layers size={17} className="text-accent" />
-                {editingItem ? 'Saját Építőanyag Szerkesztése' : 'Új Építőanyag Hozzáadása'}
+                {editingItem ? 'Termék szerkesztése' : 'Új termék hozzáadása'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -539,7 +539,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                 { id: 'basic', label: '1. Alapadatok' },
                 { id: 'content', label: '2. Leírás' },
                 { id: 'specs', label: '3. Specifikációk' },
-                { id: 'media', label: '4. Képek & PDF-ek' },
+                { id: 'media', label: '4. Képek és PDF-ek' },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -561,7 +561,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {activeTab === 'basic' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Anyag / Termék Neve *</label>
+                    <label className="font-bold text-slate-300 block mb-1">Termék neve *</label>
                     <input
                       type="text"
                       value={formData.name}
@@ -597,7 +597,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                         type="text"
                         value={formData.subcategory_name || ''}
                         onChange={(e) => setFormData({ ...formData, subcategory_name: e.target.value })}
-                        placeholder="pl. Homlokzati Hőszigetelés"
+                        placeholder="pl. Homlokzati hőszigetelés"
                         className="w-full bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-accent"
                       />
                     </div>
@@ -605,7 +605,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="font-bold text-slate-300 block mb-1">Márka / Gyártó</label>
+                      <label className="font-bold text-slate-300 block mb-1">Márka / gyártó</label>
                       <input
                         type="text"
                         value={formData.brand}
@@ -615,7 +615,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                     </div>
 
                     <div>
-                      <label className="font-bold text-slate-300 block mb-1">Cikkszám / Termékkód (SKU)</label>
+                      <label className="font-bold text-slate-300 block mb-1">Cikkszám / termékkód (SKU)</label>
                       <input
                         type="text"
                         value={formData.sku || ''}
@@ -643,7 +643,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {activeTab === 'content' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1.5">Rövid Leírás *</label>
+                    <label className="font-bold text-slate-300 block mb-1.5">Rövid leírás *</label>
                     <RichTextEditor
                       value={formData.short_description || ''}
                       onChange={(md) => setFormData((prev) => ({ ...prev, short_description: md }))}
@@ -653,12 +653,12 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                       backgroundColor="#1e293b"
                       borderColor="#334155"
                       textColor="#f1f5f9"
-                      ariaLabel="Rövid Leírás"
+                      ariaLabel="Rövid leírás"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1.5">Részletes Leírás &amp; Előnyök</label>
+                    <label className="font-bold text-slate-300 block mb-1.5">Részletes leírás és előnyök</label>
                     <RichTextEditor
                       value={formData.full_description || ''}
                       onChange={(md) => setFormData((prev) => ({ ...prev, full_description: md }))}
@@ -667,12 +667,12 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                       backgroundColor="#1e293b"
                       borderColor="#334155"
                       textColor="#f1f5f9"
-                      ariaLabel="Részletes Leírás"
+                      ariaLabel="Részletes leírás"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Alkalmazási Terület</label>
+                    <label className="font-bold text-slate-300 block mb-1">Alkalmazási terület</label>
                     <textarea
                       rows={2}
                       value={formData.application_area || ''}
@@ -688,7 +688,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {activeTab === 'specs' && (
                 <div className="space-y-4">
                   <h4 className="font-extrabold text-slate-100 flex items-center gap-1.5">
-                    <Wrench size={15} className="text-accent" /> Műszaki Adatok
+                    <Wrench size={15} className="text-accent" /> Műszaki adatok
                   </h4>
 
                   {formData.technical_specs && formData.technical_specs.length > 0 && (
@@ -785,7 +785,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
               {activeTab === 'media' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Fő Kép URL *</label>
+                    <label className="font-bold text-slate-300 block mb-1">Fő kép URL *</label>
                     <input
                       type="text"
                       value={formData.main_image_url}
@@ -798,7 +798,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
                   {/* Documents */}
                   <div className="border-t border-slate-800 pt-4 space-y-2">
-                    <h5 className="font-extrabold text-slate-100">Csatolt PDF Dokumentumok</h5>
+                    <h5 className="font-extrabold text-slate-100">Csatolt PDF-dokumentumok</h5>
                     {formData.documents && formData.documents.length > 0 && (
                       <div className="space-y-1.5">
                         {formData.documents.map((d) => (
@@ -827,7 +827,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                       />
                       <input
                         type="text"
-                        placeholder="PDF Fájl URL (pl. /docs/adatlap.pdf)"
+                        placeholder="PDF-fájl URL (pl. /docs/adatlap.pdf)"
                         value={docUrlInput}
                         onChange={(e) => setDocUrlInput(e.target.value)}
                         className="bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent"
@@ -850,7 +850,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                       onClick={handleAddDocument}
                       className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-lg cursor-pointer"
                     >
-                      + PDF Csatolása
+                      + PDF csatolása
                     </button>
                   </div>
                 </div>
@@ -874,7 +874,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                   onClick={() => handleSaveForm('draft')}
                   className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Save size={14} /> {saving ? 'Mentés...' : 'Mentés Piszkozatként'}
+                  <Save size={14} /> {saving ? 'Mentés...' : 'Mentés piszkozatként'}
                 </button>
                 <button
                   type="button"
@@ -882,7 +882,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
                   onClick={() => handleSaveForm('pending_approval')}
                   className="px-5 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-50 text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Send size={14} /> {saving ? 'Küldés...' : 'Beküldés Ellenőrzésre'}
+                  <Send size={14} /> {saving ? 'Küldés...' : 'Beküldés ellenőrzésre'}
                 </button>
               </div>
             </div>
@@ -892,8 +892,8 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
       <ConfirmDialog
         open={Boolean(confirmDeleteId)}
-        title="Saját anyag törlése"
-        message="Biztosan törölni szeretné ezt a saját anyagot?"
+        title="Termék törlése"
+        message="Biztosan törölni szeretné ezt a terméket?"
         confirmLabel="Törlés"
         destructive
         onConfirm={async () => {
