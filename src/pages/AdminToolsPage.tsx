@@ -146,7 +146,7 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
               <Wrench className="w-3.5 h-3.5" /> Katalógus
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              Eszközök &amp; Szerszámok katalógusa
+              Eszközök &amp; gépek enciklopédiája
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
               {tools.length} eszköz rögzítve a platform katalógusában.
@@ -261,7 +261,7 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
       <div className="flex items-start justify-between gap-4 flex-wrap border-b pb-4" style={{ borderColor: cardBorder }}>
         <div>
           <h1 style={{ color: textColor }} className="text-2xl font-black flex items-center gap-2.5">
-            <Wrench style={{ color: cardHighlight }} size={28} /> Eszközök &amp; Szerszámok katalógusa
+            <Wrench style={{ color: cardHighlight }} size={28} /> Eszközök &amp; gépek enciklopédiája
           </h1>
           <p className="text-sm text-gray-400 mt-1">{tools.length} eszköz rögzítve</p>
         </div>

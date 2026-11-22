@@ -802,7 +802,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
               <Home size={13} /> Főoldal
             </button>
             <ChevronRight size={13} />
-            <span className="text-accent font-bold">Eszközök & Gépek Enciklopédiája</span>
+            <span className="text-accent font-bold">Eszközök & gépek enciklopédiája</span>
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -854,7 +854,7 @@ export default function ToolPage({ onNavigate }: ToolPageProps) {
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Gép & Szerszám Katalógus',
+            label: 'Eszközök & gépek enciklopédiája',
             page: 'tool',
             icon: <Wrench size={14} className="text-accent" />,
             active: activeViewTab === 'catalog' && !selectedTool,

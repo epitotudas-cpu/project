@@ -155,7 +155,7 @@ export default function MaterialsPage({ onNavigate }: MaterialsPageProps) {
         ariaLabel="Eszközök navigáció"
         onNavigate={onNavigate}
         items={[
-          { label: 'Gép & Szerszám Katalógus', page: 'tool', icon: <Wrench size={14} className="text-accent" />, active: false },
+          { label: 'Eszközök & gépek enciklopédiája', page: 'tool', icon: <Wrench size={14} className="text-accent" />, active: false },
           { label: 'Anyagok', page: 'materials', icon: <Layers size={14} className="text-accent" />, active: true },
           { label: 'Szoftverek', page: 'software', icon: <Package size={14} className="text-accent" />, active: false },
           { label: 'Eszközválasztó Modul', page: 'valaszto', icon: <Sparkles size={14} className="text-accent" />, active: false },

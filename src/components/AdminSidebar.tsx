@@ -60,7 +60,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'categories', label: 'Kategóriák', icon: FolderTree },
       { id: 'glossary', label: 'Szakmai Kislexikon', icon: BookOpen },
       { id: 'knowledge-hub', label: 'Munkavédelem & Szabványok', icon: ShieldAlert },
-      { id: 'tools', label: 'Eszközök, Gépek & Szoftverek', icon: Wrench },
+      { id: 'tools', label: 'Eszközök & gépek enciklopédiája', icon: Wrench },
       { id: 'books', label: 'Szakmai Könyvek', icon: Library },
     ],
   },

@@ -38,7 +38,7 @@ export const DEFAULT_NAV_ITEMS: MenuItem[] = [
   { id: 'sub-learning-flashcards', label: 'Tanulókártyák', page: 'learning?tab=flashcards', parentId: 'nav-learning', isActive: true, displayOrder: 3 },
 
   // Eszközök Submenu
-  { id: 'sub-tools-cat', label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
+  { id: 'sub-tools-cat', label: 'Eszközök & gépek enciklopédiája', page: 'tool', parentId: 'nav-tool', isActive: true, displayOrder: 1 },
   { id: 'sub-materials', label: 'Anyagok', page: 'materials', parentId: 'nav-tool', isActive: true, displayOrder: 2 },
   { id: 'sub-software', label: 'Szoftverek', page: 'software', parentId: 'nav-tool', isActive: true, displayOrder: 3 },
   { id: 'sub-selector', label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', isActive: true, displayOrder: 4 },
@@ -143,7 +143,7 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
     'sub-calc': { label: 'Számítások & Kalkulátorok', page: 'calculations', parentId: 'nav-tudastar', displayOrder: 3 },
     'sub-safety': { label: 'Munkavédelem', page: 'safety', parentId: 'nav-tudastar', displayOrder: 4 },
     'sub-standards': { label: 'Szabályok, szabványok', page: 'standards', parentId: 'nav-tudastar', displayOrder: 5 },
-    'sub-tools-cat': { label: 'Gép & Szerszám Katalógus', page: 'tool', parentId: 'nav-tool', displayOrder: 1 },
+    'sub-tools-cat': { label: 'Eszközök & gépek enciklopédiája', page: 'tool', parentId: 'nav-tool', displayOrder: 1 },
     'sub-materials': { label: 'Anyagok', page: 'materials', parentId: 'nav-tool', displayOrder: 2 },
     'sub-software': { label: 'Szoftverek', page: 'software', parentId: 'nav-tool', displayOrder: 3 },
     'sub-selector': { label: 'Eszközválasztó Modul', page: 'valaszto', parentId: 'nav-tool', displayOrder: 4 },

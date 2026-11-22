@@ -63,7 +63,7 @@ const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: strin
   { id: 'partner_products', moduleId: 'partner_products', label: 'Termékek & Anyagok', icon: Package },
   { id: 'partner_articles', moduleId: 'partner_profile', label: 'Szakmai Cikkek & Útmutatók', icon: FileText },
   { id: 'partner_learning', moduleId: 'partner_profile', label: 'Oktatási Anyagok & Tesztek', icon: GraduationCap },
-  { id: 'catalog', moduleId: 'catalog', label: 'Gép & Szerszám Katalógus', icon: Wrench },
+  { id: 'catalog', moduleId: 'catalog', label: 'Eszközök & gépek enciklopédiája', icon: Wrench },
   { id: 'partner_stats', moduleId: 'partner_stats', label: 'Statisztikák & Teljesítmény', icon: BarChart3 },
 ];
 

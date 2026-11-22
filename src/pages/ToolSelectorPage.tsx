@@ -281,7 +281,7 @@ export default function ToolSelectorPage({ onNavigate }: ToolSelectorPageProps) 
         onNavigate={onNavigate}
         items={[
           {
-            label: 'Gép & Szerszám Katalógus',
+            label: 'Eszközök & gépek enciklopédiája',
             page: 'tool',
             icon: <Wrench size={14} className="text-accent" />,
             active: false,
