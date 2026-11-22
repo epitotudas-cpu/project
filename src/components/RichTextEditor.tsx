@@ -165,12 +165,12 @@ export default function RichTextEditor({
           borderColor: isOverLimit ? '#ef4444' : borderColor || '#334155',
           color: textColor || '#f1f5f9',
         }}
-        className="rounded-xl border overflow-hidden focus-within:ring-2 focus-within:ring-amber-400/50 transition-shadow"
+        className="rounded-xl border overflow-clip focus-within:ring-2 focus-within:ring-amber-400/50 transition-shadow"
       >
         {/* Toolbar */}
         <div
           style={{ borderColor: borderColor || '#334155' }}
-          className="flex flex-wrap items-center gap-1 px-2.5 py-2 bg-slate-900/90 border-b"
+          className="sticky top-0 z-10 flex flex-wrap items-center gap-1 px-2.5 py-2 bg-slate-900/95 border-b"
         >
           <button
             type="button"

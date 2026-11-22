@@ -735,10 +735,10 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
       {/* ── CREATE / EDIT MODAL FOR PARTNER ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 text-slate-100 rounded-3xl border border-slate-700 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 text-slate-100 rounded-3xl border border-slate-700 max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col">
             {/* Header */}
-            <div className="bg-slate-950 text-white p-5 rounded-t-3xl sticky top-0 z-10 flex items-center justify-between border-b border-slate-800">
+            <div className="bg-slate-950 text-white p-5 rounded-t-3xl shrink-0 z-10 flex items-center justify-between border-b border-slate-800">
               <h3 className="text-base font-black flex items-center gap-2">
                 <Layers size={17} className="text-accent" />
                 {editingItem ? 'Termék szerkesztése' : 'Új termék hozzáadása'}
@@ -755,7 +755,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
 
             {/* Rejection Alert if editing rejected item */}
             {formData.status === 'rejected' && formData.rejection_note && (
-              <div className="bg-red-950/50 border-b border-red-800/60 p-4 space-y-1">
+              <div className="bg-red-950/50 border-b border-red-800/60 p-4 space-y-1 shrink-0">
                 <span className="font-extrabold text-red-300 text-xs flex items-center gap-1">
                   <AlertTriangle size={14} /> AZ ADMINISZTRÁTOR MEGJEGYZÉSE AZ ELUTASÍTÁSHOZ:
                 </span>
@@ -764,7 +764,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             )}
 
             {/* Subnav Tabs */}
-            <div className="flex border-b border-slate-800 bg-slate-950/60 px-5 pt-3 gap-2 overflow-x-auto">
+            <div className="flex border-b border-slate-800 bg-slate-950/60 px-5 pt-3 gap-2 overflow-x-auto shrink-0">
               {[
                 { id: 'basic', label: '1. Alapadatok' },
                 { id: 'content', label: '2. Leírás' },
@@ -786,7 +786,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             </div>
 
             {/* Form */}
-            <div className="p-6 space-y-5 text-xs flex-1 text-slate-100">
+            <div className="p-6 space-y-5 text-xs flex-1 min-h-0 overflow-y-auto text-slate-100">
               {/* TAB 1: BASIC INFO */}
               {activeTab === 'basic' && (
                 <div className="space-y-4">
@@ -1286,7 +1286,7 @@ export default function PartnerMaterialsPage({ currentPartner }: PartnerMaterial
             </div>
 
             {/* Partner Responsibility Notice & Modal Actions */}
-            <div className="bg-slate-950/80 border-t border-slate-800 p-4 px-6 rounded-b-3xl space-y-3">
+            <div className="bg-slate-950/80 border-t border-slate-800 p-4 px-6 rounded-b-3xl space-y-3 shrink-0">
               <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl px-3 py-2 text-[11px] text-slate-300 flex items-start gap-2">
                 <AlertTriangle size={14} className="text-blue-400 shrink-0 mt-0.5" />
                 <span>
