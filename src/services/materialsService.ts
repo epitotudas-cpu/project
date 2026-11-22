@@ -450,7 +450,7 @@ export async function saveMaterialsLocal(
 
 export async function setMaterialStatusAsAdmin(
   itemId: string,
-  status: 'published' | 'rejected',
+  status: 'published' | 'rejected' | 'draft',
   rejectionNote: string | null
 ): Promise<MaterialItem[]> {
   const latest = await readAppConfigWithVersion<MaterialItem[]>(

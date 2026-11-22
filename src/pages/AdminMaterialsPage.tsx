@@ -145,6 +145,7 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
   const [rejectModalItem, setRejectModalItem] = useState<MaterialItem | null>(null);
   const [rejectionNoteInput, setRejectionNoteInput] = useState('');
   const [publishConfirmItem, setPublishConfirmItem] = useState<MaterialItem | null>(null);
+  const [unpublishConfirmItem, setUnpublishConfirmItem] = useState<MaterialItem | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
   // Form State
@@ -294,6 +295,21 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       return;
     }
     await executePublish(item);
+  };
+
+  const executeUnpublish = async (item: MaterialItem) => {
+    if (publishingId) return;
+    setPublishingId(item.id);
+    try {
+      const savedList = await setMaterialStatusAsAdmin(item.id, 'draft', null);
+      setItems(savedList);
+      setUnpublishConfirmItem(null);
+      toast.success(`"${item.name}" elrejtve a nyilvános felületről.`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a termék elrejtése során.');
+    } finally {
+      setPublishingId(null);
+    }
   };
 
   const handleRejectConfirm = async () => {
@@ -467,10 +483,10 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
       <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl border shadow-xl">
         <div>
           <h1 style={{ color: textColor }} className="text-2xl font-black">
-            Építőanyagok &amp; Gyártói Katalógus Kezelése
+            Partneri termékek kezelése
           </h1>
           <p className="text-xs text-gray-400 mt-1">
-            Partnerek által feltöltött anyagok jóváhagyása, publikálása, kategóriák és műszaki adatok adminisztrációja.
+            Publikált és partneri termékek utólagos felügyelete, moderációja, kategóriák és műszaki adatok adminisztrációja.
           </p>
         </div>
 
@@ -680,15 +696,27 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      {/* Approve Button */}
+                      {/* Approve / Publish Button */}
                       {item.status !== 'published' && (
                         <button
                           onClick={() => handleApprovePublish(item)}
                           disabled={publishingId === item.id}
                           className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                          title="Jóváhagyás és Publikálás"
+                          title="Publikálás a nyilvános felületre"
                         >
                           <Check size={12} /> Publikálás
+                        </button>
+                      )}
+
+                      {/* Unpublish / Hide Button (Post-moderation) */}
+                      {item.status === 'published' && (
+                        <button
+                          onClick={() => setUnpublishConfirmItem(item)}
+                          disabled={publishingId === item.id}
+                          className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-50 text-amber-300 border border-amber-500/40 text-[11px] font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                          title="Termék elrejtése a nyilvános felületről"
+                        >
+                          <Ban size={12} /> Elrejtés
                         </button>
                       )}
 
@@ -1484,6 +1512,24 @@ export default function AdminMaterialsPage({ initialSearchQuery = '' }: AdminMat
           </div>
         );
       })()}
+      <ConfirmDialog
+        open={Boolean(unpublishConfirmItem)}
+        title="Termék elrejtése (publikálás visszavonása)"
+        message={`Biztosan elrejti a(z) „${unpublishConfirmItem?.name || ''}” terméket?\n\nA termék a nyilvános felületen többé nem lesz látható, státusza piszkozatra (draft) módosul. Később bármikor újra publikálható.`}
+        confirmLabel="Elrejtés"
+        destructive
+        busy={Boolean(unpublishConfirmItem && publishingId === unpublishConfirmItem.id)}
+        onConfirm={() => {
+          if (unpublishConfirmItem) {
+            executeUnpublish(unpublishConfirmItem);
+          }
+        }}
+        onCancel={() => {
+          if (!publishingId) {
+            setUnpublishConfirmItem(null);
+          }
+        }}
+      />
       <ConfirmDialog
         open={Boolean(deleteMaterialId)}
         title="Építőanyag törlése"
