@@ -5,9 +5,20 @@ import { listTools, setToolStatus, deleteTool } from '../services/toolService';
 import { useToast } from '../components/ToastProvider';
 import EditToolModal from '../components/EditToolModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import PaginationControls, { usePagination } from '../components/PaginationControls';
 import { useSiteSettings, adjustColorBrightness, getContrastTextColor } from '../services/siteSettingsService';
 
 type StatusFilter = 'all' | Tool['status'];
+
+const ITEMS_PER_PAGE = 20;
+
+function normalizeSearchText(value: string): string {
+  return value
+    .toLocaleLowerCase('hu-HU')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
 
 const STATUS_BADGE: Record<Tool['status'], { label: string; class: string }> = {
   active: { label: 'Aktív', class: 'bg-green-500/10 text-green-400 border-green-500/20' },
@@ -25,6 +36,7 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(initialSearchQuery || '');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [editing, setEditing] = useState<Tool | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -41,30 +53,50 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
     setLoading(true);
     setError(null);
     try {
-      const data = await listTools({ status: statusFilter });
+      const data = await listTools({ status: 'all' });
       setTools(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Hiba történt az eszközök betöltésekor.');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
     loadTools();
   }, [loadTools]);
 
+  const availableCategories = useMemo(() => {
+    return Array.from(
+      new Set(
+        tools
+          .map((t) => (t.type ?? '').trim())
+          .filter((type) => type.length > 0)
+      )
+    ).sort((a, b) => a.localeCompare(b, 'hu'));
+  }, [tools]);
+
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return tools;
-    return tools.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        (t.type ?? '').toLowerCase().includes(q) ||
-        (t.brand ?? '').toLowerCase().includes(q) ||
-        (t.description ?? '').toLowerCase().includes(q)
-    );
-  }, [tools, search]);
+    const q = normalizeSearchText(search);
+    return tools.filter((t) => {
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      if (categoryFilter !== 'all' && (t.type ?? '').trim() !== categoryFilter) return false;
+      if (!q) return true;
+      return (
+        normalizeSearchText(t.name).includes(q) ||
+        normalizeSearchText(t.type ?? '').includes(q) ||
+        normalizeSearchText(t.subtype ?? '').includes(q) ||
+        normalizeSearchText(t.brand ?? '').includes(q)
+      );
+    });
+  }, [tools, search, categoryFilter, statusFilter]);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems,
+  } = usePagination(filtered, ITEMS_PER_PAGE, `${search}|${categoryFilter}|${statusFilter}`);
 
   useEffect(() => {
     if (search && filtered.length > 0) {
@@ -169,10 +201,20 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Keresés név, típus, márka..."
+              placeholder="Keresés eszköz vagy gép neve alapján..."
               className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-400 rounded-xl pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
+          <select
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="all" className="bg-slate-900 text-white">Összes kategória</option>
+            {availableCategories.map((cat) => (
+              <option key={cat} value={cat} className="bg-slate-900 text-white">{cat}</option>
+            ))}
+          </select>
           <select
             className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
             value={statusFilter}
@@ -199,9 +241,8 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="px-4 py-3">Eszköz</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Típus</th>
-                  <th className="px-4 py-3">Leírás</th>
+                  <th className="px-4 py-3">Eszköz / Gép</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Kategória</th>
                   <th className="px-4 py-3 whitespace-nowrap">Státusz</th>
                 </tr>
               </thead>
@@ -210,37 +251,54 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
                       <td className="px-4 py-3.5"><div className="h-4 w-40 bg-slate-800 rounded animate-pulse" /></td>
-                      <td className="px-4 py-3.5"><div className="h-4 w-20 bg-slate-800 rounded animate-pulse" /></td>
-                      <td className="px-4 py-3.5"><div className="h-4 w-48 bg-slate-800 rounded animate-pulse" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-24 bg-slate-800 rounded animate-pulse" /></td>
                       <td className="px-4 py-3.5"><div className="h-5 w-20 bg-slate-800 rounded-full animate-pulse" /></td>
                     </tr>
                   ))}
 
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-14 text-center">
+                    <td colSpan={3} className="px-4 py-14 text-center">
                       <Wrench size={32} className="mx-auto text-slate-600 mb-3" />
                       <p className="text-slate-400 text-xs">
-                        {search || statusFilter !== 'all' ? 'Nincs a szűrőknek megfelelő eszköz.' : 'Még nincs eszköz.'}
+                        {search || categoryFilter !== 'all' || statusFilter !== 'all'
+                          ? 'Nincs a szűrőknek megfelelő eszköz vagy gép.'
+                          : 'Még nincs eszköz rögzítve.'}
                       </p>
                     </td>
                   </tr>
                 )}
 
                 {!loading &&
-                  filtered.map((t) => {
+                  paginatedItems.map((t) => {
                     const badge = STATUS_BADGE[t.status];
                     return (
                       <tr key={t.id} id={`admin-tool-${t.id}`} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="px-4 py-3.5">
-                          <p className="font-bold text-white line-clamp-1">{t.name}</p>
-                          {t.brand && <p className="text-slate-400 text-[11px] line-clamp-1 mt-0.5">{t.brand}</p>}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            {t.image_url ? (
+                              <img
+                                src={t.image_url}
+                                alt={t.name}
+                                className="w-9 h-9 rounded-lg object-cover border border-slate-700 shrink-0 bg-slate-950"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg border border-slate-700 bg-slate-950 flex items-center justify-center shrink-0 text-slate-500">
+                                <Wrench size={14} />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-bold text-white line-clamp-1">{t.name}</p>
+                              {(t.subtype || t.brand) && (
+                                <p className="text-slate-400 text-[11px] line-clamp-1 mt-0.5">
+                                  {[t.subtype, t.brand].filter(Boolean).join(' • ')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-4 py-3.5 text-slate-300 whitespace-nowrap">{t.type ?? '—'}</td>
-                        <td className="px-4 py-3.5 text-slate-400 max-w-xs">
-                          <p className="line-clamp-2">{t.description ?? '—'}</p>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
+                        <td className="px-4 py-3 text-slate-300 whitespace-nowrap">{t.type ?? '—'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badge.class}`}>
                             {badge.label}
                           </span>
@@ -251,6 +309,17 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
               </tbody>
             </table>
           </div>
+          {!loading && totalPages > 1 && (
+            <div className="px-4 pb-4">
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filtered.length}
+                itemLabel="eszköz"
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -263,7 +332,12 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
           <h1 style={{ color: textColor }} className="text-2xl font-black flex items-center gap-2.5">
             <Wrench style={{ color: cardHighlight }} size={28} /> Eszközök &amp; gépek enciklopédiája
           </h1>
-          <p className="text-sm text-gray-400 mt-1">{tools.length} eszköz rögzítve</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Összesen {tools.length} bejegyzés
+            {(search.trim() || categoryFilter !== 'all' || statusFilter !== 'all') && (
+              <span> (szűrt találat: {filtered.length})</span>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {!readOnly && (
@@ -272,7 +346,7 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
               style={{ backgroundColor: cardHighlight, color: '#000000' }}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg hover:opacity-90 transition-all cursor-pointer shadow-md"
             >
-              <Plus size={14} /> Új eszköz
+              <Plus size={14} /> Új eszköz hozzáadása
             </button>
           )}
           {!loading && (
@@ -293,11 +367,22 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Keresés név, típus, márka..."
+            placeholder="Keresés eszköz vagy gép neve alapján..."
             style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
             className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm placeholder-gray-500 focus:outline-none transition-colors"
           />
         </div>
+        <select
+          style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
+          className={selectClass}
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option value="all">Összes kategória</option>
+          {availableCategories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
         <select
           style={{ backgroundColor: inputBg, borderColor: cardBorder, color: inputTextColor }}
           className={selectClass}
@@ -323,9 +408,8 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderColor: cardBorder }} className="border-b text-left">
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Eszköz</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Típus</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Leírás</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Eszköz / Gép</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Kategória</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Státusz</th>
                 {!readOnly && (
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">Műveletek</th>
@@ -336,9 +420,8 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
               {loading &&
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-[#1E1E1E]/50">
-                    <td className="px-4 py-3.5"><div className="h-4 w-40 bg-[#1E1E1E] rounded animate-pulse" /></td>
-                    <td className="px-4 py-3.5"><div className="h-4 w-20 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-4 w-48 bg-[#1E1E1E] rounded animate-pulse" /></td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-24 bg-[#1E1E1E] rounded animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-5 w-20 bg-[#1E1E1E] rounded-full animate-pulse" /></td>
                     <td className="px-4 py-3.5"><div className="h-4 w-24 bg-[#1E1E1E] rounded animate-pulse ml-auto" /></td>
                   </tr>
@@ -346,28 +429,48 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
 
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center">
+                  <td colSpan={4} className="px-4 py-16 text-center">
                     <Wrench size={32} className="mx-auto text-gray-700 mb-3" />
-                    <p className="text-gray-500 text-sm">{search || statusFilter !== 'all' ? 'Nincs a szűrőknek megfelelő eszköz.' : 'Még nincs eszköz.'}</p>
+                    <p className="text-gray-500 text-sm">
+                      {search || categoryFilter !== 'all' || statusFilter !== 'all'
+                        ? 'Nincs a szűrőknek megfelelő eszköz vagy gép.'
+                        : 'Még nincs eszköz rögzítve.'}
+                    </p>
                   </td>
                 </tr>
               )}
 
               {!loading &&
-                filtered.map((t) => {
+                paginatedItems.map((t) => {
                   const badge = STATUS_BADGE[t.status];
                   const isActive = t.status === 'active';
                   return (
                     <tr key={t.id} id={`admin-tool-${t.id}`} className="border-b border-[#1E1E1E]/50 hover:bg-[#1E1E1E]/30 transition-colors">
-                      <td className="px-4 py-3.5">
-                        <p className="font-bold text-gray-200 line-clamp-1">{t.name}</p>
-                        {t.brand && <p className="text-gray-600 text-xs line-clamp-1 mt-0.5">{t.brand}</p>}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {t.image_url ? (
+                            <img
+                              src={t.image_url}
+                              alt={t.name}
+                              className="w-10 h-10 rounded-lg object-cover border border-[#1E1E1E] shrink-0 bg-black/40"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg border border-[#1E1E1E] bg-black/30 flex items-center justify-center shrink-0 text-gray-500">
+                              <Wrench size={15} />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-200 line-clamp-1">{t.name}</p>
+                            {(t.subtype || t.brand) && (
+                              <p className="text-gray-500 text-xs line-clamp-1 mt-0.5">
+                                {[t.subtype, t.brand].filter(Boolean).join(' • ')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3.5 text-gray-400 whitespace-nowrap">{t.type ?? '—'}</td>
-                      <td className="px-4 py-3.5 text-gray-400 max-w-xs">
-                        <p className="line-clamp-2">{t.description ?? '—'}</p>
-                      </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{t.type ?? '—'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${badge.class}`}>
                           {badge.label}
                         </span>
@@ -410,6 +513,17 @@ export default function AdminToolsPage({ initialSearchQuery, readOnly = false }:
             </tbody>
           </table>
         </div>
+        {!loading && totalPages > 1 && (
+          <div className="px-4 pb-4">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              itemLabel="eszköz"
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
 
       {editorOpen && (
