@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -15,8 +15,9 @@ import {
   HardHat,
 } from 'lucide-react';
 import {
-  getKnowledgeItemsLocal,
-  saveKnowledgeItemsLocal,
+  loadKnowledgeItemsForAdmin,
+  saveKnowledgeItemsToCloud,
+  KnowledgeHubConflictError,
   type EducationalContentItem,
   type EducationalDocument,
 } from '../services/knowledgeHubService';
@@ -45,7 +46,14 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
     color: inputTextColor,
   };
 
-  const [items, setItems] = useState<EducationalContentItem[]>(() => getKnowledgeItemsLocal());
+  const [items, setItems] = useState<EducationalContentItem[]>([]);
+  const [loadingCloud, setLoadingCloud] = useState(true);
+  const [cloudLoaded, setCloudLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const savingRef = useRef(false);
+  const cloudUpdatedAtRef = useRef<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [sectionFilter, setSectionFilter] = useState<'all' | 'safety' | 'standards'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
@@ -86,16 +94,39 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
   const [docUrlInput, setDocUrlInput] = useState('');
   const [docDescInput, setDocDescInput] = useState('');
 
-  useEffect(() => {
-    function reload() {
-      setItems(getKnowledgeItemsLocal());
+  const loadFromCloud = useCallback(async () => {
+    setLoadingCloud(true);
+    setLoadError(null);
+    try {
+      const res = await loadKnowledgeItemsForAdmin();
+      setItems(res.items);
+      cloudUpdatedAtRef.current = res.updatedAt;
+      setCloudLoaded(true);
+      setConflictMessage(null);
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Nem sikerült betölteni a Tudástár felhős adatait.';
+      setLoadError(msg);
+      setCloudLoaded(false);
+    } finally {
+      setLoadingCloud(false);
     }
-    reload();
-    window.addEventListener('knowledge-hub-updated', reload);
-    return () => window.removeEventListener('knowledge-hub-updated', reload);
   }, []);
 
+  useEffect(() => {
+    void loadFromCloud();
+  }, [loadFromCloud]);
+
+  const isMutationBlocked = loadingCloud || !cloudLoaded || Boolean(loadError) || saving;
+  const isEditingItemDeleted = Boolean(
+    editingItem && cloudLoaded && !items.some((i) => i.id === editingItem.id)
+  );
+
   const handleOpenCreateModal = (hubType: 'safety' | 'standards' = 'safety') => {
+    if (isMutationBlocked || savingRef.current) return;
+    setConflictMessage(null);
     setEditingItem(null);
     setFormData({
       hub_type: hubType,
@@ -125,6 +156,8 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
   };
 
   const handleOpenEditModal = (item: EducationalContentItem) => {
+    if (isMutationBlocked || savingRef.current) return;
+    setConflictMessage(null);
     setEditingItem(item);
     setFormData({ ...item });
     setActiveTab('basic');
@@ -132,11 +165,17 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
   };
 
   const handleDeleteItem = (id: string) => {
+    if (isMutationBlocked || savingRef.current) return;
+    setConflictMessage(null);
     setConfirmDeleteId(id);
   };
 
-  const handleSaveForm = (e: React.FormEvent) => {
+  const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!cloudLoaded || loadError || loadingCloud || savingRef.current) {
+      toast.error('A mentés jelenleg nem engedélyezett, amíg a felhős adatok nincsenek betöltve.');
+      return;
+    }
     if (!formData.title?.trim() || !formData.topic?.trim() || !formData.summary?.trim()) {
       toast.notify('Kérjük, töltse ki a címet, a témakört és a rövid összefoglalót!', 'warning');
       return;
@@ -154,6 +193,12 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
     let updatedList: EducationalContentItem[];
 
     if (editingItem) {
+      if (!items.some((i) => i.id === editingItem.id)) {
+        toast.error(
+          'Ezt a Tudástár-elemet egy másik adminisztrátor időközben törölte. A törölt elem mentése nem engedélyezett.'
+        );
+        return;
+      }
       updatedList = items.map((i) =>
         i.id === editingItem.id
           ? ({
@@ -200,9 +245,30 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
       updatedList = [newItem, ...items];
     }
 
-    setItems(updatedList);
-    saveKnowledgeItemsLocal(updatedList);
-    setIsModalOpen(false);
+    savingRef.current = true;
+    setSaving(true);
+    setConflictMessage(null);
+    try {
+      const saved = await saveKnowledgeItemsToCloud(updatedList, cloudUpdatedAtRef.current);
+      cloudUpdatedAtRef.current = saved.updatedAt;
+      setItems(saved.items);
+      setIsModalOpen(false);
+      toast.success('Tudástár tartalom sikeresen mentve a felhőbe.');
+    } catch (err) {
+      if (err instanceof KnowledgeHubConflictError) {
+        setConflictMessage(err.message);
+        toast.error(err.message);
+      } else {
+        const msg =
+          err instanceof Error && err.message
+            ? err.message
+            : 'Hiba történt a Tudástár mentésekor.';
+        toast.error(msg);
+      }
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   const handleAddKeyword = () => {
@@ -280,20 +346,58 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => handleOpenCreateModal('safety')}
+            disabled={isMutationBlocked}
             style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-            className="px-4 py-2.5 border font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer hover:border-accent"
+            className="px-4 py-2.5 border font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ShieldAlert size={15} className="text-amber-400" /> Új Munkavédelmi Tartalom
           </button>
           <button
             onClick={() => handleOpenCreateModal('standards')}
+            disabled={isMutationBlocked}
             style={{ backgroundColor: cardHighlight, color: '#000000' }}
-            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer"
+            className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ShieldCheck size={15} /> Új Szabvány / Szabály
           </button>
         </div>
       </div>
+
+      {loadingCloud && (
+        <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border text-xs font-medium text-gray-300">
+          Tudástár felhős adatainak betöltése... (A szerkesztés és mentés a betöltés végéig zárolva van.)
+        </div>
+      )}
+
+      {loadError && (
+        <div className="p-4 rounded-2xl border border-red-500/40 bg-red-500/10 text-xs text-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span>
+            <strong>Felhőbetöltési hiba:</strong> {loadError} (Adatvesztés megelőzése érdekében a szerkesztés és mentés tiltva van.)
+          </span>
+          <button
+            type="button"
+            onClick={() => void loadFromCloud()}
+            disabled={loadingCloud}
+            className="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/40 font-bold text-xs text-white cursor-pointer shrink-0"
+          >
+            Újrapróbálás
+          </button>
+        </div>
+      )}
+
+      {conflictMessage && !isModalOpen && (
+        <div className="p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span>{conflictMessage}</span>
+          <button
+            type="button"
+            onClick={() => void loadFromCloud()}
+            disabled={loadingCloud}
+            className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 font-bold text-xs text-white cursor-pointer shrink-0"
+          >
+            Friss adatok betöltése
+          </button>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-4 rounded-2xl border shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
@@ -465,14 +569,16 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                       </button>
                       <button
                         onClick={() => handleOpenEditModal(item)}
-                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        disabled={isMutationBlocked}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Szerkesztés"
                       >
                         <Edit2 size={15} />
                       </button>
                       <button
                         onClick={() => handleDeleteItem(item.id)}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        disabled={isMutationBlocked}
+                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Törlés"
                       >
                         <Trash2 size={15} />
@@ -842,22 +948,44 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
                 </div>
               )}
 
+              {isEditingItemDeleted && (
+                <div className="p-3.5 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-200">
+                  <strong>Az elem időközben törölve lett:</strong> Ezt a Tudástár-elemet egy másik adminisztrátor törölte a felhőből. A szerkesztett adatok itt megmaradnak, amíg bezárod a modalt, de a törölt elem nem menthető vissza.
+                </div>
+              )}
+
+              {conflictMessage && (
+                <div className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span>{conflictMessage}</span>
+                  <button
+                    type="button"
+                    onClick={() => void loadFromCloud()}
+                    disabled={loadingCloud || saving}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 font-bold text-xs text-white cursor-pointer shrink-0 disabled:opacity-50"
+                  >
+                    Friss adatok betöltése
+                  </button>
+                </div>
+              )}
+
               {/* Submit Buttons */}
               <div className="pt-4 border-t border-white/10 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
+                  disabled={saving}
                   style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                  className="px-4 py-2 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90"
+                  className="px-4 py-2 border font-bold text-xs rounded-xl cursor-pointer hover:opacity-90 disabled:opacity-50"
                 >
                   Mégse
                 </button>
                 <button
                   type="submit"
+                  disabled={isMutationBlocked || isEditingItemDeleted}
                   style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90"
+                  className="px-5 py-2.5 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Mentés &amp; Publikálás
+                  {saving ? 'Mentés...' : 'Mentés & Publikálás'}
                 </button>
               </div>
             </form>
@@ -904,16 +1032,40 @@ export default function AdminKnowledgeHubPage({ initialSearchQuery = '' }: Admin
         open={Boolean(confirmDeleteId)}
         title="Oktatási tartalom törlése"
         message="Biztosan törölni szeretné ezt az oktatási tartalmat?"
-        confirmLabel="Törlés"
+        confirmLabel={saving ? 'Törlés...' : 'Törlés'}
         destructive
-        onConfirm={() => {
-          if (!confirmDeleteId) return;
+        onConfirm={async () => {
+          if (!confirmDeleteId || !cloudLoaded || loadError || loadingCloud || savingRef.current) return;
           const updated = items.filter((i) => i.id !== confirmDeleteId);
-          setItems(updated);
-          saveKnowledgeItemsLocal(updated);
-          setConfirmDeleteId(null);
+          savingRef.current = true;
+          setSaving(true);
+          setConflictMessage(null);
+          try {
+            const saved = await saveKnowledgeItemsToCloud(updated, cloudUpdatedAtRef.current);
+            cloudUpdatedAtRef.current = saved.updatedAt;
+            setItems(saved.items);
+            setConfirmDeleteId(null);
+            toast.success('Oktatási tartalom törölve.');
+          } catch (err) {
+            if (err instanceof KnowledgeHubConflictError) {
+              setConflictMessage(err.message);
+              setConfirmDeleteId(null);
+              toast.error(err.message);
+            } else {
+              const msg =
+                err instanceof Error && err.message
+                  ? err.message
+                  : 'Hiba történt a törlés során.';
+              toast.error(msg);
+            }
+          } finally {
+            savingRef.current = false;
+            setSaving(false);
+          }
         }}
-        onCancel={() => setConfirmDeleteId(null)}
+        onCancel={() => {
+          if (!saving) setConfirmDeleteId(null);
+        }}
       />
     </div>
   );

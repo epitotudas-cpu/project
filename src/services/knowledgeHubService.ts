@@ -1,4 +1,5 @@
-import { readAppConfig, writeAppConfig } from './appConfigService';
+import { supabase } from '../lib/supabase';
+import { readAppConfig, writeAppConfig, writeAppConfigIfUnchanged } from './appConfigService';
 
 export interface EducationalDocument {
   id: string;
@@ -43,7 +44,21 @@ export interface EducationalContentItem {
 }
 
 const LOCAL_STORAGE_KEY = 'epitotudas_knowledge_hub_items_v1';
+const KNOWLEDGE_HUB_CLOUD_KEY = '__SYSTEM_CONFIG_KNOWLEDGE_HUB_ITEMS__';
 const SUPABASE_SYSTEM_ROW_ID = '00000000-0000-0000-0000-000000000023';
+
+export class KnowledgeHubConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'KnowledgeHubConflictError';
+  }
+}
+
+export interface KnowledgeHubCloudLoadResult {
+  items: EducationalContentItem[];
+  updatedAt: string | null;
+  isNewRecord: boolean;
+}
 
 export const DEFAULT_KNOWLEDGE_ITEMS: EducationalContentItem[] = [
   // ── MUNKAVÉDELEM ITEMS ──
@@ -282,7 +297,7 @@ export function saveKnowledgeItemsLocal(items: EducationalContentItem[]): void {
 export async function fetchKnowledgeItemsFromCloud(): Promise<EducationalContentItem[] | null> {
   try {
     const parsed = await readAppConfig<EducationalContentItem[]>(
-      '__SYSTEM_CONFIG_KNOWLEDGE_HUB_ITEMS__',
+      KNOWLEDGE_HUB_CLOUD_KEY,
       SUPABASE_SYSTEM_ROW_ID
     );
     if (Array.isArray(parsed) && parsed.length > 0) {
@@ -296,4 +311,102 @@ export async function fetchKnowledgeItemsFromCloud(): Promise<EducationalContent
     console.warn('Cloud knowledge items fetch info:', err);
   }
   return null;
+}
+
+/**
+ * Loads Knowledge Hub items and the server `updated_at` version token for admin editing.
+ * Distinguishes query/RLS/network errors (throws) from a genuinely missing config row.
+ */
+export async function loadKnowledgeItemsForAdmin(): Promise<KnowledgeHubCloudLoadResult> {
+  const { data, error } = await supabase
+    .from('app_configs')
+    .select('value, updated_at')
+    .eq('key', KNOWLEDGE_HUB_CLOUD_KEY)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || 'Nem sikerült betölteni a Tudástár felhős adatait.');
+  }
+
+  if (data && data.value !== undefined && data.value !== null) {
+    if (!Array.isArray(data.value)) {
+      throw new Error('A felhőben tárolt Tudástár konfiguráció formátuma érvénytelen.');
+    }
+    const items = data.value as EducationalContentItem[];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
+    }
+    return {
+      items,
+      updatedAt: typeof data.updated_at === 'string' ? data.updated_at : null,
+      isNewRecord: false,
+    };
+  }
+
+  // Record not in app_configs yet: check legacy categories row before falling back to defaults
+  const { data: legacyData, error: legacyErr } = await supabase
+    .from('categories')
+    .select('description')
+    .eq('id', SUPABASE_SYSTEM_ROW_ID)
+    .maybeSingle();
+
+  if (legacyErr) {
+    throw new Error(legacyErr.message || 'Nem sikerült ellenőrizni a Tudástár konfigurációt.');
+  }
+
+  if (legacyData?.description) {
+    try {
+      const parsed = JSON.parse(legacyData.description);
+      if (Array.isArray(parsed)) {
+        const items = parsed as EducationalContentItem[];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
+        }
+        return { items, updatedAt: null, isNewRecord: true };
+      }
+    } catch {
+      throw new Error('A Tudástár örökölt konfigurációja sérült.');
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_KNOWLEDGE_ITEMS));
+  }
+  return {
+    items: DEFAULT_KNOWLEDGE_ITEMS,
+    updatedAt: null,
+    isNewRecord: true,
+  };
+}
+
+/**
+ * Persists Knowledge Hub items using optimistic CAS (`writeAppConfigIfUnchanged`).
+ * Never falls back to blind `writeAppConfig` on conflict or error, and only updates
+ * localStorage after a confirmed cloud write.
+ */
+export async function saveKnowledgeItemsToCloud(
+  items: EducationalContentItem[],
+  expectedUpdatedAt: string | null
+): Promise<{ items: EducationalContentItem[]; updatedAt: string | null }> {
+  const writeRes = await writeAppConfigIfUnchanged(
+    KNOWLEDGE_HUB_CLOUD_KEY,
+    items,
+    expectedUpdatedAt
+  );
+
+  if (writeRes.conflict) {
+    throw new KnowledgeHubConflictError(
+      'A Tudástárat időközben egy másik adminisztrátor módosította. A saját szerkesztett adataid megmaradtak; kérjük, töltsd be a friss felhős adatokat a folytatáshoz.'
+    );
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
+    window.dispatchEvent(new Event('knowledge-hub-updated'));
+  }
+
+  return {
+    items,
+    updatedAt: writeRes.updatedAt,
+  };
 }
