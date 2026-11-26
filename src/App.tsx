@@ -388,7 +388,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
       {editorView === 'tools' && (canView('catalog') ? <AdminToolsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'books' && (canView('catalog') ? <AdminBooksPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'moderation' && (canView('moderation') ? <AdminModerationPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
-      {editorView === 'settings' && (canView('settings') ? <EditorSettingsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'settings' && <EditorSettingsPage />}
     </EditorLayout>
   );
 }

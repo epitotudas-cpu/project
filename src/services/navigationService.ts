@@ -154,18 +154,24 @@ function normalizeNavLabels(items: MenuItem[]): MenuItem[] {
   const updated = cleanItems.map((item) => {
     const target = itemMap[item.id];
     if (target) {
-      const needsLabel = item.label !== target.label;
-      const needsPage = item.page !== target.page;
-      const needsParent = target.parentId !== undefined && item.parentId !== target.parentId;
-      const needsOrder = target.displayOrder !== undefined && item.displayOrder !== target.displayOrder;
+      const hasValidLabel = typeof item.label === 'string' && item.label.trim().length > 0;
+      const hasValidPage = typeof item.page === 'string' && item.page.trim().length > 0;
+      const hasValidParent = typeof item.parentId === 'string' && item.parentId.trim().length > 0;
+      const hasValidOrder = typeof item.displayOrder === 'number' && Number.isFinite(item.displayOrder);
+
+      const needsLabel = !hasValidLabel;
+      const needsPage = !hasValidPage;
+      const needsParent = target.parentId !== undefined && !hasValidParent;
+      const needsOrder = target.displayOrder !== undefined && !hasValidOrder;
+
       if (needsLabel || needsPage || needsParent || needsOrder) {
         changed = true;
         return {
           ...item,
-          label: target.label,
-          page: target.page,
-          parentId: target.parentId !== undefined ? target.parentId : item.parentId,
-          displayOrder: target.displayOrder !== undefined ? target.displayOrder : item.displayOrder,
+          label: needsLabel ? target.label : item.label,
+          page: needsPage ? target.page : item.page,
+          parentId: needsParent ? target.parentId! : item.parentId,
+          displayOrder: needsOrder ? target.displayOrder! : item.displayOrder,
         };
       }
     }

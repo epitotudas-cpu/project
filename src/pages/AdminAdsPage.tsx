@@ -981,23 +981,6 @@ export default function AdminAdsPage({ onNavigate, onNavigateView }: AdminAdsPag
               >
                 <ArrowLeft size={16} /> Vissza a Reklámkezeléshez
               </button>
-
-              <div className="flex items-center gap-2.5 shrink-0">
-                <button
-                  onClick={() => triggerSaveToast()}
-                  style={{ backgroundColor: inputBg, borderColor: cardBorder, color: textColor }}
-                  className="px-3.5 py-2 border font-bold text-xs rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-sm whitespace-nowrap"
-                >
-                  <RotateCcw size={14} /> Visszaállítás
-                </button>
-                <button
-                  onClick={() => triggerSaveToast()}
-                  style={{ backgroundColor: cardHighlight, color: '#000000' }}
-                  className="px-5 py-2 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:opacity-90 whitespace-nowrap"
-                >
-                  <Save size={16} /> Mentés
-                </button>
-              </div>
             </div>
 
             {/* LEVEL 2: Module Title */}
