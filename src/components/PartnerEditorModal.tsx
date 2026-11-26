@@ -636,6 +636,7 @@ export default function PartnerEditorModal({
     }
     setSaving(true);
     setSaveError(null);
+    setSaveSuccess(false);
     setLogoError(null);
 
     const payload: Partial<ExtendedPartner> = {
@@ -688,11 +689,16 @@ export default function PartnerEditorModal({
       if (targetPartnerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetPartnerId)) {
         try {
           const updatedDbRefs = await syncPartnerReferences(targetPartnerId, references, initialReferenceIdsRef.current);
-          if (updatedDbRefs && updatedDbRefs.length > 0) {
+          if (Array.isArray(updatedDbRefs)) {
             initialReferenceIdsRef.current = updatedDbRefs.map((r) => r.id);
           }
         } catch (syncErr) {
           console.warn('Figyelmeztetés a referenciák adatbázis-szinkronizálásakor:', syncErr);
+          const syncMsg = syncErr instanceof Error ? syncErr.message : 'Ismeretlen szinkronizálási hiba';
+          setSaveError(
+            `A partner alapadatai sikeresen elmentődtek, de a referenciák szinkronizálása nem fejeződött be teljesen (${syncMsg}). Kérjük, ellenőrizze a referenciákat, és próbálja újra a mentést.`
+          );
+          return;
         }
       }
 

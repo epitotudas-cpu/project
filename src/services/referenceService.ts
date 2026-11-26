@@ -556,75 +556,95 @@ export async function syncReferenceImages(
 ): Promise<void> {
   if (!referenceId || !partnerId) return;
 
-  try {
-    // 1. Meglévő képek lekérdezése
-    const { data: existingImages } = await supabase
-      .from('partner_reference_images')
-      .select('id, object_key, thumbnail_key, display_order, is_cover')
-      .eq('reference_id', referenceId)
-      .order('display_order', { ascending: true });
+  const errors: string[] = [];
 
-    const existing = existingImages || [];
-    const validUrls = (imageUrls || [])
-      .filter((url) => typeof url === 'string' && url.trim().length > 0)
-      .slice(0, 10);
+  // 1. Meglévő képek lekérdezése
+  const { data: existingImages, error: fetchImgError } = await supabase
+    .from('partner_reference_images')
+    .select('id, object_key, thumbnail_key, display_order, is_cover')
+    .eq('reference_id', referenceId)
+    .order('display_order', { ascending: true });
 
-    // 2. Törölt képek eltávolítása az adatbázisból
-    for (const exImg of existing) {
-      const cleanKey = extractStorageKey(exImg.object_key || '');
-      const isRetained = validUrls.some((u) => extractStorageKey(u) === cleanKey);
-      if (!isRetained) {
-        try {
-          await supabase
-            .from('partner_reference_images')
-            .delete()
-            .eq('id', exImg.id);
-        } catch {
-          // csendes elnyelés
-        }
-      }
-    }
+  if (fetchImgError) {
+    throw new Error(fetchImgError.message || 'Nem sikerült lekérdezni a referencia képeit.');
+  }
 
-    let firstCreatedImageId: string | null = null;
+  const existing = existingImages || [];
+  const validUrls = (imageUrls || [])
+    .filter((url) => typeof url === 'string' && url.trim().length > 0)
+    .slice(0, 10);
 
-    // 3. Új képek feltöltése a biztonságos intent pipeline-on keresztül
-    for (let i = 0; i < validUrls.length; i++) {
-      const rawUrl = validUrls[i].trim();
-      const isCover = i === 0;
-
-      const normKey = extractStorageKey(rawUrl);
-      const isAlreadyInDb = existing.some(
-        (img) => extractStorageKey(img.object_key || '') === normKey
-      );
-
-      // Ha már az adatbázisban van vagy meglévő Supabase tároló URL, nem kell újra feltölteni
-      if (isAlreadyInDb || rawUrl.includes('/storage/v1/object/public/partner-references/')) {
-        continue;
-      }
-
+  // 2. Törölt képek eltávolítása az adatbázisból
+  for (const exImg of existing) {
+    const cleanKey = extractStorageKey(exImg.object_key || '');
+    const isRetained = validUrls.some((u) => extractStorageKey(u) === cleanKey);
+    if (!isRetained) {
       try {
-        const uploaded = await uploadReferenceImageThroughIntent(
-          partnerId,
-          referenceId,
-          rawUrl,
-          isCover
-        );
-        if (uploaded.imageId && !firstCreatedImageId) {
-          firstCreatedImageId = uploaded.imageId;
+        const { error: delImgError } = await supabase
+          .from('partner_reference_images')
+          .delete()
+          .eq('id', exImg.id);
+        if (delImgError) {
+          errors.push(`Kép törlése sikertelen (${exImg.id}): ${delImgError.message}`);
         }
-      } catch (uploadErr) {
-        console.warn('Figyelmeztetés a kép intent-alapú feltöltésekor:', uploadErr);
+      } catch (delErr) {
+        errors.push(
+          `Kép törlése sikertelen (${exImg.id}): ${delErr instanceof Error ? delErr.message : 'Ismeretlen hiba'}`
+        );
       }
     }
+  }
 
-    // 4. Borítókép kijelölése a set_reference_cover_image RPC segítségével
+  let firstCreatedImageId: string | null = null;
+
+  // 3. Új képek feltöltése a biztonságos intent pipeline-on keresztül
+  for (let i = 0; i < validUrls.length; i++) {
+    const rawUrl = validUrls[i].trim();
+    const isCover = i === 0;
+
+    const normKey = extractStorageKey(rawUrl);
+    const isAlreadyInDb = existing.some(
+      (img) => extractStorageKey(img.object_key || '') === normKey
+    );
+
+    // Ha már az adatbázisban van vagy meglévő Supabase tároló URL, nem kell újra feltölteni
+    if (isAlreadyInDb || rawUrl.includes('/storage/v1/object/public/partner-references/')) {
+      continue;
+    }
+
+    try {
+      const uploaded = await uploadReferenceImageThroughIntent(
+        partnerId,
+        referenceId,
+        rawUrl,
+        isCover
+      );
+      if (uploaded.imageId && !firstCreatedImageId) {
+        firstCreatedImageId = uploaded.imageId;
+      }
+    } catch (uploadErr) {
+      console.warn('Figyelmeztetés a kép intent-alapú feltöltésekor:', uploadErr);
+      errors.push(
+        `Kép feltöltése sikertelen: ${uploadErr instanceof Error ? uploadErr.message : 'Ismeretlen hiba'}`
+      );
+    }
+  }
+
+  // 4. Borítókép kijelölése a set_reference_cover_image RPC segítségével
+  try {
     if (firstCreatedImageId) {
       await setReferenceCoverImage(referenceId, firstCreatedImageId);
     } else if (existing.length > 0 && !existing.some((img) => img.is_cover)) {
       await setReferenceCoverImage(referenceId, existing[0].id);
     }
-  } catch (err) {
-    console.warn('Kivétel a referencia képek szinkronizálásakor:', err);
+  } catch (coverErr) {
+    errors.push(
+      `Borítókép beállítása sikertelen: ${coverErr instanceof Error ? coverErr.message : 'Ismeretlen hiba'}`
+    );
+  }
+
+  if (errors.length > 0) {
+    throw new Error(errors.join('; '));
   }
 }
 
@@ -706,12 +726,17 @@ export async function syncPartnerReferences(
       .map((item) => item.id as string)
   );
 
+  const errors: string[] = [];
+
   for (const origId of originalIds || []) {
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(origId) && !currentUuidSet.has(origId)) {
       try {
         await deleteReference(origId);
       } catch (delErr) {
         console.warn(`Hiba a ${origId} azonosítójú referencia törlésekor:`, delErr);
+        errors.push(
+          `Referencia törlése sikertelen (${origId}): ${delErr instanceof Error ? delErr.message : 'Ismeretlen hiba'}`
+        );
       }
     }
   }
@@ -723,7 +748,14 @@ export async function syncPartnerReferences(
       await savePartnerReference(partnerId, item);
     } catch (saveErr) {
       console.warn('Hiba a referencia mentésekor:', saveErr);
+      errors.push(
+        `Referencia mentése sikertelen (${item.title.trim()}): ${saveErr instanceof Error ? saveErr.message : 'Ismeretlen hiba'}`
+      );
     }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(errors.join('; '));
   }
 
   // 3. Visszaolvasás a Supabase-ből
