@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabase';
 import { readAppConfig, writeAppConfig } from './appConfigService';
 import type {
   ExtendedAdCampaign,
@@ -165,7 +166,61 @@ export async function saveStoredCampaigns(campaigns: ExtendedAdCampaign[]): Prom
   });
 }
 
+function sanitizeCampaignList(campaigns: ExtendedAdCampaign[]): ExtendedAdCampaign[] {
+  return campaigns.filter((c) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
+}
+
+async function isPrivilegedAdAdmin(): Promise<boolean> {
+  try {
+    if (typeof supabase?.auth?.getUser !== 'function') return false;
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) return false;
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', uid)
+      .maybeSingle();
+    return prof?.role === 'admin' || prof?.role === 'editor';
+  } catch {
+    return false;
+  }
+}
+
+function sanitizePublicCampaignRow(raw: Partial<ExtendedAdCampaign>): ExtendedAdCampaign {
+  return {
+    id: String(raw.id || ''),
+    sponsor_name: String(raw.sponsor_name || ''),
+    placement_slot: String(raw.placement_slot || ''),
+    title: String(raw.title || ''),
+    target_url: raw.target_url ?? null,
+    banner_image_url: raw.banner_image_url ?? null,
+    status: 'active',
+    start_date: raw.start_date || '',
+    end_date: raw.end_date ?? null,
+    impressions_count: 0,
+    clicks_count: 0,
+    created_at: raw.start_date || '',
+  };
+}
+
+export async function listPublicAdCampaigns(): Promise<ExtendedAdCampaign[]> {
+  try {
+    const { data, error } = await supabase.rpc('get_published_ad_campaigns');
+    if (error || !Array.isArray(data)) {
+      return [];
+    }
+    return sanitizeCampaignList(data as ExtendedAdCampaign[]).map(sanitizePublicCampaignRow);
+  } catch {
+    return [];
+  }
+}
+
 export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
+  if (!(await isPrivilegedAdAdmin())) {
+    return listPublicAdCampaigns();
+  }
+
   let list = getStoredCampaigns();
 
   try {
@@ -174,7 +229,7 @@ export async function listAdCampaigns(): Promise<ExtendedAdCampaign[]> {
       SUPABASE_SYSTEM_ID
     );
     if (Array.isArray(cloudList)) {
-      list = cloudList.filter((c: ExtendedAdCampaign) => c.id !== 'camp-101' && !c.sponsor_name?.includes('Leier'));
+      list = sanitizeCampaignList(cloudList);
       try { localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(list)); } catch { /* ignore */ }
     }
   } catch (err) {
@@ -269,7 +324,7 @@ export async function deleteAdCampaign(id: string): Promise<void> {
 }
 
 export async function getAdvertisementSlots(): Promise<AdvertisementSlot[]> {
-  const campaigns = await listAdCampaigns();
+  const campaigns = await listPublicAdCampaigns();
   return campaigns.map((c) => ({
     id: c.id,
     location: (c.placement_slot as AdvertisementSlot['location']) || 'top_banner',
@@ -283,11 +338,11 @@ export async function getAdvertisementSlots(): Promise<AdvertisementSlot[]> {
 export async function getAdsForTool(_toolId?: string, _category?: string): Promise<Awaited<ReturnType<typeof listAdCampaigns>>> {
   void _toolId;
   void _category;
-  return listAdCampaigns();
+  return listPublicAdCampaigns();
 }
 
 export async function getActiveAdForSlot(slot: 'top_banner' | 'sidebar' | 'in_feed' | 'footer_banner'): Promise<AdvertisementSlot | null> {
-  const campaigns = await listAdCampaigns();
+  const campaigns = await listPublicAdCampaigns();
   const active = campaigns.filter((c) => c.placement_slot === slot && (c.status === 'active' || c.status_v2 === 'active'));
 
   if (active.length > 0) {
