@@ -25,3 +25,6 @@ dist-ssr
 .env.test.local
 playwright-report
 test-results
+
+supabase.exe
+supabase/.temp/
