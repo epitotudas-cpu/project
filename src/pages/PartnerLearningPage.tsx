@@ -86,7 +86,9 @@ export default function PartnerLearningPage({ partnerId: propPartnerId, partnerN
       return;
     }
     try {
-      const filter = currentPartnerId ? { partnerId: currentPartnerId } : {};
+      const filter = currentPartnerId
+        ? { partnerId: currentPartnerId, scope: adminUser ? ('admin' as const) : ('partner' as const) }
+        : { scope: 'admin' as const };
       const [cData, qData] = await Promise.all([
         listCourses(filter),
         listQuizzes(filter),

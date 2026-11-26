@@ -24,12 +24,29 @@ import type {
 // ── STORAGE KEYS ──
 const COURSES_STORAGE_KEY = 'epitotudas_learning_courses_v1';
 const QUIZZES_STORAGE_KEY = 'epitotudas_learning_quizzes_v1';
+const PUBLIC_COURSES_STORAGE_KEY = 'epitotudas_public_learning_courses_v1';
+const PUBLIC_QUIZZES_STORAGE_KEY = 'epitotudas_public_learning_quizzes_v1';
 const FLASHCARDS_STORAGE_KEY = 'epitotudas_learning_flashcards_v1';
 const PROGRESS_STORAGE_KEY = 'epitotudas_learning_progress_v1';
 const ATTEMPTS_STORAGE_KEY = 'epitotudas_learning_attempts_v1';
 
 const CLOUD_COURSES_KEY = '__SYSTEM_CONFIG_LEARNING_COURSES__';
 const CLOUD_QUIZZES_KEY = '__SYSTEM_CONFIG_LEARNING_QUIZZES__';
+
+export type LearningReadScope = 'public' | 'partner' | 'admin';
+
+export function stripQuizAnswerKey(quiz: Quiz): Quiz {
+  return {
+    ...quiz,
+    questions: (quiz.questions || []).map(
+      ({ correct_options: _co, explanation: _exp, correct_option_index: _coi, ...rest }) => rest
+    ),
+  };
+}
+
+function stripQuizAnswerKeyList(quizzes: Quiz[]): Quiz[] {
+  return quizzes.map(stripQuizAnswerKey);
+}
 
 // ── DEFAULT SEED COURSES ──
 export const DEFAULT_COURSES: LearningCourse[] = [
@@ -197,8 +214,6 @@ export const DEFAULT_QUIZZES: Quiz[] = [
         question: 'Milyen profil képezi a gipszkarton válaszfalak vízszintes vezetőkeretét a padlón és a mennyezeten?',
         question_type: 'single',
         options: ['CW profil', 'UW profil', 'UA profil', 'CD profil'],
-        correct_options: [1],
-        explanation: 'Az UW (U-Profil Wand) a padlóra és mennyezetre rögzített vízszintes vezetőprofil. A CW profilokat ebbe csúsztatjuk be függőlegesen.',
         points: 10,
       },
       {
@@ -206,8 +221,6 @@ export const DEFAULT_QUIZZES: Quiz[] = [
         question: 'Szabad-e a függőleges CW profilokat mereven hozzácsavarozni az UW padlóprofilhoz?',
         question_type: 'boolean',
         options: ['Igen, kötelező mereven csavarozni.', 'Nem, a CW profilnak hőtágulási dilatáció miatt mozognia kell az UW profilban.'],
-        correct_options: [1],
-        explanation: 'Helyes! A CW profilokat nem szabad mereven hozzácsavarozni az UW kerethez, mert az épületmozgások miatt feszültség és falrepedés keletkezne.',
         points: 10,
       },
       {
@@ -215,8 +228,6 @@ export const DEFAULT_QUIZZES: Quiz[] = [
         question: 'Melyik gipszkarton lap alkalmas fürdőszobai, párás helyiségek burkolására?',
         question_type: 'single',
         options: ['Fehér színű normál (RB) lap', 'Zöld színű impregnált (RBI) lap', 'Rózsaszín tűzgátló (RF) lap', 'Kék akusztikai lap'],
-        correct_options: [1],
-        explanation: 'A zöld színű impregnált (RBI) gipszkarton lap pára- és vízálló adalékolással készül, így fürdőszobákban és vizes helyiségekben ez az előírt burkolat.',
         points: 10,
       },
       {
@@ -224,8 +235,6 @@ export const DEFAULT_QUIZZES: Quiz[] = [
         question: 'Melyik felületi minőségi szint (Q1-Q4) képviseli a prémium, súrolófényben is tökéletesen sima teljes glettelést?',
         question_type: 'single',
         options: ['Q1', 'Q2', 'Q3', 'Q4'],
-        correct_options: [3],
-        explanation: 'A Q4 a legmagasabb prémium glettelési fokozat, ahol a teljes gipszkarton felületet finom glettanyággal simítják el a selyemfényű festékekhez.',
         points: 10,
       },
     ],
@@ -259,19 +268,56 @@ export async function saveCoursesLocal(courses: LearningCourse[]): Promise<void>
   await writeAppConfig(CLOUD_COURSES_KEY, courses);
 }
 
-async function getCoursesWithCloudSync(): Promise<LearningCourse[]> {
-  try {
-    const cloud = await readAppConfig<LearningCourse[]>(CLOUD_COURSES_KEY);
-    if (Array.isArray(cloud) && cloud.length > 0) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(cloud));
+async function getCoursesWithCloudSync(scope: LearningReadScope = 'public'): Promise<LearningCourse[]> {
+  if (scope === 'admin') {
+    try {
+      const cloud = await readAppConfig<LearningCourse[]>(CLOUD_COURSES_KEY);
+      if (Array.isArray(cloud) && cloud.length > 0) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(cloud));
+        }
+        return cloud;
       }
-      return cloud;
+    } catch {
+      // Fallback to localStorage cache
+    }
+    return getCoursesLocal();
+  }
+
+  if (scope === 'partner') {
+    try {
+      const { data, error } = await supabase.rpc('get_my_learning_items', {
+        p_config_key: CLOUD_COURSES_KEY,
+      });
+      if (!error && Array.isArray(data)) {
+        const items = data as LearningCourse[];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(items));
+        }
+        return items;
+      }
+    } catch {
+      // Fallback to partner local cache if RPC unavailable in unit tests
+    }
+    return getCoursesLocal();
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('get_published_learning_courses');
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const published = data as LearningCourse[];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PUBLIC_COURSES_STORAGE_KEY, JSON.stringify(published));
+      }
+      return published;
     }
   } catch {
-    // Fallback to localStorage cache
+    // Fallback to isolated public cache / published defaults
   }
-  return getCoursesLocal();
+  return getLocalListFallback<LearningCourse>(
+    PUBLIC_COURSES_STORAGE_KEY,
+    DEFAULT_COURSES.filter((c) => c.status === 'published')
+  );
 }
 
 export async function listCourses(options?: {
@@ -281,8 +327,19 @@ export async function listCourses(options?: {
   audience?: string;
   status?: string;
   partnerId?: string;
+  scope?: LearningReadScope;
 }): Promise<LearningCourse[]> {
-  const all = await getCoursesWithCloudSync();
+  let resolvedScope: LearningReadScope = options?.scope || 'public';
+  if (!options?.scope) {
+    if (options?.status === 'published') {
+      resolvedScope = 'public';
+    } else if (await isPrivilegedSystemConfigWriter()) {
+      resolvedScope = 'admin';
+    } else if (options?.partnerId) {
+      resolvedScope = 'partner';
+    }
+  }
+  const all = await getCoursesWithCloudSync(resolvedScope);
   return all.filter((c) => {
     if (options?.status && options.status !== 'all' && c.status !== options.status) return false;
     if (options?.partnerId && c.partner_id !== options.partnerId) return false;
@@ -301,8 +358,28 @@ export async function listCourses(options?: {
 }
 
 export async function getCourseBySlug(slug: string): Promise<LearningCourse | null> {
-  const all = await getCoursesWithCloudSync();
-  return all.find((c) => c.slug === slug || c.id === slug) || null;
+  const published = await getCoursesWithCloudSync('public');
+  const publicMatch = published.find((c) => c.slug === slug || c.id === slug);
+  if (publicMatch) return publicMatch;
+
+  if (await isPrivilegedSystemConfigWriter()) {
+    const adminAll = await getCoursesWithCloudSync('admin');
+    const adminMatch = adminAll.find((c) => c.slug === slug || c.id === slug);
+    if (adminMatch) return adminMatch;
+  }
+
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData?.user?.id) {
+      const partnerAll = await getCoursesWithCloudSync('partner');
+      const partnerMatch = partnerAll.find((c) => c.slug === slug || c.id === slug);
+      if (partnerMatch) return partnerMatch;
+    }
+  } catch {
+    // ignore auth check failure
+  }
+
+  return null;
 }
 
 const MAX_CAS_ATTEMPTS = 3;
@@ -428,8 +505,10 @@ async function syncLocalListAfterPartnerRpc<T extends { id: string }>(
     }
   };
   try {
-    const cloud = await readAppConfig<T[]>(cloudKey);
-    const next = Array.isArray(cloud) && cloud.length > 0 ? cloud : fallbackTransform(getLocal());
+    const { data, error } = await supabase.rpc('get_my_learning_items', {
+      p_config_key: cloudKey,
+    });
+    const next = !error && Array.isArray(data) ? (data as T[]) : fallbackTransform(getLocal());
     saveLocal(next);
   } catch {
     saveLocal(fallbackTransform(getLocal()));
@@ -439,7 +518,7 @@ async function syncLocalListAfterPartnerRpc<T extends { id: string }>(
 export async function saveCourse(payload: Partial<LearningCourse>): Promise<LearningCourse> {
   if (!(await isPrivilegedSystemConfigWriter())) {
     const now = new Date().toISOString();
-    const existingList = await listCourses();
+    const existingList = await listCourses({ scope: 'partner' });
     const existing = payload.id ? existingList.find((c) => c.id === payload.id) : undefined;
     if (existing && isStaleEdit(existing.updated_at, payload.updated_at)) {
       throw new Error('A tananyagot időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
@@ -546,7 +625,7 @@ export async function saveCourse(payload: Partial<LearningCourse>): Promise<Lear
 
 export async function setCourseStatus(id: string, status: LearningCourse['status'], rejectionNote?: string | null): Promise<void> {
   if (!(await isPrivilegedSystemConfigWriter())) {
-    const existingList = await listCourses();
+    const existingList = await listCourses({ scope: 'partner' });
     const existing = existingList.find((c) => c.id === id);
     if (!existing) throw new Error('A tananyag nem található.');
     const itemToSave: LearningCourse = {
@@ -630,19 +709,58 @@ export async function saveQuizzesLocal(quizzes: Quiz[]): Promise<void> {
   await writeAppConfig(CLOUD_QUIZZES_KEY, quizzes);
 }
 
-async function getQuizzesWithCloudSync(): Promise<Quiz[]> {
-  try {
-    const cloud = await readAppConfig<Quiz[]>(CLOUD_QUIZZES_KEY);
-    if (Array.isArray(cloud) && cloud.length > 0) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(QUIZZES_STORAGE_KEY, JSON.stringify(cloud));
+async function getQuizzesWithCloudSync(scope: LearningReadScope = 'public'): Promise<Quiz[]> {
+  if (scope === 'admin') {
+    try {
+      const cloud = await readAppConfig<Quiz[]>(CLOUD_QUIZZES_KEY);
+      if (Array.isArray(cloud) && cloud.length > 0) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(QUIZZES_STORAGE_KEY, JSON.stringify(cloud));
+        }
+        return cloud;
       }
-      return cloud;
+    } catch {
+      // Fallback to localStorage cache
+    }
+    return getQuizzesLocal();
+  }
+
+  if (scope === 'partner') {
+    try {
+      const { data, error } = await supabase.rpc('get_my_learning_items', {
+        p_config_key: CLOUD_QUIZZES_KEY,
+      });
+      if (!error && Array.isArray(data)) {
+        const items = data as Quiz[];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(QUIZZES_STORAGE_KEY, JSON.stringify(items));
+        }
+        return items;
+      }
+    } catch {
+      // Fallback to partner local cache
+    }
+    return getQuizzesLocal();
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('get_published_learning_quizzes');
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const sanitized = stripQuizAnswerKeyList(data as Quiz[]);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PUBLIC_QUIZZES_STORAGE_KEY, JSON.stringify(sanitized));
+      }
+      return sanitized;
     }
   } catch {
-    // Fallback to localStorage cache
+    // Fallback to isolated & sanitized public cache
   }
-  return getQuizzesLocal();
+  return stripQuizAnswerKeyList(
+    getLocalListFallback<Quiz>(
+      PUBLIC_QUIZZES_STORAGE_KEY,
+      DEFAULT_QUIZZES.filter((q) => q.status === 'published')
+    )
+  );
 }
 
 export async function listQuizzes(options?: {
@@ -650,8 +768,19 @@ export async function listQuizzes(options?: {
   category?: string;
   status?: string;
   partnerId?: string;
+  scope?: LearningReadScope;
 }): Promise<Quiz[]> {
-  const all = await getQuizzesWithCloudSync();
+  let resolvedScope: LearningReadScope = options?.scope || 'public';
+  if (!options?.scope) {
+    if (options?.status === 'published') {
+      resolvedScope = 'public';
+    } else if (await isPrivilegedSystemConfigWriter()) {
+      resolvedScope = 'admin';
+    } else if (options?.partnerId) {
+      resolvedScope = 'partner';
+    }
+  }
+  const all = await getQuizzesWithCloudSync(resolvedScope);
   return all.filter((q) => {
     if (options?.status && options.status !== 'all' && q.status !== options.status) return false;
     if (options?.partnerId && q.partner_id !== options.partnerId) return false;
@@ -667,14 +796,34 @@ export async function listQuizzes(options?: {
 }
 
 export async function getQuizBySlug(slug: string): Promise<Quiz | null> {
-  const all = await getQuizzesWithCloudSync();
-  return all.find((q) => q.slug === slug || q.id === slug) || null;
+  const published = await getQuizzesWithCloudSync('public');
+  const publicMatch = published.find((q) => q.slug === slug || q.id === slug);
+  if (publicMatch) return stripQuizAnswerKey(publicMatch);
+
+  if (await isPrivilegedSystemConfigWriter()) {
+    const adminAll = await getQuizzesWithCloudSync('admin');
+    const adminMatch = adminAll.find((q) => q.slug === slug || q.id === slug);
+    if (adminMatch) return adminMatch;
+  }
+
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData?.user?.id) {
+      const partnerAll = await getQuizzesWithCloudSync('partner');
+      const partnerMatch = partnerAll.find((q) => q.slug === slug || q.id === slug);
+      if (partnerMatch) return partnerMatch;
+    }
+  } catch {
+    // ignore auth check failure
+  }
+
+  return null;
 }
 
 export async function saveQuiz(payload: Partial<Quiz>): Promise<Quiz> {
   if (!(await isPrivilegedSystemConfigWriter())) {
     const now = new Date().toISOString();
-    const existingList = await listQuizzes();
+    const existingList = await listQuizzes({ scope: 'partner' });
     const existing = payload.id ? existingList.find((q) => q.id === payload.id) : undefined;
     if (existing && isStaleEdit(existing.updated_at, payload.updated_at)) {
       throw new Error('A tesztet időközben más módosította. Kérjük, töltsd újra az oldalt a legfrissebb verzióhoz!');
@@ -761,7 +910,7 @@ export async function saveQuiz(payload: Partial<Quiz>): Promise<Quiz> {
 
 export async function setQuizStatus(id: string, status: Quiz['status'], rejectionNote?: string | null): Promise<void> {
   if (!(await isPrivilegedSystemConfigWriter())) {
-    const existingList = await listQuizzes();
+    const existingList = await listQuizzes({ scope: 'partner' });
     const existing = existingList.find((q) => q.id === id);
     if (!existing) throw new Error('A teszt nem található.');
     const itemToSave: Quiz = {
@@ -819,6 +968,41 @@ export async function deleteQuiz(id: string): Promise<void> {
 }
 
 // ── QUIZ EVALUATION & ATTEMPTS ──
+export interface QuizEvaluationQuestionResult {
+  question_id: string;
+  is_correct: boolean;
+  correct_options: number[];
+  explanation?: string;
+  points_earned: number;
+}
+
+export interface QuizEvaluationResult {
+  quiz_id: string;
+  score: number;
+  max_score: number;
+  percentage: number;
+  passed: boolean;
+  passing_score_percent: number;
+  results: QuizEvaluationQuestionResult[];
+}
+
+export async function evaluateQuizAttempt(
+  quizId: string,
+  userAnswers: Record<string, number[]>
+): Promise<QuizEvaluationResult> {
+  const { data, error } = await supabase.rpc('evaluate_learning_quiz_attempt', {
+    p_quiz_id: quizId,
+    p_user_answers: userAnswers,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data || typeof data !== 'object') {
+    throw new Error('Érvénytelen kiértékelési válasz érkezett a szervertől.');
+  }
+  return data as QuizEvaluationResult;
+}
+
 function getAttemptsStorageKey(userId?: string): string {
   return `${ATTEMPTS_STORAGE_KEY}_${userId || 'anon_guest'}`;
 }

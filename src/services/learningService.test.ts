@@ -40,11 +40,14 @@ vi.mock('../lib/supabase', () => ({
 }));
 
 import {
+  DEFAULT_QUIZZES,
   saveCourse,
   setCourseStatus,
   deleteCourse,
   getCoursesLocal,
   getCourseBySlug,
+  listQuizzes,
+  evaluateQuizAttempt,
   addTermToFlashcards,
   updateFlashcardMastery,
   getFlashcardsLocal,
@@ -171,5 +174,78 @@ describe('learningService', () => {
     await updateFlashcardMastery('user-1', card.id, true);
     const updated = getFlashcardsLocal('user-1').find((c) => c.id === card.id);
     expect(updated?.master_level).toBe(1);
+  });
+
+  it('does not include correct_options or explanation in DEFAULT_QUIZZES or public listQuizzes', async () => {
+    for (const quiz of DEFAULT_QUIZZES) {
+      for (const q of quiz.questions) {
+        expect(q.correct_options).toBeUndefined();
+        expect(q.explanation).toBeUndefined();
+      }
+    }
+
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'quiz-pub',
+          title: 'Publikus Teszt',
+          slug: 'publikus-teszt',
+          description: 'Leírás',
+          category_id: 'cat-1',
+          category_name: 'Tech',
+          difficulty: 'beginner',
+          passing_score_percent: 75,
+          status: 'published',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+          questions: [
+            {
+              id: 'q1',
+              question: 'Kérdés?',
+              options: ['A', 'B'],
+              correct_options: [1],
+              explanation: 'Magyarázat',
+              points: 10,
+            },
+          ],
+        },
+      ],
+      error: null,
+    });
+
+    const publicQuizzes = await listQuizzes({ status: 'published', scope: 'public' });
+    expect(publicQuizzes).toHaveLength(1);
+    expect(publicQuizzes[0].questions[0].correct_options).toBeUndefined();
+    expect(publicQuizzes[0].questions[0].explanation).toBeUndefined();
+  });
+
+  it('evaluates quiz attempts via evaluate_learning_quiz_attempt RPC', async () => {
+    const mockEval = {
+      quiz_id: 'quiz-1',
+      score: 40,
+      max_score: 40,
+      percentage: 100,
+      passed: true,
+      passing_score_percent: 75,
+      results: [
+        {
+          question_id: 'q-1',
+          is_correct: true,
+          correct_options: [1],
+          explanation: 'Magyarázat',
+          points_earned: 10,
+        },
+      ],
+    };
+    rpcMock.mockResolvedValueOnce({ data: mockEval, error: null });
+
+    const res = await evaluateQuizAttempt('quiz-1', { 'q-1': [1] });
+    expect(rpcMock).toHaveBeenCalledWith('evaluate_learning_quiz_attempt', {
+      p_quiz_id: 'quiz-1',
+      p_user_answers: { 'q-1': [1] },
+    });
+    expect(res.score).toBe(40);
+    expect(res.passed).toBe(true);
+    expect(res.results[0].correct_options).toEqual([1]);
   });
 });

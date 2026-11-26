@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import type { Quiz, QuizAttempt } from '../lib/supabase';
-import { getQuizBySlug, saveQuizAttempt } from '../services/learningService';
+import { evaluateQuizAttempt, getQuizBySlug, saveQuizAttempt } from '../services/learningService';
 
 interface QuizPlayerPageProps {
   quizId: string;
@@ -78,35 +78,37 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
     try {
       let attempt = pendingAttempt;
       if (!attempt) {
-        let score = 0;
-        let maxScore = 0;
+        const evalResult = await evaluateQuizAttempt(quiz.id, selectedAnswers);
+        const feedbackMap = new Map(
+          (evalResult.results || []).map((r) => [r.question_id, r])
+        );
 
-        quiz.questions.forEach((q) => {
-          maxScore += q.points || 10;
-          const userSelected = selectedAnswers[q.id] || [];
-          const correct = q.correct_options || [];
-
-          // Exact match for correct options
-          const isCorrect =
-            userSelected.length === correct.length &&
-            userSelected.every((val) => correct.includes(val));
-
-          if (isCorrect) {
-            score += q.points || 10;
-          }
-        });
-
-        const percentage = Math.round((score / Math.max(1, maxScore)) * 100);
-        const passed = percentage >= quiz.passing_score_percent;
+        setQuiz((prev) =>
+          prev
+            ? {
+                ...prev,
+                questions: prev.questions.map((q) => {
+                  const fb = feedbackMap.get(q.id);
+                  return fb
+                    ? {
+                        ...q,
+                        correct_options: fb.correct_options,
+                        explanation: fb.explanation ?? q.explanation,
+                      }
+                    : q;
+                }),
+              }
+            : prev
+        );
 
         attempt = {
           id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           user_id: userId,
-          quiz_id: quiz.id,
-          score,
-          max_score: maxScore,
-          percentage,
-          passed,
+          quiz_id: evalResult.quiz_id || quiz.id,
+          score: evalResult.score,
+          max_score: evalResult.max_score,
+          percentage: evalResult.percentage,
+          passed: evalResult.passed,
           user_answers: selectedAnswers,
           completed_at: new Date().toISOString(),
         };
@@ -119,7 +121,7 @@ export default function QuizPlayerPage({ quizId, onNavigate }: QuizPlayerPagePro
       setIsFinished(true);
     } catch (e) {
       const msg = e instanceof Error && e.message ? e.message : 'Ismeretlen hiba történt a mentés során.';
-      setSaveError(`A teszt eredményét nem sikerült elmenteni a felhőbe. Kérjük, próbáld meg újra! (${msg})`);
+      setSaveError(`A teszt kiértékelése vagy mentése sikertelen volt. Kérjük, próbáld meg újra! (${msg})`);
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);

@@ -40,7 +40,7 @@ import {
   getFlashcardsLocal,
   fetchFlashcardsFromCloud,
   saveFlashcardsLocal,
-  getCoursesLocal,
+  listCourses,
   getCourseProgress,
   getQuizAttempts,
   listQuizzes,
@@ -416,7 +416,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       const certs = await getUserCertificates(user.id);
       setCertificates(certs);
 
-      const allCourses = getCoursesLocal();
+      const allCourses = await listCourses({ status: 'published', scope: 'public' });
       const userCourseList = allCourses.map((c) => ({
         course: c,
         progress: getCourseProgress(user.id, c.id),
@@ -426,7 +426,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       const attempts = getQuizAttempts(user.id);
       setQuizAttempts(attempts);
 
-      const qList = await listQuizzes();
+      const qList = await listQuizzes({ status: 'published', scope: 'public' });
       setAvailableQuizzes(qList);
     } catch (err) {
       console.warn('Error loading learning data:', err);
