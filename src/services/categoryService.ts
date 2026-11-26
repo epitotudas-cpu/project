@@ -471,14 +471,29 @@ export async function deleteCategoryAndReassignArticles(
   sourceCategoryId: string,
   targetCategoryId: string
 ): Promise<void> {
-  // Reassign local articles
+  const cleanTargetId = (targetCategoryId || '').trim();
+
+  if (cleanTargetId && cleanTargetId === sourceCategoryId) {
+    throw new Error('A célkategória nem egyezhet meg a törlendő kategóriával.');
+  }
+
+  const { error } = await supabase.rpc('delete_category_and_reassign_articles', {
+    p_source_category_id: sourceCategoryId,
+    p_target_category_id: cleanTargetId || null,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Kategória törlése sikertelen.');
+  }
+
+  // Sync localStorage only after Supabase RPC succeeds
   try {
     const rawArticles = localStorage.getItem('epitotudas_articles_v2');
     if (rawArticles) {
       const parsed = JSON.parse(rawArticles);
       if (Array.isArray(parsed)) {
         const updated = parsed.map((a: { category_id?: string; [key: string]: unknown }) =>
-          a.category_id === sourceCategoryId ? { ...a, category_id: targetCategoryId } : a
+          a.category_id === sourceCategoryId ? { ...a, category_id: cleanTargetId || null } : a
         );
         localStorage.setItem('epitotudas_articles_v2', JSON.stringify(updated));
         window.dispatchEvent(new Event('articles-updated'));
@@ -488,19 +503,14 @@ export async function deleteCategoryAndReassignArticles(
     console.warn('Reassign local articles warning:', err);
   }
 
-  // Reassign Supabase articles
-  const { error: reassignError } = await supabase
-    .from('articles')
-    .update({ category_id: targetCategoryId })
-    .eq('category_id', sourceCategoryId);
-  if (reassignError) {
-    throw new Error(reassignError.message || 'Cikkek átsorolása sikertelen.');
-  }
-
-  // Delete from Supabase
-  const { error: deleteError } = await supabase.from('categories').delete().eq('id', sourceCategoryId);
-  if (deleteError) {
-    throw new Error(deleteError.message || 'Kategória törlése sikertelen.');
+  if (typeof window !== 'undefined') {
+    try {
+      const map = getLocalCategories();
+      delete map[sourceCategoryId];
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+    } catch {
+      // ignore
+    }
   }
 
   // Mark category as deleted locally

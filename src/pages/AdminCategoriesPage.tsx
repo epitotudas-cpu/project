@@ -30,6 +30,8 @@ import { useToast } from '../components/ToastProvider';
 import EditCategoryModal from '../components/EditCategoryModal';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useAuth } from '../contexts/AuthContext';
+import { hasModuleActionPermission } from '../services/permissionService';
 
 type CategoryWithCount = Category & { articleCount: number };
 
@@ -57,6 +59,10 @@ interface AdminCategoriesPageProps {
 }
 
 export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategoriesPageProps = {}) {
+  const { profile } = useAuth();
+  const canCreateCategory = hasModuleActionPermission(profile?.role, 'categories', 'create');
+  const canEditCategory = hasModuleActionPermission(profile?.role, 'categories', 'edit');
+  const canDeleteCategory = hasModuleActionPermission(profile?.role, 'categories', 'delete');
   const toast = useToast();
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,11 +126,13 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
   }, [searchQuery, filteredCategories]);
 
   function openCreate() {
+    if (!canCreateCategory) return;
     setEditing(null);
     setEditorOpen(true);
   }
 
   function openEdit(category: CategoryWithCount) {
+    if (!canEditCategory) return;
     setEditing(category);
     setEditorOpen(true);
   }
@@ -135,6 +143,7 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
   }
 
   function handleDelete(category: CategoryWithCount) {
+    if (!canDeleteCategory) return;
     setDeleteTarget(category);
   }
 
@@ -180,13 +189,15 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
           <p className="text-sm text-gray-500 mt-1">{categories.length} kategória kezelése és testreszabása</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={openCreate}
-            style={{ backgroundColor: cardHighlight, color: '#000000' }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-xl hover:opacity-90 transition-all shadow-lg cursor-pointer"
-          >
-            <Plus size={16} /> Új kategória
-          </button>
+          {canCreateCategory && (
+            <button
+              onClick={openCreate}
+              style={{ backgroundColor: cardHighlight, color: '#000000' }}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-black rounded-xl hover:opacity-90 transition-all shadow-lg cursor-pointer"
+            >
+              <Plus size={16} /> Új kategória
+            </button>
+          )}
           {!loading && (
             <button
               onClick={loadCategories}
@@ -322,20 +333,24 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
                     />
 
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openEdit(c)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-xl hover:bg-[#FFC400] hover:text-black hover:border-[#FFC400] transition-all"
-                      >
-                        <Pencil size={13} /> Szerkesztés
-                      </button>
-                      <button
-                        onClick={() => handleDelete(c)}
-                        disabled={deletingId === c.id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 bg-red-500/10 rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
-                        title="Kategória törlése"
-                      >
-                        <Trash2 size={13} /> Törlés
-                      </button>
+                      {canEditCategory && (
+                        <button
+                          onClick={() => openEdit(c)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-300 border border-[#1E1E1E] rounded-xl hover:bg-[#FFC400] hover:text-black hover:border-[#FFC400] transition-all"
+                        >
+                          <Pencil size={13} /> Szerkesztés
+                        </button>
+                      )}
+                      {canDeleteCategory && (
+                        <button
+                          onClick={() => handleDelete(c)}
+                          disabled={deletingId === c.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 bg-red-500/10 rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                          title="Kategória törlése"
+                        >
+                          <Trash2 size={13} /> Törlés
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

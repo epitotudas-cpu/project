@@ -52,7 +52,7 @@ export type ConfigurableRole = 'editor' | 'partner' | 'school' | 'teacher';
 
 const DEFAULT_EDITOR_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   articles: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
-  categories: { view: true, create: true, edit: true, submit: false, publish: false, delete: false },
+  categories: { view: true, create: true, edit: true, submit: false, publish: false, delete: true },
   news: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
   guides: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
   glossary: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },

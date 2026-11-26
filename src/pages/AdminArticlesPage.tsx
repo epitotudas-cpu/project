@@ -89,6 +89,10 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
   const canEditArticle = hasModuleActionPermission(profile?.role, 'articles', 'edit');
   const canPublishArticle = hasModuleActionPermission(profile?.role, 'articles', 'publish');
   const canDeleteArticle = hasModuleActionPermission(profile?.role, 'articles', 'delete');
+  const canViewCategories = hasModuleActionPermission(profile?.role, 'categories', 'view');
+  const canCreateCategory = hasModuleActionPermission(profile?.role, 'categories', 'create');
+  const canEditCategory = hasModuleActionPermission(profile?.role, 'categories', 'edit');
+  const canDeleteCategory = hasModuleActionPermission(profile?.role, 'categories', 'delete');
 
   const [subTab, setSubTab] = useState<ArticleHubSubTab>('overview');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -587,6 +591,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
             </div>
 
             {/* CIKK KATEGÓRIÁK CARD */}
+            {canViewCategories && (
             <div
               onClick={() => setSubTab('categories')}
               style={{ backgroundColor: cardBg, borderColor: cardBorder }}
@@ -607,6 +612,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
               </div>
               <ChevronRight size={20} className="text-gray-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all shrink-0" />
             </div>
+            )}
           </div>
         </div>
       )}
@@ -983,7 +989,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
       {/* ---------------------------------------------------------------------- */}
       {/* SUBTAB 2: CIKK KATEGÓRIÁK */}
       {/* ---------------------------------------------------------------------- */}
-      {subTab === 'categories' && (
+      {subTab === 'categories' && canViewCategories && (
         <div style={{ backgroundColor: cardBg, borderColor: cardBorder }} className="p-6 border rounded-2xl space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -992,16 +998,18 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                 A nyilvános „Hírek / Újdonságok / Útmutatók” menüsáv automatikusan ezekből a kezelt kategóriákból épül fel.
               </p>
             </div>
-            <button
-              onClick={() => {
-                setEditingCategory(null);
-                setCategoryModalOpen(true);
-              }}
-              style={{ backgroundColor: cardHighlight }}
-              className="flex items-center gap-2 px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all"
-            >
-              <Plus size={16} /> Új Kategória Hozzáadása
-            </button>
+            {canCreateCategory && (
+              <button
+                onClick={() => {
+                  setEditingCategory(null);
+                  setCategoryModalOpen(true);
+                }}
+                style={{ backgroundColor: cardHighlight }}
+                className="flex items-center gap-2 px-4 py-2 text-black font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition-all"
+              >
+                <Plus size={16} /> Új Kategória Hozzáadása
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1028,26 +1036,30 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
                     </div>
 
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => {
-                          setEditingCategory(cat);
-                          setCategoryModalOpen(true);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-amber-400 transition-colors"
-                        title="Szerkesztés"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeletingCategory(cat);
-                          setDeleteCategoryModalOpen(true);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
-                        title="Törlés áthelyezéssel"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {canEditCategory && (
+                        <button
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setCategoryModalOpen(true);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-amber-400 transition-colors"
+                          title="Szerkesztés"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      )}
+                      {canDeleteCategory && (
+                        <button
+                          onClick={() => {
+                            setDeletingCategory(cat);
+                            setDeleteCategoryModalOpen(true);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
+                          title="Törlés áthelyezéssel"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1744,7 +1756,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
       )}
 
       {/* EDIT CATEGORY MODAL */}
-      {categoryModalOpen && (
+      {categoryModalOpen && (editingCategory ? canEditCategory : canCreateCategory) && (
         <EditCategoryModal
           category={editingCategory}
           onClose={() => {
@@ -1760,7 +1772,7 @@ export default function AdminArticlesPage({ initialSearchQuery, onNavigateView }
       )}
 
       {/* DELETE CATEGORY MODAL WITH REASSIGNMENT */}
-      {deleteCategoryModalOpen && deletingCategory && (
+      {deleteCategoryModalOpen && canDeleteCategory && deletingCategory && (
         <DeleteCategoryModal
           category={deletingCategory}
           allCategories={categories}
