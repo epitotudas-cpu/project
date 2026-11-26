@@ -79,8 +79,11 @@ BEGIN
   FOR v_elem IN SELECT * FROM jsonb_array_elements(v_raw)
   LOOP
     v_is_active := (
-      (coalesce(v_elem->>'status', '') = 'active' OR coalesce(v_elem->>'status_v2', '') = 'active')
-      AND coalesce(v_elem->>'status_v2', '') NOT IN ('expired', 'cancelled')
+      coalesce(v_elem->>'status', '') = 'active'
+      AND (
+        nullif(v_elem->>'status_v2', '') IS NULL
+        OR v_elem->>'status_v2' = 'active'
+      )
     );
 
     IF NOT v_is_active THEN
