@@ -21,6 +21,7 @@ import {
   Menu,
   CheckSquare,
   Settings,
+  FolderTree,
 } from 'lucide-react';
 
 export type EditorView =
@@ -51,6 +52,7 @@ const EDITOR_NAV_ITEMS: Array<{ id: EditorView; moduleId: string; label: string;
   { id: 'articles', moduleId: 'articles', label: 'Cikkek & Tudásanyagok', icon: FileText },
   { id: 'utmutatok', moduleId: 'guides', label: 'Kivitelezési Útmutatók', icon: BookMarked },
   { id: 'learning', moduleId: 'learning', label: 'Tananyagok & Kvízek', icon: GraduationCap },
+  { id: 'categories', moduleId: 'categories', label: 'Kategóriák', icon: FolderTree },
   { id: 'glossary', moduleId: 'glossary', label: 'Fogalomtár', icon: BookOpen },
   { id: 'safety', moduleId: 'safety', label: 'Munkavédelem', icon: ShieldAlert },
   { id: 'materials', moduleId: 'catalog', label: 'Építőipari Anyagok', icon: Layers },

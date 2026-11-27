@@ -25,6 +25,7 @@ import {
   TrendingUp,
   User,
   FileText,
+  FolderTree,
 } from 'lucide-react';
 
 export type PartnerView =
@@ -42,6 +43,7 @@ export type PartnerView =
   | 'partner_products'
   | 'partner_articles'
   | 'partner_learning'
+  | 'categories'
   | 'catalog'
   | 'partner_stats';
 
@@ -61,8 +63,9 @@ const PARTNER_NAV_ITEMS: Array<{ id: PartnerView; moduleId: string; label: strin
   { id: 'partner_profile', moduleId: 'partner_profile', label: 'Saját Partnerprofil', icon: Building2 },
   { id: 'partner_offers', moduleId: 'partner_offers', label: 'Saját Ajánlatok & Akciók', icon: Tag },
   { id: 'partner_products', moduleId: 'partner_products', label: 'Termékek & Anyagok', icon: Package },
-  { id: 'partner_articles', moduleId: 'partner_profile', label: 'Szakmai Cikkek & Útmutatók', icon: FileText },
-  { id: 'partner_learning', moduleId: 'partner_profile', label: 'Oktatási Anyagok & Tesztek', icon: GraduationCap },
+  { id: 'partner_articles', moduleId: 'articles', label: 'Szakmai Cikkek & Útmutatók', icon: FileText },
+  { id: 'partner_learning', moduleId: 'learning', label: 'Oktatási Anyagok & Tesztek', icon: GraduationCap },
+  { id: 'categories', moduleId: 'categories', label: 'Kategóriák', icon: FolderTree },
   { id: 'catalog', moduleId: 'catalog', label: 'Eszközök & gépek enciklopédiája', icon: Wrench },
   { id: 'partner_stats', moduleId: 'partner_stats', label: 'Statisztikák & Teljesítmény', icon: BarChart3 },
 ];
@@ -151,6 +154,7 @@ export default function PartnerLayout({
     { id: 'classes', moduleId: 'partner_profile', label: 'Osztályaim', icon: GraduationCap },
     { id: 'students', moduleId: 'partner_profile', label: 'Tanulóim', icon: Users },
     { id: 'materials', moduleId: 'learning', label: 'Tananyagok', icon: BookOpen },
+    { id: 'categories', moduleId: 'categories', label: 'Kategóriák', icon: FolderTree },
     { id: 'package_builder', moduleId: 'learning', label: 'Tananyag összeállítása', icon: Layers },
     { id: 'assigned_materials', moduleId: 'learning', label: 'Kiosztott tananyagok', icon: CheckSquare },
     { id: 'tests', moduleId: 'learning', label: 'Tesztek', icon: FileCheck },
@@ -158,9 +162,14 @@ export default function PartnerLayout({
     { id: 'settings', moduleId: 'partner_profile', label: 'Saját beállítások', icon: User },
   ];
 
+  const teacherPermissionRole = profile?.role === 'admin' ? 'admin' : 'teacher';
+  const schoolPermissionRole = profile?.role === 'admin' ? 'admin' : 'school';
+
   // Filter nav items based on role
   const availableNavItems = isTeacher
-    ? teacherNavItems
+    ? teacherNavItems.filter((item) =>
+        item.id === 'dashboard' ? true : canRoleAccessModule(teacherPermissionRole, item.moduleId)
+      )
     : PARTNER_NAV_ITEMS.map((item) => {
         if (item.id === 'dashboard') {
           return {
@@ -178,7 +187,11 @@ export default function PartnerLayout({
         return item;
       }).filter((item) => {
         if (isSchoolAdmin) {
-          return item.id === 'dashboard' || item.id === 'partner_profile';
+          return (
+            item.id === 'dashboard' ||
+            item.id === 'partner_profile' ||
+            (item.id === 'categories' && canRoleAccessModule(schoolPermissionRole, item.moduleId))
+          );
         }
         if (item.id === 'dashboard') return true;
         return canRoleAccessModule(role, item.moduleId);

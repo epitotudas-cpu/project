@@ -1205,7 +1205,7 @@ export default function CalculationsPage({ onNavigate }: CalculationsPageProps) 
         setViewMode('interactive-calculators');
         if (
           tabParam &&
-          ['concrete', 'masonry', 'insulation', 'tiling', 'drywall', 'roofing', 'rafter'].includes(tabParam)
+          ['concrete', 'masonry', 'insulation', 'tiling', 'drywall', 'roofing', 'rafter', 'cable', 'paint', 'paving', 'earthwork', 'underfloor'].includes(tabParam)
         ) {
           setActiveTab(tabParam as CalculatorTab);
         }

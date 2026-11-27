@@ -56,13 +56,17 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 interface AdminCategoriesPageProps {
   initialSearchQuery?: string;
+  readOnly?: boolean;
+  effectiveRole?: string;
 }
 
-export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategoriesPageProps = {}) {
+export default function AdminCategoriesPage({ initialSearchQuery, readOnly = false, effectiveRole }: AdminCategoriesPageProps = {}) {
   const { profile } = useAuth();
-  const canCreateCategory = hasModuleActionPermission(profile?.role, 'categories', 'create');
-  const canEditCategory = hasModuleActionPermission(profile?.role, 'categories', 'edit');
-  const canDeleteCategory = hasModuleActionPermission(profile?.role, 'categories', 'delete');
+  const activeRole = effectiveRole ?? profile?.role;
+  const canViewCategory = hasModuleActionPermission(activeRole, 'categories', 'view');
+  const canCreateCategory = !readOnly && hasModuleActionPermission(activeRole, 'categories', 'create');
+  const canEditCategory = !readOnly && hasModuleActionPermission(activeRole, 'categories', 'edit');
+  const canDeleteCategory = !readOnly && hasModuleActionPermission(activeRole, 'categories', 'delete');
   const toast = useToast();
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,8 +100,12 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
   }, []);
 
   useEffect(() => {
+    if (!canViewCategory) {
+      setLoading(false);
+      return;
+    }
     loadCategories();
-  }, [loadCategories]);
+  }, [canViewCategory, loadCategories]);
 
   const filteredCategories = categories.filter((c) => {
     return (
@@ -166,6 +174,19 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
   const cardHighlight = siteSettings.adminCardHighlightColor || '#FFC400';
   const cardBorder = adjustColorBrightness(cardBg, 12);
   const inputBg = adjustColorBrightness(cardBg, -4);
+
+  if (!canViewCategory) {
+    return (
+      <div className="p-8">
+        <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3">
+          <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
+          <p className="text-red-300 text-sm font-semibold">
+            Nincs jogosultság a kategóriák megtekintéséhez.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">

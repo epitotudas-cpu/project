@@ -613,6 +613,7 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
   }
 
   if (isTeacher) {
+    const teacherEffectiveRole = profile?.role === 'admin' ? 'admin' : 'teacher';
     return (
       <PartnerLayout
         onNavigate={onNavigate}
@@ -621,11 +622,19 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
         memberRole={memberRole}
         isSchoolCategory={isSchoolCategory}
       >
-        <TeacherDashboardPage
-          activeView={partnerView}
-          onNavigateView={setPartnerView}
-          onNavigate={onNavigate}
-        />
+        {partnerView === 'categories' ? (
+          canRoleAccessModule(teacherEffectiveRole, 'categories') ? (
+            <Suspense fallback={<PageFallback />}>
+              <AdminCategoriesPage readOnly effectiveRole={teacherEffectiveRole} />
+            </Suspense>
+          ) : null
+        ) : (
+          <TeacherDashboardPage
+            activeView={partnerView}
+            onNavigateView={setPartnerView}
+            onNavigate={onNavigate}
+          />
+        )}
       </PartnerLayout>
     );
   }
@@ -1195,6 +1204,23 @@ function PartnerPanelContent({ onNavigate }: { onNavigate: (page: string, params
         <Suspense fallback={<PageFallback />}>
           <PartnerLearningPage partnerId={effectivePartner.id} partnerName={effectivePartner.name} />
         </Suspense>
+      )}
+
+      {partnerView === 'categories' && (
+        (isSchoolAdmin
+          ? canRoleAccessModule(profile?.role === 'admin' ? 'admin' : 'school', 'categories')
+          : canRoleAccessModule(profile?.role || 'partner', 'categories')) && (
+          <Suspense fallback={<PageFallback />}>
+            <AdminCategoriesPage
+              readOnly={isSchoolAdmin}
+              effectiveRole={
+                isSchoolAdmin
+                  ? (profile?.role === 'admin' ? 'admin' : 'school')
+                  : (profile?.role || 'partner')
+              }
+            />
+          </Suspense>
+        )
       )}
 
       {partnerView === 'partner_stats' && (

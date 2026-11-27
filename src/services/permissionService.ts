@@ -77,7 +77,7 @@ const DEFAULT_EDITOR_PERMISSIONS: Record<string, ModuleActionPermissions> = {
 
 const DEFAULT_PARTNER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   articles: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
-  categories: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  categories: { view: true, create: true, edit: true, submit: false, publish: false, delete: true },
   news: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
   guides: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
   glossary: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
@@ -87,7 +87,7 @@ const DEFAULT_PARTNER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   calculators: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
   safety: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
   regulations: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
-  learning: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  learning: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
   catalog: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
 
   partner_profile: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
@@ -102,7 +102,7 @@ const DEFAULT_PARTNER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
 
 const DEFAULT_SCHOOL_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   articles: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
-  categories: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  categories: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
   news: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
   guides: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
   glossary: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
@@ -127,7 +127,7 @@ const DEFAULT_SCHOOL_PERMISSIONS: Record<string, ModuleActionPermissions> = {
 
 const DEFAULT_TEACHER_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   articles: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
-  categories: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  categories: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
   news: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
   guides: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
   glossary: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },

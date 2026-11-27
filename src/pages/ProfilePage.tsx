@@ -507,7 +507,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
         const hash = window.location.hash;
         if (hash.includes('tab=')) {
           const tab = hash.split('tab=')[1].split('&')[0];
-          if (['overview', 'materials', 'my-class', 'progress', 'tests', 'school-link', 'settings'].includes(tab)) {
+          if (['overview', 'materials', 'flashcards', 'my-class', 'progress', 'tests', 'school-link', 'settings', 'help'].includes(tab)) {
             setActiveMainSection(tab as MainSection);
           } else if (tab === 'learning' || tab === 'saved') {
             setActiveMainSection('materials');
