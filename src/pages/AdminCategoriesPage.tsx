@@ -25,11 +25,11 @@ import {
   Settings,
 } from 'lucide-react';
 import type { Category } from '../lib/supabase';
-import { listCategories, countArticlesForCategories, deleteCategory } from '../services/categoryService';
+import { listCategories, countArticlesForCategories } from '../services/categoryService';
 import { useToast } from '../components/ToastProvider';
 import EditCategoryModal from '../components/EditCategoryModal';
 import { useSiteSettings, adjustColorBrightness } from '../services/siteSettingsService';
-import ConfirmDialog from '../components/ConfirmDialog';
+import DeleteCategoryModal from '../components/DeleteCategoryModal';
 import { useAuth } from '../contexts/AuthContext';
 import { hasModuleActionPermission } from '../services/permissionService';
 
@@ -69,7 +69,6 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Category | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CategoryWithCount | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
@@ -145,19 +144,6 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
   function handleDelete(category: CategoryWithCount) {
     if (!canDeleteCategory) return;
     setDeleteTarget(category);
-  }
-
-  async function confirmDeleteCategory(category: CategoryWithCount) {
-    setDeletingId(category.id);
-    try {
-      await deleteCategory(category.id);
-      setCategories((prev) => prev.filter((c) => c.id !== category.id));
-      toast.success(`A(z) "${category.name}" kategória törölve.`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Hiba történt a törlés során.');
-    } finally {
-      setDeletingId(null);
-    }
   }
 
   function handleSaved(saved: Category) {
@@ -344,8 +330,7 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
                       {canDeleteCategory && (
                         <button
                           onClick={() => handleDelete(c)}
-                          disabled={deletingId === c.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 bg-red-500/10 rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 border border-red-500/20 bg-red-500/10 rounded-xl hover:bg-red-500 hover:text-white transition-all"
                           title="Kategória törlése"
                         >
                           <Trash2 size={13} /> Törlés
@@ -366,26 +351,18 @@ export default function AdminCategoriesPage({ initialSearchQuery }: AdminCategor
           onSaved={handleSaved}
         />
       )}
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="Kategória törlése"
-        message={
-          deleteTarget
-            ? `Biztosan törölni szeretnéd a(z) "${deleteTarget.name}" kategóriát?${
-                deleteTarget.articleCount > 0
-                  ? `\n\nFigyelem: A kategória ${deleteTarget.articleCount} cikket tartalmaz!`
-                  : ''
-              }`
-            : ''
-        }
-        confirmLabel="Törlés"
-        destructive
-        onConfirm={async () => {
-          if (deleteTarget) await confirmDeleteCategory(deleteTarget);
-          setDeleteTarget(null);
-        }}
-        onCancel={() => setDeleteTarget(null)}
-      />
+      {canDeleteCategory && deleteTarget && (
+        <DeleteCategoryModal
+          category={deleteTarget}
+          allCategories={categories}
+          isOpen={Boolean(deleteTarget)}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => {
+            setDeleteTarget(null);
+            void loadCategories();
+          }}
+        />
+      )}
     </div>
   );
 }
