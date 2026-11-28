@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "cloudflare": {
+      "serverUrl": "https://mcp.cloudflare.com/mcp"
+    },
+    "supabase-epitotudas": {
+      "serverUrl": "https://mcp.supabase.com/mcp?project_ref=olmavxcmkvvcebgqxohe"
+    }
+  }
+}

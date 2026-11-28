@@ -4,15 +4,7 @@ import {
   Menu,
   X,
   User,
-  LogOut,
   ChevronDown,
-  Settings,
-  GraduationCap,
-  Bookmark,
-  Clock,
-  HelpCircle,
-  Sliders,
-  Building2,
   Loader2,
   FileText,
   BookOpen,
@@ -423,9 +415,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       onNavigate(item.page);
                       setActiveDropdown(null);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-colors duration-150 whitespace-nowrap flex items-center gap-1 ${active
-                        ? 'text-accent bg-accent/10 font-bold border border-accent/20'
-                        : 'text-gray-300 group-hover:text-white group-hover:bg-white/5'
+                    className={`px-3 py-1.5 rounded-xl text-xs lg:text-sm font-semibold transition-colors duration-150 whitespace-nowrap flex items-center gap-1 ${active
+                        ? 'text-white bg-white/15 font-bold'
+                        : 'text-gray-300 group-hover:text-white group-hover:bg-white/10'
                       }`}
                   >
                     <span>{item.label}</span>
@@ -451,7 +443,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       {/* Invisible Hover Bridge spanning gap to trigger button */}
                       <div className="absolute -top-3 left-0 right-0 h-4 bg-transparent" />
 
-                      <div className="w-56 bg-[#111] border border-[#222] rounded-xl shadow-2xl overflow-hidden py-1">
+                      <div className="w-56 bg-primary-900 rounded-2xl shadow-lg overflow-hidden py-1.5">
                         {item.subItems.map((sub) => {
                           const isSubActive = isSubItemActive(sub.page, currentPage, location);
                           return (
@@ -496,9 +488,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             {isAdmin && (
               <button
                 onClick={() => onNavigate('admin')}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent-hover text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
+                className="hidden lg:flex items-center px-3 py-1.5 bg-accent hover:bg-accent-hover text-white text-xs lg:text-sm font-extrabold rounded-xl transition-colors whitespace-nowrap shadow-sm"
               >
-                <Settings size={14} />
                 Admin panel
               </button>
             )}
@@ -506,9 +497,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             {isEditor && (
               <button
                 onClick={() => onNavigate('szerkeszto')}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
+                className="hidden lg:flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs lg:text-sm font-extrabold rounded-xl transition-colors whitespace-nowrap shadow-sm"
               >
-                <User size={14} />
                 Szerkesztői panel
               </button>
             )}
@@ -516,9 +506,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             {isStudent && (
               <button
                 onClick={() => onNavigate('profile?tab=overview')}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs cursor-pointer"
+                className="hidden lg:flex items-center px-3 py-1.5 bg-[#4165b4] hover:bg-[#325296] text-white text-xs lg:text-sm font-extrabold rounded-xl transition-colors whitespace-nowrap shadow-sm cursor-pointer"
               >
-                <GraduationCap size={14} />
                 Tanuló panel
               </button>
             )}
@@ -526,9 +515,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             {isPartner && (
               <button
                 onClick={() => onNavigate(isTeacher ? 'teacher' : 'partner')}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
+                className="hidden lg:flex items-center px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-xs lg:text-sm font-extrabold rounded-xl transition-colors whitespace-nowrap shadow-sm"
               >
-                {isTeacher ? <GraduationCap size={14} /> : <Sliders size={14} />}
                 {isTeacher ? 'Tanár panel' : 'Partner panel'}
               </button>
             )}
@@ -540,9 +528,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-600 text-gray-300 text-sm font-medium hover:bg-white/5 transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 text-gray-200 text-sm font-medium hover:bg-white/15 transition-colors"
                 >
-                  <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
                     <User size={12} className="text-accent" />
                   </div>
                   <span className="max-w-[110px] truncate">{displayName}</span>
@@ -553,60 +541,54 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-[#111] border border-[#1E1E1E] rounded-xl shadow-2xl overflow-hidden z-50 divide-y divide-[#1E1E1E]/60 text-xs">
-                    <div className="px-4 py-3 bg-[#161616]">
+                  <div className="absolute right-0 mt-2 w-56 bg-primary-900 rounded-2xl shadow-lg overflow-hidden z-50 divide-y divide-white/10 text-xs">
+                    <div className="px-4 py-3 bg-primary-800/70">
                       <p className="text-white text-xs font-bold truncate">{displayName}</p>
-                      <p className="text-gray-500 text-[11px] truncate mt-0.5">{user.email}</p>
+                      <p className="text-gray-400 text-[11px] truncate mt-0.5">{user.email}</p>
                     </div>
 
                     <div className="py-1">
                       <button
                         onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=overview'); }}
-                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors font-medium"
                       >
-                        <User size={14} className="text-accent shrink-0" />
                         {isStudent ? 'Tanuló panel' : 'Fiókom'}
                       </button>
 
                       {!isTeacher && (
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=learning'); }}
-                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors font-medium"
                         >
-                          <GraduationCap size={14} className="text-blue-400 shrink-0" />
                           Tanulásom
                         </button>
                       )}
 
                       <button
                         onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=saved'); }}
-                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors font-medium"
                       >
-                        <Bookmark size={14} className="text-purple-400 shrink-0" />
                         Mentéseim
                       </button>
 
                       <button
                         onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=history'); }}
-                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors font-medium"
                       >
-                        <Clock size={14} className="text-amber-400 shrink-0" />
                         Előzményeim
                       </button>
 
                       <button
                         onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=settings'); }}
-                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors font-medium"
                       >
-                        <Sliders size={14} className="text-emerald-400 shrink-0" />
                         Beállítások
                       </button>
 
                       <button
                         onClick={() => { setUserMenuOpen(false); onNavigate('profile?tab=help'); }}
-                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2.5 font-medium"
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors font-medium"
                       >
-                        <HelpCircle size={14} className="text-sky-400 shrink-0" />
                         Segítség
                       </button>
                     </div>
@@ -615,23 +597,20 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       <div className="py-1 space-y-1">
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('admin'); }}
-                          className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                          className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/10 transition-colors font-bold"
                         >
-                          <Settings size={14} className="text-amber-400 shrink-0" />
                           Admin panel
                         </button>
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('szerkeszto'); }}
-                          className="w-full px-4 py-2 text-left text-amber-300 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                          className="w-full px-4 py-2 text-left text-amber-300 hover:bg-white/10 transition-colors font-bold"
                         >
-                          <User size={14} className="text-amber-300 shrink-0" />
                           Szerkesztői panel
                         </button>
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('partner'); }}
-                          className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                          className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/10 transition-colors font-bold"
                         >
-                          <Sliders size={14} className="text-blue-400 shrink-0" />
                           Partner panel
                         </button>
                       </div>
@@ -641,9 +620,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                       <div className="py-1">
                         <button
                           onClick={() => { setUserMenuOpen(false); onNavigate('szerkeszto'); }}
-                          className="w-full px-4 py-2 text-left text-purple-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                          className="w-full px-4 py-2 text-left text-purple-400 hover:bg-white/10 transition-colors font-bold"
                         >
-                          <User size={14} className="text-purple-400 shrink-0" />
                           Szerkesztői panel
                         </button>
                       </div>
@@ -654,18 +632,16 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                         {!isTeacher && (
                           <button
                             onClick={() => { setUserMenuOpen(false); onNavigate('partner'); }}
-                            className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                            className="w-full px-4 py-2 text-left text-blue-400 hover:bg-white/10 transition-colors font-bold"
                           >
-                            <Building2 size={14} className="text-blue-400 shrink-0" />
                             Szervezeti Vezérlőpult
                           </button>
                         )}
                         {isTeacher && (
                           <button
                             onClick={() => { setUserMenuOpen(false); onNavigate('teacher'); }}
-                            className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 font-bold"
+                            className="w-full px-4 py-2 text-left text-amber-400 hover:bg-white/10 transition-colors font-bold"
                           >
-                            <GraduationCap size={14} className="text-amber-400 shrink-0" />
                             Tanári Vezérlőpult
                           </button>
                         )}
@@ -675,9 +651,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     <div className="py-1">
                       <button
                         onClick={handleSignOut}
-                        className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2.5 font-bold"
+                        className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/10 transition-colors font-bold"
                       >
-                        <LogOut size={14} className="shrink-0" />
                         Kijelentkezés
                       </button>
                     </div>
@@ -689,13 +664,13 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               <>
                 <button
                   onClick={() => onNavigate('login')}
-                  className="hidden md:flex px-3.5 py-1.5 border border-gray-600 text-gray-300 text-xs lg:text-sm font-medium rounded-lg hover:bg-white/5 transition-all whitespace-nowrap"
+                  className="hidden md:flex px-3.5 py-1.5 bg-white/10 text-gray-200 text-xs lg:text-sm font-medium rounded-xl hover:bg-white/15 transition-colors whitespace-nowrap"
                 >
                   Bejelentkezés
                 </button>
                 <button
                   onClick={() => onNavigate('register')}
-                  className="hidden md:flex px-3.5 py-1.5 bg-accent hover:bg-accent-hover text-white text-xs lg:text-sm font-extrabold rounded-lg transition-all whitespace-nowrap shadow-xs"
+                  className="hidden md:flex px-3.5 py-1.5 bg-accent hover:bg-accent-hover text-white text-xs lg:text-sm font-extrabold rounded-xl transition-colors whitespace-nowrap shadow-sm"
                 >
                   Regisztráció
                 </button>
@@ -1052,13 +1027,12 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                           onNavigate(item.page);
                           setMobileOpen(false);
                         }}
-                        className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-bold min-h-[44px] flex items-center justify-between active:bg-white/10 ${currentPage === item.page
+                        className={`w-full text-left py-2.5 px-3 rounded-lg text-xs font-bold min-h-[44px] flex items-center active:bg-white/10 ${currentPage === item.page
                             ? 'text-accent font-bold bg-accent/15'
                             : 'text-gray-200 hover:text-white hover:bg-white/5'
                           } transition-colors`}
                       >
                         <span>Összes {item.label.toLowerCase()} megtekintése</span>
-                        <span className="text-accent font-bold">→</span>
                       </button>
 
                       {/* Subnav items */}
@@ -1092,42 +1066,42 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
           <div className="px-6 py-5 space-y-3">
             {user ? (
               <>
-                <div className="px-4 py-3 bg-primary-700/60 border border-primary-600 rounded-xl">
+                <div className="px-4 py-3 bg-primary-700/60 rounded-xl">
                   <p className="text-white text-sm font-semibold truncate">{displayName}</p>
                   <p className="text-gray-400 text-xs truncate mt-0.5">{user.email}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { onNavigate('profile?tab=overview'); setMobileOpen(false); }}
-                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                    className="py-2.5 px-3 bg-white/10 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center min-h-[44px] active:bg-white/15 cursor-pointer"
                   >
-                    <User size={14} className="text-accent" /> Fiókom
+                    Fiókom
                   </button>
                   {!isTeacher && (
                     <button
                       onClick={() => { onNavigate('profile?tab=learning'); setMobileOpen(false); }}
-                      className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                      className="py-2.5 px-3 bg-white/10 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center min-h-[44px] active:bg-white/15 cursor-pointer"
                     >
-                      <GraduationCap size={14} className="text-blue-400" /> Tanulásom
+                      Tanulásom
                     </button>
                   )}
                   <button
                     onClick={() => { onNavigate('profile?tab=saved'); setMobileOpen(false); }}
-                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                    className="py-2.5 px-3 bg-white/10 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center min-h-[44px] active:bg-white/15 cursor-pointer"
                   >
-                    <Bookmark size={14} className="text-purple-400" /> Mentéseim
+                    Mentéseim
                   </button>
                   <button
                     onClick={() => { onNavigate('profile?tab=settings'); setMobileOpen(false); }}
-                    className="py-2.5 px-3 border border-gray-600 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 min-h-[44px] active:bg-white/10 cursor-pointer"
+                    className="py-2.5 px-3 bg-white/10 text-gray-200 text-xs font-bold rounded-xl flex items-center justify-center min-h-[44px] active:bg-white/15 cursor-pointer"
                   >
-                    <Sliders size={14} className="text-emerald-400" /> Beállítások
+                    Beállítások
                   </button>
                 </div>
                 {isAdmin && (
                   <button
                     onClick={() => { onNavigate('admin'); setMobileOpen(false); }}
-                    className="w-full py-3 border border-accent/40 text-accent font-bold text-sm rounded-xl min-h-[48px] active:bg-accent/10"
+                    className="w-full py-3 bg-accent/15 text-accent font-bold text-sm rounded-xl min-h-[48px] active:bg-accent/25"
                   >
                     Admin panel
                   </button>
@@ -1135,7 +1109,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 {isEditor && (
                   <button
                     onClick={() => { onNavigate('szerkeszto'); setMobileOpen(false); }}
-                    className="w-full py-3 border border-purple-500/40 text-purple-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-purple-500/10"
+                    className="w-full py-3 bg-purple-500/15 text-purple-300 font-bold text-sm rounded-xl min-h-[48px] active:bg-purple-500/25"
                   >
                     Szerkesztői panel
                   </button>
@@ -1143,24 +1117,22 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 {isStudent && (
                   <button
                     onClick={() => { onNavigate('profile?tab=overview'); setMobileOpen(false); }}
-                    className="w-full py-3 border border-[#4165b4]/40 bg-[#4165b4]/20 text-[#60a5fa] font-bold text-sm rounded-xl min-h-[48px] active:bg-[#4165b4]/30 flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-[#4165b4]/20 text-[#60a5fa] font-bold text-sm rounded-xl min-h-[48px] active:bg-[#4165b4]/30 flex items-center justify-center"
                   >
-                    <GraduationCap size={16} />
                     Tanuló panel
                   </button>
                 )}
                 {isPartner && (
                   <button
                     onClick={() => { onNavigate(isTeacher ? 'teacher' : 'partner'); setMobileOpen(false); }}
-                    className="w-full py-3 border border-blue-500/40 text-blue-400 font-bold text-sm rounded-xl min-h-[48px] active:bg-blue-500/10 flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-blue-500/15 text-blue-300 font-bold text-sm rounded-xl min-h-[48px] active:bg-blue-500/25 flex items-center justify-center"
                   >
-                    {isTeacher ? <GraduationCap size={16} /> : <Sliders size={16} />}
                     {isTeacher ? 'Tanár panel' : 'Partner panel'}
                   </button>
                 )}
                 <button
                   onClick={handleSignOut}
-                  className="w-full py-3 border border-red-500/40 text-red-400 font-medium text-sm rounded-xl min-h-[48px] active:bg-red-500/10"
+                  className="w-full py-3 bg-red-500/15 text-red-300 font-medium text-sm rounded-xl min-h-[48px] active:bg-red-500/25"
                 >
                   Kijelentkezés
                 </button>

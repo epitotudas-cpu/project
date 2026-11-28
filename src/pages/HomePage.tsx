@@ -3,10 +3,7 @@ import { optimizeImageUrl } from '../utils/imageOptimizer';
 import {
   Search,
   BookOpen,
-  Wrench,
-  Layers,
   Clock,
-  HardHat,
   AlertCircle,
   ArrowRight,
   ExternalLink,
@@ -268,25 +265,21 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       title: 'Kivitelezési megoldások',
       description: 'Gyakorlati útmutatók és technológiák',
       page: 'category',
-      icon: Wrench,
     },
     {
       title: 'Anyagismeret',
       description: 'Építőanyagok, rendszerek és alkalmazásuk',
       page: 'materials',
-      icon: Layers,
     },
     {
       title: 'Műszaki ismeretek',
       description: 'Szabványok, munkavédelem és tudástár',
       page: 'tudastar',
-      icon: BookOpen,
     },
     {
       title: 'Gyártói dokumentáció',
       description: 'Katalógusok, műszaki adatlapok (PDF)',
       page: 'materials',
-      icon: FileText,
     },
   ];
 
@@ -372,38 +365,29 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 )}
               </div>
 
-              {/* 4 vizuális gyorselérés a kereső alatt */}
+              {/* 4 gyorselérés a kereső alatt – tónusos felületek, ikonlapka és nyíl nélkül */}
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
-                {quickAccessItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.title}
-                      type="button"
-                      onClick={() => onNavigate(item.page)}
-                      className="group flex items-center gap-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 hover:border-accent/60 px-4 py-3 text-left transition-all cursor-pointer min-h-[52px]"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-accent/20 text-accent flex items-center justify-center shrink-0">
-                        <Icon size={18} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <span className="block text-sm font-bold text-white group-hover:text-accent transition-colors truncate">
-                          {item.title}
-                        </span>
-                        <span className="block text-[11px] text-gray-300 truncate">
-                          {item.description}
-                        </span>
-                      </div>
-                      <ArrowRight size={14} className="text-gray-400 group-hover:text-accent shrink-0 transition-colors" />
-                    </button>
-                  );
-                })}
+                {quickAccessItems.map((item) => (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => onNavigate(item.page)}
+                    className="group rounded-xl bg-white/[0.09] hover:bg-white/[0.15] px-4 py-3.5 text-left transition-colors duration-200 cursor-pointer min-h-[52px]"
+                  >
+                    <span className="block text-sm font-bold text-white group-hover:text-accent-light transition-colors truncate">
+                      {item.title}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-gray-300/90 truncate">
+                      {item.description}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Right - Dynamic Hero Image Element */}
             <div className="mt-6 lg:mt-0 relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[280px] md:h-[400px] bg-[#0A0D14] border border-white/10 group">
+              <div className="relative rounded-2xl overflow-hidden shadow-lg h-[280px] md:h-[400px] bg-primary-900 group">
                 {activeHeroImages.map((img, idx) => {
                   const isCurrent = idx === currentHeroIndex;
                   return (
@@ -424,7 +408,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 {heroState.config.rotationMode === 'slideshow' &&
                   heroState.config.showIndicators !== false &&
                   activeHeroImages.length > 1 && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 shadow-xl">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-md">
                       {activeHeroImages.map((img, idx) => (
                         <button
                           key={img.id || idx}
@@ -460,7 +444,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <button
             type="button"
             onClick={() => onNavigate('article', { articleSlug: featuredSpotlightArticle.slug })}
-            className="group w-full text-left bg-white rounded-2xl border border-gray-200 hover:border-accent/60 shadow-sm hover:shadow-xl transition-all overflow-hidden grid grid-cols-1 lg:grid-cols-12 cursor-pointer"
+            className="group w-full text-left bg-white hover:bg-primary-50/40 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden grid grid-cols-1 lg:grid-cols-12 cursor-pointer"
           >
             <div className="lg:col-span-5 relative aspect-[16/10] lg:aspect-auto lg:min-h-[260px] bg-gray-900 overflow-hidden">
               {featuredSpotlightArticle.featured_image ? (
@@ -469,21 +453,21 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   alt={featuredSpotlightArticle.title}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary to-primary-800 flex items-center justify-center">
                   <BookOpen size={48} className="text-white/40" />
                 </div>
               )}
-              <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-accent text-white shadow">
+              <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-accent text-white shadow-sm">
                 Kiemelt
               </span>
             </div>
             <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between gap-4 min-w-0">
               <div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-3">
-                  <span className="rounded-md bg-accent/10 px-2.5 py-1 font-bold text-accent">
+                  <span className="rounded-lg bg-accent/10 px-2.5 py-1 font-bold text-accent">
                     {categories.find((c) => c.id === featuredSpotlightArticle.category_id)?.name || 'Szakmai cikk'}
                   </span>
                   {formatHuDate(featuredSpotlightArticle.created_at) && (
@@ -506,9 +490,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   </p>
                 )}
               </div>
-              <div className="inline-flex items-center gap-2 text-xs font-bold text-accent group-hover:translate-x-1 transition-transform">
+              <div className="inline-flex items-center text-xs font-bold text-accent group-hover:text-accent-hover transition-colors">
                 <span>Teljes szakmai anyag megnyitása</span>
-                <ArrowRight size={14} />
               </div>
             </div>
           </button>
@@ -534,7 +517,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
 
         {!leadFreshArticle ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
+          <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-500 text-sm">
             Jelenleg nincs további megjeleníthető publikált cikk.
           </div>
         ) : (
@@ -544,7 +527,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               type="button"
               onClick={() => onNavigate('article', { articleSlug: leadFreshArticle.slug })}
               className={`${secondaryFreshArticles.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'
-                } group bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-xl transition-all overflow-hidden text-left flex flex-col cursor-pointer min-w-0`}
+                } group bg-white hover:bg-primary-50/30 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden text-left flex flex-col cursor-pointer min-w-0`}
             >
               <div className="aspect-[16/9] w-full bg-gray-900 overflow-hidden relative">
                 {leadFreshArticle.featured_image ? (
@@ -553,7 +536,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     alt={leadFreshArticle.title}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary to-primary-800 flex items-center justify-center">
@@ -564,7 +547,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <div className="p-6 flex-1 flex flex-col justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2.5 text-xs text-gray-500 mb-3">
-                    <span className="rounded-md bg-accent/10 px-2.5 py-1 font-bold text-accent">
+                    <span className="rounded-lg bg-accent/10 px-2.5 py-1 font-bold text-accent">
                       {categories.find((c) => c.id === leadFreshArticle.category_id)?.name || 'Általános'}
                     </span>
                     {formatHuDate(leadFreshArticle.created_at) && (
@@ -587,8 +570,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     </p>
                   )}
                 </div>
-                <div className="text-xs font-bold text-accent inline-flex items-center gap-1.5">
-                  Cikk elolvasása <ArrowRight size={14} />
+                <div className="text-xs font-bold text-accent group-hover:text-accent-hover transition-colors">
+                  Cikk elolvasása
                 </div>
               </div>
             </button>
@@ -601,7 +584,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     key={article.id}
                     type="button"
                     onClick={() => onNavigate('article', { articleSlug: article.slug })}
-                    className="group bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-lg transition-all p-4 text-left flex gap-4 items-stretch cursor-pointer min-w-0 flex-1"
+                    className="group bg-white hover:bg-primary-50/40 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-4 text-left flex gap-4 items-stretch cursor-pointer min-w-0 flex-1"
                   >
                     <div className="w-28 sm:w-32 aspect-[4/3] rounded-xl bg-gray-900 overflow-hidden shrink-0">
                       {article.featured_image ? (
@@ -610,7 +593,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                           alt={article.title}
                           loading="lazy"
                           decoding="async"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                         />
                       ) : (
                         <div className="w-full h-full bg-primary/90 flex items-center justify-center">
@@ -620,7 +603,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-between gap-2">
                       <div>
-                        <span className="inline-block rounded bg-accent/10 px-2 py-0.5 text-[11px] font-bold text-accent mb-1.5">
+                        <span className="inline-block rounded-lg bg-accent/10 px-2 py-0.5 text-[11px] font-bold text-accent mb-1.5">
                           {categories.find((c) => c.id === article.category_id)?.name || 'Általános'}
                         </span>
                         <h3 className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
@@ -652,7 +635,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       <InFeedAdBanner slots={adSlots} onNavigate={onNavigate} />
 
       {/* 5. Új tudásanyagok (4 kártya) */}
-      <section className="bg-white border-y border-gray-200">
+      <section className="bg-primary-50/70">
         <div className="mx-auto max-w-[1440px] px-4 py-14 sm:px-6 lg:px-8">
           <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -664,14 +647,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <button
               type="button"
               onClick={() => onNavigate('tudastar')}
-              className="inline-flex items-center gap-2 text-accent font-bold text-xs hover:gap-3 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-accent font-bold text-xs shadow-sm hover:shadow-md transition-all cursor-pointer"
             >
-              Teljes Tudástár <ArrowRight size={15} />
+              Teljes Tudástár <ArrowRight size={14} />
             </button>
           </div>
 
           {knowledgeItems.length === 0 ? (
-            <div className="bg-background rounded-2xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
+            <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-500 text-sm">
               Jelenleg nincs megjeleníthető publikált tudásanyag.
             </div>
           ) : (
@@ -684,7 +667,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     key={item.id}
                     type="button"
                     onClick={() => onNavigate(targetPage)}
-                    className="group bg-background rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-lg transition-all overflow-hidden text-left flex flex-col cursor-pointer min-w-0"
+                    className="group bg-white hover:bg-primary-50/30 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden text-left flex flex-col cursor-pointer min-w-0"
                   >
                     <div className="aspect-[16/9] w-full bg-gray-900 relative overflow-hidden">
                       {item.image_url ? (
@@ -693,14 +676,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                           alt={item.title}
                           loading="lazy"
                           decoding="async"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-primary to-primary-800 flex items-center justify-center">
                           <ShieldCheck size={36} className="text-white/40" />
                         </div>
                       )}
-                      <span className="absolute top-3 left-3 rounded-full bg-black/70 backdrop-blur px-2.5 py-0.5 text-[11px] font-bold text-white border border-white/15">
+                      <span className="absolute top-3 left-3 rounded-full bg-black/70 backdrop-blur px-2.5 py-0.5 text-[11px] font-bold text-white">
                         {typeLabel}
                       </span>
                     </div>
@@ -713,9 +696,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                           {item.title}
                         </h3>
                       </div>
-                      <div className="pt-3 border-t border-gray-200/70 flex items-center justify-between text-xs font-bold text-accent">
-                        <span>Megnyitás</span>
-                        <ArrowRight size={14} />
+                      <div className="pt-2 text-xs font-bold text-accent group-hover:text-accent-hover transition-colors">
+                        Megnyitás
                       </div>
                     </div>
                   </button>
@@ -747,7 +729,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
 
         {!leadCatalog ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
+          <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-500 text-sm">
             Jelenleg nincs megjeleníthető jóváhagyott gyártói dokumentum.
           </div>
         ) : (
@@ -757,7 +739,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               {/* Nagy kiemelt katalógus */}
               <div
                 className={`${secondaryFeaturedCatalogs.length > 0 ? 'lg:col-span-6' : 'lg:col-span-12'
-                  } bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-xl transition-all overflow-hidden flex flex-col justify-between min-w-0`}
+                  } bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between min-w-0`}
               >
                 <div>
                   <div className="aspect-[16/9] w-full bg-gray-900 relative overflow-hidden">
@@ -811,9 +793,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   <button
                     type="button"
                     onClick={() => onNavigate('materials')}
-                    className="text-xs font-bold text-accent hover:underline cursor-pointer"
+                    className="text-xs font-bold text-accent hover:text-accent-hover cursor-pointer"
                   >
-                    Termékadatlap →
+                    Termékadatlap
                   </button>
                 </div>
               </div>
@@ -824,7 +806,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   {secondaryFeaturedCatalogs.map((entry) => (
                     <div
                       key={entry.item.id}
-                      className="bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-lg transition-all p-5 flex flex-col sm:flex-row gap-4 items-stretch flex-1 min-w-0"
+                      className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-5 flex flex-col sm:flex-row gap-4 items-stretch flex-1 min-w-0"
                     >
                       <div className="w-full sm:w-36 aspect-[16/10] sm:aspect-auto rounded-xl bg-gray-900 overflow-hidden shrink-0">
                         {entry.item.main_image_url ? (
@@ -883,7 +865,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   {additionalFreshCatalogs.map((entry) => (
                     <div
                       key={entry.item.id}
-                      className="bg-white rounded-2xl border border-gray-200 hover:border-accent/50 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between min-w-0"
+                      className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between min-w-0"
                     >
                       <div>
                         <div className="aspect-[16/9] w-full bg-gray-900 overflow-hidden">
@@ -935,82 +917,83 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* 8. Gyártói partnerek */}
-      <section className="mx-auto max-w-[1440px] px-4 py-14 sm:px-6 lg:px-8 border-t border-gray-200">
-        <div className="mb-8 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Gyártói partnerek</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Ipari gyártók, szakképző intézmények és szakmai támogatóink
-            </p>
+      <section className="bg-primary-50/50">
+        <div className="mx-auto max-w-[1440px] px-4 py-14 sm:px-6 lg:px-8">
+          <div className="mb-8 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Gyártói partnerek</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Ipari gyártók, szakképző intézmények és szakmai támogatóink
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate('partners')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent/10 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-white transition-colors cursor-pointer"
+            >
+              Összes Partner Megtekintése <ArrowRight size={14} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('partners')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent/10 border border-accent/30 text-accent font-bold text-xs rounded-xl hover:bg-accent hover:text-white transition-all cursor-pointer"
-          >
-            Összes Partner Megtekintése <ArrowRight size={14} />
-          </button>
-        </div>
 
-        {partners.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center text-gray-500 text-sm">
-            Jelenleg még nincsenek kiemelt partner szervezetek.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {partners.map((partner) => {
-              const safeWebsiteUrl = sanitizeExternalUrl(partner.websiteUrl, { allowAutoHttps: true });
-              const linkUrl = safeWebsiteUrl || `#partnerek/${partner.slug || partner.id}`;
-              const isExternal = Boolean(safeWebsiteUrl);
+          {partners.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-500 text-sm">
+              Jelenleg még nincsenek kiemelt partner szervezetek.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {partners.map((partner) => {
+                const safeWebsiteUrl = sanitizeExternalUrl(partner.websiteUrl, { allowAutoHttps: true });
+                const linkUrl = safeWebsiteUrl || `#partnerek/${partner.slug || partner.id}`;
+                const isExternal = Boolean(safeWebsiteUrl);
 
-              return (
-                <a
-                  key={partner.id}
-                  href={linkUrl}
-                  target={isExternal ? '_blank' : '_self'}
-                  rel={isExternal ? 'noopener noreferrer' : undefined}
-                  onClick={(e) => {
-                    if (partner.id) recordAdClick(partner.id);
-                    if (!isExternal) {
-                      e.preventDefault();
-                      onNavigate('partner-detail', { slug: partner.slug || partner.id });
-                    }
-                  }}
-                  className="group bg-white border border-gray-200 hover:border-accent rounded-xl p-6 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between cursor-pointer"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded">
-                        {getCategoryLabel(partner.category)}
-                      </span>
-                      {partner.isVerified && (
-                        <span className="text-xs text-gray-600 font-semibold flex items-center gap-1 group-hover:text-accent transition-colors">
-                          Minősített Partner <ExternalLink size={12} />
+                return (
+                  <a
+                    key={partner.id}
+                    href={linkUrl}
+                    target={isExternal ? '_blank' : '_self'}
+                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                    onClick={(e) => {
+                      if (partner.id) recordAdClick(partner.id);
+                      if (!isExternal) {
+                        e.preventDefault();
+                        onNavigate('partner-detail', { slug: partner.slug || partner.id });
+                      }
+                    }}
+                    className="group bg-white hover:bg-primary-50/30 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-pointer"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-lg">
+                          {getCategoryLabel(partner.category)}
                         </span>
-                      )}
+                        {partner.isVerified && (
+                          <span className="text-xs text-gray-600 font-semibold flex items-center gap-1 group-hover:text-accent transition-colors">
+                            Minősített Partner <ExternalLink size={12} />
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        {partner.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 leading-relaxed mb-4 line-clamp-3">
+                        {partner.description}
+                      </p>
                     </div>
-                    <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                      {partner.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed mb-4 line-clamp-3">
-                      {partner.description}
-                    </p>
-                  </div>
-                  <div className="text-xs text-accent font-bold border-t border-gray-100 pt-3 flex items-center justify-between group-hover:translate-x-0.5 transition-transform">
-                    <span>{isExternal ? 'Partner weboldalának megnyitása' : 'Részletes adatlap megtekintése'}</span>
-                    <ArrowRight size={14} />
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        )}
+                    <div className="text-xs text-accent font-bold pt-2 group-hover:text-accent-hover transition-colors">
+                      {isExternal ? 'Partner weboldalának megnyitása' : 'Részletes adatlap megtekintése'}
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* CTA - only for signed-out visitors */}
       {!session && (
         <section className="mx-auto max-w-[1440px] px-4 py-14 sm:px-6 lg:px-8">
-          <div className="bg-primary rounded-2xl p-8 md:p-12 text-center">
+          <div className="bg-primary rounded-2xl p-8 md:p-12 text-center shadow-sm">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Kezdj el tanulni ma</h2>
             <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
               Regisztrálj, és hozz létre saját könyvjelzőket, írd meg saját cikkeidet, és csatlakozz az
@@ -1019,13 +1002,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => onNavigate('register')}
-                className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors cursor-pointer"
+                className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl transition-colors cursor-pointer"
               >
                 Regisztráció
               </button>
               <button
                 onClick={() => onNavigate('login')}
-                className="px-6 py-3 border border-white/30 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-colors cursor-pointer"
               >
                 Bejelentkezés
               </button>
