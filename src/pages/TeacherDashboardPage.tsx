@@ -137,7 +137,11 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
   const [newClassName, setNewClassName] = useState('');
   const [newClassTrade, setNewClassTrade] = useState('');
   const [userRole, setUserRole] = useState<string>('instructor');
+  const [allClassMaterials, setAllClassMaterials] = useState<ClassMaterial[]>([]);
   const [schoolInstructors, setSchoolInstructors] = useState<{ id: string; full_name: string }[]>([]);
+
+  const isSchoolManager = ['owner', 'admin', 'school_admin', 'partner_admin'].includes(userRole);
+  const canManageInvitationCodes = userRole === 'owner' || userRole === 'instructor';
   const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [submittingClass, setSubmittingClass] = useState(false);
@@ -199,7 +203,8 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         .limit(1)
         .maybeSingle();
 
-      if (puError || !partnerUserData) {
+      const allowedTeacherRoles = ['instructor', 'owner', 'admin', 'school_admin', 'partner_admin'];
+      if (puError || !partnerUserData || !allowedTeacherRoles.includes(partnerUserData.member_role || '')) {
         setLoading(false);
         return;
       }
@@ -243,12 +248,15 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
       }
       setSchoolInfo({ id: partnerId, name: partnerName });
 
-      // Fetch active instructors if user is school admin/contact
-      if (partnerUserData.member_role === 'school_admin' || partnerUserData.member_role === 'owner' || partnerUserData.member_role === 'partner_admin') {
+      const isManagerRole = ['owner', 'admin', 'school_admin', 'partner_admin'].includes(partnerUserData.member_role || '');
+
+      // Fetch active instructors if user is school admin/owner
+      if (isManagerRole) {
         const { data: instData } = await supabase
           .from('partner_users')
           .select('user_id, profiles:user_id(id, full_name)')
-          .eq('partner_id', partnerId);
+          .eq('partner_id', partnerId)
+          .eq('member_role', 'instructor');
         if (instData) {
           interface InstRow {
             user_id: string;
@@ -261,6 +269,9 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
             }))
             .filter((i) => Boolean(i.id));
           setSchoolInstructors(mapped);
+          if (mapped.length > 0) {
+            setSelectedInstructorId(mapped[0].id);
+          }
         }
       }
 
@@ -278,13 +289,26 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         setPkgTrade(trades[0]);
       }
 
-      // 3. Fetch instructor classes
-      const loadedClasses = await listInstructorClasses(partnerId, user!.id);
+      // 3. Fetch school/instructor classes
+      const loadedClasses = await listInstructorClasses(partnerId, isManagerRole ? undefined : user!.id);
       setClasses(loadedClasses);
 
       // 4. Fetch all students across classes for aggregated view
-      const studentsList = await listSchoolStudents(partnerId, user!.id);
+      const studentsList = await listSchoolStudents(partnerId, isManagerRole ? undefined : user!.id);
       setAllStudents(studentsList);
+
+      // 5. Fetch real class_materials across loaded classes
+      const classIds = loadedClasses.map((c) => c.id);
+      if (classIds.length > 0) {
+        const { data: matsData } = await supabase
+          .from('class_materials')
+          .select('*')
+          .in('class_id', classIds)
+          .order('assigned_at', { ascending: false });
+        setAllClassMaterials((matsData || []) as ClassMaterial[]);
+      } else {
+        setAllClassMaterials([]);
+      }
     } catch (err) {
       console.error('Error loading teacher data:', err);
     } finally {
@@ -300,7 +324,7 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
     setActiveCode(cls.active_code || null);
 
     // Fetch students
-    const students = await listSchoolStudents(schoolInfo.id, user!.id, undefined, classId);
+    const students = await listSchoolStudents(schoolInfo.id, isSchoolManager ? undefined : user!.id, undefined, classId);
     setClassStudents(students);
 
     // Fetch materials
@@ -375,18 +399,19 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
         grade: null,
       });
 
-      // 2. Automatically generate invitation code valid for 90 days
-      const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
-      const code = await generateStudentInvitationCode({
-        schoolId: schoolInfo.id,
-        instructorId: targetInstructorId,
-        tradeId: newClassTrade,
-        classId: newClass.id,
-        expiresAt,
-        maxUses: 100,
-      });
-
-      newClass.active_code = code;
+      // 2. Automatically generate invitation code valid for 90 days (owner/instructor only)
+      if (canManageInvitationCodes) {
+        const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+        const code = await generateStudentInvitationCode({
+          schoolId: schoolInfo.id,
+          instructorId: targetInstructorId,
+          tradeId: newClassTrade,
+          classId: newClass.id,
+          expiresAt,
+          maxUses: 100,
+        });
+        newClass.active_code = code;
+      }
 
       setClasses([newClass, ...classes]);
       setShowCreateModal(false);
@@ -484,12 +509,16 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
 
   const handleGenerateNewCode = async () => {
     if (!selectedClass || !schoolInfo || !user) return;
+    if (!canManageInvitationCodes) {
+      toast.error('Meghívókódot csak az iskola tulajdonosa vagy a kijelölt oktató hozhat létre.');
+      return;
+    }
     setGeneratingCode(true);
     try {
       const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
       const code = await generateStudentInvitationCode({
         schoolId: schoolInfo.id,
-        instructorId: user.id,
+        instructorId: selectedClass.instructor_id || user.id,
         tradeId: selectedClass.trade_id,
         classId: selectedClass.id,
         expiresAt,
@@ -1150,15 +1179,17 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                               {codeCopied ? 'Másolva' : 'Másolás'}
                             </button>
                           )}
-                          <button
-                            onClick={handleGenerateNewCode}
-                            disabled={generatingCode}
-                            className="p-2.5 bg-[#4165b4]/10 hover:bg-[#4165b4]/20 text-[#60a5fa] border border-[#4165b4]/30 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-medium"
-                            title="Új kód generálása"
-                          >
-                            <RefreshCw className={`w-4 h-4 ${generatingCode ? 'animate-spin' : ''}`} />
-                            Új Kód
-                          </button>
+                          {canManageInvitationCodes && (
+                            <button
+                              onClick={handleGenerateNewCode}
+                              disabled={generatingCode}
+                              className="p-2.5 bg-[#4165b4]/10 hover:bg-[#4165b4]/20 text-[#60a5fa] border border-[#4165b4]/30 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-medium"
+                              title="Új kód generálása"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${generatingCode ? 'animate-spin' : ''}`} />
+                              Új Kód
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1733,34 +1764,51 @@ export const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({
                 <CheckSquare className="w-5 h-5 text-[#60a5fa]" /> Kiosztott Tananyagok Áttekintése
               </h2>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-gray-300">
-                  <thead className="bg-[#1F1F1F] text-gray-400 uppercase text-[10px]">
-                    <tr>
-                      <th className="py-3 px-4 rounded-l-lg">Tananyag</th>
-                      <th className="py-3 px-4">Osztály</th>
-                      <th className="py-3 px-4">Kiosztva</th>
-                      <th className="py-3 px-4">Tanulók</th>
-                      <th className="py-3 px-4">Megkezdte</th>
-                      <th className="py-3 px-4">Befejezte</th>
-                      <th className="py-3 px-4">Teljesítés %</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1F1F1F]">
-                    {DEFAULT_COURSES.slice(0, 4).map((c, idx) => (
-                      <tr key={c.id} className="hover:bg-[#1A1A1A]">
-                        <td className="py-3.5 px-4 font-semibold text-white">{c.title}</td>
-                        <td className="py-3.5 px-4 text-[#60a5fa] font-bold">{classes[idx % classes.length]?.name || '10.A'}</td>
-                        <td className="py-3.5 px-4 text-gray-400">2026. 09. 15.</td>
-                        <td className="py-3.5 px-4 font-bold text-white">24</td>
-                        <td className="py-3.5 px-4 text-blue-400 font-semibold">19</td>
-                        <td className="py-3.5 px-4 text-emerald-400 font-semibold">15</td>
-                        <td className="py-3.5 px-4 font-bold text-emerald-400">78%</td>
+              {allClassMaterials.length === 0 ? (
+                <div className="p-8 text-center text-gray-400 text-sm bg-[#1A1A1A] border border-[#262626] rounded-xl">
+                  Még nincs kiosztott osztályszintű tananyag.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-gray-300">
+                    <thead className="bg-[#1F1F1F] text-gray-400 uppercase text-[10px]">
+                      <tr>
+                        <th className="py-3 px-4 rounded-l-lg">Tananyag</th>
+                        <th className="py-3 px-4">Típus</th>
+                        <th className="py-3 px-4">Osztály</th>
+                        <th className="py-3 px-4">Kiosztva</th>
+                        <th className="py-3 px-4 rounded-r-lg">Osztály tanulói</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-[#1F1F1F]">
+                      {allClassMaterials.map((mat) => {
+                        const cls = classes.find((c) => c.id === mat.class_id);
+                        const course = DEFAULT_COURSES.find((c) => c.id === mat.content_id);
+                        const studentCount = allStudents.filter((s) => s.class_id === mat.class_id).length;
+                        return (
+                          <tr key={mat.id} className="hover:bg-[#1A1A1A]">
+                            <td className="py-3.5 px-4 font-semibold text-white">
+                              {course?.title || mat.content_id}
+                            </td>
+                            <td className="py-3.5 px-4 text-gray-400 uppercase text-[10px]">
+                              {mat.content_type}
+                            </td>
+                            <td className="py-3.5 px-4 text-[#60a5fa] font-bold">
+                              {cls?.name || 'Osztály'}
+                            </td>
+                            <td className="py-3.5 px-4 text-gray-400">
+                              {mat.assigned_at ? new Date(mat.assigned_at).toLocaleDateString('hu-HU') : '–'}
+                            </td>
+                            <td className="py-3.5 px-4 font-bold text-white">
+                              {studentCount} fő
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

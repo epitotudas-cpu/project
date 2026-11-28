@@ -373,6 +373,7 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
   const { profile } = useAuth();
   const [editorView, setEditorView] = useState<EditorView>('dashboard');
   const role = profile?.role;
+  const isAdmin = role === 'admin';
   const canView = (moduleId: string) => canRoleAccessModule(role, moduleId);
 
   return (
@@ -380,9 +381,9 @@ function EditorPanelContent({ onNavigate }: { onNavigate: (page: string) => void
       {editorView === 'dashboard' && <EditorDashboardPage onNavigateView={setEditorView} />}
       {editorView === 'articles' && (canView('articles') ? <AdminArticlesPage onNavigateView={(view) => setEditorView(view as EditorView)} /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'utmutatok' && (canView('guides') ? <AdminGuidesPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
-      {editorView === 'learning' && (canView('learning') ? <AdminLearningPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'learning' && (isAdmin && canView('learning') ? <AdminLearningPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'categories' && (canView('categories') ? <AdminCategoriesPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
-      {editorView === 'glossary' && (canView('glossary') ? <AdminGlossaryPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
+      {editorView === 'glossary' && (isAdmin && canView('glossary') ? <AdminGlossaryPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'safety' && (canView('safety') ? <AdminKnowledgeHubPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'materials' && (canView('catalog') ? <AdminMaterialsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}
       {editorView === 'tools' && (canView('catalog') ? <AdminToolsPage /> : <EditorDashboardPage onNavigateView={setEditorView} />)}

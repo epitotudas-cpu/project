@@ -416,29 +416,21 @@ export default function EditGlossaryTermModal({ term, onClose, onSaved }: EditGl
         // Upsert all defined dynamic translations
         for (const [code, item] of Object.entries(dynTranslations)) {
           if (item.translated_term.trim()) {
-            try {
-              await upsertTermTranslation({
-                glossary_term_id: data.id,
-                language_code: code,
-                translated_term: item.translated_term.trim(),
-                definition: item.definition.trim() || null,
-                synonyms: parseList(item.synonyms),
-                status: item.status,
-                source: item.source?.trim() || null,
-              });
-            } catch (trErr) {
-              console.warn(`Hiba a(z) ${code} fordítás mentésekor:`, trErr);
-            }
+            await upsertTermTranslation({
+              glossary_term_id: data.id,
+              language_code: code,
+              translated_term: item.translated_term.trim(),
+              definition: item.definition.trim() || null,
+              synonyms: parseList(item.synonyms),
+              status: item.status,
+              source: item.source?.trim() || null,
+            });
           }
         }
 
         // Delete removed translation rows if any
         for (const removedCode of removedIsoCodes) {
-          try {
-            await deleteTermTranslation(data.id, removedCode);
-          } catch (delErr) {
-            console.warn(`Hiba a(z) ${removedCode} fordítás törlésekor:`, delErr);
-          }
+          await deleteTermTranslation(data.id, removedCode);
         }
       }
 

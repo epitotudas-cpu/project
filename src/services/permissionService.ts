@@ -55,14 +55,14 @@ const DEFAULT_EDITOR_PERMISSIONS: Record<string, ModuleActionPermissions> = {
   categories: { view: true, create: true, edit: true, submit: false, publish: false, delete: true },
   news: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
   guides: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
-  glossary: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
+  glossary: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
   media: { view: true, create: true, edit: true, submit: false, publish: false, delete: true },
   moderation: { view: true, create: false, edit: true, submit: false, publish: true, delete: false },
 
   calculators: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
   safety: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
-  regulations: { view: true, create: false, edit: false, submit: false, publish: false, delete: false },
-  learning: { view: true, create: true, edit: true, submit: true, publish: true, delete: false },
+  regulations: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
+  learning: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },
   catalog: { view: true, create: true, edit: true, submit: true, publish: false, delete: false },
 
   partner_profile: { view: false, create: false, edit: false, submit: false, publish: false, delete: false },

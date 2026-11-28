@@ -157,6 +157,11 @@ export function PartnerSchoolProfilePage({ initialTab = 'profile', onNavigateVie
         .limit(1)
         .maybeSingle();
 
+      if (puData?.member_role === 'member') {
+        setLoading(false);
+        return;
+      }
+
       let currentPartner: ExtendedPartner | null = null;
       if (puData && puData.partner_id) {
         const { data: pRec } = await supabase

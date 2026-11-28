@@ -208,18 +208,21 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
     rawRole === 'instructor' ||
     rawRole === 'oktato';
 
+  const isSimpleMember = partnerMemberRole === 'member' && !isInstructorRole;
+
   const isPartnerMember =
-    Boolean(partnerMemberRole) ||
-    profile?.role === 'partner' ||
-    profile?.role === 'school' ||
-    profile?.role === 'teacher' ||
-    profile?.role === 'contact' ||
-    rawRole === 'contact' ||
-    rawUserType === 'partner' ||
-    rawUserType === 'iskola' ||
-    rawUserType === 'oktato' ||
-    rawUserType === 'teacher' ||
-    rawUserType === 'instructor';
+    !isSimpleMember &&
+    (Boolean(partnerMemberRole) ||
+      profile?.role === 'partner' ||
+      profile?.role === 'school' ||
+      profile?.role === 'teacher' ||
+      profile?.role === 'contact' ||
+      rawRole === 'contact' ||
+      rawUserType === 'partner' ||
+      rawUserType === 'iskola' ||
+      rawUserType === 'oktato' ||
+      rawUserType === 'teacher' ||
+      rawUserType === 'instructor');
 
   const isTeacher = isInstructorRole;
 

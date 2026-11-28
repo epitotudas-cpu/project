@@ -185,43 +185,35 @@ export async function saveGlossaryLanguage(payload: Partial<GlossaryLanguage> & 
     is_rtl: payload.is_rtl ?? false,
   };
 
-  // Update local
-  const existingIdx = current.findIndex((l) => l.id === langToSave.id);
+  // Cloud upsert first so RLS/DB errors are surfaced
+  const { data, error } = await supabase
+    .from('glossary_languages')
+    .upsert({
+      ...langToSave,
+      updated_at: new Date().toISOString(),
+    } as never, { onConflict: 'iso_code' })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'Nyelv mentése nem sikerült.');
+  }
+
+  const finalLang = (data as GlossaryLanguage) || langToSave;
+
+  // Update local cache only after cloud write succeeds
+  const existingIdx = current.findIndex((l) => l.id === finalLang.id || l.iso_code === finalLang.iso_code);
   let updated: GlossaryLanguage[];
   if (existingIdx >= 0) {
     updated = [...current];
-    updated[existingIdx] = langToSave;
+    updated[existingIdx] = finalLang;
   } else {
-    updated = [...current, langToSave];
+    updated = [...current, finalLang];
   }
   updated.sort((a, b) => a.sort_order - b.sort_order);
   saveLocalGlossaryLanguages(updated);
 
-  // Cloud upsert
-  try {
-    const { data, error } = await supabase
-      .from('glossary_languages')
-      .upsert({
-        ...langToSave,
-        updated_at: new Date().toISOString(),
-      } as never, { onConflict: 'iso_code' })
-      .select('*')
-      .single();
-
-    if (!error && data) {
-      const cloudResult = data as GlossaryLanguage;
-      const finalIndex = updated.findIndex((l) => l.iso_code === cloudResult.iso_code);
-      if (finalIndex >= 0) {
-        updated[finalIndex] = cloudResult;
-        saveLocalGlossaryLanguages(updated);
-      }
-      return cloudResult;
-    }
-  } catch (err) {
-    console.warn('Cloud language upsert info:', err);
-  }
-
-  return langToSave;
+  return finalLang;
 }
 
 export async function toggleLanguageActive(id: string): Promise<GlossaryLanguage[]> {
@@ -234,17 +226,17 @@ export async function toggleLanguageActive(id: string): Promise<GlossaryLanguage
     throw new Error('A magyar (HU) alapnyelv védett, nem inaktiválható!');
   }
 
+  const { error } = await supabase
+    .from('glossary_languages')
+    .update({ is_active: !target.is_active, updated_at: new Date().toISOString() } as never)
+    .eq('id', target.id);
+
+  if (error) {
+    throw new Error(error.message || 'Nyelv állapotának frissítése nem sikerült.');
+  }
+
   const updated = current.map((l) => (l.id === id ? { ...l, is_active: !l.is_active } : l));
   saveLocalGlossaryLanguages(updated);
-
-  try {
-    await supabase
-      .from('glossary_languages')
-      .update({ is_active: !target.is_active, updated_at: new Date().toISOString() } as never)
-      .eq('id', target.id);
-  } catch (err) {
-    console.warn('Cloud toggle language active info:', err);
-  }
 
   return updated;
 }
@@ -259,14 +251,14 @@ export async function deleteGlossaryLanguage(id: string): Promise<GlossaryLangua
     throw new Error('A magyar (HU) alapnyelv védett, nem törölhető!');
   }
 
+  const { error } = await supabase.from('glossary_languages').delete().eq('id', target.id);
+
+  if (error) {
+    throw new Error(error.message || 'Nyelv törlése nem sikerült.');
+  }
+
   const updated = current.filter((l) => l.id !== id);
   saveLocalGlossaryLanguages(updated);
-
-  try {
-    await supabase.from('glossary_languages').delete().eq('id', target.id);
-  } catch (err) {
-    console.warn('Cloud delete language info:', err);
-  }
 
   return updated;
 }

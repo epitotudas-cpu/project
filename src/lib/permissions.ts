@@ -105,7 +105,10 @@ export function canAccessPartnerPanel(
   _userMetadata?: unknown
 ): boolean {
   void _userMetadata;
-  if (memberRole && ['owner', 'admin', 'member', 'instructor'].includes(memberRole)) {
+  if (memberRole === 'member') {
+    return false;
+  }
+  if (memberRole && ['owner', 'admin', 'school_admin', 'partner_admin', 'instructor'].includes(memberRole)) {
     return true;
   }
   if (!profile) return false;
